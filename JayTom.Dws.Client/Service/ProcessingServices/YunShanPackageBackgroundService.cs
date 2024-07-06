@@ -379,20 +379,20 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
-                        packageInfo = new PackageInfo() {
+                        packageInfo = new PackageInfo {
                             Guid = timestamp,
-                            BarCodeInfo = new BarCodeInfoModel() {
+                            BarCodeInfo = new BarCodeInfoModel {
                                 Barcode = barCode,
                                 ScanTime = DateTime.Now,
                                 Source = SourceType.Input,
                             },
-                            WeightInfo = new WeightInfoModel() {
+                            WeightInfo = new WeightInfoModel {
                                 CreateTime = DateTime.Now,
                                 FormattedWeight = args.Weight,
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             },
-                            VolumeInfo = new VolumeInfoModel() {
+                            VolumeInfo = new VolumeInfoModel {
                                 CreateTime = DateTime.Now,
                                 FormattedHeight = args.Height,
                                 FormattedLength = args.Length,
@@ -407,7 +407,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             IsSavedImage = true,
                         };
 
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
                             PackageInfo = packageInfo
@@ -415,18 +415,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
                     else {
                         if (packageInfo is not null) {
-                            packageInfo.BarCodeInfo = new BarCodeInfoModel() {
+                            packageInfo.BarCodeInfo = new BarCodeInfoModel {
                                 Barcode = barCode,
                                 ScanTime = DateTime.Now,
                                 Source = SourceType.Input,
                             };
-                            packageInfo.WeightInfo = new WeightInfoModel() {
+                            packageInfo.WeightInfo = new WeightInfoModel {
                                 CreateTime = DateTime.Now,
                                 FormattedWeight = args.Weight,
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
-                            packageInfo.VolumeInfo = new VolumeInfoModel() {
+                            packageInfo.VolumeInfo = new VolumeInfoModel {
                                 CreateTime = DateTime.Now,
                                 FormattedHeight = args.Height,
                                 FormattedLength = args.Length,
@@ -436,17 +436,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 OriginalText = args.SourceContent
                             };
                             packageInfo.Other = boxBarCode;
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
                                 PackageInfo = packageInfo
                             });
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
                                 PackageInfo = packageInfo
                             });
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
                                 PackageInfo = packageInfo

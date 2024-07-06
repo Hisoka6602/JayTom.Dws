@@ -36,6 +36,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly IGrayscaleService _grayscaleService;
         private readonly IExternalDataService _externalDataService;
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
@@ -64,7 +65,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _configRepository = configRepository;
             _sortingService = sortingService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
-            var grayscaleService1 = grayscaleService;
+            _grayscaleService = grayscaleService;
             _externalDataService = externalDataService;
             //条码返回
             _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args) {
@@ -405,11 +406,22 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
 
                     if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
-                        grayscaleService1.IsConnected) {
+                        _grayscaleService.IsConnected) {
                         //跳过车辆
+                        var increaseCarCount = _grayscaleService.IncreaseCarCount((int)packageInfo.Guid,
+                            _grayscaleDeviceSettingsDto.CarNumberOffset);
+
+                        var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(increaseCarCount));
+
                         if (GrayScaleSkippedVehicles > 1) {
                             GrayScaleSkippedVehicles--;
                             NLog.LogManager.GetCurrentClassLogger().Error("前车联动了多车,该车跳过");
+                            if (package?.BarCodeInfo != null && package.BarCodeInfo?.Barcode.Equals("noread",
+                                    StringComparison.CurrentCultureIgnoreCase) != true) {
+                                package.LinkedCarCount = 1;
+                                PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                            }
+
                             return;
                         }
                         //动态时间
@@ -421,7 +433,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹到现在的间隔:{milliseconds}ms");
                         }
 
-                        var singleGrayscaleSensorResult = await grayscaleService1.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+                        var singleGrayscaleSensorResult = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 
                         if (singleGrayscaleSensorResult is not null) {
                             //联动车辆
@@ -440,7 +452,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             }*/
 
                             //双车赋值
-                            var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(singleGrayscaleSensorResult.CarNumber));
+
                             if (package is { BarCodeInfo: not null }) {
                                 if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
                                     singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any() != true) {

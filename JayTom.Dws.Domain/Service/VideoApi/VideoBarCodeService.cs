@@ -234,5 +234,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                 return new KeyValuePair<bool, object>(false, e.Message);
             }
         }
+
+        //保存图片方法
     }
 }
