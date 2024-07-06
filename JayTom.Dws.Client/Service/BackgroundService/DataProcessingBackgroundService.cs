@@ -127,7 +127,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 try {
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken)
+                    await Task.Delay(TimeSpan.FromMilliseconds(80), stoppingToken)
                         .ContinueWith(async a => {
                             if (a.IsCompletedSuccessfully) {
                                 var tryDequeue = _insertItems.TryDequeue(out var insertModel);
