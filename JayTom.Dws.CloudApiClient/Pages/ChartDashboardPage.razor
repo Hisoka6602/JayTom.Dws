@@ -191,13 +191,13 @@
     private List<DonutItemModel> DonutItems { get; init; } = new();
 
     private bool _dataLoaded = true;
-    public static DateTime? StartDateTime { get; set; } = DateTime.Today;
-    public static DateTime? EndDateTime { get; set; } = DateTime.Now;
-    public static string? BaseUrl { get; set; }
-    public static string? DeviceName { get; set; }
+    public DateTime? StartDateTime { get; set; } = DateTime.Today;
+    public DateTime? EndDateTime { get; set; } = DateTime.Now;
+    public string? BaseUrl { get; set; }
+    public string? DeviceName { get; set; }
 
     public List<string> DonutItemColors = new()
-                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
         "#1E90FF",
         "#687DE8",
         "#876BCE",
@@ -242,7 +242,7 @@
 
             };
         _options.Yaxis = new List<YAxis>
-                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                    {
             new YAxis {
                 DecimalsInFloat = 0,
                 Labels = new YAxisLabels { Rotate = -45, Style = new AxisLabelStyle { FontSize = "10px" } },
@@ -251,7 +251,6 @@
         };
 
         //正式逻辑
-
         BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
         OnSearchClicked();
     }

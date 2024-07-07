@@ -14,7 +14,7 @@
             <MudCardContent Style="margin:0px;border-radius:15px;padding:0px">
                 <div style=" display: flex; align-items: center; justify-content: center;border-radius:15px;overflow: hidden;">
                     <MudDatePicker @ref="_picker" MaxDate="_maxDate" PickerVariant="PickerVariant.Static" Label="Chinese" @bind-Date="@Date" Culture="@CultureInfo.GetCultureInfo("zh-Hans")" TitleDateFormat="dddd, dd MMMM" />
-                    <MudTimePicker Color="Color.Primary" Style=" margin-bottom:3px" PickerVariant="PickerVariant.Static" Label="Normal" @bind-Time="@Time" Culture="@CultureInfo.GetCultureInfo("zh-Hans")" TimeEditMode="TimeEditMode.Normal" />
+                    <MudTimePicker Color="Color.Primary" Style=" margin-bottom:3px" PickerVariant="PickerVariant.Static" Label="Normal" @bind-Time="@Time" Culture="@CultureInfo.GetCultureInfo("zh-Hans")" TimeEditMode="TimeEditMode.Normal" TimeFormat="HH:mm:ss" />
                 </div>
             </MudCardContent>
             <MudCardActions style="display: flex; justify-content: flex-end;">
@@ -60,7 +60,7 @@
         if (DateTime != null) {
             DisplayDateTime = $"{DateTime.Value:yyyy-MM-dd HH:mm:ss}";
             Date = DateTime.Value;
-            Time = DateTime.Value.TimeOfDay;
+            Time = Date.Value.TimeOfDay;
         }
     }
 

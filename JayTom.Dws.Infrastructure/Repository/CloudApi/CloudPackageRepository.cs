@@ -28,6 +28,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -60,6 +61,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -119,6 +121,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return 0;
                 return await dbSet.AsNoTracking()
+                    .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -147,6 +150,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
                 var queryable = dbSet.AsNoTracking()
+                    .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
