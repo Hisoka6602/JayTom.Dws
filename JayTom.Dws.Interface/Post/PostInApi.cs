@@ -12,6 +12,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.Post {
 
+    /// <summary>
+    /// 揽投机构
+    /// </summary>
     public class PostInApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters? Parameters { get; private set; }
@@ -479,6 +482,30 @@ namespace JayTom.Dws.Interface.Post {
                 };
                 NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(response));
             }
+        }
+
+        /// <summary>
+        /// 顶扫稽核
+        /// </summary>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> SweepTopReceiveByCsb() {
+            var deliverunSweepTopReceiveQuery = new {
+                opOrgCode = "机构代码",
+                waybillNo = "邮件条码",
+                userCode = "操作人代码",
+                userName = "操作人名称",
+                deviceName = "设备名称",
+                machineBarcode = "设备Id"
+            };
+
+            var messageHeader = new Dictionary<string, object>()
+              {
+                { "sysCod", "系统标识" },
+                { "sign", "签名" },
+                { "serialNo", DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString() },
+                { "sendDate", $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}" }
+            };
+            return new KeyValuePair<bool, string>(false, string.Empty);
         }
 
         public class ApiParameters {

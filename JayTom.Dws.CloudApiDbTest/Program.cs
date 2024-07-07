@@ -2,35 +2,86 @@
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalData;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore.Design;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 internal class Program {
 
     private static void Main(string[] args) {
-        CreateMigration();
-        Console.WriteLine("Migration completed successfully.");
+        var migrationSuccess = CreateMigration();
+        if (migrationSuccess) {
+            Console.WriteLine("Migration completed successfully.");
+            SetIndexesToDescending();
+        }
+        else {
+            Console.WriteLine("Migration failed. Check logs for details.");
+        }
+
         Console.ReadLine();
-        Console.WriteLine("Hello, World!");
     }
 
-    public static void CreateMigration() {
+    public static void SetIndexesToDescending() {
         var dbContextFactory = new DesignTimeDbContextFactory();
-        using (var context = dbContextFactory.CreateDbContext(null)) {
-            context.Database.Migrate();
+        using var context = dbContextFactory.CreateDbContext(null);
+        context.Database.ExecuteSqlRaw(@"
+                    DROP INDEX IX_Data_PackageInfo_PackageCreateTime ON data_packageinfo;
+                    CREATE INDEX IX_Data_PackageInfo_PackageCreateTime ON data_packageinfo (PackageCreateTime DESC);
+                ");
+
+        context.Database.ExecuteSqlRaw(@"
+                    DROP INDEX IX_Data_PackageInfo_PackageTimestamped ON data_packageinfo;
+                    CREATE INDEX IX_Data_PackageInfo_PackageTimestamped ON data_packageinfo (PackageTimestamped DESC);
+                ");
+
+        context.Database.ExecuteSqlRaw(@"
+                    DROP INDEX IX_Data_BarCodeInfo_Barcode ON data_barcodeinfo;
+                    CREATE INDEX IX_Data_BarCodeInfo_Barcode ON data_barcodeinfo (Barcode DESC);
+                ");
+
+        context.Database.ExecuteSqlRaw(@"
+                    DROP INDEX IX_Data_BarCodeInfo_ScanTime ON data_barcodeinfo;
+                    CREATE INDEX IX_Data_BarCodeInfo_ScanTime ON data_barcodeinfo (ScanTime DESC);
+                ");
+    }
+
+    public static bool CreateMigration() {
+        var dbContextFactory = new DesignTimeDbContextFactory();
+        try {
+            using (var context = dbContextFactory.CreateDbContext(null)) {
+                context.Database.Migrate();
+            }
+            return true; // Migration succeeded
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"Migration failed: {ex.Message}");
+            return false; // Migration failed
         }
     }
 
     public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<CloudApiContext1> {
 
         public CloudApiContext1 CreateDbContext(string[] args) {
-            var optionsBuilder = new DbContextOptionsBuilder<CloudApiContext1>();
+            /*var optionsBuilder = new DbContextOptionsBuilder<CloudApiContext1>();
             //f6vQDiiWpXLDUCxR
             optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=CloudApi;User=root;",
                 ServerVersion.AutoDetect("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=CloudApi;User=root;"),
             builder => {
                 builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
             });
+            return new CloudApiContext1(optionsBuilder.Options);*/
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            var connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+
+            var optionsBuilder = new DbContextOptionsBuilder<CloudApiContext1>();
+            optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), builder => {
+                builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
+            });
+
             return new CloudApiContext1(optionsBuilder.Options);
         }
     }
@@ -65,15 +116,15 @@ internal class Program {
                     .HasKey(c => new {
                         c.Id
                     });
-                modelBuilder.Entity<BarCodeInfoModel>()
+                /*modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.PackageId)
-                    .IsUnique(false);
+                    .IsUnique(false);*/
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
                 modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasIndex(b => b.ScanTime)
+                    .HasIndex(b => b.Barcode)
                     .IsUnique(false)
                     .HasAnnotation("IndexSortOrder", "Descending");
                 //称重信息

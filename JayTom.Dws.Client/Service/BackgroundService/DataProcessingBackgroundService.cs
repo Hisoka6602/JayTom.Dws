@@ -429,9 +429,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"数据存储异常,正在重试:{e}");
                 }
-                finally {
-                    //await Task.Delay(100, stoppingToken);
-                }
             }
         }
     }

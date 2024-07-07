@@ -942,7 +942,7 @@
                                                 MinWidth="60"
                                                 RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
-                                                Text="{Binding Weight}" />
+                                                Text="{Binding Weight, StringFormat={}{0:0.###}}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

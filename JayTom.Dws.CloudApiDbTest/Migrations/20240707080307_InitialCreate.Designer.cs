@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JayTom.Dws.CloudApiDbTest.Migrations
 {
     [DbContext(typeof(Program.CloudApiContext1))]
-    [Migration("20240201041848_AbnormalSortingType")]
-    partial class AbnormalSortingType
+    [Migration("20240707080307_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -17,6 +17,34 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
                 .HasAnnotation("ProductVersion", "5.0.17");
+
+            modelBuilder.Entity("JayTom.Dws.Data.Package.AggregatePackagesInfoModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("AggregatePackageCode")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("AggregatePackageCode");
+
+                    b.Property<long>("PackageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("PackageId");
+
+                    b.Property<DateTime>("PackagingTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("PackagingTime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PackageId")
+                        .IsUnique();
+
+                    b.ToTable("AggregatePackagesInfoModel");
+                });
 
             modelBuilder.Entity("JayTom.Dws.Data.Package.BarCodeInfoModel", b =>
                 {
@@ -49,7 +77,8 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Barcode");
+                    b.HasIndex("Barcode")
+                        .HasAnnotation("IndexSortOrder", "Descending");
 
                     b.HasIndex("PackageId")
                         .IsUnique();
@@ -218,6 +247,37 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                     b.ToTable("Data_ImageInfo", "dbo");
                 });
 
+            modelBuilder.Entity("JayTom.Dws.Data.Package.InstructionInfoModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("InstructionContent")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("InstructionContent");
+
+                    b.Property<DateTime>("InstructionGeneratedTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("InstructionGeneratedTime");
+
+                    b.Property<int>("InstructionType")
+                        .HasColumnType("int")
+                        .HasColumnName("InstructionType");
+
+                    b.Property<long>("SortingInfoId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("SortingInfoId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SortingInfoId");
+
+                    b.ToTable("Data_InstructionInfo", "dbo");
+                });
+
             modelBuilder.Entity("JayTom.Dws.Data.Package.LogisticsInfoModel", b =>
                 {
                     b.Property<long>("Id")
@@ -384,11 +444,6 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("ChecksumProtocolName");
 
-                    b.Property<string>("CommandTarget")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("CommandTarget");
-
                     b.Property<int>("CommunicationMethod")
                         .HasColumnType("int")
                         .HasColumnName("CommunicationMethod");
@@ -410,32 +465,14 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("IsSortingUsed");
 
-                    b.Property<string>("PackageCreationInstruction")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("PackageCreationInstruction");
-
                     b.Property<long>("PackageId")
                         .HasColumnType("bigint")
                         .HasColumnName("PackageId");
 
-                    b.Property<string>("ReceivedInstruction")
+                    b.Property<string>("SortingCode")
                         .IsRequired()
                         .HasColumnType("longtext")
-                        .HasColumnName("ReceivedInstruction");
-
-                    b.Property<DateTime>("ReceivedTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("ReceivedTime");
-
-                    b.Property<DateTime>("SendTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("SendTime");
-
-                    b.Property<string>("SentInstruction")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("SentInstruction");
+                        .HasColumnName("SortingCode");
 
                     b.Property<int>("SortingMode")
                         .HasColumnType("int")
@@ -601,6 +638,17 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                     b.ToTable("Data_WeightInfo", "dbo");
                 });
 
+            modelBuilder.Entity("JayTom.Dws.Data.Package.AggregatePackagesInfoModel", b =>
+                {
+                    b.HasOne("JayTom.Dws.Data.Package.PackageInfoModel", "PackageInfo")
+                        .WithOne("AggregatePackagesInfo")
+                        .HasForeignKey("JayTom.Dws.Data.Package.AggregatePackagesInfoModel", "PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PackageInfo");
+                });
+
             modelBuilder.Entity("JayTom.Dws.Data.Package.BarCodeInfoModel", b =>
                 {
                     b.HasOne("JayTom.Dws.Data.Package.PackageInfoModel", "PackageInfo")
@@ -654,6 +702,17 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                         .IsRequired();
 
                     b.Navigation("PackageInfo");
+                });
+
+            modelBuilder.Entity("JayTom.Dws.Data.Package.InstructionInfoModel", b =>
+                {
+                    b.HasOne("JayTom.Dws.Data.Package.SortingInfoModel", "SortingInfo")
+                        .WithMany("InstructionInfos")
+                        .HasForeignKey("SortingInfoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SortingInfo");
                 });
 
             modelBuilder.Entity("JayTom.Dws.Data.Package.LogisticsInfoModel", b =>
@@ -740,6 +799,8 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
             modelBuilder.Entity("JayTom.Dws.Data.Package.PackageInfoModel", b =>
                 {
+                    b.Navigation("AggregatePackagesInfo");
+
                     b.Navigation("BarCodeInfo");
 
                     b.Navigation("CloudVideoUploadInfo");
@@ -761,6 +822,11 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                     b.Navigation("VolumeInfo");
 
                     b.Navigation("WeightInfo");
+                });
+
+            modelBuilder.Entity("JayTom.Dws.Data.Package.SortingInfoModel", b =>
+                {
+                    b.Navigation("InstructionInfos");
                 });
 #pragma warning restore 612, 618
         }

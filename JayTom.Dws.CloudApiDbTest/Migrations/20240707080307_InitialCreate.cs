@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace JayTom.Dws.CloudApiDbTest.Migrations
 {
-    public partial class Migrations : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -29,6 +29,30 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Data_PackageInfo", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "AggregatePackagesInfoModel",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    AggregatePackageCode = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PackagingTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    PackageId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AggregatePackagesInfoModel", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AggregatePackagesInfoModel_Data_PackageInfo_PackageId",
+                        column: x => x.PackageId,
+                        principalSchema: "dbo",
+                        principalTable: "Data_PackageInfo",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -248,24 +272,17 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     IsSortingUsed = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    SortingCode = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     SortingMode = table.Column<int>(type: "int", nullable: false),
-                    SentInstruction = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SendTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ReceivedInstruction = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ReceivedTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    PackageCreationInstruction = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     IsCreatedByLowerMachine = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CommandTarget = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CommunicationMethod = table.Column<int>(type: "int", nullable: false),
                     ChecksumProtocolName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ConnectionName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsAbnormalSorting = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    AbnormalSortingType = table.Column<int>(type: "int", nullable: false),
                     PackageId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
@@ -404,6 +421,38 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
+            migrationBuilder.CreateTable(
+                name: "Data_InstructionInfo",
+                schema: "dbo",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    SortingInfoId = table.Column<long>(type: "bigint", nullable: false),
+                    InstructionContent = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    InstructionGeneratedTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    InstructionType = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Data_InstructionInfo", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Data_InstructionInfo_Data_SortingInfo_SortingInfoId",
+                        column: x => x.SortingInfoId,
+                        principalSchema: "dbo",
+                        principalTable: "Data_SortingInfo",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AggregatePackagesInfoModel_PackageId",
+                table: "AggregatePackagesInfoModel",
+                column: "PackageId",
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_Data_BarCodeInfo_Barcode",
                 schema: "dbo",
@@ -442,6 +491,12 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 schema: "dbo",
                 table: "Data_ImageInfo",
                 column: "PackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Data_InstructionInfo_SortingInfoId",
+                schema: "dbo",
+                table: "Data_InstructionInfo",
+                column: "SortingInfoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Data_LogisticsInfo_PackageId",
@@ -506,6 +561,9 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AggregatePackagesInfoModel");
+
+            migrationBuilder.DropTable(
                 name: "Data_BarCodeInfo",
                 schema: "dbo");
 
@@ -526,11 +584,11 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
                 schema: "dbo");
 
             migrationBuilder.DropTable(
-                name: "Data_LogisticsInfo",
+                name: "Data_InstructionInfo",
                 schema: "dbo");
 
             migrationBuilder.DropTable(
-                name: "Data_SortingInfo",
+                name: "Data_LogisticsInfo",
                 schema: "dbo");
 
             migrationBuilder.DropTable(
@@ -547,6 +605,10 @@ namespace JayTom.Dws.CloudApiDbTest.Migrations
 
             migrationBuilder.DropTable(
                 name: "OcrDetailedInfoModel");
+
+            migrationBuilder.DropTable(
+                name: "Data_SortingInfo",
+                schema: "dbo");
 
             migrationBuilder.DropTable(
                 name: "Data_OcrInfo",

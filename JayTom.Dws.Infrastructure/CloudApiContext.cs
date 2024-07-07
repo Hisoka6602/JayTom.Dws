@@ -43,7 +43,8 @@ namespace JayTom.Dws.Infrastructure {
                     });
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.Barcode)
-                    .IsUnique(false);
+                    .IsUnique(false)
+                    .HasAnnotation("IndexSortOrder", "Descending");
                 modelBuilder.Entity<BarCodeInfoModel>()
                     .HasIndex(b => b.ScanTime)
                     .IsUnique(false)
