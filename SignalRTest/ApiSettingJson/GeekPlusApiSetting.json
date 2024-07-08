@@ -1,0 +1,6 @@
+{
+  "BaseUrl": "https://erp.lakepoint.io/api/wms",
+  "TimeOut": 3000,
+  "SellerId": 1000,
+  "Key": "12345"
+}

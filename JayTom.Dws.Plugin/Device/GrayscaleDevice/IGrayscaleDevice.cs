@@ -146,8 +146,18 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// </summary>
         public decimal OffsetPercentage { get; set; }
 
+        /// <summary>
+        /// 包裹占比
+        /// </summary>
+        public decimal PackageRatio { get; set; }
+
         public override string ToString() {
-            return $"是否存在包裹: {IsPackagePresent}, 包裹区域坐标: {PackageRegionCoordinates}, 包裹偏向: {PackageOrientation}, 偏向值: {OrientationValue} ,偏向百分比: {OffsetPercentage:P2}";
+            return $"是否存在包裹: {IsPackagePresent}, " +
+                   $"包裹区域坐标: {PackageRegionCoordinates}, " +
+                   $"包裹偏向: {PackageOrientation}, " +
+                   $"偏向值: {OrientationValue}, " +
+                   $"偏向百分比: {OffsetPercentage:P2}, " +
+                   $"包裹占比: {PackageRatio:P2}";
         }
     }
 

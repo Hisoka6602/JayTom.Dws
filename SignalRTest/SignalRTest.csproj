@@ -15,6 +15,25 @@
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.CrossCutting\JayTom.Dws.CrossCutting.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ApiSettingJson\GeekPlusApiSetting.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ApiSettingJson\JdyApiSetting.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ApiSettingJson\JtThreeSegmentCodeRout\TextFile1.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ApiSettingJson\PostDeliveryAgencySettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ApiSettingJson\PostProcessingCenterSettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

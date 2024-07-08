@@ -26,12 +26,14 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         //增加一个稳定重量推送间隔
         private static bool _isZeroed = true;
 
-        private static float _lastweight = 0;
-
         /// <summary>
         /// 稳定重量累计次数
         /// </summary>
-        private static int _stableWeightCount = 0;
+        private ConcurrentQueue<float> _oldStableWeight = new();
+
+        private static float _lastweight = 0;
+
+        //private static int _stableWeightCount = 0;
 
         public void Dispose() {
             _tokenSource?.Cancel();
@@ -215,7 +217,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
                                 .FirstOrDefault();
-                            if (_isZeroed || _stableWeightCount > 4 /*|| Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2*/) {
+                            if (_isZeroed || _oldStableWeight.Count > 4 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty /*|| Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2*/) {
                                 OnStabledWeight(weight);
                                 //返回原文
                                 OnWeightStabilized(new WeightChangedEventArgs() {
@@ -228,10 +230,15 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
                                 _isZeroed = false;
                                 _lastweight = weight;
-                                _stableWeightCount = 0;
+                                _oldStableWeight.Clear();
+                            }
+                            else if (_oldStableWeight.Count > 4) {
+                                _oldStableWeight.TryDequeue(out _);
+                            }
+                            else {
+                                _oldStableWeight.Enqueue(weight);
                             }
 
-                            _stableWeightCount += 1;
                             _weightQueue.Clear();
                         }
                         else if (_weightQueue.All(item => item == 0) ||

@@ -146,7 +146,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                         PackageRegionCoordinates = coordinates,
                         PackageOrientation = isAttachmentPackagePresent ? orientation : PackageOrientation.Center,
                         OrientationValue = isAttachmentPackagePresent ? Math.Abs(attachmentPoint) : 0,
-                        OffsetPercentage = (decimal)Math.Round((isAttachmentPackagePresent ? Math.Abs(attachmentPoint) : 0) / (float)attachmentCenterPoint, 2)
+                        OffsetPercentage = (decimal)Math.Round((isAttachmentPackagePresent ? Math.Abs(attachmentPoint) : 0) / (float)attachmentCenterPoint, 2),
+                        PackageRatio = (coordinates.Y2 - coordinates.Y1) / ((decimal)MainRectangleBoxCoordinates.Y2 / RegionCarCount)
                     };
                     //主框信息
                     for (var i = 0; i < 4; i++) {
@@ -175,7 +176,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                                 PackageRegionCoordinates = packageRegionCoordinates,
                                 PackageOrientation = isPackagePresent ? packageOrientation : PackageOrientation.Center,
                                 OrientationValue = isPackagePresent ? Math.Abs(point) : 0,
-                                OffsetPercentage = (decimal)Math.Round((isPackagePresent ? Math.Abs(point) : 0) / (float)centerPoint, 2)
+                                OffsetPercentage = (decimal)Math.Round((isPackagePresent ? Math.Abs(point) : 0) / (float)centerPoint, 2),
+                                PackageRatio = (packageRegionCoordinates.Y2 - packageRegionCoordinates.Y1) / ((decimal)MainRectangleBoxCoordinates.Y2 / RegionCarCount)
                             });
                         }
                     }

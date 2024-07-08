@@ -438,24 +438,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         if (singleGrayscaleSensorResult is not null) {
                             //联动车辆
                             GrayScaleSkippedVehicles = singleGrayscaleSensorResult.LinkedCarCount;
-                            /*
-                            if (singleGrayscaleSensorResult.AttachmentRectangleBoxInfo.IsPackagePresent == true) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"存在包裹触发车号:{packageInfo.Guid}");
-                                NLog.LogManager.GetCurrentClassLogger().Error($"包裹所在车号:{singleGrayscaleSensorResult.CarNumber}");
-                            }
-                            */
-
-                            /*if ((singleGrayscaleSensorResult.AttachmentRectangleBoxInfo.IsPackagePresent != true) &&
-                                (packageInfo.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true ||
-                                 packageInfo.BarCodeInfo is null)) {
-                                return;
-                            }*/
 
                             //双车赋值
 
                             if (package is { BarCodeInfo: not null }) {
                                 if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
-                                    singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any() != true) {
+                                    singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any(a => a.IsPackagePresent &&
+                                        a.PackageRatio >= _grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage) != true) {
                                     package.Image?.Dispose();
                                     PackageInfoManager.RemovePackage(package.CreateTime);
                                     package.BarCodeInfo = null;

@@ -441,7 +441,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
                                 PackageInfo = packageInfo
                             });
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent {
+                            /*EventAggregator.Instance.Publish(new TriggerPositionEvent {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
                                 PackageInfo = packageInfo
@@ -450,7 +450,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
                                 PackageInfo = packageInfo
-                            });
+                            });*/
                         }
                     }
                 }
