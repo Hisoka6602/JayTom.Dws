@@ -362,7 +362,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _externalDataService.ContentInputReceived += async (sender, args) => {
                 try {
                     await _createPackageSlim.WaitAsync();
-
+                    var barCode = "NoRead";
                     var replace = _wdtWmsApiDto.AnyStartCodes.Replace(";", "|");
 
                     //分割条码包装码、正则验证包装码
@@ -370,7 +370,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     //取出包装码
                     var boxBarCode = strings.FirstOrDefault(f =>
                         !string.IsNullOrEmpty(replace) && Regex.IsMatch(f, $"(^(?={replace}).*)")) ?? string.Empty;
-                    var barCode = strings.FirstOrDefault(f => !f.Equals(boxBarCode)) ?? string.Empty;
+
+                    if (!strings.All(f => !string.IsNullOrEmpty(replace) && Regex.IsMatch(f, $"(^(?={replace}).*)"))) {
+                        barCode = strings.FirstOrDefault(f => !f.Equals(boxBarCode)) ?? "NoRead";
+                    }
 
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =

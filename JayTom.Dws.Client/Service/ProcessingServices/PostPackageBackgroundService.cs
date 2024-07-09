@@ -443,8 +443,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                             if (package is { BarCodeInfo: not null }) {
                                 if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
-                                    singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any(a => a.IsPackagePresent &&
-                                        a.PackageRatio >= _grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage) != true) {
+                                    singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any(a => a.PackageRatio >=
+                                                                                                (decimal)_grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage / 100) != true) {
                                     package.Image?.Dispose();
                                     PackageInfoManager.RemovePackage(package.CreateTime);
                                     package.BarCodeInfo = null;

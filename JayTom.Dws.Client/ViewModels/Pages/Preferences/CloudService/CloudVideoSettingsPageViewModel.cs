@@ -11,6 +11,7 @@ using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using System.Windows.Threading;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
@@ -36,11 +37,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
         public CloudVideoSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
             EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
-                if (item is CloudVideoUploadMessage model) {
-                    Task.Factory.StartNew(async () => {
+                if (item is { } model) {
+                    await Task.Factory.StartNew(async () => {
                         try {
                             await _logSlim.WaitAsync();
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                                 LogItems.Insert(0, new BaseLogItemModel() {
                                     CreateTime = DateTime.Now,
                                     Message =
@@ -49,7 +50,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                                 if (LogItems.Count > 100) {
                                     LogItems.RemoveAt(LogItems.Count - 1);
                                 }
-                            });
+
+                                return Task.CompletedTask;
+                            }, DispatcherPriority.Render);
                         }
                         finally {
                             _logSlim.Release();
@@ -58,11 +61,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                 }
             });
             EventAggregator.Instance.Subscribe<CloudVideoUploadRetryMessage>(async item => {
-                if (item is CloudVideoUploadRetryMessage model) {
-                    Task.Factory.StartNew(async () => {
+                if (item is { } model) {
+                    await Task.Factory.StartNew(async () => {
                         try {
                             await _logSlim.WaitAsync();
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                                 LogItems.Insert(0, new BaseLogItemModel() {
                                     CreateTime = DateTime.Now,
                                     Message = $"条码:[{model.Barcode}],重试次数:{model.RetryCount}"
@@ -70,7 +73,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                                 if (LogItems.Count > 100) {
                                     LogItems.RemoveAt(LogItems.Count - 1);
                                 }
-                            });
+
+                                return Task.CompletedTask;
+                            }, DispatcherPriority.Render);
                         }
                         finally {
                             _logSlim.Release();

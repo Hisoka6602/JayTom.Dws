@@ -544,7 +544,7 @@ namespace JayTom.Dws.Interface.Post {
                              new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                     using HttpContent content = new StreamContent(dataStream);
                     content.Headers.Add("messageHeader", header);
-                    content.Headers.Add("Content-Type", "application/json; charset=UTF-8");
+                    content.Headers.Add("Content-Type", "application/json;charset=UTF-8");
                     message = await httpClient.PostAsync(Parameters?.CsbInfo?.Url, content, token)
                         .ConfigureAwait(false);
                 }

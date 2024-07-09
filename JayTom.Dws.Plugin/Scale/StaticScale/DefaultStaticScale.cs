@@ -217,7 +217,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
                                 .FirstOrDefault();
-                            if (_isZeroed || _oldStableWeight.Count > 4 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty /*|| Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2*/) {
+                            if (_isZeroed  /*|| Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2*/) {
                                 OnStabledWeight(weight);
                                 //返回原文
                                 OnWeightStabilized(new WeightChangedEventArgs() {
@@ -232,7 +232,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 _lastweight = weight;
                                 _oldStableWeight.Clear();
                             }
-                            else if (_oldStableWeight.Count > 4) {
+                            else if (_oldStableWeight.Count > 3) {
                                 _oldStableWeight.TryDequeue(out _);
                             }
                             else {
@@ -242,7 +242,10 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             _weightQueue.Clear();
                         }
                         else if (_weightQueue.All(item => item == 0) ||
-                                 _weightQueue.Reverse().Take(_weightQueue.Count / 4).All(w => w < _defaultStaticScaleValueParameters.MinWeight)) {
+                                 _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight) ||
+                                 _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight) ||
+                                 (_oldStableWeight.Count > 3 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty)
+                                 ) {
                             /*OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
                                 FormattedWeight = 0,
@@ -250,6 +253,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 Type = WeightType.Static
                             });*/
                             _weightQueue.Clear();
+                            _oldStableWeight.Clear();
                             _serialPort?.DiscardInBuffer();
                             _isZeroed = true;
                         }
