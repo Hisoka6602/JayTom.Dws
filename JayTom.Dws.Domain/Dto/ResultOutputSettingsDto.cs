@@ -202,6 +202,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// 体积赋值
         /// </summary>
         VolumeSetValueAfter,
+
+        /// <summary>
+        /// 外部数据输入后
+        /// </summary>
+        ExternalDataInputAfter
     }
 
     /// <summary>

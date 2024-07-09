@@ -441,19 +441,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             packageInfo.Other = boxBarCode;
                             EventAggregator.Instance.Publish(new TriggerPositionEvent {
                                 IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                                TriggerPosition = TriggerPositionEnum.ExternalDataInputAfter,
                                 PackageInfo = packageInfo
                             });
-                            /*EventAggregator.Instance.Publish(new TriggerPositionEvent {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
-                                PackageInfo = packageInfo
-                            });
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
-                                PackageInfo = packageInfo
-                            });*/
                         }
                     }
                 }
@@ -572,7 +562,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         PackageInfo = packageInfo
                     });
                 }
-                else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter }) {
+                else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter }) {
                     PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                 }
             });

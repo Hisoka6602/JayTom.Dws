@@ -26,6 +26,8 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         //增加一个稳定重量推送间隔
         private static bool _isZeroed = true;
 
+        private static DateTime _lasTime = DateTime.Now;
+
         /// <summary>
         /// 稳定重量累计次数
         /// </summary>
@@ -184,13 +186,13 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 continue;
                             }
                             //取出整数
-                            var _integer = substring.Substring(_defaultStaticScaleValueParameters.IntegerStartPosition, _defaultStaticScaleValueParameters.IntegerEndPosition - _defaultStaticScaleValueParameters.IntegerStartPosition + 1);
-                            _integer = _defaultStaticScaleValueParameters.IsReversed ? new string(_integer.Reverse().ToArray()) : _integer;
+                            var integer = substring.Substring(_defaultStaticScaleValueParameters.IntegerStartPosition, _defaultStaticScaleValueParameters.IntegerEndPosition - _defaultStaticScaleValueParameters.IntegerStartPosition + 1);
+                            integer = _defaultStaticScaleValueParameters.IsReversed ? new string(integer.Reverse().ToArray()) : integer;
                             //取出小数
                             var _decimal = substring.Substring(_defaultStaticScaleValueParameters.DecimalStartPosition, _defaultStaticScaleValueParameters.DecimalEndPosition - _defaultStaticScaleValueParameters.DecimalStartPosition + 1);
                             _decimal = _defaultStaticScaleValueParameters.IsReversed ? new string(_decimal.Reverse().ToArray()) : _decimal;
                             //组合
-                            var data = $"{_integer}.{_decimal}";
+                            var data = $"{integer}.{_decimal}";
                             ProcessDataPackage(data);
                             dataBuffer = string.Empty;
                         }
@@ -211,13 +213,14 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
                     if (_weightQueue.Count >= _defaultStaticScaleValueParameters.BalanceCount) {
                         if (_weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
-                            _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight && _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
+                            _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight &&
+                            _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
                             StabledTime = DateTime.Now;
                             var weight = _weightQueue.GroupBy(x => x)
                                 .OrderByDescending(g => g.Count())
                                 .Select(g => g.Key)
                                 .FirstOrDefault();
-                            if (_isZeroed  /*|| Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2*/) {
+                            if (_isZeroed   /*|| Math.Abs(_lastweight - weight) > _defaultStaticScaleValueParameters.BalanceQty * 2*/) {
                                 OnStabledWeight(weight);
                                 //返回原文
                                 OnWeightStabilized(new WeightChangedEventArgs() {
@@ -227,12 +230,23 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                     Type = WeightType.Static
                                 });
                                 _serialPort?.DiscardInBuffer();
-
                                 _isZeroed = false;
                                 _lastweight = weight;
                                 _oldStableWeight.Clear();
+                                _lasTime = DateTime.Now;
                             }
-                            else if (_oldStableWeight.Count > 3) {
+                            else if (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty) {
+                                OnWeightCleared(new WeightChangedEventArgs() {
+                                    Format = WeightFormat,
+                                    FormattedWeight = 0,
+                                    OriginalContent = string.Join(",", _weightQueue.ToList()),
+                                    Type = WeightType.Static
+                                });
+                                _oldStableWeight.Clear();
+                                _serialPort?.DiscardInBuffer();
+                                _isZeroed = true;
+                            }
+                            else if (_oldStableWeight.Count > 2) {
                                 _oldStableWeight.TryDequeue(out _);
                             }
                             else {
@@ -244,14 +258,13 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         else if (_weightQueue.All(item => item == 0) ||
                                  _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight) ||
                                  _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight) ||
-                                 (_oldStableWeight.Count > 3 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty)
-                                 ) {
-                            /*OnWeightCleared(new WeightChangedEventArgs() {
+                                 (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty)) {
+                            OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
                                 FormattedWeight = 0,
                                 OriginalContent = string.Join(",", _weightQueue.ToList()),
                                 Type = WeightType.Static
-                            });*/
+                            });
                             _weightQueue.Clear();
                             _oldStableWeight.Clear();
                             _serialPort?.DiscardInBuffer();
