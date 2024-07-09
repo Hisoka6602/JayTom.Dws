@@ -235,7 +235,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 _oldStableWeight.Clear();
                                 _lasTime = DateTime.Now;
                             }
-                            else if (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty) {
+                            /*else if (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty) {
                                 OnWeightCleared(new WeightChangedEventArgs() {
                                     Format = WeightFormat,
                                     FormattedWeight = 0,
@@ -251,14 +251,15 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             }
                             else {
                                 _oldStableWeight.Enqueue(weight);
-                            }
+                            }*/
 
                             _weightQueue.Clear();
                         }
-                        else if (_weightQueue.All(item => item == 0) ||
-                                 _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight) ||
-                                 _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight) ||
-                                 (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty)) {
+                        else if (!_isZeroed && (_weightQueue.All(item => item == 0) ||
+                                           _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight) ||
+                                           _weightQueue.Reverse().Take(3).All(w => w < _lastweight * 0.85) ||
+                                           _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight) ||
+                                           (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty))) {
                             OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
                                 FormattedWeight = 0,
