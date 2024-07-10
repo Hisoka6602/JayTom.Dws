@@ -8,6 +8,7 @@ using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using NPOI.OpenXmlFormats.Wordprocessing;
@@ -513,37 +514,71 @@ namespace JayTom.Dws.Interface.Post {
             var data = string.Empty;
             var stopwatch = new Stopwatch();
             stopwatch.Start();
+            var unixTimeMilliseconds = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             try {
-                var deliverunSweepTopReceiveQuery = new {
+                /*var deliverunSweepTopReceiveQuery = new {
                     opOrgCode = Parameters?.CsbInfo.OpOrgCode,
                     waybillNo = barcode,
                     userCode = Parameters?.CsbInfo.UserCode,
                     userName = Parameters?.CsbInfo.UserName,
                     deviceName = Parameters?.CsbInfo.UserName,
                     machineBarcode = Parameters?.CsbInfo.MachineBarcode
+                };*/
+                /*var dictionary = new Dictionary<string, object>()
+                {
+                    { "opOrgCode", Parameters?.CsbInfo.OpOrgCode ?? string.Empty },
+                    { "waybillNo",barcode },
+                    { "userCode",  Parameters?.CsbInfo.UserCode??string.Empty },
+                    { "userName",  Parameters?.CsbInfo.UserName??string.Empty },
+                    { "deviceName",  Parameters?.CsbInfo.DeviceName??string.Empty },
+                    { "machineBarcode",  Parameters?.CsbInfo.MachineBarcode??string.Empty },
+                };*/
+                var boby = new {
+                    deliverunSweepTopReceiveQuery = new {
+                        opOrgCode = Parameters?.CsbInfo.OpOrgCode,
+                        waybillNo = barcode,
+                        userCode = Parameters?.CsbInfo.UserCode,
+                        userName = Parameters?.CsbInfo.UserName,
+                        deviceName = Parameters?.CsbInfo.DeviceName,
+                        machineBarcode = Parameters?.CsbInfo.MachineBarcode
+                    }
                 };
+
+                data = JsonConvert.SerializeObject(boby);
+
                 //MD5
-                var sign = CsbSign("sweepTopReceiveByCsb", "1.0.0", DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                    Parameters?.CsbInfo.Ak ?? string.Empty,
-                    Parameters?.CsbInfo.Sk ?? string.Empty, null, deliverunSweepTopReceiveQuery);
 
                 var messageHeader = new Dictionary<string, object>()
                 {
-                    { "sysCod", Parameters?.CsbInfo?.SysCode ?? string.Empty },
-                    { "sign", sign },
-                    { "serialNo", DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString() },
+                    { "sysCode", Parameters?.CsbInfo?.SysCode ?? string.Empty },
+                    { "serialNo", unixTimeMilliseconds.ToString() },
                     { "sendDate", $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}" }
                 };
-                var header = System.Text.Json.JsonSerializer.Serialize(messageHeader, new JsonSerializerOptions { WriteIndented = false });
 
-                data = System.Text.Json.JsonSerializer.Serialize(deliverunSweepTopReceiveQuery, new JsonSerializerOptions { WriteIndented = true });
+                //var sign = $"{Parameters?.CsbInfo?.Password}{string.Join("&", dictionary.OrderBy(o => o.Key).Select(s => $"{s.Key}={s.Value}"))}";
+                var sign = $"{Parameters?.CsbInfo?.Password}{data}";
+
+                for (int i = 0; i < 2; i++) {
+                    using var md5 = System.Security.Cryptography.MD5.Create();
+                    var result = md5.ComputeHash(Encoding.UTF8.GetBytes(sign));
+                    var strResult = BitConverter.ToString(result);
+                    sign = strResult.Replace("-", "");
+                }
+                var bytes = Encoding.UTF8.GetBytes(sign);
+                var base64Sign = Convert.ToBase64String(bytes);
+                messageHeader.Add("sign", base64Sign);
+                var header = System.Text.Json.JsonSerializer.Serialize(messageHeader, new JsonSerializerOptions { WriteIndented = false });
+                var headerSign = CsbSign("sweepTopReceiveByCsb", "1.0.0", unixTimeMilliseconds,
+                    Parameters?.CsbInfo.Ak ?? string.Empty,
+                    Parameters?.CsbInfo.Sk ?? string.Empty, null, boby);
+
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.CsbInfo?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
                              new MemoryStream(Encoding.UTF8.GetBytes(data))) {
                     using HttpContent content = new StreamContent(dataStream);
-                    content.Headers.Add("messageHeader", header);
+                    //content.Headers.Add("messageHeader", header);
                     content.Headers.Add("Content-Type", "application/json;charset=UTF-8");
                     message = await httpClient.PostAsync(Parameters?.CsbInfo?.Url, content, token)
                         .ConfigureAwait(false);
