@@ -1,9 +1,9 @@
-﻿using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using Prism.Commands;
+﻿using System;
 using Prism.Mvvm;
-using Prism.Services.Dialogs;
-using System;
+using Prism.Commands;
 using System.Windows.Input;
+using Prism.Services.Dialogs;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 
@@ -27,17 +27,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             set => SetProperty(ref _serialNo, value);
         }
 
-        public ICommand CloseCommand {
-            get => new DelegateCommand<object>(CloseDelegate);
-        }
+        public ICommand CloseCommand => new DelegateCommand<object>(CloseDelegate);
 
         private void CloseDelegate(object obj) {
             RequestClose?.Invoke(new DialogResult(ButtonResult.Cancel));
         }
 
-        public ICommand OkCommand {
-            get => new DelegateCommand<object>(OkDelegate);
-        }
+        public ICommand OkCommand => new DelegateCommand<object>(OkDelegate);
 
         private async void OkDelegate(object obj) {
             //

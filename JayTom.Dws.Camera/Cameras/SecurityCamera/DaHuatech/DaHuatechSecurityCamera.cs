@@ -6,6 +6,7 @@ using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Sockets;
+using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
@@ -131,12 +132,15 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         }
                     });
 
-                    _baseDaHuatech.RegisterRealtimeFrameCallback(devInfo.SerialNumber, imageBitmap => {
+                    _baseDaHuatech.RegisterRealtimeFrameCallback(devInfo.SerialNumber, async imageBitmap => {
                         try {
+                            await Task.Delay(1);
                             var thumbnailImage = GenerateThumbnail(imageBitmap);
                             OnRealtimeImage(new RealtimeImageEventArgs() {
                                 ThumbImage = (Bitmap?)thumbnailImage
                             });
+                            //Debug.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}-缩略图回调图片");
+                            //NLog.LogManager.GetCurrentClassLogger().Error($"-缩略图回调图片");
                         }
                         catch (Exception e) {
                         }
@@ -395,7 +399,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+            await Task.Delay(1);
             RealtimeImage?.Invoke(this, e);
         }
 

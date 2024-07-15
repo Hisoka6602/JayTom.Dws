@@ -217,7 +217,7 @@
             </StackPanel>
             <!--  内容  -->
             <StackPanel Margin="50,5,0,0" Orientation="Vertical">
-                <StackPanel
+                <!--<StackPanel
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Orientation="Horizontal">
@@ -235,9 +235,10 @@
                         Focusable="False"
                         IsChecked="{Binding CreatePackageSettingsInfo.IsUseNoReadFilter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                </StackPanel>
-                <StackPanel IsEnabled="{Binding ElementName=IsUseNoReadFilterToggleButton, Path=IsChecked}" Orientation="Horizontal">
-                    <!--  图标  -->
+                </StackPanel>-->
+
+                <!--<StackPanel IsEnabled="{Binding ElementName=IsUseNoReadFilterToggleButton, Path=IsChecked}" Orientation="Horizontal">
+                    ~1~  图标  @1@
                     <TextBlock
                         Margin="5,0"
                         VerticalAlignment="Center"
@@ -266,8 +267,92 @@
                             InputMethod.IsInputMethodEnabled="False"
                             Text="{Binding CreatePackageSettingsInfo.FilterInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
+                </StackPanel>-->
+                <StackPanel
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否使用条码赋值间隔:" />
+                    <ToggleButton
+                        Name="IsUseNoReadFilterToggleButton"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding CreatePackageSettingsInfo.IsUseNoReadFilter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
 
+                <StackPanel IsEnabled="{Binding ElementName=IsUseNoReadFilterToggleButton, Path=IsChecked}" Orientation="Horizontal">
+                    <!--  图标  -->
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="间隔时间(ms):" />
+                    <StackPanel Orientation="Horizontal">
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="70"
+                                Height="30"
+                                MaxWidth="150"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding CreatePackageSettingsInfo.FilterInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+
+                    </StackPanel>
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="~" />
+                    <StackPanel Orientation="Horizontal">
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="70"
+                                Height="30"
+                                MaxWidth="150"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding CreatePackageSettingsInfo.FilterInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+
+                    </StackPanel>
+                </StackPanel>
                 <StackPanel
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"

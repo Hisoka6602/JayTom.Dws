@@ -36,6 +36,9 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private int _filterInterval = 100;
         private bool _isGroupBarCode;
         private int _packageCreationInterval;
+        private bool _isUseBarcodeAssignmentInterval;
+        private int _minimumAssignmentTime;
+        private int _maximumAssignmentTime;
 
         /// <summary>
         /// 是否使用包裹过期
@@ -153,6 +156,30 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public int PackageCreationInterval {
             get => _packageCreationInterval;
             set => SetProperty(ref _packageCreationInterval, value);
+        }
+
+        /// <summary>
+        /// 是否使用条码赋值间隔
+        /// </summary>
+        public bool IsUseBarcodeAssignmentInterval {
+            get => _isUseBarcodeAssignmentInterval;
+            set => SetProperty(ref _isUseBarcodeAssignmentInterval, value);
+        }
+
+        /// <summary>
+        /// 最小赋值间隔
+        /// </summary>
+        public int MinimumAssignmentTime {
+            get => _minimumAssignmentTime;
+            set => SetProperty(ref _minimumAssignmentTime, value);
+        }
+
+        /// <summary>
+        /// 最大赋值间隔
+        /// </summary>
+        public int MaximumAssignmentTime {
+            get => _maximumAssignmentTime;
+            set => SetProperty(ref _maximumAssignmentTime, value);
         }
     }
 

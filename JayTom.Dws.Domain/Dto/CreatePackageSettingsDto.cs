@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class CreatePackageSettingsDto {
 
         /// <summary>
@@ -73,6 +74,21 @@ namespace JayTom.Dws.Domain.Dto {
         /// 最小创建包裹间隔时间
         /// </summary>
         public int PackageCreationInterval { get; set; } = 150;
+
+        /// <summary>
+        /// 是否使用条码赋值间隔
+        /// </summary>
+        public bool IsUseBarcodeAssignmentInterval { get; set; }
+
+        /// <summary>
+        /// 最小赋值间隔
+        /// </summary>
+        public int MinimumAssignmentTime { get; set; }
+
+        /// <summary>
+        /// 最大赋值间隔
+        /// </summary>
+        public int MaximumAssignmentTime { get; set; }
     }
 
     public enum BarcodeHandlingMethodEnum {

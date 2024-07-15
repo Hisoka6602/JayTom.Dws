@@ -180,7 +180,7 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<VolumeCameraConfigPage>();
                 containerRegistry.RegisterForNavigation<UsbCameraSettingsPage>();
                 containerRegistry.RegisterForNavigation<AlgorithmSettingsPage>();
-
+                containerRegistry.RegisterForNavigation<NVRIPCDeviceManagementPage>();
                 //分拣设置
                 containerRegistry.RegisterForNavigation<LogisticsCodeRecognitionPage>();
                 containerRegistry.RegisterForNavigation<PackageExitDefinitionPage>();
@@ -380,18 +380,18 @@ namespace JayTom.Dws.Client {
                 //同步配置
                 services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
                 //把后台注册服务写在这里
-                services.AddHostedService<PostPackageBackgroundService>(); // 注册后组包服务
-                services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
-                services.AddHostedService<SubmitApiBackgroundService>();//提交Api
-                services.AddHostedService<DataProcessingBackgroundService>();//数据处理
-                services.AddHostedService<CleanupService>();//清理
-                services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
+                //services.AddHostedService<PostPackageBackgroundService>(); // 注册后组包服务
+                //services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
+                //services.AddHostedService<SubmitApiBackgroundService>();//提交Api
+                //services.AddHostedService<DataProcessingBackgroundService>();//数据处理
+                //services.AddHostedService<CleanupService>();//清理
+                //services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
                 services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
-                services.AddHostedService<LogProcessingService>();//日志管理器
-                services.AddHostedService<TimerBackgroundService>();//计时
-                services.AddHostedService<CloudBackgroundService>();//上传云端
-                //services.AddHostedService<PackageAggregationService>();//集包服务
-                services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
+                                                                              //services.AddHostedService<LogProcessingService>();//日志管理器
+                                                                              //services.AddHostedService<TimerBackgroundService>();//计时
+                                                                              //services.AddHostedService<CloudBackgroundService>();//上传云端
+                                                                              //services.AddHostedService<PackageAggregationService>();//集包服务
+                                                                              //services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
             });
         }
 
@@ -551,6 +551,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<CameraFinderPage, CameraFinderViewModel>();
             ViewModelLocationProvider.Register<UsbCameraSettingsPage, UsbCameraSettingsViewModel>();
             ViewModelLocationProvider.Register<AlgorithmSettingsPage, AlgorithmSettingsViewModel>();
+            ViewModelLocationProvider.Register<NVRIPCDeviceManagementPage, NvrIpcDeviceManagementViewModel>();
 
             ViewModelLocationProvider.Register<APISettingsPage, ApiSettingsPageViewModel>();
             ViewModelLocationProvider.Register<SaveImageSettingsPage, SaveImageSettingsPageViewModel>();

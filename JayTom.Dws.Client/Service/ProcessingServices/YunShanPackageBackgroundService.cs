@@ -378,8 +378,16 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null } &&
+                                                               (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
+                                                                (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
+                                                                 DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
+                                                               )) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
+                                                                   (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
+                                                                    (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
+                                                                     DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
+                                                                   ));
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
                         packageInfo = new PackageInfo {

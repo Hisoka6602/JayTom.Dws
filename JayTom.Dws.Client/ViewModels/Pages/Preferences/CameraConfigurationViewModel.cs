@@ -88,6 +88,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new MenuItemInfoModel()
             {
+                Title = "NVR/IPC设备管理",
+                IconFont = new IconInfoModel()
+                {
+                    IconFont = "pack://application:,,,/Fonts/#iconfont",
+                    IconCode = "\xea0b",
+                    IconSize = 25
+                },
+                Description ="Usb相机设置",
+                PageClassName = "NVRIPCDeviceManagementPage",
+                ClickCommand = ClickCommand,
+            },
+            new MenuItemInfoModel()
+            {
                 Title = "算法配置",
                 IconFont = new IconInfoModel()
                 {

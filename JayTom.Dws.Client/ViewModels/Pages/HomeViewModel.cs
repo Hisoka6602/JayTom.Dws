@@ -670,13 +670,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
         }
 
-        private async void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
+        private void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
             //实时画面
-            await Task.Yield();
+            //await Task.Yield();
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.Camera?.Info?.SerialNumber));
             if (model is not null && args.Image is not null &&
                 model.Image is not null) {
                 if (model.IsRealtimeImageEnabled) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"-推送到实时画面图片");
                     model.BitmapQueue.Enqueue(args.Image);
                 }
             }

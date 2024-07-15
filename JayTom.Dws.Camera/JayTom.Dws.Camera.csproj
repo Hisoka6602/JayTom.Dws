@@ -21,6 +21,9 @@
     <Reference Include="CamSDK">
       <HintPath>Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll</HintPath>
     </Reference>
+    <Reference Include="DaHua.Play.Net">
+      <HintPath>..\..\..\Wxck\DaHua.Nvr.Test\DaHua.Nvr.Net\bin\Release\net7.0\DaHua.Play.Net.dll</HintPath>
+    </Reference>
     <Reference Include="Dynamsoft.BarcodeReader">
       <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\Dynamsoft.BarcodeReader.dll</HintPath>
     </Reference>
@@ -201,6 +204,30 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\VolumeCamera\Irayple\Dll\XmlParser_MD_VC120_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\avnetsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\dhconfigsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\dhnetsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\dhplay.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\Infra.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\IvsDrawer.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\RenderEngine.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="dhPlayDll\StreamConvertor.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

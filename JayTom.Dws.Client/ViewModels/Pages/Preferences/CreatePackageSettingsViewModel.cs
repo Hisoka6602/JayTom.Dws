@@ -53,6 +53,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IsUseNoReadFilter = deserializeObject.IsUseNoReadFilter,
                         FilterInterval = deserializeObject.FilterInterval,
                         PackageCreationInterval = deserializeObject.PackageCreationInterval,
+                        MaximumAssignmentTime = deserializeObject.MaximumAssignmentTime,
+                        MinimumAssignmentTime = deserializeObject.MinimumAssignmentTime,
+                        IsUseBarcodeAssignmentInterval = deserializeObject.IsUseBarcodeAssignmentInterval
                     };
                     var includedEnums = Enum.GetValues(typeof(PackageCreationMethodsEnum))
                         .Cast<PackageCreationMethodsEnum>()
@@ -95,6 +98,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IsUseNoReadFilter = CreatePackageSettingsInfo.IsUseNoReadFilter,
                     FilterInterval = CreatePackageSettingsInfo.FilterInterval,
                     PackageCreationInterval = CreatePackageSettingsInfo.PackageCreationInterval,
+                    MaximumAssignmentTime = CreatePackageSettingsInfo.MaximumAssignmentTime,
+                    MinimumAssignmentTime = CreatePackageSettingsInfo.MinimumAssignmentTime,
+                    IsUseBarcodeAssignmentInterval = CreatePackageSettingsInfo.IsUseBarcodeAssignmentInterval
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :

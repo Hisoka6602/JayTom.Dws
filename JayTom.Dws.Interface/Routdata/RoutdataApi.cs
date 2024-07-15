@@ -39,7 +39,7 @@ namespace JayTom.Dws.Interface.Routdata {
                 }
                 else {
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString()}";
+                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
                     if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
                         callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
                     }
@@ -80,7 +80,7 @@ namespace JayTom.Dws.Interface.Routdata {
                 }
                 else {
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString()}";
+                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
                     if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
                         callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
                     }
@@ -259,16 +259,19 @@ namespace JayTom.Dws.Interface.Routdata {
                 isSuccess = false;
                 resultContent += "接口访问异常!";
                 exceptionType = ApiExceptionType.UnreachableUrl;
+                exceptionMsg += "接口访问异常!";
             }
             catch (JsonException) {
                 isSuccess = false;
                 exceptionMsg += "报文解析异常!";
                 exceptionType = ApiExceptionType.ContentParsingException;
+                resultContent += "报文解析异常!";
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
                 resultContent += "接口访问返回超时!";
                 exceptionType = ApiExceptionType.Timeout;
+                exceptionMsg += "接口访问返回超时!";
             }
             catch (Exception e) {
                 isSuccess = false;
