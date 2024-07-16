@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Camera {
 
@@ -63,16 +65,6 @@ namespace JayTom.Dws.Camera {
         Task<KeyValuePair<bool, string>> SetAperture(double aperture, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// 开启实时预览
-        /// </summary>
-        Task<KeyValuePair<bool, string>> StartPreview(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// 关闭实时预览
-        /// </summary>
-        void StopPreview(CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// 远程回放实时画面事件
         /// </summary>
         public event EventHandler<RemotePlaybackEventArgs> RemotePlaybackRealtimeImage;
@@ -92,6 +84,48 @@ namespace JayTom.Dws.Camera {
         /// 暂停远程回放
         /// </summary>
         public void PauseRemotePlayback();
+
+        /// <summary>
+        /// Ocr对象
+        /// </summary>
+        public IOcr? Ocr { get; set; }
+
+        /// <summary>
+        /// 条码边框大小
+        /// </summary>
+        public int BarcodeBorderSize { get; set; }
+
+        /// <summary>
+        /// 边框颜色
+        /// </summary>
+        public System.Drawing.Color BarcodeBorderColor { get; set; }
+
+        /// <summary>
+        /// 是否显示边框
+        /// </summary>
+        public bool IsShowBarcodeBorder { get; set; }
+
+        /// <summary>
+        /// 读取到条码事件
+        /// </summary>
+        event EventHandler<BarcodeReadEventArgs> BarcodeRead;
+
+        /// <summary>
+        /// 当OCR识别到内容时触发的事件
+        /// </summary>
+        event EventHandler<OcrResult> OcrContentRecognized;
+
+        /// <summary>
+        /// 过滤的条码返回事件
+        /// </summary>
+        event EventHandler<BarcodeReadEventArgs> FilteredBarcodeReturned;
+
+        /// <summary>
+        /// 设置扫码过滤参数
+        /// </summary>
+        /// <param name="params"></param>
+        /// <returns></returns>
+        void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params);
     }
 
     public class RealPreviewEventArgs {
@@ -116,6 +150,11 @@ namespace JayTom.Dws.Camera {
         /// 密码
         /// </summary>
         public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 播放通道
+        /// </summary>
+        public int PlayChannelId { get; set; } = 0;
     }
 
     public class CameraImageMessageInfo {

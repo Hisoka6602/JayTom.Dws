@@ -677,7 +677,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             if (model is not null && args.Image is not null &&
                 model.Image is not null) {
                 if (model.IsRealtimeImageEnabled) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"-推送到实时画面图片");
+                    //先清除累积的
+                    if (model.BitmapQueue.Count > 2) {
+                        model.BitmapQueue.Clear();
+                    }
+                    //NLog.LogManager.GetCurrentClassLogger().Error($"-推送到实时画面图片");
                     model.BitmapQueue.Enqueue(args.Image);
                 }
             }
@@ -687,7 +691,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             //更新图片
 
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
-                                                        f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera);
+                                                        f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera or CameraType.PanoramaCamera);
+
+            //or CameraType.PanoramaCamera 需要删掉
+
             if (model is not null) {
                 //图片转换
                 if (args?.ThumbImage is not null &&

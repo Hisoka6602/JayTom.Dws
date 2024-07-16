@@ -1,4 +1,5 @@
-﻿using Prism.Mvvm;
+﻿using System;
+using Prism.Mvvm;
 using System.Drawing;
 using System.Windows;
 using System.Threading;
@@ -42,23 +43,35 @@ namespace JayTom.Dws.Client.Models {
             }
             Task.Factory.StartNew(async () => {
                 while (!_tokenSource.IsCancellationRequested) {
-                    await Task.Delay(5).ContinueWith(async a => {
-                        if (a.IsCompletedSuccessfully && BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
+                    try {
+                        await Task.Delay(5).ConfigureAwait(false);
+
+                        if (BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
                             var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
                             var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
                             // 使用 Dispatcher.InvokeAsync 进行 UI 线程操作
                             await this.Image.Dispatcher.InvokeAsync(() => {
-                                this.Image.WritePixels(
-                                    new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
-                                    bitmapData.Scan0,
-                                    bitmapData.Stride * bitmapData.Height,
-                                    bitmapData.Stride
-                                );
-                                bitmap.UnlockBits(bitmapData);
-                            }, DispatcherPriority.Render);
+                                try {
+                                    this.Image.WritePixels(
+                                        new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
+                                        bitmapData.Scan0,
+                                        bitmapData.Stride * bitmapData.Height,
+                                        bitmapData.Stride
+                                    );
+                                }
+                                finally {
+                                    // 确保位图在操作完成后解锁
+                                    bitmap.UnlockBits(bitmapData);
+                                }
+                            }, DispatcherPriority.Render).Task.ConfigureAwait(false);
+
+                            //NLog.LogManager.GetCurrentClassLogger().Error($"Image显示");
                         }
-                    }).Unwrap();
+                    }
+                    catch (Exception ex) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(ex, "Error processing image");
+                    }
                 }
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 

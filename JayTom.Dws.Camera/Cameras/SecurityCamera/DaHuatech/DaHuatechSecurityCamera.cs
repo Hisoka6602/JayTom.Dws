@@ -3,7 +3,9 @@ using NetSDKCS;
 using System.Net;
 using System.Linq;
 using System.Text;
+using Dynamsoft.DBR;
 using System.Drawing;
+using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Diagnostics;
@@ -16,6 +18,8 @@ using Image = System.Drawing.Image;
 using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.BarCodeReader;
+using JayTom.Dws.Camera.FilterContainer;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
@@ -25,11 +29,15 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private SemaphoreSlim _snapRevPhotoSlim = new(1);
         private ConcurrentQueue<CameraImageMessageInfo> _imageMessageQueue = new();
         private SemaphoreSlim _takePhotoSlim = new(1);
+        private IBarCodeReader? _barCodeReader;
 
         /// <summary>
         /// 设备列表
         /// </summary>
         private static ConcurrentDictionary<string, CameraInfo> _devInfo = new();
+
+        //过滤器
+        private BarCodeFilterContainer _barCodeFilterContainer = new();
 
         public DaHuatechSecurityCamera(CameraInfo info) {
             this.Info = info;
@@ -100,11 +108,71 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public async Task<KeyValuePair<bool, string>> Initialize(object param) {
             await Task.Yield();
+            BindingType = CameraBindingType.ScannerCamera;
             if (param is CameraInfo cameraInfo) {
                 var tryGetValue = _devInfo.TryGetValue(cameraInfo.SerialNumber, out var devInfo);
                 if (tryGetValue && devInfo is not null) {
                     this.Info = devInfo;
                     //注册各种事件
+                    if (BindingType == CameraBindingType.ScannerCamera) {
+                        _barCodeReader ??= new DynamsoftBarCodeReader();
+                        _barCodeReader.BarcodeRead += async (sender, result) => {
+                            //读码回调
+                            var scanTime = DateTime.Now;
+                            var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
+                            Bitmap? generateThumbnail = null;
+                            generateThumbnail = GenerateThumbnail(result.Image);
+                            if (result.BarCodes?.Any() == true) {
+                                List<Point>? points = null;
+                                if (generateThumbnail is not null) {
+                                    //设置图像边框
+                                    using var g = Graphics.FromImage(generateThumbnail);
+
+                                    foreach (var barcodeInfo in result?.BarCodes ?? new List<BarcodeInfo>()) {
+                                        points = barcodeInfo.BarcodeRegion;
+                                        if (points is not null && points.Count == 4 &&
+                                            generateThumbnail is not null &&
+                                            result?.Image is { Width: > 0, Height: > 0 }) {
+                                            var stPointList = new Point[4];
+                                            for (var i = 0; i < 4; i++) {
+                                                stPointList[i].X = (int)(points[i].X *
+                                                                         ((float)generateThumbnail.Width / result.Image.Width));
+                                                stPointList[i].Y = (int)(points[i].Y *
+                                                                         ((float)generateThumbnail.Height / result.Image.Height));
+                                            }
+                                            g.DrawPolygon(new System.Drawing.Pen(BarcodeBorderColor, BarcodeBorderSize), stPointList);
+                                        }
+                                    }
+                                }
+                                foreach (var barcodeInfo in from barcodeInfo in result?.BarCodes ?? new List<BarcodeInfo>()
+                                                            let validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                                                                BarCode = barcodeInfo.Barcode ?? "NoRead",
+                                                                ScanTime = DateTime.Now
+                                                            })
+                                                            where validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)
+                                                            select new { BarcodeInfo = barcodeInfo, IsValid = validateData.IsValidationPassed }) {
+                                    OnBarcodeRead(new BarcodeReadEventArgs() {
+                                        Barcode = _barCodeFilterContainer.RegexReplace((barcodeInfo.IsValid ? barcodeInfo.BarcodeInfo.Barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
+                                        CameraSerialNumber = this.Info.SerialNumber,
+                                        Image = result?.Image,
+                                        ScanTime = scanTime,
+                                        Timestamp = timestamp,
+                                        ThumbImage = generateThumbnail,
+                                        AreaCoords = points,
+                                    });
+                                }
+                            }
+                            if (IsRealtimeImageEnabled) {
+                                await OnRealtimeImageAsync(new RealtimeImageEventArgs() {
+                                    ThumbImage = generateThumbnail,
+                                    Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+                                });
+                            }
+                        };
+
+                        await _barCodeReader.Initialize();
+                    }
+
                     _baseDaHuatech.RegisterImageCallback(devInfo.SerialNumber, async imageBitmap => {
                         try {
                             await _snapRevPhotoSlim.WaitAsync();
@@ -134,17 +202,24 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                     _baseDaHuatech.RegisterRealtimeFrameCallback(devInfo.SerialNumber, async imageBitmap => {
                         try {
-                            await Task.Delay(1);
-                            var thumbnailImage = GenerateThumbnail(imageBitmap);
-                            OnRealtimeImage(new RealtimeImageEventArgs() {
-                                ThumbImage = (Bitmap?)thumbnailImage
-                            });
-                            //Debug.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}-缩略图回调图片");
-                            //NLog.LogManager.GetCurrentClassLogger().Error($"-缩略图回调图片");
+                            if (BindingType == CameraBindingType.ScannerCamera) {
+                                //推送图片到解码器
+                                _barCodeReader?.EnqueueFrame(imageBitmap);
+                            }
+                            else {
+                                // 直接生成缩略图
+                                var thumbnailImage = GenerateThumbnail(imageBitmap);
+
+                                // 使用异步方法触发事件
+                                await OnRealtimeImageAsync(new RealtimeImageEventArgs() {
+                                    ThumbImage = thumbnailImage
+                                });
+                            }
                         }
                         catch (Exception e) {
                         }
                     });
+
                     OnCameraInitialized(new CameraInitializedEventArgs() {
                         CameraInfo = Info
                     });
@@ -172,7 +247,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 var parameters = JsonConvert.DeserializeObject<SecurityCameraConnectionParameters>(CameraConnectionParameters);
                 if (parameters is not null && Info is not null) {
                     var (key, value) = await _baseDaHuatech.LogIn(Info.SerialNumber,
-                        parameters.Username, parameters.Password);
+                        parameters.Username, parameters.Password, parameters.PlayChannelId);
 
                     if (key) {
                         OnCameraStarted(new CameraStartedEventArgs() {
@@ -208,13 +283,36 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         Exception = new Exception(value)
                     });
                 }
+                _barCodeReader?.Dispose();
                 return new KeyValuePair<bool, string>(key, value);
             }
             return new KeyValuePair<bool, string>(false, "设备未连接");
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
-            throw new NotImplementedException();
+        public async void SetParameters(Dictionary<string, object> parameters) {
+            if (_barCodeReader is not null) {
+                foreach (var parameter in parameters) {
+                    switch (parameter.Key) {
+                        case "BarcodeReaderParameter": {
+                                //读码器参数
+                                var (key, value) = await _barCodeReader.SetBarcodeReaderParameter(
+                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value);
+                                if (!key) {
+                                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                                        Exception = new Exception(value)
+                                    });
+                                }
+
+                                break;
+                            }
+                    }
+                }
+            }
+            else {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = new Exception("设备未初始化")
+                });
+            }
         }
 
         public bool IsRealtimeImageEnabled { get; private set; }
@@ -276,14 +374,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         public Task<KeyValuePair<bool, string>> SetAperture(double aperture, CancellationToken cancellationToken = default) {
-            throw new NotImplementedException();
-        }
-
-        public Task<KeyValuePair<bool, string>> StartPreview(CancellationToken cancellationToken = default) {
-            throw new NotImplementedException();
-        }
-
-        public void StopPreview(CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 
@@ -398,41 +488,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             CameraUnregistered?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Delay(1);
+        protected virtual Task OnRealtimeImageAsync(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
-        }
-
-        public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-            // 创建目标缩略图的空白画布
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-
-            using var graphics = Graphics.FromImage(thumbnail);
-            // 设置绘图质量参数
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-            graphics.InterpolationMode = InterpolationMode.Low;
-
-            // 计算缩放比例
-            var scaleX = (float)thumbnailWidth / sourceImage.Width;
-            var scaleY = (float)thumbnailHeight / sourceImage.Height;
-            var scale = Math.Min(scaleX, scaleY);
-
-            // 计算缩放后的宽度和高度
-            var scaledWidth = (int)(sourceImage.Width * scale);
-            var scaledHeight = (int)(sourceImage.Height * scale);
-
-            // 计算在画布上居中绘制的起始位置
-            var startX = (thumbnailWidth - scaledWidth) / 2;
-            var startY = (thumbnailHeight - scaledHeight) / 2;
-
-            // 绘制缩略图
-            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
-
-            return thumbnail;
+            return Task.CompletedTask;
         }
 
         public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
@@ -447,8 +505,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
                 try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
+                    var sourcePtr = (byte*)sourceData.Scan0;
+                    var thumbnailPtr = (byte*)thumbnailData.Scan0;
 
                     var sourceBytesPerPixel = 4;
                     var thumbnailBytesPerPixel = 4;
@@ -457,10 +515,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     var scaleY = (float)thumbnailHeight / sourceImage.Height;
 
                     var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
 
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
+                    // 使用 Parallel.For 进行并行处理
+                    Parallel.For(0, thumbnailHeight, y => {
+                        for (var x = 0; x < thumbnailWidth; x++) {
                             var sourceX = (int)(x / scaleX);
                             var sourceY = (int)(y / scaleY);
 
@@ -472,7 +530,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
                             thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
                         }
-                    }
+                    });
                 }
                 finally {
                     thumbnail.UnlockBits(thumbnailData);
@@ -483,6 +541,41 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             finally {
                 sourceImage.UnlockBits(sourceData);
             }
+        }
+
+        public IOcr? Ocr { get; set; }
+        public int BarcodeBorderSize { get; set; } = 5;
+        public Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
+        public bool IsShowBarcodeBorder { get; set; } = true;
+
+        public event EventHandler<BarcodeReadEventArgs>? BarcodeRead;
+
+        public event EventHandler<OcrResult>? OcrContentRecognized;
+
+        public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
+
+        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+            _barCodeFilterContainer = new BarCodeFilterContainer {
+                Pattern = @params.RegularExpression,
+                MaxSize = @params.DuplicateBarcodeFilterCount,
+                ExpirationTime = TimeSpan.FromMilliseconds(@params.ScanInterval),
+                FilterOutContent = @params.FilterOutContent,
+                BarCodeFilterMode = @params.BarCodeFilterMode,
+                CustomRegularExpressionItems = @params.CustomRegularExpressionItems,
+                IsUseCustomRegexReplacement = @params.IsUseCustomRegexReplacement,
+                IsUseFilteredBarcodeTypes = @params.IsUseFilteredBarcodeTypes,
+                CustomRegexReplacementItems = @params.CustomRegexReplacementItems
+            };
+
+            BarCodeFilterContainer.ResetFilter();
+        }
+
+        protected virtual void OnBarcodeRead(BarcodeReadEventArgs e) {
+            BarcodeRead?.Invoke(this, e);
+        }
+
+        protected virtual void OnFilteredBarcodeReturned(BarcodeReadEventArgs e) {
+            FilteredBarcodeReturned?.Invoke(this, e);
         }
     }
 }

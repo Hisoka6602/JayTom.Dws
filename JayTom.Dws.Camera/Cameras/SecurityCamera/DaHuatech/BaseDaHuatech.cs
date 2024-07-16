@@ -78,7 +78,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     };
                     _mReConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
                     };
-                    _mRealDataCallBackEx2 += async delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
+                    _mRealDataCallBackEx2 += delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
                         IntPtr user) {
                             if (type == 0) {
                                 var (key, value) = _loginDev.FirstOrDefault(f => f.Value != null &&
@@ -158,7 +158,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
                         var convertToBmp = DhPlaySdk.ConvertToBmp(buf, size, info);
                         await callback(convertToBmp).ConfigureAwait(false);
-                        NLog.LogManager.GetCurrentClassLogger().Error($"-ProcessChannel回调图片");
+                        //NLog.LogManager.GetCurrentClassLogger().Error($"-ProcessChannel回调图片");
                     }
                 }
                 catch (Exception ex) {
@@ -294,6 +294,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 await _enumerateSlim.WaitAsync();
                 _loginDev.TryGetValue(serialNo, out var mLoginId);
                 if (mLoginId != null && mLoginId?.Handle != IntPtr.Zero) {
+                    if (mLoginId?.IsRealTimePlay == true && mLoginId.PlayHandle != IntPtr.Zero) {
+                        await StopRealtimePlay(serialNo);
+                    }
                     var result = NETClient.Logout(mLoginId.Handle);
                     if (!result) {
                         var lastError = NETClient.GetLastError();
@@ -302,7 +305,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     }
 
                     _loginDev.TryRemove(serialNo, out mLoginId);
-                    return new KeyValuePair<bool, string>(true, mLoginId.ToString());
+                    return new KeyValuePair<bool, string>(true, mLoginId?.ToString() ?? string.Empty);
                 }
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
@@ -411,7 +414,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         return new KeyValuePair<bool, string>(openMode, "设置缓存区域失败!");
                     }
 
-                    var playOpenStream = DhPlaySdk.PLAY_OpenStream(plPort, IntPtr.Zero, 0, 900 * 1024);
+                    var playOpenStream = DhPlaySdk.PLAY_OpenStream(plPort, IntPtr.Zero, 0, 1024 * 512 * 6);
 
                     if (!playOpenStream) {
                         return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
@@ -437,6 +440,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     }
                     var playSetDecCallBack = _decCbFun != null && DhPlaySdk.PLAY_SetDecCallBack(plPort, _decCbFun);
                     dev.IsRealTimePlay = playSetDecCallBack;
+
                     return new KeyValuePair<bool, string>(playSetDecCallBack, $"{(playSetDecCallBack ? "开启实时预览成功" : "设置播放回调失败!")}");
                 }
 
@@ -476,6 +480,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         //停止数据回调
                         var playStop = DhPlaySdk.PLAY_Stop(mLoginId.PlayPort);
                         if (playStop) {
+                            PLAY_CloseStream(mLoginId.PlayPort);
                             mLoginId.PlayPort = 0;
                             mLoginId.IsRealTimePlay = false;
                         }

@@ -707,6 +707,14 @@ namespace JayTom.Dws.Client.Service.Device {
                                             ?.CameraConnectionParameters;
                                         securityCamera.CameraConnectionParameters =
                                             parameters ?? string.Empty;
+                                        securityCamera.BarcodeRead += (sender, args) => {
+                                            OnBarcodeScanned(args);
+                                        };
+
+                                        securityCamera.OcrContentRecognized += delegate (object? sender,
+                                            OcrResult args) {
+                                                OnOcrContentRecognized(args);
+                                            };
                                         break;
                                     }
                                 case IVolumeCamera volumeCamera: {

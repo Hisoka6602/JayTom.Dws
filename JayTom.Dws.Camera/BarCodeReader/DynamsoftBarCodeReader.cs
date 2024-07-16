@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Dynamsoft.DBR;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
@@ -23,15 +24,15 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
         //跳帧
-        private int _recognitionSkipFrames = 4;
+        private int _recognitionSkipFrames = 2;
 
         private int _framenum = 0;
         private CancellationTokenSource _stopCancellationTokenSource = new();
         private readonly ConcurrentQueue<Bitmap> _bitmapQueue = new();
-        private static Task? _readerThread;
+        private Task? _readerThread;
 
         //图片缩放百分比
-        private int _scalePercentage = 0;
+        private int _scalePercentage = 50;
 
         public async void Dispose() {
             _stopCancellationTokenSource.Cancel();
@@ -138,16 +139,23 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                         switch (scanMode) {
                             case ScanMode.Speed: {
                                     //runtimeSettings.BarcodeFormatIds = (int)(EnumBarcodeFormat.BF_CODE_128 | EnumBarcodeFormat.BF_CODE_39 | EnumBarcodeFormat.BF_QR_CODE);
+
                                     runtimeSettings.LocalizationModes[0] = EnumLocalizationMode.LM_SCAN_DIRECTLY;
                                     for (var i = 1; i < runtimeSettings.LocalizationModes.Length; i++)
                                         runtimeSettings.LocalizationModes[i] = EnumLocalizationMode.LM_SKIP;
                                     runtimeSettings.DeblurLevel = 3;
-                                    runtimeSettings.ExpectedBarcodesCount = 0;
+                                    runtimeSettings.ExpectedBarcodesCount = 1;
                                     runtimeSettings.ScaleDownThreshold = 2300;
+                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[0] = EnumGrayscaleTransformationMode.GTM_ORIGINAL;
+                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[1] = EnumGrayscaleTransformationMode.GTM_SKIP;
+                                    runtimeSettings.FurtherModes.ImagePreprocessingModes[0] =
+                                        EnumImagePreprocessingMode.IPM_GENERAL;
+                                    runtimeSettings.MinResultConfidence = 30;
                                     for (var i = 0; i < runtimeSettings.FurtherModes.TextFilterModes.Length; i++)
                                         runtimeSettings.FurtherModes.TextFilterModes[i] = EnumTextFilterMode.TFM_SKIP;
-                                    runtimeSettings.FurtherModes.TextFilterModes[0] = EnumTextFilterMode.TFM_GENERAL_CONTOUR;
+                                    //runtimeSettings.FurtherModes.TextFilterModes[0] = EnumTextFilterMode.TFM_GENERAL_CONTOUR;
                                     _mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
+
                                     break;
                                 }
                             case ScanMode.Balance: {
@@ -161,7 +169,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                     runtimeSettings.FurtherModes.TextFilterModes[0] = EnumTextFilterMode.TFM_GENERAL_CONTOUR;
                                     for (var i = 1; i < runtimeSettings.FurtherModes.TextFilterModes.Length; i++)
                                         runtimeSettings.FurtherModes.TextFilterModes[i] = EnumTextFilterMode.TFM_SKIP;
-                                    _mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
+                                    //_mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
                                     break;
                                 }
                             case ScanMode.Coverage: {
@@ -175,7 +183,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                     runtimeSettings.FurtherModes.GrayscaleTransformationModes[1] = EnumGrayscaleTransformationMode.GTM_INVERTED;
                                     for (var i = 2; i < runtimeSettings.FurtherModes.GrayscaleTransformationModes.Length; i++)
                                         runtimeSettings.FurtherModes.GrayscaleTransformationModes[i] = EnumGrayscaleTransformationMode.GTM_SKIP;
-                                    _mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
+                                    //_mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
                                     break;
                                 }
                             case ScanMode.Custom: {
@@ -312,6 +320,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                         }
                     }
                     _mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
+                    //var serializeObject = JsonConvert.SerializeObject(runtimeSettings);
                     return new KeyValuePair<bool, string>(true, "读码器设置成功");
                 }
                 catch (Exception e) {
@@ -335,29 +344,38 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             else {
                 _mBarcodeReader = BarcodeReader.GetInstance();
                 _mNormalRuntimeSettings = _mBarcodeReader?.GetRuntimeSettings();
+
                 await SetBarcodeReaderParameter(new Dictionary<BarcodeReaderParameter, object>()
                 {
-                    { BarcodeReaderParameter.RecognitionMode, ScanMode.Speed },
+                   {BarcodeReaderParameter.RecognitionMode, ScanMode.Custom },
                     {BarcodeReaderParameter.IsUseTextFilterMode,true},
+                    {BarcodeReaderParameter.IsUseRegionPredetectionMode,true},
+                    {BarcodeReaderParameter.DeblurLevel,3},
+                    {BarcodeReaderParameter.ExpectedBarcodesCount,1},
+                    {BarcodeReaderParameter.EnumBarcodeFormat, EnumBarcodeFormat.BF_QR_CODE|EnumBarcodeFormat.BF_MICRO_QR|EnumBarcodeFormat.BF_CODE_128|EnumBarcodeFormat.BF_CODE_39|EnumBarcodeFormat.BF_CODE_93|EnumBarcodeFormat.BF_CODABAR },
                 });
             }
+
             if (_readerThread is null) {
                 _stopCancellationTokenSource = new CancellationTokenSource();
                 _readerThread = Task.Run(async () => {
                     while (!_stopCancellationTokenSource.IsCancellationRequested) {
+                        await Task.Delay(1).ConfigureAwait(false);
                         try {
-                            var tryDequeue = _bitmapQueue.TryDequeue(out var image);
-                            if (tryDequeue && image is not null) {
+                            if (_bitmapQueue.Count > 3) {
+                                _bitmapQueue.Clear();
+                            }
+                            if (_bitmapQueue.TryDequeue(out var image)) {
                                 var barcodeResult = new BarcodeResult() {
                                     Image = image,
                                     ScanTime = DateTime.Now
                                 };
+
                                 if (_framenum >= _recognitionSkipFrames) {
                                     _framenum = 0;
 
                                     barcodeResult = await ReadFromFrame(image);
                                 }
-
                                 OnBarcodeRead(barcodeResult);
                                 _framenum++;
                             }
@@ -366,7 +384,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                             OnExceptionOccurred(e);
                         }
 
-                        await Task.Delay(10);
+                        await Task.Delay(1);
                     }
                 });
             }
@@ -380,7 +398,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             ExceptionOccurred?.Invoke(this, e);
         }
 
-        public static (byte[] buffer, int stride, EnumImagePixelFormat pixelFormat) GetBitmapData(Bitmap bitmap) {
+        /*public static (byte[] buffer, int stride, EnumImagePixelFormat pixelFormat) GetBitmapData(Bitmap bitmap) {
             // 锁定Bitmap对象的内存区域，并获取其指针
             var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, bitmap.PixelFormat);
@@ -402,9 +420,62 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             var pixelFormat = GetImagePixelFormat(bitmap.PixelFormat);
 
             return (buffer, stride, pixelFormat);
+        }*/
+
+        public static unsafe (byte[] buffer, int stride, EnumImagePixelFormat pixelFormat) GetBitmapData(Bitmap bitmap) {
+            var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                                             ImageLockMode.ReadOnly, bitmap.PixelFormat);
+            try {
+                var bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+                var stride = bitmapData.Stride;
+                var bufferSize = bitmapData.Height * Math.Abs(bitmapData.Stride);
+
+                // Allocate managed memory for the buffer
+                var buffer = new byte[bufferSize];
+
+                // Allocate unmanaged memory for pixel data
+                byte* ptr = null;
+                try {
+                    ptr = (byte*)Marshal.AllocHGlobal(bufferSize);
+                    var bufferPtr = ptr;
+
+                    // Copy bitmap data to unmanaged memory
+                    for (var y = 0; y < bitmapData.Height; y++) {
+                        var source = (byte*)bitmapData.Scan0 + y * bitmapData.Stride;
+                        Buffer.MemoryCopy(source, bufferPtr, stride, stride);
+                        bufferPtr += stride;
+                    }
+
+                    // Parallel processing of rows
+                    Parallel.For(0, bitmapData.Height, y => {
+                        var rowPtr = ptr + y * stride;
+                        // Process each pixel in the row (example: invert colors)
+                        for (var x = 0; x < bitmapData.Width; x++) {
+                            // Example: Invert colors (just for illustration)
+                            rowPtr[x * bytesPerPixel] = (byte)(255 - rowPtr[x * bytesPerPixel]);
+                            rowPtr[x * bytesPerPixel + 1] = (byte)(255 - rowPtr[x * bytesPerPixel + 1]);
+                            rowPtr[x * bytesPerPixel + 2] = (byte)(255 - rowPtr[x * bytesPerPixel + 2]);
+                        }
+                    });
+
+                    // Copy the processed data from unmanaged to managed memory
+                    Marshal.Copy((IntPtr)ptr, buffer, 0, bufferSize);
+
+                    var pixelFormat = GetImagePixelFormat(bitmap.PixelFormat);
+                    return (buffer, stride, pixelFormat);
+                }
+                finally {
+                    if (ptr != null) {
+                        Marshal.FreeHGlobal((IntPtr)ptr);
+                    }
+                }
+            }
+            finally {
+                bitmap.UnlockBits(bitmapData);
+            }
         }
 
-        public static unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
             if (sourceImage is null) {
                 return null;
             }
@@ -426,9 +497,9 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                     var scaleY = (float)thumbnailHeight / sourceImage.Height;
 
                     var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
 
-                    for (var y = 0; y < thumbnailHeight; y++) {
+                    // 使用 Parallel.For 进行并行处理
+                    Parallel.For(0, thumbnailHeight, y => {
                         for (var x = 0; x < thumbnailWidth; x++) {
                             var sourceX = (int)(x / scaleX);
                             var sourceY = (int)(y / scaleY);
@@ -441,7 +512,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                             thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
                             thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
                         }
-                    }
+                    });
                 }
                 finally {
                     thumbnail.UnlockBits(thumbnailData);
