@@ -459,7 +459,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                         if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
                             packageInfo.GrayscaleResultInfo is not null &&
-                            packageInfo.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any() == true) {
+                            packageInfo.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)0.15) == true) {
                             //发送包裹居中指令
                             _sortingService.SendPackageCenter(packageInfo.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
                                 BarCode = string.Empty,
