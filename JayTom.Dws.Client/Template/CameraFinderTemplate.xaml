@@ -6,7 +6,7 @@
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <cameraConverter:BoundCameraTypeConverter x:Key="BoundCameraTypeConverter" />
-    <converters:CameraTypeToolTipConverter x:Key="CameraTypeToolTipConverter" />
+    <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
     <cameraConverter:BoundCameraTypeCornerRadiusConverter x:Key="BoundCameraTypeCornerRadiusConverter" />
     <cameraConverter:BoundCameraTypeVisibilityConverter x:Key="BoundCameraTypeVisibilityConverter" />
     <cameraConverter:CameraHasBindingVisibilityConverter x:Key="CameraHasBindingVisibilityConverter" />
@@ -183,7 +183,7 @@
                         FontSize="14"
                         FontWeight="Bold"
                         Foreground="DarkGray"
-                        Text="{Binding CameraType, Converter={StaticResource CameraTypeToolTipConverter}}" />
+                        Text="{Binding CameraType, Converter={StaticResource CameraTypeConverter}, ConverterParameter=ToolTip}" />
                 </StackPanel>
                 <!--  绑定/解绑  -->
                 <Grid Grid.Column="5">
