@@ -1,8 +1,9 @@
-﻿using JayTom.Dws.Client.Models;
-using System;
-using System.Globalization;
+﻿using System;
 using System.Windows;
+using JayTom.Dws.Camera;
 using System.Windows.Data;
+using System.Globalization;
+using JayTom.Dws.Client.Models;
 
 namespace JayTom.Dws.Client.Converters.CameraConverter {
 
@@ -12,7 +13,6 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
             if (value is CameraType cameraType) {
                 if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return cameraType switch {
-                        CameraType.PanoramaCamera => Visibility.Visible,
                         CameraType.IndustrialCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
                         CameraType.VideoCamera => Visibility.Visible,
@@ -22,6 +22,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                 else if (parameter?.ToString()?.Equals("BarcodeScannerCamera") == true) {
                     return cameraType switch {
                         CameraType.IndustrialCamera => Visibility.Visible,
+                        CameraType.VideoCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
                         _ => Visibility.Collapsed
                     };
@@ -42,9 +43,9 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
             if (value is CameraType cameraType) {
                 if (parameter?.ToString()?.Equals("PanoramaCamera") == true) {
                     return cameraType switch {
-                        CameraType.PanoramaCamera => Visibility.Visible,
                         CameraType.IndustrialCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
+                        CameraType.VideoCamera => Visibility.Visible,
                         _ => Visibility.Collapsed
                     };
                 }
@@ -52,6 +53,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                     return cameraType switch {
                         CameraType.IndustrialCamera => Visibility.Visible,
                         CameraType.SmartCamera => Visibility.Visible,
+                        CameraType.VideoCamera => Visibility.Visible,
                         _ => Visibility.Collapsed
                     };
                 }

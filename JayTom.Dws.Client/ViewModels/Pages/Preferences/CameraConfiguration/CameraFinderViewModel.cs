@@ -26,7 +26,6 @@ using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
-using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
@@ -118,7 +117,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     infoModels.AddRange(scannerCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
                         BoundType = s.IsOcrSupported ? BoundCameraType.OcrCamera : BoundCameraType.BarcodeScannerCamera,
-                        ConnectionType = (ConnectionType)s.ConnectionType,
+                        ConnectionType = (CameraConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
                         IpAddress = s.IpAddress,
@@ -131,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(panoramaCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
                         BoundType = BoundCameraType.PanoramaCamera,
-                        ConnectionType = (ConnectionType)s.ConnectionType,
+                        ConnectionType = (CameraConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
                         IpAddress = s.IpAddress,
@@ -143,7 +142,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(volumeCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
                         BoundType = BoundCameraType.VolumeCamera,
-                        ConnectionType = (ConnectionType)s.ConnectionType,
+                        ConnectionType = (CameraConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
                         IpAddress = s.IpAddress,

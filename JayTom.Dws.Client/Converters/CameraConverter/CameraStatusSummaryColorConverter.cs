@@ -1,12 +1,13 @@
-﻿using JayTom.Dws.Client.Models;
-using System;
-using System.Collections.ObjectModel;
-using System.Globalization;
+﻿using System;
 using System.Linq;
+using JayTom.Dws.Camera;
 using System.Windows.Data;
+using System.Globalization;
 using System.Windows.Media;
+using JayTom.Dws.Client.Models;
+using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters.CameraConverter {
 
     public class CameraStatusSummaryColorConverter : IValueConverter {
 

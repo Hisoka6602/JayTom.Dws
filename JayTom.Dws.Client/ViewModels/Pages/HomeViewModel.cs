@@ -47,10 +47,7 @@ using JayTom.Dws.Client.Models.OcrSettingsModel;
 using LogType = JayTom.Dws.Data.LocalLog.LogType;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using CameraType = JayTom.Dws.Client.Models.CameraType;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
-using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
 using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
@@ -276,9 +273,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     CameraItems.Clear();
                     Task.Delay(100);
                     var infoModels = list.Select(s => new CameraItemInfoModel {
-                        ConnectionType = (ConnectionType)(s?.Info?.ConnectionType ?? CameraConnectionType.Ethernet),
+                        ConnectionType = (s?.Info?.ConnectionType ?? CameraConnectionType.Ethernet),
                         CameraName = $"{s?.Info?.Brand}:{s?.Info?.SerialNumber}" ?? string.Empty,
-                        Type = (CameraType)(s?.Info?.Type ?? JayTom.Dws.Camera.CameraType.IndustrialCamera),
+                        Type = s?.Info?.Type ?? JayTom.Dws.Camera.CameraType.IndustrialCamera,
                         Status = CameraStatus.Running,
                         CameraId = (s?.Info?.Id)?.ToString() ?? string.Empty,
                         SerialNumber = s?.Info?.SerialNumber ?? string.Empty,
@@ -653,7 +650,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
             //全景相机
             await Task.Yield();
-            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && f.Type is CameraType.PanoramaCamera);
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && f.BindingType is CameraBindingType.PanoramaCamera);
             if (model is not null &&
                 model.Image is not null) {
                 //图片转换
@@ -691,7 +688,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             //更新图片
 
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
-                                                        f.Type is CameraType.IndustrialCamera or CameraType.SmartCamera or CameraType.PanoramaCamera);
+                                                        f.BindingType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera);
 
             //or CameraType.PanoramaCamera 需要删掉
 

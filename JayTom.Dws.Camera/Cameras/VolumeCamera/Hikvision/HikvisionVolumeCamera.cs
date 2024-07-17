@@ -14,9 +14,11 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
+    [CameraBindableType(CameraBindingType.VolumeCamera)]
     public class HikvisionVolumeCamera : IVolumeCamera {
         private static MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO_LIST _mStDeviceList = new();
         private MvVolmeasure.NET.MvVolmeasure? _mCsVolMeasure;
@@ -33,7 +35,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public HikvisionVolumeCamera(CameraInfo info) {
             this.Info = info;
-            this.Info.Type = CameraType.VolumeCamera;
+            this.Info.Type = CameraType.ThreeDCamera;
         }
 
         public HikvisionVolumeCamera() {
@@ -87,7 +89,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                         SerialNumber =
                             gigeInfo.chSerialNumber ?? string.Empty, //还有一个设备序列号nDeviceNumber不想知道是干吗用的
                         Name = gigeInfo.chUserDefinedName ?? string.Empty,
-                        Type = CameraType.VolumeCamera,
+                        Type = CameraType.ThreeDCamera,
                         ConnectionType = device.nTLayerType == MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_DEVICE
                             ? CameraConnectionType.Ethernet
                             : (device.nTLayerType == MvVolmeasure.NET.MvVolmeasure.MV_VOLM_USB_DEVICE
@@ -302,6 +304,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 _volumeThread = null;
                 //停止SDK
                 _mCsVolMeasure?.Stop();
+
                 OnCameraStopped(new CameraStoppedEventArgs() {
                     CameraInfo = this.Info
                 });

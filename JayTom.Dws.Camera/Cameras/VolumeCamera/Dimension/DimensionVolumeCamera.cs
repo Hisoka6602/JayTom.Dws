@@ -8,9 +8,11 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
+    [CameraBindableType(CameraBindingType.VolumeCamera)]
     public class DimensionVolumeCamera : IVolumeCamera {
         private DimensionVolumeSdk? _dimensionVolumeSdk = null;
         private SemaphoreSlim _volumelim = new(1);
@@ -34,7 +36,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
         public DimensionVolumeCamera(CameraInfo info) {
             this.Info = info;
-            this.Info.Type = CameraType.VolumeCamera;
+            this.Info.Type = CameraType.ThreeDCamera;
             if (_dimensionVolumeSdk is null) {
                 _dimensionVolumeSdk = new();
                 _dimensionVolumeSdk.VolumeCaptured += async delegate (object? sender, DimensionVolumeInfo info) {
@@ -85,7 +87,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                                 Model = device["Caption"]?.ToString() ?? string.Empty,
                                 SerialNumber = guid,
                                 Name = device["Caption"]?.ToString() ?? string.Empty,
-                                Type = CameraType.VolumeCamera,
+                                Type = CameraType.ThreeDCamera,
                                 ConnectionType = CameraConnectionType.Usb,
                                 Id = i,
                             };

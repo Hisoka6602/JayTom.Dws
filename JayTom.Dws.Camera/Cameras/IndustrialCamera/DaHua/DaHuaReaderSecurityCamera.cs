@@ -5,12 +5,14 @@ using System.Drawing;
 using JayTom.Dws.Ocr;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
     /// <summary>
     /// 大华读码安防相机
     /// </summary>
+    [CameraBindableType(CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera)]
     public class DaHuaReaderSecurityCamera : IIndustrialCamera {
 
         public void Dispose() {

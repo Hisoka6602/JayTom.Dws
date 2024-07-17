@@ -195,7 +195,13 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 相机连接类型
         /// </summary>
-        public ConnectionType ConnectionType { get; set; }
+        public CameraConnectionType ConnectionType { get; set; }
+
+        /// <summary>
+        /// 相机绑定类型
+        /// </summary>
+
+        public CameraBindingType BindingType { get; set; }
 
         /// <summary>
         /// 图像点击事件
@@ -218,8 +224,7 @@ namespace JayTom.Dws.Client.Models {
         public ICommand? TakePhotoCommand { get; set; }
     }
 
-    public enum CameraStatus {
-
+    /*public enum CameraStatus {
         /// <summary>
         /// 运行中
         /// </summary>
@@ -242,7 +247,6 @@ namespace JayTom.Dws.Client.Models {
     }
 
     public enum CameraType {
-
         /// <summary>
         /// 工业相机
         /// </summary>
@@ -270,7 +274,6 @@ namespace JayTom.Dws.Client.Models {
     }
 
     public enum ConnectionType {
-
         /// <summary>
         /// USB连接
         /// </summary>
@@ -295,5 +298,5 @@ namespace JayTom.Dws.Client.Models {
         /// Tcp连接
         /// </summary>
         Tcp = 4
-    }
+    }*/
 }

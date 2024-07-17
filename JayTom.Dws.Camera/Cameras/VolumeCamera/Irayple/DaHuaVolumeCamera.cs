@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
+    [CameraBindableType(CameraBindingType.VolumeCamera)]
     public class DaHuaVolumeCamera : IVolumeCamera {
         private static IntPtr? _handle;
 
@@ -41,7 +43,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
         public DaHuaVolumeCamera(CameraInfo info) {
             this.Info = info;
-            this.Info.Type = CameraType.VolumeCamera;
+            this.Info.Type = CameraType.ThreeDCamera;
             _resultCb = (l, w, h, v) => {
                 OnVolumeCaptured(new VolumeCapturedEventArgs() {
                     Timestamp = DateTime.Now,

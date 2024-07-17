@@ -18,10 +18,12 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
+    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera)]
     public class HikvisionSmartCamera : ISmartCamera {
         private static MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _sdkDeviceList = new();
         private MvCodeReader? _mvCodeReader;

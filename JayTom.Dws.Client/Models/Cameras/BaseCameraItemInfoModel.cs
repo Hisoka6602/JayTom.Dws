@@ -1,4 +1,5 @@
 ﻿using Prism.Mvvm;
+using JayTom.Dws.Camera;
 
 namespace JayTom.Dws.Client.Models.Cameras {
 
@@ -9,7 +10,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private string _version = string.Empty;
         private string _ipAddress = string.Empty;
         private CameraType _cameraType;
-        private ConnectionType _connectionType = 0;
+        private CameraConnectionType _connectionType = 0;
         private int _num;
         private string _brand = string.Empty;
         private string _customName = string.Empty;
@@ -93,7 +94,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// 连接方式
         /// </summary>
 
-        public ConnectionType ConnectionType {
+        public CameraConnectionType ConnectionType {
             get => _connectionType;
             set => SetProperty(ref _connectionType, value);
         }

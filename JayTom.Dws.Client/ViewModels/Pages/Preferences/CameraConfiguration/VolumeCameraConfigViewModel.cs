@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
 using System.Windows;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
@@ -19,38 +20,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private readonly IDeviceService _deviceService;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
 
-        private ObservableCollection<VolumeCameraItemInfoModel> _volumeCameraItems = new()
-        {
-            new VolumeCameraItemInfoModel() {
-                Num = 1,
-                Name = "测试相机名称",
-                ConnectionType = ConnectionType.Ethernet,
-                CameraType = CameraType.IndustrialCamera,
-                SerialNumber = "1111-2222-3333-4444",
-                IpAddress = "192.168.0.1",
-                Model = "HK-6565",
-                VolumeMeasurementMode=0,
-                MinSyncTime=200,
-                MaxSyncTime=3000,
-                MinLength=1000,
-                MaxLength=3000,
-                TriggerMode=0,
-            },
-            new VolumeCameraItemInfoModel() {
-                Num = 2,
-                Name = "测试相机名称",
-                ConnectionType = ConnectionType.Ethernet,
-                CameraType = CameraType.IndustrialCamera,
-                SerialNumber = "1111-2222-3333-4444",
-                IpAddress = "192.168.0.1",
-                Model = "HK-6565",
-                VolumeMeasurementMode=0,
-                MinSyncTime=200,
-                MaxSyncTime=3000,
-                MinLength=1000,
-                MaxLength=3000,
-                TriggerMode=0,
-            },
+        private ObservableCollection<VolumeCameraItemInfoModel> _volumeCameraItems = new() {
         };
 
         private ObservableCollection<TriggerModeDisplay> _triggerModeDisplayItems = new()
@@ -89,7 +59,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             f.SerialNumber.Equals(model.SerialNumber));
                         if (infoModel is not null) {
                             VolumeCameraItems.Add(new VolumeCameraItemInfoModel() {
-                                ConnectionType = (ConnectionType)infoModel.ConnectionType,
+                                ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
                                 CameraType = (CameraType)infoModel.CameraType,
                                 IpAddress = infoModel.IpAddress,
                                 Name = infoModel.Name,
@@ -324,7 +294,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 await Task.Delay(100);
                 var infoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                 var itemInfoModels = infoModels.Select((s, i) => new VolumeCameraItemInfoModel() {
-                    ConnectionType = (ConnectionType)s.ConnectionType,
+                    ConnectionType = (CameraConnectionType)s.ConnectionType,
                     CameraType = (CameraType)s.CameraType,
                     IpAddress = s.IpAddress,
                     MaxSyncTime = s.MaxSyncTime,

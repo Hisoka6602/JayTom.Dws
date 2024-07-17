@@ -27,9 +27,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.StatusBarModels;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
-using CameraType = JayTom.Dws.Client.Models.CameraType;
-using CameraStatus = JayTom.Dws.Client.Models.CameraStatus;
-using ConnectionType = JayTom.Dws.Client.Models.ConnectionType;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
@@ -288,7 +285,8 @@ namespace JayTom.Dws.Client.ViewModels {
                                     CameraItems?.Add(new CameraItemInfoModel() {
                                         SerialNumber = camera?.Info?.SerialNumber ?? string.Empty,
                                         Type = (CameraType)(camera?.Info?.Type ?? Camera.CameraType.IndustrialCamera),
-                                        ConnectionType = (ConnectionType)(camera?.Info?.ConnectionType ?? CameraConnectionType.Unknown),
+                                        ConnectionType = (camera?.Info?.ConnectionType ?? CameraConnectionType.Unknown),
+                                        BindingType = camera?.BindingType ?? CameraBindingType.ScannerCamera,
                                         Status = CameraStatus.Running
                                     });
                                 }

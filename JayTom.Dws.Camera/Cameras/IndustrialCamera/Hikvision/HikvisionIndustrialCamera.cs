@@ -28,11 +28,13 @@ using JayTom.Dws.Camera.FilterContainer;
 using Rectangle = System.Drawing.Rectangle;
 using static System.Net.Mime.MediaTypeNames;
 using static MVIDCodeReaderNet.MVIDCodeReader;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
+    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera)]
     public class HikvisionIndustrialCamera : IIndustrialCamera {
         private int _nRet = MVIDCodeReader.MVID_CR_OK;
 
@@ -441,7 +443,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     }
                 }
             }
-            else if (BindingType is CameraBindingType.VideoCamera or CameraBindingType.OcrCamera) {
+            else if (BindingType is CameraBindingType.PanoramaCamera or CameraBindingType.OcrCamera) {
                 //注册不包含解码信息的回调
                 if (_readImageCallback is null) {
                     _readImageCallback = delegate (ref MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {

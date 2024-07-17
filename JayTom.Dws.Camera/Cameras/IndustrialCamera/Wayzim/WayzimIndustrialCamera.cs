@@ -13,9 +13,11 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
+    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera)]
     public class WayzimIndustrialCamera : IIndustrialCamera {
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private SemaphoreSlim _takeSlim = new(1, 1);

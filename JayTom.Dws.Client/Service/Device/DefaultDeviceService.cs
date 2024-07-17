@@ -172,8 +172,8 @@ namespace JayTom.Dws.Client.Service.Device {
                     Model = s.Model,
                     Name = s.Name,
                     IpAddress = s.IpAddress,
-                    ConnectionType = (ConnectionType)s.ConnectionType,
-                    CameraType = (JayTom.Dws.Client.Models.CameraType)ConvertCameraType(s.Brand, s.Model),
+                    ConnectionType = s.ConnectionType,
+                    CameraType = ConvertCameraType(s.Brand, s.Model),
                     Version = s.Version,
                     Brand = s.Brand,
                     IsOcrSupported = s.IsOcrSupported
@@ -571,7 +571,7 @@ namespace JayTom.Dws.Client.Service.Device {
                                             if (camera is not null) {
                                                 //设置绑定模式
                                                 camera.BindingType = CameraBindingType.PanoramaCamera;
-                                                camera.Info.Type = CameraType.PanoramaCamera;
+                                                camera.Info.Type = (CameraType)model.CameraType;
                                             }
                                         }
                                     }
@@ -903,7 +903,7 @@ namespace JayTom.Dws.Client.Service.Device {
             switch (brand) {
                 case not null when (brand.Contains("Hikrobot") || brand.Contains("Hikvision")):
                     if (modelName.Contains("MV-D")) {
-                        return CameraType.VolumeCamera;
+                        return CameraType.ThreeDCamera;
                     }
                     if (modelName.Contains("MV-ID"))
                         return CameraType.SmartCamera;
@@ -918,7 +918,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         || modelName.StartsWith("R") || modelName.StartsWith("S5"))
                         return CameraType.SmartCamera;
                     if (modelName.Contains("DH-MV-D"))
-                        return CameraType.VolumeCamera;
+                        return CameraType.ThreeDCamera;
                     break;
 
                 case not null when (brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
@@ -930,7 +930,7 @@ namespace JayTom.Dws.Client.Service.Device {
 
                 case not null when (brand.Contains("量方") /*|| info.Brand.Contains("Huaray")*/):
                     if (modelName.Contains("Orbbec"))
-                        return CameraType.VolumeCamera;
+                        return CameraType.ThreeDCamera;
                     break;
 
                 case not null when (brand.Contains("Microsoft") /*|| info.Brand.Contains("Huaray")*/):

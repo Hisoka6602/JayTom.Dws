@@ -21,9 +21,11 @@ using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Camera.FilterContainer;
 using static System.Net.Mime.MediaTypeNames;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
+    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera)]
     public class DaHuatechSecurityCamera : ISecurityCamera {
         private BaseDaHuatech _baseDaHuatech = BaseDaHuatech.CreateInstance();
         private SemaphoreSlim _snapRevPhotoSlim = new(1);

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Globalization;
 using System.Windows.Data;
+using System.Globalization;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters.CameraConverter {
 
     public class CameraGridHeightConverter : IValueConverter {
 

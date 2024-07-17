@@ -11,6 +11,7 @@ using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.BarCodeReader;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {

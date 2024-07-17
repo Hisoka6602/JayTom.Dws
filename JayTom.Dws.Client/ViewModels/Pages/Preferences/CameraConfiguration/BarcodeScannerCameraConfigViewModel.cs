@@ -1,17 +1,18 @@
-﻿using JayTom.Dws.Client.Models;
+﻿using System;
+using Prism.Mvvm;
+using System.Linq;
+using Prism.Commands;
+using System.Windows;
+using JayTom.Dws.Camera;
+using System.Windows.Input;
+using System.Threading.Tasks;
+using JayTom.Dws.Client.Models;
+using MaterialDesignThemes.Wpf;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using MaterialDesignThemes.Wpf;
-using Prism.Commands;
-using Prism.Mvvm;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -36,7 +37,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             f.SerialNumber.Equals(model.SerialNumber));
                         if (infoModel is not null) {
                             BarcodeScannerCameraItems.Add(new BarcodeScannerCameraItemInfoModel() {
-                                ConnectionType = (ConnectionType)infoModel.ConnectionType,
+                                ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
                                 CameraType = (CameraType)infoModel.CameraType,
                                 IpAddress = infoModel.IpAddress,
                                 IsShowRealTimeImage = infoModel.IsShowRealTimeImage,
@@ -205,7 +206,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 await Task.Delay(100);
                 var infoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                 var itemInfoModels = infoModels.Select((s, i) => new BarcodeScannerCameraItemInfoModel {
-                    ConnectionType = (ConnectionType)s.ConnectionType,
+                    ConnectionType = (CameraConnectionType)s.ConnectionType,
                     CameraType = (CameraType)s.CameraType,
                     IpAddress = s.IpAddress,
                     IsShowRealTimeImage = s.IsShowRealTimeImage,

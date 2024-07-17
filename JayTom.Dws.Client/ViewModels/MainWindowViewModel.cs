@@ -225,7 +225,7 @@ namespace JayTom.Dws.Client.ViewModels {
             EventAggregator.Instance.Publish(new WindowsAction {
                 Type = WindowsActionType.Close
             });
-            await Task.Delay(60);
+            await Task.Delay(300);
             System.Windows.Application.Current.Shutdown();//关闭
         }
 
@@ -298,7 +298,7 @@ namespace JayTom.Dws.Client.ViewModels {
 
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 NLog.LogManager.GetCurrentClassLogger().Error($"进入主页加载");
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 //加载配置需要有一个事件通知各个模块
                 //加载体积配置
                 //加载重量配置

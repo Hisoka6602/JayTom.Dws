@@ -15,9 +15,11 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
+    [CameraBindableType(CameraBindingType.ScannerCamera)]
     public class NormalUsbCamera : IIndustrialCamera {
         private UsbBarCodeReader? _usbBarCodeReader;
         private SemaphoreSlim _semaphoreSlim = new(1, 1);

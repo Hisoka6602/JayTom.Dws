@@ -2,9 +2,11 @@
 using NetSDKCS;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera {
 
@@ -250,32 +252,32 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 工业相机
         /// </summary>
+        [Description("工业相机"), CameraFontIcon("\xe9f5")]
         IndustrialCamera = 0,
-
-        /// <summary>
-        /// 全景相机
-        /// </summary>
-        PanoramaCamera = 1,
-
-        /// <summary>
-        /// 体积相机
-        /// </summary>
-        VolumeCamera = 2,
 
         /// <summary>
         /// 智能相机
         /// </summary>
-        SmartCamera = 3,
+        [Description("智能相机"), CameraFontIcon("\xe6ef")]
+        SmartCamera = 1,
+
+        /// <summary>
+        /// 3D相机
+        /// </summary>
+        [Description("3D相机/体积相机"), CameraFontIcon("\xea1a")]
+        ThreeDCamera = 2,
 
         /// <summary>
         /// 录像相机
         /// </summary>
-        VideoCamera = 4,
+        [Description("录像相机/安防"), CameraFontIcon("\xea0b")]
+        VideoCamera = 3,
 
         /// <summary>
-        /// 普通相机
+        /// Usb相机
         /// </summary>
-        StandardCamera = 5
+        [Description("UsbCamera"), CameraFontIcon("\xe9f5")]
+        UsbCamera = 4
     }
 
     /// <summary>
@@ -286,63 +288,69 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// USB连接
         /// </summary>
+        [CameraFontIcon("\xe7c5"), Description("USB连接")]
         Usb = 0,
 
         /// <summary>
         /// 网口连接
         /// </summary>
+        [CameraFontIcon("\xe631"), Description("网口连接")]
         Ethernet = 1,
 
         /// <summary>
         /// 串口连接
         /// </summary>
+        [CameraFontIcon("\xe62c"), Description("串口连接")]
         SerialPort = 2,
 
         /// <summary>
         /// 蓝牙连接
         /// </summary>
+        [CameraFontIcon("\xec4a"), Description("蓝牙连接")]
         Bluetooth = 3,
 
         /// <summary>
         /// Tcp连接
         /// </summary>
+        [CameraFontIcon("\xe62f"), Description("Tcp连接")]
         Tcp = 4,
 
         /// <summary>
         /// 未知连接
         /// </summary>
+        [CameraFontIcon("\xe71f"), Description("未知连接")]
         Unknown = 5
     }
 
     /// <summary>
     /// 相机绑定类型枚举
     /// </summary>
+    [Flags]
     public enum CameraBindingType {
 
         /// <summary>
         /// 扫码相机
         /// </summary>
+        [CameraFontIcon("\xe9f5"), CameraBackgroundColor("#4169E1"), Description("扫码相机")]
         ScannerCamera = 0,
 
         /// <summary>
         /// 全景相机
         /// </summary>
+        [CameraFontIcon("\xe605"), CameraBackgroundColor("#FF4169E1"), Description("全景相机")]
         PanoramaCamera = 1,
 
         /// <summary>
         /// 体积相机
         /// </summary>
+        [CameraFontIcon("\xea1a"), CameraBackgroundColor("#1E90FF"), Description("体积相机")]
         VolumeCamera = 2,
-
-        /// <summary>
-        /// 录像相机
-        /// </summary>
-        VideoCamera = 3,
 
         /// <summary>
         /// Ocr相机
         /// </summary>
-        OcrCamera = 4,
+        [CameraFontIcon("\xe7a3"), CameraBackgroundColor("#FF8C00"), Description("Ocr识别")]
+        OcrCamera = 3,
     }
 
     /// <summary>
@@ -353,36 +361,43 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 未初始化
         /// </summary>
+        [CameraBackgroundColor("#A9A9A9"), CameraFontIcon("\xe612")]
         Uninitialized,
 
         /// <summary>
         /// 已连接
         /// </summary>
+        [CameraBackgroundColor("#A9A9A9"), CameraFontIcon("\xe612")]
         Connected,
 
         /// <summary>
         /// 已初始化
         /// </summary>
+        [CameraBackgroundColor("#A9A9A9"), CameraFontIcon("\xe612")]
         Initialized,
 
         /// <summary>
         /// 运行中
         /// </summary>
+        [CameraBackgroundColor("#32CD32"), CameraFontIcon("\xe693")]
         Running,
 
         /// <summary>
         /// 未连接
         /// </summary>
+        [CameraBackgroundColor("#A9A9A9"), CameraFontIcon("\xe612")]
         Disconnected,
 
         /// <summary>
         /// 故障
         /// </summary>
+        [CameraBackgroundColor("#FF4500"), CameraFontIcon("\xe612")]
         Failure,
 
         /// <summary>
         /// 暂停中
         /// </summary>
+        [CameraBackgroundColor("#FF8C00"), CameraFontIcon("\xea82")]
         Paused
     }
 
