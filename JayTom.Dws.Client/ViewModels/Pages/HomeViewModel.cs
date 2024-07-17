@@ -677,7 +677,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             if (model is not null && args.Image is not null &&
                 model.Image is not null) {
                 if (model.IsRealtimeImageEnabled) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"-推送到实时画面图片");
                     model.BitmapQueue.Enqueue(args.Image);
                 }
             }
