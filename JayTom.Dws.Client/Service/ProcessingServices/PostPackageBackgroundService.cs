@@ -425,13 +425,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             return;
                         }
                         //动态时间
-                        var milliseconds = DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds;
+                        /*var milliseconds = DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds;
                         if (milliseconds < 50) {
                             await Task.Delay((int)(50 - milliseconds));
                         }
                         else {
                             NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹到现在的间隔:{milliseconds}ms");
-                        }
+                        }*/
 
                         var singleGrayscaleSensorResult = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
 
@@ -469,9 +469,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 PackagePositionInfo = new PackagePositionInfo() {
                                     CenterX = packageInfo.GrayscaleResultInfo.CenterPoint.X,
                                     CenterY = packageInfo.GrayscaleResultInfo.CenterPoint.Y,
-                                    OffsetDirection = (OffsetDirection)(packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.PackageOrientation ?? PackageOrientation.Left),
-                                    OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OrientationValue ?? 0,
-                                    OffsetPercentage = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault()?.OffsetPercentage ?? 0
+                                    OffsetDirection = (OffsetDirection)(packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio > (decimal)0.15)?.PackageOrientation ?? PackageOrientation.Left),
+                                    OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio > (decimal)0.15)?.OrientationValue ?? 0,
+                                    OffsetPercentage = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio > (decimal)0.15)?.OffsetPercentage ?? 0
                                 },
                             });
                             //如果是没包裹则返回
