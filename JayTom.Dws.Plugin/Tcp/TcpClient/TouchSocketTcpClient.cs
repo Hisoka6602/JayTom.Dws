@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpClient {
+
     public class TouchSocketTcpClient : ITcpCommClient {
         private TouchSocket.Sockets.TcpClient? _tcpClient;
         public string IpAddress { get; private set; } = string.Empty;
@@ -103,7 +104,6 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         return true;
                     }
                 }
-
             }
             else {
                 do {
@@ -208,9 +208,11 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 else {
                     OnException(
                         new Exception($"IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}"));
+                    NLog.LogManager.GetCurrentClassLogger().Error($"未连接:IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}");
                 }
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 OnSendError(e);
                 return false;
             }

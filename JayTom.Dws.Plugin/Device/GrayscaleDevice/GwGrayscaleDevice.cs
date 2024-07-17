@@ -23,7 +23,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
     [Description("归位灰度仪x02,上层判断小车数量")]
     public class GwGrayscaleDevice : BaseTcpOperations, IGrayscaleDevice {
         private ConcurrentQueue<GrayscaleResult> _grayscaleResult = new();
-
+        private DateTime _lastSendDateTime = DateTime.Now;
         public static Coordinates AttachmentRectangleBoxCoordinates { get; private set; } = new(0, 0, 600, 200);
         public static Coordinates MainRectangleBoxCoordinates { get; private set; } = new(0, 0, 600, 600);
 
@@ -59,7 +59,11 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         public event EventHandler? ParcelLocationNotReceived;
 
         public async Task<bool> SendCarNumber(int carNumber, CancellationToken token) {
-            await Task.Yield();
+            var milliseconds = DateTime.Now.Subtract(_lastSendDateTime).TotalMilliseconds;
+            if (milliseconds < 290) {
+                await Task.Delay((int)(290 - milliseconds), token);
+                _lastSendDateTime = DateTime.Now;
+            }
             if (carNumber is > 0 and < 1000) {
                 var array = $":s{carNumber.ToString().PadLeft(3, '0')}\r\n".Select(c => (byte)c).ToArray();
                 return await base.SendMessage(array, token);
@@ -68,7 +72,12 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         }
 
         public async Task<GrayscaleResult> SendCarNumber(int carNumber, int timeOut, CancellationToken token = default) {
-            await Task.Yield();
+            var milliseconds = DateTime.Now.Subtract(_lastSendDateTime).TotalMilliseconds;
+            if (milliseconds < 290) {
+                await Task.Delay((int)(290 - milliseconds), token);
+                _lastSendDateTime = DateTime.Now;
+            }
+
             NLog.LogManager.GetCurrentClassLogger().Info("请求获取灰度仪信息");
             carNumber = CarCircularArray[carNumber + CarNumberOffset];
             if (carNumber is > 0 and < 1000) {
