@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.CloudConfig {
+    //这里的外键需要连扫码相机(可空外键)
 
     [Table("Conf_NvrCameraBindingInfo", Schema = "dbo")]
     public class NvrCameraBindingInfoModel : BaseModel {
@@ -42,10 +43,10 @@ namespace JayTom.Dws.Data.LocalConf.CloudConfig {
         [Column("Channel"), Required]
         public int Channel { get; set; }
 
-        /// <summary>
+        /*/// <summary>
         /// 扫码相机序列号
         /// </summary>
         [Column("BarcodeScannerSerialNumber"), Required]
-        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;
+        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;*/
     }
 }
