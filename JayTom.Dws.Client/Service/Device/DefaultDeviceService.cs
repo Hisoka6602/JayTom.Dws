@@ -325,15 +325,15 @@ namespace JayTom.Dws.Client.Service.Device {
                 //保存绑定参数
                 _cameraParameters.Clear();
                 _cameraParameters.AddRange(scannerCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                    Type = BoundCameraType.BarcodeScannerCamera,
+                    Type = CameraBindingType.ScannerCamera,
                     Parameters = s
                 })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                 _cameraParameters.AddRange(panoramaCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                    Type = BoundCameraType.PanoramaCamera,
+                    Type = CameraBindingType.PanoramaCamera,
                     Parameters = s
                 })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                 _cameraParameters.AddRange(volumeCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                    Type = BoundCameraType.VolumeCamera,
+                    Type = CameraBindingType.VolumeCamera,
                     Parameters = s
                 })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
 
@@ -522,15 +522,15 @@ namespace JayTom.Dws.Client.Service.Device {
 
                     _cameraParameters.Clear();
                     _cameraParameters.AddRange(scannerCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                        Type = BoundCameraType.BarcodeScannerCamera,
+                        Type = CameraBindingType.ScannerCamera,
                         Parameters = s
                     })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                     _cameraParameters.AddRange(panoramaCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                        Type = BoundCameraType.PanoramaCamera,
+                        Type = CameraBindingType.PanoramaCamera,
                         Parameters = s
                     })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
                     _cameraParameters.AddRange(volumeCameraConfigInfoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                        Type = BoundCameraType.VolumeCamera,
+                        Type = CameraBindingType.VolumeCamera,
                         Parameters = s
                     })?.ToList() ?? new List<CameraParametersModifiedEventArgs>());
 
@@ -540,7 +540,7 @@ namespace JayTom.Dws.Client.Service.Device {
                         ICamera? camera = null;
                         //创建对象
                         switch (parameter.Type) {
-                            case BoundCameraType.BarcodeScannerCamera: {
+                            case CameraBindingType.ScannerCamera: {
                                     //扫码相机
                                     if (parameter.Parameters is BarcodeScannerCameraConfigInfoModel model) {
                                         var tryGetValue = _cameraInfos.TryGetValue(model.SerialNumber, out var info);
@@ -561,7 +561,7 @@ namespace JayTom.Dws.Client.Service.Device {
 
                                     break;
                                 }
-                            case BoundCameraType.PanoramaCamera: {
+                            case CameraBindingType.PanoramaCamera: {
                                     //全景相机
                                     if (parameter.Parameters is PanoramaCameraConfigInfoModel model) {
                                         var tryGetValue = _cameraInfos.TryGetValue(model.SerialNumber, out var info);
@@ -578,7 +578,7 @@ namespace JayTom.Dws.Client.Service.Device {
 
                                     break;
                                 }
-                            case BoundCameraType.VolumeCamera: {
+                            case CameraBindingType.VolumeCamera: {
                                     //体积相机
                                     if (parameter.Parameters is VolumeCameraConfigInfoModel model) {
                                         var tryGetValue = _cameraInfos.TryGetValue(model.SerialNumber, out var info);

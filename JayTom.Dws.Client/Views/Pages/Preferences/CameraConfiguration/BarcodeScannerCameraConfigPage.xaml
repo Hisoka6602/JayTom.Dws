@@ -10,6 +10,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     Name="BarcodeScannerCameraConfigView"
     Title="BarcodeScannerCameraConfigPage"
     d:DesignHeight="450"
@@ -23,7 +24,7 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
-        <converters:CameraTypeToolTipConverter x:Key="CameraTypeToolTipConverter" />
+        <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
     </Page.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -209,7 +210,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}"
+                    Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter},ConverterParameter=ToolTip}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>

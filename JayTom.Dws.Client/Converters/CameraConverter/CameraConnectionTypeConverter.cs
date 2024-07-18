@@ -4,6 +4,7 @@ using System.Text;
 using JayTom.Dws.Camera;
 using System.Windows.Data;
 using System.Globalization;
+using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Camera.Attributes;
@@ -19,7 +20,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
                     return type.GetCameraFontIcon();
                 }
                 else if (parameter?.ToString()?.Equals("color", StringComparison.CurrentCultureIgnoreCase) == true) {
-                    return type.GetCameraLabelColor();
+                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(type.GetCameraBackgroundColor()));
                 }
                 else if (parameter?.ToString()?.Equals("ToolTip", StringComparison.CurrentCultureIgnoreCase) == true) {
                     return type.GetDescription();

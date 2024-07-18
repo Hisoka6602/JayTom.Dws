@@ -311,7 +311,7 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <summary>
         /// 已绑定类型
         /// </summary>
-        public BoundCameraType Type { get; set; }
+        public CameraBindingType Type { get; set; }
 
         /// <summary>
         /// 参数

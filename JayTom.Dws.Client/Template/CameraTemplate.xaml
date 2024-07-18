@@ -2,20 +2,18 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:interactivity="http://prismlibrary.com/"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:models="clr-namespace:JayTom.Dws.Client.Models">
 
-    <converters:CameraStatusColorConverter x:Key="CameraStatusColorConverter" />
-    <converters:CameraTypeFontConverter x:Key="CameraTypeFontConverter" />
-    <converters:CameraTypeToolTipConverter x:Key="CameraTypeToolTipConverter" />
-    <converters:CameraStatusReadyFontConverter x:Key="CameraStatusReadyFontConverter" />
-    <converters:CameraConnectionTypeFontConverter x:Key="CameraConnectionTypeFontConverter" />
-    <converters:CameraConnectionTypeToolTipConverter x:Key="CameraConnectionTypeToolTipConverter" />
+    <cameraConverter:CameraStatusConverter x:Key="CameraStatusConverter" />
+    <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
+    <cameraConverter:CameraConnectionTypeConverter x:Key="CameraConnectionTypeConverter" />
     <converters:RectConverter x:Key="RectConverter" />
-    <converters:CameraGridWidthConverter x:Key="CameraGridWidthConverter" />
-    <converters:CameraGridHeightConverter x:Key="CameraGridHeightConverter" />
+    <cameraConverter:CameraGridWidthConverter x:Key="CameraGridWidthConverter" />
+    <cameraConverter:CameraGridHeightConverter x:Key="CameraGridHeightConverter" />
     <!--  CameraGridHeightConverter  -->
     <DataTemplate x:Key="CameraTemplate" DataType="{x:Type models:CameraItemInfoModel}">
         <materialDesign:Card
@@ -89,7 +87,7 @@
                         Height="3"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Center"
-                        Background="{Binding Status, Converter={StaticResource CameraStatusColorConverter}}" />
+                        Background="{Binding Status, Converter={StaticResource CameraStatusConverter}, ConverterParameter=Color}" />
                     <Ellipse
                         Grid.Row="0"
                         Width="15"
@@ -97,7 +95,7 @@
                         Margin="30,0,0,0"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Fill="{Binding Status, Converter={StaticResource CameraStatusColorConverter}}" />
+                        Fill="{Binding Status, Converter={StaticResource CameraStatusConverter}, ConverterParameter=Color}" />
                 </Grid>
 
                 <!--  其他内容  -->
@@ -240,8 +238,8 @@
                                 FontFamily="pack://application:,,,/Fonts/#iconfont"
                                 FontSize="25"
                                 Foreground="DimGray"
-                                Text="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeFontConverter}}"
-                                ToolTip="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}" />
+                                Text="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter}, ConverterParameter=Font}"
+                                ToolTip="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter}, ConverterParameter=ToolTip}" />
                             <!--  分割线  -->
                             <Rectangle
                                 Width="1"
@@ -256,8 +254,8 @@
                                 FontFamily="pack://application:,,,/Fonts/#iconfont"
                                 FontSize="20"
                                 Foreground="DimGray"
-                                Text="{Binding ConnectionType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraConnectionTypeFontConverter}}"
-                                ToolTip="{Binding ConnectionType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraConnectionTypeToolTipConverter}}" />
+                                Text="{Binding ConnectionType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraConnectionTypeConverter}, ConverterParameter=Font}"
+                                ToolTip="{Binding ConnectionType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraConnectionTypeConverter}, ConverterParameter=ToolTip}" />
                         </StackPanel>
                         <!--  相机名称  -->
                         <TextBlock

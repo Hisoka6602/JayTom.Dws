@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
@@ -23,7 +24,7 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
-        <converters:CameraTypeToolTipConverter x:Key="CameraTypeToolTipConverter" />
+        <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
     </Page.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -222,7 +223,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}"
+                    Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter}, ConverterParameter=ToolTip}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>

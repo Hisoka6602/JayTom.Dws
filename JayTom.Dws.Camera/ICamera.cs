@@ -337,7 +337,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 全景相机
         /// </summary>
-        [CameraFontIcon("\xe605"), CameraBackgroundColor("#FF4169E1"), Description("全景相机")]
+        [CameraFontIcon("\xe605"), CameraBackgroundColor("#8A2BE2"), Description("全景相机")]
         PanoramaCamera = 1,
 
         /// <summary>

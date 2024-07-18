@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             _deviceService = deviceService;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _deviceService.CameraBound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                if (model.BoundType == BoundCameraType.PanoramaCamera) {
+                if (model.BoundType == CameraBindingType.PanoramaCamera) {
                     await Application.Current.Dispatcher.InvokeAsync(async () => {
                         //增加到集合,从数据库获取
                         var infoModel = await _panoramaCameraConfigRepository.FirstOrDefault(f =>
@@ -110,7 +110,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var delete = await _panoramaCameraConfigRepository.Delete(model);
                     if (delete) {
                         var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel() {
-                            BoundType = BoundCameraType.BarcodeScannerCamera,
+                            BoundType = CameraBindingType.ScannerCamera,
                             ConnectionType = obj.ConnectionType,
                             HasBinding = false,
                             IpAddress = obj.IpAddress,
@@ -150,7 +150,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         {
                             new()
                             {
-                                Type = BoundCameraType.PanoramaCamera,
+                                Type = CameraBindingType.PanoramaCamera,
                                 Parameters = infoModel
                             }
                         });
@@ -181,7 +181,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var updateRange = await _panoramaCameraConfigRepository.UpdateRange(infoModels);
                     if (updateRange) {
                         var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs {
-                            Type = BoundCameraType.PanoramaCamera,
+                            Type = CameraBindingType.PanoramaCamera,
                             Parameters = infoModels
                         })?.ToList();
 

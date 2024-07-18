@@ -9,6 +9,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     Title="StatusBarPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -19,7 +20,7 @@
         <converters:ListBackgroundVisibleConverter x:Key="ListBackgroundVisibleConverter" />
         <converters:ExceptionFlagColorConverter x:Key="ExceptionFlagColorConverter" />
         <converters:NullStatusFlagColorConverter x:Key="NullStatusFlagColorConverter" />
-        <converters:CameraStatusSummaryColorConverter x:Key="CameraStatusSummaryColorConverter" />
+        <cameraConverter:CameraStatusSummaryColorConverter x:Key="CameraStatusSummaryColorConverter" />
         <converters:SerialPortStatusSummaryColorConverter x:Key="SerialPortStatusSummaryColorConverter" />
         <converters:MemoryRemainingColorConverter x:Key="MemoryRemainingColorConverter" />
         <converters:ComputerColorConverter x:Key="ComputerColorConverter" />

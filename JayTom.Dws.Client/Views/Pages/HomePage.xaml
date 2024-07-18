@@ -13,6 +13,7 @@
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
     xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     x:Name="HomePageView"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -25,7 +26,7 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
-        <converters:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
+        <cameraConverter:CameraListBoxWidthConverter x:Key="CameraListBoxWidthConverter" />
         <converters:EllipseCenterConverter x:Key="EllipseCenterConverter" />
         <converters:RunningStatusConverter x:Key="RunningStatusConverter" />
         <converters:HalfHeightConverter x:Key="HalfHeightConverter" />

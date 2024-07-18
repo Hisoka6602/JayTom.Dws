@@ -476,7 +476,7 @@
                 <DataGridTextColumn
                     Width="130"
                     MinWidth="130"
-                    Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeToolTipConverter}}"
+                    Binding="{Binding CameraType, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter}, ConverterParameter=ToolTip}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -628,7 +628,7 @@
                                         Margin="0"
                                         Padding="0"
                                         materialDesign:ButtonAssist.CornerRadius="5,0,0,5"
-                                        Background="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Color}"
+                                        Background="{Binding BoundType, Converter={StaticResource CameraBindingTypeConverter}, ConverterParameter=Color}"
                                         Style="{StaticResource ButtonFocusEnlargeStyle}">
                                         <TextBlock
                                             Margin="2"
@@ -639,7 +639,7 @@
                                             FontWeight="Bold"
                                             Foreground="White"
                                             RenderTransformOrigin=".5,.5">
-                                            <Run Text="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Text}" />
+                                            <Run Text="{Binding BoundType, Converter={StaticResource CameraBindingTypeConverter}, ConverterParameter=ToolTip}" />
                                         </TextBlock>
                                     </Button>
                                     <!--  解绑  -->

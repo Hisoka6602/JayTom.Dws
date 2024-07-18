@@ -5,7 +5,7 @@
     xmlns:cameras="clr-namespace:JayTom.Dws.Client.Models.Cameras"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
-    <cameraConverter:BoundCameraTypeConverter x:Key="BoundCameraTypeConverter" />
+    <cameraConverter:CameraBindingTypeConverter x:Key="CameraBindingTypeConverter" />
     <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
     <cameraConverter:BoundCameraTypeCornerRadiusConverter x:Key="BoundCameraTypeCornerRadiusConverter" />
     <cameraConverter:BoundCameraTypeVisibilityConverter x:Key="BoundCameraTypeVisibilityConverter" />
@@ -290,7 +290,7 @@
                             Margin="0"
                             Padding="0"
                             materialDesign:ButtonAssist.CornerRadius="5,0,0,5"
-                            Background="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Color}"
+                            Background="{Binding BoundType, Converter={StaticResource CameraBindingTypeConverter}, ConverterParameter=Color}"
                             Style="{StaticResource ButtonFocusEnlargeStyle}"
                             ToolTip="NextPage">
                             <TextBlock
@@ -302,7 +302,7 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 RenderTransformOrigin=".5,.5">
-                                <Run Text="已绑定" /><Run Text="{Binding BoundType, Converter={StaticResource BoundCameraTypeConverter}, ConverterParameter=Text}" />
+                                <Run Text="已绑定" /><Run Text="{Binding BoundType, Converter={StaticResource CameraBindingTypeConverter}, ConverterParameter=ToolTip}" />
                             </TextBlock>
                         </Button>
                         <!--  绑定到体积相机  -->

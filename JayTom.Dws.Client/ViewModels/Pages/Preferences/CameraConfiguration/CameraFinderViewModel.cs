@@ -116,7 +116,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     var panoramaCameraConfigInfoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     var volumeCameraConfigInfoModels = await _volumeCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
                     infoModels.AddRange(scannerCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                        BoundType = s.IsOcrSupported ? BoundCameraType.OcrCamera : BoundCameraType.BarcodeScannerCamera,
+                        BoundType = s.IsOcrSupported ? CameraBindingType.OcrCamera : CameraBindingType.ScannerCamera,
                         ConnectionType = (CameraConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
@@ -129,7 +129,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         IsOcrSupported = s.IsOcrSupported,
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(panoramaCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                        BoundType = BoundCameraType.PanoramaCamera,
+                        BoundType = CameraBindingType.PanoramaCamera,
                         ConnectionType = (CameraConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
@@ -141,7 +141,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Version = s.Version,
                     })?.ToList() ?? new List<CameraFinderItemInfoModel>());
                     infoModels.AddRange(volumeCameraConfigInfoModels.Select(s => new CameraFinderItemInfoModel {
-                        BoundType = BoundCameraType.VolumeCamera,
+                        BoundType = CameraBindingType.VolumeCamera,
                         ConnectionType = (CameraConnectionType)s.ConnectionType,
                         CameraType = (CameraType)s.CameraType,
                         HasBinding = true,
@@ -162,7 +162,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             if (!_ocrSettingsDto.IsUseOcr) {
                                 //判断是否开启Ocr算法
                                 if (infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))
-                                        ?.BoundType == BoundCameraType.OcrCamera) {
+                                        ?.BoundType == CameraBindingType.OcrCamera) {
                                     UnbindDelegate(list[i]);
                                     hasBinding = false;
                                 }
@@ -171,7 +171,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             hasBinding ??= infoModels?.Any(a => a.SerialNumber.Equals(list[i].SerialNumber)) ?? false;
                             list[i].HasBinding = hasBinding ?? false;
                             list[i].BoundType = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.BoundType ??
-                                                BoundCameraType.BarcodeScannerCamera;
+                                                CameraBindingType.ScannerCamera;
                             list[i].CustomName = infoModels?.FirstOrDefault(f => f.SerialNumber.Equals(list[i].SerialNumber))?.CustomName ??
                                                 string.Empty;
                         }
@@ -186,7 +186,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value) ?? new OcrSettingsDto();
                         if (!_ocrSettingsDto.IsUseOcr) {
                             //判断有没有Ocr相机
-                            var itemInfoModels = CameraFinderItems.Where(w => w.BoundType == BoundCameraType.OcrCamera)?.ToList();
+                            var itemInfoModels = CameraFinderItems.Where(w => w.BoundType == CameraBindingType.OcrCamera)?.ToList();
                             if (itemInfoModels?.Any() == true) {
                                 foreach (var cameraFinderItemInfoModel in itemInfoModels) {
                                     //解绑
@@ -369,7 +369,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     //从数据库修改或增加
                     //触发修改事件
                     obj.HasBinding = true;
-                    obj.BoundType = BoundCameraType.PanoramaCamera;
+                    obj.BoundType = CameraBindingType.PanoramaCamera;
                     var (key, value) = await _deviceService.OnCameraBound(obj);
                     if (!key) {
                         obj.HasBinding = false;
@@ -438,7 +438,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     //从数据库修改或增加
                     //触发修改事件
                     obj.HasBinding = true;
-                    obj.BoundType = BoundCameraType.BarcodeScannerCamera;
+                    obj.BoundType = CameraBindingType.ScannerCamera;
                     var (key, value) = await _deviceService.OnCameraBound(obj);
                     if (!key) {
                         obj.HasBinding = false;
@@ -504,7 +504,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     //从数据库修改或增加
                     //触发修改事件
                     obj.HasBinding = true;
-                    obj.BoundType = BoundCameraType.OcrCamera;
+                    obj.BoundType = CameraBindingType.OcrCamera;
                     var (key, value) = await _deviceService.OnCameraBound(obj);
                     if (!key) {
                         obj.HasBinding = false;
@@ -553,7 +553,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     //从数据库修改或增加
                     //触发修改事件
                     obj.HasBinding = true;
-                    obj.BoundType = BoundCameraType.VolumeCamera;
+                    obj.BoundType = CameraBindingType.VolumeCamera;
                     var (key, value) = await _deviceService.OnCameraBound(obj);
                     if (!key) {
                         obj.HasBinding = false;
@@ -581,7 +581,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             var isSuccess = false;
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
-                if (obj.BoundType is BoundCameraType.BarcodeScannerCamera or BoundCameraType.OcrCamera) {
+                if (obj.BoundType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera) {
                     //从扫码相机删除
                     var model = await _barcodeScannerCameraConfigRepository.
                         FirstOrDefault(s =>
@@ -590,7 +590,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = await _barcodeScannerCameraConfigRepository.Delete(model);
                     }
                 }
-                else if (obj.BoundType == BoundCameraType.PanoramaCamera) {
+                else if (obj.BoundType == CameraBindingType.PanoramaCamera) {
                     //从全景相机删除
                     var model = await _panoramaCameraConfigRepository.
                         FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
@@ -598,7 +598,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         isSuccess = await _panoramaCameraConfigRepository.Delete(model);
                     }
                 }
-                else if (obj.BoundType == BoundCameraType.VolumeCamera) {
+                else if (obj.BoundType == CameraBindingType.VolumeCamera) {
                     //从体积相机删除
                     var model = await _volumeCameraConfigRepository.
                         FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
@@ -721,7 +721,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //更新
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 if (obj.HasBinding) {
-                    if (obj.BoundType is BoundCameraType.OcrCamera or BoundCameraType.BarcodeScannerCamera) {
+                    if (obj.BoundType is CameraBindingType.OcrCamera or CameraBindingType.ScannerCamera) {
                         var barcodeScannerCameraConfigInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
                             f.SerialNumber.Equals(obj.SerialNumber));
                         if (barcodeScannerCameraConfigInfoModel is not null) {
@@ -732,7 +732,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             }
                         }
                     }
-                    else if (obj.BoundType is BoundCameraType.PanoramaCamera) {
+                    else if (obj.BoundType is CameraBindingType.PanoramaCamera) {
                         var panoramaCameraConfigInfoModel = await _panoramaCameraConfigRepository.
                             FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
                         if (panoramaCameraConfigInfoModel is not null) {
@@ -744,7 +744,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             }
                         }
                     }
-                    else if (obj.BoundType is BoundCameraType.VolumeCamera) {
+                    else if (obj.BoundType is CameraBindingType.VolumeCamera) {
                         var volumeCameraConfigInfoModel = await _volumeCameraConfigRepository.
                             FirstOrDefault(f =>
                                 f.SerialNumber.Equals(obj.SerialNumber));

@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
@@ -12,6 +13,7 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Models.Cameras;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
+
     public class ScanCameraSelectionDialogViewModel : BindableBase, IDialogAware {
         private ObservableCollection<CameraFinderItemInfoModel> _cameras = new();
         private CameraFinderItemInfoModel _selectedCamera = new();
@@ -35,7 +37,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public void OnDialogOpened(IDialogParameters parameters) {
             var infoModels = parameters.GetValue<ObservableCollection<CameraFinderItemInfoModel>>("Cameras")?
-                .Where(w => w is { HasBinding: true, BoundType: BoundCameraType.OcrCamera or BoundCameraType.BarcodeScannerCamera })
+                .Where(w => w is { HasBinding: true, BoundType: CameraBindingType.OcrCamera or CameraBindingType.ScannerCamera })
                 ?.ToList();
             Cameras.AddRange(infoModels);
         }
@@ -56,9 +58,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             OnRequestClose(new DialogResult(ButtonResult.OK, new DialogParameters()
             {
                 {"SelectedCamera",SelectedCamera},
-
             }));
-
         }
 
         public string Title => "全景绑定";
