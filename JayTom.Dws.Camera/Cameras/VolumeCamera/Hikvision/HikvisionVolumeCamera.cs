@@ -18,7 +18,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
-    [CameraBindableType(CameraBindingType.VolumeCamera)]
     public class HikvisionVolumeCamera : IVolumeCamera {
         private static MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO_LIST _mStDeviceList = new();
         private MvVolmeasure.NET.MvVolmeasure? _mCsVolMeasure;
@@ -62,6 +61,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         public CameraStatus Status { get; private set; } = CameraStatus.Uninitialized;
         public CameraBindingType BindingType { get; set; } = CameraBindingType.VolumeCamera;
 
+        public CameraBindingType SupportedBindingType => CameraBindingType.VolumeCamera;
+
         public async Task<List<CameraInfo>?> EnumerateCameras() {
             await Task.Yield();
             var cameras = new List<CameraInfo>();
@@ -96,6 +97,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                                 ? CameraConnectionType.Usb
                                 : CameraConnectionType.Unknown),
                         Id = i,
+                        SupportedBindingType = CameraBindingType.VolumeCamera
                     };
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                     cameras.Add(cameraInfo);

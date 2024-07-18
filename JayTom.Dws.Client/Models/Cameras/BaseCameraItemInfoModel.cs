@@ -14,6 +14,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private int _num;
         private string _brand = string.Empty;
         private string _customName = string.Empty;
+        private CameraBindingType _supportedBindingType;
 
         /// <summary>
         /// 序号
@@ -97,6 +98,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public CameraConnectionType ConnectionType {
             get => _connectionType;
             set => SetProperty(ref _connectionType, value);
+        }
+
+        /// <summary>
+        /// 支持的绑定方式
+        /// </summary>
+        public CameraBindingType SupportedBindingType {
+            get => _supportedBindingType;
+            set => SetProperty(ref _supportedBindingType, value);
         }
     }
 }

@@ -81,6 +81,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 Model = s.Model,
                 Version = s.Version,
                 ConnectionType = CameraConnectionType.Ethernet,
+                SupportedBindingType = CameraBindingType.ScannerCamera |
+                                       CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera
             })?.ToList();
 
             if (infos?.Any() == true) {

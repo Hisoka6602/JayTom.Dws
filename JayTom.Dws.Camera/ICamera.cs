@@ -218,6 +218,11 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         public string CustomName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 支持绑定的类型
+        /// </summary>
+        public CameraBindingType SupportedBindingType { get; set; }
+
         public override bool Equals(object? obj) {
             if (obj == null || GetType() != obj.GetType())
                 return false;
@@ -332,25 +337,25 @@ namespace JayTom.Dws.Camera {
         /// 扫码相机
         /// </summary>
         [CameraFontIcon("\xe9f5"), CameraBackgroundColor("#4169E1"), Description("扫码相机")]
-        ScannerCamera = 0,
+        ScannerCamera = 1 << 0,
 
         /// <summary>
         /// 全景相机
         /// </summary>
         [CameraFontIcon("\xe605"), CameraBackgroundColor("#8A2BE2"), Description("全景相机")]
-        PanoramaCamera = 1,
+        PanoramaCamera = 1 << 1,
 
         /// <summary>
         /// 体积相机
         /// </summary>
         [CameraFontIcon("\xea1a"), CameraBackgroundColor("#1E90FF"), Description("体积相机")]
-        VolumeCamera = 2,
+        VolumeCamera = 1 << 2,
 
         /// <summary>
         /// Ocr相机
         /// </summary>
         [CameraFontIcon("\xe7a3"), CameraBackgroundColor("#FF8C00"), Description("Ocr识别")]
-        OcrCamera = 3,
+        OcrCamera = 1 << 3,
     }
 
     /// <summary>

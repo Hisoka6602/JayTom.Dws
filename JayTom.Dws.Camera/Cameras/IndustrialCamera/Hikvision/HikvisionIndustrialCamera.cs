@@ -34,7 +34,6 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
-    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera)]
     public class HikvisionIndustrialCamera : IIndustrialCamera {
         private int _nRet = MVIDCodeReader.MVID_CR_OK;
 
@@ -131,7 +130,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         //如果是海康的工业相机则支持
                         IsOcrSupported = ((stDevInfo.chManufacturerName?.Contains("Hikrobot") == true ||
                                            stDevInfo.chManufacturerName?.Contains("Hikvision") == true) &&
-                                          stDevInfo.chModelName?.StartsWith("MV-PD") == true)
+                                          stDevInfo.chModelName?.StartsWith("MV-PD") == true),
+                        SupportedBindingType =
+                            CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera
                     };
                     if (cameraInfo.Model.StartsWith("MV-PD")) {
                         _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);

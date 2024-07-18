@@ -12,7 +12,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
-    [CameraBindableType(CameraBindingType.VolumeCamera)]
     public class DimensionVolumeCamera : IVolumeCamera {
         private DimensionVolumeSdk? _dimensionVolumeSdk = null;
         private SemaphoreSlim _volumelim = new(1);
@@ -90,6 +89,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                                 Type = CameraType.ThreeDCamera,
                                 ConnectionType = CameraConnectionType.Usb,
                                 Id = i,
+                                SupportedBindingType = CameraBindingType.VolumeCamera
                             };
                             _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                             cameras.Add(cameraInfo);

@@ -25,7 +25,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
-    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera)]
     public class DaHuatechSecurityCamera : ISecurityCamera {
         private BaseDaHuatech _baseDaHuatech = BaseDaHuatech.CreateInstance();
         private SemaphoreSlim _snapRevPhotoSlim = new(1);
@@ -85,6 +84,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     Type = CameraType.VideoCamera,
                     Version = deviceNetInfoExe.szDevSoftVersion,
                     //IsAvailable = (s.Value.byInitStatus & 0x1) != 1
+                    SupportedBindingType = CameraBindingType.ScannerCamera |
+                                            CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera
                 })) {
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                     cameraInfos.Add(cameraInfo);

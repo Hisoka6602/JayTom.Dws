@@ -23,7 +23,6 @@ using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
-    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera)]
     public class HikvisionSmartCamera : ISmartCamera {
         private static MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _sdkDeviceList = new();
         private MvCodeReader? _mvCodeReader;
@@ -110,7 +109,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         Id = i,
                         IsOcrSupported = ((stGigEDeviceInfo.chManufacturerName?.Contains("Hikrobot") == true ||
                                            stGigEDeviceInfo.chManufacturerName?.Contains("Hikvision") == true) &&
-                                          stGigEDeviceInfo.chModelName?.StartsWith("MV-ID") == true)
+                                          stGigEDeviceInfo.chModelName?.StartsWith("MV-ID") == true),
+                        SupportedBindingType = CameraBindingType.ScannerCamera |
+                                               CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera
                     };
                     if (cameraInfo.Model.StartsWith("MV-ID")) {
                         _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);

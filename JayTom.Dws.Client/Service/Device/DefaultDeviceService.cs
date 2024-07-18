@@ -173,10 +173,12 @@ namespace JayTom.Dws.Client.Service.Device {
                     Name = s.Name,
                     IpAddress = s.IpAddress,
                     ConnectionType = s.ConnectionType,
-                    CameraType = ConvertCameraType(s.Brand, s.Model),
+                    //CameraType = ConvertCameraType(s.Brand, s.Model),
+                    CameraType = s.Type,
                     Version = s.Version,
                     Brand = s.Brand,
-                    IsOcrSupported = s.IsOcrSupported
+                    IsOcrSupported = s.IsOcrSupported,
+                    SupportedBindingType = s.SupportedBindingType
                 })?.ToList();
                 CameraEnumerationRefreshed?.Invoke(null, itemInfoModels ?? new List<CameraFinderItemInfoModel>());
                 CameraItems = list ?? new List<CameraInfo>();

@@ -68,6 +68,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 Model = "SmartCamera",
                 SerialNumber = s.CamMacAdr.Replace(":", string.Empty),
                 Id = s.DevIndex,
+                SupportedBindingType = CameraBindingType.ScannerCamera |
+                                       CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera
             })?.ToList();
             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                 Exception = new Exception($"相机数量:{cameraInfos?.Count}")

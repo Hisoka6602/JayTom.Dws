@@ -17,7 +17,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
-    [CameraBindableType(CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera)]
     public class WayzimIndustrialCamera : IIndustrialCamera {
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private SemaphoreSlim _takeSlim = new(1, 1);
@@ -95,6 +94,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                         Name = ICAMAPI.ICAM_BytesToString(cam.Cameras[i].CamFriendlyName),
                         SerialNumber = ICAMAPI.ICAM_BytesToString(cam.Cameras[i].CamSerialNumber),
                         Type = CameraType.IndustrialCamera,
+                        SupportedBindingType = CameraBindingType.ScannerCamera | CameraBindingType.PanoramaCamera
                     };
                     _devInfo.AddOrUpdate(cameraInfo.SerialNumber, cameraInfo, (k, v) => cameraInfo);
                     cameraInfos.Add(cameraInfo);

@@ -19,7 +19,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
-    [CameraBindableType(CameraBindingType.ScannerCamera)]
     public class NormalUsbCamera : IIndustrialCamera {
         private UsbBarCodeReader? _usbBarCodeReader;
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
@@ -85,6 +84,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                 Type = CameraType.IndustrialCamera,
                 ConnectionType = CameraConnectionType.Usb,
                 Id = usbCameraInfo.CameraId ?? 0,
+                SupportedBindingType =
+                    CameraBindingType.ScannerCamera
                 //如果是海康的工业相机则支持
             })) {
                 if (cameraInfo.Brand.Equals("Microsoft")) {

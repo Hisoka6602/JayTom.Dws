@@ -8,7 +8,7 @@
     <cameraConverter:CameraBindingTypeConverter x:Key="CameraBindingTypeConverter" />
     <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
     <cameraConverter:BoundCameraTypeCornerRadiusConverter x:Key="BoundCameraTypeCornerRadiusConverter" />
-    <cameraConverter:BoundCameraTypeVisibilityConverter x:Key="BoundCameraTypeVisibilityConverter" />
+    <cameraConverter:SupportedBindingTypeVisibilityConverter x:Key="SupportedBindingTypeVisibilityConverter" />
     <cameraConverter:CameraHasBindingVisibilityConverter x:Key="CameraHasBindingVisibilityConverter" />
 
     <DataTemplate x:Key="CameraFinderTemplate" DataType="{x:Type cameras:CameraFinderItemInfoModel}">
@@ -212,7 +212,7 @@
                                 Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindPanoramaCameraCommand}"
                                 CommandParameter="{Binding}"
                                 Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=PanoramaCamera}">
+                                Visibility="{Binding SupportedBindingType, Converter={StaticResource SupportedBindingTypeVisibilityConverter}, ConverterParameter=PanoramaCamera}">
                                 <TextBlock
                                     Margin="2"
                                     HorizontalAlignment="Center"
@@ -237,7 +237,7 @@
                                 Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindBarcodeScannerCameraCommand}"
                                 CommandParameter="{Binding}"
                                 Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=BarcodeScannerCamera}">
+                                Visibility="{Binding SupportedBindingType, Converter={StaticResource SupportedBindingTypeVisibilityConverter}, ConverterParameter=BarcodeScannerCamera}">
                                 <TextBlock
                                     Margin="2"
                                     HorizontalAlignment="Center"
@@ -263,7 +263,7 @@
                                 Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindVolumeCameraCommand}"
                                 CommandParameter="{Binding}"
                                 Style="{StaticResource ButtonFocusEnlargeStyle}"
-                                Visibility="{Binding CameraType, Converter={StaticResource BoundCameraTypeVisibilityConverter}, ConverterParameter=VolumeCamera}">
+                                Visibility="{Binding SupportedBindingType, Converter={StaticResource SupportedBindingTypeVisibilityConverter}, ConverterParameter=VolumeCamera}">
                                 <TextBlock
                                     Margin="2"
                                     HorizontalAlignment="Center"

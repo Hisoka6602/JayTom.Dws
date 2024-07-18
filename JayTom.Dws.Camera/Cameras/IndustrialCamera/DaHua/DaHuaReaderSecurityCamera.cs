@@ -12,7 +12,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
     /// <summary>
     /// 大华读码安防相机
     /// </summary>
-    [CameraBindableType(CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera)]
     public class DaHuaReaderSecurityCamera : IIndustrialCamera {
 
         public void Dispose() {
@@ -20,11 +19,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
         }
 
         public CameraInfo? Info { get; }
-        public SdkType SdkType { get; }
+        public SdkType SdkType => SdkType.IndustrialCameraSdk;
         public string SdkName { get; }
         public bool IsOriginalImageOut { get; set; }
         public CameraStatus Status { get; }
         public CameraBindingType BindingType { get; set; }
+
+        // public CameraBindingType SupportedBindingType =>
+        //     CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera;
 
         public Task<List<CameraInfo>?> EnumerateCameras() {
             throw new NotImplementedException();

@@ -9,7 +9,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
-    [CameraBindableType(CameraBindingType.VolumeCamera)]
     public class DaHuaVolumeCamera : IVolumeCamera {
         private static IntPtr? _handle;
 
