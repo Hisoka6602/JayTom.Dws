@@ -411,13 +411,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         var increaseCarCount = _grayscaleService.IncreaseCarCount((int)packageInfo.Guid,
                             _grayscaleDeviceSettingsDto.CarNumberOffset);
 
-                        PackageInfo? package;
-                        if (_grayscaleDeviceSettingsDto.CarNumberOffset == 0) {
-                            package = info;
-                        }
-                        else {
-                            package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(increaseCarCount));
-                        }
+                        var package = _grayscaleDeviceSettingsDto.CarNumberOffset == 0 ? info : PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(increaseCarCount));
 
                         if (GrayScaleSkippedVehicles > 1) {
                             GrayScaleSkippedVehicles--;

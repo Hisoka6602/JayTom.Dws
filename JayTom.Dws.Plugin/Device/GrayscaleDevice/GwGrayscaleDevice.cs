@@ -209,7 +209,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                     var abs = Math.Abs(grayscaleResult.AttachmentRectangleBoxInfo.PackageRegionCoordinates.Y1) /
                         (float)AttachmentRectangleBoxCoordinates.Y2 * 100;
                     if (grayscaleResult.AttachmentRectangleBoxInfo.IsPackagePresent &&
-                        grayscaleResult.MainRectangleBoxInfos.Any(a => a.PackageRegionCoordinates.Y1 == 0) &&
+                        grayscaleResult.MainRectangleBoxInfos.Any(a => a.PackageRegionCoordinates.Y1 == 0 ||
+                                                                      Math.Abs(a.PackageRegionCoordinates.Y2 - MainRectangleBoxCoordinates.Y2) < 3) &&
                         grayscaleResult.MainRectangleBoxInfos.Count == 1 &&
                         abs > AdditionalBoxSpacePercentage &&
                         grayscaleResult.MainRectangleBoxInfos.FirstOrDefault()?.OffsetPercentage == grayscaleResult.AttachmentRectangleBoxInfo.OffsetPercentage) {
