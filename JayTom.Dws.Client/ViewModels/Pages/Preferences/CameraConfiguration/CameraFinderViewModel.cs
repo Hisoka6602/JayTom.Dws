@@ -272,9 +272,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 刷新
         /// </summary>
-        public ICommand RefreshCommand {
-            get => new DelegateCommand<object>(RefreshDelegate);
-        }
+        public ICommand RefreshCommand => new DelegateCommand<object>(RefreshDelegate);
 
         private void RefreshDelegate(object obj) {
             if (IsRefreshing) {
@@ -294,9 +292,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         ///  绑定全景相机
         /// </summary>
-        public ICommand BindPanoramaCameraCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(BindPanoramaCameraDelegate);
-        }
+        public ICommand BindPanoramaCameraCommand => new DelegateCommand<CameraFinderItemInfoModel>(BindPanoramaCameraDelegate);
 
         private async void BindPanoramaCameraDelegate(CameraFinderItemInfoModel obj) {
             if (_isExecuting || !CheckSdk(obj)) {
@@ -387,9 +383,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 绑定扫码相机
         /// </summary>
-        public ICommand BindBarcodeScannerCameraCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(BindBarcodeScannerCameraDelegate);
-        }
+        public ICommand BindBarcodeScannerCameraCommand => new DelegateCommand<CameraFinderItemInfoModel>(BindBarcodeScannerCameraDelegate);
 
         private async void BindBarcodeScannerCameraDelegate(CameraFinderItemInfoModel obj) {
             if (_isExecuting || !CheckSdk(obj)) {
@@ -418,6 +412,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     return;
                 }
             }
+            //如果是安防相机，需要判断是否已经登录
 
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;

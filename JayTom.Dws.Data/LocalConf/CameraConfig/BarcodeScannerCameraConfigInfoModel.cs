@@ -28,5 +28,7 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("IsOcrSupported"), InsertOrUpdata]
         public bool IsOcrSupported { get; set; }
+
+        //绑定对应的Nvr(可空)
     }
 }
