@@ -24,6 +24,7 @@ namespace JayTom.Dws.Domain.Manager {
         public static event EventHandler<PackageCompletedEventArgs>? PackageCompleted;
 
         public static void OnPackageRemoved(PackageRemovedEventArgs e) {
+            e.RemovedPackage?.Image?.Dispose();
             PackageRemoved?.Invoke(null, e);
         }
 
@@ -69,6 +70,7 @@ namespace JayTom.Dws.Domain.Manager {
             if (value is not null) {
                 var tryRemove = _packageInfos.TryRemove(key, out var info);
                 if (tryRemove && info is not null) {
+                    info?.Image?.Dispose();
                     OnPackageRemoved(new PackageRemovedEventArgs(info, description));
                 }
                 return tryRemove;
@@ -183,6 +185,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// 清空包裹
         /// </summary>
         public static void ClearAllPackages() {
+            foreach (var (key, value) in _packageInfos) {
+                _packageInfos.Remove(key, out var info);
+                info?.Image?.Dispose();
+            }
+
             _packageInfos.Clear();
         }
 

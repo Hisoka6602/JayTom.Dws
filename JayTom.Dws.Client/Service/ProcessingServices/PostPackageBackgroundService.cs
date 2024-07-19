@@ -405,8 +405,26 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         return;
                     }
 
+                    //添加包裹
+                    var packageRemoveTimers = new List<PackageRemoveTimer>();
+                    if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {
+                        packageRemoveTimers.Add(new PackageRemoveTimer() {
+                            Description = "空包裹过期",
+                            Predicate = w => w.Value.BarCodeInfo == null,
+                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.EmptyPackageExpiryTime)
+                        });
+                    }
+                    if (_createPackageSettingsDto is { IsUsePackageExpiry: true, PackageExpiryTime: > 0 }) {
+                        packageRemoveTimers.Add(new PackageRemoveTimer() {
+                            Description = "包裹超过生存周期",
+                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
+                        });
+                    }
+                    PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
+
+                    //灰度仪操作放在这里
                     if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
-                        _grayscaleService.IsConnected) {
+                     _grayscaleService.IsConnected) {
                         //跳过车辆
                         var increaseCarCount = _grayscaleService.IncreaseCarCount((int)packageInfo.Guid,
                             _grayscaleDeviceSettingsDto.CarNumberOffset);
@@ -420,6 +438,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     StringComparison.CurrentCultureIgnoreCase) != true) {
                                 package.LinkedCarCount = 1;
                                 PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                            }
+                            else {
+                                PackageInfoManager.RemovePackage(packageInfo.CreateTime);
                             }
 
                             return;
@@ -454,6 +475,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
                                 }
                             }
+                            else if (package?.CreateTime.Equals(packageInfo.CreateTime) == true) {
+                                package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
+                            }
                             packageInfo.GrayscaleResultInfo = singleGrayscaleSensorResult;
                         }
 
@@ -478,26 +502,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         }
                     }
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
-
-                    //添加包裹
-                    var packageRemoveTimers = new List<PackageRemoveTimer>();
-                    if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {
-                        packageRemoveTimers.Add(new PackageRemoveTimer() {
-                            Description = "空包裹过期",
-                            Predicate = w => w.Value.BarCodeInfo == null,
-                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.EmptyPackageExpiryTime)
-                        });
-                    }
-                    if (_createPackageSettingsDto is { IsUsePackageExpiry: true, PackageExpiryTime: > 0 }) {
-                        packageRemoveTimers.Add(new PackageRemoveTimer() {
-                            Description = "包裹超过生存周期",
-                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
-                        });
-                    }
-                    PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
-
-                    //灰度仪操作放在这里
-
                     //触发创建包裹事件
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
@@ -507,14 +511,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 }
                 else if (item is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo: { } info }) {
                     //邮政专供
-                    if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
+                    if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector ||
+                        (info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
+                         info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)0.15))) {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                 }
             });
+
             //程序停止
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
-                if (item is { } info) {
+                if (item is { }
+
+info) {
                     if (info.Status == ApplicationStatus.Stop &&
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         PackageInfoManager.ClearAllPackages();
