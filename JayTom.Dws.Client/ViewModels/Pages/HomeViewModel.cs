@@ -62,7 +62,6 @@ using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationSta
 using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;

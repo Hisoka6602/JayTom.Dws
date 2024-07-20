@@ -284,7 +284,7 @@
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
-                        IsChecked="{Binding CreatePackageSettingsInfo.IsUseNoReadFilter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        IsChecked="{Binding CreatePackageSettingsInfo.IsUseBarcodeAssignmentInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
 
@@ -317,9 +317,8 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding CreatePackageSettingsInfo.FilterInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding CreatePackageSettingsInfo.MinimumAssignmentTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
-
                     </StackPanel>
                     <TextBlock
                         Margin="5,0"
@@ -348,9 +347,8 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding CreatePackageSettingsInfo.FilterInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding CreatePackageSettingsInfo.MaximumAssignmentTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
-
                     </StackPanel>
                 </StackPanel>
                 <StackPanel
