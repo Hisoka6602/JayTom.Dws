@@ -380,7 +380,7 @@ namespace JayTom.Dws.Client {
                 //同步配置
                 services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
                 //把后台注册服务写在这里
-                services.AddHostedService<YunShanPackageBackgroundService>(); // 注册后组包服务
+                services.AddHostedService<PostPackageBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                 services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
