@@ -2,9 +2,13 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using Prism.Commands;
+using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Client.Models.PackageSorting;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -12,11 +16,88 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
     /// IPC/NVR管理
     /// </summary>
     public class NvrIpcDeviceManagementViewModel : BindableBase {
-        private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
 
-        public IpcNvrItemInfoModel IpcNvrItemInfo {
-            get => _ipcNvrItemInfo;
-            set => SetProperty(ref _ipcNvrItemInfo, value);
+        private ObservableCollection<IpcNvrItemInfoModel> _ipcNvrItemInfos = new()
+        {
+            new IpcNvrItemInfoModel()
+            {
+                IpAddress = "10.200.211.98",
+                Port = 37777,
+                Username = "admin",
+                Password = "a12345678"
+            }
+        };
+
+        private bool _isRefreshing;
+
+        public ObservableCollection<IpcNvrItemInfoModel> IpcNvrItemInfos {
+            get => _ipcNvrItemInfos;
+            set => SetProperty(ref _ipcNvrItemInfos, value);
+        }
+
+        public bool IsRefreshing {
+            get => _isRefreshing;
+            set => SetProperty(ref _isRefreshing, value);
+        }
+
+        public NvrIpcDeviceManagementViewModel() {
+        }
+
+        /// <summary>
+        /// 预览
+        /// </summary>
+        public ICommand PreviewCommand => new DelegateCommand<object>(PreviewDelegate);
+
+        private void PreviewDelegate(object obj) {
+        }
+
+        /// <summary>
+        /// 绑定
+        /// </summary>
+        public ICommand BindCommand => new DelegateCommand<object>(BindDelegate);
+
+        private void BindDelegate(object obj) {
+        }
+
+        /// <summary>
+        /// 编辑
+        /// </summary>
+        public ICommand EditCommand => new DelegateCommand<object>(EditDelegate);
+
+        private void EditDelegate(object obj) {
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public ICommand DeleteCommand => new DelegateCommand<object>(DeleteDelegate);
+
+        private void DeleteDelegate(object obj) {
+        }
+
+        public ICommand RefreshCommand => new DelegateCommand<object>(RefreshDelegate);
+
+        /// <summary>
+        /// 刷新
+        /// </summary>
+        /// <param name="obj"></param>
+        private void RefreshDelegate(object obj) {
+        }
+
+        /// <summary>
+        /// 添加
+        /// </summary>
+        public ICommand AddCommand => new DelegateCommand<object>(AddDelegate);
+
+        private void AddDelegate(object obj) {
+        }
+
+        /// <summary>
+        /// 批量改密
+        /// </summary>
+        public ICommand BatchChangePasswordCommand => new DelegateCommand<object>(BatchChangePasswordDelegate);
+
+        private void BatchChangePasswordDelegate(object obj) {
         }
     }
 }

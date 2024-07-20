@@ -123,7 +123,7 @@
                 Margin="5,0"
                 materialDesign:ButtonAssist.CornerRadius="5"
                 BorderThickness="0"
-                Command="{Binding ApplyAllChangesCommand}">
+                Command="{Binding AddCommand}">
                 <Button.Style>
                     <Style BasedOn="{StaticResource MaterialDesignFlatAccentBgButton}" TargetType="Button">
 
@@ -170,7 +170,7 @@
                 Margin="5,0"
                 materialDesign:ButtonAssist.CornerRadius="5"
                 BorderThickness="0"
-                Command="{Binding ApplyAllChangesCommand}">
+                Command="{Binding BatchChangePasswordCommand}">
                 <Button.Style>
                     <Style BasedOn="{StaticResource MaterialDesignFlatAccentBgButton}" TargetType="Button">
 
@@ -232,7 +232,7 @@
             FrozenColumnCount="2"
             GridLinesVisibility="None"
             HorizontalScrollBarVisibility="Auto"
-            ItemsSource="{Binding PanoramaCameraItems, UpdateSourceTrigger=PropertyChanged}"
+            ItemsSource="{Binding IpcNvrItemInfos, UpdateSourceTrigger=PropertyChanged}"
             RowBackground="#061E90FF"
             Style="{StaticResource VirtualizingDataGridStyle}">
             <DataGrid.RowStyle>
@@ -263,7 +263,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -303,17 +303,7 @@
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="设备型号" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
-                <!--  版本  -->
-                <DataGridTextColumn
-                    Width="60"
-                    MinWidth="60"
-                    Binding="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
-                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
-                    <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="通道数" />
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
+
                 <!--  IP地址  -->
                 <DataGridTextColumn
                     Width="120"
@@ -329,7 +319,7 @@
                 <DataGridTextColumn
                     Width="60"
                     MinWidth="60"
-                    Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -338,9 +328,9 @@
                 </DataGridTextColumn>
                 <!--  通道数  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
-                    Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
+                    Width="60"
+                    MinWidth="60"
+                    Binding="{Binding ChannelCount, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -351,7 +341,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding Channel, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -362,16 +352,15 @@
                 <materialDesign:DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding CaptureDelayTime, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
                     ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="在线状态" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="状态" />
                     </DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>
                 <!--  操作  -->
                 <DataGridTemplateColumn
-                    Width="190"
                     MinWidth="100"
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
@@ -386,9 +375,78 @@
                                     Width="80"
                                     Height="30"
                                     MinWidth="60"
+                                    Margin="2,0"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="DarkViolet"
+                                    Command="{Binding ElementName=NvripcDeviceManagementView, Path=DataContext.PreviewCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Foreground="DarkViolet"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="White"
+                                            Text="&#xe773;" />
+                                        <TextBlock
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="True"
+                                            Text="预览"
+                                            TextAlignment="Justify" />
+                                    </StackPanel>
+                                </Button>
+                                <Button
+                                    Width="80"
+                                    Height="30"
+                                    MinWidth="60"
+                                    Margin="2,0"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="Green"
+                                    Command="{Binding ElementName=NvripcDeviceManagementView, Path=DataContext.BindCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Foreground="Green"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="White"
+                                            Text="&#xe6fa;" />
+                                        <TextBlock
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="True"
+                                            Text="绑定"
+                                            TextAlignment="Justify" />
+                                    </StackPanel>
+                                </Button>
+                                <Button
+                                    Width="80"
+                                    Height="30"
+                                    MinWidth="60"
+                                    Margin="2,0"
                                     materialDesign:ButtonAssist.CornerRadius="5"
                                     Background="RoyalBlue"
-                                    Command="{Binding ElementName=PanoramaCameraConfigView, Path=DataContext.ApplyChangesCommand}"
+                                    Command="{Binding ElementName=NvripcDeviceManagementView, Path=DataContext.EditCommand}"
                                     CommandParameter="{Binding}"
                                     Focusable="False"
                                     Foreground="RoyalBlue"
@@ -400,7 +458,7 @@
                                             FontFamily="{StaticResource IconFontFamily}"
                                             FontSize="15"
                                             Foreground="White"
-                                            Text="&#xe66e;" />
+                                            Text="&#xe7c8;" />
                                         <TextBlock
                                             Margin="5,0"
                                             HorizontalAlignment="Center"
@@ -411,7 +469,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="{x:Static languages:Language.Save}"
+                                            Text="编辑"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>
@@ -419,10 +477,10 @@
                                     Width="80"
                                     Height="30"
                                     MinWidth="60"
-                                    Margin="5,0"
+                                    Margin="2,0"
                                     materialDesign:ButtonAssist.CornerRadius="5"
                                     Background="DarkRed"
-                                    Command="{Binding ElementName=PanoramaCameraConfigView, Path=DataContext.UnbindCameraCommand}"
+                                    Command="{Binding ElementName=NvripcDeviceManagementView, Path=DataContext.DeleteCommand}"
                                     CommandParameter="{Binding}"
                                     Focusable="False"
                                     Foreground="Red"
@@ -445,7 +503,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="{x:Static languages:Language.Unbind}"
+                                            Text="删除"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>

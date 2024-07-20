@@ -5,6 +5,7 @@ using JayTom.Dws.Camera;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 
 namespace JayTom.Dws.Client.Models.Cameras {
@@ -17,7 +18,13 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private DeviceType _type;
         private int _channelCount;
         private NvrStatus _status;
-        private ICollection<BarcodeScannerCameraItemInfoModel> _bindingCameraSerialNumbers = new List<BarcodeScannerCameraItemInfoModel>();
+        private ObservableCollection<BarcodeScannerCameraItemInfoModel> _bindingCameraSerialNumbers = new();
+        private bool _isSelect;
+
+        public bool IsSelect {
+            get => _isSelect;
+            set => SetProperty(ref _isSelect, value);
+        }
 
         /// <summary>
         /// 端口
@@ -78,7 +85,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 已绑定相机列表
         /// </summary>
-        public ICollection<BarcodeScannerCameraItemInfoModel> BindingCameraSerialNumbers {
+        public ObservableCollection<BarcodeScannerCameraItemInfoModel> BindingCameraSerialNumbers {
             get => _bindingCameraSerialNumbers;
             set => SetProperty(ref _bindingCameraSerialNumbers, value);
         }

@@ -94,9 +94,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 删除指令
         /// </summary>
-        public ICommand DeleteInstructionCommand {
-            get => new DelegateCommand<SortingInstructionItemInfoModel>(DeleteInstructionDelegate);
-        }
+        public ICommand DeleteInstructionCommand => new DelegateCommand<SortingInstructionItemInfoModel>(DeleteInstructionDelegate);
 
         private async void DeleteInstructionDelegate(SortingInstructionItemInfoModel obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
