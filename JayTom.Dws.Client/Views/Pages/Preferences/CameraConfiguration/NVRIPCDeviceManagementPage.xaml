@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
@@ -24,6 +25,7 @@
     </b:Interaction.Triggers>
     <Page.Resources>
         <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
+        <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     </Page.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
