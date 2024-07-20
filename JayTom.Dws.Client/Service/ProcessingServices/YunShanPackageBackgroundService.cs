@@ -371,10 +371,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     var boxBarCode = strings.FirstOrDefault(f =>
                         !string.IsNullOrEmpty(replace) && Regex.IsMatch(f, $"(^(?={replace}).*)")) ?? string.Empty;
 
-                    if (!strings.All(f => !string.IsNullOrEmpty(replace) && Regex.IsMatch(f, $"(^(?={replace}).*)"))) {
+                    /*if (!strings.All(f => !string.IsNullOrEmpty(replace) && Regex.IsMatch(f, $"(^(?={replace}).*)"))) {
                         barCode = strings.FirstOrDefault(f => !f.Equals(boxBarCode)) ?? "NoRead";
-                    }
-
+                    }*/
+                    barCode = strings.FirstOrDefault(f => !f.Equals(boxBarCode)) ?? "NoRead";
+                    /*barCode = strings.FirstOrDefault(f =>
+                        !string.IsNullOrEmpty(replace) && !Regex.IsMatch(f, $"(^(?={replace}).*)")) ?? "NoRead";*/
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
