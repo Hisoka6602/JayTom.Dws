@@ -235,6 +235,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.ExternalDataInputAfter,
+                                PackageInfo = packageInfo
+                            });
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
