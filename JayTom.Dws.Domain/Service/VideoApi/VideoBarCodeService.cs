@@ -96,7 +96,6 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                                 VideoNodeImageInfos = imageInfoModels,
                                 VideoNvrCameraBindingInfos =scanNodeInfo?.CloudNvrCameraBindingInfos?
                             .Select(s => new VideoNvrCameraBindingInfoModel {
-                                BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
                                 Channel = s.Channel,
                                 IpAddress = s.IpAddress,
                                 Password = s.Password,
@@ -120,7 +119,6 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                         VideoNodeImageInfos = imageInfoModels,
                         VideoNvrCameraBindingInfos = scanNodeInfo?.CloudNvrCameraBindingInfos?
                             .Select(s => new VideoNvrCameraBindingInfoModel {
-                                BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
                                 Channel = s.Channel,
                                 IpAddress = s.IpAddress,
                                 Password = s.Password,

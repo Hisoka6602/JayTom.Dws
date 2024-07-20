@@ -84,6 +84,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
+using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
@@ -97,6 +98,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService;
 using JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
@@ -305,6 +307,8 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ITcpConfigRepository, TcpConfigRepository>();
                 services.AddSingleton<ITcpConnectionConfigRepository, TcpConnectionConfigRepository>();
                 services.AddSingleton<INvrCameraBindingRepository, NvrCameraBindingRepository>();
+
+                services.AddSingleton<IIpcNvrConfigRepository, IpcNvrConfigRepository>();
 
                 //logs
                 services.AddSingleton<IAppLogRepository, AppLogRepository>();

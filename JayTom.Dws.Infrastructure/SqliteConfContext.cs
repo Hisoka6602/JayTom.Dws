@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
@@ -47,6 +48,11 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>()
                     .HasIndex(b => b.SerialNumber)
                     .IsUnique();
+                modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>()
+                   .HasMany(m => m.NvrCameraBindingInfos)
+                   .WithOne(n => n.BarcodeScannerCameraConfigInfoModel)
+                   .HasForeignKey(n => new { n.ScannerCameraConfigInfoModelId })
+                   .OnDelete(DeleteBehavior.Cascade);
                 //PanoramaCamera
                 modelBuilder.Entity<PanoramaCameraConfigInfoModel>().HasKey(c => new {
                     c.Id
@@ -68,6 +74,10 @@ namespace JayTom.Dws.Infrastructure {
                 });
                 modelBuilder.Entity<UsbCameraConfigInfoModel>()
                     .HasIndex(b => b.SerialNumber)
+                    .IsUnique();
+                //IPC/NVR
+                modelBuilder.Entity<IpcNvrConfigInfoModel>()
+                    .HasIndex(b => b.IpAddress)
                     .IsUnique();
 
                 //分拣

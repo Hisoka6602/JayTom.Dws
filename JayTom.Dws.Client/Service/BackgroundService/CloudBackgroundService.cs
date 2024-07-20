@@ -32,6 +32,7 @@ using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Interface.Cloud.InstructionType;
@@ -65,6 +66,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
         private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
+        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
         private SyncSettingsDto _syncSettingsDto = new();
         private DateTime _startTime = DateTime.Now;
@@ -90,7 +92,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IPackageExitLockBindingRepository packageExitLockBindingRepository,
-            ISortingInstructionBindingRepository sortingInstructionBindingRepository) {
+            ISortingInstructionBindingRepository sortingInstructionBindingRepository,
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
             _configRepository = configRepository;
             _cloud = cloud;
             _packageRepository = packageRepository;
@@ -109,6 +112,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
             _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
+            _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
 
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 switch (item) {
@@ -841,37 +845,24 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync(token);
-                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f =>
+
+                            var cacheData = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+                            nvrCameraBindingInfoModels = cacheData.Where(w => !string.IsNullOrEmpty(cameraSerialNumber) &&
+                                                                              w.SerialNumber.Equals(cameraSerialNumber) &&
+                                                                              w.NvrCameraBindingInfos?.Any() == true)
+                                                             ?.SelectMany(s => s.NvrCameraBindingInfos)
+                                                             ?.ToList() ??
+                                                         new List<NvrCameraBindingInfoModel>();
+
+                            /*nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f =>
                                                              !string.IsNullOrEmpty(cameraSerialNumber)
                                                              && f.BarcodeScannerSerialNumber.Equals(
                                                                  cameraSerialNumber))?.ToList() ??
-                                                         new List<NvrCameraBindingInfoModel>();
+                                                         new List<NvrCameraBindingInfoModel>();*/
                         }
                         finally {
                             _setNvrCameraBindingSlim.Release();
                         }
-
-                        /*
-                        var cloudUploadResponse = await _cloud.UploadData(packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
-                            packageInfoModel.BarCodeInfo?.ScanTime ?? DateTime.Now, packageInfoModel.WeightInfo?.FormattedWeight ?? 0,
-                            _cloudVideoSettingsDto.NodeName,
-                            null, packageInfoModel.ImageInfos?.Select(s =>
-                                new CloudUploadImageInfo {
-                                    CameraSerialNumber = s.CameraSerialNumber,
-                                    CameraName = s.CameraName,
-                                    CustomCameraName = s.CustomCameraName,
-                                    Type = s.Type,
-                                    Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
-                                })?.ToList(), nvrCameraBindingInfos: nvrCameraBindingInfoModels.Select(nvr =>
-                           new CloudNvrCameraBindingInfo {
-                               BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
-                               Channel = nvr.Channel,
-                               IpAddress = nvr.IpAddress,
-                               Password = nvr.Password,
-                               Port = nvr.Port,
-                               Username = nvr.Username
-                           })?.ToList() ?? new List<CloudNvrCameraBindingInfo>(), token: token);
-                           */
 
                         var cloudUploadResponse = await _cloud.UploadData(new PackageCloudInfo() {
                             PackageCreateTime = packageInfoModel.PackageCreateTime,
@@ -971,7 +962,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                             },
                             CloudNvrCameraBindingInfos = nvrCameraBindingInfoModels?.Select(s =>
                                 new PackageCloudNvrCameraBindingInfo {
-                                    BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
+                                    //BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
                                     Channel = s.Channel,
                                     IpAddress = s.IpAddress,
                                     Password = s.Password,

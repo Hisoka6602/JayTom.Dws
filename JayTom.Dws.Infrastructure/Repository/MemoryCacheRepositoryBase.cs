@@ -25,8 +25,16 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     entry.SlidingExpiration = TimeSpan.FromMinutes(5);
                     await using (var concardContext = _contextFactory.CreateDbContext()) {
                         var dbSet = concardContext?.Set<T>();
-                        if (dbSet is null) return null;
-                        return await dbSet.AsNoTracking().ToListAsync();
+                        if (dbSet is null || concardContext is null) return null;
+                        // return await dbSet.AsNoTracking().ToListAsync();
+                        // 获取所有导航属性并使用Include加载
+                        var query = dbSet.AsQueryable();
+                        var navigationProperties = concardContext.Model.FindEntityType(typeof(T))
+                            .GetNavigations()
+                            .Select(n => n.Name);
+                        query = navigationProperties.Aggregate(query, (current, navProp) => current.Include(navProp));
+
+                        return await query.AsNoTracking().ToListAsync();
                     }
                 });
             }

@@ -4,7 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Attributes;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.CloudConfig {
@@ -48,5 +50,11 @@ namespace JayTom.Dws.Data.LocalConf.CloudConfig {
         /// </summary>
         [Column("BarcodeScannerSerialNumber"), Required]
         public string BarcodeScannerSerialNumber { get; set; } = string.Empty;*/
+
+        [Column("ScannerCameraConfigInfoModelId"), JsonIgnore]
+        public long ScannerCameraConfigInfoModelId { get; set; }
+
+        [ForeignKey("Id")]
+        public virtual BarcodeScannerCameraConfigInfoModel? BarcodeScannerCameraConfigInfoModel { get; set; }
     }
 }

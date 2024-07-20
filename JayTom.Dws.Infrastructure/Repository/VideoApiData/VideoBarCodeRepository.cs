@@ -102,7 +102,6 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                                    Description = s1.Description,
                                    Name = s1.Name,
                                    VideoNvrCameraBindingInfos = s1.VideoNvrCameraBindingInfos?.Select(nvr => new VideoNvrCameraBindingInfoModel {
-                                       BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
                                        Channel = nvr.Channel,
                                        IpAddress = nvr.IpAddress,
                                        Password = nvr.Password,

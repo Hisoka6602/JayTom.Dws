@@ -171,7 +171,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                                 CameraSerialNumber = barcodeScannerCameraConfigInfoModel.SerialNumber,
                                 CustomCameraName = isExistingSerialNumber ? barcodeScannerCameraConfigInfoModel.CustomName : $"{barcodeScannerCameraConfigInfoModel.CustomName}(无效)",
                                 Num = num,
-                                IsBinding = nvrCameraBindingInfoModels.Any(a => a.BarcodeScannerSerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber)),
+                                // IsBinding = nvrCameraBindingInfoModels.Any(a => a.BarcodeScannerSerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber)),
                             });
                             num++;
                         }
@@ -202,7 +202,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                 //修改删除条件
 
                 var cameraBindingInfoModels = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => new NvrCameraBindingInfoModel {
-                    BarcodeScannerSerialNumber = s.CameraSerialNumber,
+                    //BarcodeScannerSerialNumber = s.CameraSerialNumber,
                     Channel = Channel,
                     IpAddress = IpAddress,
                     Password = Password,

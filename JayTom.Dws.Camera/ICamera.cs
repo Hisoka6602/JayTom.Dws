@@ -575,4 +575,16 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         CustomRegexFilter = 2,
     }
+
+    /// <summary>
+    /// 安防相机类型
+    /// </summary>
+    public enum DeviceType {
+
+        [Description("IPC相机")]
+        IPC,
+
+        [Description("NVR视频设备")]
+        NVR
+    }
 }

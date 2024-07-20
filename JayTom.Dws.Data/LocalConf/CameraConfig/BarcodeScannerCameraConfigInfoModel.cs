@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Data.LocalConf.CloudConfig;
+using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.LocalConf.CameraConfig {
@@ -29,6 +32,10 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         [Column("IsOcrSupported"), InsertOrUpdata]
         public bool IsOcrSupported { get; set; }
 
-        //绑定对应的Nvr(可空)
+        /// <summary>
+        /// Nvr
+        /// </summary>
+        [Description("Nvr")]
+        public virtual ICollection<NvrCameraBindingInfoModel>? NvrCameraBindingInfos { get; set; }
     }
 }

@@ -48,27 +48,12 @@ namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
         /// 类型 [IPC/NVR]
         /// </summary>
         [Column("Type"), Required, InsertOrUpdata]
-        public DeviceType Type { get; set; }
+        public int Type { get; set; }
 
         /// <summary>
         /// 名称
         /// </summary>
         [Column("Name"), Required, InsertOrUpdata]
         public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 已绑定的相机序列号
-        /// </summary>
-        [Column("BindingCameraSerialNumbers"), Required, InsertOrUpdata]
-        public List<string> BindingCameraSerialNumbers { get; set; } = new();
-    }
-
-    public enum DeviceType {
-
-        [Description("IPC相机")]
-        IPC,
-
-        [Description("NVR视频设备")]
-        NVR
     }
 }
