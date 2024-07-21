@@ -2,6 +2,7 @@
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration.NVRIPCDeviceManagementPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
@@ -24,9 +25,9 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
-        <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
         <cameraConverter:NvrStatusConverter x:Key="NvrStatusConverter" />
+        <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
     </Page.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -264,7 +265,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=description}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -275,7 +276,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding DeviceName, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -295,8 +296,8 @@
                 </DataGridTextColumn>
                 <!--  型号  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
+                    Width="80"
+                    MinWidth="80"
                     Binding="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -338,31 +339,21 @@
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="通道数" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
-                <!--  取流通道  -->
+                <!--  登录名  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
-                    Binding="{Binding Channel, UpdateSourceTrigger=PropertyChanged}"
+                    Width="80"
+                    MinWidth="80"
+                    Binding="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="取流通道" />
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="登录名" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  在线状态  -->
-                <!--<materialDesign:DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
-                    Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                    EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}"
-                    ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}">
-                    <DataGridTextColumn.Header>
-                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="状态" />
-                    </DataGridTextColumn.Header>
-                </materialDesign:DataGridTextColumn>-->
                 <DataGridTemplateColumn
                     MinWidth="80"
-                    MaxWidth="150"
+                    MaxWidth="120"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="状态" />
@@ -403,7 +394,10 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <!--  定位按钮  -->
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel
+                                MinWidth="340"
+                                HorizontalAlignment="Left"
+                                Orientation="Horizontal">
                                 <Button
                                     Width="80"
                                     Height="30"
@@ -517,7 +511,8 @@
                                     CommandParameter="{Binding}"
                                     Focusable="False"
                                     Foreground="Red"
-                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                    Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    Visibility="{Binding IsConfigured, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock
                                             HorizontalAlignment="Center"

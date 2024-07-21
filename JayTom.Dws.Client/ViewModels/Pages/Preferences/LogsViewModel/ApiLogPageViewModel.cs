@@ -211,9 +211,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 查询数据
         /// </summary>
-        public ICommand SearchDataCommand {
-            get => new DelegateCommand<object>(SearchDataDelegate);
-        }
+        public ICommand SearchDataCommand => new DelegateCommand<object>(SearchDataDelegate);
 
         private void SearchDataDelegate(object obj) {
             PageIndex = 1;
@@ -259,9 +257,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 页面加载完成
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -270,9 +266,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
             }
         }
 
-        public ICommand ClearMessageCommand {
-            get => new DelegateCommand<object>(ClearMessageDelegate);
-        }
+        public ICommand ClearMessageCommand => new DelegateCommand<object>(ClearMessageDelegate);
 
         private async void ClearMessageDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {

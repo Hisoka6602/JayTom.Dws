@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.ComponentModel;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 
 namespace JayTom.Dws.Client.Attributes {

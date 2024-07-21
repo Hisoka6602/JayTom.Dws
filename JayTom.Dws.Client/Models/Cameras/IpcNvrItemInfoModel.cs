@@ -20,6 +20,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private NvrStatus _status = NvrStatus.Unverified;
         private ObservableCollection<BarcodeScannerCameraItemInfoModel> _bindingCameraSerialNumbers = new();
         private bool _isSelect;
+        private bool _isConfigured;
+        private string _deviceName = string.Empty;
 
         public bool IsSelect {
             get => _isSelect;
@@ -83,6 +85,22 @@ namespace JayTom.Dws.Client.Models.Cameras {
         }
 
         /// <summary>
+        /// 是否存在配置中
+        /// </summary>
+        public bool IsConfigured {
+            get => _isConfigured;
+            set => SetProperty(ref _isConfigured, value);
+        }
+
+        /// <summary>
+        /// 设备名称
+        /// </summary>
+        public string DeviceName {
+            get => _deviceName;
+            set => SetProperty(ref _deviceName, value);
+        }
+
+        /// <summary>
         /// 已绑定相机列表
         /// </summary>
         public ObservableCollection<BarcodeScannerCameraItemInfoModel> BindingCameraSerialNumbers {
@@ -96,7 +114,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 离线状态
         /// </summary>
-        [Description("离线"), BackgroundColor("#FF8C00")]
+        [Description("离线"), BackgroundColor("#D3D3D3")]
         Offline,
 
         /// <summary>
@@ -115,6 +133,12 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// 在线状态
         /// </summary>
         [Description("在线"), BackgroundColor("#31C731")]
-        Online
+        Online,
+
+        /// <summary>
+        /// 登录中状态
+        /// </summary>
+        [Description("登录中"), BackgroundColor("#FF8C00")]
+        LoggingIn
     }
 }
