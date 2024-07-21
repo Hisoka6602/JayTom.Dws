@@ -5,10 +5,15 @@ using System.Text;
 using Prism.Commands;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
+using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Models.PackageSorting;
+using JayTom.Dws.Client.Views.Editors.CloudService;
+using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -29,6 +34,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         };
 
         private bool _isRefreshing;
+        private SnackbarMessageQueue _nvrIpcDeviceManagemenMessageQueue = new(TimeSpan.FromSeconds(2));
 
         public ObservableCollection<IpcNvrItemInfoModel> IpcNvrItemInfos {
             get => _ipcNvrItemInfos;
@@ -38,6 +44,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public bool IsRefreshing {
             get => _isRefreshing;
             set => SetProperty(ref _isRefreshing, value);
+        }
+
+        public string Identifier => "CameraSettingDialog";
+
+        public SnackbarMessageQueue NvrIpcDeviceManagemenMessageQueue {
+            get => _nvrIpcDeviceManagemenMessageQueue;
+            set => SetProperty(ref _nvrIpcDeviceManagemenMessageQueue, value);
         }
 
         public NvrIpcDeviceManagementViewModel() {
@@ -89,7 +102,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// </summary>
         public ICommand AddCommand => new DelegateCommand<object>(AddDelegate);
 
-        private void AddDelegate(object obj) {
+        private async void AddDelegate(object obj) {
+            var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
+            if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
+                model.Identifier = Identifier;
+                /*model.Channel = SelectChannel;
+                model.IpAddress = NvrClientSettingsInfo.Ip;
+                model.Port = NvrClientSettingsInfo.Port;
+                model.Username = NvrClientSettingsInfo.Username;
+                model.Password = NvrClientSettingsInfo.Password;*/
+
+                await DialogHost.Show(nvrIpcDeviceEditor, model.Identifier);
+                if (!string.IsNullOrEmpty(model.Message)) {
+                    NvrIpcDeviceManagemenMessageQueue.Enqueue(model.Message);
+                }
+            }
         }
 
         /// <summary>

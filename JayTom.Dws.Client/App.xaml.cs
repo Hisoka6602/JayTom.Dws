@@ -85,10 +85,12 @@ using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
+using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
@@ -537,6 +539,9 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ApiSortingRuleEditor, ApiSortingRuleEditorViewModel>();
             ViewModelLocationProvider.Register<CommunicationConnectionConfigEditor, CommunicationConnectionConfigEditorViewModel>();
             ViewModelLocationProvider.Register<RegularExpressionEditor, RegularExpressionEditorViewModel>();
+
+            //Ipc/Nvr编辑
+            ViewModelLocationProvider.Register<NvrIpcDeviceEditor, NvrIpcDeviceEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();

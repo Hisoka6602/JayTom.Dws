@@ -129,9 +129,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
             set => SetProperty(ref _nvrCameraBindingItems, value);
         }
 
-        public ICommand SelectedCommand {
-            get => new DelegateCommand<object>(SelectedDelegate);
-        }
+        public ICommand SelectedCommand => new DelegateCommand<object>(SelectedDelegate);
 
         private async void SelectedDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -141,9 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
             });
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             //加载扫码相机
@@ -225,9 +221,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
             });
         }
 
-        public ICommand CancelCommand {
-            get => new DelegateCommand(CancelDelegate);
-        }
+        public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
         private void CancelDelegate() {
             if (DialogHost.IsDialogOpen(Identifier)) {

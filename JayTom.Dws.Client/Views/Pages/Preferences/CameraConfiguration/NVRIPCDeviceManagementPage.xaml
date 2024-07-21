@@ -349,7 +349,7 @@
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
                 <!--  在线状态  -->
-                <materialDesign:DataGridTextColumn
+                <!--<materialDesign:DataGridTextColumn
                     Width="100"
                     MinWidth="100"
                     Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -358,7 +358,39 @@
                     <DataGridTextColumn.Header>
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="状态" />
                     </DataGridTextColumn.Header>
-                </materialDesign:DataGridTextColumn>
+                </materialDesign:DataGridTextColumn>-->
+                <DataGridTemplateColumn
+                    MinWidth="100"
+                    MaxWidth="150"
+                    CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="状态" />
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <!--  点  -->
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="30"
+                                    Foreground="Red"
+                                    Text="&#xe7a6;" />
+                                <!--  文字  -->
+                                <TextBlock
+                                    Margin="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DimGray"
+                                    Text="{Binding Status, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <!--  操作  -->
                 <DataGridTemplateColumn
                     MinWidth="100"
@@ -514,5 +546,14 @@
             </DataGrid.Columns>
         </DataGrid>
         <!--  提示框  -->
+        <materialDesign:Snackbar
+            Grid.Row="1"
+            Width="Auto"
+            Height="Auto"
+            VerticalAlignment="Bottom"
+            Background="BlueViolet"
+            FontFamily="LoadFiraCode"
+            FontWeight="Bold"
+            MessageQueue="{Binding NvrIpcDeviceManagemenMessageQueue}" />
     </Grid>
 </Page>
