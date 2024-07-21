@@ -30,7 +30,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 Port = 37777,
                 Username = "admin",
                 Password = "a12345678"
-            }
+            },
+            new IpcNvrItemInfoModel()
+            {
+                IpAddress = "10.200.211.98",
+                Port = 37777,
+                Username = "admin",
+                Password = "a12345678",
+                Status = NvrStatus.Online,
+            },
+            new IpcNvrItemInfoModel()
+            {
+                IpAddress = "10.200.211.98",
+                Port = 37777,
+                Username = "admin",
+                Password = "a12345678",
+                Status = NvrStatus.Unverified,
+            },
         };
 
         private bool _isRefreshing;

@@ -26,6 +26,7 @@
     <Page.Resources>
         <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+        <cameraConverter:NvrStatusConverter x:Key="NvrStatusConverter" />
     </Page.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -360,7 +361,7 @@
                     </DataGridTextColumn.Header>
                 </materialDesign:DataGridTextColumn>-->
                 <DataGridTemplateColumn
-                    MinWidth="100"
+                    MinWidth="80"
                     MaxWidth="150"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>
@@ -368,25 +369,25 @@
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                                 <!--  点  -->
                                 <TextBlock
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
                                     FontSize="30"
-                                    Foreground="Red"
+                                    Foreground="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NvrStatusConverter}, ConverterParameter=color}"
                                     Text="&#xe7a6;" />
                                 <!--  文字  -->
                                 <TextBlock
-                                    Margin="5,0"
+                                    Margin="2,0"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
-                                    FontSize="14"
-                                    FontWeight="Bold"
-                                    Foreground="DimGray"
-                                    Text="{Binding Status, UpdateSourceTrigger=PropertyChanged}" />
+                                    FontSize="13"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NvrStatusConverter}, ConverterParameter=ToolTip}" />
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

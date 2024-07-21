@@ -17,7 +17,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private int _channel;
         private DeviceType _type;
         private int _channelCount;
-        private NvrStatus _status;
+        private NvrStatus _status = NvrStatus.Unverified;
         private ObservableCollection<BarcodeScannerCameraItemInfoModel> _bindingCameraSerialNumbers = new();
         private bool _isSelect;
 

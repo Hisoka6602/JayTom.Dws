@@ -11,7 +11,6 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
-
     public class NvrIpcDeviceEditorViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
@@ -23,6 +22,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private string _password = string.Empty;
         private bool _isOk;
         private int _channel;
+        private SnackbarMessageQueue _nvrIpcDeviceEditorMessageQueue = new(TimeSpan.FromSeconds(1));
 
         public string Identifier {
             get => _identifier;
@@ -64,6 +64,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             set => SetProperty(ref _channel, value);
         }
 
+        public SnackbarMessageQueue NvrIpcDeviceEditorMessageQueue {
+            get => _nvrIpcDeviceEditorMessageQueue;
+            set => SetProperty(ref _nvrIpcDeviceEditorMessageQueue, value);
+        }
+
         public NvrIpcDeviceEditorViewModel(IDeviceService deviceService,
             IIpcNvrConfigRepository ipcNvrConfigRepository) {
             _deviceService = deviceService;
@@ -99,6 +104,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             if (DialogHost.IsDialogOpen(Identifier)) {
                 DialogHost.Close(Identifier);
             }
+        }
+
+        public ICommand TestLogInCommand => new DelegateCommand(TestLogInDelegate);
+
+        private void TestLogInDelegate() {
+            NvrIpcDeviceEditorMessageQueue.Enqueue("登录测试");
         }
     }
 }
