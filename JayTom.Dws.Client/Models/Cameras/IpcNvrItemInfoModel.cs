@@ -107,6 +107,31 @@ namespace JayTom.Dws.Client.Models.Cameras {
             get => _bindingCameraSerialNumbers;
             set => SetProperty(ref _bindingCameraSerialNumbers, value);
         }
+
+        public override bool Equals(object? obj) {
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            var otherInfo = (IpcNvrItemInfoModel)obj;
+            return //Name == otherInfo.Name &&
+                   //Brand == otherInfo.Brand &&
+                   //SerialNumber == otherInfo.SerialNumber &&
+                IpAddress == otherInfo.IpAddress/* &&
+                Port == otherInfo.Port &&
+                Version == otherInfo.Version &&
+                Model == otherInfo.Model*/;
+        }
+
+        public override int GetHashCode() {
+            return IpAddress.GetHashCode();
+            /*return Name.GetHashCode()
+                                    //^ Brand.GetHashCode()
+                                    ^ SerialNumber.GetHashCode()
+                                    ^ IpAddress.GetHashCode()
+                                    ^ Port.GetHashCode()
+                                    /*^ Version.GetHashCode()
+                                    ^ Model.GetHashCode()#1#;*/
+        }
     }
 
     public enum NvrStatus {

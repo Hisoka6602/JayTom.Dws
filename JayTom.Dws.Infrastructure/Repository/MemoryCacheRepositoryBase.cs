@@ -44,6 +44,16 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return null;
         }
 
+        public void UpdateMemoryCache() {
+            try {
+                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
+                _cache.Remove(name ?? string.Empty);
+            }
+            catch (Exception e) {
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
+        }
+
         public new async Task<bool> Insert(T entity, CancellationToken token) {
             var insert = await base.Insert(entity, token);
             if (insert) {
@@ -103,7 +113,19 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
                 _cache.Remove(name ?? string.Empty);
             }
+
             return insertOrUpdate;
+        }
+
+        public new async Task<bool> InsertOrUpdateRange(List<T> entities,
+            CancellationToken token) {
+            var insertOrUpdateRange = await base.InsertOrUpdateRange(entities, token);
+            if (insertOrUpdateRange) {
+                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
+                _cache.Remove(name ?? string.Empty);
+            }
+
+            return insertOrUpdateRange;
         }
 
         public new async Task<bool> SyncEntities([NotNull] List<T> entities, CancellationToken token) {

@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
+using System.Windows;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
@@ -10,37 +11,26 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Data.LocalConf.CloudConfig;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
+using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
     public class NvrBindingEditorViewModel : BindableBase {
+        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
+        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private CameraFinderItemInfoModel _cameraFinderItemInfo = new();
 
-        private ObservableCollection<NvrBindingItemModel> _nvrBindingItems = new()
-        {
-            new NvrBindingItemModel()
-            {
-                IpAddress = "10.200.211.98",
-                Port = 37777,
-                Username = "admin",
-                Password = "a12345678",
-                Status = NvrStatus.LoginFailed,
-                IsConfigured = true,
-                Type = DeviceType.NVR,
-            },
-            new NvrBindingItemModel()
-            {
-                IpAddress = "10.200.211.98",
-                Port = 37777,
-                Username = "admin",
-                Password = "a12345678",
-                Status = NvrStatus.LoginFailed,
-                IsConfigured = true,
-                Type = DeviceType.NVR,
-                IsNvrBound = true
-            },
-        };
+        private ObservableCollection<NvrBindingItemModel> _nvrBindingItems = new();
 
+        private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
+        private List<BarcodeScannerCameraConfigInfoModel>? _scannerCameraConfigInfoModels;
         public string Identifier { get; set; } = string.Empty;
 
         public ObservableCollection<NvrBindingItemModel> NvrBindingItems {
@@ -53,12 +43,66 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             set => SetProperty(ref _cameraFinderItemInfo, value);
         }
 
-        public NvrBindingEditorViewModel() {
+        public NvrBindingEditorViewModel(IIpcNvrConfigRepository ipcNvrConfigRepository,
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            INvrCameraBindingRepository nvrCameraBindingRepository) {
+            _ipcNvrConfigRepository = ipcNvrConfigRepository;
+            _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+            _nvrCameraBindingRepository = nvrCameraBindingRepository;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj) {
+            _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
+            _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+
+            var nvrBindingItemModels = _ipcNvrConfigInfoModels
+                .Where(w => w.Type == (int)DeviceType.NVR)
+                .SelectMany((s, i) => Enumerable.Range(1, s.ChannelCount).Select(channelIndex => new NvrBindingItemModel {
+                    Num = i + 1,
+                    Brand = s.Brand,
+                    IpAddress = s.IpAddress,
+                    Name = s.Name,
+                    SerialNumber = s.SerialNumber,
+                    IsConfigured = true,
+                    Channel = channelIndex,
+                    CustomName = s.Name,
+                    Type = (DeviceType)s.Type,
+                    Username = s.Username,
+                    Password = s.Password,
+                    Port = s.Port,
+                    IsNvrBound = _scannerCameraConfigInfoModels
+                        .FirstOrDefault(f => f.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber) &&
+                            f.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress) && a.Channel == channelIndex) == true) != null,
+                }))
+                ?.ToList();
+
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                NvrBindingItems.Clear();
+                await Task.Delay(200);
+                NvrBindingItems.AddRange(nvrBindingItemModels);
+                Parallel.ForEach(NvrBindingItems.Where(w =>
+                    !w.Username.Equals(string.Empty) &&
+                    !w.Password.Equals(string.Empty) &&
+                    !w.Brand.Equals(string.Empty)), async device => {
+                        //登录
+                        if (device.Brand.Equals("DaHua", StringComparison.InvariantCultureIgnoreCase)) {
+                            //大华登录
+                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                                device.Status = NvrStatus.LoggingIn;
+                                return Task.CompletedTask;
+                            });
+                            var baseDaHuatech = BaseDaHuatech.CreateInstance();
+                            var (key, value) = await baseDaHuatech.LogIn(device.SerialNumber, device.Username, device.Password);
+                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                                device.Status = key ? NvrStatus.Online : NvrStatus.LoginFailed;
+                                return Task.CompletedTask;
+                            });
+                        }
+                    });
+            });
+            //加载后需要再次登录以验证账号密码
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
@@ -71,18 +115,46 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public ICommand UnbindNvrCommand => new DelegateCommand<object>(UnbindNvrDelegate);
 
-        private void UnbindNvrDelegate(object obj) {
-            //同步到库
-            //解绑
-            //刷新
+        private async void UnbindNvrDelegate(object obj) {
+            if (obj is NvrBindingItemModel info) {
+                var model = _scannerCameraConfigInfoModels?.FirstOrDefault(f =>
+                    f.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber));
+                if (model is not null) {
+                    var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
+                        f.Channel.Equals(info.Channel) &&
+                        f.ScannerCameraConfigInfoModelId.Equals(model.Id));
+                    if (infoModel is not null) {
+                        var delete = await _nvrCameraBindingRepository.Delete(infoModel);
+                        if (delete) {
+                            _barcodeScannerCameraConfigRepository.UpdateMemoryCache();
+                            LoadedDelegate(obj);
+                        }
+                    }
+                }
+            }
         }
 
         public ICommand BindNvrCommand => new DelegateCommand<object>(BindNvrDelegate);
 
-        private void BindNvrDelegate(object obj) {
-            //同步到库
-            //绑定
-            //刷新
+        private async void BindNvrDelegate(object obj) {
+            if (obj is NvrBindingItemModel info) {
+                var model = _scannerCameraConfigInfoModels?.FirstOrDefault(f =>
+                    f.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber));
+                if (model is not null) {
+                    var insert = await _nvrCameraBindingRepository.Insert(new NvrCameraBindingInfoModel() {
+                        ScannerCameraConfigInfoModelId = model.Id,
+                        Channel = info.Channel,
+                        IpAddress = info.IpAddress,
+                        Password = info.Password,
+                        Username = info.Username,
+                        Port = info.Port,
+                    });
+                    if (insert) {
+                        _barcodeScannerCameraConfigRepository.UpdateMemoryCache();
+                        LoadedDelegate(obj);
+                    }
+                }
+            }
         }
     }
 }

@@ -89,9 +89,8 @@ namespace JayTom.Dws.Client.Service.Device {
             await Task.Yield();
             _cameraInfos.Clear();
             try {
-                var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                    f.ConfigName.Equals("CameraSdkSelector"), token);
-                _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
+                _cameraSdkSelectorDto = await _configRepository.FirstOrDefaultEntity<CameraSdkSelectorDto>("CameraSdkSelector", token) ??
+                                        new CameraSdkSelectorDto();
 
                 var daHuaSmartCameras = new List<CameraInfo>();
                 var hikvisionIndustrialCameras = new List<CameraInfo>();
@@ -122,7 +121,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 }
                 if (_cameraSdkSelectorDto?.IsUseDaHuaSecurityCameraSdk == true) {
                     //大华安防相机
-                    daHuaSecurityCameras = await new DaHuatechSecurityCamera().EnumerateCameras();
+                    daHuaSecurityCameras = (await new DaHuatechSecurityCamera().EnumerateCameras())?.Where(w => w.Type == CameraType.VideoCamera)?.ToList();
                 }
 
                 if (_cameraSdkSelectorDto?.IsUseWayzimSmartCameraSdk == true) {
@@ -421,21 +420,24 @@ namespace JayTom.Dws.Client.Service.Device {
 
                 await Task.Delay(100, token);
                 await camera.Start(string.Empty);
-                if (_cameraSdkSelectorDto?.IsUsbCameraSdk == true) {
-                    //判断是否Usb相机或者安防相机扫码
-                    if (camera is NormalUsbCamera usbCamera) {
-                        var usbCameraParameter = await GetUsbCameraParameter(usbCamera.Info?.SerialNumber ?? string.Empty);
-                        var barcodeReaderParameter = await GetBarcodeReaderParameter();
-                        var dictionary = new Dictionary<string, object>();
-                        if (usbCameraParameter is not null) {
-                            dictionary.Add("UsbCameraParameter", usbCameraParameter);
-                        }
 
-                        if (barcodeReaderParameter is not null) {
-                            dictionary.Add("BarcodeReaderParameter", barcodeReaderParameter);
-                        }
-                        usbCamera.SetParameters(dictionary);
-                    }
+                if (_cameraSdkSelectorDto?.IsUsbCameraSdk == true && camera is NormalUsbCamera usbCamera) {
+                    var usbCameraParameter = await GetUsbCameraParameter(usbCamera.Info?.SerialNumber ?? string.Empty) ?? new Dictionary<UsbCameraParameter, object>();
+                    var barcodeReaderParameter = await GetBarcodeReaderParameter() ?? new Dictionary<BarcodeReaderParameter, object>();
+                    var dictionary = new Dictionary<string, object>()
+                    {
+                        {"UsbCameraParameter", usbCameraParameter},
+                        {"BarcodeReaderParameter", barcodeReaderParameter}
+                    };
+                    usbCamera.SetParameters(dictionary);
+                }
+                else if (camera is DaHuatechSecurityCamera ipcCamera && camera.BindingType == CameraBindingType.ScannerCamera) {
+                    var barcodeReaderParameter = await GetBarcodeReaderParameter() ?? new Dictionary<BarcodeReaderParameter, object>();
+                    var dictionary = new Dictionary<string, object>()
+                    {
+                        {"BarcodeReaderParameter", barcodeReaderParameter}
+                    };
+                    ipcCamera.SetParameters(dictionary);
                 }
             }
             //连接磅秤
@@ -704,11 +706,19 @@ namespace JayTom.Dws.Client.Service.Device {
                                     break;
 
                                 case ISecurityCamera securityCamera: {
-                                        var parameters = panoramaCameraConfigInfoModels
-                                            ?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))
-                                            ?.CameraConnectionParameters;
+                                        var parameters = securityCamera.BindingType switch {
+                                            CameraBindingType.PanoramaCamera => panoramaCameraConfigInfoModels
+                                                ?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))
+                                                ?.CameraConnectionParameters,
+                                            CameraBindingType.ScannerCamera => scannerCameraConfigInfoModels
+                                                ?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))
+                                                ?.CameraConnectionParameters,
+                                            _ => string.Empty
+                                        };
+
                                         securityCamera.CameraConnectionParameters =
-                                            parameters ?? string.Empty;
+                                                parameters ?? string.Empty;
+
                                         securityCamera.BarcodeRead += (sender, args) => {
                                             OnBarcodeScanned(args);
                                         };

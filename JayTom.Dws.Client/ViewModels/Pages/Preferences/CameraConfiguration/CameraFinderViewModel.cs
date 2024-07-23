@@ -6,6 +6,7 @@ using Prism.Commands;
 using System.Windows;
 using Newtonsoft.Json;
 using TouchSocket.Core;
+using Mono.Unix.Native;
 using JayTom.Dws.Camera;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -27,11 +28,14 @@ using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
+using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
@@ -43,6 +47,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
         private readonly IConfigRepository _configRepository;
         private readonly IDialogService _dialogService;
+        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private bool _isExecuting;
         private static bool _isLoaded;
 
@@ -97,13 +102,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IVolumeCameraConfigRepository volumeCameraConfigRepository,
             IConfigRepository configRepository,
-            IDialogService dialogService) {
+            IDialogService dialogService,
+            IIpcNvrConfigRepository ipcNvrConfigRepository) {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
             _configRepository = configRepository;
             _dialogService = dialogService;
+            _ipcNvrConfigRepository = ipcNvrConfigRepository;
 
             _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
                 await Application.Current.Dispatcher.InvokeAsync(() => {
@@ -309,27 +316,54 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             //判断是否安防相机
             if (obj.CameraType == CameraType.VideoCamera) {
                 //弹出账号密码录入框
-                var result = ButtonResult.No;
-                _dialogService.ShowDialog($"VideoCameraSettingsDialog", new DialogParameters()
-                {
-                    {"SerialNo", obj.SerialNumber}
-                }, callback => {
-                    result = callback.Result;
-                    var userName = callback.Parameters.GetValue<string>("UserName");
-                    var passWord = callback.Parameters.GetValue<string>("PassWord");
-                    failureMessage = callback.Parameters.GetValue<string>("FailureMessage");
 
+                //判断是否已登录
+
+                var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
+
+                var ipcNvrConfigInfoModel = ipcNvrConfigInfoModels.FirstOrDefault(a => a.SerialNumber.Equals(obj.SerialNumber) &&
+                    !a.Username.Equals(string.Empty) &&
+                    !a.Password.Equals(string.Empty));
+                if (ipcNvrConfigInfoModel is not null) {
                     cameraConnectionParameters = JsonConvert.SerializeObject(new {
-                        UserName = userName,
-                        PassWord = passWord,
+                        UserName = ipcNvrConfigInfoModel.Username,
+                        PassWord = ipcNvrConfigInfoModel.Password,
                     });
-                });
-                if (result != ButtonResult.OK) {
-                    return;
                 }
-                if (!failureMessage.Equals(string.Empty)) {
-                    CameraFinderMessageQueue.Enqueue(failureMessage);
-                    return;
+                else {
+                    var result = ButtonResult.No;
+                    _dialogService.ShowDialog($"VideoCameraSettingsDialog", new DialogParameters()
+                    {
+                        {"SerialNo", obj.SerialNumber}
+                    }, async callback => {
+                        result = callback.Result;
+                        var userName = callback.Parameters.GetValue<string>("UserName");
+                        var passWord = callback.Parameters.GetValue<string>("PassWord");
+                        failureMessage = callback.Parameters.GetValue<string>("FailureMessage");
+
+                        cameraConnectionParameters = JsonConvert.SerializeObject(new {
+                            UserName = userName,
+                            PassWord = passWord,
+                        });
+                        //更新到库
+                        await _ipcNvrConfigRepository.InsertOrUpdate(new IpcNvrConfigInfoModel() {
+                            Brand = "DaHua", //当前只有大华
+                            IpAddress = obj.IpAddress,
+                            Name = obj.Name,
+                            Password = passWord,
+                            Port = 37777,
+                            Type = 0,
+                            Username = userName,
+                            ChannelCount = 1
+                        });
+                    });
+                    if (result != ButtonResult.OK) {
+                        return;
+                    }
+                    if (!failureMessage.Equals(string.Empty)) {
+                        CameraFinderMessageQueue.Enqueue(failureMessage);
+                        return;
+                    }
                 }
             }
 
@@ -394,7 +428,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             if (_isExecuting || !CheckSdk(obj)) {
                 return;
             }
-
+            var failureMessage = string.Empty;
             var cameraConnectionParameters = string.Empty;
             var result = ButtonResult.No;
             if (obj.CameraType == CameraType.SmartCamera /*&&
@@ -418,7 +452,58 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 }
             }
             //如果是安防相机，需要判断是否已经登录
+            //判断是否安防相机
+            if (obj.CameraType == CameraType.VideoCamera) {
+                //弹出账号密码录入框
 
+                //判断是否已登录
+
+                var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
+
+                var ipcNvrConfigInfoModel = ipcNvrConfigInfoModels.FirstOrDefault(a => a.SerialNumber.Equals(obj.SerialNumber) &&
+                    !a.Username.Equals(string.Empty) &&
+                    !a.Password.Equals(string.Empty));
+                if (ipcNvrConfigInfoModel is not null) {
+                    cameraConnectionParameters = JsonConvert.SerializeObject(new {
+                        UserName = ipcNvrConfigInfoModel.Username,
+                        PassWord = ipcNvrConfigInfoModel.Password,
+                    });
+                }
+                else {
+                    _dialogService.ShowDialog($"VideoCameraSettingsDialog", new DialogParameters()
+                    {
+                        {"SerialNo", obj.SerialNumber}
+                    }, async callback => {
+                        result = callback.Result;
+                        var userName = callback.Parameters.GetValue<string>("UserName");
+                        var passWord = callback.Parameters.GetValue<string>("PassWord");
+                        failureMessage = callback.Parameters.GetValue<string>("FailureMessage");
+
+                        cameraConnectionParameters = JsonConvert.SerializeObject(new {
+                            UserName = userName,
+                            PassWord = passWord,
+                        });
+                        //更新到库
+                        await _ipcNvrConfigRepository.InsertOrUpdate(new IpcNvrConfigInfoModel() {
+                            Brand = "DaHua", //当前只有大华
+                            IpAddress = obj.IpAddress,
+                            Name = obj.Name,
+                            Password = passWord,
+                            Port = 37777,
+                            Type = 0,
+                            Username = userName,
+                            ChannelCount = 1
+                        });
+                    });
+                    if (result != ButtonResult.OK) {
+                        return;
+                    }
+                    if (!failureMessage.Equals(string.Empty)) {
+                        CameraFinderMessageQueue.Enqueue(failureMessage);
+                        return;
+                    }
+                }
+            }
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 _isExecuting = true;
                 var isSuccess = false;

@@ -30,6 +30,7 @@
     <Border
         MinWidth="700"
         MinHeight="500"
+        MaxWidth="700"
         Background="#2E2E2E"
         CornerRadius="20">
         <Grid>
@@ -88,7 +89,7 @@
                 FrozenColumnCount="2"
                 GridLinesVisibility="None"
                 HorizontalScrollBarVisibility="Auto"
-                ItemsSource="{Binding BaseCameraItemInfos, UpdateSourceTrigger=PropertyChanged}"
+                ItemsSource="{Binding NvrCameraMappingItemInfos, UpdateSourceTrigger=PropertyChanged}"
                 RowBackground="#061E90FF"
                 Style="{StaticResource VirtualizingDataGridStyle}">
                 <DataGrid.RowStyle>
@@ -140,7 +141,6 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="型号" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-
                     <!--  IP地址  -->
                     <DataGridTextColumn
                         Width="120"
@@ -150,6 +150,17 @@
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderIPAddress}" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  取流通道  -->
+                    <DataGridTextColumn
+                        Width="80"
+                        MinWidth="80"
+                        Binding="{Binding Channel, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="取流通道" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <!--  操作  -->

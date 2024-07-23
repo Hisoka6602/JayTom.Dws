@@ -7,5 +7,11 @@
         /// </summary>
         /// <returns></returns>
         Task<List<T>> MemoryCacheData();
+
+        /// <summary>
+        /// 手动更新缓存
+        /// </summary>
+        /// <returns></returns>
+        void UpdateMemoryCache();
     }
 }

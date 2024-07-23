@@ -223,6 +223,11 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         public CameraBindingType SupportedBindingType { get; set; }
 
+        /// <summary>
+        /// Nvr信息
+        /// </summary>
+        public CameraNvrInfo? CameraNvrInfo { get; set; }
+
         public override bool Equals(object? obj) {
             if (obj == null || GetType() != obj.GetType())
                 return false;
@@ -282,7 +287,13 @@ namespace JayTom.Dws.Camera {
         /// Usb相机
         /// </summary>
         [Description("UsbCamera"), CameraFontIcon("\xe9f5")]
-        UsbCamera = 4
+        UsbCamera = 4,
+
+        /// <summary>
+        /// NVR设备
+        /// </summary>
+        [Description("NVR设备"), CameraFontIcon("\xe9ef")]
+        NvrDevice = 5
     }
 
     /// <summary>
@@ -553,6 +564,13 @@ namespace JayTom.Dws.Camera {
         /// 替换的内容
         /// </summary>
         public string ReplaceContent { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Nvr信息
+    /// </summary>
+    public class CameraNvrInfo {
+        public int ChannelCount { get; set; }
     }
 
     /// <summary>

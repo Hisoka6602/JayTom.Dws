@@ -13,7 +13,6 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Camera.BarCodeReader {
-
     public class DynamsoftBarCodeReader : IBarCodeReader {
         private static string dbrLicenseKeys = "t0075oQAAAIvhAJJ+Mv2OHC+ZyzvrkkYyqMuHRgLktAwWHPtBRExDoEyZOSN3p9eHQ0csZBILJK+DKrBs2QaXyzJtmx0k+YgeciYvcCOd";
 
@@ -50,7 +49,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             long elapsedMilliseconds = 0;
             TextResult[]? bars = null;
 
-            if (_scalePercentage > 0) {
+            if (_scalePercentage >= 0) {
                 bitmap = GenerateThumbnail(bitmap, (int)(bitmap.Width * ((float)_scalePercentage / 100)),
                     (int)(bitmap.Height * ((float)_scalePercentage / 100))) ?? bitmap;
             }
@@ -240,6 +239,8 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                         .Value;
                                     if (isUseTextFilterMode is bool filterMode) {
                                         runtimeSettings.FurtherModes.TextFilterModes[0] = filterMode ? EnumTextFilterMode.TFM_GENERAL_CONTOUR : EnumTextFilterMode.TFM_SKIP;
+                                        for (var i = 1; i < runtimeSettings.FurtherModes.TextFilterModes.Length; i++)
+                                            runtimeSettings.FurtherModes.TextFilterModes[i] = EnumTextFilterMode.TFM_SKIP;
                                     }
 
                                     var isUseRegionPredetectionMode = parameters.FirstOrDefault(f =>
@@ -264,16 +265,22 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                             case GrayscaleTransformationMode.Original:
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[0] = EnumGrayscaleTransformationMode.GTM_ORIGINAL;
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[1] = EnumGrayscaleTransformationMode.GTM_INVERTED;
+                                                for (var i = 2; i < runtimeSettings.FurtherModes.GrayscaleTransformationModes.Length; i++)
+                                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[i] = EnumGrayscaleTransformationMode.GTM_SKIP;
                                                 break;
 
                                             case GrayscaleTransformationMode.Inverted:
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[0] = EnumGrayscaleTransformationMode.GTM_INVERTED;
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[1] = EnumGrayscaleTransformationMode.GTM_SKIP;
+                                                for (var i = 2; i < runtimeSettings.FurtherModes.GrayscaleTransformationModes.Length; i++)
+                                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[i] = EnumGrayscaleTransformationMode.GTM_SKIP;
                                                 break;
 
                                             case GrayscaleTransformationMode.OriginalAndInverted:
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[0] = EnumGrayscaleTransformationMode.GTM_ORIGINAL;
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[1] = EnumGrayscaleTransformationMode.GTM_SKIP;
+                                                for (var i = 2; i < runtimeSettings.FurtherModes.GrayscaleTransformationModes.Length; i++)
+                                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[i] = EnumGrayscaleTransformationMode.GTM_SKIP;
                                                 break;
                                         }
                                     }

@@ -24,7 +24,6 @@ using static System.Net.Mime.MediaTypeNames;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
-
     public class DaHuatechSecurityCamera : ISecurityCamera {
         private BaseDaHuatech _baseDaHuatech = BaseDaHuatech.CreateInstance();
         private SemaphoreSlim _snapRevPhotoSlim = new(1);
@@ -81,8 +80,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     Model = deviceNetInfoExe.szDetailType,
                     Port = deviceNetInfoExe.nPort,
                     SerialNumber = deviceNetInfoExe.szSerialNo,
-                    Type = CameraType.VideoCamera,
+                    Type = deviceNetInfoExe.szDeviceType.Contains("IPC", StringComparison.InvariantCultureIgnoreCase) ? CameraType.VideoCamera : CameraType.NvrDevice,
                     Version = deviceNetInfoExe.szDevSoftVersion,
+                    CameraNvrInfo = deviceNetInfoExe.szDeviceType.Contains("NVR", StringComparison.InvariantCultureIgnoreCase) ? new CameraNvrInfo() {
+                        ChannelCount = deviceNetInfoExe.wRemoteVideoInputCh
+                    } : new CameraNvrInfo(),
                     //IsAvailable = (s.Value.byInitStatus & 0x1) != 1
                     SupportedBindingType = CameraBindingType.ScannerCamera |
                                             CameraBindingType.PanoramaCamera | CameraBindingType.OcrCamera

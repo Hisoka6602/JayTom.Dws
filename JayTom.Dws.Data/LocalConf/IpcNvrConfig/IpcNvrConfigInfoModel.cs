@@ -55,5 +55,22 @@ namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
         /// </summary>
         [Column("Name"), Required, InsertOrUpdata]
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 品牌
+        /// </summary>
+        [Column("Brand"), Required, InsertOrUpdata]
+        public string Brand { get; set; } = string.Empty;
+        /// <summary>
+        /// 序列号
+        /// </summary>
+
+        [Column("SerialNumber"), Required, InsertOrUpdata]
+        public string SerialNumber { get; set; } = string.Empty;
+        /// <summary>
+        /// 通道数
+        /// </summary>
+        [Column("ChannelCount"), Required, InsertOrUpdata]
+        public int ChannelCount { get; set; }
     }
 }

@@ -60,7 +60,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     ProcessChannel();
                     _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
                         var info = (NET_DEVICE_NET_INFO_EX2)(Marshal.PtrToStructure(intPtr, typeof(NET_DEVICE_NET_INFO_EX2)) ?? IntPtr.Zero);
-                        if (info.stuDevInfo is { iIPVersion: 4, szDeviceType: "IPC" }) {
+                        if (info.stuDevInfo is { iIPVersion: 4, }) {
                             await _enumerateSlim.WaitAsync();
                             _devInfo.AddOrUpdate(info.stuDevInfo.szSerialNo, key => info.stuDevInfo,
                                 (key, oldValue) => {
@@ -192,7 +192,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     await Task.Delay(50);
                     NETClient.StartSearchDevicesEx(ref stuIn, ref stuOut);
                 }
-                await Task.Delay(1500);
+                await Task.Delay(2000);
                 await _enumerateSlim.WaitAsync();
 
                 devices.AddRange(_devInfo.Select(s => s.Value));
