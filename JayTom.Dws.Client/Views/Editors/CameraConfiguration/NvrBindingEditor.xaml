@@ -12,6 +12,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
     Name="NvrBindingEditorView"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -31,9 +32,9 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
     </UserControl.Resources>
     <Border
-        MinWidth="750"
+        MinWidth="780"
         MinHeight="500"
-        MaxWidth="750"
+        MaxWidth="780"
         Background="#2E2E2E"
         CornerRadius="20">
         <Grid>
@@ -47,7 +48,7 @@
                 <RectangleGeometry
                     RadiusX="20"
                     RadiusY="20"
-                    Rect="0,0,750,500" />
+                    Rect="0,0,780,500" />
             </Grid.Clip>
             <!--  关闭按钮  -->
             <Border
@@ -75,6 +76,7 @@
             <!--  列表  -->
             <DataGrid
                 Grid.Row="1"
+                MaxHeight="430"
                 Padding="10,0"
                 materialDesign:DataGridAssist.CellPadding="4 2 2 2"
                 materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
@@ -143,17 +145,18 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderIPAddress}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  通道数  -->
+                    <!--  取流通道  -->
                     <DataGridTextColumn
-                        Width="60"
-                        MinWidth="60"
-                        Binding="{Binding ChannelCount, UpdateSourceTrigger=PropertyChanged}"
+                        Width="80"
+                        MinWidth="80"
+                        Binding="{Binding Channel, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="通道数" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="取流通道" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+
                     <!--  在线状态  -->
                     <DataGridTemplateColumn
                         MinWidth="80"

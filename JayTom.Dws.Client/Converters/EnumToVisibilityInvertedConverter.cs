@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Converters {
-
     public class EnumToVisibilityInvertedConverter : IValueConverter {
 
         public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {

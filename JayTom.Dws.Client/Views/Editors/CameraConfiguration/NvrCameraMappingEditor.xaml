@@ -72,6 +72,7 @@
             <!--  列表  -->
             <DataGrid
                 Grid.Row="1"
+                MaxHeight="430"
                 Padding="10,0"
                 materialDesign:DataGridAssist.CellPadding="4 2 2 2"
                 materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"

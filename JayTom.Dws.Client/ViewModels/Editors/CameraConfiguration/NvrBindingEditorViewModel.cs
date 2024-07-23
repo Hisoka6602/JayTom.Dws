@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
+
     public class NvrBindingEditorViewModel : BindableBase {
         private CameraFinderItemInfoModel _cameraFinderItemInfo = new();
 
