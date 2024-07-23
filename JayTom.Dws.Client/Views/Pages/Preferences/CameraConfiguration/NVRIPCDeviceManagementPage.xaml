@@ -1,17 +1,15 @@
 ﻿<Page
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration.NVRIPCDeviceManagementPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
-    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
-    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
-    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
-    xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     Name="NvripcDeviceManagementView"
     Title="NVRIPCDeviceManagementPage"
     d:DesignHeight="450"
@@ -25,8 +23,8 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
+        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
-        <cameraConverter:NvrStatusConverter x:Key="NvrStatusConverter" />
         <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
     </Page.Resources>
     <Grid Margin="10">
@@ -214,7 +212,6 @@
                 </StackPanel>
             </Button>
         </StackPanel>
-
         <!--  列表  -->
         <DataGrid
             Grid.Row="1"
@@ -367,7 +364,7 @@
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource IconFontFamily}"
                                     FontSize="30"
-                                    Foreground="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NvrStatusConverter}, ConverterParameter=color}"
+                                    Foreground="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=BackgroundColor}"
                                     Text="&#xe7a6;" />
                                 <!--  文字  -->
                                 <TextBlock
@@ -378,7 +375,7 @@
                                     FontSize="13"
                                     FontWeight="Light"
                                     Foreground="White"
-                                    Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NvrStatusConverter}, ConverterParameter=ToolTip}" />
+                                    Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -443,7 +440,8 @@
                                     CommandParameter="{Binding}"
                                     Focusable="False"
                                     Foreground="Green"
-                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                    Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    Visibility="{Binding Type, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=NVR, UpdateSourceTrigger=PropertyChanged}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock
                                             HorizontalAlignment="Center"

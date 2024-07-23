@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
@@ -14,7 +15,9 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Client.Views.Editors.CloudService;
+using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
@@ -59,6 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 Username = "admin",
                 Password = "a12345678",
                 Status = NvrStatus.Offline,
+                Type = DeviceType.NVR,
             },
             new IpcNvrItemInfoModel()
             {
@@ -68,6 +72,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 Password = "a12345678",
                 Status = NvrStatus.LoginFailed,
                 IsConfigured = true,
+                Type = DeviceType.NVR,
             },
         };
 
@@ -94,13 +99,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public NvrIpcDeviceManagementViewModel() {
         }
 
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
+
+        private void LoadedDelegate(object obj) {
+        }
+
         /// <summary>
         /// 预览
         /// </summary>
         public ICommand PreviewCommand => new DelegateCommand<object>(PreviewDelegate);
 
-        private void PreviewDelegate(object obj) {
+        private async void PreviewDelegate(object obj) {
             //显示预览框
+
+            if (obj is IpcNvrItemInfoModel info) {
+                var ipcPreviewDialog = new IpcPreviewDialog();
+                if (ipcPreviewDialog.DataContext is IpcPreviewViewModel model) {
+                    model.Identifier = Identifier;
+                    model.IpcNvrItemInfo = info;
+
+                    await DialogHost.Show(ipcPreviewDialog, model.Identifier);
+                }
+            }
         }
 
         /// <summary>
@@ -108,8 +128,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// </summary>
         public ICommand BindCommand => new DelegateCommand<object>(BindDelegate);
 
-        private void BindDelegate(object obj) {
+        private async void BindDelegate(object obj) {
             //显示绑定框
+            if (obj is IpcNvrItemInfoModel info) {
+                var nvrCameraMappingEditor = new NvrCameraMappingEditor();
+                if (nvrCameraMappingEditor.DataContext is NvrCameraMappingEditorViewModel model) {
+                    model.Identifier = Identifier;
+                    await DialogHost.Show(nvrCameraMappingEditor, model.Identifier);
+                }
+            }
         }
 
         /// <summary>

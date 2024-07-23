@@ -273,9 +273,9 @@ namespace JayTom.Dws.Camera {
         ThreeDCamera = 2,
 
         /// <summary>
-        /// 录像相机
+        /// IPC相机
         /// </summary>
-        [Description("录像相机/安防"), CameraFontIcon("\xea0b")]
+        [Description("IPC相机"), CameraFontIcon("\xea0b")]
         VideoCamera = 3,
 
         /// <summary>

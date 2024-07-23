@@ -1,0 +1,284 @@
+﻿<UserControl
+    x:Class="JayTom.Dws.Client.Views.Editors.CameraConfiguration.NvrBindingEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
+    xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Editors.CameraConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    Name="NvrBindingEditorView"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    FontFamily="{StaticResource CustomFontFamily}"
+    mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="NvrBindingEditorView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <UserControl.Resources>
+        <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
+        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+        <converters:EnumToVisibilityInvertedConverter x:Key="EnumToVisibilityInvertedConverter" />
+        <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+    </UserControl.Resources>
+    <Border
+        MinWidth="750"
+        MinHeight="500"
+        MaxWidth="750"
+        Background="#2E2E2E"
+        CornerRadius="20">
+        <Grid>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.Clip>
+                <RectangleGeometry
+                    RadiusX="20"
+                    RadiusY="20"
+                    Rect="0,0,750,500" />
+            </Grid.Clip>
+            <!--  关闭按钮  -->
+            <Border
+                Grid.Row="0"
+                Grid.Column="0"
+                Height="40"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                CornerRadius="20,20,0,0">
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+
+                    <!--  关闭  -->
+                    <Button
+                        Command="{Binding CloseDialogCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}"
+                        Style="{StaticResource CustomCloseButtonStyle}"
+                        ToolTip="Close">
+                        <TextBlock
+                            Foreground="White"
+                            Style="{StaticResource SystemTextBlockStyle}"
+                            Text="&#xe601;" />
+                    </Button>
+                </StackPanel>
+            </Border>
+            <!--  列表  -->
+            <DataGrid
+                Grid.Row="1"
+                Padding="10,0"
+                materialDesign:DataGridAssist.CellPadding="4 2 2 2"
+                materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
+                AlternatingRowBackground="#101E90FF"
+                AutoGenerateColumns="False"
+                Background="Transparent"
+                CanUserAddRows="False"
+                CanUserResizeColumns="True"
+                CanUserSortColumns="False"
+                CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                Foreground="White"
+                FrozenColumnCount="2"
+                GridLinesVisibility="None"
+                HorizontalScrollBarVisibility="Auto"
+                ItemsSource="{Binding NvrBindingItems, UpdateSourceTrigger=PropertyChanged}"
+                RowBackground="#061E90FF"
+                Style="{StaticResource VirtualizingDataGridStyle}">
+                <DataGrid.RowStyle>
+                    <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                        <Setter Property="Height" Value="35" />
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn
+                        Width="45"
+                        MinWidth="45"
+                        Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        IsReadOnly="True">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  设备名称  -->
+                    <DataGridTextColumn
+                        Width="100"
+                        MinWidth="100"
+                        Binding="{Binding CustomName, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="设备名称" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  序列号  -->
+                    <DataGridTextColumn
+                        Width="130"
+                        MinWidth="130"
+                        Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="序列号" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+
+                    <!--  IP地址  -->
+                    <DataGridTextColumn
+                        Width="120"
+                        MinWidth="120"
+                        Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderIPAddress}" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  通道数  -->
+                    <DataGridTextColumn
+                        Width="60"
+                        MinWidth="60"
+                        Binding="{Binding ChannelCount, UpdateSourceTrigger=PropertyChanged}"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                        EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="通道数" />
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <!--  在线状态  -->
+                    <DataGridTemplateColumn
+                        MinWidth="80"
+                        MaxWidth="120"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="状态" />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <!--  点  -->
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="30"
+                                        Foreground="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=BackgroundColor}"
+                                        Text="&#xe7a6;" />
+                                    <!--  文字  -->
+                                    <TextBlock
+                                        Margin="2,0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="13"
+                                        FontWeight="Light"
+                                        Foreground="White"
+                                        Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--  操作  -->
+                    <DataGridTemplateColumn
+                        Width="120"
+                        MaxWidth="320"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel
+                                    Margin="10,0,0,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                                    <!--  绑定  -->
+                                    <Button
+                                        Height="30"
+                                        MinWidth="60"
+                                        Margin="2,0"
+                                        HorizontalAlignment="Left"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="RoyalBlue"
+                                        Command="{Binding ElementName=NvrBindingEditorView, Path=DataContext.BindNvrCommand}"
+                                        CommandParameter="{Binding}"
+                                        Focusable="False"
+                                        Foreground="RoyalBlue"
+                                        Style="{StaticResource MaterialDesignFlatLightButton}"
+                                        Visibility="{Binding IsNvrBound, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="13"
+                                                Foreground="White"
+                                                Text="&#xe9c7;" />
+                                            <TextBlock
+                                                Margin="5,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="True"
+                                                Text="绑定"
+                                                TextAlignment="Justify" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button
+                                        Height="30"
+                                        MinWidth="60"
+                                        Margin="2,0"
+                                        materialDesign:ButtonAssist.CornerRadius="5"
+                                        Background="DarkRed"
+                                        Command="{Binding ElementName=NvrBindingEditorView, Path=DataContext.UnbindNvrCommand}"
+                                        CommandParameter="{Binding}"
+                                        Focusable="False"
+                                        Foreground="Red"
+                                        Style="{StaticResource MaterialDesignFlatLightButton}"
+                                        Visibility="{Binding IsNvrBound, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="13"
+                                                Foreground="White"
+                                                Text="&#xe9c6;" />
+                                            <TextBlock
+                                                Margin="5,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="True"
+                                                Text="解绑"
+                                                TextAlignment="Justify" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

@@ -18,12 +18,11 @@ namespace JayTom.Dws.Client.Converters {
 
             var enumValue = value.ToString() ?? string.Empty;
             var targetValue = parameter.ToString();
-
+            var strings = targetValue?.Split("|");
             // Check if the value matches the parameter
-            var isVisible = enumValue.Equals(targetValue, StringComparison.InvariantCultureIgnoreCase);
 
             // Return inverted visibility
-            return isVisible ? Visibility.Collapsed : Visibility.Visible;
+            return strings?.Any(a => a.Equals(enumValue, StringComparison.InvariantCultureIgnoreCase)) == true ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {

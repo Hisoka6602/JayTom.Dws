@@ -81,6 +81,7 @@ using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
+using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
@@ -89,6 +90,7 @@ using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
+using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
@@ -542,6 +544,8 @@ namespace JayTom.Dws.Client {
 
             //Ipc/Nvr编辑
             ViewModelLocationProvider.Register<NvrIpcDeviceEditor, NvrIpcDeviceEditorViewModel>();
+            ViewModelLocationProvider.Register<NvrCameraMappingEditor, NvrCameraMappingEditorViewModel>();
+            ViewModelLocationProvider.Register<NvrBindingEditor, NvrBindingEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
@@ -550,6 +554,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
             ViewModelLocationProvider.Register<PackageDetailsDialog, PackageDetailsDialogViewModel>();
+            ViewModelLocationProvider.Register<IpcPreviewDialog, IpcPreviewViewModel>();
 
             ViewModelLocationProvider.Register<ApiTestDialog, ApiTestViewModel>();
             ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();

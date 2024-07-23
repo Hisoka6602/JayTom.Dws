@@ -18,6 +18,7 @@ using System.Windows.Threading;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
+using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
@@ -26,7 +27,11 @@ using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
@@ -203,6 +208,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             });
         }
 
+        public string Identifier => "CameraSettingDialog";
+
         /// <summary>
         /// Sdk选择
         /// </summary>
@@ -221,9 +228,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             set => SetProperty(ref _cameraFinderItems, value);
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         /// <summary>
         /// 刷新中
@@ -447,9 +452,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             });
         }
 
-        public ICommand BindOcrScannerCameraCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(BindOcrScannerCameraDelegate);
-        }
+        /// <summary>
+        /// 绑定Ocr算法
+        /// </summary>
+        public ICommand BindOcrScannerCameraCommand => new DelegateCommand<CameraFinderItemInfoModel>(BindOcrScannerCameraDelegate);
 
         private async void BindOcrScannerCameraDelegate(CameraFinderItemInfoModel obj) {
             //绑定Ocr算法相机
@@ -516,9 +522,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 绑定体积相机
         /// </summary>
-        public ICommand BindVolumeCameraCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(BindVolumeCameraDelegate);
-        }
+        public ICommand BindVolumeCameraCommand => new DelegateCommand<CameraFinderItemInfoModel>(BindVolumeCameraDelegate);
 
         private async void BindVolumeCameraDelegate(CameraFinderItemInfoModel obj) {
             if (_isExecuting) {
@@ -565,9 +569,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 解绑
         /// </summary>
-        public ICommand UnbindCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(UnbindDelegate);
-        }
+        public ICommand UnbindCommand => new DelegateCommand<CameraFinderItemInfoModel>(UnbindDelegate);
 
         private async void UnbindDelegate(CameraFinderItemInfoModel obj) {
             if (_isExecuting) {
@@ -612,9 +614,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             });
         }
 
-        public ICommand SdkSelectedCommand {
-            get => new DelegateCommand<object>(SdkSelectedDelegate);
-        }
+        public ICommand SdkSelectedCommand => new DelegateCommand<object>(SdkSelectedDelegate);
 
         private void SdkSelectedDelegate(object obj) {
             //检查对应环境
@@ -674,9 +674,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
         }
 
-        public ICommand SdkSelectionChangedCommand {
-            get => new DelegateCommand<object>(SdkSelectionChangedDelegate);
-        }
+        public ICommand SdkSelectionChangedCommand => new DelegateCommand<object>(SdkSelectionChangedDelegate);
 
         private async void SdkSelectionChangedDelegate(object obj) {
             //保存到配置
@@ -707,9 +705,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
         }
 
-        public ICommand EditedCustomNameCommand {
-            get => new DelegateCommand<CameraFinderItemInfoModel>(EditedCustomNameDelegate);
-        }
+        public ICommand EditedCustomNameCommand => new DelegateCommand<CameraFinderItemInfoModel>(EditedCustomNameDelegate);
 
         private async void EditedCustomNameDelegate(CameraFinderItemInfoModel obj) {
             //保存到数据库
@@ -816,6 +812,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 绑定Nvr
+        /// </summary>
+        public ICommand BindNvrCommand => new DelegateCommand<object>(BindNvrDelegate);
+
+        private async void BindNvrDelegate(object obj) {
+            //绑定Nvr
+            //弹窗
+
+            if (obj is CameraFinderItemInfoModel info) {
+                var nvrBindingEditor = new NvrBindingEditor();
+                if (nvrBindingEditor.DataContext is NvrBindingEditorViewModel model) {
+                    model.Identifier = Identifier;
+                    model.CameraFinderItemInfo = info;
+
+                    await DialogHost.Show(nvrBindingEditor, model.Identifier);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 解绑Nvr
+        /// </summary>
+        public ICommand UnbindNvrCommand => new DelegateCommand<object>(UnbindNvrDelegate);
+
+        private void UnbindNvrDelegate(object obj) {
         }
     }
 }

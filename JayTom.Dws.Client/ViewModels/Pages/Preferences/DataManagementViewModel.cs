@@ -38,7 +38,6 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -288,9 +287,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _packageItems, value);
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<Page>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<Page>(LoadedDelegate);
 
         private async void LoadedDelegate(Page obj) {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
@@ -327,9 +324,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        public ICommand OpenDateTimeDialogCommand {
-            get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
-        }
+        public ICommand OpenDateTimeDialogCommand => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
 
         private async void OpenDateTimeDialogDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -368,9 +363,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 上传状态点击
         /// </summary>
-        public ICommand UploadStatusCommand {
-            get => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
-        }
+        public ICommand UploadStatusCommand => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
 
         private void UploadStatusDelegate(PackageItemModel obj) {
             //判断状态是否已上传再获进行弹窗
@@ -382,9 +375,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 打开图片
         /// </summary>
-        public ICommand OpenPackagedImageCommand {
-            get => new DelegateCommand<PackageItemModel>(OpenPackagedImageDelegate);
-        }
+        public ICommand OpenPackagedImageCommand => new DelegateCommand<PackageItemModel>(OpenPackagedImageDelegate);
 
         private void OpenPackagedImageDelegate(PackageItemModel obj) {
             if (File.Exists(obj?.BarcodeImagePath)) {
@@ -400,9 +391,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 定位图片位置
         /// </summary>
-        public ICommand OpenPackagedImageFolderCommand {
-            get => new DelegateCommand<PackageItemModel>(OpenPackagedImageFolderDelegate);
-        }
+        public ICommand OpenPackagedImageFolderCommand => new DelegateCommand<PackageItemModel>(OpenPackagedImageFolderDelegate);
 
         private void OpenPackagedImageFolderDelegate(PackageItemModel obj) {
             if (File.Exists(obj?.BarcodeImagePath)) {
@@ -419,9 +408,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// 打开全景图片
         /// </summary>
 
-        public ICommand OpenPanoramaImageCommand {
-            get => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramaImageDelegate);
-        }
+        public ICommand OpenPanoramaImageCommand => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramaImageDelegate);
 
         private void OpenPanoramaImageDelegate(PanoramaImageItemModel obj) {
             if (File.Exists(obj?.PanoramaImagePath)) {
@@ -455,9 +442,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 清空查询条件
         /// </summary>
-        public ICommand ClearSearchCriteriaCommand {
-            get => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
-        }
+        public ICommand ClearSearchCriteriaCommand => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
 
         private async void ClearSearchCriteriaDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -473,9 +458,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 查询数据
         /// </summary>
-        public ICommand SearchDataCommand {
-            get => new DelegateCommand<object>(SearchDataDelegate);
-        }
+        public ICommand SearchDataCommand => new DelegateCommand<object>(SearchDataDelegate);
 
         private void SearchDataDelegate(object obj) {
             PageIndex = 1;
@@ -485,9 +468,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 导出数据
         /// </summary>
-        public ICommand ExportDataCommand {
-            get => new DelegateCommand<object>(ExportDataDelegate);
-        }
+        public ICommand ExportDataCommand => new DelegateCommand<object>(ExportDataDelegate);
 
         private async void ExportDataDelegate(object obj) {
             if (PackageItems?.Any() != true) {
