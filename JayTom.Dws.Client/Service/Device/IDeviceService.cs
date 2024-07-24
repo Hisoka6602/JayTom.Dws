@@ -129,6 +129,11 @@ namespace JayTom.Dws.Client.Service.Device {
         event EventHandler<string> CameraReleased;
 
         /// <summary>
+        /// 相机启动事件
+        /// </summary>
+        event EventHandler<CameraStartedEventArgs> CameraStarted;
+
+        /// <summary>
         /// 当磅秤连接时触发的事件
         /// </summary>
         event EventHandler<ScaleConnectedEventArgs> ScaleConnected;

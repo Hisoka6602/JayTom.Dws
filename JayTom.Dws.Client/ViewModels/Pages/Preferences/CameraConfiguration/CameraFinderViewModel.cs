@@ -728,7 +728,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             }
             if (obj.ToString()?.Equals("IsUseDaHuaVolumeCameraSdk") == true) {
                 //大华体积
-                //files = Directory.GetFiles($"{destinationDir}Cameras\\SmartCamera\\Irayple\\Dll")?.ToList();
+                files = Directory.GetFiles($"{destinationDir}Cameras\\VolumeCamera\\Irayple\\Dll")?.ToList();
             }
             if (obj.ToString()?.Equals("IsUseDaHuaSecurityCameraSdk") == true) {
                 //大华安防
@@ -751,10 +751,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 //Usb相机
             }
             if (files?.Any() == true) {
-                foreach (var s in files) {
-                    if (!File.Exists($"{destinationDir}\\{new FileInfo(s).Name}")) {
-                        File.Copy(s, $"{destinationDir}\\{new FileInfo(s).Name}", true);
-                    }
+                foreach (var s in files.Where(s => !File.Exists($"{destinationDir}\\{new FileInfo(s).Name}"))) {
+                    File.Copy(s, $"{destinationDir}\\{new FileInfo(s).Name}", true);
                 }
             }
         }
@@ -917,14 +915,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     await DialogHost.Show(nvrBindingEditor, model.Identifier);
                 }
             }
-        }
-
-        /// <summary>
-        /// 解绑Nvr
-        /// </summary>
-        public ICommand UnbindNvrCommand => new DelegateCommand<object>(UnbindNvrDelegate);
-
-        private void UnbindNvrDelegate(object obj) {
         }
     }
 }

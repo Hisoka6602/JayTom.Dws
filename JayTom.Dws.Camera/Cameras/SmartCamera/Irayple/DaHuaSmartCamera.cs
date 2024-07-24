@@ -203,7 +203,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                         GrabResultDecode(args.GrabResult);
                     };
                     OnCameraStarted(new CameraStartedEventArgs() {
-                        CameraInfo = this.Info
+                        CameraInfo = this.Info,
+                        Camera = this
                     });
                     return new KeyValuePair<bool, string>(true, "设备启动成功!");
                 }

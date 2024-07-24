@@ -485,6 +485,7 @@ namespace JayTom.Dws.Camera {
     /// 相机启动事件参数
     /// </summary>
     public class CameraStartedEventArgs : EventArgs {
+        public ICamera? Camera { get; set; }
         public CameraInfo? CameraInfo { get; set; }
     }
 

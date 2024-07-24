@@ -517,13 +517,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                 }
+                else if (item is { TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter, PackageInfo: { } package }) {
+                    if (package.BarCodeInfo is not null && package.BarCodeInfo?.Barcode?.Equals("NoRead") != true) {
+                        //正式使用需要判断 LinkedCarCount和 GrayscaleResultInfo
+                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(package.CreateTime));
+                    }
+                }
             });
 
             //程序停止
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
-                if (item is { }
-
-info) {
+                if (item is { } info) {
                     if (info.Status == ApplicationStatus.Stop &&
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         PackageInfoManager.ClearAllPackages();

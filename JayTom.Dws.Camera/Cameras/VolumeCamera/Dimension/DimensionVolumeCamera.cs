@@ -148,7 +148,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                 return new KeyValuePair<bool, string>(true, "不支持实时");
                 _dimensionVolumeSdk.StartVolumeCapture();
                 OnCameraStarted(new CameraStartedEventArgs() {
-                    CameraInfo = this.Info
+                    CameraInfo = this.Info,
+                    Camera = this
                 });
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }

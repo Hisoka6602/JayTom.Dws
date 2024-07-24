@@ -62,6 +62,7 @@ using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationSta
 using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IComputerInfoReporter _computerInfoReporter;
@@ -267,6 +268,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _clientLicenseApi = clientLicenseApi;
             /*CameraItems = new();
             PackageItems = new();*/
+
+            _deviceService.CameraStarted += async (sender, args) => {
+                await Task.Delay(500);
+                var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraInfo?.SerialNumber ?? string.Empty));
+                if (model is not null) {
+                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                        model.IsRealtimeImageEnabled = args.Camera?.IsRealtimeImageEnabled ?? false;
+                    });
+                }
+            };
+
             _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     CameraItems.Clear();
@@ -282,7 +294,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         StatusClickCommand = StatusClickCommand,
                         TakePhotoCommand = TakePhotoCommand,
                         SwitchRealtimeImageCommand = SwitchRealtimeImageCommand,
-                        IsRealtimeImageEnabled = s?.IsRealtimeImageEnabled ?? false
+                        IsRealtimeImageEnabled = s?.IsRealtimeImageEnabled ?? false,
+                        BindingType = s?.BindingType ?? new CameraBindingType()
                     })?.ToList();
                     CameraItems.AddRange(infoModels);
                 });
@@ -688,9 +701,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
             var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) &&
                                                         f.BindingType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera);
-
-            //or CameraType.PanoramaCamera 需要删掉
-
             if (model is not null) {
                 //图片转换
                 if (args?.ThumbImage is not null &&

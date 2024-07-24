@@ -156,7 +156,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     var key = (from kvp in _loginDev where kvp.Value.PlayPort == port select kvp.Key).FirstOrDefault() ?? string.Empty;
 
                     if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
-                        var convertToBmp = DhPlaySdk.ConvertToBmp(buf, size, info);
+                        var convertToBmp = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
                         await callback(convertToBmp).ConfigureAwait(false);
                         //NLog.LogManager.GetCurrentClassLogger().Error($"-ProcessChannel回调图片");
                     }
@@ -432,6 +432,30 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (!realDataCallBack) {
                         return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
                     }
+                    //设置解码模块
+
+                    var playSetEngine = DhPlaySdk.PLAY_SetEngine(plPort, DecodeType.Hevc, 0);
+
+                    if (!playSetEngine) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置解码模块失败!");
+                    }
+                    //设置图片质量
+                    var playSetPicQuality = DhPlaySdk.PLAY_SetPicQuality(plPort, true);
+
+                    if (!playSetPicQuality) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置图片质量失败!");
+                    }
+                    /*//设置颜色
+                    var playSetColor = DhPlaySdk.PLAY_SetColor(plPort, 0, 64, 64, 64, 64);
+                    if (!playSetColor) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置颜色失败!");
+                    }*/
+                    //启用高清图像内部调整策略
+
+                    var picAdjustment = DhPlaySdk.PLAY_EnableLargePicAdjustment(plPort, true);
+                    if (!picAdjustment) {
+                        return new KeyValuePair<bool, string>(picAdjustment, "启用高清图像内部调整策略失败!");
+                    }
 
                     var playPlay = DhPlaySdk.PLAY_Play(plPort, IntPtr.Zero);
 
@@ -480,6 +504,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         //停止数据回调
                         var playStop = DhPlaySdk.PLAY_Stop(mLoginId.PlayPort);
                         if (playStop) {
+                            DhPlaySdk.PLAY_ResetSourceBuffer(mLoginId.PlayPort);
                             PLAY_CloseStream(mLoginId.PlayPort);
                             mLoginId.PlayPort = 0;
                             mLoginId.IsRealTimePlay = false;

@@ -24,6 +24,7 @@ using static System.Net.Mime.MediaTypeNames;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
+
     public class DaHuatechSecurityCamera : ISecurityCamera {
         private BaseDaHuatech _baseDaHuatech = BaseDaHuatech.CreateInstance();
         private SemaphoreSlim _snapRevPhotoSlim = new(1);
@@ -256,7 +257,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                     if (key) {
                         OnCameraStarted(new CameraStartedEventArgs() {
-                            CameraInfo = Info
+                            CameraInfo = Info,
+                            Camera = this
                         });
                     }
                     else {
@@ -280,8 +282,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public async Task<KeyValuePair<bool, string>> Stop() {
             //断开
-            await Task.Yield();
+
+            await Task.Yield(); ;
             if (!string.IsNullOrEmpty(this.Info?.SerialNumber)) {
+                await _baseDaHuatech.StopRealtimePlay(this.Info.SerialNumber);
                 var (key, value) = await _baseDaHuatech.LogOut(this.Info.SerialNumber);
                 if (!key) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {

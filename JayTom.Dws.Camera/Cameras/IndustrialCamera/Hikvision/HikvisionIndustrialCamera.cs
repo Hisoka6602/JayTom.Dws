@@ -468,7 +468,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 return new KeyValuePair<bool, string>(false, $"启动失败:{_nRet:X}!");
             }
             OnCameraStarted(new CameraStartedEventArgs() {
-                CameraInfo = this.Info
+                CameraInfo = this.Info,
+                Camera = this
             });
             return new KeyValuePair<bool, string>(true, $"启动成功,{_nRet:X}");
         }

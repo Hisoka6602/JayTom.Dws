@@ -289,7 +289,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             }
 
             OnCameraStarted(new CameraStartedEventArgs() {
-                CameraInfo = this.Info
+                CameraInfo = this.Info,
+                Camera = this
             });
             return new KeyValuePair<bool, string>(true, $"体积相机启动成功");
         }

@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Camera.BarCodeReader {
+
     public class DynamsoftBarCodeReader : IBarCodeReader {
         private static string dbrLicenseKeys = "t0075oQAAAIvhAJJ+Mv2OHC+ZyzvrkkYyqMuHRgLktAwWHPtBRExDoEyZOSN3p9eHQ0csZBILJK+DKrBs2QaXyzJtmx0k+YgeciYvcCOd";
 
@@ -86,6 +87,8 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                 })?.ToList();
 
                 barcodeResult.RecognitionTime = elapsedMilliseconds;
+
+                NLog.LogManager.GetCurrentClassLogger().Info($"识别耗时:{elapsedMilliseconds}");
             }
             return barcodeResult;
         }
@@ -129,7 +132,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                             f.Key == BarcodeReaderParameter.ScalePercentage)
                         .Value;
                     if (scalePercentage is int percentage) {
-                        _scalePercentage = percentage * 10;
+                        _scalePercentage = percentage == 0 ? 100 : percentage * 10;
                     }
                     var recognitionMode = parameters.FirstOrDefault(f =>
                             f.Key == BarcodeReaderParameter.RecognitionMode)
@@ -158,17 +161,25 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                     break;
                                 }
                             case ScanMode.Balance: {
+                                    //runtimeSettings.LocalizationModes = _mNormalRuntimeSettings?.LocalizationModes;
                                     runtimeSettings.LocalizationModes[0] = EnumLocalizationMode.LM_CONNECTED_BLOCKS;
                                     runtimeSettings.LocalizationModes[1] = EnumLocalizationMode.LM_SCAN_DIRECTLY;
                                     for (var i = 2; i < runtimeSettings.LocalizationModes.Length; i++)
                                         runtimeSettings.LocalizationModes[i] = EnumLocalizationMode.LM_SKIP;
+                                    /*runtimeSettings.FurtherModes.RegionPredetectionModes[0] =
+                                        EnumRegionPredetectionMode.RPM_GENERAL_RGB_CONTRAST;*/
                                     runtimeSettings.DeblurLevel = 5;
                                     runtimeSettings.ExpectedBarcodesCount = 512;
                                     runtimeSettings.ScaleDownThreshold = 2300;
                                     runtimeSettings.FurtherModes.TextFilterModes[0] = EnumTextFilterMode.TFM_GENERAL_CONTOUR;
                                     for (var i = 1; i < runtimeSettings.FurtherModes.TextFilterModes.Length; i++)
                                         runtimeSettings.FurtherModes.TextFilterModes[i] = EnumTextFilterMode.TFM_SKIP;
-                                    //_mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
+                                    //后面补充
+                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[0] = EnumGrayscaleTransformationMode.GTM_ORIGINAL;
+                                    runtimeSettings.FurtherModes.GrayscaleTransformationModes[1] = EnumGrayscaleTransformationMode.GTM_INVERTED;
+                                    for (var i = 2; i < runtimeSettings.FurtherModes.GrayscaleTransformationModes.Length; i++)
+                                        runtimeSettings.FurtherModes.GrayscaleTransformationModes[i] = EnumGrayscaleTransformationMode.GTM_SKIP;
+
                                     break;
                                 }
                             case ScanMode.Coverage: {
@@ -202,10 +213,10 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                     for (var i = 0; i < runtimeSettings.LocalizationModes.Length; i++)
                                         runtimeSettings.LocalizationModes[i] = EnumLocalizationMode.LM_SKIP;
 
-                                    var localizationMode = parameters.FirstOrDefault(f =>
+                                    var localizationMode = (LocalizationMode)(parameters.FirstOrDefault(f =>
                                             f.Key == BarcodeReaderParameter.LocalizationMode)
-                                        .Value ?? LocalizationMode.Default;
-                                    if (localizationMode is LocalizationMode mode) {
+                                        .Value ?? 0);
+                                    if (localizationMode is var mode) {
                                         switch (mode) {
                                             case LocalizationMode.Default:
                                                 runtimeSettings.LocalizationModes = _mNormalRuntimeSettings?.LocalizationModes;
@@ -257,10 +268,10 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                         runtimeSettings.ScaleDownThreshold = threshold < 512 ? 512 : threshold;
                                     }
 
-                                    var grayscaleTransformationMode = parameters.FirstOrDefault(f =>
+                                    var grayscaleTransformationMode = (GrayscaleTransformationMode)(parameters.FirstOrDefault(f =>
                                             f.Key == BarcodeReaderParameter.GrayscaleTransformationMode)
-                                        .Value ?? GrayscaleTransformationMode.Original;
-                                    if (grayscaleTransformationMode is GrayscaleTransformationMode formationMode) {
+                                        .Value ?? 0);
+                                    if (grayscaleTransformationMode is var formationMode) {
                                         switch (formationMode) {
                                             case GrayscaleTransformationMode.Original:
                                                 runtimeSettings.FurtherModes.GrayscaleTransformationModes[0] = EnumGrayscaleTransformationMode.GTM_ORIGINAL;
@@ -285,10 +296,10 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                         }
                                     }
 
-                                    var imagePreprocessingMode = parameters.FirstOrDefault(f =>
+                                    var imagePreprocessingMode = (ImagePreprocessingMode)(parameters.FirstOrDefault(f =>
                                             f.Key == BarcodeReaderParameter.ImagePreprocessingMode)
-                                        .Value ?? ImagePreprocessingMode.General;
-                                    if (imagePreprocessingMode is ImagePreprocessingMode preprocessingMode) {
+                                        .Value ?? 0);
+                                    if (imagePreprocessingMode is var preprocessingMode) {
                                         runtimeSettings.FurtherModes.ImagePreprocessingModes[0] = preprocessingMode switch {
                                             ImagePreprocessingMode.General => EnumImagePreprocessingMode.IPM_GENERAL,
                                             ImagePreprocessingMode.GrayEqualization => EnumImagePreprocessingMode.IPM_GRAY_EQUALIZE,
@@ -327,7 +338,6 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                         }
                     }
                     _mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
-                    //var serializeObject = JsonConvert.SerializeObject(runtimeSettings);
                     return new KeyValuePair<bool, string>(true, "读码器设置成功");
                 }
                 catch (Exception e) {

@@ -345,6 +345,8 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public event EventHandler<string>? CameraReleased;
 
+        public event EventHandler<CameraStartedEventArgs>? CameraStarted;
+
         public event EventHandler<ScaleConnectedEventArgs>? ScaleConnected;
 
         public event EventHandler<OcrExceptionEventArgs>? OcrExceptionOccurred;
@@ -374,47 +376,37 @@ namespace JayTom.Dws.Client.Service.Device {
             foreach (var camera in _cameras.OrderByDescending(o => o.BindingType)) {
                 //设置过滤
                 if (camera.BindingType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera) {
-                    if (camera is IIndustrialCamera industrialCamera) {
-                        industrialCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
-                            DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
-                            RegularExpression = _barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty,
-                            ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
-                            FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
-                                FilterOutputType.NoRead => "NoRead",
-                                FilterOutputType.Filtered => "Filtered",
-                                _ => string.Empty
-                            },
-                            BarCodeFilterMode = (BarCodeFilterMode)(_barcodeFilterSettingsDto?.BarCodeFilterOptions ?? BarCodeFilterOptions.None),
-                            IsUseCustomRegexReplacement = _barcodeFilterSettingsDto?.IsUseCustomRegexReplacement ?? false,
-                            CustomRegexReplacementItems = _barcodeFilterSettingsDto?.CustomRegexReplacementItems?.Where(w => w.IsActive)?.Select(s =>
-                                new CustomRegexReplacementItemInfo {
-                                    RegexPattern = s.RegexPattern,
-                                    ReplaceContent = s.ReplaceContent
-                                })?.ToList() ?? new List<CustomRegexReplacementItemInfo>(),
-                            CustomRegularExpressionItems = _barcodeFilterSettingsDto?.CustomRegexFilterItems?.Where(w => w.IsActive)?
-                                .Select(s => s.RegexPattern)?.ToList() ?? new List<string>()
-                        });
-                    }
-                    else if (camera is ISmartCamera smartCamera) {
-                        smartCamera.SetScanCodeFilterParams(new ScanCodeFilterParams() {
-                            DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
-                            RegularExpression = _barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty,
-                            ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
-                            FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
-                                FilterOutputType.NoRead => "NoRead",
-                                FilterOutputType.Filtered => "Filtered",
-                                _ => string.Empty
-                            },
-                            BarCodeFilterMode = (BarCodeFilterMode)(_barcodeFilterSettingsDto?.BarCodeFilterOptions ?? BarCodeFilterOptions.None),
-                            IsUseCustomRegexReplacement = _barcodeFilterSettingsDto?.IsUseCustomRegexReplacement ?? false,
-                            CustomRegexReplacementItems = _barcodeFilterSettingsDto?.CustomRegexReplacementItems?.Where(w => w.IsActive)?.Select(s =>
-                                new CustomRegexReplacementItemInfo {
-                                    RegexPattern = s.RegexPattern,
-                                    ReplaceContent = s.ReplaceContent
-                                })?.ToList() ?? new List<CustomRegexReplacementItemInfo>(),
-                            CustomRegularExpressionItems = _barcodeFilterSettingsDto?.CustomRegexFilterItems?.Where(w => w.IsActive)?
-                                .Select(s => s.RegexPattern)?.ToList() ?? new List<string>()
-                        });
+                    var filterParams = new ScanCodeFilterParams {
+                        DuplicateBarcodeFilterCount = _barcodeFilterSettingsDto?.DuplicateBarcodeFilterCount ?? 0,
+                        RegularExpression = _barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty,
+                        ScanInterval = _barcodeFilterSettingsDto?.ScanInterval ?? 1000,
+                        FilterOutContent = _barcodeFilterSettingsDto?.FilterOutputType switch {
+                            FilterOutputType.NoRead => "NoRead",
+                            FilterOutputType.Filtered => "Filtered",
+                            _ => string.Empty
+                        },
+                        BarCodeFilterMode = (BarCodeFilterMode)(_barcodeFilterSettingsDto?.BarCodeFilterOptions ?? BarCodeFilterOptions.None),
+                        IsUseCustomRegexReplacement = _barcodeFilterSettingsDto?.IsUseCustomRegexReplacement ?? false,
+                        CustomRegexReplacementItems = _barcodeFilterSettingsDto?.CustomRegexReplacementItems?.Where(w => w.IsActive)?.Select(s =>
+                            new CustomRegexReplacementItemInfo {
+                                RegexPattern = s.RegexPattern,
+                                ReplaceContent = s.ReplaceContent
+                            })?.ToList() ?? new List<CustomRegexReplacementItemInfo>(),
+                        CustomRegularExpressionItems = _barcodeFilterSettingsDto?.CustomRegexFilterItems?.Where(w => w.IsActive)?
+                            .Select(s => s.RegexPattern)?.ToList() ?? new List<string>()
+                    };
+                    switch (camera) {
+                        case IIndustrialCamera industrialCamera:
+                            industrialCamera.SetScanCodeFilterParams(filterParams);
+                            break;
+
+                        case ISmartCamera smartCamera:
+                            smartCamera.SetScanCodeFilterParams(filterParams);
+                            break;
+
+                        case ISecurityCamera securityCamera:
+                            securityCamera.SetScanCodeFilterParams(filterParams);
+                            break;
                     }
                 }
 
@@ -542,6 +534,7 @@ namespace JayTom.Dws.Client.Service.Device {
 
                     foreach (var parameter in _cameraParameters) {
                         ICamera? camera = null;
+
                         //创建对象
                         switch (parameter.Type) {
                             case CameraBindingType.ScannerCamera: {
@@ -602,7 +595,8 @@ namespace JayTom.Dws.Client.Service.Device {
 
                         if (camera is not null) {
                             //注册事件
-
+                            var isShowRealTimeImage = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
+                                f.SerialNumber.Equals(camera.Info?.SerialNumber))?.IsShowRealTimeImage ?? false;
                             camera.CameraDisconnected += delegate (object? sender, CameraConnectionEventArgs args) {
                                 if (sender is ICamera mCamera) {
                                     OnCameraDisconnected(mCamera);
@@ -638,6 +632,10 @@ namespace JayTom.Dws.Client.Service.Device {
                                     Image = args.ThumbImage,
                                 });
                             };
+                            //相机启动事件
+                            camera.CameraStarted += (sender, args) => {
+                                OnCameraStarted(args);
+                            };
                             //判断相机类型(各自注册事件)
 
                             switch (camera) {
@@ -653,12 +651,11 @@ namespace JayTom.Dws.Client.Service.Device {
                                         OcrResult args) {
                                             OnOcrContentRecognized(args);
                                         };
-                                    var isShowRealTimeImage = scannerCameraConfigInfoModels?.FirstOrDefault(f =>
-                                        f.SerialNumber.Equals(camera.Info?.SerialNumber))
-                                        ?.IsShowRealTimeImage;
-                                    if (isShowRealTimeImage == true) {
-                                        industrialCamera.StartRealTimeImage();
-                                    }
+                                    industrialCamera.CameraStarted += (sender, args) => {
+                                        if (isShowRealTimeImage == true) {
+                                            industrialCamera.StartRealTimeImage();
+                                        }
+                                    };
 
                                     if (industrialCamera.BindingType == CameraBindingType.OcrCamera) {
                                         industrialCamera.Ocr = _ocr;
@@ -692,9 +689,12 @@ namespace JayTom.Dws.Client.Service.Device {
                                             }
                                         }
 
-                                        if (scannerCameraConfigInfoModel?.IsShowRealTimeImage == true) {
-                                            smartCamera.StartRealTimeImage();
-                                        }
+                                        smartCamera.CameraStarted += (sender, args) => {
+                                            if (isShowRealTimeImage == true) {
+                                                smartCamera.StartRealTimeImage();
+                                            }
+                                        };
+
                                         if (smartCamera.BindingType == CameraBindingType.OcrCamera) {
                                             smartCamera.Ocr = _ocr;
                                         }
@@ -719,6 +719,11 @@ namespace JayTom.Dws.Client.Service.Device {
                                         securityCamera.CameraConnectionParameters =
                                                 parameters ?? string.Empty;
 
+                                        securityCamera.CameraStarted += (sender, args) => {
+                                            if (isShowRealTimeImage == true) {
+                                                securityCamera.StartRealTimeImage();
+                                            }
+                                        };
                                         securityCamera.BarcodeRead += (sender, args) => {
                                             OnBarcodeScanned(args);
                                         };
@@ -1136,6 +1141,11 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnWeightCleared(WeightChangedEventArgs e) {
             await Task.Yield();
             WeightCleared?.Invoke(this, e);
+        }
+
+        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
+            await Task.Yield();
+            CameraStarted?.Invoke(this, e);
         }
     }
 }

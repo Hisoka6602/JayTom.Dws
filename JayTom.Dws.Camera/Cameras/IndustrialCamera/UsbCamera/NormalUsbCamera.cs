@@ -247,7 +247,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                 }
                 else {
                     OnCameraStarted(new CameraStartedEventArgs() {
-                        CameraInfo = this.Info
+                        CameraInfo = this.Info,
+                        Camera = this
                     });
                 }
                 return new KeyValuePair<bool, string>(key, value);

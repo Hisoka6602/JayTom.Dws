@@ -141,9 +141,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 点击事件
         /// </summary>
-        public ICommand ClickCommand {
-            get => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
-        }
+        public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
 
         private async void MenuClickDelegate(MenuItemInfoModel obj) {
             await Application.Current.Dispatcher.InvokeAsync(() => {

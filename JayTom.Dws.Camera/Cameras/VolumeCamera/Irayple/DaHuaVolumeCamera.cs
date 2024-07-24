@@ -160,7 +160,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
                     return new KeyValuePair<bool, string>(false, "启动失败!");
                 }
                 OnCameraStarted(new CameraStartedEventArgs() {
-                    CameraInfo = this.Info
+                    CameraInfo = this.Info,
+                    Camera = this
                 });
                 return new KeyValuePair<bool, string>(true, "启动成功!");
             }
@@ -183,7 +184,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             else {
                 Volume3DSdk.vslbVolume3DStop(_handle.Value);
                 OnCameraStarted(new CameraStartedEventArgs() {
-                    CameraInfo = this.Info
+                    CameraInfo = this.Info,
+                    Camera = this
                 });
                 return new KeyValuePair<bool, string>(true, "停止成功");
             }

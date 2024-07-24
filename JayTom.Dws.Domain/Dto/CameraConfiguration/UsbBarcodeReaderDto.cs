@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
-
     public class UsbBarcodeReaderDto {
         /*/// <summary>
         /// 是否使用OrCode码
@@ -60,27 +59,27 @@ namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
         /// <summary>
         /// 去模糊级别
         /// </summary>
-        public int DeblurLevel { get; set; }
+        public int DeblurLevel { get; set; } = 3;
 
         /// <summary>
         /// 期望的条形码数量
         /// </summary>
-        public int ExpectedBarcodesCount { get; set; }
+        public int ExpectedBarcodesCount { get; set; } = 1;
 
         /// <summary>
         /// 缩放阈值
         /// </summary>
-        public int ScaleDownThreshold { get; set; }
+        public int ScaleDownThreshold { get; set; } = 2300;
 
         /// <summary>
         /// 是否使用文本过滤模式
         /// </summary>
-        public bool IsUseTextFilterMode { get; set; }
+        public bool IsUseTextFilterMode { get; set; } = true;
 
         /// <summary>
         /// 是否使用区域预检测模式
         /// </summary>
-        public bool IsUseRegionPredetectionMode { get; set; }
+        public bool IsUseRegionPredetectionMode { get; set; } = true;
 
         /// <summary>
         /// 灰度转换模式
@@ -95,12 +94,12 @@ namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
         /// <summary>
         /// 最小结果置信度
         /// </summary>
-        public int MinResultConfidence { get; set; }
+        public int MinResultConfidence { get; set; } = 3;
 
         /// <summary>
         /// 纹理检测敏感度
         /// </summary>
-        public int TextureDetectionSensitivity { get; set; }
+        public int TextureDetectionSensitivity { get; set; } = 9;
 
         /// <summary>
         /// 二值化块大小
@@ -120,12 +119,12 @@ namespace JayTom.Dws.Domain.Dto.CameraConfiguration {
         /// <summary>
         /// 图片缩放百分比
         /// </summary>
-        public int ScalePercentage { get; set; }
+        public int ScalePercentage { get; set; } = 5;
 
         /// <summary>
         /// 条码类型
         /// </summary>
-        public BarcodeType BarcodeType { get; set; } = BarcodeType.Code39;
+        public BarcodeType BarcodeType { get; set; } = BarcodeType.Code39 | BarcodeType.Code128 | BarcodeType.CodeBar | BarcodeType.QRCode;
     }
 
     [Flags]
