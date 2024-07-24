@@ -62,7 +62,7 @@ namespace JayTom.Dws.Application.Service.VideoApi {
                                         Name = s1.Name,
                                         ScanTime = s1.ScanTime,
                                         NvrCameraBindingInfos = s1.VideoNvrCameraBindingInfos?.Select(nvr => new NvrCameraBindingDto {
-                                            BarcodeScannerSerialNumber = nvr?.BarcodeScannerSerialNumber ?? string.Empty,
+                                            BarcodeScannerSerialNumber = nvr?.BarcodeScannerCameraConfigInfoModel?.SerialNumber ?? string.Empty,
                                             Channel = nvr?.Channel ?? 0,
                                             IpAddress = nvr?.IpAddress ?? string.Empty,
                                             Password = nvr?.Password ?? string.Empty,

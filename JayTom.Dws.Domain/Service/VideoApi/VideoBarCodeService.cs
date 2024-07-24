@@ -110,6 +110,9 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     if (insert) {
                         return new KeyValuePair<bool, object>(true, videoBarCodeInfoModel);
                     }
+                    else {
+                        Console.WriteLine(111);
+                    }
                 }
                 else {
                     var videoScanNodeInfoModel = new VideoScanNodeInfoModel() {
@@ -129,6 +132,9 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     var update = await _videoScanNodeRepository.Update(videoScanNodeInfoModel);
                     if (update) {
                         return new KeyValuePair<bool, object>(true, videoScanNodeInfoModel);
+                    }
+                    else {
+                        Console.WriteLine(111);
                     }
                 }
 

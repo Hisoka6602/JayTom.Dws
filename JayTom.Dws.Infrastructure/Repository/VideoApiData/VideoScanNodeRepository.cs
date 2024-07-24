@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.ComponentModel;
 using EFCore.BulkExtensions;
 using System.Threading.Tasks;
@@ -52,6 +53,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
         public new async Task<bool> Update([NotNull] VideoScanNodeInfoModel entity, CancellationToken token = default) {
             IDbContextTransaction? contextTransaction = null;
+            var serializeObject = JsonConvert.SerializeObject(entity);
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
@@ -88,13 +90,13 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                 });
             }
             catch (Win32Exception) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
             }
             catch (TaskCanceledException) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
             }
             catch (Exception e) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;

@@ -1,18 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using JayTom.Dws.Data.ServerData;
-using JayTom.Dws.Data.VideoApiData;
+﻿using JayTom.Dws.Data.VideoApiData;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
 
-namespace JayTom.Dws.Infrastructure {
+namespace JayTom.Dws.VideoApiDbTest {
 
-    public class VideoApiContext : DbContext {
+    public class VideoApiContextDB : DbContext {
 
-        public VideoApiContext(DbContextOptions<VideoApiContext> options) : base(options) {
+        public VideoApiContextDB(DbContextOptions<VideoApiContextDB> options) : base(options) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {

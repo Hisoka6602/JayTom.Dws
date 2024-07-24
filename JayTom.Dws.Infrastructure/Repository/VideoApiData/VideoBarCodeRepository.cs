@@ -152,13 +152,13 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
                 });
             }
             catch (Win32Exception) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
             }
             catch (TaskCanceledException) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
             }
             catch (Exception e) {
-                await contextTransaction?.RollbackAsync(token)!;
+                //await contextTransaction?.RollbackAsync(token)!;
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
