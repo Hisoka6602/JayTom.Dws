@@ -362,25 +362,6 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                             NodeList.AddRange(nodeNames);
                         }
 
-                        var (b, o) = await _videoApi.BarcodeTotalForDate(DateTime.Today);
-                        if (b && o is ApiResult { Data: long total }) {
-                            TodayBarcodeCount = (int)total;
-                        }
-
-                        var (key1, value1) = await _videoApi.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
-                        if (key1 && value1 is ApiResult { Data: long count }) {
-                            YesterdayBarcodeCount = (int)count;
-                        }
-                        var (b1, o1) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
-                            new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddSeconds(-1));
-                        if (b1 && o1 is ApiResult { Data: long firstDayOfMonthCount }) {
-                            FirstDayOfMonthCount = (int)firstDayOfMonthCount;
-                        }
-                        var (key2, value2) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
-                            new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
-                        if (key2 && value2 is ApiResult { Data: long lastDayOfMonthCount }) {
-                            LastDayOfMonthCount = (int)lastDayOfMonthCount;
-                        }
                         FirstPageDelegate(obj);
                     }
                 });
@@ -669,6 +650,26 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                     model.Identifier = "MainDialog";
                     DialogHost.Show(loadingDialog, model.Identifier);
                     BarCodeItems.Clear();
+
+                    var (b, o) = await _videoApi.BarcodeTotalForDate(DateTime.Today);
+                    if (b && o is ApiResult { Data: long total }) {
+                        TodayBarcodeCount = (int)total;
+                    }
+
+                    var (key1, value1) = await _videoApi.BarcodeTotalForDate(DateTime.Today.AddDays(-1));
+                    if (key1 && value1 is ApiResult { Data: long count }) {
+                        YesterdayBarcodeCount = (int)count;
+                    }
+                    var (b1, o1) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddSeconds(-1));
+                    if (b1 && o1 is ApiResult { Data: long firstDayOfMonthCount }) {
+                        FirstDayOfMonthCount = (int)firstDayOfMonthCount;
+                    }
+                    var (key2, value2) = await _videoApi.BarcodeTotalForDateBetween(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
+                        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
+                    if (key2 && value2 is ApiResult { Data: long lastDayOfMonthCount }) {
+                        LastDayOfMonthCount = (int)lastDayOfMonthCount;
+                    }
 
                     var (key, value) = await _videoApi.BarcodeInfos(barCode,
                         startTime, endTime,
