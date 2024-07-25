@@ -21,7 +21,7 @@ namespace JayTom.Dws.VideoApi.BackgroundService {
             //读配置
             _daysAgo = _configuration.GetValue<int>("CleanupDataDaysAgo", 0);
             while (!stoppingToken.IsCancellationRequested && _daysAgo > 0) {
-                await Task.Delay(10000, stoppingToken).ContinueWith(async a => {
+                await Task.Delay(30000, stoppingToken).ContinueWith(async a => {
                     var (key, value) = await _videoBarCodeAppService.CleanupDataDaysAgo(_daysAgo, stoppingToken);
                     if (!key && value is string errorMessage) {
                         _logger.LogError(errorMessage);

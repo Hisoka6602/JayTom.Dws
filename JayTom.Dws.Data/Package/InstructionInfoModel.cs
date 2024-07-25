@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {

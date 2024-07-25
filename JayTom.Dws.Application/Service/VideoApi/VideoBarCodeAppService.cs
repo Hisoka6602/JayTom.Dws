@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Application.Dto;
 using JayTom.Dws.Data.VideoApiData;
@@ -50,43 +51,17 @@ namespace JayTom.Dws.Application.Service.VideoApi {
                         cameraSerialNumber,
                         cameraName,
                         pageIndex, pageSize, token);
-                    if (b && o is List<VideoBarCodeInfoModel> models) {
-                        return new KeyValuePair<bool, object>(true, new BarcodesDto {
-                            BarCodes = models.Select(s => new BarcodesInfoDto {
-                                Barcode = s.Barcode,
-                                Id = s.Id,
-                                TimestampedGuid = s.TimestampedGuid,
-                                ScanNodeInfos = s.VideoScanNodeInfos?
-                                    .Select(s1 => new ScanNodeInfoDto {
-                                        Description = s1.Description,
-                                        Name = s1.Name,
-                                        ScanTime = s1.ScanTime,
-                                        NvrCameraBindingInfos = s1.VideoNvrCameraBindingInfos?.Select(nvr => new NvrCameraBindingDto {
-                                            BarcodeScannerSerialNumber = nvr?.BarcodeScannerCameraConfigInfoModel?.SerialNumber ?? string.Empty,
-                                            Channel = nvr?.Channel ?? 0,
-                                            IpAddress = nvr?.IpAddress ?? string.Empty,
-                                            Password = nvr?.Password ?? string.Empty,
-                                            Username = nvr?.Username ?? string.Empty,
-                                            Port = nvr?.Port ?? 0,
-                                        })?.ToList() ?? new List<NvrCameraBindingDto>(),
-                                        BarcodeImageInfos = s1.VideoNodeImageInfos?
-                                            .Select(s2 => new BarcodeImageInfoDto {
-                                                CameraName = s2.CameraName,
-                                                CameraSerialNumber = s2.CameraSerialNumber,
-                                                ImageType = s2.ImageType,
-                                                Name = s2.Name,
-                                                Path = s2.Path,
-                                            })?.ToList() ?? new List<BarcodeImageInfoDto>()
-                                    })?.ToList() ?? new List<ScanNodeInfoDto>()
-                            })?.ToList() ?? new List<BarcodesInfoDto>(),
+                    if (b && o is List<PackageInfoModel> models) {
+                        return new KeyValuePair<bool, object>(true, new VideoPackageDto {
+                            Packages = models,
                             Total = total
                         });
                     }
                     return new KeyValuePair<bool, object>(false, o);
                 }
                 else {
-                    return new KeyValuePair<bool, object>(true, new BarcodesDto {
-                        BarCodes = new List<BarcodesInfoDto>(),
+                    return new KeyValuePair<bool, object>(true, new VideoPackageDto {
+                        Packages = new List<PackageInfoModel>(),
                         Total = total
                     });
                 }

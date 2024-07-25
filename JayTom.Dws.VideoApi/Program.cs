@@ -1,6 +1,7 @@
 using NLog;
 using NLog.Web;
 using Newtonsoft.Json;
+using System.Text.Json;
 using System.Text.Unicode;
 using NLog.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
@@ -8,15 +9,18 @@ using System.Text.Encodings.Web;
 using JayTom.Dws.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using JayTom.Dws.Domain.Service.VideoApi;
 using JayTom.Dws.VideoApi.BackgroundService;
+using JayTom.Dws.Domain.Repository.VideoApi;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Application.Service.VideoApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using JayTom.Dws.Infrastructure.Repository.VideoApi;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using JayTom.Dws.Infrastructure.Repository.VideoApiData;
@@ -105,7 +109,10 @@ internal class Program {
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local; // 设置时区为 UTC
             options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
         });
+
         //SignalR
 
         builder.Services.AddSignalR(options => {
@@ -125,6 +132,8 @@ internal class Program {
                 builder.Services.AddSingleton<IVideoNodeImageRepository, VideoNodeImageRepository>();
 
                 builder.Services.AddSingleton<IVideoScanNodeRepository, VideoScanNodeRepository>();
+
+                builder.Services.AddSingleton<IVideoPackageRepository, VideoPackageRepository>();
             }
         }
         //Service注入

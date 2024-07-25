@@ -74,7 +74,7 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 设备信息
         /// </summary>
-        public DeviceInfoDto? DeviceInfos { get; set; }
+        public DeviceInfoDto? DeviceInfo { get; set; }
 
         /// <summary>
         /// Nvr信息

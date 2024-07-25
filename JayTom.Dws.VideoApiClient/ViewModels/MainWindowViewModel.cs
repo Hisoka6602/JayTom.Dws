@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Security.Policy;
+using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Threading.Channels;
@@ -678,44 +679,41 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                             PageCount = result.Total / _pageSize + (result.Total % _pageSize > 0 ? 1 : 0);
                             if (result.Total > 0) {
                                 //转换
-                                if (result.Data is List<ApiBarCodesInfo> infos) {
-                                    var barCodeItemModels = infos.SelectMany(d => d.ScanNodeInfos, (d, s) => new { d.Barcode, s })
-                                        .Select((s, i) => new BarCodeItemModel {
-                                            Num = i + 1,
-                                            BarCode = s.Barcode,
-                                            CameraCustomName = s.s.BarcodeImageInfos
-                                                ?.FirstOrDefault(f => f.ImageType == 0)?.CameraName,
-                                            CameraSerialNumber = s.s.BarcodeImageInfos
-                                                ?.FirstOrDefault(f => f.ImageType == 0)?.CameraSerialNumber,
-                                            NodeName = s.s.Name,
-                                            ScanImageUrl = s.s.BarcodeImageInfos?.FirstOrDefault(f => f.ImageType == 0)
-                                                ?.Path,
-                                            ScanTime = s.s.ScanTime,
-                                            ScanImageVisible = !string.IsNullOrEmpty(s.s.BarcodeImageInfos
-                                                ?.FirstOrDefault(f => f.ImageType == 0)?.Path),
-                                            PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>(s.s
-                                                .BarcodeImageInfos?.Where(w => w.ImageType == 1)
-                                                ?.Select(s1 => new PanoramaImageItemModel {
-                                                    ImageVisible = !string.IsNullOrEmpty(s1.Path),
-                                                    ImageUrl = s1.Path
-                                                })?.ToList() ?? new List<PanoramaImageItemModel>()),
-                                            NvrCameraBindingItemInfos = s.s.NvrCameraBindingInfos?.Select(nvr => new NvrCameraBindingItemInfo {
-                                                BarcodeScannerSerialNumber = nvr.BarcodeScannerSerialNumber,
+                                if (result.Data is List<PackageInfoModel> infos) {
+                                    var barCodeItemModels = infos.Select((s, i) => new BarCodeItemModel {
+                                        Num = i + 1,
+                                        BarCode = s.BarCodeInfo?.Barcode,
+                                        CameraCustomName = s?.BarCodeInfo?.CameraSerialNumber,
+
+                                        CameraSerialNumber = s?.BarCodeInfo?.CameraSerialNumber,
+                                        NodeName = s?.DeviceInfo?.NodeName,
+                                        ScanImageUrl = s?.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.ImageUrl,
+                                        ScanTime = s?.BarCodeInfo?.ScanTime ?? DateTime.MinValue,
+                                        ScanImageVisible = !string.IsNullOrEmpty(s?.ImageInfos
+                                            ?.FirstOrDefault(f => f.Type == 0)?.ImageUrl),
+                                        PanoramaImageItems = new ObservableCollection<PanoramaImageItemModel>(s
+                                            ?.ImageInfos?.Where(w => w.Type == 1)
+                                            ?.Select(s1 => new PanoramaImageItemModel {
+                                                ImageVisible = !string.IsNullOrEmpty(s1.ImageUrl),
+                                                ImageUrl = s1.ImageUrl
+                                            })?.ToList() ?? new List<PanoramaImageItemModel>()),
+                                        NvrCameraBindingItemInfos = s?.NvrInfos?.Select(nvr =>
+                                            new NvrCameraBindingItemInfo {
                                                 Channel = nvr.Channel,
                                                 IpAddress = nvr.IpAddress,
                                                 Password = nvr.Password,
                                                 Port = nvr.Port,
                                                 Username = nvr.Username,
                                                 IsVideoLinkVisible =
-                                                    new Func<bool>(() => !string.IsNullOrEmpty(nvr.BarcodeScannerSerialNumber) &&
-                                                                         !string.IsNullOrEmpty(nvr.Password) &&
-                                                                         !string.IsNullOrEmpty(nvr.Username) &&
-                                                                         !string.IsNullOrEmpty(nvr.IpAddress) &&
-                                                                         nvr is { Port: > 0, Channel: > 0 })(),
-                                                BarCode = s.Barcode,
-                                                ScanTime = s.s.ScanTime,
+                                                    new Func<bool>(() =>
+                                                        !string.IsNullOrEmpty(nvr.Password) &&
+                                                        !string.IsNullOrEmpty(nvr.Username) &&
+                                                        !string.IsNullOrEmpty(nvr.IpAddress) &&
+                                                        nvr is { Port: > 0, Channel: > 0 })(),
+                                                BarCode = s?.BarCodeInfo?.Barcode ?? string.Empty,
+                                                ScanTime = s?.BarCodeInfo?.ScanTime ?? DateTime.MinValue,
                                             })?.ToList() ?? new List<NvrCameraBindingItemInfo>()
-                                        })?.OrderByDescending(o => o.ScanTime)?.ToList();
+                                    })?.OrderByDescending(o => o.ScanTime)?.ToList(); ;
                                     BarCodeItems.AddRange(barCodeItemModels);
                                 }
                             }

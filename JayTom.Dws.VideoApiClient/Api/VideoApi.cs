@@ -6,6 +6,7 @@ using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using System.DirectoryServices.ActiveDirectory;
 
@@ -72,7 +73,7 @@ namespace JayTom.Dws.VideoApiClient.Api {
                     //解码
                     var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
                     if (result is { Result: true, Data: not null }) {
-                        var apiBarCodesInfos = JsonConvert.DeserializeObject<List<ApiBarCodesInfo>>(result.Data.ToString() ?? string.Empty);
+                        var apiBarCodesInfos = JsonConvert.DeserializeObject<List<PackageInfoModel>>(result.Data.ToString() ?? string.Empty);
                         return new KeyValuePair<bool, object>(true, new ApiResult() {
                             Data = apiBarCodesInfos,
                             Msg = result.Msg,

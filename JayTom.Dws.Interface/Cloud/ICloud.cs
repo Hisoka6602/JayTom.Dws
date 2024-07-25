@@ -182,7 +182,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 设备信息
         /// </summary>
-        public PackageCloudDeviceInfo? DeviceInfos { get; set; }
+        public PackageCloudDeviceInfo? DeviceInfo { get; set; }
 
         /// <summary>
         /// Nvr信息

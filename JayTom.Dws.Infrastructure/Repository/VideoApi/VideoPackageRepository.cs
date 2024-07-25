@@ -8,13 +8,14 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.CloudApi;
+using JayTom.Dws.Domain.Repository.VideoApi;
 
-namespace JayTom.Dws.Infrastructure.Repository.LocalData {
+namespace JayTom.Dws.Infrastructure.Repository.VideoApi {
 
-    public class PackageRepository : LocalRepositoryBase<PackageInfoModel>, IPackageRepository {
+    public class VideoPackageRepository : RepositoryBase<PackageInfoModel>, IVideoPackageRepository {
 
-        public PackageRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
+        public VideoPackageRepository(IDbContextFactory<VideoApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
         public async Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackageOrderByDescending<TOrder>(Expression<Func<PackageInfoModel, bool>> where, Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
@@ -25,19 +26,10 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
-                    .Include(b => b.WeightInfo)
-                    .Include(b => b.VolumeInfo)
-                    .Include(b => b.UploadInfo)
-                    .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
+                    .Include(b => b.DeviceInfo)
                     .Include(b => b.NvrInfos)
                     .Where(where)
                     .OrderByDescending(order)
@@ -60,21 +52,13 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .OrderBy(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
-                    .Include(b => b.WeightInfo)
-                    .Include(b => b.VolumeInfo)
-                    .Include(b => b.UploadInfo)
-                    .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
+                    .Include(b => b.DeviceInfo)
                     .Include(b => b.NvrInfos)
                     .Where(where)
+                    .OrderBy(order)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken: token);
@@ -93,26 +77,58 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
-                    .Where(where)
+                    .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
-                    .Include(b => b.WeightInfo)
-                    .Include(b => b.VolumeInfo)
-                    .Include(b => b.UploadInfo)
-                    .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
-                    .FirstOrDefaultAsync(cancellationToken: token);
+                    .Include(b => b.DeviceInfo)
+                    .Include(b => b.NvrInfos)
+                    .FirstOrDefaultAsync(where, cancellationToken: token);
                 return new KeyValuePair<bool, PackageInfoModel>(true, barCodeInfoModels);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
+            }
+        }
+
+        public async Task<KeyValuePair<bool, List<string>>> SelectNodeInfos(CancellationToken token = default) {
+            try {
+                //联表
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<DeviceInfoModel>();
+                if (dbSet is null) return new KeyValuePair<bool, List<string>>(false, new List<string>());
+                var listAsync = await dbSet.AsNoTracking()
+                    .GroupBy(g => g.NodeName)
+                    .Select(s => s.Key)
+                    .ToListAsync(cancellationToken: token);
+
+                return new KeyValuePair<bool, List<string>>(true, listAsync);
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return new KeyValuePair<bool, List<string>>(false, new List<string>());
+            }
+        }
+
+        public async Task<KeyValuePair<bool, List<NvrInfoModel>>> SelectNvrInfos(CancellationToken token = default) {
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<NvrInfoModel>();
+                if (dbSet is null) return new KeyValuePair<bool, List<NvrInfoModel>>(false, new List<NvrInfoModel>());
+                var nvrInfoModels = await dbSet.AsNoTracking()
+                    .GroupBy(g => new { g.IpAddress, g.Port, g.Channel })
+                    .Select(s => new NvrInfoModel {
+                        IpAddress = s.Key.IpAddress,
+                        Port = s.Key.Port,
+                        Channel = s.Key.Channel,
+                    })
+                    .ToListAsync(cancellationToken: token);
+
+                return new KeyValuePair<bool, List<NvrInfoModel>>(true, nvrInfoModels);
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return new KeyValuePair<bool, List<NvrInfoModel>>(false, new List<NvrInfoModel>());
             }
         }
 
@@ -124,21 +140,13 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return 0;
                 return await dbSet.AsNoTracking()
-                     .Include(b => b.BarCodeInfo)
-                     .Include(b => b.WeightInfo)
-                     .Include(b => b.VolumeInfo)
-                     .Include(b => b.UploadInfo)
-                     .Include(b => b.ExitInfo)
-                     .Include(b => b.SortingInfo)
-                     .ThenInclude(c => c.InstructionInfos)
-                     .Include(b => b.LogisticsInfo)
-                     .Include(b => b.OcrInfo)
-                     .ThenInclude(c => c.OcrDetailedInfos)
-                     .Include(b => b.ImageInfos)
-                     .Include(b => b.CloudVideoUploadInfo)
-                     .Include(b => b.AggregatePackagesInfo)
-                     .Where(where)
-                     .CountAsync(cancellationToken: token);
+                    .OrderByDescending(o => o.PackageCreateTime)
+                    .Include(b => b.BarCodeInfo)
+                    .Include(b => b.ImageInfos)
+                    .Include(b => b.DeviceInfo)
+                    .Include(b => b.NvrInfos)
+                    .Where(where)
+                    .CountAsync(cancellationToken: token);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

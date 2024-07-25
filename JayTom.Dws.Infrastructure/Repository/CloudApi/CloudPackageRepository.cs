@@ -92,7 +92,6 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
-                    .Where(where)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -104,7 +103,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                     .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
                     .Include(b => b.CloudVideoUploadInfo)
-                    .FirstOrDefaultAsync(cancellationToken: token);
+                    .FirstOrDefaultAsync(where, cancellationToken: token);
                 return new KeyValuePair<bool, PackageInfoModel>(true, barCodeInfoModels);
             }
             catch (Exception e) {

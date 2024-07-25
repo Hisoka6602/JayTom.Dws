@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -38,7 +39,7 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 图片本地路径
         /// </summary>
-        [Column("LocalPath"), Required]
+        [Column("LocalPath"), Required, JsonIgnore]
         public string LocalPath { get; set; } = string.Empty;
 
         /// <summary>

@@ -133,6 +133,15 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                     c.Id
                 });
+                //Nvr信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasMany(b => b.NvrInfos)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey(n => new { n.PackageId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<NvrInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //设备
                 modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.DeviceInfo)

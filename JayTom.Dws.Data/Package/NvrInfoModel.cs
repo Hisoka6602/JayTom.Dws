@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.CloudConfig {
-    //这里的外键需要连扫码相机(可空外键)
+namespace JayTom.Dws.Data.Package {
 
-    [Table("Conf_NvrCameraBindingInfo", Schema = "dbo")]
-    public class NvrCameraBindingInfoModel : BaseModel {
+    [Table("Data_NvrInfo", Schema = "dbo")]
+    public class NvrInfoModel : BasePackageForeignKeyInfoModel {
 
         /// <summary>
         /// IP地址
@@ -44,17 +40,5 @@ namespace JayTom.Dws.Data.LocalConf.CloudConfig {
         /// </summary>
         [Column("Channel"), Required]
         public int Channel { get; set; }
-
-        /*/// <summary>
-        /// 扫码相机序列号
-        /// </summary>
-        [Column("BarcodeScannerSerialNumber"), Required]
-        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;*/
-
-        [Column("ScannerCameraConfigInfoModelId"), JsonIgnore]
-        public long ScannerCameraConfigInfoModelId { get; set; }
-
-        [ForeignKey("Id")]
-        public virtual BarcodeScannerCameraConfigInfoModel? BarcodeScannerCameraConfigInfoModel { get; set; }
     }
 }

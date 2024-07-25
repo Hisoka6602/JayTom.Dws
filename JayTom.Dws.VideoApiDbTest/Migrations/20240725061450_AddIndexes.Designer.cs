@@ -3,14 +3,16 @@ using System;
 using JayTom.Dws.VideoApiDbTest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace JayTom.Dws.VideoApiDbTest.Migrations
 {
     [DbContext(typeof(VideoApiContextDb))]
-    partial class VideoApiContextDbModelSnapshot : ModelSnapshot
+    [Migration("20240725061450_AddIndexes")]
+    partial class AddIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,7 +53,7 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
 
                     b.Property<string>("Barcode")
                         .IsRequired()
-                        .HasColumnType("longtext")
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("Barcode");
 
                     b.Property<string>("CameraSerialNumber")
@@ -73,8 +75,14 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Barcode")
+                        .HasAnnotation("IndexSortOrder", "Descending");
+
                     b.HasIndex("PackageId")
                         .IsUnique();
+
+                    b.HasIndex("ScanTime")
+                        .HasAnnotation("IndexSortOrder", "Descending");
 
                     b.ToTable("Data_BarCodeInfo", "dbo");
                 });

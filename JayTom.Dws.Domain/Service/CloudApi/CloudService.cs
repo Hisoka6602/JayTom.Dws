@@ -107,9 +107,9 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                             Type = s.Type,
                         })?.ToList(),
                     DeviceInfo = new DeviceInfoModel() {
-                        DeviceName = packageInfo.DeviceInfos?.DeviceName ?? string.Empty,
-                        MachineCode = packageInfo.DeviceInfos?.MachineCode ?? string.Empty,
-                        NodeName = packageInfo.DeviceInfos?.NodeName ?? string.Empty,
+                        DeviceName = packageInfo.DeviceInfo?.DeviceName ?? string.Empty,
+                        MachineCode = packageInfo.DeviceInfo?.MachineCode ?? string.Empty,
+                        NodeName = packageInfo.DeviceInfo?.NodeName ?? string.Empty,
                     }
                 }, cancellationToken);
                 return new KeyValuePair<bool, object>(insert, insert ? "保存成功" : "保存失败");

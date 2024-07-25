@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Data.ServerData;
 using JayTom.Dws.Data.VideoApiData;
@@ -18,7 +19,7 @@ namespace JayTom.Dws.Infrastructure {
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
             // 配置基类的主键
-            modelBuilder.Entity<NvrCameraBindingInfoModel>()
+            /*modelBuilder.Entity<NvrCameraBindingInfoModel>()
                 .HasKey(c => c.Id);
             modelBuilder.Entity<VideoBarCodeInfoModel>().HasKey(c => new {
                 c.Id
@@ -49,7 +50,66 @@ namespace JayTom.Dws.Infrastructure {
                 .HasMany(b => b.VideoNvrCameraBindingInfos)
                 .WithOne(n => n.ScanNodeInfo)
                 .HasForeignKey(n => n.ScanNodeId)
+                .OnDelete(DeleteBehavior.Cascade);*/
+
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasKey(c => new {
+                    c.Id
+                });
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasIndex(b => b.PackageTimestamped)
+                .IsUnique(false);
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasIndex(b => b.PackageCreateTime)
+                .IsUnique(false)
+                .HasAnnotation("IndexSortOrder", "Descending");
+            //条码信息
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasOne(b => b.BarCodeInfo)
+                .WithOne(n => n.PackageInfo)
+                .HasForeignKey<BarCodeInfoModel>(n => n.PackageId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BarCodeInfoModel>()
+                .HasKey(c => new {
+                    c.Id
+                });
+            /*modelBuilder.Entity<BarCodeInfoModel>()
+                .HasIndex(b => b.Barcode)
+                .IsUnique(false)
+                .HasAnnotation("IndexSortOrder", "Descending");
+            modelBuilder.Entity<BarCodeInfoModel>()
+                .HasIndex(b => b.ScanTime)
+                .IsUnique(false)
+                .HasAnnotation("IndexSortOrder", "Descending");*/
+
+            //图片信息
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasMany(b => b.ImageInfos)
+                .WithOne(n => n.PackageInfo)
+                .HasForeignKey(n => new { n.PackageId })
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
+                c.Id
+            });
+            //设备
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasOne(b => b.DeviceInfo)
+                .WithOne(n => n.PackageInfo)
+                .HasForeignKey<DeviceInfoModel>(n => n.PackageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DeviceInfoModel>().HasKey(c => new {
+                c.Id
+            });
+            //Nvr
+            modelBuilder.Entity<PackageInfoModel>()
+                .HasMany(b => b.NvrInfos)
+                .WithOne(n => n.PackageInfo)
+                .HasForeignKey(n => new { n.PackageId })
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<NvrInfoModel>().HasKey(c => new {
+                c.Id
+            });
         }
     }
 }

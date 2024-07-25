@@ -956,7 +956,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                     Type = s.Type,
                                     Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
                                 })?.ToList(),
-                            DeviceInfos = new PackageCloudDeviceInfo() {
+                            DeviceInfo = new PackageCloudDeviceInfo() {
                                 NodeName = _cloudVideoSettingsDto.NodeName,
                                 MachineCode = await _computer.GenerateMachineCode(),
                             },

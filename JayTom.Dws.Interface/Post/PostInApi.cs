@@ -70,7 +70,8 @@ namespace JayTom.Dws.Interface.Post {
         public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
-            //请求格口
+            //提交扫描
+            SubmitScanInfo(barcode, token);
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -189,7 +190,8 @@ namespace JayTom.Dws.Interface.Post {
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            //请求格口
+            //提交扫描
+            SubmitScanInfo(barcode, token);
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -261,7 +263,6 @@ namespace JayTom.Dws.Interface.Post {
                             //格口
                             resultContent += $"格口:[{parts[7][..4]}]";
                             isSuccess = true;
-                            SubmitScanInfo(barcode, token);
                         }
                     }
                 }
@@ -430,6 +431,9 @@ namespace JayTom.Dws.Interface.Post {
         /// <param name="token"></param>
         public async void SubmitScanInfo(string barcode, CancellationToken token = default) {
             //提交扫描信息
+            if (barcode.Contains("NoRead", StringComparison.InvariantCultureIgnoreCase)) {
+                return;
+            }
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;

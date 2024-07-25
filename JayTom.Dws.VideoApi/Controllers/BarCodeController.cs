@@ -174,16 +174,21 @@ namespace JayTom.Dws.VideoApi.Controllers {
                 param.CameraName,
                 param.PageIndex,
                 param.PageSize, cancellationToken);
-            if (key && value is BarcodesDto dto) {
-                dto.BarCodes.ForEach(b =>
+            if (key && value is VideoPackageDto dto) {
+                /*dto.BarCodes.ForEach(b =>
                     b.ScanNodeInfos?.ForEach(s =>
                         s.BarcodeImageInfos?.ForEach(f => {
                             var request = _httpContextAccessor.HttpContext?.Request;
                             f.Path = $"{request?.Scheme}://{request?.Host}/scr{f.Path.Replace(_hostEnvironment.WebRootPath, string.Empty).Replace("\\", "/")}";
                         })
                     )
-                );
-                return JsonResultVo.Success("查询成功", dto.Total, dto.BarCodes);
+                );*/
+                dto.Packages.ForEach(b =>
+                    b.ImageInfos?.ToList()?.ForEach(f => {
+                        var request = _httpContextAccessor.HttpContext?.Request;
+                        f.ImageUrl = $"{request?.Scheme}://{request?.Host}/scr{f.LocalPath.Replace(_hostEnvironment.WebRootPath, string.Empty).Replace("\\", "/")}";
+                    }));
+                return JsonResultVo.Success("查询成功", dto.Total, dto.Packages);
             }
             else {
                 return JsonResultVo.Fail(value?.ToString() ?? string.Empty);

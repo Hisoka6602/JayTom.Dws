@@ -3,14 +3,16 @@ using System;
 using JayTom.Dws.VideoApiDbTest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace JayTom.Dws.VideoApiDbTest.Migrations
 {
     [DbContext(typeof(VideoApiContextDb))]
-    partial class VideoApiContextDbModelSnapshot : ModelSnapshot
+    [Migration("20240725065729_AddIndexesAndNewFields")]
+    partial class AddIndexesAndNewFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

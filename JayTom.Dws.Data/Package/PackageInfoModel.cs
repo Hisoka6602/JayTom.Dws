@@ -75,6 +75,11 @@ namespace JayTom.Dws.Data.Package {
         public virtual ICollection<ImageInfoModel>? ImageInfos { get; set; }
 
         /// <summary>
+        /// Nvr信息
+        /// </summary>
+        public virtual ICollection<NvrInfoModel>? NvrInfos { get; set; }
+
+        /// <summary>
         /// 视频云信息
         /// </summary>
         public virtual CloudVideoUploadInfoModel? CloudVideoUploadInfo { get; set; }

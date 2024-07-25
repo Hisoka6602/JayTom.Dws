@@ -24,28 +24,25 @@ internal class Program {
     public static void SetIndexesToDescending() {
         var dbContextFactory = new DesignTimeDbContextFactory();
         using var context = dbContextFactory.CreateDbContext(null);
-
-        // 删除已有的索引（如果存在）
-        /*context.Database.ExecuteSqlRaw(@"
-        SET @sql = NULL;
-        SELECT GROUP_CONCAT('DROP INDEX ', INDEX_NAME, ' ON ', TABLE_NAME) INTO @sql
-        FROM information_schema.STATISTICS
-        WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'Data_VideoBarCodeInfo'
-        AND INDEX_NAME IN ('IX_Data_VideoBarCodeInfo_ScanTime', 'IX_Data_VideoBarCodeInfo_Barcode');
-
-        PREPARE stmt FROM @sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    ");*/
-
         // 创建新的索引
         context.Database.ExecuteSqlRaw(@"
-        CREATE INDEX `IX_Data_VideoBarCodeInfo_ScanTime` ON `Data_VideoBarCodeInfo` (`ScanTime` DESC);
+        CREATE INDEX `IX_PackageInfoModel_PackageCreateTime` ON `Data_PackageInfo` (`PackageCreateTime` DESC);
     ");
 
         context.Database.ExecuteSqlRaw(@"
-        CREATE INDEX `IX_Data_VideoBarCodeInfo_Barcode` ON `Data_VideoBarCodeInfo` (`Barcode`(255));
+        CREATE INDEX `IX_BarCodeInfoModel_Barcode` ON `Data_BarCodeInfo` (`Barcode`(50));
+    ");
+
+        context.Database.ExecuteSqlRaw(@"
+        CREATE INDEX `IX_BarCodeInfoModel_ScanTime` ON `Data_BarCodeInfo` (`ScanTime` DESC);
+    ");
+
+        context.Database.ExecuteSqlRaw(@"
+        CREATE INDEX `IX_DeviceInfoModel_NodeName` ON `Data_DeviceInfo` (`NodeName`(50));
+    ");
+
+        context.Database.ExecuteSqlRaw(@"
+        CREATE INDEX `IX_DeviceInfoModel_DeviceName` ON `Data_DeviceInfo` (`DeviceName`(50));
     ");
     }
 
@@ -62,9 +59,9 @@ internal class Program {
         }
     }
 
-    public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<VideoApiContextDB> {
+    public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<VideoApiContextDb> {
 
-        public VideoApiContextDB CreateDbContext(string[] args) {
+        public VideoApiContextDb CreateDbContext(string[] args) {
             /*var optionsBuilder = new DbContextOptionsBuilder<CloudApiContext1>();
             //f6vQDiiWpXLDUCxR
             optionsBuilder.UseMySql("Server=localhost;Port=3306;Password=f6vQDiiWpXLDUCxR;Database=CloudApi;User=root;",
@@ -80,12 +77,12 @@ internal class Program {
 
             var connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
 
-            var optionsBuilder = new DbContextOptionsBuilder<VideoApiContextDB>();
+            var optionsBuilder = new DbContextOptionsBuilder<VideoApiContextDb>();
             optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), builder => {
                 builder.SchemaBehavior(MySqlSchemaBehavior.Ignore);
             });
 
-            return new VideoApiContextDB(optionsBuilder.Options);
+            return new VideoApiContextDb(optionsBuilder.Options);
         }
     }
 }
