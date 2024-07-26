@@ -318,6 +318,7 @@ namespace JayTom.Dws.Interface.Post {
                             //格口
                             int.TryParse($"{parts[6][..4]}", out var exit);
                             chuteCode = exit.ToString();
+                            //这里换成实际落格
                         }
                         //路向-4
                         if (parts.Length > 1) {
