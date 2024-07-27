@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using MVIDCodeReaderNet;
 using MvCodeReaderSDKNet;
+using System.IO.Packaging;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
@@ -26,8 +27,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
     public class HikvisionSmartCamera : ISmartCamera {
         private static MvCodeReader.MV_CODEREADER_DEVICE_INFO_LIST _sdkDeviceList = new();
         private MvCodeReader? _mvCodeReader;
+
         private Task? _barcodeThread;
         private Task? _continuousSoftTriggerThread;
+
         private byte[] _bufForDriver = new byte[1024 * 1024 * 20];
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
@@ -35,6 +38,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private GCHandle? _imageBufferHandle;
         private long _frameNo = 0;
+        private MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 _stFrameInfo = new();
 
         /// <summary>
         /// Ocr图像队列
@@ -251,6 +255,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         }
                     }
 
+                    /*
+                    nRet = _mvCodeReader.MV_CODEREADER_RegisterImageCallBackEx2_NET(ImageCallbackFunc, IntPtr.Zero);
+                    if (nRet != MvCodeReader.MV_CODEREADER_OK) {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception($"初始化失败:注册回调函数失败,{nRet:X}")
+                        });
+                        return new KeyValuePair<bool, string>(false, $"注册回调函数失败,{nRet:X}!");
+                    }
+                    */
+
                     //获取参数ExposureTime
                     //获取参数Gain
                     //获取参数AcquisitionFrameRate
@@ -429,6 +443,106 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
+        /// <summary>
+        /// 图像回调
+        /// </summary>
+        /// <param name="pData"></param>
+        /// <param name="pstFrameInfoEx2"></param>
+        /// <param name="pUser"></param>
+        public void ImageCallbackFunc(IntPtr pData, IntPtr pstFrameInfoEx2, IntPtr pUser) {
+            _stFrameInfo = (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(Marshal.PtrToStructure(pstFrameInfoEx2, typeof(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ?? new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2());
+            var stBcrResult = (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(_stFrameInfo.UnparsedBcrList.pstCodeListEx2, typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ?? new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
+            HandleBarcodeReading(pData, _stFrameInfo, stBcrResult);
+        }
+
+        public async void HandleBarcodeReading(IntPtr pData, MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfo,
+            MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 stBcrResult) {
+            try {
+                var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfo);
+
+                //智能相机没有纯图像回调,暂时先写在这里
+                if (this.BindingType is CameraBindingType.OcrCamera) {
+                    //调用Ocr
+                    //添加图片到识别队列
+                    //抠图
+                    if (bmp is not null) {
+                        _ocrBitmapQueue.Enqueue(bmp);
+                    }
+                }
+                else {
+                    var thumbnailImage = GenerateThumbnail(bmp);
+                    //Bitmap? thumbnailImage = null;
+                    //返回条码
+                    var scanTime = DateTime.Now;
+                    var localTime = new DateTimeOffset(scanTime).ToLocalTime();
+                    var timestamp = localTime.ToUnixTimeMilliseconds();
+                    if (stBcrResult.nCodeNum > 0) {
+                        //画区域
+                        if (IsShowBarcodeBorder && thumbnailImage is not null &&
+                            thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
+                            stBcrResult.stBcrInfoEx2?.Any() == true) {
+                            using var g = Graphics.FromImage(thumbnailImage);
+                            for (var i = 0; i < stBcrResult.stBcrInfoEx2.Length; i++) {
+                                var points = new Point[4];
+                                for (var j = 0; j < 4; ++j) {
+                                    points[j].X = (int)(stBcrResult.stBcrInfoEx2[i].pt[j].x *
+                                        (float)(thumbnailImage.Size.Width) / stFrameInfo.nWidth);
+                                    points[j].Y = (int)(stBcrResult.stBcrInfoEx2[i].pt[j].y *
+                                        (float)(thumbnailImage.Size.Height) / stFrameInfo.nHeight);
+                                }
+
+                                g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
+                            }
+                        }
+
+                        var barcodeTriggeredEventArgsList = FilterBarcodes(stBcrResult, scanTime, timestamp, bmp, thumbnailImage,
+                            stFrameInfo);
+                        if (barcodeTriggeredEventArgsList.Any()) {
+                            foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
+                                OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
+                            }
+                        }
+                        else {
+                            if (!IsRealtimeImageEnabled) {
+                                thumbnailImage?.Dispose();
+                            }
+                        }
+                    }
+                    else {
+                        //如果没读到条码
+                        if (TriggerMode == TriggerMode.Hardware) {
+                            //临时等待5ms,邮政3个项目
+                            await Task.Delay(5);
+                            OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
+                                Timestamp = timestamp,
+                                Barcode = "NoRead",
+                                Image = bmp,
+                                ThumbImage = thumbnailImage,
+                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                                ScanTime = DateTime.Now,
+                                FrameNo = _frameNo
+                            });
+                        }
+                        else {
+                            bmp?.Dispose();
+                        }
+                    }
+
+                    if (IsRealtimeImageEnabled) {
+                        OnRealtimeImage(new RealtimeImageEventArgs() {
+                            ThumbImage = (Bitmap?)thumbnailImage,
+                            Timestamp = timestamp
+                        });
+                    }
+                }
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                    Exception = new Exception($"解析帧数据异常:{JsonConvert.SerializeObject(e)}")
+                });
+            }
+        }
+
         public void SetParameters(Dictionary<string, object> parameters) {
             throw new NotImplementedException();
         }
@@ -592,83 +706,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     if (IsHideNoRead && stBcrResultEx2.nCodeNum < 1) {
                                         return;
                                     }
-                                    var bmp = await GetBitmapAsync(pData, _bufForDriver, stFrameInfoEx2);
 
-                                    //智能相机没有纯图像回调,暂时先写在这里
-                                    if (this.BindingType is CameraBindingType.OcrCamera) {
-                                        //调用Ocr
-                                        //添加图片到识别队列
-                                        //抠图
-                                        if (bmp is not null) {
-                                            _ocrBitmapQueue.Enqueue(bmp);
-                                        }
-                                    }
-                                    else {
-                                        var thumbnailImage = GenerateThumbnail(bmp);
-                                        //Bitmap? thumbnailImage = null;
-                                        //返回条码
-                                        var scanTime = DateTime.Now;
-                                        var localTime = new DateTimeOffset(scanTime).ToLocalTime();
-                                        var timestamp = localTime.ToUnixTimeMilliseconds();
-                                        if (stBcrResultEx2.nCodeNum > 0) {
-                                            //画区域
-                                            if (IsShowBarcodeBorder && thumbnailImage is not null &&
-                                                thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
-                                                stBcrResultEx2.stBcrInfoEx2?.Any() == true) {
-                                                using var g = Graphics.FromImage(thumbnailImage);
-                                                for (var i = 0; i < stBcrResultEx2.stBcrInfoEx2.Length; i++) {
-                                                    var points = new Point[4];
-                                                    for (var j = 0; j < 4; ++j) {
-                                                        points[j].X = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].x *
-                                                            (float)(thumbnailImage.Size.Width) / stFrameInfoEx2.nWidth);
-                                                        points[j].Y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[j].y *
-                                                            (float)(thumbnailImage.Size.Height) / stFrameInfoEx2.nHeight);
-                                                    }
-
-                                                    g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
-                                                }
-                                            }
-
-                                            var barcodeTriggeredEventArgsList = FilterBarcodes(stBcrResultEx2, scanTime, timestamp, bmp, thumbnailImage,
-                                                stFrameInfoEx2);
-                                            if (barcodeTriggeredEventArgsList.Any()) {
-                                                foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
-                                                    OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
-                                                }
-                                            }
-                                            else {
-                                                if (!IsRealtimeImageEnabled) {
-                                                    thumbnailImage?.Dispose();
-                                                }
-                                            }
-                                        }
-                                        else {
-                                            //如果没读到条码
-                                            if (TriggerMode == TriggerMode.Hardware) {
-                                                //临时等待5ms,邮政3个项目
-                                                await Task.Delay(5, token);
-                                                OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
-                                                    Timestamp = timestamp,
-                                                    Barcode = "NoRead",
-                                                    Image = bmp,
-                                                    ThumbImage = thumbnailImage,
-                                                    CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                    ScanTime = DateTime.Now,
-                                                    FrameNo = _frameNo
-                                                });
-                                            }
-                                            else {
-                                                bmp?.Dispose();
-                                            }
-                                        }
-
-                                        if (IsRealtimeImageEnabled) {
-                                            OnRealtimeImage(new RealtimeImageEventArgs() {
-                                                ThumbImage = (Bitmap?)thumbnailImage,
-                                                Timestamp = timestamp
-                                            });
-                                        }
-                                    }
+                                    HandleBarcodeReading(pData, stFrameInfoEx2, stBcrResultEx2);
                                 }
                                 _frameNo += 1;
                             }
@@ -760,37 +799,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
 
             return triggeredEventArgsList;
-        }
-
-        /// <summary>
-        /// Ocr回调处理逻辑
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public async Task OcrCallbackThread1(CancellationToken token) {
-            //提交图片
-            await Task.Yield();
-            while (!token.IsCancellationRequested) {
-                //判断信号
-                if (_ocrSemaphoreSlim.CurrentCount > 0) {
-                    Task.Factory.StartNew(async () => {
-                        try {
-                            //这里换成多线程
-                            await _ocrSemaphoreSlim.WaitAsync(token);
-                            var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
-                            if (tryDequeue && bitmap is not null) {
-                                //提交图片
-                                Ocr?.SubmitImage(bitmap, this.Info?.SerialNumber ?? string.Empty);
-                            }
-                        }
-                        finally {
-                            _ocrSemaphoreSlim.Release();
-                        }
-                    }, token);
-                }
-
-                await Task.Delay(50, token);
-            }
         }
 
         /// <summary>
