@@ -50,6 +50,7 @@ namespace JayTom.Dws.Interface.Post {
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             //请求格口
+            SubmitScanInfo(barcode, token);
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -125,7 +126,6 @@ namespace JayTom.Dws.Interface.Post {
                             }
                             resultContent += exit;
                             isSuccess = true;
-                            SubmitScanInfo(barcode, token);
                         }
                     }
                 }
@@ -173,6 +173,7 @@ namespace JayTom.Dws.Interface.Post {
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             //请求格口
+            SubmitScanInfo(barcode, token);
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -248,7 +249,6 @@ namespace JayTom.Dws.Interface.Post {
                             }
                             resultContent += exit;
                             isSuccess = true;
-                            SubmitScanInfo(barcode, token);
                         }
                     }
                 }
@@ -317,6 +317,10 @@ namespace JayTom.Dws.Interface.Post {
                         if (parts.Length > 6 && parts[6].Length >= 4) {
                             //格口
                             int.TryParse($"{parts[6][..4]}", out var exit);
+                            //判断备用格口
+                            if (await IsExitLocked(parts[6][..4], token)) {
+                                int.TryParse($"{parts[6][4..8]}", out exit);
+                            }
                             chuteCode = exit.ToString();
                         }
                         //路向-4
@@ -418,6 +422,9 @@ namespace JayTom.Dws.Interface.Post {
         /// <param name="token"></param>
         public async void SubmitScanInfo(string barcode, CancellationToken token = default) {
             //提交扫描信息
+            if (barcode.Equals("NoRead", StringComparison.CurrentCultureIgnoreCase)) {
+                return;
+            }
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
