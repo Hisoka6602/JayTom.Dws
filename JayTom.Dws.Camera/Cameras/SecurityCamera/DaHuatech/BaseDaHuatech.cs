@@ -156,7 +156,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     var key = (from kvp in _loginDev where kvp.Value.PlayPort == port select kvp.Key).FirstOrDefault() ?? string.Empty;
 
                     if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
-                        var convertToBmp = DhPlaySdk.ConvertToBmp(buf, size, info);
+                        var convertToBmp = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
                         await callback(convertToBmp).ConfigureAwait(false);
                         NLog.LogManager.GetCurrentClassLogger().Error($"-ProcessChannel回调图片");
                     }
