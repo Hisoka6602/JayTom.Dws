@@ -703,6 +703,31 @@
             MCU升级失败
             </summary>
         </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_E_UPG_PLATFORM_DISMATCH">
+            <summary>
+            平台不匹配
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_E_UPG_TYPE_DISMATCH">
+            <summary>
+            型号不匹配
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_E_UPG_SPACE_DISMATCH">
+            <summary>
+            空间不匹配
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_E_UPG_MEM_DISMATCH">
+            <summary>
+            内存不匹配
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_E_UPG_NET_TRANS_ERROR">
+            <summary>
+            网络传输异常，请重新升级
+            </summary>
+        </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_E_UPG_UNKNOW">
             <summary>
             升级时未知错误
@@ -1185,6 +1210,26 @@
             <param name="nMillisec">超时时间(ms)</param>
             <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
         </member>
+        <member name="M:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_GetGvcpTimeout_NET(System.IntPtr)">
+            <summary>
+            获取GIGE设备超时时间
+            </summary>
+            <param name="pMillisec">超时时间(ms)</param>
+            <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
+        </member>
+        <member name="M:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_SetFrameNodeNum_NET(System.UInt32)">
+            <summary>
+            设置帧数据缓存节点数量（虚拟相机一直返回OK，但实际不支持，无效果）, 创建句柄后，连接设备前调用有效
+            </summary>
+            <param name="nNodeNum">缓存节点数量，范围1-12，默认3</param>
+            <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
+        </member>
+        <member name="M:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_InvalidateNodes_NET">
+            <summary>
+            清除GenICam节点缓存
+            </summary>
+            <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
+        </member>
         <member name="M:MvCodeReaderSDKNet.MvCodeReader.GetCameraHandle">
             <summary>
             获取设备句柄
@@ -1641,6 +1686,29 @@
             <param name="nMillisec">超时时间(ms)</param>
             <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
         </member>
+        <member name="M:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_GetGvcpTimeout(System.IntPtr,System.IntPtr)">
+            <summary>
+            获取GIGE超时时间
+            </summary>
+            <param name="handle">设备句柄</param>
+            <param name="pMillisec">超时时间(ms)</param>
+            <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
+        </member>
+        <member name="M:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_SetFrameNodeNum(System.IntPtr,System.UInt32)">
+            <summary>
+            设置帧数据缓存节点数量
+            </summary>
+            <param name="handle">设备句柄</param>
+            <param name="nMillisec">缓存节点数量，范围1-12，默认3</param>
+            <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
+        </member>
+        <member name="M:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_InvalidateNodes(System.IntPtr)">
+            <summary>
+            清除GenICam节点缓存
+            </summary>
+            <param name="handle">设备句柄</param>
+            <returns>成功，返回MV_CODEREADER_OK；错误，返回错误码</returns>
+        </member>
         <member name="T:MvCodeReaderSDKNet.MvCodeReader.cbExceptiondelegate">
             回调函数声明
             <summary>
@@ -1750,9 +1818,9 @@
             设备序列号
             </summary>
         </member>
-        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO.chUserDefinedName">
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO.UserDefinedName">
             <summary>
-            设备型号
+            设备用户自定义名称
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO.nNetExport">
@@ -1768,6 +1836,11 @@
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO.nReserved">
             <summary>
             预留字段
+            </summary>
+        </member>
+        <member name="P:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO.chUserDefinedName">
+            <summary>
+            设备用户自定义名称
             </summary>
         </member>
         <member name="T:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_USB3_DEVICE_INFO">
@@ -1888,6 +1961,11 @@
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_DEVICE_INFO.nTLayerType">
             <summary>
             设备传输层协议类型，e.g. MV_GIGE_DEVICE
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_DEVICE_INFO.nDeviceType">
+            <summary>
+            设备类型
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_DEVICE_INFO.bSelectDevice">
@@ -2384,7 +2462,17 @@
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_COUNTER0">
             <summary>
-            Line4
+            计数器0触发
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_TCPSERVERSTART">
+            <summary>
+            Tcp服务器触发
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_UDPSTART">
+            <summary>
+            Udp触发
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_SOFTWARE">
@@ -2392,9 +2480,24 @@
             软触发
             </summary>
         </member>
-        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_FrequencyConverter">
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_SERIALSTART">
             <summary>
-            变频器触发
+            串口触发
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_SELFTRIGGER">
+            <summary>
+            自触发
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_MAINSUB">
+            <summary>
+            主从触发
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_TRIGGER_SOURCE.MV_CODEREADER_TRIGGER_SOURCE_TCPCLIENTSTART">
+            <summary>
+            Tcp客户端触发
             </summary>
         </member>
         <member name="T:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE">
@@ -2415,6 +2518,11 @@
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_TDCR_QR">
             <summary>
             QR码
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_TDCR_MICROQR">
+            <summary>
+            MicroQR码
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_BCR_EAN8">
@@ -2503,9 +2611,29 @@
             交叉14码
             </summary>
         </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_BCR_PHARMACODE">
+            <summary>
+            Pharmacode码
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_BCR_PHARMACODE2D">
+            <summary>
+            Pharmacode Two Track码
+            </summary>
+        </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_TDCR_ECC140">
             <summary>
             ECC140码制
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_TDCR_AZTEC">
+            <summary>
+            AZTEC码制
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_CODE_TYPE.MV_CODEREADER_TDCR_HANXIN">
+            <summary>
+            HANXIN码制
             </summary>
         </member>
         <member name="T:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_XML_AccessMode">
@@ -3200,6 +3328,26 @@
             从触发开始到APP输出时间统计(ms)
             </summary>
         </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX.nTriggerTimeTvHigh">
+            <summary>
+            触发开始时间高32位(s)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX.nTriggerTimeTvLow">
+            <summary>
+            触发开始时间低32位(s)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX.nTriggerTimeUtvHigh">
+            <summary>
+            触发开始时间高32位(us)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX.nTriggerTimeUtvLow">
+            <summary>
+            触发开始时间低32位(us)
+            </summary>
+        </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX.nReserved">
             <summary>
             保留字节
@@ -3293,6 +3441,26 @@
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX2.nTotalProcCost">
             <summary>
             从触发开始到APP输出时间统计(ms)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX2.nTriggerTimeTvHigh">
+            <summary>
+            触发开始时间高32位(s)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX2.nTriggerTimeTvLow">
+            <summary>
+            触发开始时间低32位(s)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX2.nTriggerTimeUtvHigh">
+            <summary>
+            触发开始时间高32位(us)
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX2.nTriggerTimeUtvLow">
+            <summary>
+            触发开始时间低32位(us)
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_BCR_INFO_EX2.nReserved">
@@ -3453,6 +3621,16 @@
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO.nImageCost">
             <summary>
             帧图像在相机内部的处理耗时
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO.nWholeFlag">
+            <summary>
+            整图标记，整图标记，输出整图时标记为1
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO.nRes">
+            <summary>
+            保留字节
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO.nReserved">
@@ -3721,6 +3899,16 @@
             帧图像在相机内部的处理耗时
             </summary>
         </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX.nWholeFlag">
+            <summary>
+            整图标记，输出整图时标记为1
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX.nRes">
+            <summary>
+            保留字节
+            </summary>
+        </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX.nReserved">
             <summary>
             保留字节
@@ -3814,6 +4002,16 @@
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2.nImageCost">
             <summary>
             帧图像在相机内部的处理耗时
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2.nWholeFlag">
+            <summary>
+            整图标记，输出整图时标记为1
+            </summary>
+        </member>
+        <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2.nRes">
+            <summary>
+            保留字节
             </summary>
         </member>
         <member name="F:MvCodeReaderSDKNet.MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2.nReserved">
