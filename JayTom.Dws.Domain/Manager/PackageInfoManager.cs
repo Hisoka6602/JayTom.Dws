@@ -200,7 +200,7 @@ namespace JayTom.Dws.Domain.Manager {
 
         public static void CompletedPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             var packageInfo = GetPackage(predicate);
-            if (packageInfo == null) return;
+            if (packageInfo == null || packageInfo.IsCompleted) return;
             packageInfo.VolumeInfo ??= new VolumeInfoModel();
             packageInfo.WeightInfo ??= new WeightInfoModel();
             packageInfo.BarCodeInfo ??= new BarCodeInfoModel();

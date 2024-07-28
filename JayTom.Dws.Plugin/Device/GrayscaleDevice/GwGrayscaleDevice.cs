@@ -105,6 +105,8 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             return new GrayscaleResult() {
                 CarNumber = carNumber,
                 LinkedCarCount = 1,
+                IsTimeOut = true,
+                ResultTime = DateTime.Now
             };
         }
 
@@ -135,7 +137,9 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         }
 
         public GrayscaleResult? DecodeData(byte[] dataBytes) {
-            var grayscaleResult = new GrayscaleResult();
+            var grayscaleResult = new GrayscaleResult() {
+                ResultTime = DateTime.Now
+            };
             try {
                 NLog.LogManager.GetCurrentClassLogger()
                     .Info($"接收到的内容:{BitConverter.ToString(dataBytes).Replace("-", " ")}");

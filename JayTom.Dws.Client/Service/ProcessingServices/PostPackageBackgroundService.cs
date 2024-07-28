@@ -518,7 +518,14 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 return;
                             }
 
-                            _ = await _grayscaleService.GetSingleGrayscaleSensorResult(createPackageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+                            var result = await _grayscaleService.GetSingleGrayscaleSensorResult(createPackageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+
+                            if (result is { IsTimeOut: true }) {
+                                var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(result.CarNumber));
+                                if (package is { IsCompleted: false, BarCodeInfo: not null } && !package.BarCodeInfo.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase)) {
+                                    PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                                }
+                            }
 
                             /*if (singleGrayscaleSensorResult is not null) {
                                 //联动车辆
@@ -580,6 +587,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                              DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds > _grayscaleDeviceSettingsDto.TimeOut &&
                              info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    }
+                    else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                             info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
+                        info.LinkedCarCount = 1;
+                        //PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else if ((info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
                               info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio))) {

@@ -114,6 +114,12 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         [Description("返回结果时间")]
         public DateTime ResultTime { get; set; }
 
+        /// <summary>
+        /// 是否超时
+        /// </summary>
+        [Description("是否超时")]
+        public bool IsTimeOut { get; set; }
+
         public override string ToString() {
             // 构建字符串表示
             var result = $"小车号: {CarNumber}\n";
