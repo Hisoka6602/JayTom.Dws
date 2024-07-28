@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
-
     public class GrayscaleDeviceSettingsDto {
 
         /// <summary>
@@ -64,5 +63,15 @@ namespace JayTom.Dws.Domain.Dto {
         /// 占用附加框属性百分比
         /// </summary>
         public int AdditionalBoxSpacePercentage { get; set; } = 20;
+
+        /// <summary>
+        /// 最小发送间隔，单位为毫秒
+        /// </summary>
+        public int MinSendInterval { get; set; } = 300;
+
+        /// <summary>
+        /// 主框包裹包裹判断占比
+        /// </summary>
+        public double MainBoxPackageRatio { get; set; } = 15;
     }
 }

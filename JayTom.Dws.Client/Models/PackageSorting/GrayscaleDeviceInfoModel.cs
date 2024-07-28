@@ -21,6 +21,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private int _carNumberOffset;
         private bool _isDirectionReversed;
         private int _additionalBoxSpacePercentage;
+        private int _minSendInterval;
+        private double _mainBoxPackageRatio;
 
         /// <summary>
         /// 是否使用灰度仪检测包裹
@@ -109,6 +111,22 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         public int AdditionalBoxSpacePercentage {
             get => _additionalBoxSpacePercentage;
             set => SetProperty(ref _additionalBoxSpacePercentage, value);
+        }
+
+        /// <summary>
+        /// 最小发送间隔，单位为毫秒
+        /// </summary>
+        public int MinSendInterval {
+            get => _minSendInterval;
+            set => SetProperty(ref _minSendInterval, value);
+        }
+
+        /// <summary>
+        /// 主框包裹包裹判断占比
+        /// </summary>
+        public double MainBoxPackageRatio {
+            get => _mainBoxPackageRatio;
+            set => SetProperty(ref _mainBoxPackageRatio, value);
         }
     }
 }

@@ -78,6 +78,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     };
                     _tcpClient.Disconnected += delegate (ITcpClientBase client, DisconnectEventArgs args) {
                         OnDisconnected($"IpAddress:{IpAddress},Port:{Port}");
+                        NLog.LogManager.GetCurrentClassLogger().Error($"断开:IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}");
                     };
                 }
 
@@ -98,8 +99,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
             if (count > 0) {
                 for (var i = 0; i < count; i++) {
-                    await Connect(token: token);
                     await Task.Delay(500, token);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
+                    await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
                         return true;
                     }
@@ -107,8 +109,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
             }
             else {
                 do {
-                    await Connect(token: token);
                     await Task.Delay(500, token);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
+                    await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
                         return true;
                     }
@@ -145,6 +148,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         };
                         _tcpClient.Disconnected += delegate (ITcpClientBase client, DisconnectEventArgs args) {
                             OnDisconnected($"IpAddress:{IpAddress},Port:{Port}");
+                            NLog.LogManager.GetCurrentClassLogger().Error($"断开:IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}");
                         };
                     }
                     var touchSocketConfig = new TouchSocketConfig().SetRemoteIPHost(new IPHost($"{tcpConnect.Address}:{tcpConnect.Port}"))
@@ -208,7 +212,6 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 else {
                     OnException(
                         new Exception($"IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}"));
-                    NLog.LogManager.GetCurrentClassLogger().Error($"未连接:IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}");
                 }
             }
             catch (Exception e) {

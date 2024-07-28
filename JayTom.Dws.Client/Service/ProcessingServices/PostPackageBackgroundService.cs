@@ -47,6 +47,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private List<ICamera> _cameras = new();
         private GrayscaleDeviceSettingsDto _grayscaleDeviceSettingsDto = new();
         private static bool _isWindowsClose;
+        private ConcurrentDictionary<int, GrayscaleResult> _grayscaleResultItems = new();
 
         /// <summary>
         /// 灰度仪跳过的车辆
@@ -369,7 +370,66 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     _createPackageSlim.Release();
                 }
             };
+            _grayscaleService.GrayscaleSensorResultReceived += (sender, result) => {
+                //给小车赋值
+                //取出超时的删除
+                var pairs = _grayscaleResultItems.Where(s =>
+                        s.Value != null && DateTime.Now.Subtract(s.Value.ResultTime).TotalSeconds > 3)
+                    .ToList();
+                foreach (var pair in pairs) {
+                    _grayscaleResultItems.TryRemove(pair);
+                }
 
+                _grayscaleResultItems.TryAdd(result.CarNumber, result);
+
+                var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(result.CarNumber));
+                if (package is not null) {
+                    if (package.BarCodeInfo != null && package.BarCodeInfo?.Barcode.Equals("noread",
+                            StringComparison.CurrentCultureIgnoreCase) != true) {
+                        package.LinkedCarCount = 1;
+                        PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                    }
+
+                    //联动车辆
+                    GrayScaleSkippedVehicles = result.LinkedCarCount;
+
+                    if (package is { BarCodeInfo: not null }) {
+                        if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
+                            result.MainRectangleBoxInfos?.Any(a => a.PackageRatio >=
+                                                                   (decimal)_grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage / 100) != true) {
+                            PackageInfoManager.RemovePackage(package.CreateTime);
+                            package.BarCodeInfo = null;
+                        }
+                        else {
+                            package.LinkedCarCount = result.LinkedCarCount;
+                            PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                        }
+                    }
+
+                    package.GrayscaleResultInfo = result;
+
+                    if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
+                        package.GrayscaleResultInfo is not null &&
+                        package.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio) == true &&
+                        result.ResultTime.Subtract(package.CreateTime).TotalMilliseconds <= _grayscaleDeviceSettingsDto.TimeOut) {
+                        //发送包裹居中指令
+                        _sortingService.SendPackageCenter(package.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
+                            BarCode = string.Empty,
+                            Guid = package.GrayscaleResultInfo.CarNumber,
+                            Timestamp = package.Timestamp,
+                            LinkedCarCount = package.GrayscaleResultInfo.LinkedCarCount,
+                            PackagePositionInfo = new PackagePositionInfo() {
+                                CenterX = package.GrayscaleResultInfo.CenterPoint.X,
+                                CenterY = package.GrayscaleResultInfo.CenterPoint.Y,
+                                OffsetDirection = (OffsetDirection)(package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)?.PackageOrientation ?? PackageOrientation.Left),
+                                OffsetDistance = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)?.OrientationValue ?? 0,
+                                OffsetPercentage = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)?.OffsetPercentage ?? 0
+                            },
+                        });
+                        //如果是没包裹则返回
+                    }
+                }
+            };
             //配置更改
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is { } model) {
@@ -420,88 +480,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
                         });
                     }
+                    packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
                     PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
 
-                    //灰度仪操作放在这里
-                    if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
-                     _grayscaleService.IsConnected) {
-                        //跳过车辆
-                        var increaseCarCount = _grayscaleService.IncreaseCarCount((int)packageInfo.Guid,
-                            _grayscaleDeviceSettingsDto.CarNumberOffset);
-
-                        var package = _grayscaleDeviceSettingsDto.CarNumberOffset == 0 ? packageInfo : PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(increaseCarCount));
-
-                        if (GrayScaleSkippedVehicles > 1) {
-                            GrayScaleSkippedVehicles--;
-                            NLog.LogManager.GetCurrentClassLogger().Error("前车联动了多车,该车跳过");
-                            if (package?.BarCodeInfo != null && package.BarCodeInfo?.Barcode.Equals("noread",
-                                    StringComparison.CurrentCultureIgnoreCase) != true) {
-                                package.LinkedCarCount = 1;
-                                PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
-                            }
-                            else {
-                                PackageInfoManager.RemovePackage(packageInfo.CreateTime);
-                            }
-
-                            return;
-                        }
-                        /*//动态时间
-                        var milliseconds = DateTime.Now.Subtract(packageInfo.CreateTime).TotalMilliseconds;
-                        if (milliseconds < 50) {
-                            await Task.Delay((int)(50 - milliseconds));
-                        }
-                        else {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"创建包裹到现在的间隔:{milliseconds}ms");
-                        }*/
-
-                        var singleGrayscaleSensorResult = await _grayscaleService.GetSingleGrayscaleSensorResult(packageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
-
-                        if (singleGrayscaleSensorResult is not null) {
-                            //联动车辆
-                            GrayScaleSkippedVehicles = singleGrayscaleSensorResult.LinkedCarCount;
-
-                            //双车赋值
-
-                            if (package is { BarCodeInfo: not null }) {
-                                if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
-                                    singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any(a => a.PackageRatio >=
-                                                                                                (decimal)_grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage / 100) != true) {
-                                    package.Image?.Dispose();
-                                    PackageInfoManager.RemovePackage(package.CreateTime);
-                                    package.BarCodeInfo = null;
-                                }
-                                else {
-                                    package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
-                                    PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
-                                }
-                            }
-                            else if (package?.CreateTime.Equals(packageInfo.CreateTime) == true) {
-                                package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
-                            }
-                            packageInfo.GrayscaleResultInfo = singleGrayscaleSensorResult;
-                        }
-
-                        if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
-                            packageInfo.GrayscaleResultInfo is not null &&
-                            packageInfo.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)0.15) == true) {
-                            //发送包裹居中指令
-                            _sortingService.SendPackageCenter(packageInfo.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
-                                BarCode = string.Empty,
-                                Guid = packageInfo.GrayscaleResultInfo.CarNumber,
-                                Timestamp = packageInfo.Timestamp,
-                                LinkedCarCount = packageInfo.GrayscaleResultInfo.LinkedCarCount,
-                                PackagePositionInfo = new PackagePositionInfo() {
-                                    CenterX = packageInfo.GrayscaleResultInfo.CenterPoint.X,
-                                    CenterY = packageInfo.GrayscaleResultInfo.CenterPoint.Y,
-                                    OffsetDirection = (OffsetDirection)(packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)0.15)?.PackageOrientation ?? PackageOrientation.Left),
-                                    OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)0.15)?.OrientationValue ?? 0,
-                                    OffsetPercentage = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)0.15)?.OffsetPercentage ?? 0
-                                },
-                            });
-                            //如果是没包裹则返回
-                        }
-                    }
-                    packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
                     //触发创建包裹事件
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                         IsSuccess = true,
@@ -509,12 +490,111 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         PackageInfo = packageInfo
                     });
                 }
+                else if (item is { TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter, PackageInfo: { } createPackageInfo }) {
+                    //触发灰度仪
+                    if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                        _grayscaleService.IsConnected) {
+                        //灰度仪操作放在这里
+                        if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                         _grayscaleService.IsConnected) {
+                            //跳过车辆
+                            /*var increaseCarCount = _grayscaleService.IncreaseCarCount((int)createPackageInfo.Guid,
+                                _grayscaleDeviceSettingsDto.CarNumberOffset);*/
+
+                            //var package = _grayscaleDeviceSettingsDto.CarNumberOffset == 0 ? packageInfo : PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(increaseCarCount));
+
+                            if (GrayScaleSkippedVehicles > 1) {
+                                GrayScaleSkippedVehicles--;
+                                /*NLog.LogManager.GetCurrentClassLogger().Error("前车联动了多车,该车跳过");
+                                if (package?.BarCodeInfo != null && package.BarCodeInfo?.Barcode.Equals("noread",
+                                        StringComparison.CurrentCultureIgnoreCase) != true) {
+                                    package.LinkedCarCount = 1;
+                                    PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                                }
+                                else {
+                                    PackageInfoManager.RemovePackage(packageInfo.CreateTime);
+                                }*/
+
+                                return;
+                            }
+
+                            _ = await _grayscaleService.GetSingleGrayscaleSensorResult(createPackageInfo.Guid, _grayscaleDeviceSettingsDto.TimeOut);
+
+                            /*if (singleGrayscaleSensorResult is not null) {
+                                //联动车辆
+                                GrayScaleSkippedVehicles = singleGrayscaleSensorResult.LinkedCarCount;
+
+                                //双车赋值
+
+                                if (package is { BarCodeInfo: not null }) {
+                                    if (package.BarCodeInfo?.Barcode.Equals("noread", StringComparison.CurrentCultureIgnoreCase) == true &&
+                                        singleGrayscaleSensorResult.MainRectangleBoxInfos?.Any(a => a.PackageRatio >=
+                                                                                                    (decimal)_grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage / 100) != true) {
+                                        package.Image?.Dispose();
+                                        PackageInfoManager.RemovePackage(package.CreateTime);
+                                        package.BarCodeInfo = null;
+                                    }
+                                    else {
+                                        package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
+                                        PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
+                                    }
+                                }
+                                else if (package?.CreateTime.Equals(packageInfo.CreateTime) == true) {
+                                    package.LinkedCarCount = singleGrayscaleSensorResult.LinkedCarCount;
+                                }
+                                packageInfo.GrayscaleResultInfo = singleGrayscaleSensorResult;
+                            }
+
+                            if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
+                                packageInfo.GrayscaleResultInfo is not null &&
+                                packageInfo.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)0.15) == true) {
+                                //发送包裹居中指令
+                                _sortingService.SendPackageCenter(packageInfo.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
+                                    BarCode = string.Empty,
+                                    Guid = packageInfo.GrayscaleResultInfo.CarNumber,
+                                    Timestamp = packageInfo.Timestamp,
+                                    LinkedCarCount = packageInfo.GrayscaleResultInfo.LinkedCarCount,
+                                    PackagePositionInfo = new PackagePositionInfo() {
+                                        CenterX = packageInfo.GrayscaleResultInfo.CenterPoint.X,
+                                        CenterY = packageInfo.GrayscaleResultInfo.CenterPoint.Y,
+                                        OffsetDirection = (OffsetDirection)(packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)0.15)?.PackageOrientation ?? PackageOrientation.Left),
+                                        OffsetDistance = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)0.15)?.OrientationValue ?? 0,
+                                        OffsetPercentage = packageInfo.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)0.15)?.OffsetPercentage ?? 0
+                                    },
+                                });
+                                //如果是没包裹则返回
+                            }*/
+                        }
+                    }
+                    else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                             !_grayscaleService.IsConnected) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"灰度仪未连接");
+                    }
+                }
                 else if (item is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo: { } info }) {
                     //邮政专供
-                    if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector ||
-                        (info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
-                         info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)0.15))) {
+                    if (!_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    }
+                    else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
+                             DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds > _grayscaleDeviceSettingsDto.TimeOut &&
+                             info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
+                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    }
+                    else if ((info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
+                              info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio))) {
+                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    }
+                    else {
+                        //获取灰度仪的结果
+
+                        _grayscaleResultItems.TryGetValue((int)info.Guid, out var result);
+                        if (result is { LinkedCarCount: > 0 } &&
+                            result.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)) {
+                            info.LinkedCarCount = result.LinkedCarCount;
+                            info.GrayscaleResultInfo = result;
+                            PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                        }
                     }
                 }
             });
@@ -527,6 +607,7 @@ info) {
                     if (info.Status == ApplicationStatus.Stop &&
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         PackageInfoManager.ClearAllPackages();
+                        _grayscaleResultItems.Clear();
                     }
                 }
             });
