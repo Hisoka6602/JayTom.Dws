@@ -597,15 +597,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
                              DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds > _grayscaleDeviceSettingsDto.TimeOut &&
                              info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
+                        info.LinkedCarCount = info.GrayscaleResultInfo?.LinkedCarCount ?? 1;
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
                              info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
-                        //info.LinkedCarCount = 1;
+                        info.LinkedCarCount = info.GrayscaleResultInfo?.LinkedCarCount ?? 1;
                         //PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else if ((info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
                               info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100))) {
+                        info.LinkedCarCount = info.GrayscaleResultInfo.LinkedCarCount;
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else {
