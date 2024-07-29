@@ -54,6 +54,16 @@ namespace JayTom.Dws.Camera {
         public int SourceLine { get; set; }
 
         /// <summary>
+        /// 是否合并条码
+        /// </summary>
+        public bool IsMergeBarCodes { get; set; }
+
+        /// <summary>
+        /// 多条码分隔符
+        /// </summary>
+        public string MultiBarcodeDelimiter { get; set; }
+
+        /// <summary>
         /// 软触发一次
         /// </summary>
         void SoftwareTriggerOnce();

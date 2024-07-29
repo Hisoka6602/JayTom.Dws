@@ -466,6 +466,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
         public int SourceLine { get; set; } = 0;
+        public bool IsMergeBarCodes { get; set; } = true;
+        public string MultiBarcodeDelimiter { get; set; } = "_";
 
         public void SoftwareTriggerOnce() {
             Task.Factory.StartNew(() => {
@@ -628,8 +630,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                             var barcodeTriggeredEventArgsList = FilterBarcodes(stBcrResultEx2, scanTime, timestamp, bmp, thumbnailImage,
                                                 stFrameInfoEx2);
                                             if (barcodeTriggeredEventArgsList.Any()) {
-                                                foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
-                                                    OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
+                                                if (IsMergeBarCodes) {
+                                                    var eventArgs = barcodeTriggeredEventArgsList.FirstOrDefault() ?? new BarcodeTriggeredEventArgs();
+                                                    eventArgs.Barcode = string.Join(MultiBarcodeDelimiter,
+                                                        barcodeTriggeredEventArgsList.Select(s => s.Barcode));
+                                                    OnBarcodeReadTriggered(eventArgs);
+                                                }
+                                                else {
+                                                    foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
+                                                        OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
+                                                    }
                                                 }
                                             }
                                             else {

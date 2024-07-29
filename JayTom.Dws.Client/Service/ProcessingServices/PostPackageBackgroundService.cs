@@ -74,10 +74,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 try {
                     await _createPackageSlim.WaitAsync();
                     _lastReadTime = DateTime.Now;
-                    if (_cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1) {
-                        var barCodeFrameInfo = new BarCodeFrameInfo() {
-                            Timestamp = args.Timestamp,
-                            Frame = args.FrameNo,
+                    var packageInfo =
+                        _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
+                                                                   args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
+
+                    if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
+                        == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
+                        //支持扫码创建
+                        packageInfo = new PackageInfo() {
+                            Guid = args.Timestamp,
                             BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = args.Barcode,
                                 CameraSerialNumber = args.CameraSerialNumber,
@@ -85,69 +92,29 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 Source = SourceType.Camera,
                                 BindTime = DateTime.Now
                             },
-                            Image = args.Image
+                            Image = args.Image,
                         };
-
-                        _barCodeFrameInfoItem.AddOrUpdate(args.CameraSerialNumber, key => barCodeFrameInfo,
-                            (key, oldValue) => barCodeFrameInfo);
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                            PackageInfo = packageInfo
+                        });
                     }
                     else {
-                        //多条码判断------
-
-                        var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
-                                                                      f.Value.BarCodeInfo.ScanTime.Equals(
-                                                                          args.ScanTime) &&
-                                                                      f.Value.BarCodeInfo.CameraSerialNumber.Equals(
-                                                                          args.CameraSerialNumber));
-                        if (info is { BarCodeInfo: not null } && _createPackageSettingsDto.BarcodeHandlingMethod != BarcodeHandlingMethodEnum.UseMultipleBarcodes) {
-                            if (_createPackageSettingsDto.BarcodeHandlingMethod == BarcodeHandlingMethodEnum.MergeBarcodes) {
-                                info.BarCodeInfo.Barcode += $"{_barcodeFilterSettingsDto.MultiBarcodeDelimiter}{args.Barcode}";
-                            }
-                            return;
-                        }
-
-                        var packageInfo =
-                            _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
-                                                                       args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
-
-                        if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
-                            == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
-                            //支持扫码创建
-                            packageInfo = new PackageInfo() {
-                                Guid = args.Timestamp,
-                                BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
-                                    ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera,
-                                    BindTime = DateTime.Now
-                                },
-                                Image = args.Image,
+                        if (packageInfo is not null) {
+                            packageInfo.BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                CameraSerialNumber = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera,
+                                BindTime = DateTime.Now
                             };
+                            packageInfo.Image = args.Image;
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                                PackageInfo = packageInfo
+                                TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                                PackageInfo = packageInfo,
                             });
-                        }
-                        else {
-                            if (packageInfo is not null) {
-                                packageInfo.BarCodeInfo = new BarCodeInfoModel() {
-                                    Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
-                                    ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera,
-                                    BindTime = DateTime.Now
-                                };
-                                packageInfo.Image = args.Image;
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                                    IsSuccess = true,
-                                    TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
-                                    PackageInfo = packageInfo,
-                                });
-                            }
                         }
                     }
                 }
@@ -700,6 +667,7 @@ info) {
                                 //存图
                                 if (codeInfo?.Image != null) {
                                     EventAggregator.Instance.Publish(new ImageMessageInfo {
+                                        PackageTimestamped = codeInfo.Timestamp,
                                         BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                         CameraSerialNumber = codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                         Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),

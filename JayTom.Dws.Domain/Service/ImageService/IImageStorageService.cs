@@ -38,13 +38,13 @@ namespace JayTom.Dws.Domain.Service.ImageService {
            DateTime scanTime, float length, float width, float height, float volume,
            string cameraSerialNumber, CancellationToken cancellationToken = default);
 
-        Task SaveImage(long packageId, Image image, SaveImageType type, string barCode, float weight,
+        Task SaveImage(long packageTimestamped, Image image, SaveImageType type, string barCode, float weight,
             DateTime scanTime, float length, float width, float height, float volume,
             string cameraSerialNumber, CancellationToken cancellationToken = default);
     }
 
     public class ImageSavedEventArgs : EventArgs {
-        public long? PackageId { get; set; }
+        public long PackageTimestamp { get; set; }
 
         /// <summary>
         /// 相机序列号

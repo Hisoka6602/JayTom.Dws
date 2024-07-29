@@ -33,5 +33,7 @@ namespace JayTom.Dws.Domain.Model {
         /// 相机自定义名称
         /// </summary>
         public string CameraCustomName { get; set; } = string.Empty;
+
+        public long PackageTimestamped { get; set; }
     }
 }
