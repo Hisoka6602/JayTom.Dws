@@ -139,7 +139,101 @@
                 <PropertyColumn Property="x => x.VolumeInfo.FormattedWidth" Title="宽度" Format="F3" />
                 <PropertyColumn Property="x => x.VolumeInfo.FormattedHeight" Title="高度" Format="F3" />
                 <PropertyColumn Property="x => x.VolumeInfo.FormattedVolume" Title="体积" Format="F3" />
-                <PropertyColumn Property="x => ConvertStatus(x.UploadInfo.RequestStatus)" Title="Api上传状态" />
+                <TemplateColumn Title="Api上传状态">
+                    <CellTemplate>
+
+                        <MudMenu Class="" Label="@ConvertStatus(context.Item.UploadInfo.RequestStatus)" Variant="Variant.Text" Style="@ConvertStatusLabelColor(context.Item.UploadInfo.RequestStatus)" Color="Color.Inherit">
+                            <div class="d-flex flex-row align-items-center" style="margin: 20px;">
+                                @if (context.Item.UploadInfo.RequestStatus is 1 or 2 or 0) {
+                                    @*条码、上传状态、耗时*@
+                                    @*上传时间、上传内容*@
+                                    @*响应时间、响应内容*@
+                                    @*颜色:成功=lightseagreen、失败:orangered--rgba(255, 69, 0, 0.2)*@
+
+                                    <MudGrid Spacing="2" Style="margin: 20px;">
+                                        <MudItem xs="12">
+                                            <!-- 条码、耗时、提交状态 -->
+                                            <MudStack Orientation="Horizontal" JustifyContent="center">
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    条码
+                                                </MudText>
+                                                <MudText Typo="Typo.body1" Class="m-2" MaxWidth="280px" Overflow="ellipsis">
+                                                    @context.Item.BarCodeInfo.Barcode
+                                                </MudText>
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    状态
+                                                </MudText>
+                                                @*<!-- 图标 -->
+                                        <MudIcon Icon="@context.Item.UploadInfo.RequestStatus" Color="@ConvertStatusToColor(context.Item.UploadInfo.RequestStatus)" Class="m-2" />*@
+                                                <!-- 文字 -->
+                                                <MudText Typo="Typo.body1" Class="m-2" TextAlignment="Justify" Overflow="ellipsis">
+                                                    @context.Item.UploadInfo.RequestStatus
+                                                </MudText>
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    耗时(ms):
+                                                </MudText>
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    @String.Format("{0:F1}", context.Item.UploadInfo.DurationInSeconds)
+                                                </MudText>
+                                            </MudStack>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <!-- 提交时间 -->
+                                            <MudStack Orientation="Horizontal" Class="mt-2">
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    请求时间
+                                                </MudText>
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    @context.Item.UploadInfo.RequestTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+                                                </MudText>
+                                            </MudStack>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <!-- 提交信息 -->
+                                            <MudStack Orientation="Vertical" Class="mt-2">
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    请求内容
+                                                </MudText>
+                                                <MudTextField Value="@context.Item.UploadInfo.RequestContent" ReadOnly="true" Lines="5" Class="m-2" Style="background-color: #202020; color: white;" />
+                                            </MudStack>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <!-- 响应时间 -->
+                                            <MudStack Orientation="Horizontal" Class="mt-2">
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    响应时间
+                                                </MudText>
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    @context.Item.UploadInfo.ResponseTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+                                                </MudText>
+                                            </MudStack>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <!-- 响应信息 -->
+                                            <MudStack Orientation="Vertical" Class="mt-2">
+                                                <MudText Typo="Typo.body1" Class="m-2">
+                                                    响应内容
+                                                </MudText>
+                                                <MudTextField Value="@context.Item.UploadInfo.ResponseContent" ReadOnly="true" Lines="5" Class="m-2" Style="background-color: #202020; color: white;" />
+                                            </MudStack>
+                                        </MudItem>
+                                    </MudGrid>
+
+
+                                }
+
+
+
+
+
+                            </div>
+
+                        </MudMenu>
+
+                    </CellTemplate>
+
+                </TemplateColumn>
+
                 <PropertyColumn Property="x => x.ExitInfo.PhysicalExit" Title="物理格口" />
                 <PropertyColumn Property="x => x.DeviceInfos.DeviceName" Title="设备" />
                 <TemplateColumn Title="扫码图">
@@ -318,10 +412,23 @@
     public string ConvertStatus(int? status) {
         if (status.HasValue) {
             return status.Value switch {
-                0 => "成功",
-                1 => "失败",
-                2 => "未上传",
+                0 => "未上传",
+                1 => "成功",
+                2 => "失败",
                 _ => "未知"
+            };
+        }
+        else {
+            return string.Empty;
+        }
+    }
+
+    public string ConvertStatusLabelColor(int? status) {
+        if (status.HasValue) {
+            return status.Value switch {
+                1 => "height:30px; background-color: rgba(32, 178, 170, 0.2); color:lightseagreen; border-radius: 15px;",
+                2 => "height:30px; background-color: rgba(255, 69, 0, 0.2); color:orangered; border-radius: 15px;",
+                _ => "height:30px;  border-radius: 15px;"
             };
         }
         else {

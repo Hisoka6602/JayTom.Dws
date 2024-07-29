@@ -751,7 +751,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     try {
                         var settingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
                         if (settingsDto is not null && settingsDto.IsAutoStart) {
-                            StartDelegate(new object());
+                            StartDelegate(null);
                         }
                     }
                     catch (Exception e) {
