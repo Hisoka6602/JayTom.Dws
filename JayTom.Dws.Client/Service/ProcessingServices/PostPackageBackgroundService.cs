@@ -385,11 +385,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                 var package = PackageInfoManager.GetLastPackage(s => s.Value != null && s.Value.Guid.Equals(result.CarNumber));
                 if (package is not null) {
-                    if (package.BarCodeInfo != null && package.BarCodeInfo?.Barcode.Equals("noread",
+                    /*if (package.BarCodeInfo != null && package.BarCodeInfo?.Barcode.Equals("noread",
                             StringComparison.CurrentCultureIgnoreCase) != true) {
                         package.LinkedCarCount = 1;
                         PackageInfoManager.CompletedPackage(f => f.Value?.CreateTime.Equals(package.CreateTime) == true);
-                    }
+                    }*/
 
                     //联动车辆
                     GrayScaleSkippedVehicles = result.LinkedCarCount;
