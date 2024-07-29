@@ -22,7 +22,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private bool _isDirectionReversed;
         private int _additionalBoxSpacePercentage;
         private int _minSendInterval;
-        private double _mainBoxPackageRatio;
+        private int _mainBoxPackageRatio;
 
         /// <summary>
         /// 是否使用灰度仪检测包裹
@@ -124,7 +124,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 主框包裹包裹判断占比
         /// </summary>
-        public double MainBoxPackageRatio {
+        public int MainBoxPackageRatio {
             get => _mainBoxPackageRatio;
             set => SetProperty(ref _mainBoxPackageRatio, value);
         }

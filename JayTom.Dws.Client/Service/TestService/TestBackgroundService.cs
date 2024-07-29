@@ -369,7 +369,7 @@ namespace JayTom.Dws.Client.Service.TestService {
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
 
                     //添加包裹
-                    var packageRemoveTimers = new List<PackageRemoveTimer>();
+                    var packageRemoveTimers = new List<PackageTimer>();
                     if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {
                         packageRemoveTimers.Add(new PackageRemoveTimer() {
                             Description = "空包裹过期",

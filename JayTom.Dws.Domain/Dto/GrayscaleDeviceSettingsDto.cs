@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class GrayscaleDeviceSettingsDto {
 
         /// <summary>
@@ -72,6 +73,6 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 主框包裹包裹判断占比
         /// </summary>
-        public double MainBoxPackageRatio { get; set; } = 15;
+        public int MainBoxPackageRatio { get; set; } = 15;
     }
 }

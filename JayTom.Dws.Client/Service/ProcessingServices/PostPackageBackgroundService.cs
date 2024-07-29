@@ -373,6 +373,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _grayscaleService.GrayscaleSensorResultReceived += (sender, result) => {
                 //给小车赋值
                 //取出超时的删除
+
                 var pairs = _grayscaleResultItems.Where(s =>
                         s.Value != null && DateTime.Now.Subtract(s.Value.ResultTime).TotalSeconds > 3)
                     .ToList();
@@ -410,9 +411,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                     if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
                         package.GrayscaleResultInfo is not null &&
-                        package.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio) == true &&
+                        package.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100) == true &&
                         result.ResultTime.Subtract(package.CreateTime).TotalMilliseconds <= _grayscaleDeviceSettingsDto.TimeOut) {
-                        //发送包裹居中指令
                         _sortingService.SendPackageCenter(package.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
                             BarCode = string.Empty,
                             Guid = package.GrayscaleResultInfo.CarNumber,
@@ -421,9 +421,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             PackagePositionInfo = new PackagePositionInfo() {
                                 CenterX = package.GrayscaleResultInfo.CenterPoint.X,
                                 CenterY = package.GrayscaleResultInfo.CenterPoint.Y,
-                                OffsetDirection = (OffsetDirection)(package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)?.PackageOrientation ?? PackageOrientation.Left),
-                                OffsetDistance = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)?.OrientationValue ?? 0,
-                                OffsetPercentage = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)?.OffsetPercentage ?? 0
+                                OffsetDirection = (OffsetDirection)(package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.PackageOrientation ?? PackageOrientation.Left),
+                                OffsetDistance = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.OrientationValue ?? 0,
+                                OffsetPercentage = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.OffsetPercentage ?? 0
                             },
                         });
                         //如果是没包裹则返回
@@ -466,22 +466,33 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
 
                     //添加包裹
-                    var packageRemoveTimers = new List<PackageRemoveTimer>();
+                    var packageTimers = new List<PackageTimer>()
+                    {
+                        //无检测包裹自动完成
+                        new PackCompletedTimer()
+                        {
+                            Predicate =  w => w.Value.BarCodeInfo != null
+                                              &&!w.Value.BarCodeInfo.Barcode.
+                                                  Equals("noread", StringComparison.CurrentCultureIgnoreCase)
+                            &&!w.Value.IsCompleted,
+                            CompletTimeSpan =  TimeSpan.FromMilliseconds(_grayscaleDeviceSettingsDto.TimeOut+130)
+                        }
+                    };
                     if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {
-                        packageRemoveTimers.Add(new PackageRemoveTimer() {
+                        packageTimers.Add(new PackageRemoveTimer() {
                             Description = "空包裹过期",
                             Predicate = w => w.Value.BarCodeInfo == null,
                             RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.EmptyPackageExpiryTime)
                         });
                     }
                     if (_createPackageSettingsDto is { IsUsePackageExpiry: true, PackageExpiryTime: > 0 }) {
-                        packageRemoveTimers.Add(new PackageRemoveTimer() {
+                        packageTimers.Add(new PackageRemoveTimer() {
                             Description = "包裹超过生存周期",
                             RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
                         });
                     }
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
-                    PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
+                    PackageInfoManager.AddPackage(packageInfo, packageTimers);
 
                     //触发创建包裹事件
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -594,7 +605,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         //PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else if ((info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
-                              info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio))) {
+                              info.GrayscaleResultInfo.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100))) {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else {
@@ -602,7 +613,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                         _grayscaleResultItems.TryGetValue((int)info.Guid, out var result);
                         if (result is { LinkedCarCount: > 0 } &&
-                            result.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio)) {
+                            result.MainRectangleBoxInfos.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)) {
                             info.LinkedCarCount = result.LinkedCarCount;
                             info.GrayscaleResultInfo = result;
                             PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));

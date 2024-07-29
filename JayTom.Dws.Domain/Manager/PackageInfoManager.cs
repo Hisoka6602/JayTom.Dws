@@ -1,4 +1,5 @@
 ﻿using NLog;
+using System.Linq;
 using System.Drawing;
 using System.Diagnostics;
 using JayTom.Dws.Domain.Dto;
@@ -39,9 +40,9 @@ namespace JayTom.Dws.Domain.Manager {
         /// </summary>
         /// <param name="package"></param>
         /// <param name="removeTimers"></param>
-        public static void AddPackage(PackageInfo package, List<PackageRemoveTimer> removeTimers) {
+        public static void AddPackage(PackageInfo package, List<PackageTimer> removeTimers) {
             _packageInfos.TryAdd(package.CreateTime, package);
-            package.StartRemovalTimers(_packageInfos, removeTimers);
+            package.StartTimers(_packageInfos, removeTimers);
         }
 
         /// <summary>
@@ -334,6 +335,11 @@ namespace JayTom.Dws.Domain.Manager {
         public List<PackageRemoveTimer>? PackageRemoveTimers { get; private set; } = new();
 
         /// <summary>
+        /// 完成包裹计时器
+        /// </summary>
+        public List<PackCompletedTimer>? PackCompletedTimers { get; private set; } = new();
+
+        /// <summary>
         /// 其他
         /// </summary>
 
@@ -341,10 +347,16 @@ namespace JayTom.Dws.Domain.Manager {
 
         private readonly object _removalLock = new();
 
-        public void StartRemovalTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageRemoveTimer> removeTimers) {
+        public void StartTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageTimer> removeTimers) {
             foreach (var timer in removeTimers) {
-                timer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, timer), timer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
-                PackageRemoveTimers?.Add(timer);
+                if (timer is PackageRemoveTimer packageRemoveTimer) {
+                    packageRemoveTimer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer), packageRemoveTimer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
+                    PackageRemoveTimers?.Add(packageRemoveTimer);
+                }
+                else if (timer is PackCompletedTimer packCompletedTimer) {
+                    packCompletedTimer.CompletTimer = new Timer(CompletedCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer), packCompletedTimer.CompletTimeSpan, Timeout.InfiniteTimeSpan);
+                    PackCompletedTimers?.Add(packCompletedTimer);
+                }
             }
         }
 
@@ -364,16 +376,41 @@ namespace JayTom.Dws.Domain.Manager {
                 }
             }
         }
+
+        private void CompletedCollection(object? state) {
+            if (state is not null) {
+                var (packageInfos, removeTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>)state;
+                if (removeTimer.Predicate is not null) {
+                    var valuePair = packageInfos.Where(removeTimer.Predicate)
+                        ?.FirstOrDefault(f => f.Value != null && f.Value.CreateTime.Equals(CreateTime));
+                    if (valuePair is { Value: not null }) {
+                        PackageInfoManager.CompletedPackage(f => f.Value != null && f.Value.CreateTime.Equals(CreateTime));
+                        removeTimer.CompletTimer?.Dispose();
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
     /// 移除包裹计时器
     /// </summary>
-    public class PackageRemoveTimer {
+    public class PackageRemoveTimer : PackageTimer {
         public TimeSpan RemovalTimeSpan { get; set; }
         public Timer? PackageRemovalTimer { get; set; }
-        public Func<KeyValuePair<DateTime, PackageInfo>, bool>? Predicate { get; set; }
         public string Description { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 完成计时器
+    /// </summary>
+    public class PackCompletedTimer : PackageTimer {
+        public TimeSpan CompletTimeSpan { get; set; }
+        public Timer? CompletTimer { get; set; }
+    }
+
+    public class PackageTimer {
+        public Func<KeyValuePair<DateTime, PackageInfo>, bool>? Predicate { get; set; }
     }
 
     public class PackageRemovedEventArgs : EventArgs {
