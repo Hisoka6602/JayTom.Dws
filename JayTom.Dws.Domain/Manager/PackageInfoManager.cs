@@ -206,8 +206,12 @@ namespace JayTom.Dws.Domain.Manager {
             packageInfo.WeightInfo ??= new WeightInfoModel();
             packageInfo.BarCodeInfo ??= new BarCodeInfoModel();
             packageInfo.GrayscaleResultInfo ??= new GrayscaleResult();
+            if (packageInfo.LinkedCarCount == 0) {
+                packageInfo.LinkedCarCount = 1;
+            }
             packageInfo.IsStackedPackage ??= false;
             packageInfo.IsCompleted = true;
+
             OnPackageCompleted(new PackageCompletedEventArgs(packageInfo, string.Empty));
         }
     }

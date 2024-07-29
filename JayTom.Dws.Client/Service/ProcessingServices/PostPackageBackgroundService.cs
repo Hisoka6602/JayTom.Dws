@@ -400,6 +400,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                                                    (decimal)_grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage / 100) != true) {
                             PackageInfoManager.RemovePackage(package.CreateTime);
                             package.BarCodeInfo = null;
+                            return;
                         }
                         else {
                             package.LinkedCarCount = result.LinkedCarCount;
@@ -408,22 +409,21 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
 
                     package.GrayscaleResultInfo = result;
-
                     if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
                         package.GrayscaleResultInfo is not null &&
                         package.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100) == true &&
                         result.ResultTime.Subtract(package.CreateTime).TotalMilliseconds <= _grayscaleDeviceSettingsDto.TimeOut) {
-                        _sortingService.SendPackageCenter(package.GrayscaleResultInfo.CarNumber, new InstructionsAttach() {
+                        _sortingService.SendPackageCenter(result.CarNumber, new InstructionsAttach() {
                             BarCode = string.Empty,
-                            Guid = package.GrayscaleResultInfo.CarNumber,
+                            Guid = result.CarNumber,
                             Timestamp = package.Timestamp,
-                            LinkedCarCount = package.GrayscaleResultInfo.LinkedCarCount,
+                            LinkedCarCount = result.LinkedCarCount,
                             PackagePositionInfo = new PackagePositionInfo() {
-                                CenterX = package.GrayscaleResultInfo.CenterPoint.X,
-                                CenterY = package.GrayscaleResultInfo.CenterPoint.Y,
-                                OffsetDirection = (OffsetDirection)(package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.PackageOrientation ?? PackageOrientation.Left),
-                                OffsetDistance = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.OrientationValue ?? 0,
-                                OffsetPercentage = package.GrayscaleResultInfo.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.OffsetPercentage ?? 0
+                                CenterX = result.CenterPoint.X,
+                                CenterY = result.CenterPoint.Y,
+                                OffsetDirection = (OffsetDirection)(result.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.PackageOrientation ?? PackageOrientation.Left),
+                                OffsetDistance = result.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.OrientationValue ?? 0,
+                                OffsetPercentage = result.MainRectangleBoxInfos?.FirstOrDefault(f => f.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100)?.OffsetPercentage ?? 0
                             },
                         });
                         //如果是没包裹则返回
@@ -601,7 +601,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
                     else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
                              info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
-                        info.LinkedCarCount = 1;
+                        //info.LinkedCarCount = 1;
                         //PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else if ((info.LinkedCarCount > 0 && info.GrayscaleResultInfo is not null &&
