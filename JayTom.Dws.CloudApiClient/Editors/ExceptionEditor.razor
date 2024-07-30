@@ -1,0 +1,43 @@
+﻿@using System.Globalization
+@using JayTom.Dws.CloudApiClient.Data.Models.ConfigModels
+@using MudBlazor.Utilities
+<div class="d-flex">
+    <MudPaper Elevation="3" Style=" width:400px;height:auto; position: relative; border-radius: 15px; display: flex; flex-direction: column; align-items: center;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="padding:50px;width: 100%;">
+
+                @*异常类型名称*@
+                <MudTextField Variant="Variant.Text" @bind-Value="@Model.ExceptionName" Style="margin-bottom:30px" T="string" Label="异常类型名称" For="@(() => Model.ExceptionName)" />
+                @*显示颜色*@
+                @*<MudColorPicker @bind-Value="@Model.ExceptionColor" Label="显示颜色" ColorPickerView="ColorPickerView.Spectrum" />*@
+                <MudColorPicker @bind-Value="@SelectMudColor" DisableToolbar="false" Label="显示颜色" PickerVariant="PickerVariant.Inline" />
+                <div style="margin-top:20px; display: flex; justify-content: center;">
+                    <MudButton Style="background-color:dodgerblue; color:white; margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Inherit">保存</MudButton>
+                    <MudButton OnClick="Cancel" Style="margin-left:5px;margin-right:5px; width:130px; border-radius: 30px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Error">取消</MudButton>
+                </div>
+            </div>
+
+        </div>
+    </MudPaper>
+</div>
+@code {
+    [Parameter]
+    public EventCallback<ExceptionInfoItemModel> OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+
+    public ExceptionInfoItemModel Model { get; set; } = new();
+    private MudColor? SelectMudColor { get; set; }
+    private async void Confirm() {
+
+        await OnConfirm.InvokeAsync();
+    }
+
+    public async void Cancel() {
+        await OnCancel.InvokeAsync(null);
+    }
+}

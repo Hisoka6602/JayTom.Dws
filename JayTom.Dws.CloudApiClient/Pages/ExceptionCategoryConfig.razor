@@ -1,0 +1,121 @@
+﻿@page "/config-exceptionCategoryConfig"
+@using JayTom.Dws.CloudApiClient.Data.Models.ConfigModels
+@using JayTom.Dws.CloudApiClient.Editors
+<MudPaper Elevation="0" Style="display: flex; height:95vh">
+    @*弹出框*@
+    <MudOverlay Visible="_exceptionEditorIsVisible" DarkBackground="true">
+
+        <ExceptionEditor OnCancel="() => { _exceptionEditorIsVisible=false;}" />
+
+    </MudOverlay>
+    <MudOverlay Visible="_exceptionMatchEditorIsVisible" DarkBackground="true">
+
+        <ExceptionMatchEditor OnCancel="() => { _exceptionMatchEditorIsVisible=false;}" />
+
+    </MudOverlay>
+    <!-- 左侧异常表分类表 -->
+    <div style="width: 35%; padding: 20px; border-right: 1px solid #ddd;  display: flex; flex-direction: column; gap: 10px;">
+        <MudButton Style="min-height:40px; height:40px; width:100px; border-radius: 15px; margin-left:3px; background-color:#3763E8;color:white" Size="@Size.Small" Variant="@Variant.Filled"
+                   Color="@Color.Surface" OnClick="()=>{_exceptionEditorIsVisible=true;}">添加分类</MudButton>
+
+        <MudDataGrid Height="100%" Style="min-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true"
+                     FixedHeader="true" ColumnResizeMode="ResizeMode.Column"
+                     HeaderClass="custom-header" Filterable="false"
+                     SortMode="@SortMode.None" Groupable="false" Items="ExceptionInfoItems">
+            <Columns>
+                <PropertyColumn Property="x => x.Num" Title="" />
+                <PropertyColumn Property="x => x.ExceptionName" Title="异常分类" />
+                <PropertyColumn Property="x => x.ExceptionColor" Title="异常颜色">
+                    <CellTemplate>
+                        @{
+                            var color = !string.IsNullOrEmpty(context.Item.ExceptionColor) ? context.Item.ExceptionColor : "darkred";
+                        }
+                        <div style="width:60px; display: flex; justify-content: center; align-items: center; height: 100%;">
+                            <div style="background-color:@color; width: 20px; height: 20px; border-radius: 5px;"></div>
+                        </div>
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn CellClass="d-flex justify-end">
+                    <CellTemplate>
+                        <MudStack Row>
+                            <MudButton Style="background-color:#3763E8; color:white; border-radius:10px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Inherit">编辑</MudButton>
+                            <MudButton Style="background-color:firebrick;color:white;border-radius:10px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Inherit">删除</MudButton>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+
+        </MudDataGrid>
+    </div>
+    <!-- 右侧匹配表 -->
+    <div style="width: 65%; padding: 20px;  display: flex; flex-direction: column; gap: 10px;">
+        <MudButton Style="min-height:40px; height:40px; width:100px; border-radius: 15px; margin-left:3px; background-color:#3763E8;color:white"
+                   Size="@Size.Small" Variant="@Variant.Filled"
+                   Color="@Color.Surface" OnClick="()=>{_exceptionMatchEditorIsVisible=true;}">添加匹配</MudButton>
+        <MudDataGrid Height="100%" Style="min-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true"
+                     FixedHeader="true" ColumnResizeMode="ResizeMode.Column"
+                     HeaderClass="custom-header" Filterable="false"
+                     SortMode="@SortMode.None" Groupable="false" Items="ExceptionMatchItems">
+            <Columns>
+                <PropertyColumn Property="x => x.Num" Title="" />
+                <PropertyColumn Property="x => x.Keywords" Title="包含关键字" />
+                <PropertyColumn Property="x => x.CustomRegex" Title="自定义正则" />
+                <PropertyColumn Property="x => x.DataSource" Title="数据源" />
+                <PropertyColumn Property="x => x.ExceptionTypeName" Title="异常类型" />
+                <PropertyColumn Property="x => x.Priority" Title="判断优先级" />
+                <TemplateColumn CellClass="d-flex justify-end">
+                    <CellTemplate>
+                        <MudStack Row>
+                            <MudButton Style="background-color:#3763E8; color:white; border-radius:10px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Inherit">编辑</MudButton>
+                            <MudButton Style="background-color:firebrick;color:white;border-radius:10px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Inherit">删除</MudButton>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+
+        </MudDataGrid>
+    </div>
+</MudPaper>
+
+@code {
+    private bool _exceptionEditorIsVisible = false;
+    private bool _exceptionMatchEditorIsVisible = false;
+    private static readonly Random Random = new();
+    public List<ExceptionInfoItemModel> ExceptionInfoItems = new();
+    public List<ExceptionMatchItemModel> ExceptionMatchItems = new() {
+        new ExceptionMatchItemModel()
+        {
+            Num = 1,
+
+            Keywords = "关键字示例",
+            CustomRegex = @"\d{3}-\d{2}-\d{4}",
+            DataSource = DataSourceType.ResponseContent,
+            ExceptionTypeName = "示例异常类型",
+
+        }
+    };
+    protected override void OnInitialized() {
+        base.OnInitialized();
+
+        for (int i = 0; i < 100; i++) {
+            ExceptionInfoItems.Add(new ExceptionInfoItemModel {
+                    Num = ExceptionInfoItems.Count + 1,
+                    ExceptionName = GetRandomExceptionName(),
+                    ExceptionColor = GetRandomColor()
+                });
+        }
+
+    }
+
+    private static string GetRandomColor() {
+        return $"#{Random.Next(0x1000000):X6}";
+    }
+
+    private static string GetRandomExceptionName() {
+        var names = new[]
+        {
+            "无物理格口", "未识别", "无效数据", "超时错误", "未知错误", "连接失败", "数据丢失", "权限不足"
+        };
+        return names[Random.Next(names.Length)];
+    }
+}

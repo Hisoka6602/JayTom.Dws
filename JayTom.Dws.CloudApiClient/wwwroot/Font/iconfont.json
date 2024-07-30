@@ -6,6 +6,34 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "880499",
+      "name": "设置",
+      "font_class": "setupb",
+      "unicode": "e63b",
+      "unicode_decimal": 58939
+    },
+    {
+      "icon_id": "8094221",
+      "name": "统设置",
+      "font_class": "tongshezhi",
+      "unicode": "e64f",
+      "unicode_decimal": 58959
+    },
+    {
+      "icon_id": "8765234",
+      "name": "设置",
+      "font_class": "shezhi",
+      "unicode": "e638",
+      "unicode_decimal": 58936
+    },
+    {
+      "icon_id": "22895721",
+      "name": "基础设置_面性",
+      "font_class": "jichushezhi-2",
+      "unicode": "e673",
+      "unicode_decimal": 58995
+    },
+    {
       "icon_id": "6446307",
       "name": "标签1",
       "font_class": "tianchongxing-",

@@ -13,7 +13,6 @@
 @inject IExcelService ExcelService
 @inject IJSRuntime JSRuntime
 
-
 @*搜索条件框*@
 <MudCard Style="height:50px; margin-bottom:10px;border-radius:25px">
     <div style="height: 50px; display: flex; align-items: center;">
@@ -143,90 +142,80 @@
                     <CellTemplate>
 
                         <MudMenu Class="" Label="@ConvertStatus(context.Item.UploadInfo.RequestStatus)" Variant="Variant.Text" Style="@ConvertStatusLabelColor(context.Item.UploadInfo.RequestStatus)" Color="Color.Inherit">
-                            <div class="d-flex flex-row align-items-center" style="margin: 20px;">
+                            <div class="d-flex flex-row align-items-center" style="max-width:700px; margin: 20px;">
                                 @if (context.Item.UploadInfo.RequestStatus is 1 or 2 or 0) {
-                                    @*条码、上传状态、耗时*@
-                                    @*上传时间、上传内容*@
-                                    @*响应时间、响应内容*@
-                                    @*颜色:成功=lightseagreen、失败:orangered--rgba(255, 69, 0, 0.2)*@
-
                                     <MudGrid Spacing="2" Style="margin: 20px;">
                                         <MudItem xs="12">
                                             <!-- 条码、耗时、提交状态 -->
-                                            <MudStack Orientation="Horizontal" JustifyContent="center">
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    条码
-                                                </MudText>
-                                                <MudText Typo="Typo.body1" Class="m-2" MaxWidth="280px" Overflow="ellipsis">
+                                            <div class="d-flex justify-content-center">
+                                                <div style="margin-right:10px;">条码:</div>
+                                                <div style="font-weight:900">
                                                     @context.Item.BarCodeInfo.Barcode
-                                                </MudText>
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    状态
-                                                </MudText>
-                                                @*<!-- 图标 -->
-                                        <MudIcon Icon="@context.Item.UploadInfo.RequestStatus" Color="@ConvertStatusToColor(context.Item.UploadInfo.RequestStatus)" Class="m-2" />*@
-                                                <!-- 文字 -->
-                                                <MudText Typo="Typo.body1" Class="m-2" TextAlignment="Justify" Overflow="ellipsis">
-                                                    @context.Item.UploadInfo.RequestStatus
-                                                </MudText>
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    耗时(ms):
-                                                </MudText>
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    @String.Format("{0:F1}", context.Item.UploadInfo.DurationInSeconds)
-                                                </MudText>
-                                            </MudStack>
+                                                </div>
+                                            </div>
                                         </MudItem>
+                                        <!-- 状态、耗时 -->
                                         <MudItem xs="12">
-                                            <!-- 提交时间 -->
-                                            <MudStack Orientation="Horizontal" Class="mt-2">
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    请求时间
-                                                </MudText>
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    @context.Item.UploadInfo.RequestTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-                                                </MudText>
-                                            </MudStack>
+                                            <div class="d-flex justify-content-center">
+                                                <div style="margin-right:10px; font-weight:500">状态:</div>
+                                                <div style="@ConvertStatusLabelColor(context.Item.UploadInfo.RequestStatus)">
+                                                    @ConvertStatus(context.Item.UploadInfo.RequestStatus)
+                                                </div>
+                                                <div style="margin-right:10px; margin-left:100px;font-weight:500"> 耗时(ms):</div>
+                                                <div style="font-weight:800"> @String.Format("{0:F1}", context.Item.UploadInfo.DurationInSeconds)</div>
+                                            </div>
                                         </MudItem>
+                                        <!-- Url -->
                                         <MudItem xs="12">
-                                            <!-- 提交信息 -->
-                                            <MudStack Orientation="Vertical" Class="mt-2">
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    请求内容
-                                                </MudText>
-                                                <MudTextField Value="@context.Item.UploadInfo.RequestContent" ReadOnly="true" Lines="5" Class="m-2" Style="background-color: #202020; color: white;" />
-                                            </MudStack>
+                                            <div class="mt-2">
+                                                <div class="d-flex justify-content-between align-items-center" style="background-color: #2F2F2F; color: white; padding: 10px; border-top-left-radius: 5px; border-top-right-radius: 5px; margin-bottom: 0; border-bottom: 1px solid #333;">
+
+                                                    <div>Url</div>
+
+                                                </div>
+                                                <div class="m-0" style="max-height: 100px; min-height: 40px; background-color: #202020; color: white; padding: 10px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; overflow: auto; margin-top: 0;">
+                                                    <MudCode Class="m-0" Style="background-color: transparent; color: white;">
+                                                        @context.Item.UploadInfo.RequestUrl
+                                                    </MudCode>
+                                                </div>
+                                            </div>
                                         </MudItem>
+                                        <!-- 提交信息 -->
                                         <MudItem xs="12">
-                                            <!-- 响应时间 -->
-                                            <MudStack Orientation="Horizontal" Class="mt-2">
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    响应时间
-                                                </MudText>
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    @context.Item.UploadInfo.ResponseTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-                                                </MudText>
-                                            </MudStack>
+                                            <div class="mt-2">
+                                                <div class="d-flex justify-content-between align-items-center" style="background-color: #2F2F2F; color: white; padding: 10px; border-top-left-radius: 5px; border-top-right-radius: 5px; margin-bottom: 0; border-bottom: 1px solid #333;">
+
+                                                    <div>提交</div>
+                                                    <div>@context.Item.UploadInfo.RequestTime.ToString("yyyy-MM-dd HH:mm:ss.fff")</div>
+                                                </div>
+                                                <div class="m-0" style="max-height: 180px; min-height: 100px; background-color: #202020; color: white; padding: 10px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; overflow: auto; margin-top: 0;">
+                                                    <MudCode Class="m-0" Style="background-color: transparent; color: white;">
+                                                        @context.Item.UploadInfo.RequestContent
+
+                                                    </MudCode>
+                                                </div>
+                                            </div>
                                         </MudItem>
                                         <MudItem xs="12">
                                             <!-- 响应信息 -->
-                                            <MudStack Orientation="Vertical" Class="mt-2">
-                                                <MudText Typo="Typo.body1" Class="m-2">
-                                                    响应内容
-                                                </MudText>
-                                                <MudTextField Value="@context.Item.UploadInfo.ResponseContent" ReadOnly="true" Lines="5" Class="m-2" Style="background-color: #202020; color: white;" />
-                                            </MudStack>
+                                            <div class="mt-2">
+                                                <div class="d-flex justify-content-between align-items-center" style="background-color: #2F2F2F; color: white; padding: 10px; border-top-left-radius: 5px; border-top-right-radius: 5px; margin-bottom: 0; border-bottom: 1px solid #333;">
+
+                                                    <div>响应</div>
+                                                    <div>@context.Item.UploadInfo.ResponseTime.ToString("yyyy-MM-dd HH:mm:ss.fff")</div>
+                                                </div>
+                                                <div class="m-0" style="max-height: 180px; min-height: 100px; background-color: #202020; color: white; padding: 10px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; overflow: auto; margin-top: 0;">
+                                                    <MudCode Class="m-0" Style="background-color: transparent; color: white;">
+                                                        @context.Item.UploadInfo.ResponseContent
+
+                                                    </MudCode>
+                                                </div>
+                                            </div>
                                         </MudItem>
                                     </MudGrid>
-
-
                                 }
-
-
-
-
-
                             </div>
+
 
                         </MudMenu>
 
@@ -359,51 +348,6 @@
     protected override void OnInitialized() {
         base.OnInitialized();
 
-        /*for (var i = 0; i < 100; i++) {
-            var model = new DetailInfoItemModel() {
-                    Num = i + 1,
-                    BarCodeInfo = new BarCodeInfoModel() {
-                        Barcode = "SF123456789",
-                        ScanTime = DateTime.Now,
-                    },
-                    WeightInfo = new WeightInfoModel() {
-                        FormattedWeight = 0.22f
-                    },
-                    VolumeInfo = new VolumeInfoModel() {
-                        FormattedLength = 10.2f,
-                        FormattedWidth = 10.3f,
-                        FormattedHeight = 10.4f,
-                        FormattedVolume = 1000.36f
-                    },
-                    UploadInfo = new UploadInfoModel() {
-                        RequestStatus = 1,
-                    },
-                    ExitInfo = new ExitInfoModel() {
-                        PhysicalExit = "格口1"
-                    },
-                    ScanImageInfo = new ImageInfoModel() {
-                        ImageUrl = "https://img2.baidu.com/it/u=621048240,333776885&fm=253&fmt=auto&app=138&f=GIF?w=1024&h=435"
-                    },
-                    PanoramaImageInfos = new List<ImageInfoModel>()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
-                    new ImageInfoModel()
-                    {
-                        ImageUrl = "https://n.sinaimg.cn/translate/366/w700h466/20191130/54fa-ikcaceq7124230.jpg",
-
-                    },
-                    new ImageInfoModel()
-                    {
-                        ImageUrl = "https://www.zyouwl.cn/wp-content/uploads/2024/01/image-97-800x486.png",
-
-                    },
-                },
-                    DeviceInfos = new DeviceInfoModel() {
-                        DeviceName = "扫码设备1"
-                    },
-
-                };
-            DetailInfoItems.Add(model);
-        }*/
         BaseUrl ??= Configuration.GetValue<string>("BaseUrl");
 
         OnSearchClicked();
