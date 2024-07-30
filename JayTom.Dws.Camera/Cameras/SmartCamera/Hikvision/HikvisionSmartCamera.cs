@@ -584,6 +584,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         public bool IsUseTriggerMode { get; set; } = true;
         public TriggerMode TriggerMode { get; set; } = TriggerMode.Hardware;
         public int SourceLine { get; set; } = 0;
+        public bool IsMergeBarCodes { get; set; } = true;
+        public string MultiBarcodeDelimiter { get; set; } = "_";
 
         public void SoftwareTriggerOnce() {
             Task.Factory.StartNew(() => {

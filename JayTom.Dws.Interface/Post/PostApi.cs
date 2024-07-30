@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.Post {
-
     public class PostApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters? Parameters { get; private set; }
@@ -317,6 +316,7 @@ namespace JayTom.Dws.Interface.Post {
                         if (parts.Length > 6 && parts[6].Length >= 4) {
                             //格口
                             int.TryParse($"{parts[6][..4]}", out var exit);
+                            //判断备用格口
                             if (await IsExitLocked(parts[6][..4], token)) {
                                 int.TryParse($"{parts[6][4..8]}", out exit);
                             }
@@ -422,6 +422,9 @@ namespace JayTom.Dws.Interface.Post {
         /// <param name="token"></param>
         public async void SubmitScanInfo(string barcode, CancellationToken token = default) {
             //提交扫描信息
+            if (barcode.Equals("NoRead", StringComparison.CurrentCultureIgnoreCase)) {
+                return;
+            }
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -535,7 +538,6 @@ namespace JayTom.Dws.Interface.Post {
         }
 
         public class ApiParameters {
-
             /// <summary>
             /// URL
             /// </summary>
@@ -569,7 +571,6 @@ namespace JayTom.Dws.Interface.Post {
 
         [XmlRoot(ElementName = "Envelope", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
         public class SoapEnvelope {
-
             [XmlElement(ElementName = "Header", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
             public SoapHeader Header { get; set; }
 
@@ -587,7 +588,6 @@ namespace JayTom.Dws.Interface.Post {
         }
 
         public class SoapBody {
-
             [XmlElement(ElementName = "getGKCX", Namespace = "http://serverNs.webservice.pcs.jdpt.chinapost.cn/")]
             public GetGKCXRequest GetGkcx { get; set; }
 
@@ -597,7 +597,6 @@ namespace JayTom.Dws.Interface.Post {
         }
 
         public class GetGKCXRequest {
-
             [XmlElement(ElementName = "arg0", Namespace = "")]
             public string Arg0 { get; set; }
         }

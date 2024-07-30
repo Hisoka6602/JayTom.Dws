@@ -1010,7 +1010,6 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                                 }, token);
                             }
                         }
-                        NLog.LogManager.GetCurrentClassLogger().Error($"云端上传失败:{JsonConvert.SerializeObject(cloudUploadResponse)}");
                         return false;
                     }
 

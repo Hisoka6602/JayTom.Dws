@@ -71,7 +71,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _exitInfoRepository = exitInfoRepository;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
                 //保存后触发
+
                 _savedImageItems.Enqueue(new SavedImageInfo() {
+                    PackageTimestamp = args.PackageTimestamp,
                     BarCode = args.BarCode,
                     FilePath = args.FilePath,
                     ImageType = args.ImageType,
@@ -179,9 +181,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
                                         //扫码图
                                         var (key, value) = await _packageRepository.FirstOrDefaultInfo(f =>
-                                                f.BarCodeInfo != null &&
-                                                f.BarCodeInfo.Barcode.Equals(savedImageInfo.BarCode) &&
-                                                f.BarCodeInfo.ScanTime.Equals(savedImageInfo.ScanTime),
+                                                f.PackageTimestamped.Equals(savedImageInfo.PackageTimestamp),
                                             stoppingToken);
 
                                         if (key && value is { } packageInfoModel) {
@@ -212,9 +212,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
                                         //全景图
                                         var (key, value) = await _packageRepository.FirstOrDefaultInfo(f =>
-                                                f.BarCodeInfo != null &&
-                                                f.BarCodeInfo.Barcode.Equals(savedImageInfo.BarCode) &&
-                                                f.BarCodeInfo.ScanTime.Equals(savedImageInfo.ScanTime),
+                                            f.PackageTimestamped.Equals(savedImageInfo.PackageTimestamp),
                                             stoppingToken);
                                         if (key && value is { } packageInfoModel) {
                                             var cameraConfigInfoModel =

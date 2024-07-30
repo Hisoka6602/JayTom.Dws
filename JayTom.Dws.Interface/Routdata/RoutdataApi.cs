@@ -322,6 +322,9 @@ namespace JayTom.Dws.Interface.Routdata {
                     _ => new UploadResponse()
                 };
             });
+
+            //写出推送信息
+            NLog.LogManager.GetCurrentClassLogger().Info(JsonConvert.SerializeObject(uploadResponse));
         }
 
         public static byte[] CombineByteArrays(byte[] array1, byte[] array2) {

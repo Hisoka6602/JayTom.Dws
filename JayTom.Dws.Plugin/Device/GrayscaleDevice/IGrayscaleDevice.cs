@@ -45,7 +45,9 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// <param name="attachmentRectangle"></param>
         /// <param name="mainRectangle"></param>
         /// <param name="additionalBoxSpacePercentage"></param>
-        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle, int additionalBoxSpacePercentage = 20);
+        /// <param name="minSendInterval"></param>
+        public void SetRectangleSizes(Coordinates attachmentRectangle, Coordinates mainRectangle,
+            int additionalBoxSpacePercentage = 20, int minSendInterval = 300);
 
         /// <summary>
         /// 设置区域小车数量
@@ -105,6 +107,18 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
         /// </summary>
         [Description("中心点")]
         public Point CenterPoint { get; set; }
+
+        /// <summary>
+        /// 返回结果时间
+        /// </summary>
+        [Description("返回结果时间")]
+        public DateTime ResultTime { get; set; }
+
+        /// <summary>
+        /// 是否超时
+        /// </summary>
+        [Description("是否超时")]
+        public bool IsTimeOut { get; set; }
 
         public override string ToString() {
             // 构建字符串表示

@@ -121,7 +121,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var tryDequeue = _imageItems.TryDequeue(out var messageInfo);
                                 if (tryDequeue && messageInfo is not null) {
                                     if (messageInfo.Image is not null) {
-                                        await _imageStorageService.SaveImage(messageInfo.Image,
+                                        await _imageStorageService.SaveImage(messageInfo.PackageTimestamped, messageInfo.Image,
                                             messageInfo.Type, messageInfo.BarCode, messageInfo.Weight,
                                             messageInfo.ScanTime, messageInfo.Length, messageInfo.Width,
                                             messageInfo.Height, messageInfo.Volume, messageInfo.CameraSerialNumber

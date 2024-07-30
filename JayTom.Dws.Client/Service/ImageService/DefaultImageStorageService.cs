@@ -205,7 +205,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
             }
         }
 
-        public async Task SaveImage(long packageId, Image image, SaveImageType type, string barCode, float weight, DateTime scanTime,
+        public async Task SaveImage(long packageTimestamped, Image image, SaveImageType type, string barCode, float weight, DateTime scanTime,
             float length, float width, float height, float volume, string cameraSerialNumber,
             CancellationToken cancellationToken = default) {
             if (image is null) return;
@@ -291,7 +291,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
                             ImageType = type,
                             SaveDateTime = DateTime.Now,
                             ScanTime = scanTime,
-                            PackageId = packageId
+                            PackageTimestamp = packageTimestamped
                         });
                     }
                 }
@@ -311,7 +311,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
                             ImageType = type,
                             SaveDateTime = DateTime.Now,
                             ScanTime = scanTime,
-                            PackageId = packageId
+                            PackageTimestamp = packageTimestamped
                         });
                     }
                 }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Domain.Model {
 
     public class SavedImageInfo {
+        public long PackageTimestamp { get; set; }
 
         /// <summary>
         /// 文件路径

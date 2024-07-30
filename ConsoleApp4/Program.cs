@@ -24,7 +24,7 @@ internal class Program {
 
     private static async Task Main(string[] args) {
         var gwGrayscaleDevice = new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer());
-        string hexString = "3A 73 30 31 37 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 31 2C 64 00 9C 01 2C 1A 01 F3 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
+        string hexString = "3A 73 30 36 35 2C 31 2C B3 00 6F 01 2C C5 02 42 03 2C 32 2C CD 00 51 01 2C C9 00 92 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
         var hexStringToByteArray = HexStringToByteArray(hexString);
 
         var grayscaleResult = gwGrayscaleDevice.DecodeData(hexStringToByteArray);

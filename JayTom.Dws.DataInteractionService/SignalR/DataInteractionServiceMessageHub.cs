@@ -171,7 +171,7 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
                                 CameraName = model.Name,
                                 CustomCameraName = model.CustomName,
                                 LocalPath = args.FilePath ?? string.Empty,
-                                PackageId = args.PackageId ?? 0,
+                                PackageId = args.PackageTimestamp,
                                 Type = (int)(args.ImageType ?? SaveImageType.BarcodeImage)
                             };
                             break;
@@ -186,7 +186,7 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
                                 CameraName = model.Name,
                                 CustomCameraName = model.CustomName,
                                 LocalPath = args.FilePath ?? string.Empty,
-                                PackageId = args.PackageId ?? 0,
+                                PackageId = args.PackageTimestamp,
                                 Type = (int)(args.ImageType ?? SaveImageType.BarcodeImage)
                             };
                             break;
@@ -202,13 +202,13 @@ namespace JayTom.Dws.DataInteractionService.SignalR {
                                 CameraName = model.Name,
                                 CustomCameraName = model.CustomName,
                                 LocalPath = args.FilePath ?? string.Empty,
-                                PackageId = args.PackageId ?? 0,
+                                PackageId = args.PackageTimestamp,
                                 Type = (int)(args.ImageType ?? SaveImageType.BarcodeImage)
                             };
                             break;
                         }
                 }
-                UpdateImageDataAsync(args.PackageId ?? 0, imageInfo);
+                UpdateImageDataAsync(args.PackageTimestamp, imageInfo);
             };
 
             _imageStorageService.ImageSaveFailed += (sender, exception) => {
