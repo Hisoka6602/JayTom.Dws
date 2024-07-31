@@ -70,28 +70,52 @@
                         <span class="iconfont icon-tianchongxing-" style="color: white; font-size: 26px; margin-right: 10px;"></span>
                         <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">异常数据分布</span>
                         <MudChipSet Mandatory="true" Style="margin-left: auto;" MultiSelection="false">
-                            <MudChip>
+                            <MudChip OnClick="@ShowChartArea">
                                 <MudIcon Style="color:white;" Icon="iconfont icon-a-Group134134gaishuai" />
                             </MudChip>
-                            <MudChip>
+                            <MudChip OnClick="@HideChartArea">
                                 <MudIcon Style="color:white;" Icon="iconfont icon-shujubiao" />
                             </MudChip>
 
                         </MudChipSet>
                     </div>
+                    @*图表*@
+                    @if (_showChartArea) {
+                        <div>
+                            <ApexChart Width="500" Height="300" TItem="DonutItemModel">
 
-                    <ApexChart Width="500" Height="300" TItem="DonutItemModel">
+                                <ApexPointSeries TItem="DonutItemModel"
+                                                 Items="DonutItems"
+                                                 ShowDataLabels="true"
+                                                 Name="异常分布"
+                                                 PointColor="e => e.Color"
+                                                 SeriesType="SeriesType.Donut"
+                                                 XValue="e => e.Name"
+                                                 YValue="e => e.Value" />
 
-                        <ApexPointSeries TItem="DonutItemModel"
-                                         Items="DonutItems"
-                                         ShowDataLabels="true"
-                                         Name="异常分布"
-                                         PointColor="e => e.Color"
-                                         SeriesType="SeriesType.Donut"
-                                         XValue="e => e.Name"
-                                         YValue="e => e.Value" />
+                            </ApexChart>
+                        </div>
+                    }
+                    else {
 
-                    </ApexChart>
+                        @*数据表*@
+                        <div>
+
+                            <MudDataGrid Height="310px" Style="min-height:95%; width:100%; border-radius:10px" DragDropColumnReordering="true"
+                                         FixedHeader="true" ColumnResizeMode="ResizeMode.Column"
+                                         HeaderClass="custom-header" Filterable="false"
+                                         SortMode="@SortMode.None" Groupable="false" Items="DonutItems">
+
+                                <Columns>
+                                    <PropertyColumn Property="x => x.Name" Title="类型/原因" />
+                                    <PropertyColumn Property="x => x.Value" Title="数量" />
+                                    <PropertyColumn Property="x => x.ExceptionPercentage" Title="异常中占比" />
+                                    <PropertyColumn Property="x => x.OverallPercentage" Title="整体占比" />
+                                </Columns>
+                            </MudDataGrid>
+                        </div>
+                    }
+
                 </div>
 
 
@@ -101,7 +125,7 @@
         @*异常统计图*@
 
     </div>
-    <div style="flex: 60%;">
+    <div style="flex: 60%; margin-left:10px">
         @if (!_dataLoaded) {
             <MudSkeleton Style="height:350px; position: relative; border-radius:15px;" SkeletonType="SkeletonType.Rectangle" />
         }
@@ -113,7 +137,7 @@
                         <span style="font-weight: bold; font-size: 15px; margin-left: 30px; color: white;">格口数据分布</span>
                     </div>
                     <MudDivider DividerType="DividerType.Middle" Style="height:2px:margin:2px" />
-                    <MudDataGrid HeaderClass="custom-header" Height="310px" FixedHeader="true" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@ExitDistributionItems">
+                    <MudDataGrid Style=" border-radius:10px" HeaderClass="custom-header" Height="310px" FixedHeader="true" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@ExitDistributionItems">
                         <Columns>
                             <PropertyColumn Property="x => x.Num" Title="" />
                             <PropertyColumn Property="x => x.ExitName" Title="格口名称" />
@@ -204,9 +228,9 @@
     public DateTime? EndDateTime { get; set; } = DateTime.Now;
     public string? BaseUrl { get; set; }
     public string? DeviceName { get; set; }
-
+    private bool _showChartArea = false;
     public List<string> DonutItemColors = new()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
         "#1E90FF",
         "#687DE8",
         "#876BCE",
@@ -251,7 +275,7 @@
 
             };
         _options.Yaxis = new List<YAxis>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
             new YAxis {
                 DecimalsInFloat = 0,
                 Labels = new YAxisLabels { Rotate = -45, Style = new AxisLabelStyle { FontSize = "10px" } },
@@ -446,5 +470,11 @@
     //操作实时折线图事件
     //操作饼图事件
     //获取统计接口数据
+    private void ShowChartArea() {
+        _showChartArea = true;
+    }
 
+    private void HideChartArea() {
+        _showChartArea = false;
+    }
 }

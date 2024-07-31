@@ -1,6 +1,7 @@
 ﻿using JayTom.Dws.Data.License;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.CloudApiData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore.Design;
@@ -237,6 +238,19 @@ internal class Program {
                     .HasForeignKey(n => new { n.SortingInfoId })
                     .OnDelete(DeleteBehavior.Cascade);
                 modelBuilder.Entity<InstructionInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //客户端配置
+                modelBuilder.Entity<ExceptionTypeInfoModel>()
+                    .HasKey(c => new {
+                        c.Id
+                    });
+                modelBuilder.Entity<ExceptionTypeInfoModel>()
+                    .HasMany(b => b.ExceptionMatchInfos)
+                    .WithOne(n => n.ExceptionInfo)
+                    .HasForeignKey(n => new { n.ExceptionTypeId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<ExceptionMatchInfoModel>().HasKey(c => new {
                     c.Id
                 });
             }
