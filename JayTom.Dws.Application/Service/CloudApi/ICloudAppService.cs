@@ -86,5 +86,93 @@ namespace JayTom.Dws.Application.Service.CloudApi {
         /// <param name="minFreeSpaceInMb"></param>
         /// <returns></returns>
         public Task CleanEarliestImageFiles(string folderPath, long minFreeSpaceInMb);
+
+        /// <summary>
+        /// 添加异常分类
+        /// </summary>
+        /// <param name="exceptionColor"></param>
+        /// <param name="token"></param>
+        /// <param name="exceptionName"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> AddExceptionType(string exceptionName, string exceptionColor, CancellationToken token = default);
+
+        /// <summary>
+        /// 修改异常分类
+        /// </summary>
+        /// <param name="exceptionCategoryId"></param>
+        /// <param name="exceptionColor"></param>
+        /// <param name="token"></param>
+        /// <param name="exceptionName"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> UpdateExceptionType(long exceptionCategoryId, string exceptionName, string exceptionColor, CancellationToken token = default);
+
+        /// <summary>
+        /// 删除异常分类
+        /// </summary>
+        /// <param name="exceptionCategoryId"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> DeleteExceptionType(long exceptionCategoryId, CancellationToken token = default);
+
+        /// <summary>
+        /// 添加异常匹配规则
+        /// </summary>
+        /// <param name="priority"></param>
+        /// <param name="token"></param>
+        /// <param name="keywords"></param>
+        /// <param name="customRegex"></param>
+        /// <param name="dataSource"></param>
+        /// <param name="exceptionTypeName"></param>
+        /// <param name="exceptionTypeId"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> AddExceptionRule(string keywords,
+            string customRegex,
+            int dataSource,
+            string exceptionTypeName,
+            long exceptionTypeId,
+            int priority,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 修改异常匹配规则
+        /// </summary>
+        /// <param name="exceptionRuleId"></param>
+        /// <param name="priority"></param>
+        /// <param name="token"></param>
+        /// <param name="keywords"></param>
+        /// <param name="customRegex"></param>
+        /// <param name="dataSource"></param>
+        /// <param name="exceptionTypeName"></param>
+        /// <param name="exceptionTypeId"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> UpdateExceptionRule(long exceptionRuleId,
+            string keywords,
+            string customRegex,
+            int dataSource,
+            string exceptionTypeName,
+            long exceptionTypeId,
+            int priority, CancellationToken token = default);
+
+        /// <summary>
+        /// 删除异常匹配规则
+        /// </summary>
+        /// <param name="exceptionRuleId"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> DeleteExceptionRule(long exceptionRuleId, CancellationToken token = default);
+
+        /// <summary>
+        /// 异常分类列表
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> ExceptionTypes(CancellationToken token = default);
+
+        /// <summary>
+        /// 异常匹配列表
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> ExceptionRule(CancellationToken token = default);
     }
 }

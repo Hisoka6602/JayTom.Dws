@@ -1,16 +1,9 @@
-﻿namespace JayTom.Dws.CloudApiClient.Data.Models.ConfigModels {
+﻿using JayTom.Dws.Data.LocalLog;
 
-    public class ExceptionMatchItemModel {
+namespace JayTom.Dws.CloudApi.Do.Conf {
 
-        /// <summary>
-        /// 编号
-        /// </summary>
-        public int Num { get; set; }
-
-        /// <summary>
-        /// 异常匹配表唯一标识符
-        /// </summary>
-        public long Id { get; set; }
+    public class ExceptionMatchInfoDo {
+        public long ExceptionRuleId { get; set; }
 
         /// <summary>
         /// 包含关键字
@@ -25,7 +18,7 @@
         /// <summary>
         /// 数据源
         /// </summary>
-        public DataSourceType DataSource { get; set; } = DataSourceType.ResponseContent;
+        public int DataSource { get; set; }
 
         /// <summary>
         /// 异常类型名称
@@ -41,23 +34,5 @@
         /// 判断优先级
         /// </summary>
         public int Priority { get; set; }
-    }
-
-    public enum DataSourceType {
-
-        /// <summary>
-        /// 条码
-        /// </summary>
-        Barcode = 0,
-
-        /// <summary>
-        ///提交内容
-        /// </summary>
-        RequestContent = 1,
-
-        /// <summary>
-        /// 响应内容
-        /// </summary>
-        ResponseContent = 2
     }
 }

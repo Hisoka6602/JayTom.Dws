@@ -113,6 +113,8 @@ internal class Program {
             //data
             {
                 builder.Services.AddSingleton<ICloudPackageRepository, CloudPackageRepository>();
+                builder.Services.AddSingleton<IExceptionTypeRepository, ExceptionTypeRepository>();
+                builder.Services.AddSingleton<IExceptionMatchRepository, ExceptionMatchRepository>();
             }
         }
         //Service×¢Èë

@@ -5,7 +5,6 @@ using System.Threading;
 using JayTom.Dws.CloudApiClient.Data.Models;
 
 namespace JayTom.Dws.CloudApiClient.Api {
-
     public class CloudApiRequest : ICloudApiRequest {
         private readonly IHttpClientFactory _httpClientFactory;
         public static string Domain { get; private set; } = "http://192.168.31.199";
@@ -108,11 +107,10 @@ namespace JayTom.Dws.CloudApiClient.Api {
                 httpClient.Timeout = TimeSpan.FromSeconds(20);
                 HttpResponseMessage message;
                 await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{Domain}{"/api/Package/Packages"}", content, token)
-                            .ConfigureAwait(false);
-                    }
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Package/Packages"}", content, token)
+                        .ConfigureAwait(false);
                 }
                 string httpResult;
                 switch (message.StatusCode) {
@@ -130,6 +128,359 @@ namespace JayTom.Dws.CloudApiClient.Api {
                         break;
                 }
 
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> AddExceptionType(string exceptionName, string exceptionColor, CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    ExceptionName = exceptionName,
+                    ExceptionColor = exceptionColor,
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Conf/AddExceptionType"}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> UpdateExceptionType(long exceptionCategoryId, string exceptionName, string exceptionColor,
+            CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    ExceptionTypeId = exceptionCategoryId,
+                    ExceptionName = exceptionName,
+                    ExceptionColor = exceptionColor,
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Conf/UpdateExceptionType"}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> DeleteExceptionType(long exceptionCategoryId, CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    ExceptionTypeId = exceptionCategoryId,
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Conf/DeleteExceptionType"}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> AddExceptionRule(string keywords, string customRegex, int dataSource, string exceptionTypeName,
+            long exceptionTypeId, int priority, CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    Keywords = keywords,
+                    CustomRegex = customRegex,
+                    DataSource = dataSource,
+                    ExceptionTypeName = exceptionTypeName,
+                    ExceptionTypeId = exceptionTypeId,
+                    Priority = priority,
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Conf/AddExceptionRule"}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> UpdateExceptionRule(long exceptionRuleId, string keywords, string customRegex, int dataSource,
+            string exceptionTypeName, long exceptionTypeId, int priority, CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    Keywords = keywords,
+                    CustomRegex = customRegex,
+                    DataSource = dataSource,
+                    ExceptionTypeName = exceptionTypeName,
+                    ExceptionTypeId = exceptionTypeId,
+                    Priority = priority,
+                    ExceptionRuleId = exceptionRuleId,
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Conf/UpdateExceptionRule"}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> DeleteExceptionRule(long exceptionRuleId, CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    ExceptionRuleId = exceptionRuleId,
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Domain}{"/api/Conf/DeleteExceptionRule"}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> ExceptionTypes(CancellationToken token = default) {
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                var httpResult = await httpClient.GetStringAsync($"{Domain}{"/api/Conf/ExceptionTypes"}",
+                    token);
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> ExceptionRule(CancellationToken token = default) {
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                var httpResult = await httpClient.GetStringAsync($"{Domain}{"/api/Conf/ExceptionRules"}",
+                    token);
                 //解码
                 var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
                 return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());

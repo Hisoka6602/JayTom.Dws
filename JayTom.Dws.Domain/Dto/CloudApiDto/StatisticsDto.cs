@@ -27,5 +27,10 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 占比
         /// </summary>
         public double Percentage { get; set; }
+
+        /// <summary>
+        /// 整体Item占比
+        /// </summary>
+        public double OverallPercentage { get; set; }
     }
 }

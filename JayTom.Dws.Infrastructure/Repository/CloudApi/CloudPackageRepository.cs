@@ -7,7 +7,10 @@ using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
+using JayTom.Dws.Data.CloudApiData;
 using Microsoft.EntityFrameworkCore;
+using MathNet.Numerics.Distributions;
+using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
 using Microsoft.Extensions.Caching.Memory;
@@ -147,7 +150,9 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<PackageInfoModel>();
-                if (dbSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
+                var exceptionTypeSet = concardContext?.Set<ExceptionTypeInfoModel>();
+                var matchSet = concardContext?.Set<ExceptionMatchInfoModel>();
+                if (dbSet is null || matchSet is null || exceptionTypeSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
                 var queryable = dbSet.AsNoTracking()
                     .OrderByDescending(o => o.PackageCreateTime)
                     .Include(b => b.BarCodeInfo)
@@ -238,12 +243,14 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         }
                         )?.ToListAsync(cancellationToken: cancellationToken);
 
+                    //异常分拣类型
+                    /*
                     var abnormalCount = await queryable.Where(w => w.SortingInfo != null &&
                                                               w.SortingInfo.IsSortingUsed && w.SortingInfo.IsAbnormalSorting)
                         .CountAsync(cancellationToken: cancellationToken);
-                    //异常分拣类型
+                        */
 
-                    var errorStatistics = await queryable.Where(w => w.SortingInfo != null &&
+                    /*var errorStatistics = await queryable.Where(w => w.SortingInfo != null &&
                                                                      w.SortingInfo.IsSortingUsed &&
                                                                      w.SortingInfo.IsAbnormalSorting &&
                                                                      w.SortingInfo.AbnormalSortingType != AbnormalSortingType.None)
@@ -252,9 +259,35 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                             Name = s.Key.ToString(),
                             Quantity = s.Count(),
                             Percentage = Math.Round((double)s.Count() / abnormalCount, 3),
-                            TotalCount = abnormalCount
+                            TotalCount = abnormalCount,
+                            OverallPercentage = Math.Round((double)s.Count() / totalPackages, 3),
                         }
-                        )?.ToListAsync(cancellationToken: cancellationToken)!;
+                        )?.ToListAsync(cancellationToken: cancellationToken)!;*/
+
+                    //取出全部异常数据
+
+                    //linq逐条匹配异常
+                    var exceptionTypeModels = await exceptionTypeSet.AsQueryable().ToListAsync(cancellationToken: cancellationToken);
+                    var exceptionMatchInfoModels = await matchSet.AsQueryable().ToListAsync(cancellationToken: cancellationToken);
+
+                    var infoModels = await queryable.Where(w => w.SortingInfo != null &&
+                                                                w.SortingInfo.AbnormalSortingType != AbnormalSortingType.None)
+                        ?.ToListAsync(cancellationToken: cancellationToken)! ?? new List<PackageInfoModel>();
+
+                    var errorStatistics = infoModels.Select(s =>
+                        ConvertExceptionType(exceptionMatchInfoModels, exceptionTypeModels,
+                            s.BarCodeInfo?.Barcode ?? string.Empty,
+                            s.UploadInfo))
+                        ?.GroupBy(g => g.ExceptionName)
+                        ?.Select(s => new StatisticsDto {
+                            Name = s.Key.ToString(),
+                            Quantity = s.Count(),
+                            Percentage = Math.Round((double)s.Count() / infoModels.Count, 3),
+                            TotalCount = infoModels.Count,
+                            OverallPercentage = Math.Round((double)s.Count() / totalPackages, 3),
+                        })
+                        ?.ToList();
+
                     //获取走势数据
 
                     var trendDataInfos = await queryable.Where(w => w.BarCodeInfo != null)
@@ -354,6 +387,65 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 "年份" => time.AddYears(1),
                 _ => time
             };
+        }
+
+        private ExceptionTypeInfoModel ConvertExceptionType(List<ExceptionMatchInfoModel> matchInfos,
+            List<ExceptionTypeInfoModel> exceptionTypeInfos, string barcode, UploadInfoModel? uploadInfoModel) {
+            foreach (var info in matchInfos) {
+                var empty = string.IsNullOrEmpty(info.Keywords);
+                if (info.DataSource == 0) {
+                    //条码
+                    var matchException = MatchException(barcode, empty ? info.CustomRegex : info.Keywords, empty);
+                    if (matchException) {
+                        return exceptionTypeInfos.FirstOrDefault(f =>
+                            f.Id.Equals(info.ExceptionTypeId)) ?? new ExceptionTypeInfoModel() {
+                                Id = 0,
+                                ExceptionName = "未知"
+                            };
+                    }
+                }
+                else if (info.DataSource == 1 && !string.IsNullOrEmpty(uploadInfoModel?.RequestContent)) {
+                    //提交内容
+                    var matchException = MatchException(uploadInfoModel.RequestContent, empty ? info.CustomRegex : info.Keywords, empty);
+                    if (matchException) {
+                        return exceptionTypeInfos.FirstOrDefault(f =>
+                            f.Id.Equals(info.ExceptionTypeId)) ?? new ExceptionTypeInfoModel() {
+                                Id = 0,
+                                ExceptionName = "未知"
+                            }; ;
+                    }
+                }
+                else if (info.DataSource == 2 && !string.IsNullOrEmpty(uploadInfoModel?.ResponseContent)) {
+                    //响应内容
+                    var matchException = MatchException(uploadInfoModel.ResponseContent, empty ? info.CustomRegex : info.Keywords, empty);
+                    if (matchException) {
+                        return exceptionTypeInfos.FirstOrDefault(f =>
+                            f.Id.Equals(info.ExceptionTypeId)) ?? new ExceptionTypeInfoModel() {
+                                Id = 0,
+                                ExceptionName = "未知"
+                            }; ;
+                    }
+                }
+            }
+
+            return new ExceptionTypeInfoModel() {
+                Id = 0,
+                ExceptionName = "未知"
+            }; ;
+        }
+
+        private bool MatchException(string source, string patternOrKey, bool isRegex) {
+            try {
+                if (isRegex) {
+                    return Regex.IsMatch(source, patternOrKey);
+                }
+                else {
+                    return source.Contains(patternOrKey);
+                }
+            }
+            catch (Exception e) {
+                return false;
+            }
         }
     }
 }

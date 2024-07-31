@@ -10,7 +10,7 @@
                 <MudTextField Variant="Variant.Text" @bind-Value="@Model.Keywords" Style="min-width:300px;margin-bottom:30px" T="string" Label="包含关键字" For="@(() => Model.Keywords)" />
 
                 @*自定义正则*@
-                <MudTextField Variant="Variant.Text" @bind-Value="@Model.Keywords" Style="min-width:300px;margin-bottom:30px" T="string" Label="自定义正则" For="@(() => Model.CustomRegex)" />
+                <MudTextField Variant="Variant.Text" @bind-Value="@Model.CustomRegex" Style="min-width:300px;margin-bottom:30px" T="string" Label="自定义正则" For="@(() => Model.CustomRegex)" />
                 @*数据源(下拉)*@
                 <MudSelect Style="min-width:300px;margin-bottom:30px" @bind-Value="Model.DataSource" Label="判断数据源" Class="ml-4">
                     <MudSelectItem Value="DataSourceType.Barcode">条码</MudSelectItem>
@@ -32,7 +32,7 @@
                     }
                 </MudSelect>
                 <div style="margin-top:20px; display: flex; justify-content: center;">
-                    <MudButton Style="background-color:dodgerblue; color:white; margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Inherit">保存</MudButton>
+                    <MudButton OnClick="Confirm" Style="background-color:dodgerblue; color:white; margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Inherit">保存</MudButton>
                     <MudButton OnClick="Cancel" Style="margin-left:5px;margin-right:5px; width:130px; border-radius: 30px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Error">取消</MudButton>
                 </div>
             </div>
@@ -52,9 +52,11 @@
     public ExceptionMatchItemModel Model { get; set; } = new();
     [Parameter]
     public List<ExceptionInfoItemModel> ExceptionInfoItems { get; set; } = new();
+
+
     private async void Confirm() {
 
-        await OnConfirm.InvokeAsync();
+        await OnConfirm.InvokeAsync(Model);
     }
 
     public async void Cancel() {

@@ -58,7 +58,7 @@
         /// <summary>
         /// 名称
         /// </summary>
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = "未知";
 
         /// <summary>
         /// 总数
@@ -74,6 +74,16 @@
         /// 占比
         /// </summary>
         public double Percentage { get; set; }
+
+        /// <summary>
+        /// 整体Item占比
+        /// </summary>
+        public double OverallPercentage { get; set; }
+
+        /// <summary>
+        /// 异常颜色值
+        /// </summary>
+        public string ExceptionColor { get; set; } = "#808080";
     }
 
     public class StatisticsTrendDataInfo {

@@ -125,6 +125,43 @@ namespace JayTom.Dws.Application.Service.CloudApi {
             }
         }
 
+        public Task<KeyValuePair<bool, object>> AddExceptionType(string exceptionName, string exceptionColor, CancellationToken token = default) {
+            return _cloudService.AddExceptionType(exceptionName, exceptionColor, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> UpdateExceptionType(long exceptionCategoryId, string exceptionName, string exceptionColor,
+            CancellationToken token = default) {
+            return _cloudService.UpdateExceptionType(exceptionCategoryId, exceptionName, exceptionColor, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> DeleteExceptionType(long exceptionCategoryId, CancellationToken token = default) {
+            return _cloudService.DeleteExceptionType(exceptionCategoryId, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> AddExceptionRule(string keywords, string customRegex, int dataSource, string exceptionTypeName,
+            long exceptionTypeId, int priority, CancellationToken token = default) {
+            return _cloudService.AddExceptionRule(keywords, customRegex, dataSource, exceptionTypeName, exceptionTypeId,
+                 priority, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> UpdateExceptionRule(long exceptionRuleId, string keywords, string customRegex, int dataSource,
+            string exceptionTypeName, long exceptionTypeId, int priority, CancellationToken token = default) {
+            return _cloudService.UpdateExceptionRule(exceptionRuleId, keywords, customRegex, dataSource,
+                exceptionTypeName, exceptionTypeId, priority, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> DeleteExceptionRule(long exceptionRuleId, CancellationToken token = default) {
+            return _cloudService.DeleteExceptionRule(exceptionRuleId, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> ExceptionTypes(CancellationToken token = default) {
+            return _cloudService.ExceptionTypes(token);
+        }
+
+        public Task<KeyValuePair<bool, object>> ExceptionRule(CancellationToken token = default) {
+            return _cloudService.ExceptionRule(token);
+        }
+
         public double ConvertBytesToMb(long bytes) {
             return (bytes / 1024f) / 1024f;
         }

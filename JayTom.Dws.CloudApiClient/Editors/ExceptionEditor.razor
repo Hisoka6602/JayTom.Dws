@@ -11,9 +11,9 @@
                 <MudTextField Variant="Variant.Text" @bind-Value="@Model.ExceptionName" Style="margin-bottom:30px" T="string" Label="异常类型名称" For="@(() => Model.ExceptionName)" />
                 @*显示颜色*@
                 @*<MudColorPicker @bind-Value="@Model.ExceptionColor" Label="显示颜色" ColorPickerView="ColorPickerView.Spectrum" />*@
-                <MudColorPicker @bind-Value="@SelectMudColor" DisableToolbar="false" Label="显示颜色" PickerVariant="PickerVariant.Inline" />
+                <MudColorPicker @bind-Text="@Model.ExceptionColor" ColorPickerMode="ColorPickerMode.HEX" DisableToolbar="false" Label="显示颜色" PickerVariant="PickerVariant.Inline" />
                 <div style="margin-top:20px; display: flex; justify-content: center;">
-                    <MudButton Style="background-color:dodgerblue; color:white; margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Inherit">保存</MudButton>
+                    <MudButton OnClick="Confirm" Style="background-color:dodgerblue; color:white; margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Inherit">保存</MudButton>
                     <MudButton OnClick="Cancel" Style="margin-left:5px;margin-right:5px; width:130px; border-radius: 30px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Error">取消</MudButton>
                 </div>
             </div>
@@ -31,13 +31,24 @@
     [Parameter]
 
     public ExceptionInfoItemModel Model { get; set; } = new();
-    private MudColor? SelectMudColor { get; set; }
-    private async void Confirm() {
 
-        await OnConfirm.InvokeAsync();
+    //private MudColor? SelectMudColor { get; set; } = new(255, 0, 0, 255);
+    private async void Confirm() {
+        /*var s = SelectMudColor?.ToString();
+        Model.ExceptionColor = MudColorToHex(SelectMudColor);*/
+        await OnConfirm.InvokeAsync(Model);
     }
 
     public async void Cancel() {
         await OnCancel.InvokeAsync(null);
+    }
+
+    public string MudColorToHex(MudColor? color) {
+        if (color is null) {
+            return string.Empty;
+
+        }
+        // 获取RGB值并转换为十六进制字符串
+        return $"#{color.R:X2}{color.G:X2}{color.B:X2}{color.B:X2}";
     }
 }

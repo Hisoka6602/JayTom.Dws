@@ -206,7 +206,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
                         ImageUrl = s1.ImageUrl,
                         Type = s1.Type,
                     })?.ToList(),
-                    DeviceInfos = new DeviceInfoDto() {
+                    DeviceInfo = new DeviceInfoDto() {
                         DeviceName = s.DeviceInfo?.DeviceName ?? string.Empty,
                         MachineCode = s.DeviceInfo?.MachineCode ?? string.Empty,
                         NodeName = s.DeviceInfo?.NodeName ?? string.Empty,

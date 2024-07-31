@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
+using JayTom.Dws.Data.CloudApiData;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Domain.Repository.CloudApi;
 
@@ -11,9 +12,15 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
 
     public class CloudService : ICloudService {
         private readonly ICloudPackageRepository _cloudPackageRepository;
+        private readonly IExceptionTypeRepository _exceptionTypeRepository;
+        private readonly IExceptionMatchRepository _exceptionMatchRepository;
 
-        public CloudService(ICloudPackageRepository cloudPackageRepository) {
+        public CloudService(ICloudPackageRepository cloudPackageRepository,
+            IExceptionTypeRepository exceptionTypeRepository,
+            IExceptionMatchRepository exceptionMatchRepository) {
             _cloudPackageRepository = cloudPackageRepository;
+            _exceptionTypeRepository = exceptionTypeRepository;
+            _exceptionMatchRepository = exceptionMatchRepository;
         }
 
         public async Task<KeyValuePair<bool, object>> SavePackageInfo(PackageDto packageInfo, CancellationToken cancellationToken = default) {
@@ -211,6 +218,97 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
             else {
                 return new KeyValuePair<bool, object>(false, "未获取到相关数据");
             }
+        }
+
+        public async Task<KeyValuePair<bool, object>> AddExceptionType(string exceptionName, string exceptionColor, CancellationToken token = default) {
+            var insertOrUpdate = await _exceptionTypeRepository.Insert(new ExceptionTypeInfoModel() {
+                ExceptionColor = exceptionColor,
+                ExceptionName = exceptionName
+            }, token);
+            return new KeyValuePair<bool, object>(insertOrUpdate, insertOrUpdate ? "操作成功" : "操作失败");
+        }
+
+        public async Task<KeyValuePair<bool, object>> UpdateExceptionType(long exceptionCategoryId, string exceptionName, string exceptionColor,
+            CancellationToken token = default) {
+            var insertOrUpdate = await _exceptionTypeRepository.Update(new ExceptionTypeInfoModel() {
+                ExceptionColor = exceptionColor,
+                ExceptionName = exceptionName,
+                Id = exceptionCategoryId
+            }, token);
+            return new KeyValuePair<bool, object>(insertOrUpdate, insertOrUpdate ? "操作成功" : "操作失败");
+        }
+
+        public async Task<KeyValuePair<bool, object>> DeleteExceptionType(long exceptionCategoryId, CancellationToken token = default) {
+            var model = await _exceptionTypeRepository.FirstOrDefault(f =>
+                f.Id.Equals(exceptionCategoryId), token);
+            if (model is not null) {
+                var delete = await _exceptionTypeRepository.Delete(model, token);
+                if (delete) {
+                    return new KeyValuePair<bool, object>(true, "删除成功");
+                }
+            }
+            return new KeyValuePair<bool, object>(false, "删除失败");
+        }
+
+        public async Task<KeyValuePair<bool, object>> AddExceptionRule(string keywords, string customRegex, int dataSource, string exceptionTypeName,
+            long exceptionTypeId, int priority, CancellationToken token = default) {
+            var insertOrUpdate = await _exceptionMatchRepository.Insert(new ExceptionMatchInfoModel() {
+                Keywords = keywords,
+                CustomRegex = customRegex,
+                DataSource = dataSource,
+                ExceptionTypeId = exceptionTypeId,
+                Priority = priority,
+            }, token);
+            return new KeyValuePair<bool, object>(insertOrUpdate, insertOrUpdate ? "操作成功" : "操作失败");
+        }
+
+        public async Task<KeyValuePair<bool, object>> UpdateExceptionRule(long exceptionRuleId, string keywords, string customRegex, int dataSource,
+            string exceptionTypeName, long exceptionTypeId, int priority, CancellationToken token = default) {
+            var update = await _exceptionMatchRepository.Update(new ExceptionMatchInfoModel() {
+                Id = exceptionRuleId,
+                Keywords = keywords,
+                CustomRegex = customRegex,
+                DataSource = dataSource,
+                ExceptionTypeId = exceptionTypeId,
+                Priority = priority,
+            }, token);
+            return new KeyValuePair<bool, object>(update, update ? "操作成功" : "操作失败");
+        }
+
+        public async Task<KeyValuePair<bool, object>> DeleteExceptionRule(long exceptionRuleId, CancellationToken token = default) {
+            var model = await _exceptionMatchRepository.FirstOrDefault(f =>
+                f.Id.Equals(exceptionRuleId), token);
+            if (model is not null) {
+                var delete = await _exceptionMatchRepository.Delete(model, token);
+                if (delete) {
+                    return new KeyValuePair<bool, object>(true, "删除成功");
+                }
+            }
+
+            return new KeyValuePair<bool, object>(false, "删除失败");
+        }
+
+        public async Task<KeyValuePair<bool, object>> ExceptionTypes(CancellationToken token = default) {
+            var models = await _exceptionTypeRepository.MemoryCacheData();
+
+            return new KeyValuePair<bool, object>(true, models?.Select(s => new ExceptionTypeDto {
+                ExceptionColor = s.ExceptionColor,
+                ExceptionName = s.ExceptionName,
+                Id = s.Id
+            })?.ToList() ?? new List<ExceptionTypeDto>());
+        }
+
+        public async Task<KeyValuePair<bool, object>> ExceptionRule(CancellationToken token = default) {
+            var models = await _exceptionMatchRepository.MemoryCacheData();
+
+            return new KeyValuePair<bool, object>(true, models.Select(s => new ExceptionRuleDto {
+                Id = s.Id,
+                CustomRegex = s.CustomRegex,
+                DataSource = s.DataSource,
+                ExceptionTypeId = s.ExceptionTypeId,
+                Keywords = s.Keywords,
+                Priority = s.Priority,
+            })?.ToList() ?? new List<ExceptionRuleDto>());
         }
     }
 }
