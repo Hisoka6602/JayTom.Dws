@@ -440,7 +440,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                               &&!w.Value.BarCodeInfo.Barcode.
                                                   Equals("noread", StringComparison.CurrentCultureIgnoreCase)
                             &&!w.Value.IsCompleted,
-                            CompletTimeSpan =  TimeSpan.FromMilliseconds(_grayscaleDeviceSettingsDto.TimeOut+130)
+                            CompletTimeSpan =  TimeSpan.FromMilliseconds((Math.Abs(_grayscaleDeviceSettingsDto.CarNumberOffset)*_grayscaleDeviceSettingsDto.MinSendInterval)+_grayscaleDeviceSettingsDto.TimeOut+150)
                         }
                     };
                     if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {
@@ -560,7 +560,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                     }
                     else if (_grayscaleDeviceSettingsDto.IsUseGrayscaleDetector &&
-                             DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds > _grayscaleDeviceSettingsDto.TimeOut &&
+                             DateTime.Now.Subtract(info.CreateTime).TotalMilliseconds >
+                             (Math.Abs(_grayscaleDeviceSettingsDto.CarNumberOffset) * _grayscaleDeviceSettingsDto.MinSendInterval) + _grayscaleDeviceSettingsDto.TimeOut &&
                              info.BarCodeInfo?.Barcode?.Equals("noread", StringComparison.CurrentCultureIgnoreCase) != true) {
                         info.LinkedCarCount = info.GrayscaleResultInfo?.LinkedCarCount ?? 1;
                         PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
