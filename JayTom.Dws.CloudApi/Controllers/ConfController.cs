@@ -2,6 +2,7 @@
 using JayTom.Dws.CloudApi.Vo;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using JayTom.Dws.CloudApi.Filter;
 using JayTom.Dws.CloudApi.Do.Conf;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Application.Service.CloudApi;
@@ -25,6 +26,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("AddExceptionType")]
+        [IpAddressFilter("127.0.0.1")]
         public async Task<JsonResult> AddExceptionType([FromBody] ExceptionInfoDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _cloudAppService.AddExceptionType(param.ExceptionName,
@@ -40,6 +42,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("UpdateExceptionType")]
+        [IpAddressFilter("127.0.0.1")]
         public async Task<JsonResult> UpdateExceptionType([FromBody] ExceptionInfoDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _cloudAppService.UpdateExceptionType(param.ExceptionTypeId,
@@ -56,6 +59,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("DeleteExceptionType")]
+        [IpAddressFilter("127.0.0.1")]
         public async Task<JsonResult> DeleteExceptionType([FromBody] ExceptionInfoDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _cloudAppService.DeleteExceptionType(param.ExceptionTypeId, cancellationToken);
@@ -89,6 +93,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("AddExceptionRule")]
+        [IpAddressFilter("127.0.0.1")]
         public async Task<JsonResult> AddExceptionRule([FromBody] ExceptionMatchInfoDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _cloudAppService.AddExceptionRule(param.Keywords,
@@ -105,6 +110,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("UpdateExceptionRule")]
+        [IpAddressFilter("127.0.0.1")]
         public async Task<JsonResult> UpdateExceptionRule([FromBody] ExceptionMatchInfoDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _cloudAppService.AddExceptionRule(param.Keywords,
@@ -121,6 +127,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
         /// <returns></returns>
         [Produces("application/json")]
         [HttpPost("DeleteExceptionRule")]
+        [IpAddressFilter("127.0.0.1")]
         public async Task<JsonResult> DeleteExceptionRule([FromBody] ExceptionMatchInfoDo param,
             CancellationToken cancellationToken) {
             var (key, value) = await _cloudAppService.DeleteExceptionRule(param.ExceptionRuleId, cancellationToken);

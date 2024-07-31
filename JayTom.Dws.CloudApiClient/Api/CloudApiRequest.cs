@@ -5,6 +5,7 @@ using System.Threading;
 using JayTom.Dws.CloudApiClient.Data.Models;
 
 namespace JayTom.Dws.CloudApiClient.Api {
+
     public class CloudApiRequest : ICloudApiRequest {
         private readonly IHttpClientFactory _httpClientFactory;
         public static string Domain { get; private set; } = "http://192.168.31.199";
@@ -29,7 +30,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
                 });
 
                 using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromSeconds(20);
+                    httpClient.Timeout = TimeSpan.FromMinutes(1);
                     HttpResponseMessage message;
                     await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
                         using (HttpContent content = new StreamContent(dataStream)) {
@@ -104,7 +105,7 @@ namespace JayTom.Dws.CloudApiClient.Api {
                 });
 
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromSeconds(20);
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
                 HttpResponseMessage message;
                 await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
                     using HttpContent content = new StreamContent(dataStream);

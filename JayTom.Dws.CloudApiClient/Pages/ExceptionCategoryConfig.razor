@@ -221,6 +221,14 @@
                 GetExceptionTypes();
             }
         }
+        else if (value is ApiResult apiResult) {
+
+            Snackbar.Add(apiResult.Msg, Severity.Error);
+        }
+        else {
+
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
     }
 
     private async void GetExceptionMatchItems() {
@@ -332,6 +340,14 @@
 
                 GetExceptionMatchItems();
             }
+        }
+        else if (value is ApiResult apiResult) {
+
+            Snackbar.Add(apiResult.Msg, Severity.Error);
+        }
+        else {
+
+            Snackbar.Add(value.ToString(), Severity.Error);
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿@using Microsoft.JSInterop
 @using Newtonsoft.Json
+@inject IJSRuntime JS
 <MudNavMenu Rounded="true" Dense="true" Color="Color.Transparent" Style="color:white;background-color:transparent">
     @foreach (var link in links) {
         <MudNavLink Href="@link.Href"
@@ -67,9 +68,8 @@
 
 @code {
     private List<LinkData> links = new();
-    protected override void OnInitialized() {
-        base.OnInitialized();
-
+    protected override async void OnInitialized() {
+        await base.OnInitializedAsync();
         links = new List<LinkData>() {
             new() { Title = "图表主页", Icon ="iconfont icon-icons_statistics", Href = "/data-charthome"},
             new() { Title = "详细数据", Icon = "iconfont icon-shujubiao1",Href = "/data-detail"},
@@ -79,7 +79,6 @@
         };
 
     }
-
     [Inject]
     private IJSRuntime JSRuntime { get; set; }
 
