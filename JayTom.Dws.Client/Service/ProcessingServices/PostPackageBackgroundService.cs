@@ -377,9 +377,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                     package.GrayscaleResultInfo = result;
                     if (_grayscaleDeviceSettingsDto.IsCheckPackageOrientation &&
-                        package.GrayscaleResultInfo is not null &&
-                        package.GrayscaleResultInfo?.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100) == true &&
-                        result.ResultTime.Subtract(package.CreateTime).TotalMilliseconds <= _grayscaleDeviceSettingsDto.TimeOut) {
+                        result.MainRectangleBoxInfos?.Any(a => a.PackageRatio >= (decimal)_grayscaleDeviceSettingsDto.MainBoxPackageRatio / 100) == true) {
                         _sortingService.SendPackageCenter(result.CarNumber, new InstructionsAttach() {
                             BarCode = string.Empty,
                             Guid = result.CarNumber,
