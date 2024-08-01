@@ -181,9 +181,9 @@ namespace JayTom.Dws.CloudApiClient.Data.Models {
     public class UploadInfoModel {
 
         /// <summary>
-        /// 上传状态(1成功、2失败、0未上传)
+        /// 上传状态(0成功、1失败、2未上传)
         /// </summary>
-        public int RequestStatus { get; set; }
+        public int RequestStatus { get; set; } = 2;
 
         /// <summary>
         /// 上传内容

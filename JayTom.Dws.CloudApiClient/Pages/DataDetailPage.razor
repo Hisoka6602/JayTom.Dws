@@ -142,7 +142,7 @@
                     <CellTemplate>
 
                         <MudMenu Class="" Label="@ConvertStatus(context.Item.UploadInfo.RequestStatus)" Variant="Variant.Text" Style="@ConvertStatusLabelColor(context.Item.UploadInfo.RequestStatus)" Color="Color.Inherit">
-                            <div class="d-flex flex-row align-items-center" style="max-width:700px; margin: 20px;">
+                            <div class="d-flex flex-row align-items-center" style="max-width:850px; margin: 20px;">
                                 @if (context.Item.UploadInfo.RequestStatus is 1 or 2 or 0) {
                                     <MudGrid Spacing="2" Style="margin: 20px;">
                                         <MudItem xs="12">
@@ -156,13 +156,13 @@
                                         </MudItem>
                                         <!-- 状态、耗时 -->
                                         <MudItem xs="12">
-                                            <div class="d-flex justify-content-center">
+                                            <div style="display: flex; justify-content: center; align-items: center;">
                                                 <div style="margin-right:10px; font-weight:500">状态:</div>
-                                                <div style="@ConvertStatusLabelColor(context.Item.UploadInfo.RequestStatus)">
+                                                <div style="@ConvertStatusLabelColor(context.Item.UploadInfo.RequestStatus) ">
                                                     @ConvertStatus(context.Item.UploadInfo.RequestStatus)
                                                 </div>
                                                 <div style="margin-right:10px; margin-left:100px;font-weight:500"> 耗时(ms):</div>
-                                                <div style="font-weight:800"> @String.Format("{0:F1}", context.Item.UploadInfo.DurationInSeconds)</div>
+                                                <div style="font-weight:800"> @String.Format("{0:F1}", context.Item.UploadInfo.DurationInSeconds * 1000)</div>
                                             </div>
                                         </MudItem>
                                         <!-- Url -->
@@ -356,9 +356,9 @@
     public string ConvertStatus(int? status) {
         if (status.HasValue) {
             return status.Value switch {
-                0 => "未上传",
-                1 => "成功",
-                2 => "失败",
+                2 => "未上传",
+                0 => "成功",
+                1 => "失败",
                 _ => "未知"
             };
         }
@@ -370,9 +370,9 @@
     public string ConvertStatusLabelColor(int? status) {
         if (status.HasValue) {
             return status.Value switch {
-                1 => "height:30px; background-color: rgba(32, 178, 170, 0.2); color:lightseagreen; border-radius: 15px;",
-                2 => "height:30px; background-color: rgba(255, 69, 0, 0.2); color:orangered; border-radius: 15px;",
-                _ => "height:30px;  border-radius: 15px;"
+                0 => "min-width:40px;height:30px; background-color: rgba(32, 178, 170, 0.2); color:lightseagreen; border-radius: 15px; display: flex; justify-content: center; align-items: center;",
+                1 => "min-width:40px;height:30px; background-color: rgba(255, 69, 0, 0.2); color:orangered; border-radius: 15px; display: flex; justify-content: center; align-items: center;",
+                _ => "min-width:40px;height:30px;  border-radius: 15px; display: flex; justify-content: center; align-items: center;"
             };
         }
         else {
