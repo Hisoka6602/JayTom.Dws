@@ -193,7 +193,7 @@ namespace JayTom.Dws.Interface.Routdata {
                                         YLZD2 = "",
                                         YLZD3 = "",
                                         SBDM = deviceCode,
-                                        LLGK = theoryBoxCode
+                                        LLGK = phyBoxCode
                                     }
                                 }
                         },
@@ -211,7 +211,7 @@ namespace JayTom.Dws.Interface.Routdata {
                                         SBDM = deviceCode,
                                         SMFS = "1",
                                         CLSJ = processingTime.ToString("yyyyMMddHHmmss"),
-                                        LLGK = theoryBoxCode,
+                                        LLGK = phyBoxCode,
                                         YLZD1 = "",
                                         YLZD2 = "",
                                         YLZD3 = ""
