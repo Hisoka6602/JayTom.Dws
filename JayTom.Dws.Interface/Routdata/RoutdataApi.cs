@@ -49,13 +49,13 @@ namespace JayTom.Dws.Interface.Routdata {
                 mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
             }
 
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
-                Parameters.DeviceCode, theoryBoxCode ?? "99",
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
-                Parameters.DeviceCode, theoryBoxCode ?? "99",
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
@@ -89,13 +89,13 @@ namespace JayTom.Dws.Interface.Routdata {
             catch (Exception e) {
                 mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
             }
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
-                Parameters.DeviceCode, theoryBoxCode ?? "99",
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, phyBoxCode ?? "99",
-                Parameters.DeviceCode, theoryBoxCode ?? "99",
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
