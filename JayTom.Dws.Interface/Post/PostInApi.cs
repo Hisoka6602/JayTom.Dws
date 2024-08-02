@@ -63,7 +63,6 @@ namespace JayTom.Dws.Interface.Post {
                     Parameters = new();
                     NLog.LogManager.GetCurrentClassLogger().Error($"读取接口配置错误:{e}");
                 }
-                _httpClientFactory = httpClientFactory;
             }
         }
 

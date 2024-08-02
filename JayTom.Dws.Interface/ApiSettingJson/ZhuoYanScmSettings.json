@@ -1,0 +1,5 @@
+{
+  "Url": "https://testgw.zhuoyan-scm.com/wms-external-interface/api/weighted/receiveForHuiliu?lineNo=1",
+  //超时时间 (Timeout in milliseconds)
+  "TimeOut": 1000
+}

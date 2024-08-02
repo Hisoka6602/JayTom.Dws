@@ -35,6 +35,7 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Interface.zhuoyan_scm;
 using JayTom.Dws.Client.Service.Sorting;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -83,6 +84,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static EshippingitApi.ApiParameters _eshippingitApiParam = new();
         private static PostApi.ApiParameters _postApiParam = new();
         private static PostInApi.ApiParameters _postInApiParam = new();
+        private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
@@ -620,6 +622,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                             }
 
+                                            break;
+
+                                        case ApiType.ZhuoYanScm: {
+                                                uploader = new ZhuoYanScmApi(_httpClientFactory);
+                                                var (key, value) = await uploader.SetParameters(_zhuoYanScmApiParam);
+
+                                                if (key) {
+                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                        info.Weight, info.ScanTime,
+                                                        info.Length, info.Width,
+                                                        info.Height, info.Volume,
+                                                        null, null,
+                                                        info.IsStackedPackage, stoppingToken);
+                                                }
+                                                else {
+                                                    uploadResponse = new UploadResponse() {
+                                                        ExceptionMsg = value
+                                                    };
+                                                    Console.WriteLine("设置参数失败!");
+                                                }
+                                            }
                                             break;
                                     }
                                     if (_apiSettingsDto?.Type is not null &&
