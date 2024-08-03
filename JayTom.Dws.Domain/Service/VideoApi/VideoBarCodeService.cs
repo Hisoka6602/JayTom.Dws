@@ -15,6 +15,7 @@ using JayTom.Dws.Domain.Repository.VideoApiData;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JayTom.Dws.Domain.Service.VideoApi {
+
     public class VideoBarCodeService : IVideoBarCodeService {
         private readonly IVideoPackageRepository _videoPackageRepository;
 
@@ -142,6 +143,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
             var (key, value) = await _videoPackageRepository.SelectPackageOrderByDescending(w =>
                     w.BarCodeInfo != null &&
                     w.DeviceInfo != null &&
+                    (string.IsNullOrEmpty(barCode) || w.BarCodeInfo.Barcode.Contains(barCode)) &&
                     (nodeStartDateTime == null || w.BarCodeInfo.ScanTime >= nodeStartDateTime) &&
                     (nodeEndDateTime == null || w.BarCodeInfo.ScanTime <= nodeEndDateTime) &&
                     (nodeName == null || w.DeviceInfo.NodeName.Equals(nodeName)), o => o.PackageCreateTime,
@@ -157,6 +159,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
             var total = await _videoPackageRepository.Total(w =>
                 w.BarCodeInfo != null &&
                 w.DeviceInfo != null &&
+                (string.IsNullOrEmpty(barCode) || w.BarCodeInfo.Barcode.Contains(barCode)) &&
                 (nodeStartDateTime == null || w.BarCodeInfo.ScanTime >= nodeStartDateTime) &&
                 (nodeStartDateTime == null || w.BarCodeInfo.ScanTime <= nodeEndDateTime) &&
                 (nodeName == null || w.DeviceInfo.NodeName.Equals(nodeName)), token);
