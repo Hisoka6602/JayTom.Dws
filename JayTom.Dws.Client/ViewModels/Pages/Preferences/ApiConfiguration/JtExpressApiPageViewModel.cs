@@ -13,12 +13,13 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
+using JayTom.Dws.Interface.ApiImplementations.Jtexpress;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
     public class JtExpressApiPageViewModel : SettingsPageTemplateViewModel {
         private readonly IHttpClientFactory _httpClientFactory;

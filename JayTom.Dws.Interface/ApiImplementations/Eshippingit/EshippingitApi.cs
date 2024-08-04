@@ -17,7 +17,7 @@ using JayTom.Dws.Interface.Routdata;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace JayTom.Dws.Interface.Eshippingit {
+namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
 
     [ApiClass("海通智运Api", "EshippingitApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
     public class EshippingitApi : IApiUploader<EshippingitApi.ApiParameters> {
@@ -236,7 +236,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var isSuccess = false;
             var data = new {
                 orderNo = barcode,
-                cloudFileName = cloudFileName
+                cloudFileName
             };
             try {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");

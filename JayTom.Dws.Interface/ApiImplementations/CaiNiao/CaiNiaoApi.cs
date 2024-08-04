@@ -14,9 +14,9 @@ using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
-using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
+using static JayTom.Dws.Interface.ApiImplementations.CaiNiao.CaiNiaoApi;
 
-namespace JayTom.Dws.Interface.CaiNiao {
+namespace JayTom.Dws.Interface.ApiImplementations.CaiNiao {
 
     [ApiClass("菜鸟Api", "CaiNiaoApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.SendConsolidationReport)]
     public class CaiNiaoApi : IApiUploader<ApiParameters> {
@@ -56,7 +56,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                             height=0,
                             bcrCode= Parameters.BcrCode,
                             bcrName=Parameters.BcrName,
-                            foldFlag=(other is true)?0:1
+                            foldFlag=other is true?0:1
                         }
                     }
                 },

@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.TemporaryClient.Views;
-using JayTom.Dws.Interface.WeciMexicoDv;
 using JayTom.Dws.TemporaryClient.Service;
 using Microsoft.Extensions.Configuration;
 using JayTom.Dws.Device.Camera._3DCamera;
@@ -40,8 +39,10 @@ using DryIoc.Microsoft.DependencyInjection.Extension;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.TemporaryClient.Service.BackgroundService;
+using JayTom.Dws.Interface.ApiImplementations.WeciMexicoDv;
 
-namespace JayTom.Dws.TemporaryClient {
+namespace JayTom.Dws.TemporaryClient
+{
 
     /// <summary>
     /// Interaction logic for App.xaml

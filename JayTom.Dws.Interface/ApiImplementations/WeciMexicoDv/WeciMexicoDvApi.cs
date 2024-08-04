@@ -1,59 +1,45 @@
 ﻿using System;
+using System.Web;
 using System.Linq;
 using System.Text;
 using System.Drawing;
-using Newtonsoft.Json;
 using System.Net.Http;
+using Newtonsoft.Json;
+using JayTom.Dws.Utils;
 using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
-using System.Security.Policy;
+using System.Drawing.Imaging;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Szjy188;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Configuration;
 
-namespace JayTom.Dws.Interface.JdyWms {
+namespace JayTom.Dws.Interface.ApiImplementations.WeciMexicoDv {
 
     /// <summary>
-    /// 筋斗云Wms
+    /// 卫慈-墨西哥dv60
     /// </summary>
-    [ApiClass("筋斗云Wms", "JdyWmsApi", "1.0", ExecutionType.UploadInformation)]
-    public class JdyWmsApi : IApiUploader<JdyWmsApi.ApiParameters> {
+    [ApiClass("卫慈-墨西哥-Api", "WeciMexicoDvApi", "1.0", ExecutionType.UploadInformation)]
+    public class WeciMexicoDvApi : IApiUploader<WeciMexicoDvApi.ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public JdyWmsApi(IHttpClientFactory httpClientFactory) {
-            //读取、设置
-            lock (httpClientFactory) {
-                if (Url is null || TimeOut is null) {
-                    try {
-                        IConfiguration configuration = new ConfigurationBuilder()
-                            .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
-                            .AddJsonFile("JdyApiSetting.json", optional: false, reloadOnChange: true)
-                            .Build();
-                        Url = configuration["Url"];
-                        TimeOut = Convert.ToInt32(configuration["TimeOut"]);
-                    }
-                    catch (Exception e) {
-                        Url = string.Empty;
-                        TimeOut = 3000;
-                    }
-                }
-                _httpClientFactory = httpClientFactory;
-            }
+        public WeciMexicoDvApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
         }
 
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
+        public class ApiParameter : BaseApiParameters {
+
+            /// <summary>
+            /// 机器码
+            /// </summary>
+            public string MachineNo { get; set; } = "no123";
         }
 
-        public class ApiParameters : BaseApiParameters {
-        }
+        public ApiParameter Parameters { get; private set; } = new();
 
-        public ApiParameters Parameters { get; private set; } = new();
-
-        public bool SetParameters(ApiParameters parameters) {
+        public bool SetParameters(ApiParameter parameters) {
             Parameters = parameters;
             return true;
         }
@@ -62,18 +48,26 @@ namespace JayTom.Dws.Interface.JdyWms {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
+            UploadResponse response;
+            imageInfo.Image = imageInfo.Image?.AddTextWatermark(
+                $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                Color.Red, 30);
+            var imageBase64 = imageInfo.Image?.ConvertImageToBase64() ?? string.Empty;
+            //image?.Save($"{AppDomain.CurrentDomain.BaseDirectory}watermark.jpg", ImageFormat.Jpeg);
+            //var base64String = Convert.ToBase64String(Encoding.Default.GetBytes(imageBase64));
             var data = new {
-                ticketsNum = barcode,
-                length = length,
-                width = Math.Round(Convert.ToDecimal(width), 3),
-                height = Math.Round(Convert.ToDecimal(height), 3),
-                weight = Math.Round(Convert.ToDecimal(weight), 3),
-                workConsole = "分拣机",
-                destination = string.Empty,
+                bc_no = barcode,
+                size_width = width,
+                size_long = length,
+                size_heigth = height,
+                weigth_kg = Math.Round(Convert.ToDecimal(weight), 3),
+                date_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                time_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                machine_no = Parameters.MachineNo,
+                imagebase64 = imageBase64
             };
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
@@ -81,6 +75,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             try {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                httpClient.DefaultRequestHeaders.Add("Access-Control-Allow-Origin", "www.invenova.mx");
                 HttpResponseMessage message;
                 await using (Stream dataStream =
                              new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
@@ -95,7 +90,8 @@ namespace JayTom.Dws.Interface.JdyWms {
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
                     //判断
                     var jObject = JObject.Parse(resultContent);
-                    if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
+                    if (jObject["code"]?.ToString()?.ToUpper()?.Equals("0") == true &&
+                        jObject["message"]?.ToString()?.ToUpper()?.Equals("OK") == true) {
                         isSuccess = true;
                     }
                 }
@@ -103,23 +99,23 @@ namespace JayTom.Dws.Interface.JdyWms {
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
+                exceptionMsg = e.Message;
             }
             catch (AggregateException) {
                 isSuccess = false;
-                resultContent += exceptionMsg = "接口访问异常!";
+                exceptionMsg = "接口访问异常!";
             }
             catch (JsonException) {
                 isSuccess = false;
-                resultContent += exceptionMsg = "报文解析异常!";
+                exceptionMsg = "报文解析异常!";
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
-                resultContent += exceptionMsg = "接口访问返回超时!";
+                exceptionMsg = "接口访问返回超时!";
             }
             catch (Exception e) {
                 isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
+                exceptionMsg = e.Message;
             }
             finally {
                 stopwatch.Stop();

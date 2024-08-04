@@ -10,121 +10,88 @@ using System.Net.Http.Headers;
 using JayTom.Dws.Interface.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 
-namespace JayTom.Dws.Interface.Routdata {
+namespace JayTom.Dws.Interface.ApiImplementations.Routdata {
 
-    public class RoutDataApi : IDataUploader {
+    [ApiClass("络道科技Api", "RoutDataApi", "1.0", ExecutionType.UploadInformation)]
+    public class RoutDataApi : IApiUploader<RoutDataApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
+        public bool SetParameters(ApiParameters parameters) {
+            Parameters = parameters;
+            return true;
+        }
+
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
+                Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
+            var phyBoxCode = string.Empty;
+            var theoryBoxCode = string.Empty;
+            var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
+            try {
+                if (callApiMethod.IsSuccess) {
+                    //解析
+                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
+                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
+                    phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
+                    theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
+                }
+                else {
+                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
+                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
+                    if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
+                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
+                    }
+                }
+            }
+            catch (Exception e) {
+                mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
+            }
+            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
+                callApiMethod.IsSuccess,
+                callApiMethod.ResponseTime
+                , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
+            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
+                callApiMethod.IsSuccess,
+                callApiMethod.ResponseTime
+                , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
+            return callApiMethod;
+        }
+
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+        }
+
+        public Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
         public RoutDataApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
-        }
-
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
-            object? other = null, CancellationToken token = default) {
-            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
-                Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
-            var phyBoxCode = string.Empty;
-            var theoryBoxCode = string.Empty;
-            var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
-            try {
-                if (callApiMethod.IsSuccess) {
-                    //解析
-                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
-                    phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
-                    theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
-                }
-                else {
-                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
-                    if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
-                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
-                    }
-                }
-            }
-            catch (Exception e) {
-                mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
-            }
-
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
-                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
-                callApiMethod.IsSuccess,
-                callApiMethod.ResponseTime
-                , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
-                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
-                callApiMethod.IsSuccess,
-                callApiMethod.ResponseTime
-                , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            return callApiMethod;
-        }
-
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
-                Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
-            var phyBoxCode = string.Empty;
-            var theoryBoxCode = string.Empty;
-            var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
-            try {
-                if (callApiMethod.IsSuccess) {
-                    //解析
-                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
-                    phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
-                    theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
-                }
-                else {
-                    var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
-                    if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
-                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
-                    }
-                }
-            }
-            catch (Exception e) {
-                mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
-            }
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
-                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
-                callApiMethod.IsSuccess,
-                callApiMethod.ResponseTime
-                , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
-                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
-                callApiMethod.IsSuccess,
-                callApiMethod.ResponseTime
-                , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            return callApiMethod;
-        }
-
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            if (parameters is ApiParameters param) {
-                Parameters.DeviceCode = param.DeviceCode;
-                Parameters.Url = param.Url;
-                Parameters.RetryCount = param.RetryCount;
-                Parameters.RetryInterval = param.RetryInterval;
-                Parameters.SignKey = param.SignKey;
-                Parameters.TimeOut = param.TimeOut;
-                Parameters.OrgCode = param.OrgCode;
-                return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
-            }
-            else {
-                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
-            }
-        }
-
-        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-        }
-
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
-            object? other = null, CancellationToken token = default) {
         }
 
         /// <summary>
@@ -362,8 +329,8 @@ namespace JayTom.Dws.Interface.Routdata {
             PickingInfoPush
         }
 
-        public class ApiParameters {
-
+        public class ApiParameters : BaseApiParameters {
+            /*
             /// <summary>
             /// Url
             /// </summary>
@@ -372,7 +339,7 @@ namespace JayTom.Dws.Interface.Routdata {
             /// <summary>
             /// 超时
             /// </summary>
-            public int TimeOut { get; set; } = 1000;
+            public int TimeOut { get; set; } = 1000;*/
 
             /// <summary>
             /// SignKey

@@ -19,21 +19,17 @@ using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using static System.Net.Mime.MediaTypeNames;
 using MD5 = System.Security.Cryptography.MD5;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JsonException = Newtonsoft.Json.JsonException;
+using static JayTom.Dws.Interface.ApiImplementations.Szjy188.SzjyApi;
 
-namespace JayTom.Dws.Interface.Jtexpress {
+namespace JayTom.Dws.Interface.ApiImplementations.Jtexpress {
 
-    public class JtExpressApi : IDataUploader {
+    [ApiClass("极兔Api", "JtExpressApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    public class JtExpressApi : IApiUploader<JtExpressApi.ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
-        public static ApiParameter Parameters { get; set; } = new();
-        public static JtExpressUserInfo UserInfo { get; set; } = new();
-        private static List<ExcelDeliveryCode> _excelDeliveryCodes = new();
-        private readonly IExcel _excel;
+        public ApiParameter Parameters { get; set; } = new();
 
-        public JtExpressApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory;
-            _excel ??= new NpoiExport();
+        public bool SetParameters(ApiParameter parameters) {
             if (_excelDeliveryCodes?.Any() != true) {
                 //判断文件是否存在
                 var path = $"{AppContext.BaseDirectory}ApiSettingJson\\JtThreeSegmentCodeRout";
@@ -50,7 +46,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                                 return Task.CompletedTask;
                             }
-                                ).GetAwaiter().GetResult();
+                        ).GetAwaiter().GetResult();
                         if (models?.Any() == true) {
                             _excelDeliveryCodes = models;
                             NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(_excelDeliveryCodes)}");
@@ -64,88 +60,28 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     }
                 }
             }
+
+            Parameters = parameters;
+            return true;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
-            object? other = null, CancellationToken token = default) {
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
             return await GenerateSegmentCode(barcode);
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            var deliveryCode = string.Empty;
-            return await GenerateSegmentCode(barcode);
-            /*try {
-                var jtExpressResponseResult = JsonConvert.DeserializeObject<JtExpressResponseResult>(generateSegmentCode.ResponseContent);
-                if (jtExpressResponseResult?.Data is not null) {
-                    var segmentCodeInfos = JsonConvert.DeserializeObject<List<SegmentCodeInfo>>(jtExpressResponseResult.Data.ToString() ?? string.Empty);
-
-                    if (segmentCodeInfos?.Any() == true) {
-                        var segmentCodeInfo = segmentCodeInfos?.FirstOrDefault();
-                        var excelDeliveryCode = _excelDeliveryCodes?.FirstOrDefault(f =>
-                            f.ThirdlyDispatchCode.Equals(segmentCodeInfo?.ThirdlyDispatchCode));
-                        if (excelDeliveryCode is not null) {
-                            deliveryCode = excelDeliveryCode.DeliveryCode;
-                        }
-                    }
-                }
-            }
-            catch {
-                deliveryCode = string.Empty;
-            }
-
-            if (!generateSegmentCode.ExceptionMsg.Equals("条码为NoRead")) {
-                if (Parameters.BusinessType == BusinessType.ArrivalScan) {
-                    ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
-                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                    );
-                }
-                else if (Parameters.BusinessType == BusinessType.DepartureScan) {
-                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
-                }
-                else if (Parameters.BusinessType == BusinessType.ArrivalScanAndDepartureScan) {
-                    ArrivalScan(barcode, weight, scanTime, length, width, height, Parameters.ScanTypeCode
-                        , Parameters.TransportTypeCode, Parameters.ScanPda, Parameters.ScanType, Parameters.WeightFlag
-                    );
-                    DepartureScan(barcode, deliveryCode, Parameters.ScanPda);
-                }
-            }
-
-            return generateSegmentCode;*/
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
         }
 
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            if (parameters is ApiParameter param) {
-                Parameters = new ApiParameter() {
-                    AppSecret = param.AppSecret,
-                    AppKey = param.AppKey,
-                    BusinessType = param.BusinessType,
-                    Password = param.Password,
-                    ScanPda = param.ScanPda,
-                    ScanType = param.ScanType,
-                    ScanTypeCode = param.ScanTypeCode,
-                    SegmentCodeTimeOut = param.SegmentCodeTimeOut,
-                    SegmentCodeUrl = param.SegmentCodeUrl,
-                    TimeOut = param.TimeOut,
-                    TransportTypeCode = param.TransportTypeCode,
-                    Url = param.Url,
-                    UserName = param.UserName,
-                    WeightFlag = param.WeightFlag,
-                    InterceptorEnabled = param.InterceptorEnabled,
-                };
-                return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
-            }
-            else {
-                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
-            }
-        }
-
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            NLog.LogManager.GetCurrentClassLogger().Error($"进入提交方法");
+        public async Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
             var deliveryCode = string.Empty;
             if (other is UploadResponse uploadResponse) {
                 try {
@@ -184,10 +120,35 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     }
                 }
             }
+
+            return new UploadResponse();
         }
 
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public static JtExpressUserInfo UserInfo { get; set; } = new();
+        private static List<ExcelDeliveryCode> _excelDeliveryCodes = new();
+        private readonly IExcel _excel;
+
+        public JtExpressApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
+            _excel ??= new NpoiExport();
+        }
+
+        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
+            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+            object? other = null, CancellationToken token = default) {
+            return await GenerateSegmentCode(barcode);
         }
 
         /// <summary>
@@ -216,8 +177,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 var data = new {
                     account = userName,
                     password = sign.ToLower(),
-                    appKey = appKey,
-                    appSecret = appSecret,
+                    appKey,
+                    appSecret,
                 };
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
@@ -428,15 +389,15 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     listId = $"{UserInfo.NetworkCode}{new DateTimeOffset(requestTime).ToUnixTimeMilliseconds()}",
                     waybillId = barcode,
                     scanTime = $"{requestTime:yyyy-MM-dd HH:mm:ss}",
-                    scanTypeCode = scanTypeCode,
-                    weight = weight,
-                    length = length,
+                    scanTypeCode,
+                    weight,
+                    length,
                     wide = width,
                     high = height,
-                    transportTypeCode = transportTypeCode,
-                    scanPda = scanPda,
-                    scanType = scanType,
-                    weightFlag = weightFlag
+                    transportTypeCode,
+                    scanPda,
+                    scanType,
+                    weightFlag
                 }
             };
             stopwatch.Start();
@@ -542,7 +503,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     waybillId = barcode,
                     scanTime = $"{requestTime:yyyy-MM-dd HH:mm:ss}",
                     deliveryCode = string.IsNullOrEmpty(deliveryCode)?Parameters.UserName:deliveryCode,
-                    scanPda = scanPda,
+                    scanPda,
                 }
             };
             try {
@@ -676,12 +637,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
             public int? Interceptor { get; set; }
         }
 
-        public class ApiParameter {
-
-            /// <summary>
+        public class ApiParameter : BaseApiParameters {
+            /*/// <summary>
             /// Url
             /// </summary>
-            public string Url { get; set; } = "https://opa.jtexpress.com.cn";
+            public string Url { get; set; } = "https://opa.jtexpress.com.cn";*/
 
             /// <summary>
             /// 账号
@@ -702,11 +662,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// AppSecret
             /// </summary>
             public string AppSecret { get; set; } = "default";
-
-            /// <summary>
-            /// 超时
-            /// </summary>
-            public int TimeOut { get; set; } = 1000;
 
             /// <summary>
             /// 条码类型

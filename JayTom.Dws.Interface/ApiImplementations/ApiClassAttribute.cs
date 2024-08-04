@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Interface {
+namespace JayTom.Dws.Interface.ApiImplementations {
 
     [AttributeUsage(AttributeTargets.Class)]
     public class ApiClassAttribute : Attribute {

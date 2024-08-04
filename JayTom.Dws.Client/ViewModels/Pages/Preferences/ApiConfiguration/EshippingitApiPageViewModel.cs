@@ -20,14 +20,15 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
+using JayTom.Dws.Interface.ApiImplementations.Eshippingit;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
     public class EshippingitApiPageViewModel : SettingsPageTemplateViewModel {
         private readonly IHttpClientFactory _httpClientFactory;

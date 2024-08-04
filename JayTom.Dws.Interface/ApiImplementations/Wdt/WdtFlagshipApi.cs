@@ -10,13 +10,15 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Interface.ApiImplementations;
+using static JayTom.Dws.Interface.ApiImplementations.Szjy188.SzjyApi;
 
 namespace JayTom.Dws.Interface.Wdt {
 
-    public class WdtFlagshipApi : IDataUploader {
+    [ApiClass("旺店通旗舰版Api", "WdtFlagshipApi", "1.0", ExecutionType.UploadInformation)]
+    public class WdtFlagshipApi : IApiUploader<WdtFlagshipApi.ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ApiParameter ApiParameters { get; set; } = new();
 
         public WdtFlagshipApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -30,22 +32,22 @@ namespace JayTom.Dws.Interface.Wdt {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
-            var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
+            var objects = Parameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
+                new object[] { barcode, string.Empty, roundedWeight, Parameters.PackagerId, Parameters.Force }
+                : new object[] { barcode, string.Empty, roundedWeight, Parameters.PackagerId, Parameters.OperateTableName, Parameters.Force };
 
             var dictionary = new Dictionary<string, object>()
             {
                 {"body",JsonConvert.SerializeObject(objects)},
-                {"key",ApiParameters.Key},
-                {"sid",ApiParameters.Sid},
-                {"method",ApiParameters.Method},
-                {"v",ApiParameters.V},
-                {"salt",ApiParameters.Salt},
+                {"key",Parameters.Key},
+                {"sid",Parameters.Sid},
+                {"method",Parameters.Method},
+                {"v",Parameters.V},
+                {"salt",Parameters.Salt},
                 {"timestamp",DateTimeOffset.Now.ToUnixTimeSeconds()- 1325347200},
             };
             var pairs = dictionary.OrderBy(o => o.Key);
-            var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + ApiParameters.Appsecret;
+            var signString = Parameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + Parameters.Appsecret;
 
             //转MD5
             string sign;
@@ -64,13 +66,13 @@ namespace JayTom.Dws.Interface.Wdt {
             stopwatch.Start();
             try {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 using (Stream dataStream =
                        new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
                     using (HttpContent content = new StreamContent(dataStream)) {
                         content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
+                        message = await httpClient.PostAsync($"{Parameters.Url}?{param}", content, token)
                             .ConfigureAwait(false);
                     }
                 }
@@ -115,7 +117,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(objects),
                     RequestTime = requestTime,
-                    RequestUrl = ApiParameters.Url,
+                    RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -123,145 +125,7 @@ namespace JayTom.Dws.Interface.Wdt {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
-            object? other = null, CancellationToken token = default) {
-            UploadResponse response;
-            var resultContent = string.Empty;
-            var exceptionMsg = string.Empty;
-            var isSuccess = false;
-
-            var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
-            var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
-
-            var dictionary = new Dictionary<string, object>()
-            {
-                {"body",JsonConvert.SerializeObject(objects)},
-                {"key",ApiParameters.Key},
-                {"sid",ApiParameters.Sid},
-                {"method",ApiParameters.Method},
-                {"v",ApiParameters.V},
-                {"salt",ApiParameters.Salt},
-                {"timestamp",DateTimeOffset.Now.ToUnixTimeSeconds()- 1325347200},
-            };
-            var pairs = dictionary.OrderBy(o => o.Key);
-            var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + ApiParameters.Appsecret;
-
-            //转MD5
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));
-                var strResult = BitConverter.ToString(result);
-                sign = strResult.Replace("-", "");
-            }
-            dictionary.Add("sign", sign.ToLower());
-            dictionary.Remove("body");
-            //拼接url
-            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? Array.Empty<string>());
-
-            var requestTime = DateTime.Now;
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
-                HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
-                            .ConfigureAwait(false);
-                    }
-                }
-
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
-                    var jObject = JObject.Parse(resultContent);
-                    if (jObject["status"]?.ToString()?.ToUpper()?.Equals("0") == true) {
-                        isSuccess = true;
-                    }
-                }
-                //判断是否成功条件
-            }
-            catch (HttpRequestException e) {
-                isSuccess = false;
-                resultContent = exceptionMsg = e.Message;
-            }
-            catch (AggregateException) {
-                isSuccess = false;
-                resultContent = exceptionMsg = "接口访问异常!";
-            }
-            catch (JsonException) {
-                isSuccess = false;
-                resultContent = exceptionMsg = "报文解析异常!";
-            }
-            catch (TaskCanceledException) {
-                isSuccess = false;
-                resultContent = exceptionMsg = "接口访问返回超时!";
-            }
-            catch (Exception e) {
-                isSuccess = false;
-                resultContent = exceptionMsg = e.Message;
-            }
-            finally {
-                stopwatch.Stop();
-                response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this.ApiParameters),
-                    IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = JsonConvert.SerializeObject(objects),
-                    RequestTime = requestTime,
-                    RequestUrl = ApiParameters.Url,
-                    ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
-                };
-            }
-            return response;
-        }
-
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            if (parameters is ApiParameter param) {
-                this.ApiParameters = new ApiParameter() {
-                    Appsecret = param.Appsecret,
-                    Force = param.Force,
-                    Key = param.Key,
-                    Method = param.Method,
-                    OperateTableName = param.OperateTableName,
-                    PackagerId = param.PackagerId,
-                    Salt = param.Salt,
-                    Sid = param.Sid,
-                    TimeOut = param.TimeOut,
-                    Url = param.Url,
-                    V = param.V,
-                };
-                return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
-            }
-            else {
-                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
-            }
-        }
-
-        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-        }
-
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
-            object? other = null, CancellationToken token = default) {
-        }
-
-        public class ApiParameter {
-
-            /// <summary>
-            /// Url
-            /// </summary>
-            public string Url { get; set; } = string.Empty;
+        public class ApiParameter : BaseApiParameters {
 
             /// <summary>
             /// Key
@@ -307,11 +171,140 @@ namespace JayTom.Dws.Interface.Wdt {
             /// 是否强制称重
             /// </summary>
             public bool Force { get; set; }
+        }
 
-            /// <summary>
-            /// 超时
-            /// </summary>
-            public int TimeOut { get; set; } = 1000;
+        public ApiParameter Parameters { get; private set; } = new();
+
+        public bool SetParameters(ApiParameter parameters) {
+            Parameters = parameters;
+            return true;
+        }
+
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            UploadResponse response;
+            var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+
+            var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
+            var objects = Parameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
+                new object[] { barcode, string.Empty, roundedWeight, Parameters.PackagerId, Parameters.Force }
+                : new object[] { barcode, string.Empty, roundedWeight, Parameters.PackagerId, Parameters.OperateTableName, Parameters.Force };
+
+            var dictionary = new Dictionary<string, object>()
+            {
+                {"body",JsonConvert.SerializeObject(objects)},
+                {"key",Parameters.Key},
+                {"sid",Parameters.Sid},
+                {"method",Parameters.Method},
+                {"v",Parameters.V},
+                {"salt",Parameters.Salt},
+                {"timestamp",DateTimeOffset.Now.ToUnixTimeSeconds()- 1325347200},
+            };
+            var pairs = dictionary.OrderBy(o => o.Key);
+            var signString = Parameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + Parameters.Appsecret;
+
+            //转MD5
+            string sign;
+            using (var md5 = MD5.Create()) {
+                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));
+                var strResult = BitConverter.ToString(result);
+                sign = strResult.Replace("-", "");
+            }
+            dictionary.Add("sign", sign.ToLower());
+            dictionary.Remove("body");
+            //拼接url
+            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? Array.Empty<string>());
+
+            var requestTime = DateTime.Now;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{Parameters.Url}?{param}", content, token)
+                        .ConfigureAwait(false);
+                }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+                    if (jObject["status"]?.ToString()?.ToUpper()?.Equals("0") == true) {
+                        isSuccess = true;
+                    }
+                }
+                //判断是否成功条件
+            }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                resultContent = exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                resultContent = exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                resultContent = exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                resultContent = exceptionMsg = "接口访问返回超时!";
+            }
+            catch (Exception e) {
+                isSuccess = false;
+                resultContent = exceptionMsg = e.Message;
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this.Parameters),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = JsonConvert.SerializeObject(objects),
+                    RequestTime = requestTime,
+                    RequestUrl = Parameters.Url,
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+            }
+            return response;
+        }
+
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+        }
+
+        public Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
         }
     }
 }

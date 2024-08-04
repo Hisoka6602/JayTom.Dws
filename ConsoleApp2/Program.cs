@@ -21,16 +21,16 @@ using System.Collections.Generic;
 using Org.BouncyCastle.Utilities;
 using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Interface.Sunnen;
-using JayTom.Dws.Interface.Szjy188;
-using JayTom.Dws.Interface.Jtexpress;
 using System.Text.RegularExpressions;
 using static System.Text.Json.JsonElement;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.DownstreamProtocols;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using static JayTom.Dws.Interface.ApiImplementations.Szjy188.SzjyApi;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
-using static JayTom.Dws.Interface.Jtexpress.JtExpressApi;
+using static JayTom.Dws.Interface.ApiImplementations.Jtexpress.JtExpressApi;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using JayTom.Dws.Interface.ApiImplementations.Jtexpress;
+using JayTom.Dws.Interface.ApiImplementations.Szjy188;
 
 internal class Program {
 
