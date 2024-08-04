@@ -8,8 +8,10 @@ using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
+using System.Security.Policy;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.JdyWms {
@@ -17,18 +19,9 @@ namespace JayTom.Dws.Interface.JdyWms {
     /// <summary>
     /// 筋斗云Wms
     /// </summary>
-    public class JdyWmsApi : IDataUploader {
+    [ApiClass("筋斗云Wms", "JdyWmsApi", "1.0", ExecutionType.UploadInformation)]
+    public class JdyWmsApi : IApiUploader<JdyWmsApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
-
-        /// <summary>
-        /// Url
-        /// </summary>
-        public string? Url { get; private set; }
-
-        /// <summary>
-        /// 超时
-        /// </summary>
-        public int? TimeOut { get; private set; }
 
         public JdyWmsApi(IHttpClientFactory httpClientFactory) {
             //读取、设置
@@ -51,8 +44,23 @@ namespace JayTom.Dws.Interface.JdyWms {
             }
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
+            return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
+        }
+
+        public class ApiParameters : BaseApiParameters {
+        }
+
+        public ApiParameters Parameters { get; private set; } = new();
+
+        public bool SetParameters(ApiParameters parameters) {
+            Parameters = parameters;
+            return true;
+        }
+
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -61,9 +69,9 @@ namespace JayTom.Dws.Interface.JdyWms {
             var data = new {
                 ticketsNum = barcode,
                 length = length,
-                width = Math.Round(Convert.ToDecimal(weight), 3),
-                height = height,
-                weight = weight,
+                width = Math.Round(Convert.ToDecimal(width), 3),
+                height = Math.Round(Convert.ToDecimal(height), 3),
+                weight = Math.Round(Convert.ToDecimal(weight), 3),
                 workConsole = "分拣机",
                 destination = string.Empty,
             };
@@ -71,29 +79,27 @@ namespace JayTom.Dws.Interface.JdyWms {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Url ?? string.Empty, content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
-                    if (!string.IsNullOrWhiteSpace(resultContent)) {
-                        //判断
-                        var jObject = JObject.Parse(resultContent);
-                        if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
-                            isSuccess = true;
-                        }
-                    }
-                    //判断是否成功条件
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                        .ConfigureAwait(false);
                 }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+                    if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
+                        isSuccess = true;
+                    }
+                }
+                //判断是否成功条件
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -124,7 +130,7 @@ namespace JayTom.Dws.Interface.JdyWms {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = Url,
+                    RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -132,98 +138,29 @@ namespace JayTom.Dws.Interface.JdyWms {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+        }
+
+        public Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            UploadResponse response;
-            var resultContent = string.Empty;
-            var exceptionMsg = string.Empty;
-            var isSuccess = false;
-            var data = new {
-                ticketsNum = barcode,
-                length = length,
-                width = width,
-                height = height,
-                weight = weight,
-                workConsole = "分拣机",
-                destination = string.Empty,
-            };
-            var requestTime = DateTime.Now;
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
-                    httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Url ?? string.Empty, content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-
-                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
-                    if (!string.IsNullOrWhiteSpace(resultContent)) {
-                        //判断
-                        var jObject = JObject.Parse(resultContent);
-                        if (jObject["result"]?.ToString()?.ToLower()?.Equals("true") == true) {
-                            isSuccess = true;
-                        }
-                    }
-                    //判断是否成功条件
-                }
-            }
-            catch (HttpRequestException e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            catch (AggregateException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问异常!";
-            }
-            catch (JsonException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "报文解析异常!";
-            }
-            catch (TaskCanceledException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问返回超时!";
-            }
-            catch (Exception e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            finally {
-                stopwatch.Stop();
-                response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
-                    IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = JsonConvert.SerializeObject(data),
-                    RequestTime = requestTime,
-                    RequestUrl = Url,
-                    ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
-                };
-            }
-            return response;
-        }
-
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
-        }
-
-        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-        }
-
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
-            object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
         }
     }
 }

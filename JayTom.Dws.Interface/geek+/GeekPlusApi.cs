@@ -7,7 +7,9 @@ using System.Net.Http;
 using System.Threading;
 using NPOI.POIFS.Crypt;
 using System.Diagnostics;
+using TouchSocket.Sockets;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Security.Policy;
 using System.Drawing.Imaging;
@@ -16,41 +18,42 @@ using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.geek_ {
 
-    public class GeekPlusApi : IDataUploader {
+    [ApiClass("Geek+", "GeekPlusApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    public class GeekPlusApi : IApiUploader<GeekPlusApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
-        public ApiParameters? Parameters { get; private set; }
-        public object SettingLock { get; private set; } = new();
+        public ApiParameters Parameters { get; private set; } = new();
 
-        public GeekPlusApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory;
+        public bool SetParameters(ApiParameters parameters) {
             lock (SettingLock) {
                 try {
-                    if (Parameters is null) {
-                        IConfiguration configuration = new ConfigurationBuilder()
-                            .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
-                            .AddJsonFile("GeekPlusApiSetting.json", optional: false, reloadOnChange: true)
-                            .Build();
-                        Parameters = new ApiParameters() {
-                            BaseUrl = configuration["BaseUrl"],
-                            TimeOut = Convert.ToInt32(configuration["TimeOut"]),
-                            SellerId = Convert.ToInt32(configuration["SellerId"]),
-                            Key = configuration["Key"],
-                        };
-                    }
+                    IConfiguration configuration = new ConfigurationBuilder()
+                        .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
+                        .AddJsonFile("GeekPlusApiSetting.json", optional: false, reloadOnChange: true)
+                        .Build();
+                    Parameters = new ApiParameters() {
+                        Url = configuration["BaseUrl"],
+                        TimeOut = Convert.ToInt32(configuration["TimeOut"]),
+                        SellerId = Convert.ToInt32(configuration["SellerId"]),
+                        Key = configuration["Key"],
+                    };
                 }
                 catch (Exception e) {
+                    return false;
                 }
-                _httpClientFactory = httpClientFactory;
             }
+
+            return true;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
-            object? other = null, CancellationToken token = default) {
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -59,107 +62,16 @@ namespace JayTom.Dws.Interface.geek_ {
             string hashString;
             var data = new {
                 barcode = barcode,
-                height = Math.Round(Convert.ToDecimal(height), 3).ToString(),
-                length = Math.Round(Convert.ToDecimal(length), 3).ToString(),
+                height = Math.Round(Convert.ToDecimal(height), 3).ToString(CultureInfo.InvariantCulture),
+                length = Math.Round(Convert.ToDecimal(length), 3).ToString(CultureInfo.InvariantCulture),
                 seller_id = Parameters?.SellerId,
                 timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
-                volume = Math.Round(Convert.ToDecimal(volume), 3).ToString(),
-                weight = Math.Round(Convert.ToDecimal(weight), 3).ToString(),
-                width = Math.Round(Convert.ToDecimal(width), 3).ToString(),
+                volume = Math.Round(Convert.ToDecimal(volume), 3).ToString(CultureInfo.InvariantCulture),
+                weight = Math.Round(Convert.ToDecimal(weight), 3).ToString(CultureInfo.InvariantCulture),
+                width = Math.Round(Convert.ToDecimal(width), 3).ToString(CultureInfo.InvariantCulture),
             };
             using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
-                var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
-
-                hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-            }
-
-            var requestTime = DateTime.Now;
-
-            var stopwatch = new Stopwatch();
-
-            stopwatch.Start();
-            try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
-                HttpResponseMessage message;
-                await using (Stream dataStream =
-                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using HttpContent content = new StreamContent(dataStream);
-                    content.Headers.Add("Content-Type", "application/json");
-                    message = await httpClient.PostAsync($"{Parameters.BaseUrl}{method}", content, token)
-                        .ConfigureAwait(false);
-                }
-
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
-                    var jObject = JObject.Parse(resultContent);
-                    if (jObject["code"]?.ToString()?.ToLower()?.Equals("0") == true) {
-                        isSuccess = true;
-                    }
-                }
-                //判断是否成功条件
-            }
-            catch (HttpRequestException e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            catch (AggregateException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问异常!";
-            }
-            catch (JsonException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "报文解析异常!";
-            }
-            catch (TaskCanceledException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问返回超时!";
-            }
-            catch (Exception e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            finally {
-                stopwatch.Stop();
-                response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
-                    IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = JsonConvert.SerializeObject(data),
-                    RequestTime = requestTime,
-                    RequestUrl = $"{Parameters.BaseUrl}{method}",
-                    ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
-                };
-            }
-            return response;
-        }
-
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            UploadResponse response;
-            var resultContent = string.Empty;
-            var exceptionMsg = string.Empty;
-            var isSuccess = false;
-            var method = "/scanParcel";
-            string hashString;
-            var data = new {
-                barcode = barcode,
-                height = Math.Round(Convert.ToDecimal(height), 3).ToString(),
-                length = Math.Round(Convert.ToDecimal(length), 3).ToString(),
-                seller_id = Parameters?.SellerId,
-                timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
-                volume = Math.Round(Convert.ToDecimal(volume), 3).ToString(),
-                weight = Math.Round(Convert.ToDecimal(weight), 3).ToString(),
-                width = Math.Round(Convert.ToDecimal(width), 3).ToString(),
-            };
-            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
-                var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
+                var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.Url}{method}|{JsonConvert.SerializeObject(data)}"));
 
                 hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
             }
@@ -178,7 +90,7 @@ namespace JayTom.Dws.Interface.geek_ {
                              new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
                     using HttpContent content = new StreamContent(dataStream);
                     content.Headers.Add("Content-Type", "application/json");
-                    message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", content, token)
+                    message = await httpClient.PostAsync($"{Parameters?.Url}{method}", content, token)
                         .ConfigureAwait(false);
                 }
 
@@ -222,7 +134,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = $"{Parameters?.BaseUrl}{method}",
+                    RequestUrl = $"{Parameters?.Url}{method}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
@@ -230,18 +142,21 @@ namespace JayTom.Dws.Interface.geek_ {
             return response;
         }
 
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
         }
 
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+        public async Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             var method = "/uploadParcelImage";
-            string hashString;
 
             var requestTime = DateTime.Now;
 
@@ -288,8 +203,9 @@ namespace JayTom.Dws.Interface.geek_ {
                     }
                 }*/
 
+                string hashString;
                 using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
-                    var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
+                    var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.Url}{method}|{JsonConvert.SerializeObject(data)}"));
 
                     hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
                 }
@@ -298,7 +214,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
-                var message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", formData, token);
+                var message = await httpClient.PostAsync($"{Parameters?.Url}{method}", formData, token);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 isSuccess = resultContent.ToLower().Contains("true");
@@ -325,22 +241,38 @@ namespace JayTom.Dws.Interface.geek_ {
             }
             finally {
                 stopwatch.Stop();
-                var response = new UploadResponse() {
+                response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
-                    RequestUrl = $"{Parameters?.BaseUrl}{method}",
+                    RequestUrl = $"{Parameters?.Url}{method}",
                     ResponseContent = resultContent,
                     ResponseTime = DateTime.Now
                 };
             }
+
+            return response;
         }
 
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public object SettingLock { get; private set; } = new();
+
+        public GeekPlusApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
         }
 
         public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
@@ -369,13 +301,12 @@ namespace JayTom.Dws.Interface.geek_ {
             }
         }
 
-        public class ApiParameters {
-            public string BaseUrl { get; set; } = "https://erp.lakepoint.io/api/wms";
+        public class ApiParameters : BaseApiParameters {
+            //public string BaseUrl { get; set; } = "https://erp.lakepoint.io/api/wms";
 
             public string Key { get; set; } = "12345";
 
             public int SellerId { get; set; } = 1000;
-            public int TimeOut { get; set; } = 10000;
         }
     }
 }

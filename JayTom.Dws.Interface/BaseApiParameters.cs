@@ -16,6 +16,6 @@ namespace JayTom.Dws.Interface {
         /// <summary>
         /// TimeOut
         /// </summary>
-        public int TimeOut { get; set; }
+        public int TimeOut { get; set; } = 1000;
     }
 }

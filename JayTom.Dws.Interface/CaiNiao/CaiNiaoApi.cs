@@ -12,22 +12,26 @@ using System.Collections.Generic;
 using Org.BouncyCastle.Asn1.Ocsp;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 
 namespace JayTom.Dws.Interface.CaiNiao {
 
-    public class CaiNiaoApi : IDataUploader {
+    [ApiClass("菜鸟Api", "CaiNiaoApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.SendConsolidationReport)]
+    public class CaiNiaoApi : IApiUploader<ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
-        public CaiNiaoApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory;
+        public bool SetParameters(ApiParameters parameters) {
+            Parameters = parameters;
+            return true;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
-            object? other = null, CancellationToken token = default) {
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
             //请求格口
             UploadResponse response;
             var resultContent = string.Empty;
@@ -122,128 +126,27 @@ namespace JayTom.Dws.Interface.CaiNiao {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            //请求格口
-            UploadResponse response;
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+        }
+
+        public async Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            UploadResponse response = new();
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             var requestTime = DateTime.Now;
-            var data = new {
-                source = Parameters.Source,
-                version = Parameters.Version,
-                requestId = new DateTimeOffset(requestTime).ToUnixTimeSeconds(),
-                data = new object[]
-                {
-                    new
-                    {
-                        command="sorter.dest_request",
-                        @params=new
-                        {
-                            barCode=barcode,
-                            weight=0,
-                            length=0,
-                            width=0,
-                            height=0,
-                            bcrCode= Parameters.BcrCode,
-                            bcrName=Parameters.BcrName,
-                            foldFlag=(other is true)?0:1
-                        }
-                    }
-                },
-            };
-
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
-                HttpResponseMessage message;
-                await using (Stream dataStream =
-                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                    using HttpContent content = new StreamContent(dataStream);
-                    content.Headers.Add("Content-Type", "application/json");
-                    message = await httpClient.PostAsync(Parameters.Url, content, token)
-                        .ConfigureAwait(false);
-                }
-
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
-                    var jObject = JObject.Parse(resultContent);
-
-                    if (jObject["result"] is not null) {
-                        var jArray = JArray.Parse(jObject["result"]?.ToString() ?? string.Empty);
-                        isSuccess = jArray.FirstOrDefault()?["code"]?.ToString() == "0";
-                    }
-                }
-                //判断是否成功条件
-            }
-            catch (HttpRequestException e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            catch (AggregateException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问异常!";
-            }
-            catch (JsonException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "报文解析异常!";
-            }
-            catch (TaskCanceledException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问返回超时!";
-            }
-            catch (Exception e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            finally {
-                stopwatch.Stop();
-                response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
-                    IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = JsonConvert.SerializeObject(data),
-                    RequestTime = requestTime,
-                    RequestUrl = Parameters.Url,
-                    ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
-                };
-            }
-            return response;
-        }
-
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            if (parameters is ApiParameters param) {
-                Parameters.Url = param.Url;
-                Parameters.TimeOut = param.TimeOut;
-                Parameters.Source = param.Source;
-                Parameters.Version = param.Version;
-                Parameters.BcrCode = param.BcrCode;
-                Parameters.BcrName = param.BcrName;
-                return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
-            }
-            else {
-                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
-            }
-        }
-
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (other is ReportChuteInfo reportChuteInfo) {
                 if (reportChuteInfo.ErrorReson.Contains("车号不匹配")) {
                     reportChuteInfo.ChuteCode = "100";
                 }
                 NLog.LogManager.GetCurrentClassLogger().Error($"提交分拣报告:barCode:{barcode},chuteCode:{reportChuteInfo.ChuteCode},reportChuteInfo.ErrorReson:{reportChuteInfo.ErrorReson}");
-                var requestTime = DateTime.Now;
+
                 var data = new {
                     source = Parameters.Source,
                     version = Parameters.Version,
@@ -266,6 +169,8 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     }
                     },
                 };
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 try {
                     using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
@@ -278,7 +183,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                             .ConfigureAwait(false);
                     }
 
-                    var resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                     resultContent = Regex.Unescape(resultContent);
                     NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告返回:{resultContent}");
                 }
@@ -288,12 +193,38 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"分拣报告异常:{e}");
                 }
+                finally {
+                    stopwatch.Stop();
+                    response = new UploadResponse() {
+                        ExceptionMsg = exceptionMsg,
+                        ApiParameters = JsonConvert.SerializeObject(this),
+                        IsSuccess = isSuccess,
+                        Duration = stopwatch.Elapsed.TotalSeconds,
+                        RequestContent = JsonConvert.SerializeObject(data),
+                        RequestTime = requestTime,
+                        RequestUrl = Parameters.Url,
+                        ResponseContent = resultContent,
+                        ResponseTime = DateTime.Now
+                    };
+                }
             }
+
+            return response;
         }
 
-        public async void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public async Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            UploadResponse response = new();
             var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
             var requestTime = DateTime.Now;
             var data = new {
                 source = Parameters.Source,
@@ -315,7 +246,8 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 },
             };
             NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:格口:{new string(packageExit.Where(char.IsDigit).ToArray())},包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
-
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             try {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
@@ -335,19 +267,29 @@ namespace JayTom.Dws.Interface.CaiNiao {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"集包报告异常:{e}");
             }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = JsonConvert.SerializeObject(data),
+                    RequestTime = requestTime,
+                    RequestUrl = Parameters.Url,
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+            }
+
+            return response;
         }
 
-        public class ApiParameters {
+        public CaiNiaoApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
+        }
 
-            /// <summary>
-            /// Url
-            /// </summary>
-            public string Url { get; set; } = "http://10.220.64.463:10002/ucs/api";
-
-            /// <summary>
-            /// 超时
-            /// </summary>
-            public int TimeOut { get; set; } = 1000;
+        public class ApiParameters : BaseApiParameters {
 
             /// <summary>
             /// SignKey
