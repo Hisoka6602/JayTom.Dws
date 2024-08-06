@@ -1,10 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-
-namespace JayTom.Dws.Interface.ApiImplementations {
+﻿namespace JayTom.Dws.Domain.Interface.Attributes {
 
     [AttributeUsage(AttributeTargets.Class)]
     public class ApiClassAttribute : Attribute {
@@ -30,17 +24,24 @@ namespace JayTom.Dws.Interface.ApiImplementations {
         public ExecutionType ExecTypes { get; }
 
         /// <summary>
+        /// 保存的参数名称
+        /// </summary>
+        public string ParametersName { get; }
+
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="displayName">显示名称</param>
         /// <param name="name">名称</param>
+        /// <param name="parametersName"></param>
         /// <param name="version">版本号</param>
         /// <param name="execTypes">执行类型</param>
-        public ApiClassAttribute(string displayName, string name, string version = "", ExecutionType execTypes = ExecutionType.UploadInformation) {
+        public ApiClassAttribute(string displayName, string name, string parametersName, string version = "", ExecutionType execTypes = ExecutionType.UploadInformation) {
             DisplayName = displayName;
             Name = name;
             Version = version;
             ExecTypes = execTypes;
+            ParametersName = parametersName;
         }
     }
 
@@ -75,6 +76,27 @@ namespace JayTom.Dws.Interface.ApiImplementations {
         /// <summary>
         /// 发送集包报告
         /// </summary>
-        SendConsolidationReport = 16
+        SendConsolidationReport = 16,
+
+        /// <summary>
+        /// 发送图片
+        /// </summary>
+        SendImage = 32,
+
+        /// <summary>
+        /// 发送锁格指令
+        /// </summary>
+        SendLockCommand = 64,
+
+        /// <summary>
+        /// 发送解除锁格指令
+        /// </summary>
+        SendUnlockCommand = 128,
+
+        //发送设备信息报告
+        /// <summary>
+        /// 发送设备信息报告
+        /// </summary>
+        SendDeviceReport = 256,
     }
 }

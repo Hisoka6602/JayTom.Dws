@@ -17,6 +17,7 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Domain.Interface.Cloud;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Infrastructure.Repository.LocalData;

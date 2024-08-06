@@ -10,18 +10,21 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
+using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface.ApiImplementations.Post {
 
-    [ApiClass("邮政处理中心Api", "PostApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.ScanPackage)]
+    [ApiClass("邮政处理中心Api", "PostApi", "PostApiParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.ScanPackage)]
     public class PostApi : IApiUploader<PostApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameters parameters) {
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
             lock (Parameters) {
                 try {
                     IConfiguration configuration = new ConfigurationBuilder()
@@ -131,7 +134,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.Post {
                     RequestTime = requestTime,
                     RequestUrl = Parameters?.Url ?? string.Empty,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -204,7 +208,7 @@ namespace JayTom.Dws.Interface.ApiImplementations.Post {
                     RequestTime = requestTime,
                     RequestUrl = Parameters?.Url ?? string.Empty,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
                 };
                 NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject(response));
             }
@@ -312,7 +316,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.Post {
                         RequestTime = requestTime,
                         RequestUrl = Parameters?.Url ?? string.Empty,
                         ResponseContent = resultContent,
-                        ResponseTime = DateTime.Now
+                        ResponseTime = DateTime.Now,
+                        ExecutionType = ExecutionType.SendSortingReport
                     };
                     NLog.LogManager.GetCurrentClassLogger().Error($"落格返回：{JsonConvert.SerializeObject(response)}");
                 }
@@ -325,12 +330,41 @@ namespace JayTom.Dws.Interface.ApiImplementations.Post {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
 
         private static long _num = 1;

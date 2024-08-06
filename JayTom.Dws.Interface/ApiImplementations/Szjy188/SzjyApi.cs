@@ -9,16 +9,16 @@ using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Sunnen;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
-using JayTom.Dws.Interface.WeciMexicoDv;
 using System.Reflection.PortableExecutable;
+using JayTom.Dws.Domain.Interface.Attributes;
 using static JayTom.Dws.Interface.ApiImplementations.Szjy188.SzjyApi;
 
 namespace JayTom.Dws.Interface.ApiImplementations.Szjy188 {
 
-    [ApiClass("神州集运Api", "SzjyApi", "1.0", ExecutionType.UploadInformation)]
+    [ApiClass("神州集运Api", "SzjyApi", "SzjyApiParameter", "1.0", ExecutionType.UploadInformation)]
     public class SzjyApi : IApiUploader<ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
         public static int? _uid = null;
@@ -135,8 +135,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.Szjy188 {
 
         public ApiParameter Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameter parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameter param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -242,7 +243,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.Szjy188 {
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters.Url}{method}?{urlJoin}",
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -270,6 +272,23 @@ namespace JayTom.Dws.Interface.ApiImplementations.Szjy188 {
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
             return Task.FromResult(new UploadResponse());
         }
     }

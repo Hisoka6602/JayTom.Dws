@@ -1,58 +1,31 @@
 ﻿using NLog;
 using System;
-using ImTools;
-using System.Net;
 using System.Linq;
 using System.Drawing;
-using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading;
 using TouchSocket.Core;
-using JayTom.Dws.Interface;
+using System.Reflection;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Interface.Wdt;
-using JayTom.Dws.Data.LocalConf;
-using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Interface.geek_;
 using System.Collections.Generic;
-using NPOI.XSSF.Streaming.Values;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Interface.Sunnen;
-using JayTom.Dws.Interface.JdyWms;
+using JayTom.Dws.Domain.Interface;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Interface.zhuoyan_scm;
-using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.PluginInterface.Utils;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.DownstreamProtocols;
+using JayTom.Dws.Domain.Interface.Attributes;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.ImageService;
-using JayTom.Dws.Interface.ApiImplementations.Post;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Interface.ApiImplementations.CaiNiao;
-using JayTom.Dws.Interface.ApiImplementations.Szjy188;
-using JayTom.Dws.Interface.ApiImplementations.Routdata;
-using JayTom.Dws.Interface.ApiImplementations.Jtexpress;
-using static Aliyun.OSS.Model.ListMultipartUploadsResult;
-using JayTom.Dws.Interface.ApiImplementations.Eshippingit;
-using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using PluginType = JayTom.Dws.Client.EventMediators.PluginType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using UploadResponse = JayTom.Dws.Domain.Interface.UploadResponse;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using static JayTom.Dws.Interface.ApiImplementations.CaiNiao.CaiNiaoApi;
-using PushPackageInfo = JayTom.Dws.Client.EventMediators.PushPackageInfo;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
 using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
@@ -74,25 +47,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IMemoryCache _memoryCache;
         private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
-        private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
-        private static SzjyApi.ApiParameter _szjyApiParam = new();
-        private static WdtWmsApi.ApiParameter _wdtWmsApiParameter = new();
-        private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
-        private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
-        private static RoutDataApi.ApiParameters _rstDataApiParam = new();
-        private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
-        private static EshippingitApi.ApiParameters _eshippingitApiParam = new();
-        private static PostApi.ApiParameters _postApiParam = new();
-        private static PostInApi.ApiParameters _postInApiParam = new();
-        private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
-        /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
-        private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
         private ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
         private SemaphoreSlim _takePackageSlim = new(1);
         private ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
         private JtExpressDto _jtExpressDto = new();
-        private IDataUploader? _submissionUploader;
+        private IApiUploader<BaseApiParameters>? _submissionUploader;
 
         #region 非通用版本变量(临时)
 
@@ -147,140 +107,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 await Task.Yield();
                 if (item is { } model) {
-                    switch (model.SettingsName) {
-                        case "ApiSettings":
-                            _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
-                            _submissionUploader = _apiSettingsDto?.Type switch {
-                                ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
-                                ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
-                                ApiType.PostInApi => new PostInApi(_httpClientFactory),
-                                ApiType.PostApi => new PostApi(_httpClientFactory),
-                                _ => null
-                            };
+                    var interfaceType = typeof(IApiUploader<BaseApiParameters>);
+                    var types = AppDomain.CurrentDomain.GetAssemblies()
+                        .SelectMany(assembly => assembly.GetTypes())
+                        .Where(t => interfaceType.IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false });
 
-                            break;
+                    var orDefault = types.FirstOrDefault(f => (bool)f.GetCustomAttribute<ApiClassAttribute>()?.ParametersName.Equals(
+                        model.SettingsName,
+                        StringComparison.InvariantCultureIgnoreCase));
 
-                        case "DefaultApiParameters": {
-                                //默认上传接口改参数
-                                var entity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(model.SettingsName) ?? new DefaultApiDto();
-                                _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
-                                    CompleteMatch = entity.CompleteMatch,
-                                    IsUseJsonUpload = entity.IsUseJsonUpload,
-                                    JsonTemplate = entity.JsonTemplate,
-                                    RegularExpression = entity.RegularExpression,
-                                    StringContains = entity.StringContains,
-                                    Timeout = entity.Timeout,
-                                    StringTemplate = entity.StringTemplate,
-                                    Url = entity.Url,
-                                    ValidationMode = (int)entity.ValidationMode,
-                                };
-                                break;
-                            }
-                        case "SzjyApiParameters": {
-                                //默认上传接口改参数
-                                var entity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(model.SettingsName) ?? new SzjyApiDto();
-                                _szjyApiParam = new SzjyApi.ApiParameter() {
-                                    Machine = entity.Machine,
-                                    Password = entity.Password,
-                                    TimeOut = entity.TimeOut,
-                                    UserName = entity.UserName,
-                                    Url = entity.Url,
-                                };
-                                break;
-                            }
-                        case "WdtWmsApiParameters": {
-                                //默认上传接口改参数
-                                var entity = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ?? new WdtWmsApiDto();
-                                _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
-                                    AppKey = entity.AppKey,
-                                    AppSecret = entity.AppSecret,
-                                    TimeOut = entity.TimeOut,
-                                    Method = entity.Method,
-                                    Url = entity.Url,
-                                    Sid = entity.Sid,
-                                    MustIncludeBoxBarcode = entity.MustIncludeBoxBarcode
-                                };
-                                break;
-                            }
-                        case "WdtFlagshipApiParameters": {
-                                //默认上传接口改参数
-                                var entity = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(model.SettingsName) ?? new WdtFlagshipApiDto();
-                                _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
-                                    TimeOut = entity.TimeOut,
-                                    Method = entity.Method,
-                                    Url = entity.Url,
-                                    Sid = entity.Sid,
-                                    Appsecret = entity.Appsecret,
-                                    Force = entity.Force,
-                                    Key = entity.Key,
-                                    OperateTableName = entity.OperateTableName,
-                                    PackagerId = entity.PackagerId,
-                                    Salt = entity.Salt,
-                                    V = entity.V
-                                };
-                                break;
-                            }
-                        case "JtExpressApiParameters":
-                            //默认上传接口改参数
-                            _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
-                            _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                                AppSecret = _jtExpressDto.AppSecret,
-                                AppKey = _jtExpressDto.AppKey,
-                                BusinessType = (JtExpressApi.BusinessType)_jtExpressDto.BusinessType,
-                                Password = _jtExpressDto.Password,
-                                ScanPda = _jtExpressDto.ScanPda,
-                                ScanType = _jtExpressDto.ScanType,
-                                ScanTypeCode = _jtExpressDto.ScanTypeCode,
-                                SegmentCodeTimeOut = _jtExpressDto.SegmentCodeTimeOut,
-                                SegmentCodeUrl = _jtExpressDto.SegmentCodeUrl,
-                                TimeOut = _jtExpressDto.TimeOut,
-                                TransportTypeCode = _jtExpressDto.TransportTypeCode,
-                                Url = _jtExpressDto.Url,
-                                UserName = _jtExpressDto.UserName,
-                                WeightFlag = _jtExpressDto.WeightFlag,
-                                InterceptorEnabled = _jtExpressDto.InterceptorEnabled
-                            };
-                            break;
+                    if (model.SettingsName.Equals("ApiSettings", StringComparison.CurrentCultureIgnoreCase) ||
+                        orDefault is not null) {
+                        //重新实例化
+                        var settingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName);
+                        _submissionUploader = CreateInstanceByApiName(settingsDto.ApiName);
+                        if (_submissionUploader is not null) {
+                            //设置参数
+                            var parametersName = GetParametersName(_submissionUploader.GetType());
 
-                        case "RoutDataApiParameters": {
-                                var entity = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
-                                _rstDataApiParam = new RoutDataApi.ApiParameters() {
-                                    Url = entity.Url,
-                                    TimeOut = entity.TimeOut,
-                                    DeviceCode = entity.DeviceCode,
-                                    RetryCount = entity.RetryCount,
-                                    RetryInterval = entity.RetryInterval,
-                                    SignKey = entity.SignKey,
-                                    OrgCode = entity.OrgCode
-                                };
-                                break;
-                            }
-                        case "CaiNiaoApiParameters": {
-                                var entity = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(model.SettingsName) ?? new CaiNiaoApiDto();
-                                _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
-                                    BcrName = entity.BcrName,
-                                    BcrCode = entity.BcrCode,
-                                    Source = entity.Source,
-                                    TimeOut = entity.TimeOut,
-                                    Url = entity.Url,
-                                    Version = entity.Version
-                                };
-                                break;
-                            }
-                        case "EshippingitApiParameters": {
-                                var entity = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(model.SettingsName) ?? new EshippingitApiDto();
-                                _eshippingitApiParam = new EshippingitApi.ApiParameters() {
-                                    Authorization = entity.Authorization,
-                                    BucketName = entity.BucketName,
-                                    Domain = entity.Domain,
-                                    Endpoint = entity.Endpoint,
-                                    RetryCount = entity.RetryCount,
-                                    RetryInterval = entity.RetryInterval,
-                                    TimeOut = entity.TimeOut,
-                                    Machine = entity.Machine
-                                };
-                                break;
-                            }
+                            var defaultEntity = await CallConfigRepositoryFirstOrDefaultEntity(_submissionUploader.Parameters.GetType(), parametersName);
+                            _submissionUploader.SetParameters(defaultEntity ?? new object());
+                        }
+
+                        //CreateInstanceByApiName
                     }
                 }
             });
@@ -380,273 +229,31 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 //上传
                                 //判断上传接口
                                 Task.Factory.StartNew(async () => {
-                                    IDataUploader uploader;
                                     UploadResponse? uploadResponse = null;
-                                    switch (_apiSettingsDto?.Type) {
-                                        case ApiType.None:
-                                            return;
+                                    if (_submissionUploader is not null) {
+                                        var executionType = _submissionUploader.GetType().GetCustomAttribute<ApiClassAttribute>()?.ExecTypes;
 
-                                        case ApiType.DefaultApi: {
-                                                //基础接口
-                                                uploader = new DefaultApi(_httpClientFactory);
-                                                //设置参数
-                                                var (key, value) = await uploader.SetParameters(_defaultApiParameters);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
+                                        if (executionType is not null && executionType.Value.HasFlag(ExecutionType.ScanPackage)) {
+                                            //扫描包裹
+                                            _submissionUploader.ScanPackage(info.Barcode ?? string.Empty,
+                                                info.Weight, info.ScanTime,
+                                                info.Length, info.Width,
+                                                info.Height, info.Volume,
+                                                info.Timestamp, null,
+                                                null, stoppingToken, stoppingToken);
+                                        }
 
-                                                break;
-                                            }
-                                        case ApiType.SunnenApi: {
-                                                uploader = new SunnenApi(_httpClientFactory);
-                                                uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                    info.Weight, info.ScanTime,
-                                                    info.Length, info.Width,
-                                                    info.Height, info.Volume,
-                                                    null, null,
-                                                    _sunnenApiPackage, stoppingToken);
-                                                break;
-                                            }
-                                        case ApiType.SzjyApi: {
-                                                //神州集运后台
-                                                uploader = new SzjyApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_szjyApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.WdtWmsApi: {
-                                                uploader = new WdtWmsApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_wdtWmsApiParameter);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        info.Other, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.WdtErpFlagShipApi: {
-                                                uploader = new WdtFlagshipApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_wdtFlagshipApiParameter);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.JdyWms: {
-                                                uploader = new JdyWmsApi(_httpClientFactory);
-                                                uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                    info.Weight, info.ScanTime,
-                                                    info.Length, info.Width,
-                                                    info.Height, info.Volume,
-                                                    null, null,
-                                                    null, stoppingToken);
-                                                break;
-                                            }
-                                        case ApiType.JtExpressApi: {
-                                                uploader = new JtExpressApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_jtExpressApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-
-                                                break;
-                                            }
-                                        case ApiType.RoutDataApi: {
-                                                uploader = new RoutDataApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_rstDataApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.GeekPlusApi: {
-                                                uploader = new GeekPlusApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_rstDataApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.CaiNiaoApi: {
-                                                uploader = new CaiNiaoApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        info.IsStackedPackage, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.EshippingitApi: {
-                                                uploader = new EshippingitApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        info.IsStackedPackage, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                                break;
-                                            }
-                                        case ApiType.PostApi: {
-                                                uploader = new PostApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_postApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        info.IsStackedPackage, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                            }
-
-                                            break;
-
-                                        case ApiType.PostInApi: {
-                                                uploader = new PostInApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_postInApiParam);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        info.IsStackedPackage, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                            }
-
-                                            break;
-
-                                        case ApiType.ZhuoYanScm: {
-                                                uploader = new ZhuoYanScmApi(_httpClientFactory);
-                                                var (key, value) = await uploader.SetParameters(_zhuoYanScmApiParam);
-
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        info.IsStackedPackage, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
-                                            }
-                                            break;
+                                        if (executionType is not null && executionType.Value.HasFlag(ExecutionType.UploadInformation)) {
+                                            uploadResponse = await _submissionUploader.UploadInformation(info.Barcode ?? string.Empty,
+                                                info.Weight, info.ScanTime,
+                                                info.Length, info.Width,
+                                                info.Height, info.Volume,
+                                                info.Timestamp, null,
+                                                null, stoppingToken, stoppingToken);
+                                        }
                                     }
                                     if (_apiSettingsDto?.Type is not null &&
-                                        _apiSettingsDto.Type != ApiType.None) {
+                                        _submissionUploader is not null) {
                                         //临时单线程
                                         EventAggregator.Instance.Publish(new ApiResponseReceived {
                                             Guid = info.Guid,
@@ -667,91 +274,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 }, stoppingToken);
                             }
 
-                            //取出图片
-                            var dequeue = _savedImageItems.TryDequeue(out var model);
-                            if (dequeue && model is not null && !string.IsNullOrEmpty(model.FilePath) &&
-                                model.ImageType == SaveImageType.BarcodeImage) {
-                                Task.Factory.StartNew(async () => {
-                                    //后续上传
-                                    IDataUploader uploader;
-                                    switch (_apiSettingsDto?.Type) {
-                                        case ApiType.None:
-                                            return;
-
-                                        case ApiType.GeekPlusApi:
-
-                                            uploader = new GeekPlusApi(_httpClientFactory);
-                                            uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
-                                                model.ScanTime, imageInfo: new UploadImageInfo() {
-                                                    CameraCustomName = model.CameraSerialNumber,
-                                                    CameraName = model.CameraSerialNumber,
-                                                    CameraSerialNumber = model.CameraSerialNumber,
-                                                    Image = Image.FromFile(model.FilePath ?? string.Empty)
-                                                }, token: stoppingToken);
-                                            break;
-
-                                        case ApiType.EshippingitApi:
-                                            uploader = new EshippingitApi(_httpClientFactory);
-                                            var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
-                                            if (key) {
-                                                uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
-                                                    model.ScanTime, imageInfo: new UploadImageInfo() {
-                                                        CameraCustomName = model.CameraSerialNumber,
-                                                        CameraName = model.CameraSerialNumber,
-                                                        CameraSerialNumber = model.CameraSerialNumber,
-                                                        Image = Image.FromFile(model.FilePath ?? string.Empty)
-                                                    }, token: stoppingToken);
-                                            }
-                                            else {
-                                                LogManager.GetCurrentClassLogger().Error("设置参数失败!");
-                                            }
-
-                                            break;
-                                    }
-                                }, stoppingToken);
-                            }
-
-                            //获取需要提交到备用格口的数据
-
                             /*
-                        var keyValuePairs = _packageSubmissionPushItems?.Any(f => (f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.PackageExceptionEx) == true
-                                                                                   && f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SendSorting) == true)
-                                                                                  && f.Value.PackageInfo is not null
-                                                                                  && !f.Value.WasPushedAlternateExitSorter) == true
-                            ? _packageSubmissionPushItems?.Where(f => (f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.PackageExceptionEx) == true
-                                                                       && f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SendSorting) == true)
-                                                                      && f.Value.PackageInfo is not null && !f.Value.WasPushedAlternateExitSorter)?.ToList()
-                            : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
-
-                        if (keyValuePairs?.Any() == true) {
-                            Parallel.ForEach(keyValuePairs, async packageValue => {
-                                try {
-                                    await _takePackageSlim.WaitAsync(stoppingToken);
-                                    //获取包裹信息
-                                    var updateEvent = packageValue.Value.PackageExitUpdateItems.FirstOrDefault(f =>
-                                        f.InstructionType == InstructionType.SendSorting);
-                                    if (packageValue.Value.PackageInfo is not null &&
-                                        updateEvent is not null) {
-                                        //推送
-                                        EventAggregator.Instance.Publish(new PushAlternateExitSorterEvent() {
-                                            PackageInfo = packageValue.Value.PackageInfo,
-                                            LockTime = packageValue.Value.PackageExitUpdateItems
-                                                           .FirstOrDefault(
-                                                               f => f.InstructionType == InstructionType.PackageExceptionEx)
-                                                           ?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime ??
-                                                       DateTime.Now,
-                                            OriginalExitId = updateEvent.ExitId,
-                                            OriginalExitName = updateEvent.ExitName
-                                        });
-                                        packageValue.Value.WasPushedAlternateExitSorter = true;
-                                    }
-                                }
-                                finally {
-                                    _takePackageSlim.Release();
-                                }
-                            });
-                        }*/
-
                             //获取包裹
                             var pairs = _packageSubmissionPushItems?.Any(f => f.Value.PackageExitUpdateItems?.Any() == true
                                                                               && f.Value.PackageInfo is not null) == true
@@ -769,7 +292,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         ReportProgress(packageValue, uploader, stoppingToken);
                                     }
                                 });
-                                */
+                                #1#
 
                                     foreach (var pair in pairs) {
                                         ReportProgress(pair, _submissionUploader, stoppingToken);
@@ -804,7 +327,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             break;
                                     }
                                 }, stoppingToken);
-                            }
+                            }*/
                         }
                         catch (Exception e) {
                             LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -818,118 +341,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //上传类型
             _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
 
-            //默认接口
-            var defaultentity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>("DefaultApiParameters") ?? new DefaultApiDto();
-            _defaultApiParameters = new DefaultApi.DefaultApiParameters() {
-                CompleteMatch = defaultentity.CompleteMatch,
-                IsUseJsonUpload = defaultentity.IsUseJsonUpload,
-                JsonTemplate = defaultentity.JsonTemplate,
-                RegularExpression = defaultentity.RegularExpression,
-                StringContains = defaultentity.StringContains,
-                Timeout = defaultentity.Timeout,
-                StringTemplate = defaultentity.StringTemplate,
-                Url = defaultentity.Url,
-                ValidationMode = (int)defaultentity.ValidationMode,
-            };
-            //神州
-            var szjyEntity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>("SzjyApiParameters") ?? new SzjyApiDto();
-            _szjyApiParam = new SzjyApi.ApiParameter() {
-                Machine = szjyEntity.Machine,
-                Password = szjyEntity.Password,
-                TimeOut = szjyEntity.TimeOut,
-                UserName = szjyEntity.UserName,
-                Url = szjyEntity.Url,
-            };
+            //重新实例化
+            _submissionUploader = CreateInstanceByApiName(_apiSettingsDto.ApiName);
+            if (_submissionUploader is not null) {
+                //设置参数
+                var parametersName = GetParametersName(_submissionUploader.GetType());
 
-            //旺店通Wms
-            var wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>("WdtWmsApiParameters") ?? new WdtWmsApiDto();
-
-            _wdtWmsApiParameter = new WdtWmsApi.ApiParameter {
-                AppKey = wdtWmsApiDto.AppKey,
-                AppSecret = wdtWmsApiDto.AppSecret,
-                TimeOut = wdtWmsApiDto.TimeOut,
-                Method = wdtWmsApiDto.Method,
-                Url = wdtWmsApiDto.Url,
-                Sid = wdtWmsApiDto.Sid,
-                MustIncludeBoxBarcode = wdtWmsApiDto.MustIncludeBoxBarcode
-            };
-            //旺店通旗舰版
-            var wdtFlagshipApiDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>("WdtFlagshipApiParameters") ?? new WdtFlagshipApiDto();
-
-            _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter {
-                TimeOut = wdtFlagshipApiDto.TimeOut,
-                Method = wdtFlagshipApiDto.Method,
-                Url = wdtFlagshipApiDto.Url,
-                Sid = wdtFlagshipApiDto.Sid,
-                Appsecret = wdtFlagshipApiDto.Appsecret,
-                Force = wdtFlagshipApiDto.Force,
-                Key = wdtFlagshipApiDto.Key,
-                OperateTableName = wdtFlagshipApiDto.OperateTableName,
-                PackagerId = wdtFlagshipApiDto.PackagerId,
-                Salt = wdtFlagshipApiDto.Salt,
-                V = wdtFlagshipApiDto.V
-            };
-            //极兔
-            _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>("JtExpressApiParameters") ?? new JtExpressDto();
-            _jtExpressApiParam = new JtExpressApi.ApiParameter {
-                AppSecret = _jtExpressDto.AppSecret,
-                AppKey = _jtExpressDto.AppKey,
-                BusinessType = (JtExpressApi.BusinessType)_jtExpressDto.BusinessType,
-                Password = _jtExpressDto.Password,
-                ScanPda = _jtExpressDto.ScanPda,
-                ScanType = _jtExpressDto.ScanType,
-                ScanTypeCode = _jtExpressDto.ScanTypeCode,
-                SegmentCodeTimeOut = _jtExpressDto.SegmentCodeTimeOut,
-                SegmentCodeUrl = _jtExpressDto.SegmentCodeUrl,
-                TimeOut = _jtExpressDto.TimeOut,
-                TransportTypeCode = _jtExpressDto.TransportTypeCode,
-                Url = _jtExpressDto.Url,
-                UserName = _jtExpressDto.UserName,
-                WeightFlag = _jtExpressDto.WeightFlag,
-                InterceptorEnabled = _jtExpressApiParam.InterceptorEnabled
-            };
-            //络道科技Api
-            var routDataApiDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();
-            _rstDataApiParam = new RoutDataApi.ApiParameters() {
-                Url = routDataApiDto.Url,
-                TimeOut = routDataApiDto.TimeOut,
-                DeviceCode = routDataApiDto.DeviceCode,
-                RetryCount = routDataApiDto.RetryCount,
-                RetryInterval = routDataApiDto.RetryInterval,
-                SignKey = routDataApiDto.SignKey,
-                OrgCode = routDataApiDto.OrgCode
-            };
-            //菜鸟Api
-            var caiNiaoApiDto = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>("CaiNiaoApiParameters") ?? new CaiNiaoApiDto();
-
-            _caiNiaoApiParam = new CaiNiaoApi.ApiParameters() {
-                BcrName = caiNiaoApiDto.BcrName,
-                BcrCode = caiNiaoApiDto.BcrCode,
-                Source = caiNiaoApiDto.Source,
-                TimeOut = caiNiaoApiDto.TimeOut,
-                Url = caiNiaoApiDto.Url,
-                Version = caiNiaoApiDto.Version
-            };
-            //海通智运Api
-            var eshippingitApiDto = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>("EshippingitApiParameters") ?? new EshippingitApiDto();
-            _eshippingitApiParam = new EshippingitApi.ApiParameters() {
-                Authorization = eshippingitApiDto.Authorization,
-                BucketName = eshippingitApiDto.BucketName,
-                Domain = eshippingitApiDto.Domain,
-                Endpoint = eshippingitApiDto.Endpoint,
-                RetryCount = eshippingitApiDto.RetryCount,
-                RetryInterval = eshippingitApiDto.RetryInterval,
-                TimeOut = eshippingitApiDto.TimeOut,
-                Machine = eshippingitApiDto.Machine
-            };
-
-            _submissionUploader = _apiSettingsDto?.Type switch {
-                ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
-                ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
-                ApiType.PostInApi => new PostInApi(_httpClientFactory),
-                ApiType.PostApi => new PostApi(_httpClientFactory),
-                _ => null
-            };
+                var defaultEntity = await CallConfigRepositoryFirstOrDefaultEntity(_submissionUploader.Parameters.GetType(), parametersName);
+                _submissionUploader.SetParameters(defaultEntity ?? new object());
+            }
         }
 
         private KeyValuePair<int, CaiNiaoExitInfo> CaiNiaoStatusConvert(string barcode, List<PackageExitUpdateEvent> packageExitItems) {
@@ -968,201 +388,65 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
         }
 
-        private async void ReportProgress(KeyValuePair<long, PackageSubmissionPushInfo> packageValue,
-            IDataUploader uploader, CancellationToken token) {
+        public IApiUploader<BaseApiParameters>? CreateInstanceByApiName(string apiName) {
             try {
-                await _takePackageSlim.WaitAsync(token);
-                //提交
-                if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
-                    switch (_apiSettingsDto?.Type) {
-                        case ApiType.CaiNiaoApi:
-                            //实时方案
-                            /*if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
-                                //实时-超时删除直接不匹配
-                                _packageSubmissionPushItems?.TryRemove(packageValue);
-                                NLog.LogManager.GetCurrentClassLogger().Error($"待提交的单号:{packageValue.Value.PackageInfo.BarCodeInfo?.Barcode},格口:[{packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f => f.InstructionType == InstructionType.CreatePackage)?.ExitName}],超过等待回调时间");
-                                return;
-                            }
-                            //判断状态有完成再提交
-                            if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback &&
-                                    a.InstructionType == InstructionType.PackageExceptionEx) != true) {
-                                return;
-                            }
-                            NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
-                            var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                            if (key) {
-                                var caiNiaoStatusConvert = CaiNiaoStatusConvert(
-                                    packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                    packageValue.Value.PackageExitUpdateItems);
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                    packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                        CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                    }, other: new ReportChuteInfo {
-                                        ChuteCode = packageValue.Value.PackageExitUpdateItems?.LastOrDefault()?.ExitName ?? string.Empty,
-                                        ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
-                                        ErrorReson = caiNiaoStatusConvert.Value,
-                                        Status = caiNiaoStatusConvert.Key,
-                                    }, token: stoppingToken);
-                            }
-                            else {
-                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                            }*/
-                            //延迟方案
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
-                                //超时删除直接不匹配
-                                /*do {
-                                    if (_packageSubmissionPushItems?.ContainsKey(packageValue.Key) == true) {
-                                        isRemove = _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _) ?? false;
-                                    }
-                                    else {
-                                        break;
-                                    }
-                                    await Task.Delay(5, token);
-                                } while (isRemove);*/
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            //创建时间大于23s再提交
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 23 ||
-                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
-                                    a.InstructionType == InstructionType.SendSorting) != true) {
-                                return;
-                            }
+                var interfaceType = typeof(IApiUploader<>);
+                var types = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .Where(t => t is { IsClass: true, IsAbstract: false })
+                    .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType))
+                    .ToList();
 
-                            NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
-
-                            var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-
-                            if (key) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    var caiNiaoStatusConvert = CaiNiaoStatusConvert(
-                                        packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                        packageValue.Value.PackageExitUpdateItems);
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                            CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        }, other: new ReportChuteInfo {
-                                            ChuteCode = caiNiaoStatusConvert.Value.ChuteCode,
-                                            ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
-                                            ErrorReson = caiNiaoStatusConvert.Value.ErrorReson,
-                                            Status = caiNiaoStatusConvert.Key,
-                                        }, token: token);
-                                }
-                            }
-                            else {
-                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                            }
-
-                            break;
-
-                        case ApiType.JtExpressApi:
-                            if (_jtExpressDto.IsUploadAfterReturn && packageValue.Value.PackageExitUpdateItems.Any(a => a.Type == ExitType.AbnormalExit)) {
-                                //删除这条
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            if (packageValue.Value.ApiResponse.UploadResponse is null || DateTime.Now.Subtract(packageValue.Value.ApiResponse.UploadResponse.ResponseTime).TotalSeconds < 2) {
-                                return;
-                            }
-
-                            var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
-                            if (keyValuePair.Key) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
-                                }
-                            }
-                            else {
-                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                            }
-
-                            break;
-
-                        case ApiType.PostInApi:
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 100) {
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 80 ||
-                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
-                                    a.InstructionType == InstructionType.SendSorting) != true) {
-                                return;
-                            }
-                            var (b, s) = await uploader.SetParameters(_postInApiParam);
-                            if (b) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
-                                }
-                            }
-                            break;
-
-                        case ApiType.PostApi:
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 35 ||
-                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
-                                    a.InstructionType == InstructionType.SendSorting) != true) {
-                                return;
-                            }
-
-                            var valuePair = await uploader.SetParameters(_postApiParam);
-                            if (valuePair.Key) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
-                                }
-                            }
-                            break;
+                foreach (var type in types) {
+                    var apiNameAttribute = type.GetCustomAttribute<ApiClassAttribute>();
+                    if (apiNameAttribute != null && apiNameAttribute.Name == apiName) {
+                        var constructor = type.GetConstructor(new[] { typeof(IHttpClientFactory) });
+                        if (constructor != null) {
+                            var instance = (IApiUploader<BaseApiParameters>)constructor.Invoke(new object[] { _httpClientFactory });
+                            return instance;
+                        }
                     }
-                    //判断推送锁格(条码、原格口、包裹信息)
-                    //推送集包信息
-                    EventAggregator.Instance.Publish(new PushPackageInfo() {
-                        PackageInfo = packageValue.Value.PackageInfo ?? new PackageInfo(),
-                        PackageExitUpdateEvent = packageValue.Value.PackageExitUpdateItems?.LastOrDefault() ?? new PackageExitUpdateEvent(),
-                        SignalCallbackTime = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.InstructionType is InstructionType.SignalCallback or InstructionType.PackageExceptionEx)?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime
-                    });
-                    //删除这条
-
-                    /*do {
-                        if (_packageSubmissionPushItems?.ContainsKey(packageValue.Key) == true) {
-                            isRemove = _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _) ?? false;
-                        }
-                        else {
-                            break;
-                        }
-                        await Task.Delay(5, token);
-                    } while (isRemove);*/
-                    _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                 }
             }
-            finally {
-                _takePackageSlim.Release();
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
+
+            return null;
+        }
+
+        private async Task<object?> CallConfigRepositoryFirstOrDefaultEntity(Type apiParametersType, string settingsName, CancellationToken token = default) {
+            try {
+                // 获取方法信息
+                var method = typeof(ConfigRepository).GetMethod("FirstOrDefaultEntity");
+
+                // 创建泛型方法
+                var genericMethod = method.MakeGenericMethod(apiParametersType);
+
+                // 调用泛型方法
+                var resultTask = (Task)genericMethod.Invoke(_configRepository, new object[] { settingsName, token });
+
+                // 等待任务完成
+                if (resultTask != null) {
+                    await resultTask;
+
+                    // 获取任务结果
+                    var resultProperty = resultTask.GetType().GetProperty("Result");
+                    var result = resultProperty?.GetValue(resultTask);
+
+                    return result;
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+
+            return null;
+        }
+
+        private string? GetParametersName(Type type) {
+            var attribute = type.GetCustomAttribute<ApiClassAttribute>();
+            return attribute?.ParametersName;
         }
 
         public class SubmitItemInfo {

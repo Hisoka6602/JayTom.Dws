@@ -12,13 +12,15 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection.PortableExecutable;
+using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface {
 
-    [ApiClass("默认Api", "DefaultApi")]
+    [ApiClass("默认Api", "DefaultApi", "DefaultApiParameter", "1.0")]
     public class DefaultApi : IApiUploader<DefaultApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -131,8 +133,9 @@ namespace JayTom.Dws.Interface {
 
         public ApiParameters Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameters parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -249,7 +252,8 @@ namespace JayTom.Dws.Interface {
                     RequestTime = requestTime,
                     RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -265,19 +269,50 @@ namespace JayTom.Dws.Interface {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendSortingReport
+            });
         }
 
         public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
     }
 }

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using Image = System.Drawing.Image;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Interface.Cloud;
 
 namespace JayTom.Dws.Interface.Cloud.CloudVideo {
 

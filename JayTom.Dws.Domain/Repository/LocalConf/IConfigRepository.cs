@@ -11,7 +11,7 @@ namespace JayTom.Dws.Domain.Repository.LocalConf {
         /// <param name="keyName"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T?> FirstOrDefaultEntity<T>(string keyName, CancellationToken token = default) where T : class;
+        Task<T> FirstOrDefaultEntity<T>(string keyName, CancellationToken token = default) where T : class, new();
 
         /// <summary>
         /// 读取对象Json

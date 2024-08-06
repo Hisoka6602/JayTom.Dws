@@ -8,19 +8,22 @@ using Newtonsoft.Json.Linq;
 using System.IO.Compression;
 using System.Net.Http.Headers;
 using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Domain.Interface;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface.ApiImplementations.Routdata {
 
-    [ApiClass("络道科技Api", "RoutDataApi", "1.0", ExecutionType.UploadInformation)]
+    [ApiClass("络道科技Api", "RoutDataApi", "RoutDataApiParameters", "1.0", ExecutionType.UploadInformation)]
     public class RoutDataApi : IApiUploader<RoutDataApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameters parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -62,6 +65,7 @@ namespace JayTom.Dws.Interface.ApiImplementations.Routdata {
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
+            callApiMethod.ExecutionType = ExecutionType.UploadInformation;
             return callApiMethod;
         }
 
@@ -75,19 +79,50 @@ namespace JayTom.Dws.Interface.ApiImplementations.Routdata {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendSortingReport
+            });
         }
 
         public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
 
         public RoutDataApi(IHttpClientFactory httpClientFactory) {

@@ -8,6 +8,7 @@ namespace JayTom.Dws.Domain.Dto {
 
     public class ApiSettingsDto {
         public ApiType Type { get; set; } = ApiType.None;
+        public string ApiName { get; set; } = string.Empty;
     }
 
     public enum ApiType {

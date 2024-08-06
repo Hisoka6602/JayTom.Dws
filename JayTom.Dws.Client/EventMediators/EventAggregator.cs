@@ -12,7 +12,7 @@ using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 
 namespace JayTom.Dws.Client.EventMediators {
 
-    public class EventAggregator {
+    public class EventAggregator1 {
         private static readonly Lazy<EventAggregator> _instance = new(() => new EventAggregator());
 
         public static EventAggregator Instance => _instance.Value;

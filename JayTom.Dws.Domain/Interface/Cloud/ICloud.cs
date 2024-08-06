@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Drawing;
+﻿using System.Drawing;
 using System.ComponentModel;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace JayTom.Dws.Interface.Cloud {
+namespace JayTom.Dws.Domain.Interface.Cloud {
 
     public interface ICloud {
 

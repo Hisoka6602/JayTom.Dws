@@ -10,21 +10,24 @@ using System.Threading.Tasks;
 using System.Security.Policy;
 using System.Collections.Generic;
 using Org.BouncyCastle.Asn1.Ocsp;
+using JayTom.Dws.Domain.Interface;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
+using JayTom.Dws.Domain.Interface.Attributes;
 using static JayTom.Dws.Interface.ApiImplementations.CaiNiao.CaiNiaoApi;
 
 namespace JayTom.Dws.Interface.ApiImplementations.CaiNiao {
 
-    [ApiClass("菜鸟Api", "CaiNiaoApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.SendConsolidationReport)]
+    [ApiClass("菜鸟Api", "CaiNiaoApi", "CaiNiaoApiParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.SendConsolidationReport)]
     public class CaiNiaoApi : IApiUploader<ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameters parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -120,7 +123,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.CaiNiao {
                     RequestTime = requestTime,
                     RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -204,7 +208,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.CaiNiao {
                         RequestTime = requestTime,
                         RequestUrl = Parameters.Url,
                         ResponseContent = resultContent,
-                        ResponseTime = DateTime.Now
+                        ResponseTime = DateTime.Now,
+                        ExecutionType = ExecutionType.SendSortingReport
                     };
                 }
             }
@@ -216,7 +221,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.CaiNiao {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public async Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
@@ -278,11 +285,37 @@ namespace JayTom.Dws.Interface.ApiImplementations.CaiNiao {
                     RequestTime = requestTime,
                     RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.SendConsolidationReport
                 };
             }
 
             return response;
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
 
         public CaiNiaoApi(IHttpClientFactory httpClientFactory) {

@@ -13,23 +13,25 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Excel;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using static System.Net.Mime.MediaTypeNames;
+using JayTom.Dws.Domain.Interface.Attributes;
 using MD5 = System.Security.Cryptography.MD5;
 using JsonException = Newtonsoft.Json.JsonException;
 using static JayTom.Dws.Interface.ApiImplementations.Szjy188.SzjyApi;
 
 namespace JayTom.Dws.Interface.ApiImplementations.Jtexpress {
 
-    [ApiClass("极兔Api", "JtExpressApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    [ApiClass("极兔Api", "JtExpressApi", "JtExpressApiParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
     public class JtExpressApi : IApiUploader<JtExpressApi.ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameter Parameters { get; set; } = new();
 
-        public bool SetParameters(ApiParameter parameters) {
+        public bool SetParameters(object parameters) {
             if (_excelDeliveryCodes?.Any() != true) {
                 //判断文件是否存在
                 var path = $"{AppContext.BaseDirectory}ApiSettingJson\\JtThreeSegmentCodeRout";
@@ -60,8 +62,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.Jtexpress {
                     }
                 }
             }
+            if (parameters is not ApiParameter param) return false;
 
-            Parameters = parameters;
+            Parameters = param;
             return true;
         }
 
@@ -69,7 +72,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.Jtexpress {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return await GenerateSegmentCode(barcode);
+            var response = await GenerateSegmentCode(barcode);
+            response.ExecutionType = ExecutionType.UploadInformation;
+            return response;
         }
 
         public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
@@ -121,19 +126,50 @@ namespace JayTom.Dws.Interface.ApiImplementations.Jtexpress {
                 }
             }
 
-            return new UploadResponse();
+            return new UploadResponse() {
+                ExecutionType = ExecutionType.SendSortingReport
+            };
         }
 
         public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
-            double width = default, double height = default, double volume = default, long packageId = default,
-            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
-            CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+         double width = default, double height = default, double volume = default, long packageId = default,
+         UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+         CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
 
         public static JtExpressUserInfo UserInfo { get; set; } = new();

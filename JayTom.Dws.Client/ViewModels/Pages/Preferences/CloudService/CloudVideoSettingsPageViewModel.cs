@@ -21,6 +21,7 @@ using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Domain.Interface.Cloud;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.LogsItemModels;

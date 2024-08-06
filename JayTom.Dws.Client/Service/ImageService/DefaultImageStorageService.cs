@@ -12,6 +12,7 @@ using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Domain.Converters;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;

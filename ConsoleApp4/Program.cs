@@ -7,7 +7,6 @@ using System.Configuration;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Interface.Post;
-using JayTom.Dws.Interface.geek_;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;

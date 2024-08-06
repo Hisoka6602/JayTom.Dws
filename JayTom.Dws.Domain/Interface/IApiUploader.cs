@@ -1,13 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using System.Drawing;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Interface.Attributes;
 
-namespace JayTom.Dws.Interface {
+namespace JayTom.Dws.Domain.Interface {
 
-    public interface IApiUploader<T> where T : BaseApiParameters, new() {
+    public interface IApiUploader<out T> where T : BaseApiParameters, new() {
 
         /// <summary>
         /// 参数
@@ -18,7 +15,7 @@ namespace JayTom.Dws.Interface {
         /// <summary>
         /// 设置参数
         /// </summary>
-        bool SetParameters(T parameters);
+        bool SetParameters(object parameters);
 
         /// <summary>
         /// 上传信息请求接口
@@ -48,6 +45,39 @@ namespace JayTom.Dws.Interface {
         /// 发送集包报告
         /// </summary>
         Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems, object? other = null, CancellationToken token = default);
+
+        /// <summary>
+        /// 发送图片
+        /// </summary>
+        Task<UploadResponse> SendImage(
+            [NotNull] string barcode,
+            List<UploadImageInfo> uploadImagesInfos,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 发送锁格指令
+        /// </summary>
+        Task<UploadResponse> SendLockCommand(
+            [NotNull] string lockIdentifier,
+            object? other = null,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 发送解除锁格指令
+        /// </summary>
+        Task<UploadResponse> SendUnlockCommand(
+            [NotNull] string lockIdentifier,
+            object? other = null,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 发送设备信息报告
+        /// </summary>
+        Task<UploadResponse> SendDeviceReport(
+            string deviceIdentifier,
+            string deviceStatus,
+            object? other = null,
+            CancellationToken token = default);
     }
 
     public class UploadResponse {
@@ -101,6 +131,11 @@ namespace JayTom.Dws.Interface {
         /// Api异常类型
         /// </summary>
         public ApiExceptionType ApiExceptionType { get; set; } = ApiExceptionType.None;
+
+        /// <summary>
+        /// 执行类型
+        /// </summary>
+        public ExecutionType ExecutionType { get; set; }
     }
 
     public enum ApiExceptionType {
@@ -134,5 +169,28 @@ namespace JayTom.Dws.Interface {
         /// 其他
         /// </summary>
         Other = 5
+    }
+
+    public class UploadImageInfo {
+
+        /// <summary>
+        /// 图片
+        /// </summary>
+        public Image? Image { get; set; }
+
+        /// <summary>
+        /// 相机序列号
+        /// </summary>
+        public string CameraSerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机名称
+        /// </summary>
+        public string CameraName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机自定义名称
+        /// </summary>
+        public string CameraCustomName { get; set; } = string.Empty;
     }
 }

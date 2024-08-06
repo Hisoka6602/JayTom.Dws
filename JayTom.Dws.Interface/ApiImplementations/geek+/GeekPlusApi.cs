@@ -1,35 +1,26 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
-using System.Net.Http;
-using System.Threading;
-using NPOI.POIFS.Crypt;
 using System.Diagnostics;
-using TouchSocket.Sockets;
-using Newtonsoft.Json.Linq;
 using System.Globalization;
-using System.Threading.Tasks;
-using System.Security.Policy;
+using Newtonsoft.Json.Linq;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
-using System.Collections.Generic;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Domain.Interface;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
-using JayTom.Dws.Interface.ApiImplementations;
+using JayTom.Dws.Domain.Interface.Attributes;
 
-namespace JayTom.Dws.Interface.geek_ {
+namespace JayTom.Dws.Interface.ApiImplementations.geek_ {
 
-    [ApiClass("Geek+", "GeekPlusApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    [ApiClass("Geek+", "GeekPlusApi", "GeekPlusParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
     public class GeekPlusApi : IApiUploader<GeekPlusApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameters parameters) {
+        public bool SetParameters(object parameters) {
             lock (SettingLock) {
                 try {
                     IConfiguration configuration = new ConfigurationBuilder()
@@ -137,7 +128,8 @@ namespace JayTom.Dws.Interface.geek_ {
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters?.Url}{method}",
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -251,7 +243,8 @@ namespace JayTom.Dws.Interface.geek_ {
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters?.Url}{method}",
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.SendSortingReport
                 };
             }
 
@@ -262,12 +255,41 @@ namespace JayTom.Dws.Interface.geek_ {
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
 
         public object SettingLock { get; private set; } = new();

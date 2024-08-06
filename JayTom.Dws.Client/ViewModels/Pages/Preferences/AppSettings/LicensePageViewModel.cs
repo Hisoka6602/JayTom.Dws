@@ -20,6 +20,7 @@ using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Interface.License;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Domain.Interface.License;
 using JayTom.Dws.Client.Models.AppSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {

@@ -12,13 +12,19 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
+using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
 

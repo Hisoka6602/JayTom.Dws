@@ -1,21 +1,16 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Drawing;
+﻿using System.Text;
 using Newtonsoft.Json;
-using System.Net.Http;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
-using JayTom.Dws.Interface.ApiImplementations;
+using JayTom.Dws.Domain.Interface.Attributes;
 
-namespace JayTom.Dws.Interface.Wdt {
+namespace JayTom.Dws.Interface.ApiImplementations.Wdt {
 
-    [ApiClass("旺店通Wms-Api", "WdtWmsApi", "1.0", ExecutionType.UploadInformation)]
+    [ApiClass("旺店通Wms-Api", "WdtWmsApi", "WdtWmsApiParameter", "1.0", ExecutionType.UploadInformation)]
     public class WdtWmsApi : IApiUploader<WdtWmsApi.ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -37,8 +32,9 @@ namespace JayTom.Dws.Interface.Wdt {
 
         public ApiParameter Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameter parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameter param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -148,7 +144,8 @@ namespace JayTom.Dws.Interface.Wdt {
                     RequestTime = requestTime,
                     RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -176,6 +173,23 @@ namespace JayTom.Dws.Interface.Wdt {
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
             return Task.FromResult(new UploadResponse());
         }
     }

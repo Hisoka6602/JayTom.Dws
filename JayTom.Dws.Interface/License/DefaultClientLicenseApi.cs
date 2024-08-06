@@ -7,8 +7,10 @@ using Newtonsoft.Json;
 using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface.License;
 
 namespace JayTom.Dws.Interface.License {
+
     public class DefaultClientLicenseApi : IClientLicenseApi {
         private readonly IHttpClientFactory _httpClientFactory;
 

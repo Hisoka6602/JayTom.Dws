@@ -5,9 +5,11 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
 
 namespace JayTom.Dws.Interface {
+
     public class NetworkTime : INetworkTime {
         private readonly IHttpClientFactory _httpClientFactory;
 

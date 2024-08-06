@@ -12,20 +12,22 @@ using SixLabors.ImageSharp;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using Image = System.Drawing.Image;
-using JayTom.Dws.Interface.Routdata;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
 
-    [ApiClass("海通智运Api", "EshippingitApi", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    [ApiClass("海通智运Api", "EshippingitApi", "EshippingitApiParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
     public class EshippingitApi : IApiUploader<EshippingitApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameters parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -125,19 +127,50 @@ namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
                 await PolicyPush(barcode, scanTime, imageInfo.Image, token);
                 imageInfo?.Image?.Dispose();
             }
-            return new UploadResponse();
+            return new UploadResponse() {
+                ExecutionType = ExecutionType.SendSortingReport
+            };
         }
 
         public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
         }
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse());
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
 
         public static OssParameters? OssParam { get; private set; }

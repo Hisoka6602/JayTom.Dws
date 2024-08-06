@@ -5,6 +5,7 @@ using System.Diagnostics;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
+using JayTom.Dws.Domain.Interface;
 using System.Collections.Concurrent;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
@@ -322,6 +323,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// 供包台信号类型
         /// </summary>
         public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
+
+        /// <summary>
+        /// 接口返回内容
+        /// </summary>
+        public List<UploadResponse> UploadResponses { get; set; } = new();
 
         /// <summary>
         /// 灰度仪信息

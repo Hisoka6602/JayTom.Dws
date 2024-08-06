@@ -12,16 +12,17 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Szjy188;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface.ApiImplementations.WeciMexicoDv {
 
     /// <summary>
     /// 卫慈-墨西哥dv60
     /// </summary>
-    [ApiClass("卫慈-墨西哥-Api", "WeciMexicoDvApi", "1.0", ExecutionType.UploadInformation)]
+    [ApiClass("卫慈-墨西哥-Api", "WeciMexicoDvApi", "WeciMexicoDvApiParameter", "1.0", ExecutionType.UploadInformation)]
     public class WeciMexicoDvApi : IApiUploader<WeciMexicoDvApi.ApiParameter> {
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -39,8 +40,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.WeciMexicoDv {
 
         public ApiParameter Parameters { get; private set; } = new();
 
-        public bool SetParameters(ApiParameter parameters) {
-            Parameters = parameters;
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameter param) return false;
+            Parameters = param;
             return true;
         }
 
@@ -128,7 +130,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.WeciMexicoDv {
                     RequestTime = requestTime,
                     RequestUrl = Parameters.Url,
                     ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
                 };
             }
             return response;
@@ -156,6 +159,23 @@ namespace JayTom.Dws.Interface.ApiImplementations.WeciMexicoDv {
 
         public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse());
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
             return Task.FromResult(new UploadResponse());
         }
     }

@@ -3,15 +3,20 @@ using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
+using System.Reflection;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
+using NPOI.SS.Formula.Functions;
+using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Interface.Attributes;
 using JayTom.Dws.Client.Models.ApiSettingsModel;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
@@ -20,79 +25,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
     public class ApiSettingsPageViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
 
-        private ObservableCollection<ApiTypeInfoModel> _apiTypeItems = new()
-        {
-            new ApiTypeInfoModel()
-            {
-                Name = Languages.Language.ResourceManager.GetString("NoneApi")??string.Empty,
-                Value = ApiType.None
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = Languages.Language.ResourceManager.GetString("DefaultApi")??string.Empty,
-                Value = ApiType.DefaultApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "SunnenApi",
-                Value = ApiType.SunnenApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "旺店通WMS",
-                Value = ApiType.WdtWmsApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "旺店通ERP旗舰版",
-                Value = ApiType.WdtErpFlagShipApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "神州集运后台接口",
-                Value = ApiType.SzjyApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "筋斗云Wms",
-                Value = ApiType.JdyWms
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "极兔Api接口",
-                Value = ApiType.JtExpressApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "络道科技Api",
-                Value = ApiType.RoutDataApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "Geek+",
-                Value = ApiType.GeekPlusApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "菜鸟Api",
-                Value = ApiType.CaiNiaoApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "海通智运Api",
-                Value = ApiType.EshippingitApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "邮政处理中心Api",
-                Value = ApiType.PostApi
-            },
-            new ApiTypeInfoModel()
-            {
-                Name = "拙燕仓Api",
-                Value = ApiType.ZhuoYanScm
-            },
-        };
+        private ObservableCollection<ApiTypeInfoModel> _apiTypeItems = new();
 
         private ApiTypeInfoModel? _selectApiType = new();
         private SnackbarMessageQueue _apiSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
@@ -100,6 +33,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public ApiSettingsPageViewModel(IConfigRepository configRepository) {
             _configRepository = configRepository;
+            //遍历接口
+            ApiTypeItems.Clear();
+            ApiTypeItems.Add(new ApiTypeInfoModel() {
+                Name = "不使用接口上传",
+                Value = "None"
+            });
+            var interfaceType = typeof(IApiUploader<BaseApiParameters>);
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(t => interfaceType.IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false })
+                .ToList();
+
+            var apiTypeInfoModels = types.Select(s => new ApiTypeInfoModel {
+                Name = $"{s.GetCustomAttribute<ApiClassAttribute>()?.DisplayName ?? string.Empty}({s.GetCustomAttribute<ApiClassAttribute>()?.Version ?? string.Empty})",
+                Value = s.GetCustomAttribute<ApiClassAttribute>()?.Name ?? string.Empty
+            })?.ToList() ?? new List<ApiTypeInfoModel>();
+            ApiTypeItems.AddRange(apiTypeInfoModels);
         }
 
         public SnackbarMessageQueue ApiSettingsMessageQueue {
@@ -123,11 +73,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = "ApiSettings",
                 Value = JsonConvert.SerializeObject(new ApiSettingsDto() {
-                    Type = SelectApiType?.Value ?? ApiType.None
+                    ApiName = SelectApiType?.Value ?? string.Empty,
                 })
             });
             if (!insertOrUpdate) {
-                SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == ApiType.None);
+                SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == string.Empty);
                 ApiSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("切换Api接口失败") ?? string.Empty}");
             }
             else {
@@ -140,9 +90,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 页面加载完成
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
@@ -150,7 +98,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
-                    SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.Type);
+                    SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.ApiName);
                 });
             }
         }

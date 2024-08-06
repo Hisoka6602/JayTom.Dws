@@ -5,7 +5,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel {
 
     public class ApiTypeInfoModel : BindableBase {
         private string _name = string.Empty;
-        private ApiType _value = ApiType.None;
+        private string _value = string.Empty;
 
         /// <summary>
         /// 名称
@@ -18,7 +18,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel {
         /// <summary>
         /// 实际内容
         /// </summary>
-        public ApiType Value {
+        public string Value {
             get => _value;
             set => SetProperty(ref _value, value);
         }
