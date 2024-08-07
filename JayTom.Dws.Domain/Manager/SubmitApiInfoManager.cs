@@ -22,6 +22,8 @@ namespace JayTom.Dws.Domain.Manager {
 
         public static event EventHandler<UploadResponse>? ConsolidationReportEvent;
 
+        public static event EventHandler<IApiUploader<BaseApiParameters>>? ApiUploaderChanged;
+
         public static async Task<IApiUploader<BaseApiParameters>?> ApiInitialization(IHttpClientFactory httpClientFactory, string apiName,
             IConfigRepository configRepository, CancellationToken token = default) {
             _submissionUploader = CreateInstanceByApiName(httpClientFactory, apiName);
@@ -30,6 +32,7 @@ namespace JayTom.Dws.Domain.Manager {
                 var parametersName = GetParametersName(_submissionUploader.GetType());
                 var defaultEntity = await CallConfigRepositoryFirstOrDefaultEntity(configRepository, _submissionUploader.Parameters.GetType(), parametersName, token);
                 _submissionUploader.SetParameters(defaultEntity ?? new object());
+                OnApiUploaderChanged(_submissionUploader);
             }
 
             return _submissionUploader;
@@ -321,6 +324,10 @@ namespace JayTom.Dws.Domain.Manager {
 
         private static void OnConsolidationReportEvent(UploadResponse e) {
             ConsolidationReportEvent?.Invoke(null, e);
+        }
+
+        private static void OnApiUploaderChanged(IApiUploader<BaseApiParameters> e) {
+            ApiUploaderChanged?.Invoke(null, e);
         }
     }
 

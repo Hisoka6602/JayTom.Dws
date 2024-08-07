@@ -9,6 +9,7 @@ using JayTom.Dws.Domain.Dto;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Interface;
 using System.Collections.ObjectModel;
@@ -27,6 +28,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private ApiTypeInfoModel? _selectApiType = new();
         private SnackbarMessageQueue _apiSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
+        private bool _isUseLocalConfig;
+        private IApiUploader<BaseApiParameters>? _apiUploader;
 
         public ApiSettingsPageViewModel(IConfigRepository configRepository) {
             _configRepository = configRepository;
@@ -47,6 +50,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Value = s.GetCustomAttribute<ApiClassAttribute>()?.Name ?? string.Empty
             })?.ToList() ?? new List<ApiTypeInfoModel>();
             ApiTypeItems.AddRange(apiTypeInfoModels);
+
+            SubmitApiInfoManager.ApiUploaderChanged += async (sender, uploader) => {
+                _apiUploader = uploader;
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    IsUseLocalConfig =
+                        _apiUploader?.GetType()?.GetCustomAttribute<ApiClassAttribute>()?.UseLocalConfig ?? false;
+                });
+            };
         }
 
         public SnackbarMessageQueue ApiSettingsMessageQueue {
@@ -62,6 +73,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public ApiTypeInfoModel? SelectApiType {
             get => _selectApiType;
             set => SetProperty(ref _selectApiType, value);
+        }
+
+        public bool IsUseLocalConfig {
+            get => _isUseLocalConfig;
+            set => SetProperty(ref _isUseLocalConfig, value);
         }
 
         public ICommand OptionSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(OptionSelectionChangedDelegate);
@@ -82,6 +98,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     SettingsName = "ApiSettings"
                 });
             }
+
+            if (SelectApiType?.Value?.Equals("None", StringComparison.CurrentCultureIgnoreCase) == true) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    IsUseLocalConfig = false;
+                });
+            }
         }
 
         /// <summary>
@@ -98,6 +120,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.ApiName);
                 });
             }
+        }
+
+        public ICommand OpenConfigFileCommand => new DelegateCommand<object>(OpenConfigFileDelegate);
+
+        private void OpenConfigFileDelegate(object obj) {
+            _apiUploader?.OpenJsonConfigFile();
         }
     }
 }
