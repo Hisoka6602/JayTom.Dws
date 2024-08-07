@@ -18,7 +18,6 @@ using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;

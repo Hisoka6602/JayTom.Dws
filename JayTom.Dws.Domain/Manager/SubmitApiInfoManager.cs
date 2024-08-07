@@ -18,12 +18,12 @@ namespace JayTom.Dws.Domain.Manager {
     public static class SubmitApiInfoManager {
         private static IApiUploader<BaseApiParameters>? _submissionUploader;
 
-        public static event EventHandler<PackageInfo>? ApiResponseEvent;
+        public static event EventHandler<PackageUploadResponseEvent>? ApiResponseEvent;
 
         public static event EventHandler<UploadResponse>? ConsolidationReportEvent;
 
         public static async Task<IApiUploader<BaseApiParameters>?> ApiInitialization(IHttpClientFactory httpClientFactory, string apiName,
-            IConfigRepository configRepository, Type apiParametersType, string settingsName, CancellationToken token = default) {
+            IConfigRepository configRepository, CancellationToken token = default) {
             _submissionUploader = CreateInstanceByApiName(httpClientFactory, apiName);
             if (_submissionUploader is not null) {
                 //设置参数
@@ -91,6 +91,15 @@ namespace JayTom.Dws.Domain.Manager {
             return null;
         }
 
+        public static List<string> GetConfigParameterNames() {
+            var interfaceType = typeof(IApiUploader<>);
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(t => interfaceType.IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false });
+            return types?.Where(w => !string.IsNullOrEmpty(w.GetCustomAttribute<ApiClassAttribute>()?.ParametersName))
+                  .Select(s => s.GetCustomAttribute<ApiClassAttribute>()?.ParametersName ?? string.Empty).ToList() ?? new List<string>();
+        }
+
         private static string? GetParametersName(Type type) {
             var attribute = type.GetCustomAttribute<ApiClassAttribute>();
             return attribute?.ParametersName;
@@ -121,12 +130,15 @@ namespace JayTom.Dws.Domain.Manager {
                         CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                     }, token: cancellation);
                 packageInfo.UploadResponses.Add(uploadInformation);
-                OnApiResponseEvent(packageInfo);
+                OnApiResponseEvent(new PackageUploadResponseEvent() {
+                    PackageInfo = packageInfo,
+                    UploadResponse = uploadInformation
+                });
                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                     IsSuccess = uploadInformation?.IsSuccess ?? false,
                     TriggerPosition = TriggerPositionEnum.HttpOutput,
                     Description = "请求格口返回",
-                    PackageInfo = packageInfo
+                    PackageInfo = packageInfo,
                 });
             }
         }
@@ -183,7 +195,10 @@ namespace JayTom.Dws.Domain.Manager {
                         CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                     }, token: cancellation);
                 packageInfo.UploadResponses.Add(uploadInformation);
-                OnApiResponseEvent(packageInfo);
+                OnApiResponseEvent(new PackageUploadResponseEvent() {
+                    PackageInfo = packageInfo,
+                    UploadResponse = uploadInformation
+                });
             }
         }
 
@@ -212,7 +227,10 @@ namespace JayTom.Dws.Domain.Manager {
                         CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                     }, token: cancellation);
                 packageInfo.UploadResponses.Add(uploadInformation);
-                OnApiResponseEvent(packageInfo);
+                OnApiResponseEvent(new PackageUploadResponseEvent() {
+                    PackageInfo = packageInfo,
+                    UploadResponse = uploadInformation
+                });
             }
         }
 
@@ -297,12 +315,17 @@ namespace JayTom.Dws.Domain.Manager {
             }
         }
 
-        private static void OnApiResponseEvent(PackageInfo e) {
+        private static void OnApiResponseEvent(PackageUploadResponseEvent e) {
             ApiResponseEvent?.Invoke(null, e);
         }
 
         private static void OnConsolidationReportEvent(UploadResponse e) {
             ConsolidationReportEvent?.Invoke(null, e);
         }
+    }
+
+    public class PackageUploadResponseEvent : EventArgs {
+        public PackageInfo? PackageInfo { get; set; }
+        public UploadResponse? UploadResponse { get; set; }
     }
 }

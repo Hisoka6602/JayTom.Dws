@@ -9,7 +9,8 @@ using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface.ApiImplementations.zhuoyan_scm {
 
-    [ApiClass("拙燕仓Api", "ZhuoYanScmApi", "ZhuoYanScmApiParameters", "1.0", ExecutionType.UploadInformation)]
+    [ApiClass("拙燕仓Api", "ZhuoYanScmApi", "ZhuoYanScmApiParameters", "1.0",
+        ExecutionType.UploadInformation, true)]
     public class ZhuoYanScmApi : IApiUploader<ZhuoYanScmApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
@@ -35,6 +36,25 @@ namespace JayTom.Dws.Interface.ApiImplementations.zhuoyan_scm {
             }
 
             return true;
+        }
+
+        public void OpenJsonConfigFile() {
+            try {
+                var configFilePath = Path.Combine($"{AppContext.BaseDirectory}",
+                    "ApiSettingJson",
+                    "ZhuoYanScmSettings.json");
+                if (File.Exists(configFilePath)) {
+                    // 使用记事本打开配置文件
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "notepad.exe",
+                        Arguments = configFilePath,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
         }
 
         public async Task<UploadResponse> UploadInformation(string barcode, double weight, DateTime scanTime = default, double length = default,

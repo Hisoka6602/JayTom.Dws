@@ -175,6 +175,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.Wdt {
             return true;
         }
 
+        public void OpenJsonConfigFile() {
+        }
+
         public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,

@@ -46,7 +46,6 @@ using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Domain.Interface.Cloud;

@@ -15,7 +15,6 @@ using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using DateTime = System.DateTime;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using Microsoft.Extensions.Configuration;
 using JayTom.Dws.Domain.Repository.LocalConf;

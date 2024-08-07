@@ -1,67 +1,47 @@
 ﻿using System;
-using DryIoc;
-using System.IO;
 using Prism.Mvvm;
 using System.Linq;
-using MessagePack;
+using JayTom.Dws.Ocr;
 using Prism.Commands;
 using System.Windows;
-using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
-using TouchSocket.Core;
 using JayTom.Dws.Camera;
-using JayTom.Dws.License;
-using System.Diagnostics;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using JayTom.Dws.Data.Package;
+using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalLog;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Domain.Converters;
 using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Interface.License;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Interface.Cloud;
 using JayTom.Dws.Client.Models.DataModels;
-using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.Interface.License;
+using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.Service.ResultOutput;
+using JayTom.Dws.Domain.Interface.Attributes;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.ImageService;
-using JayTom.Dws.Client.Models.LogsItemModels;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using LogType = JayTom.Dws.Data.LocalLog.LogType;
-using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
-using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
-using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
@@ -105,9 +85,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private OcrInfoItemModel _ocrItemInfo = new();
         private bool _isLoaded;
         private CancellationTokenSource _cancellationTokenSource = new();
-        private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
-
-        //private ConcurrentQueue<SortingExitReceived> _sortingExitItems = new();
         private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
 
         private ConcurrentQueue<CloudVideoUploadMessage> _cloudVideoUploadItems = new();
@@ -393,10 +370,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(async info => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(info => {
                 //填充数据到列表
 
-                await Task.Yield();
                 if (info is { } model) {
                     AddNewRow(new PackageItemModel() {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
@@ -459,12 +435,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                if (item is { } model) {
-                    await Task.Yield();
-                    _updateResponseItems.Enqueue(model);
+            SubmitApiInfoManager.ApiResponseEvent += async (sender, info) => {
+                if (info is {
+                    UploadResponse.ExecutionType: ExecutionType.UploadInformation, PackageInfo: not null
+                }) {
+                    await Task.Delay(100);
+                    try {
+                        await _updateSlim.WaitAsync();
+                        var barCodeItemModel =
+                            PackageItems.FirstOrDefault(f => f.TimestampedGuid.Equals(info.PackageInfo.Timestamp));
+                        if (barCodeItemModel is not null) {
+                            Application.Current.Dispatcher.InvokeAsync(() => {
+                                //更新数据
+                                barCodeItemModel.RequestStatus = info.UploadResponse?.IsSuccess == true
+                                    ? UploadStatus.Succeeded
+                                    : UploadStatus.Failed;
+                                barCodeItemModel.UploadInfo = new UploadItemModel() {
+                                    DurationInSeconds = info.UploadResponse?.Duration ?? 0,
+                                    ExceptionMessage = info.UploadResponse?.ExceptionMsg ?? string.Empty,
+                                    InterfaceParameters = info.UploadResponse?.ApiParameters ?? string.Empty,
+                                    IsSuccess = info.UploadResponse?.IsSuccess ?? false,
+                                    RequestContent = info.UploadResponse?.RequestContent ?? string.Empty,
+                                    RequestTime = info.UploadResponse?.RequestTime,
+                                    RequestUrl = info.UploadResponse?.RequestUrl ?? string.Empty,
+                                    ResponseContent = info.UploadResponse?.ResponseContent ?? string.Empty,
+                                    ResponseTime = info.UploadResponse?.ResponseTime
+                                };
+                                if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
+                                    UploadedDataCount += 1;
+                                }
+
+                                if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
+                                    AbnormalDataCount += 1;
+                                }
+                            }, DispatcherPriority.Render);
+                        }
+                    }
+                    finally {
+                        _updateSlim.Release();
+                    }
                 }
-            });
+            };
+
             //更新云视频上传状态
             EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
                 if (item is { } model) {
@@ -498,46 +510,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 new TaskFactory().StartNew(async () => {
                     while (!_cancellationTokenSource.IsCancellationRequested) {
                         await Task.Delay(50).ContinueWith(async a => {
-                            var tryDequeue = _updateResponseItems.TryDequeue(out var updateResponse);
-                            if (tryDequeue && updateResponse is not null) {
-                                try {
-                                    await _updateSlim.WaitAsync();
-                                    var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(updateResponse.Barcode) &&
-                                        f.ScanTime.Equals(updateResponse.ScanTime));
-                                    if (barCodeItemModel is not null) {
-                                        Application.Current.Dispatcher.InvokeAsync(() => {
-                                            //更新数据
-                                            barCodeItemModel.RequestStatus = updateResponse.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-                                            barCodeItemModel.UploadInfo = new UploadItemModel() {
-                                                DurationInSeconds = updateResponse.UploadResponse?.Duration ?? 0,
-                                                ExceptionMessage = updateResponse.UploadResponse?.ExceptionMsg ?? string.Empty,
-                                                InterfaceParameters = updateResponse.UploadResponse?.ApiParameters ?? string.Empty,
-                                                IsSuccess = updateResponse.UploadResponse?.IsSuccess ?? false,
-                                                RequestContent = updateResponse.UploadResponse?.RequestContent ?? string.Empty,
-                                                RequestTime = updateResponse.UploadResponse?.RequestTime,
-                                                RequestUrl = updateResponse.UploadResponse?.RequestUrl ?? string.Empty,
-                                                ResponseContent = updateResponse.UploadResponse?.ResponseContent ?? string.Empty,
-                                                ResponseTime = updateResponse.UploadResponse?.ResponseTime
-                                            };
-                                            if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
-                                                UploadedDataCount += 1;
-                                            }
-                                            if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
-                                                AbnormalDataCount += 1;
-                                            }
-                                        }, DispatcherPriority.Render);
-                                    }
-                                    else {
-                                        if (DateTime.Now.Subtract(updateResponse.ScanTime).TotalSeconds < 10) {
-                                            _updateResponseItems.Enqueue(updateResponse);
-                                        }
-                                    }
-                                }
-                                finally {
-                                    _updateSlim.Release();
-                                }
-                            }
-
                             var dequeue = _packageExitUpdateItems.TryDequeue(out var exitInfo);
                             if (dequeue && exitInfo is not null) {
                                 try {
@@ -972,32 +944,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
                 //item.IsInserting = true;
             }, DispatcherPriority.Background);
-            /*await Task.Run(() => {
-                item.Num = TotalDataCount += 1;
-                Application.Current.Dispatcher.Invoke(() => {
-                    PackageItems.Insert(0, item);
-                    if (PackageItems.Count > 50) {
-                        PackageItems.RemoveAt(PackageItems.Count - 1);
-                    }
-                    //item.IsInserting = true;
-                });
-            });*/
-            /*try {
-                await _updateSlim.WaitAsync();
-                await Task.Run(() => {
-                    item.Num = TotalDataCount += 1;
-                    Application.Current.Dispatcher.Invoke(() => {
-                        PackageItems.Insert(0, item);
-                        if (PackageItems.Count > 500) {
-                            PackageItems.RemoveAt(PackageItems.Count - 1);
-                        }
-                        //item.IsInserting = true;
-                    });
-                });
-            }
-            finally {
-                _updateSlim.Release();
-            }*/
         }
 
         /// <summary>
@@ -1015,7 +961,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 TotalDataCount =
                     UploadedDataCount =
                         AbnormalDataCount = 0;
-                _updateResponseItems.Clear();
                 _packageExitUpdateItems.Clear();
                 _cloudVideoUploadItems.Clear();
             }, DispatcherPriority.Background);

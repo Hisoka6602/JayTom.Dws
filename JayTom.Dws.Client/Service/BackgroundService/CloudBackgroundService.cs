@@ -20,7 +20,6 @@ using JayTom.Dws.Domain.Dto.AppDto;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using JayTom.Dws.Domain.Dto.CloudDto;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Interface.Cloud;
 using JayTom.Dws.Infrastructure.IComputer;
@@ -35,16 +34,11 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using ApiExceptionType = JayTom.Dws.Domain.Interface.ApiExceptionType;
 using InstructionType = JayTom.Dws.Domain.Interface.Cloud.InstructionType;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

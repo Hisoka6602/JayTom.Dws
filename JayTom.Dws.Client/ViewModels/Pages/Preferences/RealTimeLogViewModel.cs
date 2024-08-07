@@ -1,17 +1,10 @@
 ﻿using System;
 using Prism.Mvvm;
-using System.Linq;
-using System.Text;
 using Prism.Commands;
-using System.IO.Ports;
 using System.Threading;
 using System.Windows.Input;
-using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
-using System.Windows.Threading;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Models.LogsItemModels;
 

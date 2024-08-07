@@ -1,5 +1,4 @@
 ﻿using System;
-using DryIoc;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -13,8 +12,8 @@ using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using JayTom.Dws.Data.Package;
+using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.Generic;
@@ -23,9 +22,8 @@ using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Editors;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.PluginInterface.Utils;
 using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
@@ -33,11 +31,10 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;

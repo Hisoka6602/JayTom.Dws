@@ -15,13 +15,16 @@ using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface.ApiImplementations.geek_ {
 
-    [ApiClass("Geek+", "GeekPlusApi", "GeekPlusParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    [ApiClass("Geek+", "GeekPlusApi",
+        "GeekPlusParameters", "1.0",
+        ExecutionType.UploadInformation | ExecutionType.SendSortingReport,
+        true)]
     public class GeekPlusApi : IApiUploader<GeekPlusApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
 
         public bool SetParameters(object parameters) {
-            lock (SettingLock) {
+            lock (Parameters) {
                 try {
                     IConfiguration configuration = new ConfigurationBuilder()
                         .SetBasePath($"{AppContext.BaseDirectory}ApiSettingJson")
@@ -40,6 +43,24 @@ namespace JayTom.Dws.Interface.ApiImplementations.geek_ {
             }
 
             return true;
+        }
+
+        public void OpenJsonConfigFile() {
+            try {
+                var configFilePath = Path.Combine($"{AppContext.BaseDirectory}", "ApiSettingJson",
+                    "GeekPlusApiSetting.json");
+                if (File.Exists(configFilePath)) {
+                    // 使用记事本打开配置文件
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "notepad.exe",
+                        Arguments = configFilePath,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
         }
 
         public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
@@ -291,8 +312,6 @@ namespace JayTom.Dws.Interface.ApiImplementations.geek_ {
                 ExecutionType = ExecutionType.SendDeviceReport
             });
         }
-
-        public object SettingLock { get; private set; } = new();
 
         public GeekPlusApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;

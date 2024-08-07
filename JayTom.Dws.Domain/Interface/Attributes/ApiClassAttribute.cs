@@ -29,6 +29,11 @@
         public string ParametersName { get; }
 
         /// <summary>
+        /// 是否使用本地配置文件
+        /// </summary>
+        public bool UseLocalConfig { get; }
+
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="displayName">显示名称</param>
@@ -36,12 +41,13 @@
         /// <param name="parametersName"></param>
         /// <param name="version">版本号</param>
         /// <param name="execTypes">执行类型</param>
-        public ApiClassAttribute(string displayName, string name, string parametersName, string version = "", ExecutionType execTypes = ExecutionType.UploadInformation) {
+        public ApiClassAttribute(string displayName, string name, string parametersName, string version = "", ExecutionType execTypes = ExecutionType.UploadInformation, bool useLocalConfig = false) {
             DisplayName = displayName;
             Name = name;
             Version = version;
             ExecTypes = execTypes;
             ParametersName = parametersName;
+            UseLocalConfig = useLocalConfig;
         }
     }
 

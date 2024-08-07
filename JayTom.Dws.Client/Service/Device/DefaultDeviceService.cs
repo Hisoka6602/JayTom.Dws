@@ -17,7 +17,6 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -37,7 +36,6 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.Device {
 

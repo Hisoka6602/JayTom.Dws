@@ -31,6 +31,9 @@ namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
             return true;
         }
 
+        public void OpenJsonConfigFile() {
+        }
+
         public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
@@ -119,17 +122,13 @@ namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
             CancellationToken token = default) {
         }
 
-        public async Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+        public Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
             double width = default, double height = default, double volume = default, long packageId = default,
             UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            if (imageInfo?.Image is not null) {
-                await PolicyPush(barcode, scanTime, imageInfo.Image, token);
-                imageInfo?.Image?.Dispose();
-            }
-            return new UploadResponse() {
+            return Task.FromResult(new UploadResponse() {
                 ExecutionType = ExecutionType.SendSortingReport
-            };
+            });
         }
 
         public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
@@ -148,10 +147,16 @@ namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
             });
         }
 
-        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
-            return Task.FromResult(new UploadResponse() {
+        public async Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            var uploadImageInfo = uploadImagesInfos?.FirstOrDefault(f => f.Image != null);
+
+            if (uploadImageInfo?.Image != null) {
+                await PolicyPush(barcode, uploadImageInfo.ScanTime, uploadImageInfo.Image, token);
+                uploadImageInfo?.Image?.Dispose();
+            }
+            return new UploadResponse() {
                 ExecutionType = ExecutionType.SendImage
-            });
+            };
         }
 
         public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {

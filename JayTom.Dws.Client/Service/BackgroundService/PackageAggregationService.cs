@@ -10,16 +10,11 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using PushPackageInfo = JayTom.Dws.Client.EventMediators.PushPackageInfo;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
-using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -41,17 +36,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _packageRepository = packageRepository;
             _exitMonitor = exitMonitor;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            /*EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
-                if (item is CallBackPackageInfo info) {
-                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.PackageCreateTime));
-                    if (key && value is not null) {
-                        //添加包裹到队列
-                        _packageInfoItems.Enqueue(value);
-                    }
-                }
-            });*/
+
             EventAggregator.Instance.Subscribe<PushPackageInfo>(async item => {
-                if (item is PushPackageInfo model) {
+                if (item is { } model) {
                     //判断加入历史包还是当前包
                     try {
                         await _createPackageSlim.WaitAsync();
@@ -84,7 +71,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
 
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
-                if (item is ApplicationStatusChanged info) {
+                if (item is { } info) {
                     if (info.Status == ApplicationStatus.Stop) {
                         _exitPackageAggregationItems.Clear();
                         _overexitPackageAggregationItems.Clear();

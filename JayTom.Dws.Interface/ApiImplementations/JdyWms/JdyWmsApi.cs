@@ -22,7 +22,8 @@ namespace JayTom.Dws.Interface.ApiImplementations.JdyWms {
     /// <summary>
     /// 筋斗云Wms
     /// </summary>
-    [ApiClass("筋斗云Wms", "JdyWmsApi", "JdyApiParameters", "1.0", ExecutionType.UploadInformation)]
+    [ApiClass("筋斗云Wms", "JdyWmsApi", "JdyApiParameters", "1.0",
+        ExecutionType.UploadInformation, true)]
     public class JdyWmsApi : IApiUploader<JdyWmsApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -51,6 +52,25 @@ namespace JayTom.Dws.Interface.ApiImplementations.JdyWms {
                 }
             }
             return true;
+        }
+
+        public void OpenJsonConfigFile() {
+            try {
+                var configFilePath = Path.Combine($"{AppContext.BaseDirectory}",
+                    "ApiSettingJson",
+                    "JdyApiSetting.json");
+                if (File.Exists(configFilePath)) {
+                    // 使用记事本打开配置文件
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "notepad.exe",
+                        Arguments = configFilePath,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
         }
 
         public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,

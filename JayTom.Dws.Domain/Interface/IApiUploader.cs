@@ -11,11 +11,15 @@ namespace JayTom.Dws.Domain.Interface {
         /// </summary>
         T Parameters { get; }
 
-        //设置参数
         /// <summary>
         /// 设置参数
         /// </summary>
         bool SetParameters(object parameters);
+
+        /// <summary>
+        /// 运行Json配置文件
+        /// </summary>
+        public void OpenJsonConfigFile();
 
         /// <summary>
         /// 上传信息请求接口
@@ -192,5 +196,10 @@ namespace JayTom.Dws.Domain.Interface {
         /// 相机自定义名称
         /// </summary>
         public string CameraCustomName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码时间
+        /// </summary>
+        public DateTime ScanTime { get; set; }
     }
 }

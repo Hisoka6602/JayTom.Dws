@@ -203,12 +203,6 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     })
                 });
                 //Api
-                var task10 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
-                    ConfigName = "ApiSettings",
-                    Value = JsonConvert.SerializeObject(new ApiSettingsDto() {
-                        Type = ApiType.None
-                    })
-                });
                 var task11 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                     ConfigName = "CreatePackageSettings",
                     Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto() {
@@ -231,7 +225,6 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     task6,
                     task8,
                     task9,
-                    task10,
                     task11,
                     task12,
                     task13);

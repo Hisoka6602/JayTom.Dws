@@ -11,25 +11,21 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using System.Windows.Documents;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Interface.Cloud;
+using JayTom.Dws.Domain.Interface.Attributes;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using PackageInfo = JayTom.Dws.Domain.Manager.PackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
-using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
@@ -49,8 +45,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExitInfoRepository _exitInfoRepository;
         private ConcurrentQueue<PackageInfoModel> _insertItems = new();
-        private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
+
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
         private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
         private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
@@ -95,12 +91,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                await Task.Yield();
-                if (item is { } model) {
-                    _updateResponseItems.Enqueue(model);
+            SubmitApiInfoManager.ApiResponseEvent += async (sender, info) => {
+                //后续需要存所有的上传信息(暂时只存获取格口的)
+                if (info is { UploadResponse.ExecutionType: ExecutionType.UploadInformation, PackageInfo: not null }) {
+                    var updateResponseItems = await _packageRepository.FillNavigationPropertyAsync(info.PackageInfo.Timestamp, new UploadInfoModel() {
+                        RequestStatus = info.UploadResponse.IsSuccess
+                            ? UploadStatus.Succeeded
+                            : UploadStatus.Failed,
+                        RequestContent = info.UploadResponse.RequestContent,
+                        ResponseContent = info.UploadResponse.ResponseContent,
+                        RequestTime = info.UploadResponse.RequestTime,
+                        ResponseTime = info.UploadResponse.ResponseTime,
+                        DurationInSeconds = info.UploadResponse.Duration,
+                        InterfaceParameters = info.UploadResponse.ApiParameters,
+                        RequestUrl = info.UploadResponse.RequestUrl,
+                        ExceptionMessage = info.UploadResponse.ExceptionMsg,
+                        ApiExceptionType = (ApiExceptionType)info.UploadResponse.ApiExceptionType,
+                    });
+                    if (!updateResponseItems) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"上传信息存储失败:{JsonConvert.SerializeObject(info.UploadResponse)}");
+                    }
                 }
-            });
+            };
+
             EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
                 await Task.Yield();
                 if (item is { } model) {
@@ -141,41 +154,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         _insertItems.Enqueue(insertModel);
                                     }
                                 }
-
-                                var dequeue = _updateResponseItems.TryDequeue(out var responseModel);
-                                if (dequeue && responseModel is not null) {
-                                    //更新
-                                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                                            f.BarCodeInfo.Barcode.Equals(responseModel.Barcode) &&
-                                            f.BarCodeInfo.ScanTime.Equals(responseModel.ScanTime),
-                                        stoppingToken);
-
-                                    if (key && value is { } packageInfoModel && responseModel.UploadResponse is not null) {
-                                        var insert = await _uploadRepository.Insert(new UploadInfoModel() {
-                                            PackageId = packageInfoModel.Id,
-                                            RequestStatus = responseModel.UploadResponse.IsSuccess
-                                                ? UploadStatus.Succeeded
-                                                : UploadStatus.Failed,
-                                            RequestContent = responseModel.UploadResponse.RequestContent,
-                                            ResponseContent = responseModel.UploadResponse.ResponseContent,
-                                            RequestTime = responseModel.UploadResponse.RequestTime,
-                                            ResponseTime = responseModel.UploadResponse.ResponseTime,
-                                            DurationInSeconds = responseModel.UploadResponse.Duration,
-                                            InterfaceParameters = responseModel.UploadResponse.ApiParameters,
-                                            RequestUrl = responseModel.UploadResponse.RequestUrl,
-                                            ExceptionMessage = responseModel.UploadResponse.ExceptionMsg,
-                                            ApiExceptionType = (ApiExceptionType)responseModel.UploadResponse.ApiExceptionType,
-                                        }, stoppingToken);
-
-                                        if (!insert) {
-                                            _updateResponseItems.Enqueue(responseModel);
-                                        }
-                                    }
-                                    else {
-                                        _updateResponseItems.Enqueue(responseModel);
-                                    }
-                                }
-                                //更新图片路径
 
                                 var isSaved = _savedImageItems.TryDequeue(out var savedImageInfo);
                                 if (isSaved && savedImageInfo is not null) {
@@ -244,11 +222,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 //指令更新
                                 var isSorting = _instructionItems.TryDequeue(out var sortingModel);
                                 if (isSorting && sortingModel is not null) {
-                                    //取出对应条码id(根据条码、扫码时间)
-                                    /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                                        f.BarCodeInfo.Barcode.Equals(sortingModel.BarCode) &&
-                                        f.BarCodeInfo.ScanTime.Equals(sortingModel.ScanTime),
-                                    stoppingToken);*/
                                     var (key, value) = await _packageRepository.FirstOrDefaultInfo(
                                         f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
                                         stoppingToken);

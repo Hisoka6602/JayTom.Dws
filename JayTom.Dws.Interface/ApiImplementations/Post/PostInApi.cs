@@ -23,7 +23,10 @@ namespace JayTom.Dws.Interface.ApiImplementations.Post {
     /// <summary>
     /// 揽投机构
     /// </summary>
-    [ApiClass("邮政揽投机构Api", "PostInApi", "PostInApiParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.ScanPackage)]
+    [ApiClass("邮政揽投机构Api", "PostInApi",
+        "PostInApiParameters", "1.0",
+        ExecutionType.UploadInformation | ExecutionType.SendSortingReport | ExecutionType.ScanPackage,
+        true)]
     public class PostInApi : IApiUploader<PostInApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
@@ -69,6 +72,25 @@ namespace JayTom.Dws.Interface.ApiImplementations.Post {
             }
 
             return true;
+        }
+
+        public void OpenJsonConfigFile() {
+            try {
+                var configFilePath = Path.Combine($"{AppContext.BaseDirectory}",
+                    "ApiSettingJson",
+                    "PostDeliveryAgencySettings.json");
+                if (File.Exists(configFilePath)) {
+                    // 使用记事本打开配置文件
+                    Process.Start(new ProcessStartInfo {
+                        FileName = "notepad.exe",
+                        Arguments = configFilePath,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
         }
 
         public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,

@@ -10,7 +10,6 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
@@ -20,7 +19,6 @@ using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 

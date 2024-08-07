@@ -250,6 +250,11 @@ namespace JayTom.Dws.Domain.Manager {
         public WeightInfoModel? WeightInfo { get; set; }
 
         /// <summary>
+        /// 格口信息
+        /// </summary>
+        public virtual ExitInfoModel? ExitInfo { get; set; }
+
+        /// <summary>
         /// 是否已完成(完成输出、上传、但未从集合删除)
         /// </summary>
         public bool IsCompleted;
@@ -304,16 +309,6 @@ namespace JayTom.Dws.Domain.Manager {
         /// </summary>
         public long Timestamp { get; set; }
 
-        /*/// <summary>
-        /// 包裹异常信息
-        /// </summary>
-        public string PackageExceptionMsg { get; set; } = "分拣成功";
-
-        /// <summary>
-        /// 包裹异常状态
-        /// </summary>
-        public int PackageExceptionStatus { get; set; } = 0;*/
-
         /// <summary>
         /// 包裹异常类型
         /// </summary>
@@ -338,6 +333,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// 联动车辆
         /// </summary>
         public int LinkedCarCount { get; set; } = 0;
+
+        /// <summary>
+        /// 分拣异常信息
+        /// </summary>
+        public string? SortingExceptionInfo { get; set; }
 
         /// <summary>
         /// 移除包裹计时器
