@@ -203,7 +203,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.DataInteractionS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.UploadCloudService", "JayTom.Dws.UploadCloudService\JayTom.Dws.UploadCloudService.csproj", "{98C31D74-2370-432A-9C92-D4C0F011D913}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.VideoApiDbTest", "JayTom.Dws.VideoApiDbTest\JayTom.Dws.VideoApiDbTest.csproj", "{681D6223-6E3E-40BC-BDD4-661FB6F4630E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JayTom.Dws.VideoApiDbTest", "JayTom.Dws.VideoApiDbTest\JayTom.Dws.VideoApiDbTest.csproj", "{681D6223-6E3E-40BC-BDD4-661FB6F4630E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
