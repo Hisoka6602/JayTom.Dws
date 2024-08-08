@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="47.1.0" />
+    <PackageReference Include="HidSharpCore" Version="1.2.1.1" />
     <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="NPOI" Version="2.6.0" />
     <PackageReference Include="S7netplus" Version="0.20.0" />
