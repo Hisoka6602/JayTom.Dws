@@ -14,7 +14,7 @@ namespace Hid_Test {
         private static void Main(string[] args1) {
             // 枚举所有的 HID 设备
             var devices = HidDevices.Enumerate().ToList();
-            var targetDevice = devices.FirstOrDefault(d => d.Capabilities.UsagePage == 1 && d.Capabilities.Usage == 6);
+            var targetDevice = devices.FirstOrDefault(d => d.Description.Contains("HID Keyboard Device"));
             // 打印所有设备的信息
             Console.WriteLine(JsonConvert.SerializeObject(devices.Select(s => $"{s.Attributes.ProductHexId}--{s.Description}"), Formatting.Indented));
             // var targetDevice = devices.FirstOrDefault(f => f.Description.Contains("系统控制器") && f.Attributes.ProductHexId.Equals("0x1026"));
@@ -25,7 +25,7 @@ namespace Hid_Test {
                 targetDevice.OpenDevice();
 
                 // 注册数据接收事件
-
+                var targetDeviceIsOpen = targetDevice.IsOpen;
                 targetDevice.MonitorDeviceEvents = true;
                 ReadKeyboardReport(targetDevice);
                 /*targetDevice.Read(a => {
@@ -57,8 +57,8 @@ namespace Hid_Test {
             Console.ReadLine();
         }
 
-        private static void ReadKeyboardReport(HidDevice device) {
-            device.ReadReport(report => {
+        private static async void ReadKeyboardReport(HidDevice device) {
+            device.Read(report => {
                 if (report.Data.Length > 0) {
                     Console.WriteLine($"Report Data: {BitConverter.ToString(report.Data)}");
                 }
@@ -66,9 +66,11 @@ namespace Hid_Test {
                     Console.WriteLine("Empty report received.");
                 }
 
+                Task.Delay(300);
                 // 继续读取下一份报告
                 ReadKeyboardReport(device);
             });
+            //device.ReadReport();
         }
     }
 }

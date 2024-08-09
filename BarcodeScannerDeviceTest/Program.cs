@@ -20,7 +20,7 @@ internal class Program {
         UsbDevice.Exit();
         Console.WriteLine(device.Pid);
         Console.WriteLine(device.Vid);
-
+        Console.WriteLine($"VID: {device.Vid:X4}, PID: {device.Pid:X4},MaxInputReportLength:{device.Rev}");
         var usbDevice = UsbDevice.OpenUsbDevice(new UsbDeviceFinder(device.Vid, device.Pid));
 
         new UsbDeviceListener().StartListening(usbDevice);
@@ -43,6 +43,7 @@ public class UsbDeviceListener {
         _device = device;
         // Assume endpoint 0x81 is the IN endpoint for data reading
         _endpointReader = _device.OpenEndpointReader(ReadEndpointID.Ep01);
+        Console.WriteLine($"_endpointReader.ReadBufferSize:{_endpointReader.ReadBufferSize}");
         _keepReading = true;
 
         _readThread = new Thread(ReadData);
@@ -59,17 +60,17 @@ public class UsbDeviceListener {
             try {
                 int bytesRead;
                 var buffer = new byte[64];  // 假设端点最大包大小为64字节，调整大小以适应你的设备
-                ErrorCode ec = _endpointReader.Read(buffer, 5000, out bytesRead);  // 增加超时时间
+                ErrorCode ec = _endpointReader.Read(buffer, 200, out bytesRead);  // 增加超时时间
 
                 if (ec == ErrorCode.Success && bytesRead > 0) {
-                    Console.WriteLine("Data received: " + BitConverter.ToString(buffer, 0, bytesRead));
+                    Console.WriteLine("Data received: " + BitConverter.ToString(buffer, 0, bytesRead).Replace("-", " "));
                 }
                 else if (ec != ErrorCode.Success) {
-                    Console.WriteLine("Error reading data: " + ec);
+                    // Console.WriteLine("Error reading data: " + ec);
                 }
             }
             catch (Exception ex) {
-                Console.WriteLine("Exception: " + ex.Message);
+                // Console.WriteLine("Exception: " + ex.Message);
             }
         }
     }
