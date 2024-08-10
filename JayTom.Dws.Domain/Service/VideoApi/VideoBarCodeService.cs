@@ -107,7 +107,8 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     },
                     BarCodeInfo = new BarCodeInfoModel() {
                         Barcode = packageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                        CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                        SerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
+                        DisplayIdentifier = packageInfo.BarCodeInfo?.DisplayIdentifier ?? string.Empty,
                         ScanTime = packageInfo.BarCodeInfo?.ScanTime ?? DateTime.MinValue,
                         Source = packageInfo.BarCodeInfo?.Source ?? SourceType.None,
                     }

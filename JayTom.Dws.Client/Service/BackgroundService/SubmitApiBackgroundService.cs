@@ -1045,9 +1045,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         packageValue.Value.PackageExitUpdateItems);
                                     uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
                                         packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                            CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                            CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                            CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
+                                            CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
+                                            CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                                         }, other: new ReportChuteInfo {
                                             ChuteCode = caiNiaoStatusConvert.Value.ChuteCode,
                                             ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,

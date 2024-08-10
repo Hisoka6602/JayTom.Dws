@@ -18,6 +18,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
@@ -56,7 +57,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private async void LoadedDelegate(object obj) {
             _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
-
+            var bindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
             var nvrBindingItemModels = _ipcNvrConfigInfoModels
                 .Where(w => w.Type == (int)DeviceType.NVR)
                 .SelectMany((s, i) => Enumerable.Range(1, s.ChannelCount).Select(channelIndex => new NvrBindingItemModel {
@@ -72,9 +73,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     Username = s.Username,
                     Password = s.Password,
                     Port = s.Port,
-                    IsNvrBound = _scannerCameraConfigInfoModels
+                    /*IsNvrBound = _scannerCameraConfigInfoModels
                         .FirstOrDefault(f => f.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber) &&
-                            f.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress) && a.Channel == channelIndex) == true) != null,
+                            f.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress) && a.Channel == channelIndex) == true) != null,*/
+                    IsNvrBound = bindingInfoModels.Any(a => a.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber) &&
+                                                          a.Channel == channelIndex &&
+                                                          a.IpAddress.Equals(s.IpAddress))
                 }))
                 ?.ToList();
 
@@ -122,7 +126,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 if (model is not null) {
                     var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
                         f.Channel.Equals(info.Channel) &&
-                        f.ScannerCameraConfigInfoModelId.Equals(model.Id));
+                        f.SerialNumber.Equals(model.SerialNumber));
                     if (infoModel is not null) {
                         var delete = await _nvrCameraBindingRepository.Delete(infoModel);
                         if (delete) {
@@ -142,7 +146,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     f.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber));
                 if (model is not null) {
                     var insert = await _nvrCameraBindingRepository.Insert(new NvrCameraBindingInfoModel() {
-                        ScannerCameraConfigInfoModelId = model.Id,
+                        SerialNumber = model.SerialNumber,
                         Channel = info.Channel,
                         IpAddress = info.IpAddress,
                         Password = info.Password,

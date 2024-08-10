@@ -81,7 +81,8 @@ namespace JayTom.Dws.Client.Service.TestService {
                             Frame = args.FrameNo,
                             BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
                                 ScanTime = args.ScanTime,
                                 Source = SourceType.Camera,
                                 BindTime = DateTime.Now
@@ -98,7 +99,7 @@ namespace JayTom.Dws.Client.Service.TestService {
                         var info = PackageInfoManager.GetPackage(f => f.Value.BarCodeInfo != null &&
                                                                       f.Value.BarCodeInfo.ScanTime.Equals(
                                                                           args.ScanTime) &&
-                                                                      f.Value.BarCodeInfo.CameraSerialNumber.Equals(
+                                                                      f.Value.BarCodeInfo.SerialNumber.Equals(
                                                                           args.CameraSerialNumber));
                         if (info is { BarCodeInfo: not null } && _createPackageSettingsDto.BarcodeHandlingMethod != BarcodeHandlingMethodEnum.UseMultipleBarcodes) {
                             if (_createPackageSettingsDto.BarcodeHandlingMethod == BarcodeHandlingMethodEnum.MergeBarcodes) {
@@ -119,7 +120,8 @@ namespace JayTom.Dws.Client.Service.TestService {
                                 Guid = args.Timestamp,
                                 BarCodeInfo = new BarCodeInfoModel() {
                                     Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
+                                    SerialNumber = args.CameraSerialNumber,
+                                    DisplayIdentifier = args.CameraSerialNumber,
                                     ScanTime = args.ScanTime,
                                     Source = SourceType.Camera,
                                     BindTime = DateTime.Now
@@ -136,7 +138,8 @@ namespace JayTom.Dws.Client.Service.TestService {
                             if (packageInfo is not null) {
                                 packageInfo.BarCodeInfo = new BarCodeInfoModel() {
                                     Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
+                                    SerialNumber = args.CameraSerialNumber,
+                                    DisplayIdentifier = args.CameraSerialNumber,
                                     ScanTime = args.ScanTime,
                                     Source = SourceType.Camera,
                                     BindTime = DateTime.Now
@@ -474,7 +477,7 @@ namespace JayTom.Dws.Client.Service.TestService {
                             if (codeInfo?.Image != null) {
                                 EventAggregator.Instance.Publish(new ImageMessageInfo {
                                     BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                    CameraSerialNumber = codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                    CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                                     Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
                                     Height = (float)(codeInfo.VolumeInfo?.FormattedHeight ?? 0),
                                     Image = codeInfo.Image,
@@ -483,8 +486,8 @@ namespace JayTom.Dws.Client.Service.TestService {
                                     Volume = (float)(codeInfo.VolumeInfo?.FormattedVolume ?? 0),
                                     ScanTime = codeInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
                                     Type = SaveImageType.BarcodeImage,
-                                    CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info?.Name ?? string.Empty,
-                                    CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info?.CustomName ?? string.Empty,
+                                    CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info?.Name ?? string.Empty,
+                                    CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info?.CustomName ?? string.Empty,
                                 });
                                 codeInfo.IsSavedImage = true;
                             }

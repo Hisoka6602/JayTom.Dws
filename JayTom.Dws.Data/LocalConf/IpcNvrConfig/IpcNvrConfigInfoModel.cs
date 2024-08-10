@@ -61,12 +61,14 @@ namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
         /// </summary>
         [Column("Brand"), Required, InsertOrUpdata]
         public string Brand { get; set; } = string.Empty;
+
         /// <summary>
         /// 序列号
         /// </summary>
 
         [Column("SerialNumber"), Required, InsertOrUpdata]
         public string SerialNumber { get; set; } = string.Empty;
+
         /// <summary>
         /// 通道数
         /// </summary>

@@ -73,6 +73,11 @@ namespace JayTom.Dws.Data.Package {
         /// Ocr创建
         /// </summary>
         Ocr = 5,
+
+        /// <summary>
+        /// 扫码枪
+        /// </summary>
+        BarcodeScanner = 6
     }
 
     /// <summary>

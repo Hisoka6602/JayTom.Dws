@@ -45,16 +45,16 @@ namespace JayTom.Dws.Data.LocalConf.CloudConfig {
         [Column("Channel"), Required]
         public int Channel { get; set; }
 
-        /*/// <summary>
-        /// 扫码相机序列号
+        /// <summary>
+        /// 输入序列(来源设备唯一标识)
         /// </summary>
-        [Column("BarcodeScannerSerialNumber"), Required]
-        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;*/
+        [Column("SerialNumber")]
+        public string SerialNumber { get; set; } = string.Empty;
 
-        [Column("ScannerCameraConfigInfoModelId"), JsonIgnore]
+        /*[Column("ScannerCameraConfigInfoModelId"), JsonIgnore]
         public long ScannerCameraConfigInfoModelId { get; set; }
 
         [ForeignKey("Id")]
-        public virtual BarcodeScannerCameraConfigInfoModel? BarcodeScannerCameraConfigInfoModel { get; set; }
+        public virtual BarcodeScannerCameraConfigInfoModel? BarcodeScannerCameraConfigInfoModel { get; set; }*/
     }
 }

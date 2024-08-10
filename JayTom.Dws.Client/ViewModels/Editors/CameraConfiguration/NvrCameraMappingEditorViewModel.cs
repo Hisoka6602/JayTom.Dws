@@ -119,7 +119,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 if (model is not null) {
                     var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
                         f.Channel.Equals(info.Channel) &&
-                        f.ScannerCameraConfigInfoModelId.Equals(model.Id));
+                        f.SerialNumber.Equals(model.SerialNumber));
                     if (infoModel is not null) {
                         var delete = await _nvrCameraBindingRepository.Delete(infoModel);
                         if (delete) {
