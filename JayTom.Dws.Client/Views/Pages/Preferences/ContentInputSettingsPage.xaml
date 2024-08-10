@@ -533,9 +533,291 @@
                 </StackPanel>
             </StackPanel>
         </StackPanel>
-        <!--  使用控件输入  -->
+        <!--  监测扫码枪输入  -->
         <StackPanel
             Grid.Row="1"
+            Margin="5,0"
+            VerticalAlignment="Center"
+            Orientation="Vertical">
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,0,1"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DarkGray"
+                    Text="&#xe9cc;" />
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="是否监听扫码枪输入" />
+                <ToggleButton
+                    Name="IsUseBarcodeScannerToggleButton"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                    materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                    Focusable="False"
+                    IsChecked="{Binding IsUseBarcodeScannerToggleButton, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+            <StackPanel
+                Margin="50,5,0,20"
+                IsEnabled="{Binding ElementName=IsUseBarcodeScannerToggleButton, Path=IsChecked}"
+                Orientation="Vertical"
+                Visibility="{Binding ElementName=IsUseBarcodeScannerToggleButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+
+                <!--  扫码枪列表  -->
+
+                <DataGrid
+                    MinWidth="500"
+                    MinHeight="300"
+                    Margin="0,10,10,0"
+                    Padding="10,0"
+                    materialDesign:DataGridAssist.CellPadding="4 2 2 2"
+                    materialDesign:DataGridAssist.ColumnHeaderPadding="4 2 2 2"
+                    AlternatingRowBackground="#101E90FF"
+                    AutoGenerateColumns="False"
+                    Background="Transparent"
+                    CanUserAddRows="False"
+                    CanUserResizeColumns="True"
+                    CanUserSortColumns="False"
+                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                    ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
+                    Focusable="False"
+                    Foreground="White"
+                    FrozenColumnCount="2"
+                    GridLinesVisibility="None"
+                    HorizontalScrollBarVisibility="Auto"
+                    ItemsSource="{Binding CameraFinderItems, UpdateSourceTrigger=PropertyChanged}"
+                    RowBackground="#061E90FF"
+                    Style="{StaticResource VirtualizingDataGridStyle}">
+                    <DataGrid.RowStyle>
+                        <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                            <Setter Property="Height" Value="35" />
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn
+                            Width="45"
+                            MinWidth="45"
+                            Binding="{Binding Num, UpdateSourceTrigger=PropertyChanged}"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            IsReadOnly="True">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <!--  名称  -->
+                        <DataGridTextColumn
+                            Width="80"
+                            MinWidth="80"
+                            Binding="{Binding DeviceName, UpdateSourceTrigger=PropertyChanged}"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="名称" />
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+
+                        <!--  VendorId  -->
+                        <DataGridTextColumn
+                            Width="150"
+                            MinWidth="100"
+                            Binding="{Binding VendorId, UpdateSourceTrigger=PropertyChanged}"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="VendorId" />
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <!--  ProductId  -->
+                        <DataGridTextColumn
+                            Width="150"
+                            MinWidth="100"
+                            Binding="{Binding ProductId, UpdateSourceTrigger=PropertyChanged}"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="ProductId" />
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <!--  制造商名称  -->
+                        <DataGridTextColumn
+                            Width="150"
+                            MinWidth="100"
+                            Binding="{Binding ManufacturerName, UpdateSourceTrigger=PropertyChanged}"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                            EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="制造商名称" />
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+
+                        <!--  操作  -->
+                        <DataGridTemplateColumn
+                            Width="Auto"
+                            MinWidth="120"
+                            MaxWidth="320"
+                            CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderOperation}" />
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <!--  按钮  -->
+                                    <StackPanel Margin="0" Orientation="Horizontal">
+
+                                        <!--  绑定前  -->
+                                        <StackPanel
+                                            MinWidth="280"
+                                            Margin="10,0,0,0"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Visibility="{Binding HasBinding, Converter={StaticResource InverseBooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                            <!--  绑定扫码枪  -->
+                                            <Button
+                                                Height="30"
+                                                MinWidth="60"
+                                                Margin="2,0"
+                                                materialDesign:ButtonAssist.CornerRadius="5"
+                                                Background="RoyalBlue"
+                                                Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindBarcodeScannerCameraCommand}"
+                                                CommandParameter="{Binding}"
+                                                Focusable="False"
+                                                Foreground="RoyalBlue"
+                                                Style="{StaticResource MaterialDesignFlatLightButton}"
+                                                Visibility="{Binding SupportedBindingType, Converter={StaticResource SupportedBindingTypeVisibilityConverter}, ConverterParameter=BarcodeScannerCamera}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock
+                                                        Margin="5,0"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Background="Transparent"
+                                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                        FontSize="13"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsEnabled="True"
+                                                        Text="绑定扫码枪"
+                                                        TextAlignment="Justify" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <!--  绑定后  -->
+                                        <StackPanel
+                                            MinWidth="280"
+                                            Margin="10,0,0,0"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Visibility="{Binding HasBinding, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                                            <!--  NVR配置  -->
+                                            <Button
+                                                Height="30"
+                                                MinWidth="60"
+                                                Margin="2,0"
+                                                materialDesign:ButtonAssist.CornerRadius="5"
+                                                Background="ForestGreen"
+                                                Command="{Binding ElementName=CameraFinderView, Path=DataContext.BindNvrCommand}"
+                                                CommandParameter="{Binding}"
+                                                Focusable="False"
+                                                Foreground="ForestGreen"
+                                                Style="{StaticResource MaterialDesignFlatLightButton}"
+                                                Visibility="{Binding BoundType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=ScannerCamera|OcrCamera}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock
+                                                        Margin="5,0"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Background="Transparent"
+                                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                        FontSize="13"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsEnabled="True"
+                                                        Text="NVR配置"
+                                                        TextAlignment="Justify" />
+                                                </StackPanel>
+                                            </Button>
+                                            <!--  解绑相机  -->
+                                            <Button
+                                                Height="30"
+                                                MinWidth="60"
+                                                Margin="2,0"
+                                                materialDesign:ButtonAssist.CornerRadius="5"
+                                                Background="DarkRed"
+                                                Command="{Binding ElementName=CameraFinderView, Path=DataContext.UnbindCommand}"
+                                                CommandParameter="{Binding}"
+                                                Focusable="False"
+                                                Foreground="DarkRed"
+                                                Style="{StaticResource MaterialDesignFlatLightButton}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock
+                                                        Margin="5,0"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Background="Transparent"
+                                                        FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                                        FontSize="13"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        IsEnabled="True"
+                                                        Text="解绑扫码枪"
+                                                        TextAlignment="Justify" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!--  是否过滤内容  -->
+                <StackPanel
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="是否使用常规过滤验证输入内容" />
+                    <ToggleButton
+                        materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                        materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
+                        Focusable="False"
+                        IsChecked="{Binding IsUseBarcodeScannerToggleButton, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
+                </StackPanel>
+
+
+
+            </StackPanel>
+            <!--  说明  -->
+            <TextBlock
+                Width="390"
+                Margin="50,5,0,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DarkGray"
+                Text="勾选需要输入的元素后可在主页对应的元素框上输入内容,任意输入框按回车键(Enter)提交,Tab键切换下一个输入控件"
+                TextWrapping="Wrap"
+                Visibility="Collapsed" />
+        </StackPanel>
+        <!--  使用控件输入  -->
+        <StackPanel
+            Grid.Row="2"
             Margin="5,0"
             VerticalAlignment="Center"
             Orientation="Vertical">

@@ -30,7 +30,6 @@ internal class Program {
     private static void Main(string[] args) {
         // Get the devices that can be handled with Raw Input.
         var devices = RawInputDevice.GetDevices();
-
         // Keyboards will be returned as a RawInputKeyboard.
         var keyboards = devices.OfType<RawInputKeyboard>();
 

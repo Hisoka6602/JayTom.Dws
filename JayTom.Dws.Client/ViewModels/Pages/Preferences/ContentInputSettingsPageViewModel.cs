@@ -18,7 +18,6 @@ using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class ContentInputSettingsPageViewModel : SettingsPageTemplateViewModel {
         private bool _isUseTcpInput;
         private bool _isUseControlInput;
@@ -26,6 +25,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
         private string _separator = string.Empty;
+        private bool _isUseBarcodeScannerInput;
+        private bool _isUseRegularFilter;
 
         public ContentInputSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
         }
@@ -56,6 +57,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public bool IsUseControlInput {
             get => _isUseControlInput;
             set => SetProperty(ref _isUseControlInput, value);
+        }
+
+        /// <summary>
+        /// 是否使用扫码枪输入
+        /// </summary>
+        public bool IsUseBarcodeScannerInput {
+            get => _isUseBarcodeScannerInput;
+            set => SetProperty(ref _isUseBarcodeScannerInput, value);
+        }
+
+        /// <summary>
+        /// 是否使用常规过滤
+        /// </summary>
+        public bool IsUseRegularFilter {
+            get => _isUseRegularFilter;
+            set => SetProperty(ref _isUseRegularFilter, value);
         }
 
         public ObservableCollection<ItemBaseTemplateModel> DataTemplate {
@@ -145,6 +162,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Value = JsonConvert.SerializeObject(new ContentInputSettingsDto {
                     IsUseControlInput = IsUseControlInput,
                     IsUseTcpInput = IsUseTcpInput,
+                    IsUseBarcodeScannerInput = IsUseBarcodeScannerInput,
+                    IsUseRegularFilter = IsUseRegularFilter,
                     DataTemplate = DataTemplate.Select(s => new ItemTemplateInfo() {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
@@ -181,6 +200,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>(SettingsName) ?? new ContentInputSettingsDto();
             IsUseTcpInput = settingsDto.IsUseTcpInput;
             IsUseControlInput = settingsDto.IsUseControlInput;
+            IsUseBarcodeScannerInput = settingsDto.IsUseBarcodeScannerInput;
+            IsUseRegularFilter = settingsDto.IsUseRegularFilter;
             ControlInputInfo = new ControlInputInfoModel {
                 IsReceiveBarcode = settingsDto.ControlInputInfo.IsReceiveBarcode,
                 IsReceiveHeight = settingsDto.ControlInputInfo.IsReceiveHeight,
