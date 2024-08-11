@@ -477,7 +477,7 @@ namespace JayTom.Dws.Client.Service.Device {
                     _keyboardDeviceManager.SetFilterRule(_barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty);
                 }
                 var listening = await _keyboardDeviceManager.StartListening(contentInputSettingsDto.KeyboardDevice);
-                if (listening) {
+                if (!listening) {
                     OnDeviceException(new DeviceExceptionEventArgs() {
                         ExceptionMessage = new Exception("扫码枪监听失败")
                     });
@@ -494,9 +494,9 @@ namespace JayTom.Dws.Client.Service.Device {
             return new KeyValuePair<bool, string>(true, string.Empty);
         }
 
-        public event EventHandler<string>? BarCodeKeyReceived;
+        public event EventHandler<KeyboardBarCodeReceivedEventArgs>? BarCodeKeyReceived;
 
-        public event EventHandler<string>? RealTimeKeyReceived;
+        public event EventHandler<KeyboardRealTimeKeyEventArgs>? RealTimeKeyReceived;
 
         public async Task Initialization() {
             await Task.Yield();
@@ -1139,11 +1139,11 @@ namespace JayTom.Dws.Client.Service.Device {
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual void OnBarCodeKeyReceived(string e) {
+        protected virtual void OnBarCodeKeyReceived(KeyboardBarCodeReceivedEventArgs e) {
             BarCodeKeyReceived?.Invoke(this, e);
         }
 
-        protected virtual void OnRealTimeKeyReceived(string e) {
+        protected virtual void OnRealTimeKeyReceived(KeyboardRealTimeKeyEventArgs e) {
             RealTimeKeyReceived?.Invoke(this, e);
         }
     }

@@ -206,7 +206,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 外部数据输入后
         /// </summary>
-        ExternalDataInputAfter
+        ExternalDataInputAfter,
+
+        /// <summary>
+        /// 扫码枪返回
+        /// </summary>
+        BarcodeScannerReturn
     }
 
     /// <summary>

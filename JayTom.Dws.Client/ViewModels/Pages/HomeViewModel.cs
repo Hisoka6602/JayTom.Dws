@@ -349,6 +349,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 });
             };
             _deviceService.OcrContentRecognized += DeviceServiceOnOcrContentRecognized;
+            _deviceService.BarCodeKeyReceived += async (sender, s) => {
+                await Application.Current.Dispatcher.BeginInvoke(async () => {
+                    BarCode = s.Barcode;
+                });
+            };
+
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");

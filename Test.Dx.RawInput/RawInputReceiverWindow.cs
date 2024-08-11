@@ -1,13 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using Linearstar.Windows.RawInput;
+﻿using Linearstar.Windows.RawInput;
 using System.Runtime.InteropServices;
 
-namespace Test.Dx.RawInput {
-
+namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
     internal sealed class RawInputReceiverWindow : IDisposable {
         private const int WM_INPUT = 0x00FF;
         public IntPtr Handle;
@@ -29,7 +23,6 @@ namespace Test.Dx.RawInput {
         private RawInputReceiverWindow() {
             _wndProcDelegate = WindowProcedure;
             Handle = CreateHiddenWindow();
-            CancellationToken = new();
         }
 
         // 单例实例的公开访问点
@@ -67,16 +60,25 @@ namespace Test.Dx.RawInput {
         public static void MessageLoop() {
             lock (_lock) {
                 if (_isMessageLoopRunning) {
-                    throw new InvalidOperationException("MessageLoop is already running.");
+                    return;
                 }
                 _isMessageLoopRunning = true;
             }
-
+            CancellationToken = new();
             try {
-                while (GetMessage(out var msg, IntPtr.Zero, 0, 0) && !CancellationToken.IsCancellationRequested) {
-                    TranslateMessage(ref msg);
-                    DispatchMessage(ref msg);
+                while (!CancellationToken.Token.IsCancellationRequested) {
+                    if (PeekMessage(out var msg, IntPtr.Zero, 0, 0, 0)) {
+                        GetMessage(out msg, IntPtr.Zero, 0, 0);
+                        TranslateMessage(ref msg);
+                        DispatchMessage(ref msg);
+                    }
+                    else {
+                        // 你可以在这里插入一些非阻塞的代码，比如记录日志，或者做其他处理
+                    }
                 }
+            }
+            catch (Exception e) {
+                //NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
                 _isMessageLoopRunning = false;
@@ -136,6 +138,9 @@ namespace Test.Dx.RawInput {
             public int x;
             public int y;
         }
+
+        [DllImport("user32.dll")]
+        private static extern bool PeekMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, uint wRemoveMsg);
 
         [DllImport("user32.dll")]
         private static extern bool GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);

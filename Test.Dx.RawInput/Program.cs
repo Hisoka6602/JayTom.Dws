@@ -1,11 +1,11 @@
 ﻿using System.Text;
 using System.Linq;
 using Newtonsoft.Json;
-using Test.Dx.RawInput;
 using Linearstar.Windows.RawInput;
 using System.Runtime.InteropServices;
 using Linearstar.Windows.RawInput.Native;
 using static System.Net.Mime.MediaTypeNames;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 
 internal class Program {
 
@@ -43,37 +43,46 @@ internal class Program {
 
         // To begin catching inputs, first make a window that listens WM_INPUT.
         // 创建 RawInputReceiverWindow 实例
+        Task.Run(() => {
+            try {
+                var window = RawInputReceiverWindow.Instance;
 
-        var window = RawInputReceiverWindow.Instance;
+                window.Input += (sender, e) => {
+                    // 处理输入数据
+                    var data = e.Data;
+                    if (data is RawInputKeyboardData { Keyboard.Flags: RawKeyboardFlags.None } keyboardData &&
+                        keyboardData.Device?.ProductName?.Contains("USB HID Keyboard",
+                            StringComparison.CurrentCultureIgnoreCase) == true) {
+                        var keyString = VirtualKeyToString(keyboardData.Keyboard.VirutalKey);
+                        //Console.WriteLine($"VirtualKey转换后的字符是: {keyString}");
+                        if (!string.IsNullOrEmpty(keyString)) {
+                            //全大写
+                            AddKeyToList(keyString.ToUpper());
+                        }
 
-        window.Input += (sender, e) => {
-            // 处理输入数据
-            var data = e.Data;
-            if (data is RawInputKeyboardData { Keyboard.Flags: RawKeyboardFlags.None } keyboardData &&
-                keyboardData.Device?.ProductName?.Contains("USB HID Keyboard",
-                    StringComparison.CurrentCultureIgnoreCase) == true) {
-                var keyString = VirtualKeyToString(keyboardData.Keyboard.VirutalKey);
-                //Console.WriteLine($"VirtualKey转换后的字符是: {keyString}");
-                if (!string.IsNullOrEmpty(keyString)) {
-                    //全大写
-                    AddKeyToList(keyString.ToUpper());
-                }
+                        if (keyboardData.Keyboard.VirutalKey == 13 && _keyList.Any()) {
+                            Console.WriteLine(string.Join(string.Empty, _keyList));
+                            _keyList.Clear();
+                        }
+                    }
+                };
+                // 注册设备
+                RawInputDevice.RegisterDevice(HidUsageAndPage.Keyboard,
+                    RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, window.Handle);
 
-                if (keyboardData.Keyboard.VirutalKey == 13 && _keyList.Any()) {
-                    Console.WriteLine(string.Join(string.Empty, _keyList));
-                    _keyList.Clear();
-                }
+                // 运行消息循环
+                RawInputReceiverWindow.MessageLoop();
             }
-        };
-        try {
-            // Register the HidUsageAndPage to watch any device.
-            RawInputDevice.RegisterDevice(HidUsageAndPage.Keyboard,
-                RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, window.Handle);
-            RawInputReceiverWindow.MessageLoop();
-        }
-        finally {
-            RawInputDevice.UnregisterDevice(HidUsageAndPage.Keyboard);
-        }
+            catch (Exception e) {
+                Console.WriteLine($"Exception: {e.Message}");
+            }
+        });
+        /*var messageLoopThread = new Thread(() => {
+        });
+        messageLoopThread.SetApartmentState(ApartmentState.STA);
+        messageLoopThread.Start();*/
+
+        Console.WriteLine("Press Enter to exit...");
         Console.ReadLine();
     }
 

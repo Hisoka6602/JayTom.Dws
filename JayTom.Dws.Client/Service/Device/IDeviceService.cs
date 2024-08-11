@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.Cameras;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 
 namespace JayTom.Dws.Client.Service.Device {
 
@@ -203,12 +204,12 @@ namespace JayTom.Dws.Client.Service.Device {
         /// <summary>
         /// 扫码枪条码返回事件
         /// </summary>
-        event EventHandler<string> BarCodeKeyReceived;
+        event EventHandler<KeyboardBarCodeReceivedEventArgs> BarCodeKeyReceived;
 
         /// <summary>
         /// 扫码枪实时按键事件
         /// </summary>
-        event EventHandler<string> RealTimeKeyReceived;
+        event EventHandler<KeyboardRealTimeKeyEventArgs> RealTimeKeyReceived;
 
         /// <summary>
         /// 初始化设备服务
