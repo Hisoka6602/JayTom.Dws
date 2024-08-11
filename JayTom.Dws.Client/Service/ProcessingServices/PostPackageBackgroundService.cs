@@ -81,7 +81,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             Guid = args.Timestamp,
                             BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
                                 ScanTime = args.ScanTime,
                                 Source = SourceType.Camera,
                                 BindTime = DateTime.Now
@@ -98,7 +99,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         if (packageInfo is not null) {
                             packageInfo.BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
                                 ScanTime = args.ScanTime,
                                 Source = SourceType.Camera,
                                 BindTime = DateTime.Now
@@ -131,7 +133,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             Frame = args.FrameNo,
                             BarCodeInfo = new BarCodeInfoModel() {
                                 Barcode = args.Barcode,
-                                CameraSerialNumber = args.CameraSerialNumber,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
                                 ScanTime = args.ScanTime,
                                 Source = SourceType.Camera,
                                 BindTime = DateTime.Now
@@ -163,7 +166,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 Guid = args.Timestamp,
                                 BarCodeInfo = new BarCodeInfoModel() {
                                     Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
+                                    SerialNumber = args.CameraSerialNumber,
+                                    DisplayIdentifier = args.CameraSerialNumber,
                                     ScanTime = args.ScanTime,
                                     Source = SourceType.Camera,
                                     BindTime = DateTime.Now
@@ -180,7 +184,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             if (packageInfo is not null) {
                                 packageInfo.BarCodeInfo = new BarCodeInfoModel() {
                                     Barcode = args.Barcode,
-                                    CameraSerialNumber = args.CameraSerialNumber,
+                                    SerialNumber = args.CameraSerialNumber,
+                                    DisplayIdentifier = args.CameraSerialNumber,
                                     ScanTime = args.ScanTime,
                                     Source = SourceType.Camera,
                                     BindTime = DateTime.Now
@@ -667,7 +672,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     EventAggregator.Instance.Publish(new ImageMessageInfo {
                                         PackageTimestamped = codeInfo.Timestamp,
                                         BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                        CameraSerialNumber = codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                        CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                                         Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
                                         Height = (float)(codeInfo.VolumeInfo?.FormattedHeight ?? 0),
                                         Image = codeInfo.Image,
@@ -678,11 +683,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                         Type = SaveImageType.BarcodeImage,
                                         CameraName = _cameras.FirstOrDefault(f =>
                                                 (bool)f.Info?.SerialNumber.Equals(
-                                                    codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info
+                                                    codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info
                                             ?.Name ?? string.Empty,
                                         CameraCustomName = _cameras.FirstOrDefault(f =>
                                                 (bool)f.Info?.SerialNumber.Equals(
-                                                    codeInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty))?.Info
+                                                    codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info
                                             ?.CustomName ?? string.Empty,
                                     });
                                     codeInfo.IsSavedImage = true;

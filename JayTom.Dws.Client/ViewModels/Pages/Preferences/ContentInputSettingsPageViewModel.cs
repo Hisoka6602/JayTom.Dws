@@ -6,28 +6,40 @@ using Newtonsoft.Json;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
+using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
+using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
     public class ContentInputSettingsPageViewModel : SettingsPageTemplateViewModel {
+        private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private bool _isUseTcpInput;
         private bool _isUseControlInput;
         private ControlInputInfoModel _controlInputInfo = new();
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
         private string _separator = string.Empty;
+        private bool _isUseBarcodeScannerInput;
+        private bool _isUseRegularFilter;
+        private ObservableCollection<KeyboardDeviceItemInfoModel> _keyboardDeviceItemInfo = new();
 
-        public ContentInputSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public ContentInputSettingsPageViewModel(IConfigRepository configRepository,
+            IKeyboardDeviceManager keyboardDeviceManager) : base(configRepository) {
+            _keyboardDeviceManager = keyboardDeviceManager;
         }
 
         /// <summary>
@@ -58,6 +70,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _isUseControlInput, value);
         }
 
+        /// <summary>
+        /// 是否使用扫码枪输入
+        /// </summary>
+        public bool IsUseBarcodeScannerInput {
+            get => _isUseBarcodeScannerInput;
+            set => SetProperty(ref _isUseBarcodeScannerInput, value);
+        }
+
+        /// <summary>
+        /// 是否使用常规过滤
+        /// </summary>
+        public bool IsUseRegularFilter {
+            get => _isUseRegularFilter;
+            set => SetProperty(ref _isUseRegularFilter, value);
+        }
+
         public ObservableCollection<ItemBaseTemplateModel> DataTemplate {
             get => _dataTemplate;
             set => SetProperty(ref _dataTemplate, value);
@@ -84,7 +112,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
 
-        public override string Identifier => "ContentInputSettingsDialogHost";
+        public ObservableCollection<KeyboardDeviceItemInfoModel> KeyboardDeviceItemInfo {
+            get => _keyboardDeviceItemInfo;
+            set => SetProperty(ref _keyboardDeviceItemInfo, value);
+        }
+
+        public JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice KeyboardDevice { get; set; } = new();
+        public override string Identifier => "SettingDialog";
         public override string SettingsName => "ContentInputSettings";
 
         /// <summary>
@@ -139,12 +173,104 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
         }
 
+        /// <summary>
+        /// 使用扫码枪
+        /// </summary>
+        public ICommand SwitchUseBarcodeScannerCommand => new DelegateCommand<object>(SwitchUseBarcodeScannerDelegate);
+
+        private void SwitchUseBarcodeScannerDelegate(object obj) {
+            if (IsUseBarcodeScannerInput) {
+                RefreshBarcodeScanner();
+            }
+        }
+
+        public ICommand BindScannerCommand => new DelegateCommand<KeyboardDeviceItemInfoModel>(BindScannerDelegate);
+
+        private void BindScannerDelegate(KeyboardDeviceItemInfoModel obj) {
+            if (obj is { ProductId: > 0, VendorId: > 0 } && !string.IsNullOrEmpty(obj.DevicePath)) {
+                KeyboardDevice = new KeyboardDevice() {
+                    DeviceName = obj.DeviceName,
+                    DevicePath = obj.DevicePath,
+                    ManufacturerName = obj.ManufacturerName,
+                    ProductId = obj.ProductId,
+                    VendorId = obj.VendorId,
+                };
+                RefreshBarcodeScanner();
+            }
+            else {
+                base.MessageQueue.Enqueue("该扫码器无法绑定");
+            }
+        }
+
+        public ICommand UnbindScannerCommand => new DelegateCommand<KeyboardDeviceItemInfoModel>(UnbindScannerDelegate);
+
+        private void UnbindScannerDelegate(KeyboardDeviceItemInfoModel obj) {
+            KeyboardDevice = new KeyboardDevice();
+            RefreshBarcodeScanner();
+        }
+
+        public ICommand NvrSettingsCommand => new DelegateCommand<KeyboardDeviceItemInfoModel>(NvrSettingsDelegate);
+
+        private async void NvrSettingsDelegate(KeyboardDeviceItemInfoModel obj) {
+            var nvrBindingEditor = new NvrBindingEditor();
+            if (nvrBindingEditor.DataContext is NvrBindingEditorViewModel model &&
+               !string.IsNullOrEmpty(obj.DevicePath)) {
+                model.Identifier = Identifier;
+                model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
+                    BindingSource = SourceType.BarcodeScanner,
+                    DisplayIdentifier = $"{obj.DeviceName}-{obj.ManufacturerName}",
+                    SerialNumber = obj.DevicePath
+                };
+                await DialogHost.Show(nvrBindingEditor, model.Identifier);
+            }
+        }
+
+        public ICommand TcpInputNvrSettingsCommand => new DelegateCommand<object>(TcpInputNvrSettingsDelegate);
+
+        private async void TcpInputNvrSettingsDelegate(object obj) {
+            var nvrBindingEditor = new NvrBindingEditor();
+            if (nvrBindingEditor.DataContext is NvrBindingEditorViewModel model &&
+                TcpSettingsInfo.ConnectionMode != null) {
+                model.Identifier = Identifier;
+
+                var displayIdentifier = TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server ? $"{TcpSettingsInfo.ServerConfig.IpAddress}:{TcpSettingsInfo.ServerConfig.Port}" : $"{TcpSettingsInfo.ClientConfig.IpAddress}:{TcpSettingsInfo.ClientConfig.Port}";
+
+                model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
+                    BindingSource = SourceType.Tcp,
+                    DisplayIdentifier = displayIdentifier,
+                    SerialNumber = displayIdentifier
+                };
+                await DialogHost.Show(nvrBindingEditor, model.Identifier);
+            }
+            else {
+                base.MessageQueue.Enqueue("未选择连接方式");
+            }
+        }
+
+        public ICommand ControlInputNvrSettingsCommand => new DelegateCommand<object>(ControlInputNvrSettingsDelegate);
+
+        private async void ControlInputNvrSettingsDelegate(object obj) {
+            var nvrBindingEditor = new NvrBindingEditor();
+            if (nvrBindingEditor.DataContext is NvrBindingEditorViewModel model) {
+                model.Identifier = Identifier;
+
+                model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
+                    BindingSource = SourceType.Input,
+                    DisplayIdentifier = Environment.MachineName,
+                    SerialNumber = Environment.MachineName
+                };
+                await DialogHost.Show(nvrBindingEditor, model.Identifier);
+            }
+        }
+
         protected override async Task<bool> SaveSettingsProcess() {
             var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
                 ConfigName = SettingsName,
                 Value = JsonConvert.SerializeObject(new ContentInputSettingsDto {
                     IsUseControlInput = IsUseControlInput,
                     IsUseTcpInput = IsUseTcpInput,
+                    IsUseBarcodeScannerInput = IsUseBarcodeScannerInput,
+                    IsUseRegularFilter = IsUseRegularFilter,
                     DataTemplate = DataTemplate.Select(s => new ItemTemplateInfo() {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
@@ -169,7 +295,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             Port = TcpSettingsInfo.ServerConfig.Port,
                         }
                     },
-                    Separator = Separator
+                    Separator = Separator,
+                    KeyboardDevice = KeyboardDevice,
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -179,8 +306,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public override async void LoadedDelegate(object obj) {
             var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>(SettingsName) ?? new ContentInputSettingsDto();
+            KeyboardDevice = settingsDto.KeyboardDevice;
             IsUseTcpInput = settingsDto.IsUseTcpInput;
             IsUseControlInput = settingsDto.IsUseControlInput;
+            IsUseBarcodeScannerInput = settingsDto.IsUseBarcodeScannerInput;
+            IsUseRegularFilter = settingsDto.IsUseRegularFilter;
             ControlInputInfo = new ControlInputInfoModel {
                 IsReceiveBarcode = settingsDto.ControlInputInfo.IsReceiveBarcode,
                 IsReceiveHeight = settingsDto.ControlInputInfo.IsReceiveHeight,
@@ -208,6 +338,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             })?.ToList();
             DataTemplate.Clear();
             DataTemplate.AddRange(templateModels);
+            if (IsUseBarcodeScannerInput) {
+                RefreshBarcodeScanner();
+            }
+            //加载键盘
+        }
+
+        public void RefreshBarcodeScanner() {
+            Task.Run(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    KeyboardDeviceItemInfo.Clear();
+                    var keyboardDevices = await _keyboardDeviceManager.EnumerateKeyboardDevices();
+
+                    if (keyboardDevices.Any()) {
+                        var infoModels = keyboardDevices.Select((s, i) => new KeyboardDeviceItemInfoModel {
+                            DeviceName = s.DeviceName,
+                            DevicePath = s.DevicePath,
+                            IsConnected = s.IsConnected,
+                            ManufacturerName = s.ManufacturerName,
+                            ProductId = s.ProductId,
+                            VendorId = s.VendorId,
+                            HasBinding = (KeyboardDevice.ProductId == s.ProductId && KeyboardDevice.VendorId == s.VendorId && KeyboardDevice.DevicePath == s.DevicePath),
+                            Num = i + 1,
+                        }).ToList();
+
+                        KeyboardDeviceItemInfo.AddRange(infoModels);
+                    }
+                });
+            });
         }
     }
 }

@@ -75,6 +75,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private async void LoadedDelegate(object obj) {
             _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+            RefreshDelegate(obj);
         }
 
         /// <summary>

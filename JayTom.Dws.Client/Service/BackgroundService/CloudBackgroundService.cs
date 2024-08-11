@@ -842,6 +842,9 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                             await _setNvrCameraBindingSlim.WaitAsync(token);
 
                             var cacheData = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+
+                            //这里需要从条码来源获取
+
                             nvrCameraBindingInfoModels = cacheData.Where(w => !string.IsNullOrEmpty(cameraSerialNumber) &&
                                                                               w.SerialNumber.Equals(cameraSerialNumber) &&
                                                                               w.NvrCameraBindingInfos?.Any() == true)
@@ -864,7 +867,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                             PackageTimestamped = packageInfoModel.PackageTimestamped,
                             BarCodeInfo = new PackageCloudBarCodeInfo() {
                                 Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
-                                CameraSerialNumber = packageInfoModel.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                                SerialNumber = packageInfoModel.BarCodeInfo?.SerialNumber ?? string.Empty,
+                                DisplayIdentifier = packageInfoModel.BarCodeInfo?.DisplayIdentifier ?? string.Empty,
                                 ScanTime = packageInfoModel.BarCodeInfo?.ScanTime ?? DateTime.Now,
                                 Source = (int)(packageInfoModel.BarCodeInfo?.Source ?? 0),
                             },

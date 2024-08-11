@@ -31,10 +31,16 @@ namespace JayTom.Dws.Data.Package {
         public SourceType Source { get; set; }
 
         /// <summary>
-        /// 相机序列号
+        /// 输入序列(来源设备唯一标识)
         /// </summary>
-        [Column("CameraSerialNumber")]
-        public string CameraSerialNumber { get; set; } = string.Empty;
+        [Column("SerialNumber")]
+        public string SerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 显示标识
+        /// </summary>
+        [Column("DisplayIdentifier")]
+        public string DisplayIdentifier { get; set; } = string.Empty;
 
         /// <summary>
         /// 自定义名称

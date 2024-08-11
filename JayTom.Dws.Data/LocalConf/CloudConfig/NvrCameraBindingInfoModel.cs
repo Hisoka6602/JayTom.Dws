@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -45,16 +46,28 @@ namespace JayTom.Dws.Data.LocalConf.CloudConfig {
         [Column("Channel"), Required]
         public int Channel { get; set; }
 
-        /*/// <summary>
-        /// 扫码相机序列号
+        /// <summary>
+        /// 输入序列(来源设备唯一标识)
         /// </summary>
-        [Column("BarcodeScannerSerialNumber"), Required]
-        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;*/
+        [Column("SerialNumber")]
+        public string SerialNumber { get; set; } = string.Empty;
 
-        [Column("ScannerCameraConfigInfoModelId"), JsonIgnore]
-        public long ScannerCameraConfigInfoModelId { get; set; }
+        /// <summary>
+        /// 显示标识
+        /// </summary>
+        [Column("DisplayIdentifier")]
+        public string DisplayIdentifier { get; set; } = string.Empty;
 
-        [ForeignKey("Id")]
-        public virtual BarcodeScannerCameraConfigInfoModel? BarcodeScannerCameraConfigInfoModel { get; set; }
+        /// <summary>
+        /// 绑定源
+        /// </summary>
+        [Column("BindingSource")]
+        public SourceType BindingSource { get; set; } = SourceType.None;
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [Column("Remarks")]
+        public string Remarks { get; set; } = string.Empty;
     }
 }

@@ -48,12 +48,6 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>()
                     .HasIndex(b => b.SerialNumber)
                     .IsUnique();
-                modelBuilder.Entity<BarcodeScannerCameraConfigInfoModel>()
-                   .HasMany(m => m.NvrCameraBindingInfos)
-                   .WithOne(n => n.BarcodeScannerCameraConfigInfoModel)
-                   .HasForeignKey(n => new { n.ScannerCameraConfigInfoModelId })
-                   .OnDelete(DeleteBehavior.Cascade);
-                //PanoramaCamera
                 modelBuilder.Entity<PanoramaCameraConfigInfoModel>().HasKey(c => new {
                     c.Id
                 });

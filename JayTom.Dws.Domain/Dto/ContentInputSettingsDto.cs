@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 
 namespace JayTom.Dws.Domain.Dto {
 
@@ -18,6 +19,21 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否使用控件输入
         /// </summary>
         public bool IsUseControlInput { get; set; }
+
+        /// <summary>
+        /// 是否使用扫码枪输入
+        /// </summary>
+        public bool IsUseBarcodeScannerInput { get; set; }
+
+        /// <summary>
+        /// 是否使用常规过滤
+        /// </summary>
+        public bool IsUseRegularFilter { get; set; }
+
+        /// <summary>
+        /// 绑定的扫码枪
+        /// </summary>
+        public KeyboardDevice KeyboardDevice { get; set; } = new();
 
         /// <summary>
         /// Tcp设置

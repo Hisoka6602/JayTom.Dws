@@ -8,6 +8,6 @@ using JayTom.Dws.Data.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Domain.Repository.LocalConf.CloudConfig {
 
-    public interface INvrCameraBindingRepository : IRepository<NvrCameraBindingInfoModel> {
+    public interface INvrCameraBindingRepository : IMemoryCacheRepository<NvrCameraBindingInfoModel> {
     }
 }

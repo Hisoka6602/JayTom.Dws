@@ -105,7 +105,12 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 相机序列号
         /// </summary>
-        public string CameraSerialNumber { get; set; } = string.Empty;
+        public string SerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 显示标识
+        /// </summary>
+        public string DisplayIdentifier { get; set; } = string.Empty;
     }
 
     /// <summary>

@@ -67,6 +67,7 @@ using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Client.Service.ImageService;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Views.Pages.Preferences;
@@ -341,6 +342,8 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ITcpContentInput>(provider => new TcpContentInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddSingleton<ISortingSerialPort>(serialPort => new SortingSerialPort(new SerialPort()));
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
+                services.AddSingleton<IKeyboardDeviceManager, KeyboardDeviceManager>();
+
                 //叠包监控通讯注册
                 services.AddSingleton<IPackageDetectionSerialPort>(serialPort => new PackageDetectionSerialPort(new SerialPort()));
                 services.AddSingleton<IPackageDetectionTcp>(provider => new PackageDetectionTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
@@ -390,7 +393,7 @@ namespace JayTom.Dws.Client {
                 //同步配置
                 services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
                 //把后台注册服务写在这里
-                services.AddHostedService<ZhuoYanScmBackgroundService>(); // 注册后组包服务
+                services.AddHostedService<SingleCameraBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                 services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理

@@ -31,7 +31,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                     PackageTimestamped = packageInfo.PackageTimestamped,
                     BarCodeInfo = new BarCodeInfoModel() {
                         Barcode = packageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                        CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                        SerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
+                        DisplayIdentifier = packageInfo.BarCodeInfo?.DisplayIdentifier ?? string.Empty,
                         ScanTime = packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
                         Source = packageInfo.BarCodeInfo?.Source ?? SourceType.None,
                     },
@@ -128,7 +129,7 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
             return new KeyValuePair<bool, object>(false, "保存失败");
         }
 
-        public async Task<KeyValuePair<bool, object>> GetPackages(string? barcode, DateTime? startScanTime, DateTime? endScanTime, string? cameraSerialNumber,
+        public async Task<KeyValuePair<bool, object>> GetPackages(string? barcode, DateTime? startScanTime, DateTime? endScanTime, string? serialNumber,
             double? minWeight, double? maxWeight, int? requestStatus, string? physicalExit, string? sentInstruction,
             string? logisticsName, string? threeSegmentCode, string? nodeName, string? deviceName, int pageIndex,
             int pageSize, CancellationToken cancellationToken) {
@@ -138,8 +139,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                     (string.IsNullOrEmpty(barcode) || w.BarCodeInfo.Barcode.Contains(barcode)) &&
                     (startScanTime == null || w.BarCodeInfo.ScanTime >= startScanTime) &&
                     (endScanTime == null || w.BarCodeInfo.ScanTime <= endScanTime) &&
-                    (string.IsNullOrEmpty(cameraSerialNumber) ||
-                     w.BarCodeInfo.CameraSerialNumber.Contains(cameraSerialNumber)) &&
+                    (string.IsNullOrEmpty(serialNumber) ||
+                     w.BarCodeInfo.SerialNumber.Contains(serialNumber)) &&
                     (minWeight == null || w.WeightInfo.FormattedWeight >= minWeight) &&
                     (maxWeight == null || w.WeightInfo.FormattedWeight <= maxWeight) &&
                     (requestStatus == null ||
@@ -165,8 +166,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                         (string.IsNullOrEmpty(barcode) || w.BarCodeInfo.Barcode.Contains(barcode)) &&
                         (startScanTime == null || w.BarCodeInfo.ScanTime >= startScanTime) &&
                         (endScanTime == null || w.BarCodeInfo.ScanTime <= endScanTime) &&
-                        (string.IsNullOrEmpty(cameraSerialNumber) ||
-                         w.BarCodeInfo.CameraSerialNumber.Contains(cameraSerialNumber)) &&
+                        (string.IsNullOrEmpty(serialNumber) ||
+                         w.BarCodeInfo.SerialNumber.Contains(serialNumber)) &&
                         (minWeight == null || w.WeightInfo.FormattedWeight >= minWeight) &&
                         (maxWeight == null || w.WeightInfo.FormattedWeight <= maxWeight) &&
                         (requestStatus == null ||

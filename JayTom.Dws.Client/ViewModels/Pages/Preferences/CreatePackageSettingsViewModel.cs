@@ -6,12 +6,14 @@ using System.Text;
 using Prism.Commands;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
+using TouchSocket.Core;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -55,7 +57,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         PackageCreationInterval = deserializeObject.PackageCreationInterval,
                         MaximumAssignmentTime = deserializeObject.MaximumAssignmentTime,
                         MinimumAssignmentTime = deserializeObject.MinimumAssignmentTime,
-                        IsUseBarcodeAssignmentInterval = deserializeObject.IsUseBarcodeAssignmentInterval
+                        IsUseBarcodeAssignmentInterval = deserializeObject.IsUseBarcodeAssignmentInterval,
+                        PackageCreationMethodItems = new ObservableCollection<PackageCreationMethodItemInfoModel>(Enum.GetValues(typeof(PackageCreationMethodsEnum))
+                            .Cast<PackageCreationMethodsEnum>()
+                            .ToList().Select(s => new PackageCreationMethodItemInfoModel {
+                                DisplayName = s.GetDescription(),
+                                EnumValue = s,
+                            })?.ToList() ?? new List<PackageCreationMethodItemInfoModel>())
                     };
                     var includedEnums = Enum.GetValues(typeof(PackageCreationMethodsEnum))
                         .Cast<PackageCreationMethodsEnum>()

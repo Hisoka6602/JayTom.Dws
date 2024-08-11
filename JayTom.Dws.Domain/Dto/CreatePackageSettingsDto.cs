@@ -157,7 +157,13 @@ namespace JayTom.Dws.Domain.Dto {
         /// Ocr信息
         /// </summary>
         [Description("Ocr信息")]
-        OcrInfo = 64
+        OcrInfo = 64,
+
+        /// <summary>
+        /// 扫码枪输入
+        /// </summary>
+        [Description("扫码枪输入")]
+        BarcodeScannerInput = 128
     }
 
     public enum PackageRemoveMethodsEnum {

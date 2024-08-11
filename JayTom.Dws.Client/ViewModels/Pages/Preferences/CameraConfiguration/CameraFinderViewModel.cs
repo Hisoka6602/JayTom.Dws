@@ -13,6 +13,7 @@ using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.Package;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
@@ -908,7 +909,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 var nvrBindingEditor = new NvrBindingEditor();
                 if (nvrBindingEditor.DataContext is NvrBindingEditorViewModel model) {
                     model.Identifier = Identifier;
-                    model.CameraFinderItemInfo = info;
+                    model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
+                        BindingSource = SourceType.Camera,
+                        DisplayIdentifier = info.SerialNumber,
+                        SerialNumber = info.SerialNumber
+                    };
 
                     await DialogHost.Show(nvrBindingEditor, model.Identifier);
                 }
