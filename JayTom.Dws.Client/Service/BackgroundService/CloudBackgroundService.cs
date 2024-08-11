@@ -141,8 +141,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     case SettingsChangedEvent { SettingsName: "NvrCameraBindingInfoModel" }:
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync();
-                            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s => s.Id > 0,
-                                o => o.Id);
+                            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
                         }
                         catch (Exception e) {
                             NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -777,9 +776,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
             _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings", stoppingToken) ??
                  new SyncSettingsDto();
-
-            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s => s.Id > 0,
-                o => o.Id, stoppingToken);
+            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
 
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //设置参数
@@ -846,22 +843,9 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync(token);
 
-                            var cacheData = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+                            var serialNumber = packageInfoModel.BarCodeInfo?.SerialNumber;
 
-                            //这里需要从条码来源获取
-
-                            nvrCameraBindingInfoModels = cacheData.Where(w => !string.IsNullOrEmpty(cameraSerialNumber) &&
-                                                                              w.SerialNumber.Equals(cameraSerialNumber) &&
-                                                                              w.NvrCameraBindingInfos?.Any() == true)
-                                                             ?.SelectMany(s => s.NvrCameraBindingInfos)
-                                                             ?.ToList() ??
-                                                         new List<NvrCameraBindingInfoModel>();
-
-                            /*nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f =>
-                                                             !string.IsNullOrEmpty(cameraSerialNumber)
-                                                             && f.BarcodeScannerSerialNumber.Equals(
-                                                                 cameraSerialNumber))?.ToList() ??
-                                                         new List<NvrCameraBindingInfoModel>();*/
+                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
                         }
                         finally {
                             _setNvrCameraBindingSlim.Release();
@@ -966,7 +950,6 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                             },
                             CloudNvrCameraBindingInfos = nvrCameraBindingInfoModels?.Select(s =>
                                 new PackageCloudNvrCameraBindingInfo {
-                                    //BarcodeScannerSerialNumber = s.BarcodeScannerSerialNumber,
                                     Channel = s.Channel,
                                     IpAddress = s.IpAddress,
                                     Password = s.Password,
