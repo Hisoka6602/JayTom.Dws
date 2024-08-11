@@ -65,6 +65,7 @@ using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Client.Service.ImageService;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Views.Pages.Preferences;
@@ -339,6 +340,8 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ITcpContentInput>(provider => new TcpContentInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
                 services.AddSingleton<ISortingSerialPort>(serialPort => new SortingSerialPort(new SerialPort()));
                 services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
+                services.AddSingleton<IKeyboardDeviceManager, KeyboardDeviceManager>();
+
                 //叠包监控通讯注册
                 services.AddSingleton<IPackageDetectionSerialPort>(serialPort => new PackageDetectionSerialPort(new SerialPort()));
                 services.AddSingleton<IPackageDetectionTcp>(provider => new PackageDetectionTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));

@@ -20,7 +20,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private bool _clearPackageQueueOnStop = true;
 
         private ObservableCollection<PackageCreationMethodItemInfoModel> _packageCreationMethodItems = new()
-        {
+        /*{
             new PackageCreationMethodItemInfoModel { DisplayName = "扫码相机", EnumValue = PackageCreationMethodsEnum.ScanBarcodeCamera ,IsChecked = false },
             new PackageCreationMethodItemInfoModel { DisplayName = "稳定重量",EnumValue = PackageCreationMethodsEnum.StableWeight , IsChecked = false },
             new PackageCreationMethodItemInfoModel { DisplayName = "控件输入",EnumValue = PackageCreationMethodsEnum.ControlInput , IsChecked = false },
@@ -28,7 +28,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
             new PackageCreationMethodItemInfoModel { DisplayName = "下位机创建",EnumValue = PackageCreationMethodsEnum.LowerMachineCreation , IsChecked = false },
             new PackageCreationMethodItemInfoModel { DisplayName = "Tcp内容输入",EnumValue = PackageCreationMethodsEnum.TcpInput , IsChecked = false },
             new PackageCreationMethodItemInfoModel { DisplayName = "Ocr信息",EnumValue = PackageCreationMethodsEnum.OcrInfo , IsChecked = false },
-        };
+        }*/;
 
         private bool _isUseEmptyPackageExpiry;
         private int _emptyPackageExpiryTime;
@@ -120,6 +120,9 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
             set => SetProperty(ref _clearPackageQueueOnStop, value);
         }
 
+        /// <summary>
+        /// 包裹创建方式
+        /// </summary>
         public ObservableCollection<PackageCreationMethodItemInfoModel> PackageCreationMethodItems {
             get => _packageCreationMethodItems;
             set => SetProperty(ref _packageCreationMethodItems, value);

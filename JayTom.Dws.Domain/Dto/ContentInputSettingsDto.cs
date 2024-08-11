@@ -30,6 +30,9 @@ namespace JayTom.Dws.Domain.Dto {
         /// </summary>
         public bool IsUseRegularFilter { get; set; }
 
+        /// <summary>
+        /// 绑定的扫码枪
+        /// </summary>
         public KeyboardDevice KeyboardDevice { get; set; } = new();
 
         /// <summary>

@@ -8,6 +8,16 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
     public interface IKeyboardDeviceManager : IDisposable {
 
+        /// <summary>
+        /// 条码返回事件
+        /// </summary>
+        event EventHandler<string> BarCodeReceived;
+
+        /// <summary>
+        /// 实时按键事件
+        /// </summary>
+        event EventHandler<string> RealTimeKeyReceived;
+
         // 是否正在监听
         bool IsListening { get; }
 
@@ -26,9 +36,9 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         /// 启动监听指定的键盘设备
         /// </summary>
         /// <param name="device"></param>
-        /// <param name="onDataReceived"></param>
+
         /// <returns></returns>
-        Task<bool> StartListening(KeyboardDevice device, Action<string> onDataReceived);
+        Task<bool> StartListening(KeyboardDevice device);
 
         /// <summary>
         /// 停止监听指定的键盘设备

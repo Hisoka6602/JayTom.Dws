@@ -108,37 +108,37 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  相机名称  -->
+                    <!--  绑定源  -->
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
-                        Binding="{Binding CustomName, UpdateSourceTrigger=PropertyChanged}"
+                        Binding="{Binding BindingSource, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="相机名称" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定源" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  序列号  -->
+                    <!--  绑定标识  -->
                     <DataGridTextColumn
                         Width="130"
                         MinWidth="130"
-                        Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                        Binding="{Binding DisplayIdentifier, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="序列号" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="绑定标识" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <!--  型号  -->
+                    <!--  登录名  -->
                     <DataGridTextColumn
                         Width="80"
                         MinWidth="80"
-                        Binding="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
+                        Binding="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>
-                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="型号" />
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="NVR登录名" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <!--  IP地址  -->

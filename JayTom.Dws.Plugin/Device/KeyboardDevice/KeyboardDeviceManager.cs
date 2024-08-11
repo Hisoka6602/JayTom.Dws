@@ -37,6 +37,10 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             StopListening();
         }
 
+        public event EventHandler<string>? BarCodeReceived;
+
+        public event EventHandler<string>? RealTimeKeyReceived;
+
         public bool IsListening { get; private set; }
         public KeyboardDevice ListeningDevice { get; private set; } = new();
 
@@ -55,8 +59,9 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             return _keyboardDevices;
         }
 
-        public async Task<bool> StartListening(KeyboardDevice device, Action<string> onDataReceived) {
+        public async Task<bool> StartListening(KeyboardDevice device) {
             await Task.Yield();
+
             if (IsListening || _keyboardDevices.Any(a => a.ProductId.Equals(device.ProductId) &&
                                                       a.VendorId.Equals(device.VendorId) &&
                                                       a.DeviceName?.Equals(device.DeviceName) != true) != true) {
@@ -76,13 +81,14 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
                     if (!string.IsNullOrEmpty(keyString)) {
                         //全大写
                         AddKeyToList(keyString.ToUpper());
+                        OnRealTimeKeyReceived(keyString);
                     }
 
                     if (keyboardData.Keyboard.VirutalKey == 13 && _keyList.Any()) {
                         //过滤
                         var data = string.Join(string.Empty, _keyList);
                         if (string.IsNullOrEmpty(_regexPattern) || Regex.IsMatch(data, _regexPattern)) {
-                            onDataReceived.Invoke(data);
+                            OnBarCodeReceived(data);
                         }
 
                         _keyList.Clear();
@@ -142,6 +148,14 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             catch (Exception e) {
                 return string.Empty;
             }
+        }
+
+        protected virtual void OnBarCodeReceived(string e) {
+            BarCodeReceived?.Invoke(this, e);
+        }
+
+        protected virtual void OnRealTimeKeyReceived(string e) {
+            RealTimeKeyReceived?.Invoke(this, e);
         }
     }
 }

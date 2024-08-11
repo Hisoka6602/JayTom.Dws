@@ -8,10 +8,8 @@ using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -22,22 +20,9 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
     public class NvrCameraMappingEditorViewModel : BindableBase {
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
-        private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
-        private List<BarcodeScannerCameraConfigInfoModel>? _scannerCameraConfigInfoModels;
 
-        private ObservableCollection<NvrCameraMappingItemInfoModel> _nvrCameraMappingItemInfos = new()
-        {
-            new NvrCameraMappingItemInfoModel()
-            {
-                IpAddress = "192.168.0.1",
-                CustomName = "相机1",
-                SerialNumber = "测试序列号",
-                Num = 1,
-                Model = "型号"
-            }
+        private ObservableCollection<NvrCameraMappingItemInfoModel> _nvrCameraMappingItemInfos = new() {
         };
 
         private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
@@ -54,45 +39,25 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             set => SetProperty(ref _nvrCameraMappingItemInfos, value);
         }
 
-        public NvrCameraMappingEditorViewModel(IIpcNvrConfigRepository ipcNvrConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository) {
-            _ipcNvrConfigRepository = ipcNvrConfigRepository;
-            _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+        public NvrCameraMappingEditorViewModel(INvrCameraBindingRepository nvrCameraBindingRepository) {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
-            _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
-
-            var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s => s.IpAddress.Equals(IpcNvrItemInfo.IpAddress),
-                o => o.Id);
+            var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
 
             var cameraMappingItemInfoModels = nvrCameraBindingInfoModels.Select((s, i) => new NvrCameraMappingItemInfoModel {
                 Num = i + 1,
-                CameraType = (CameraType)(_scannerCameraConfigInfoModels.FirstOrDefault(f =>
-                    f.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress) &&
-                                                      a.Channel.Equals(s.Channel)) == true)?.CameraType ?? 0),
+                DisplayIdentifier = s.DisplayIdentifier,
                 Channel = s.Channel,
                 IpAddress = s.IpAddress,
-                Name = _scannerCameraConfigInfoModels.FirstOrDefault(f => f.NvrCameraBindingInfos?.Any(a =>
-                    a.IpAddress.Equals(s.IpAddress) &&
-                    a.Channel.Equals(s.Channel)) == true)?.Name ?? string.Empty,
-                ConnectionType = (CameraConnectionType)(_scannerCameraConfigInfoModels.FirstOrDefault(f =>
-                    f.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress) &&
-                                                      a.Channel.Equals(s.Channel)) == true)?.ConnectionType ?? 0),
-                CustomName = _scannerCameraConfigInfoModels.FirstOrDefault(f => f.NvrCameraBindingInfos?.Any(a =>
-                    a.IpAddress.Equals(s.IpAddress) &&
-                    a.Channel.Equals(s.Channel)) == true)?.CustomName ?? string.Empty,
-                Model = _scannerCameraConfigInfoModels.FirstOrDefault(f => f.NvrCameraBindingInfos?.Any(a =>
-                    a.IpAddress.Equals(s.IpAddress) &&
-                    a.Channel.Equals(s.Channel)) == true)?.Model ?? string.Empty,
-                SerialNumber = _scannerCameraConfigInfoModels.FirstOrDefault(f => f.NvrCameraBindingInfos?.Any(a =>
-                    a.IpAddress.Equals(s.IpAddress) &&
-                    a.Channel.Equals(s.Channel)) == true)?.SerialNumber ?? string.Empty,
+                Username = s.Username,
+                SerialNumber = s.SerialNumber,
+                BindingSource = s.BindingSource,
+                Remarks = s.Remarks,
+                Port = s.Port,
             })?.ToList();
 
             await Application.Current.Dispatcher.InvokeAsync(async () => {
@@ -114,18 +79,13 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         private async void UnbindCameraDelegate(object obj) {
             if (obj is NvrCameraMappingItemInfoModel info) {
-                var model = _scannerCameraConfigInfoModels?.FirstOrDefault(f =>
+                var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
+                    f.Channel.Equals(info.Channel) &&
                     f.SerialNumber.Equals(info.SerialNumber));
-                if (model is not null) {
-                    var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
-                        f.Channel.Equals(info.Channel) &&
-                        f.SerialNumber.Equals(model.SerialNumber));
-                    if (infoModel is not null) {
-                        var delete = await _nvrCameraBindingRepository.Delete(infoModel);
-                        if (delete) {
-                            _barcodeScannerCameraConfigRepository.UpdateMemoryCache();
-                            LoadedDelegate(obj);
-                        }
+                if (infoModel is not null) {
+                    var delete = await _nvrCameraBindingRepository.Delete(infoModel);
+                    if (delete) {
+                        LoadedDelegate(obj);
                     }
                 }
             }

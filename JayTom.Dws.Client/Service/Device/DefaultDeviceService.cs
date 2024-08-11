@@ -23,6 +23,7 @@ using JayTom.Dws.Plugin.Scale.DynamicScale;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using CameraType = JayTom.Dws.Camera.CameraType;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
@@ -50,6 +51,7 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IStaticScale _staticScale;
         private readonly IOcr _ocr;
         private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
+        private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private SemaphoreSlim _cameraSlim = new(1);
 
         //private List<string> CameraInitializationException { get; set; } = new();
@@ -195,7 +197,8 @@ namespace JayTom.Dws.Client.Service.Device {
             IVolumeCameraConfigRepository volumeCameraConfigRepository,
             IConfigRepository configRepository, IDynamicScale dynamicScale,
             IStaticScale staticScale, IOcr ocr,
-            IUsbCameraConfigRepository usbCameraConfigRepository) {
+            IUsbCameraConfigRepository usbCameraConfigRepository,
+            IKeyboardDeviceManager keyboardDeviceManager) {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
@@ -204,6 +207,7 @@ namespace JayTom.Dws.Client.Service.Device {
             _staticScale = staticScale;
             _ocr = ocr;
             _usbCameraConfigRepository = usbCameraConfigRepository;
+            _keyboardDeviceManager = keyboardDeviceManager;
             //注册磅秤事件
             _dynamicScale.StabledWeight += delegate (object? sender, float f) {
                 OnStableWeight(new StableWeightEventArgs() {
@@ -260,6 +264,13 @@ namespace JayTom.Dws.Client.Service.Device {
                     },
                     ScaleType = ScaleType.Static
                 });
+            };
+            //扫码枪
+            _keyboardDeviceManager.BarCodeReceived += (sender, s) => {
+                OnBarCodeKeyReceived(s);
+            };
+            _keyboardDeviceManager.RealTimeKeyReceived += (sender, s) => {
+                OnRealTimeKeyReceived(s);
             };
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "BarcodeFilterSettings" }) {
@@ -457,6 +468,21 @@ namespace JayTom.Dws.Client.Service.Device {
                         break;
                 }
             }
+            //初始化扫码枪
+            //获取已绑定的扫码枪
+            var contentInputSettingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings", token) ?? new ContentInputSettingsDto();
+            if (contentInputSettingsDto.KeyboardDevice is { ProductId: > 0, VendorId: > 0 }) {
+                //设置过滤
+                if (contentInputSettingsDto.IsUseRegularFilter) {
+                    _keyboardDeviceManager.SetFilterRule(_barcodeFilterSettingsDto?.BasicFilterInfo?.RegularExpression ?? string.Empty);
+                }
+                var listening = await _keyboardDeviceManager.StartListening(contentInputSettingsDto.KeyboardDevice);
+                if (listening) {
+                    OnDeviceException(new DeviceExceptionEventArgs() {
+                        ExceptionMessage = new Exception("扫码枪监听失败")
+                    });
+                }
+            }
 
             return new KeyValuePair<bool, string>(false, string.Empty);
         }
@@ -467,6 +493,10 @@ namespace JayTom.Dws.Client.Service.Device {
             RunningStatus = false;
             return new KeyValuePair<bool, string>(true, string.Empty);
         }
+
+        public event EventHandler<string>? BarCodeKeyReceived;
+
+        public event EventHandler<string>? RealTimeKeyReceived;
 
         public async Task Initialization() {
             await Task.Yield();
@@ -758,75 +788,78 @@ namespace JayTom.Dws.Client.Service.Device {
                     OnCameraInitialized(_cameras);
                     //磅秤相关
                     //获取磅秤配置
-                    var infoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("WeightSettings"));
-                    if (infoModel is not null) {
-                        try {
+                    _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings") ?? new WeightSettingsDto();
+                    try {
+                        if (_weightSettingsDto.Mode != WeightMode.None) {
                             _staticScale.Dispose();
                             _dynamicScale.Dispose();
                             await Task.Delay(TimeSpan.FromSeconds(1));
-                            _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(infoModel.Value);
-                            if (_weightSettingsDto is not null) {
-                                //判断需要连接的磅秤
-                                var properties = new WeightAdditionalProperties() {
-                                    IsUseActualWeightConversionRate =
-                           _weightSettingsDto.AdditionalWeight.IsUseActualWeightConversionRate,
-                                    IsUseAppendedWeight = _weightSettingsDto.AdditionalWeight.IsUseAppendedWeight,
-                                    IsUseFixedWeight = _weightSettingsDto.AdditionalWeight.IsUseFixedWeight,
-                                    IsUseMergedWeightTimeout = _weightSettingsDto.AdditionalWeight.IsUseMergedWeightTimeout,
-                                    WeightConversionRate = _weightSettingsDto.AdditionalWeight.WeightConversionRate,
-                                    AppendedWeightValue = _weightSettingsDto.AdditionalWeight.AppendedWeightValue,
-                                    FixedWeightValue = _weightSettingsDto.AdditionalWeight.FixedWeightValue,
-                                    MergedWeightTimeout = _weightSettingsDto.AdditionalWeight.MergedWeightTimeout
-                                };
-                                switch (_weightSettingsDto.Mode) {
-                                    //连接
-                                    case WeightMode.Static:
-                                        ScaleType = ScaleType.Static;
-                                        _staticScale.WeightFormat = (ScaleWeightFormat)_weightSettingsDto.Connection.DataFormat;
-                                        _staticScale.WeightAdditionalProperties = properties;
-                                        _staticScale.SetWeightCalculationParameters(new DefaultStaticScaleValueParameters() {
-                                            AccessMode = (Plugin.Scale.StaticScale.WeightAccessMode)_weightSettingsDto.StaticWeight.AccessMode,
-                                            BalanceCount = _weightSettingsDto.StaticWeight.BalanceCount,
-                                            BalanceQty = _weightSettingsDto.StaticWeight.BalanceQty,
-                                            CharacterLength = _weightSettingsDto.StaticWeight.CharacterLength,
-                                            DataInterval = _weightSettingsDto.StaticWeight.DataInterval,
-                                            DecimalEndPosition = _weightSettingsDto.StaticWeight.DecimalEndPosition,
-                                            DecimalStartPosition = _weightSettingsDto.StaticWeight.DecimalStartPosition,
-                                            Identifier = _weightSettingsDto.StaticWeight.Identifier,
-                                            IdentifierPosition = _weightSettingsDto.StaticWeight.IdentifierPosition,
-                                            IntegerEndPosition = _weightSettingsDto.StaticWeight.IntegerEndPosition,
-                                            IntegerStartPosition = _weightSettingsDto.StaticWeight.IntegerStartPosition,
-                                            IsReversed = _weightSettingsDto.StaticWeight.IsReversed,
-                                            SendingContent = _weightSettingsDto.StaticWeight.SendingContent,
-                                            SendingFormat = (ScaleWeightFormat)_weightSettingsDto.StaticWeight.SendingFormat,
-                                            MaxWeight = _weightSettingsDto.CommonWeight.MaxWeight,
-                                            MinWeight = _weightSettingsDto.CommonWeight.MinWeight
-                                        });
+                            //判断需要连接的磅秤
+                            var properties = new WeightAdditionalProperties() {
+                                IsUseActualWeightConversionRate =
+                       _weightSettingsDto.AdditionalWeight.IsUseActualWeightConversionRate,
+                                IsUseAppendedWeight = _weightSettingsDto.AdditionalWeight.IsUseAppendedWeight,
+                                IsUseFixedWeight = _weightSettingsDto.AdditionalWeight.IsUseFixedWeight,
+                                IsUseMergedWeightTimeout = _weightSettingsDto.AdditionalWeight.IsUseMergedWeightTimeout,
+                                WeightConversionRate = _weightSettingsDto.AdditionalWeight.WeightConversionRate,
+                                AppendedWeightValue = _weightSettingsDto.AdditionalWeight.AppendedWeightValue,
+                                FixedWeightValue = _weightSettingsDto.AdditionalWeight.FixedWeightValue,
+                                MergedWeightTimeout = _weightSettingsDto.AdditionalWeight.MergedWeightTimeout
+                            };
+                            switch (_weightSettingsDto.Mode) {
+                                //连接
+                                case WeightMode.Static:
+                                    ScaleType = ScaleType.Static;
+                                    _staticScale.WeightFormat = (ScaleWeightFormat)_weightSettingsDto.Connection.DataFormat;
+                                    _staticScale.WeightAdditionalProperties = properties;
+                                    _staticScale.SetWeightCalculationParameters(new DefaultStaticScaleValueParameters() {
+                                        AccessMode = (Plugin.Scale.StaticScale.WeightAccessMode)_weightSettingsDto.StaticWeight.AccessMode,
+                                        BalanceCount = _weightSettingsDto.StaticWeight.BalanceCount,
+                                        BalanceQty = _weightSettingsDto.StaticWeight.BalanceQty,
+                                        CharacterLength = _weightSettingsDto.StaticWeight.CharacterLength,
+                                        DataInterval = _weightSettingsDto.StaticWeight.DataInterval,
+                                        DecimalEndPosition = _weightSettingsDto.StaticWeight.DecimalEndPosition,
+                                        DecimalStartPosition = _weightSettingsDto.StaticWeight.DecimalStartPosition,
+                                        Identifier = _weightSettingsDto.StaticWeight.Identifier,
+                                        IdentifierPosition = _weightSettingsDto.StaticWeight.IdentifierPosition,
+                                        IntegerEndPosition = _weightSettingsDto.StaticWeight.IntegerEndPosition,
+                                        IntegerStartPosition = _weightSettingsDto.StaticWeight.IntegerStartPosition,
+                                        IsReversed = _weightSettingsDto.StaticWeight.IsReversed,
+                                        SendingContent = _weightSettingsDto.StaticWeight.SendingContent,
+                                        SendingFormat = (ScaleWeightFormat)_weightSettingsDto.StaticWeight.SendingFormat,
+                                        MaxWeight = _weightSettingsDto.CommonWeight.MaxWeight,
+                                        MinWeight = _weightSettingsDto.CommonWeight.MinWeight
+                                    });
 
-                                        break;
+                                    break;
 
-                                    case WeightMode.Dynamic:
-                                        //连接动态称
-                                        ScaleType = ScaleType.Dynamic;
-                                        _dynamicScale.WeightFormat = (ScaleWeightFormat)_weightSettingsDto.Connection.DataFormat;
-                                        _dynamicScale.WeightAdditionalProperties = properties;
-                                        _dynamicScale.SetWeightCalculationParameters(new DefaultDynamicScaleValueParameters() {
-                                            DecimalPlaces = _weightSettingsDto.DynamicWeight.DecimalPrecision
-                                        });
+                                case WeightMode.Dynamic:
+                                    //连接动态称
+                                    ScaleType = ScaleType.Dynamic;
+                                    _dynamicScale.WeightFormat = (ScaleWeightFormat)_weightSettingsDto.Connection.DataFormat;
+                                    _dynamicScale.WeightAdditionalProperties = properties;
+                                    _dynamicScale.SetWeightCalculationParameters(new DefaultDynamicScaleValueParameters() {
+                                        DecimalPlaces = _weightSettingsDto.DynamicWeight.DecimalPrecision
+                                    });
 
-                                        break;
+                                    break;
 
-                                    case WeightMode.None:
-                                        ScaleType = ScaleType.None;
-                                        break;
-                                }
+                                case WeightMode.None:
+                                    ScaleType = ScaleType.None;
+                                    break;
                             }
                         }
-                        catch (Exception e) {
-                            OnDeviceException(new DeviceExceptionEventArgs() {
-                                ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载磅秤设置失败") ?? string.Empty}:{e.Message}")
-                            });
-                        }
+                    }
+                    catch (Exception e) {
+                        OnDeviceException(new DeviceExceptionEventArgs() {
+                            ExceptionMessage = new Exception($"{Languages.Language.ResourceManager.GetString("加载磅秤设置失败") ?? string.Empty}:{e.Message}")
+                        });
+                    }
+                    //扫码枪相关
+
+                    var createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings") ?? new CreatePackageSettingsDto();
+                    if (createPackageSettingsDto.PackageCreationMethods.HasFlag(PackageCreationMethodsEnum.BarcodeScannerInput)) {
+                        await _keyboardDeviceManager.EnumerateKeyboardDevices();
                     }
                 }
                 catch (Exception e) {
@@ -837,13 +870,14 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public void Dispose() {
             try {
-                for (int i = _cameras.Count - 1; i >= 0; i--) {
+                for (var i = _cameras.Count - 1; i >= 0; i--) {
                     var serialNumber = _cameras[i]?.Info?.SerialNumber ?? string.Empty;
                     _cameras[i]?.Dispose();
                     OnCameraReleased(serialNumber);
                 }
                 _dynamicScale?.Dispose();
                 _staticScale?.Dispose();
+                _keyboardDeviceManager.Dispose();
             }
             catch (Exception e) {
                 OnDeviceException(new DeviceExceptionEventArgs() {
@@ -914,49 +948,6 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnCameraReleased(string e) {
             await Task.Yield();
             CameraReleased?.Invoke(this, e);
-        }
-
-        private CameraType ConvertCameraType(string brand, string modelName) {
-            switch (brand) {
-                case not null when (brand.Contains("Hikrobot") || brand.Contains("Hikvision")):
-                    if (modelName.Contains("MV-D")) {
-                        return CameraType.ThreeDCamera;
-                    }
-                    if (modelName.Contains("MV-ID"))
-                        return CameraType.SmartCamera;
-                    if (modelName.Contains("MV-PD"))
-                        return CameraType.IndustrialCamera;
-                    break;
-
-                case not null when (brand.Contains("Dahua") || brand.Contains("Huaray")):
-                    if (modelName.Contains("IPC"))
-                        return CameraType.VideoCamera;
-                    if (modelName.Contains("DH-MV-S") || modelName.Contains("DH-MV-R") || modelName.Contains("DH-SL")
-                        || modelName.StartsWith("R") || modelName.StartsWith("S5"))
-                        return CameraType.SmartCamera;
-                    if (modelName.Contains("DH-MV-D"))
-                        return CameraType.ThreeDCamera;
-                    break;
-
-                case not null when (brand.Contains("Wayzim") /*|| info.Brand.Contains("Huaray")*/):
-                    if (modelName.Contains("SmartCamera"))
-                        return CameraType.SmartCamera;
-                    if (modelName.Contains("IndustrialCamera"))
-                        return CameraType.IndustrialCamera;
-                    break;
-
-                case not null when (brand.Contains("量方") /*|| info.Brand.Contains("Huaray")*/):
-                    if (modelName.Contains("Orbbec"))
-                        return CameraType.ThreeDCamera;
-                    break;
-
-                case not null when (brand.Contains("Microsoft") /*|| info.Brand.Contains("Huaray")*/):
-                    return CameraType.IndustrialCamera;
-
-                default:
-                    return CameraType.IndustrialCamera;
-            }
-            return CameraType.IndustrialCamera;
         }
 
         private ICamera? ConvertCamera(CameraInfo info) {
@@ -1146,6 +1137,14 @@ namespace JayTom.Dws.Client.Service.Device {
         protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
             await Task.Yield();
             CameraStarted?.Invoke(this, e);
+        }
+
+        protected virtual void OnBarCodeKeyReceived(string e) {
+            BarCodeKeyReceived?.Invoke(this, e);
+        }
+
+        protected virtual void OnRealTimeKeyReceived(string e) {
+            RealTimeKeyReceived?.Invoke(this, e);
         }
     }
 }

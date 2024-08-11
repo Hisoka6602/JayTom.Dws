@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.AccessControl;
@@ -47,36 +48,43 @@ namespace JayTom.Dws.Data.Package {
         /// <summary>
         /// 无
         /// </summary>
+        [Description("无")]
         None = 0,
 
         /// <summary>
         /// 串口
         /// </summary>
+        [Description("串口")]
         SerialPort = 1,
 
         /// <summary>
         /// Tcp
         /// </summary>
+        [Description("TCP")]
         Tcp = 2,
 
         /// <summary>
         /// 输入
         /// </summary>
+        [Description("控件输入")]
         Input = 3,
 
         /// <summary>
         /// 相机
         /// </summary>
+        [Description("相机")]
         Camera = 4,
 
         /// <summary>
         /// Ocr创建
         /// </summary>
+        [Description("Ocr推理")]
         Ocr = 5,
 
         /// <summary>
         /// 扫码枪
         /// </summary>
+        [Description("扫码枪")]
         BarcodeScanner = 6
     }
 

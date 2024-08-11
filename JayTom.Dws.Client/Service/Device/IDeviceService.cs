@@ -201,6 +201,16 @@ namespace JayTom.Dws.Client.Service.Device {
         Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default);
 
         /// <summary>
+        /// 扫码枪条码返回事件
+        /// </summary>
+        event EventHandler<string> BarCodeKeyReceived;
+
+        /// <summary>
+        /// 扫码枪实时按键事件
+        /// </summary>
+        event EventHandler<string> RealTimeKeyReceived;
+
+        /// <summary>
         /// 初始化设备服务
         /// </summary>
         Task Initialization();
