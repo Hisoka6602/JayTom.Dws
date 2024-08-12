@@ -71,8 +71,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SyncSettingsDto _syncSettingsDto = new();
         private DateTime _startTime = DateTime.Now;
         private SemaphoreSlim _cloudVideoUpLoadSlim = new(2);
+
         private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
         private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
+
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private static bool _isWindowsClose;
 
@@ -178,7 +180,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "EshippingitApiParameters", IsLocallySaved: true } eshippingitApiParameters: {
+                    case { SettingsName: "EshippingitApiParameters", IsLocallySaved: true } eshippingitApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -191,7 +193,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "JtExpressApiParameters", IsLocallySaved: true } jtExpressApiParameters: {
+                    case { SettingsName: "JtExpressApiParameters", IsLocallySaved: true } jtExpressApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -204,7 +206,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "RoutDataApiParameters", IsLocallySaved: true } routDataApiParameters: {
+                    case { SettingsName: "RoutDataApiParameters", IsLocallySaved: true } routDataApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -217,7 +219,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "SzjyApiParameters", IsLocallySaved: true } szjyApiParameters: {
+                    case { SettingsName: "SzjyApiParameters", IsLocallySaved: true } szjyApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -230,7 +232,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "WdtFlagshipApiParameters", IsLocallySaved: true } wdtFlagshipApiParameters: {
+                    case { SettingsName: "WdtFlagshipApiParameters", IsLocallySaved: true } wdtFlagshipApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -243,7 +245,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "WdtWmsApiParameters", IsLocallySaved: true } wdtWmsApiParameters: {
+                    case { SettingsName: "WdtWmsApiParameters", IsLocallySaved: true } wdtWmsApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -256,7 +258,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "SaveImageSettings", IsLocallySaved: true } saveImageSettings: {
+                    case { SettingsName: "SaveImageSettings", IsLocallySaved: true } saveImageSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseImageStorageSync: true }) {
@@ -270,7 +272,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "BarcodeFilterSettings", IsLocallySaved: true } barcodeFilterSettings: {
+                    case { SettingsName: "BarcodeFilterSettings", IsLocallySaved: true } barcodeFilterSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseFilterSync: true }) {
@@ -283,7 +285,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "ContentInputSettings", IsLocallySaved: true } contentInputSettings: {
+                    case { SettingsName: "ContentInputSettings", IsLocallySaved: true } contentInputSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseContentInputSync: true }) {
@@ -776,7 +778,6 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
             _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings", stoppingToken) ??
                  new SyncSettingsDto();
-            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
 
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 //设置参数
@@ -844,8 +845,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                             await _setNvrCameraBindingSlim.WaitAsync(token);
 
                             var serialNumber = packageInfoModel.BarCodeInfo?.SerialNumber;
-
-                            nvrCameraBindingInfoModels = _nvrCameraBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
+                            var nvrBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                            nvrCameraBindingInfoModels = nvrBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
                         }
                         finally {
                             _setNvrCameraBindingSlim.Release();
