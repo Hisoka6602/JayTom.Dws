@@ -118,7 +118,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 switch (item) {
-                    case SettingsChangedEvent { SettingsName: "CloudVideoSettings" } model: {
+                    case { SettingsName: "CloudVideoSettings" } model: {
                             _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(model.SettingsName) ?? new CloudVideoSettingsDto();
                             _cloudVideoUpLoadSlim = new SemaphoreSlim(_cloudVideoSettingsDto.Concurrency);
                             if (_cloudVideoSettingsDto.IsAutoUploadUnsyncedData) {
@@ -136,11 +136,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "SyncSettingsSettings" } syncSettingsSettings: {
+                    case { SettingsName: "SyncSettingsSettings" } syncSettingsSettings: {
                             _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "NvrCameraBindingInfoModel" }:
+                    case { SettingsName: "NvrCameraBindingInfoModel" }:
                         try {
                             await _setNvrCameraBindingSlim.WaitAsync();
                             _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
@@ -154,7 +154,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                         break;
 
-                    case SettingsChangedEvent { SettingsName: "ApiSettings", IsLocallySaved: true } apiSettings: {
+                    case { SettingsName: "ApiSettings", IsLocallySaved: true } apiSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -167,7 +167,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "CaiNiaoApiParameters", IsLocallySaved: true } caiNiaoApiParameters: {
+                    case { SettingsName: "CaiNiaoApiParameters", IsLocallySaved: true } caiNiaoApiParameters: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
@@ -298,7 +298,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "CreatePackageSettings", IsLocallySaved: true } createPackageSettings: {
+                    case { SettingsName: "CreatePackageSettings", IsLocallySaved: true } createPackageSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUsePackagingSync: true }) {
@@ -311,7 +311,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "OcrSettings", IsLocallySaved: true } ocrSettings: {
+                    case { SettingsName: "OcrSettings", IsLocallySaved: true } ocrSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseOcrSync: true }) {
@@ -324,7 +324,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "CacheClearSettings", IsLocallySaved: true } cacheClearSettings: {
+                    case { SettingsName: "CacheClearSettings", IsLocallySaved: true } cacheClearSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSpaceCleaningSync: true }) {
@@ -337,7 +337,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "ApiSortingItemsSettings", IsLocallySaved: true } apiSortingItemsSettings: {
+                    case { SettingsName: "ApiSortingItemsSettings", IsLocallySaved: true } apiSortingItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
@@ -354,7 +354,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "BarcodeSortingItemsSettings", IsLocallySaved: true } barcodeSortingItemsSettings: {
+                    case { SettingsName: "BarcodeSortingItemsSettings", IsLocallySaved: true } barcodeSortingItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
@@ -371,7 +371,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "LogisticsSortingItemsSettings", IsLocallySaved: true } logisticsSortingItemsSettings: {
+                    case { SettingsName: "LogisticsSortingItemsSettings", IsLocallySaved: true } logisticsSortingItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
@@ -388,7 +388,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "OcrSortingItemsSettings", IsLocallySaved: true } ocrSortingItemsSettings: {
+                    case { SettingsName: "OcrSortingItemsSettings", IsLocallySaved: true } ocrSortingItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
@@ -405,13 +405,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "VolumeSortingItemsSettings", IsLocallySaved: true } volumeSortingItemsSettings: {
+                    case { SettingsName: "VolumeSortingItemsSettings", IsLocallySaved: true } volumeSortingItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
                                 var volumeSortingInfoModels = await _volumeSortingRepository.VolumeSortingItems(s => s.Id > 0);
                                 var (key, value) = await _syncSettingsService.SubmitSyncContent(volumeSortingItemsSettings.SettingsName,
-JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings() { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
+JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
                                 if (!key) {
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
                                 }
@@ -419,7 +419,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "WeightSortingItemsSettings", IsLocallySaved: true } weightSortingItemsSettings: {
+                    case { SettingsName: "WeightSortingItemsSettings", IsLocallySaved: true } weightSortingItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
@@ -432,7 +432,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "CommunicationsItemsSettings", IsLocallySaved: true } communicationsItemsSettings: {
+                    case { SettingsName: "CommunicationsItemsSettings", IsLocallySaved: true } communicationsItemsSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseConnectionSync: true }) {
@@ -449,7 +449,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "LogisticsCodeRecognitionItemSettings", IsLocallySaved: true } logisticsCodeRecognitionItemSettings: {
+                    case { SettingsName: "LogisticsCodeRecognitionItemSettings", IsLocallySaved: true } logisticsCodeRecognitionItemSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseLogisticsSync: true }) {
@@ -463,7 +463,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "PackageExitDefinitionItemSettings", IsLocallySaved: true } packageExitDefinitionItemSettings: {
+                    case { SettingsName: "PackageExitDefinitionItemSettings", IsLocallySaved: true } packageExitDefinitionItemSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseExitSync: true }) {
@@ -476,7 +476,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "PackageExitLockSettings", IsLocallySaved: true } packageExitLockSettings: {
+                    case { SettingsName: "PackageExitLockSettings", IsLocallySaved: true } packageExitLockSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true }) {
@@ -489,7 +489,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "PackageExitLockBindingItemSettings", IsLocallySaved: true } packageExitLockBindingItemSettings: {
+                    case { SettingsName: "PackageExitLockBindingItemSettings", IsLocallySaved: true } packageExitLockBindingItemSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true }) {
@@ -506,7 +506,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "SortingInstructionBindingItemSettings", IsLocallySaved: true } sortingInstructionBindingItemSettings: {
+                    case { SettingsName: "SortingInstructionBindingItemSettings", IsLocallySaved: true } sortingInstructionBindingItemSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseInstructionSync: true }) {
@@ -519,7 +519,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "StackedPackageDetectionSettings", IsLocallySaved: true } stackedPackageDetectionSettings: {
+                    case { SettingsName: "StackedPackageDetectionSettings", IsLocallySaved: true } stackedPackageDetectionSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseStackingSync: true }) {
@@ -533,7 +533,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "SupplyCounterSettings", IsLocallySaved: true } supplyCounterSettings: {
+                    case { SettingsName: "SupplyCounterSettings", IsLocallySaved: true } supplyCounterSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true }) {
@@ -547,7 +547,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "SortingMethodSettings", IsLocallySaved: true } sortingMethodSettings: {
+                    case { SettingsName: "SortingMethodSettings", IsLocallySaved: true } sortingMethodSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }) {
@@ -560,7 +560,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
 
                             break;
                         }
-                    case SettingsChangedEvent { SettingsName: "AlgorithmSettings", IsLocallySaved: true } algorithmSettings: {
+                    case { SettingsName: "AlgorithmSettings", IsLocallySaved: true } algorithmSettings: {
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseAlgorithmSync: true }) {
@@ -575,8 +575,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         }
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
+                if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });
@@ -827,18 +827,12 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings(
                         });
                     });
                 await retryPolicy.ExecuteAsync(async () => {
-                    //获取数据
-                    //创建多线程
-
-                    //位置输出*/
                     var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>()
                     {
                         { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
                         { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                     });
                     if (key) {
-                        var cameraSerialNumber = packageInfoModel.ImageInfos?.FirstOrDefault(f => f.Type == 0)
-                            ?.CameraSerialNumber;
                         //取出绑定信息
                         List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
                         try {
