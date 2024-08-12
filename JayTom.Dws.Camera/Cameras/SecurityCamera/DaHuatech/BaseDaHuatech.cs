@@ -30,18 +30,14 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static SemaphoreSlim _enumerateSlim = new(1);
         private static ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
         private static ConcurrentDictionary<string, DevLogInInfo> _loginDev = new();
-        private static ConcurrentQueue<CameraImageMessageInfo> _imageMessageQueue = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
         private static ConcurrentDictionary<string, Func<Bitmap, Task>> _realtimeFrameEvent = new();
         private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
         private static SemaphoreSlim _snapRevPhotoSlim = new(1);
-        private static SemaphoreSlim _realtimeFrameSlim = new(1);
         private static byte[] _imageBytes = Array.Empty<byte>();
-        private static byte[] _realtimeFrameBytes = Array.Empty<byte>();
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
-        private IntPtr _mPlayBackId = IntPtr.Zero;
-        private static Channel<(int port, IntPtr buf, int size, DhPlaySdk.FRAME_INFO info)> _channel;
+        private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel;
         private static DecCBFun? _decCbFun;
 
         //播放Id队列
@@ -129,7 +125,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             }
                         }
                     };
-
                     NETClient.SetNetworkParam(new NET_PARAM() {
                         nWaittime = 10000,// 等待超时时间(毫秒)
                         nConnectTime = 10000,// 连接超时时间(毫秒)
@@ -656,6 +651,30 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 添加水印
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <param name="content"></param>
+        /// <param name="config"></param>
+        public void AddRealTimeWatermark(string serialNo, int channelId, string content, SecurityCameraWatermarkConfig config) {
+        }
+
+        /// <summary>
+        /// 删除过期水印
+        /// </summary>
+        public void DeleteExpiredWatermarks(string serialNo, int channelId) {
+        }
+
+        /// <summary>
+        /// 删除全部水印
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        public void DeleteAllWatermarks(string serialNo, int channelId) {
         }
     }
 

@@ -106,7 +106,7 @@ namespace JayTom.Dws.VideoApi.Controllers {
                                     FirstOrDefault()?.ScanTime ?? DateTime.Now,
                                 NvrCameraBindingItem = videoBarCodeInfoModel.VideoScanNodeInfos?.FirstOrDefault()?.
                                     VideoNvrCameraBindingInfos?.Select(s => new MessageNvrCameraBindingItemInfo {
-                                        BarcodeScannerSerialNumber = s?.BarcodeScannerCameraConfigInfoModel?.SerialNumber ?? string.Empty,
+                                        BarcodeScannerSerialNumber = s?.SerialNumber ?? string.Empty,
                                         Channel = s?.Channel ?? 0,
                                         IpAddress = s?.IpAddress ?? string.Empty,
                                         Password = s?.Password ?? string.Empty,
@@ -141,7 +141,7 @@ namespace JayTom.Dws.VideoApi.Controllers {
                                    ?.ToList()?.FirstOrDefault() ?? string.Empty,
                                 ScanTime = videoScanNodeInfoModel?.ScanTime ?? DateTime.Now,
                                 NvrCameraBindingItem = videoScanNodeInfoModel?.VideoNvrCameraBindingInfos?.Select(s => new MessageNvrCameraBindingItemInfo {
-                                    BarcodeScannerSerialNumber = s?.BarcodeScannerCameraConfigInfoModel?.SerialNumber ?? string.Empty,
+                                    BarcodeScannerSerialNumber = s?.SerialNumber ?? string.Empty,
                                     Channel = s?.Channel ?? 0,
                                     IpAddress = s?.IpAddress ?? string.Empty,
                                     Password = s?.Password ?? string.Empty,
