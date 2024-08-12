@@ -40,6 +40,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel;
         private static DecCBFun? _decCbFun;
 
+        private static ConcurrentDictionary<long, HistoricalWatermark> _historicalWatermarkInfos = new();
+
         //播放Id队列
         private static ConcurrentDictionary<string, IntPtr> _playBackIds = new();
 
@@ -661,6 +663,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="content"></param>
         /// <param name="config"></param>
         public void AddRealTimeWatermark(string serialNo, int channelId, string content, SecurityCameraWatermarkConfig config) {
+            //_historicalWatermarkInfos
+            //执行SDK添加
+            //判断是否超过上限
+            //获取位置偏移
+            //如果成功则添加到列表里面(填写过期移除)
         }
 
         /// <summary>
