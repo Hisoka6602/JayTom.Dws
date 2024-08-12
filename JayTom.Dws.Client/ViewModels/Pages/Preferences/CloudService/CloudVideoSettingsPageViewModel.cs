@@ -52,7 +52,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                                 }
 
                                 return Task.CompletedTask;
-                            }, DispatcherPriority.Render);
+                            }, DispatcherPriority.Background);
                         }
                         finally {
                             _logSlim.Release();
@@ -75,7 +75,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                                 }
 
                                 return Task.CompletedTask;
-                            }, DispatcherPriority.Render);
+                            }, DispatcherPriority.Background);
                         }
                         finally {
                             _logSlim.Release();
@@ -122,7 +122,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             if (!_isLoaded) {
                 _isLoaded = true;
                 var cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(SettingsName) ?? new CloudVideoSettingsDto();
-                CloudVideoSettings = new CloudVideoSettingsModel() {
+                CloudVideoSettings = new CloudVideoSettingsModel {
                     Concurrency = cloudVideoSettingsDto.Concurrency,
                     IsAutoUploadUnsyncedData = cloudVideoSettingsDto.IsAutoUploadUnsyncedData,
                     IsUseCloudVideoUpload = cloudVideoSettingsDto.IsUseCloudVideoUpload,
@@ -139,9 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         public ICommand ClearLogCommand => new DelegateCommand<object>(ClearLogDelegate);
 
         private async void ClearLogDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                LogItems.Clear();
-            });
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(LogItems.Clear);
         }
     }
 }

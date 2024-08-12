@@ -11,20 +11,19 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         private static RawInputReceiverWindow? _instance;
         private static readonly object _lock = new();
 
-        private static bool _isMessageLoopRunning;
+        private bool _isMessageLoopRunning;
 
         // 定义 WNDPROC 委托
         private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         public event EventHandler<RawInputEventArgs>? Input;
 
-        public static CancellationTokenSource CancellationToken = new();
+        public CancellationTokenSource CancellationToken = new();
 
         // 私有构造函数，防止外部实例化
         private RawInputReceiverWindow() {
             _wndProcDelegate = WindowProcedure;
             Handle = CreateHiddenWindow();
-            CancellationToken = new();
         }
 
         // 单例实例的公开访问点
@@ -59,22 +58,40 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             return hwnd;
         }
 
-        public static void MessageLoop() {
+        public void MessageLoop() {
             lock (_lock) {
                 if (_isMessageLoopRunning) {
-                    throw new InvalidOperationException("MessageLoop is already running.");
+                    return;
                 }
                 _isMessageLoopRunning = true;
             }
-
+            CancellationToken = new();
             try {
-                while (GetMessage(out var msg, IntPtr.Zero, 0, 0) && !CancellationToken.IsCancellationRequested) {
-                    TranslateMessage(ref msg);
-                    DispatchMessage(ref msg);
+                while (!CancellationToken.Token.IsCancellationRequested) {
+                    if (PeekMessage(out var msg, IntPtr.Zero, 0, 0, 0)) {
+                        var result = GetMessage(out msg, IntPtr.Zero, 0, 0);
+                        if (result) {
+                            TranslateMessage(ref msg);
+                            DispatchMessage(ref msg);
+                        }
+                        else {
+                            NLog.LogManager.GetCurrentClassLogger().Error("GetMessage failed with error: " + Marshal.GetLastWin32Error());
+                        }
+                    }
                 }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
                 _isMessageLoopRunning = false;
+                if (Handle != IntPtr.Zero) {
+                    DestroyWindow(Handle);
+                    Handle = IntPtr.Zero;
+                }
+
+                // 注销窗口类
+                UnregisterClass("RawInputClass", GetModuleHandle(null));
             }
         }
 
@@ -147,17 +164,18 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             CancellationToken.Cancel();
             await Task.Delay(100);
 
-            if (Handle != IntPtr.Zero) {
-                DestroyWindow(Handle);
-                Handle = IntPtr.Zero;
-            }
-
             _instance = null;
             GC.SuppressFinalize(this);
         }
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool DestroyWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
+
+        [DllImport("user32.dll")]
+        private static extern bool PeekMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, uint wRemoveMsg);
     }
 
     public class RawInputEventArgs : EventArgs {

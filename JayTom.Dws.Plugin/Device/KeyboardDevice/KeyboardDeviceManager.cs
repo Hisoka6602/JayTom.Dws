@@ -37,9 +37,9 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             StopListening();
         }
 
-        public event EventHandler<string>? BarCodeReceived;
+        public event EventHandler<KeyboardBarCodeReceivedEventArgs>? BarCodeReceived;
 
-        public event EventHandler<string>? RealTimeKeyReceived;
+        public event EventHandler<KeyboardRealTimeKeyEventArgs>? RealTimeKeyReceived;
 
         public bool IsListening { get; private set; }
         public KeyboardDevice ListeningDevice { get; private set; } = new();
@@ -64,42 +64,55 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
             if (IsListening || _keyboardDevices.Any(a => a.ProductId.Equals(device.ProductId) &&
                                                       a.VendorId.Equals(device.VendorId) &&
-                                                      a.DeviceName?.Equals(device.DeviceName) != true) != true) {
+                                                      a.DeviceName?.Equals(device.DeviceName) == true) != true) {
                 return false;
             }
             IsListening = true;
             ListeningDevice = device;
-            _window = RawInputReceiverWindow.Instance;
 
-            _window.Input += (sender, e) => {
-                // 处理输入数据
-
-                if (e.Data is RawInputKeyboardData { Keyboard.Flags: RawKeyboardFlags.None } keyboardData && e.Data.Device?.ProductId.Equals(ListeningDevice.ProductId) == true &&
-                    e.Data.Device?.VendorId.Equals(ListeningDevice.VendorId) == true &&
-                    e.Data.Device?.ProductName?.Equals(ListeningDevice.DeviceName) == true) {
-                    var keyString = VirtualKeyToString(keyboardData.Keyboard.VirutalKey);
-                    if (!string.IsNullOrEmpty(keyString)) {
-                        //全大写
-                        AddKeyToList(keyString.ToUpper());
-                        OnRealTimeKeyReceived(keyString);
-                    }
-
-                    if (keyboardData.Keyboard.VirutalKey == 13 && _keyList.Any()) {
-                        //过滤
-                        var data = string.Join(string.Empty, _keyList);
-                        if (string.IsNullOrEmpty(_regexPattern) || Regex.IsMatch(data, _regexPattern)) {
-                            OnBarCodeReceived(data);
-                        }
-
-                        _keyList.Clear();
-                    }
-                }
-            };
             Task.Run(() => {
                 try {
+                    _window = RawInputReceiverWindow.Instance;
+
+                    _window.Input += (sender, e) => {
+                        // 处理输入数据
+
+                        if (e.Data is RawInputKeyboardData { Keyboard.Flags: RawKeyboardFlags.None } keyboardData && e.Data.Device?.ProductId.Equals(ListeningDevice.ProductId) == true &&
+                            e.Data.Device?.VendorId.Equals(ListeningDevice.VendorId) == true &&
+                            e.Data.Device?.ProductName?.Equals(ListeningDevice.DeviceName) == true) {
+                            var keyString = VirtualKeyToString(keyboardData.Keyboard.VirutalKey);
+                            //全大写
+                            var upper = keyString.Replace("\n", "").Replace("\r", "").ToUpper();
+                            if (!string.IsNullOrEmpty(upper)) {
+                                AddKeyToList(upper);
+                            }
+
+                            if (keyboardData.Keyboard.VirutalKey == 13 && _keyList.Any()) {
+                                //过滤
+                                var data = string.Join(string.Empty, _keyList);
+                                if (string.IsNullOrEmpty(_regexPattern) || Regex.IsMatch(data, _regexPattern)) {
+                                    OnBarCodeReceived(new KeyboardBarCodeReceivedEventArgs() {
+                                        Barcode = data,
+                                        Device = ListeningDevice,
+                                        ScanTime = DateTime.Now,
+                                        Timestamp = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()
+                                    });
+                                }
+
+                                _keyList.Clear();
+                            }
+                            OnRealTimeKeyReceived(new KeyboardRealTimeKeyEventArgs() {
+                                Data = upper,
+                                Device = ListeningDevice,
+                                ScanTime = DateTime.Now,
+                                ScanCode = keyboardData.Keyboard.ScanCode,
+                                VirutalKey = keyboardData.Keyboard.VirutalKey
+                            });
+                        }
+                    };
                     RawInputDevice.RegisterDevice(HidUsageAndPage.Keyboard,
                         RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, _window.Handle);
-                    RawInputReceiverWindow.MessageLoop();
+                    _window.MessageLoop();
                 }
                 catch (Exception e) {
                     IsListening = false;
@@ -150,11 +163,11 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             }
         }
 
-        protected virtual void OnBarCodeReceived(string e) {
+        protected virtual void OnBarCodeReceived(KeyboardBarCodeReceivedEventArgs e) {
             BarCodeReceived?.Invoke(this, e);
         }
 
-        protected virtual void OnRealTimeKeyReceived(string e) {
+        protected virtual void OnRealTimeKeyReceived(KeyboardRealTimeKeyEventArgs e) {
             RealTimeKeyReceived?.Invoke(this, e);
         }
     }

@@ -613,11 +613,6 @@ namespace JayTom.Dws.Domain.Interface.Cloud {
         /// 通道
         /// </summary>
         public int Channel { get; set; }
-
-        /// <summary>
-        /// 扫码相机序列号
-        /// </summary>
-        public string BarcodeScannerSerialNumber { get; set; } = string.Empty;
     }
 
     public enum PackageCloudAbnormalSortingType {
