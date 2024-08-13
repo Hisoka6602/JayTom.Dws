@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using DaHua.Play.Net;
+using System.Windows;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Diagnostics;
@@ -39,7 +40,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
         private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel;
         private static DecCBFun? _decCbFun;
-
+        private static SemaphoreSlim _upDateRealTimeWatermarkSlim = new(1);
         private static ConcurrentDictionary<long, HistoricalWatermark> _historicalWatermarkInfos = new();
 
         //播放Id队列
@@ -65,7 +66,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     oldValue.verifyData = info.stuDevInfo.verifyData;
                                     oldValue.szVendor = info.stuDevInfo.szVendor;
                                     oldValue.szDevName = info.stuDevInfo.szDevName;
-                                    oldValue.wVideoInputCh = info.stuDevInfo.wVideoInputCh;
+                                    if (info.stuDevInfo.wVideoInputCh > 0) {
+                                        oldValue.wVideoInputCh = info.stuDevInfo.wVideoInputCh;
+                                    }
                                     return oldValue;
                                 });
 
@@ -660,20 +663,133 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId"></param>
+        /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public void AddRealTimeWatermark(string serialNo, int channelId, string content, SecurityCameraWatermarkConfig config) {
-            //_historicalWatermarkInfos
-            //执行SDK添加
+        public async void AddRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
+            //每行间隔是70
+            //获取位置坐标
+            await Task.Delay(10);
+            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                //添加
+                _historicalWatermarkInfos.TryAdd(packAgeTimestamp,
+                    new HistoricalWatermark(serialNo, mLoginId.Handle, channelId, content, DateTime.Now, config.Duration,
+                        w => {
+                            var (key, value) = _historicalWatermarkInfos.FirstOrDefault(f => f.Value != null
+                                && f.Value.AddedTime.Equals(w.AddedTime));
+                            if (value is not null) {
+                                _historicalWatermarkInfos.Remove(key, out var info);
+                                if (info is not null && !_historicalWatermarkInfos.Any(a =>
+                                        a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
+                                    DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                }
+                                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+                            }
+                        }) {
+                        BackgroundColor = config.BackgroundColor,
+                        ForegroundColor = config.ForegroundColor,
+                        Position = config.Position,
+                        Duration = config.Duration,
+                        MaxWatermarks = config.MaxWatermarks
+                    });
+                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+            }
+
             //判断是否超过上限
             //获取位置偏移
             //如果成功则添加到列表里面(填写过期移除)
         }
 
-        /// <summary>
-        /// 删除过期水印
-        /// </summary>
-        public void DeleteExpiredWatermarks(string serialNo, int channelId) {
+        public async void AddSingleRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp,
+            string content, SecurityCameraWatermarkConfig config) {
+            await Task.Delay(10);
+            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                _historicalWatermarkInfos.Clear();
+                _historicalWatermarkInfos.TryAdd(packAgeTimestamp,
+                    new HistoricalWatermark(serialNo, mLoginId.Handle, channelId, content, DateTime.Now, config.Duration,
+                        w => {
+                            var (key, value) = _historicalWatermarkInfos.FirstOrDefault(f => f.Value != null
+                                && f.Value.AddedTime.Equals(w.AddedTime));
+                            if (value is not null) {
+                                _historicalWatermarkInfos.Remove(key, out var info);
+                                if (info is not null && !_historicalWatermarkInfos.Any(a =>
+                                        a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
+                                    DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                }
+                                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+                            }
+                        }) {
+                        BackgroundColor = config.BackgroundColor,
+                        ForegroundColor = config.ForegroundColor,
+                        Position = config.Position,
+                        Duration = config.Duration,
+                        MaxWatermarks = config.MaxWatermarks
+                    });
+                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+            }
+        }
+
+        private void UpDateRealTimeWatermark(ConcurrentDictionary<long, HistoricalWatermark> historicalWatermarkInfos) {
+            //最小写入间隔是700
+            var waitTime = 2300;
+            historicalWatermarkInfos.GroupBy(g => new {
+                g.Value.LoginId,
+                g.Value.ChannelId
+            }).Select(s => new RealTimeWatermarkInfo() {
+                LoginId = s.Key.LoginId,
+                ChannelId = s.Key.ChannelId,
+                CustomInfo = GetNET_OSD_CUSTOM_TITLE(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+                CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+            }).Select(ac => new Action(() => {
+                var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
+                if (!osdConfig) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                }
+                /*osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLETEXTALIGN, ac.ChannelId, ac.CustomAlign, waitTime);
+                if (!osdConfig) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                }*/
+            })).ToList().ForEach(action => action.Invoke());
+        }
+
+        private NET_OSD_CUSTOM_TITLE GetNET_OSD_CUSTOM_TITLE(List<HistoricalWatermark> historicalWatermarkInfos, int maxWatermarks) {
+            var customInfo = new NET_OSD_CUSTOM_TITLE {
+                dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE)),
+                emOsdBlendType = EM_OSD_BLEND_TYPE.MAIN,
+                nCustomTitleNum = maxWatermarks,
+                stuCustomTitle = new NET_CUSTOM_TITLE_INFO[8],
+            };
+            historicalWatermarkInfos.OrderByDescending(o => o.AddedTime).Take(8).Select((s, i) =>
+                new Action(() => {
+                    customInfo.stuCustomTitle[i].bEncodeBlend = true; //等于false会清除
+                    customInfo.stuCustomTitle[i].stuRect.left = 10;
+                    customInfo.stuCustomTitle[i].stuRect.top = (i * 70) + 10;
+                    customInfo.stuCustomTitle[i].stuBackColor.nAlpha = s.BackgroundColor.A;
+                    customInfo.stuCustomTitle[i].stuBackColor.nBlue = s.BackgroundColor.B;
+                    customInfo.stuCustomTitle[i].stuBackColor.nGreen = s.BackgroundColor.G;
+                    customInfo.stuCustomTitle[i].stuBackColor.nRed = s.BackgroundColor.R;
+                    customInfo.stuCustomTitle[i].stuFrontColor.nAlpha = s.ForegroundColor.A;
+                    customInfo.stuCustomTitle[i].stuFrontColor.nBlue = s.BackgroundColor.B;
+                    customInfo.stuCustomTitle[i].stuFrontColor.nGreen = s.BackgroundColor.G;
+                    customInfo.stuCustomTitle[i].stuFrontColor.nRed = s.BackgroundColor.R;
+                    customInfo.stuCustomTitle[i].szText = s.Content;
+                })).ToList().ForEach(action => action.Invoke());
+            return customInfo;
+        }
+
+        private NET_OSD_CUSTOM_TITLE_TEXT_ALIGN GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(List<HistoricalWatermark> historicalWatermarkInfos, int maxWatermarks) {
+            var customAlign = new NET_OSD_CUSTOM_TITLE_TEXT_ALIGN {
+                dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE_TEXT_ALIGN)),
+                nCustomTitleNum = maxWatermarks,
+                emTextAlign = new EM_TITLE_TEXT_ALIGNTYPE[8]
+            };
+
+            historicalWatermarkInfos.OrderByDescending(o => o.AddedTime).Take(8).Select((s, i) =>
+                new Action(() => {
+                    //换行对齐
+                    customAlign.emTextAlign[i] = EM_TITLE_TEXT_ALIGNTYPE.CHANGELINE;
+                })).ToList().ForEach(action => action.Invoke());
+            return customAlign;
         }
 
         /// <summary>
@@ -681,8 +797,30 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId"></param>
-        public void DeleteAllWatermarks(string serialNo, int channelId) {
+        public async void DeleteAllWatermarks(string serialNo, int channelId) {
+            await Task.Delay(200);
+            var waitTime = 2300;
+            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                var customInfo = new NET_OSD_CUSTOM_TITLE {
+                    dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE)),
+                    emOsdBlendType = EM_OSD_BLEND_TYPE.MAIN,
+                    nCustomTitleNum = 8,
+                    stuCustomTitle = new NET_CUSTOM_TITLE_INFO[8],
+                };
+
+                var osdConfig = NETClient.SetOSDConfig(mLoginId.Handle, EM_CFG_OSD_TYPE.CUSTOMTITLE, channelId, customInfo, waitTime);
+                if (!osdConfig) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                }
+            }
         }
+    }
+
+    public class RealTimeWatermarkInfo {
+        public nint LoginId { get; set; }
+        public int ChannelId { get; set; }
+        public NET_OSD_CUSTOM_TITLE CustomInfo { get; set; }
+        public NET_OSD_CUSTOM_TITLE_TEXT_ALIGN CustomAlign { get; set; }
     }
 
     public class VideoTime {

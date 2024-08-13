@@ -74,5 +74,10 @@ namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
         /// </summary>
         [Column("ChannelCount"), Required, InsertOrUpdata]
         public int ChannelCount { get; set; }
+
+        /// <summary>
+        /// 通道水印信息
+        /// </summary>
+        public virtual ICollection<NvrWatermarkConfigInfoModel>? NvrWatermarkConfigInfos { get; set; }
     }
 }

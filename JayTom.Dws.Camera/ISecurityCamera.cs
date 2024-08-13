@@ -254,6 +254,11 @@ namespace JayTom.Dws.Camera {
         public DateTime AddedTime { get; set; }
 
         /// <summary>
+        /// 登录ID
+        /// </summary>
+        public nint LoginId { get; set; }
+
+        /// <summary>
         /// 获取或设置自动删除水印的计时器。
         /// 当时间到达时自动触发删除。
         /// </summary>
@@ -266,12 +271,14 @@ namespace JayTom.Dws.Camera {
 
         public HistoricalWatermark(
             string serialNo,
+            nint loginId,
             int channelId,
             string content,
             DateTime addedTime,
             double autoDeleteInterval,
             Action<HistoricalWatermark>? onAutoDelete = null) {
             SerialNo = serialNo;
+            LoginId = loginId;
             ChannelId = channelId;
             Content = content;
             AddedTime = addedTime;

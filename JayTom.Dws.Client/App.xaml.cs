@@ -314,7 +314,7 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<INvrCameraBindingRepository, NvrCameraBindingRepository>();
 
                 services.AddSingleton<IIpcNvrConfigRepository, IpcNvrConfigRepository>();
-
+                services.AddSingleton<INvrWatermarkConfigRepository, NvrWatermarkConfigRepository>();
                 //logs
                 services.AddSingleton<IAppLogRepository, AppLogRepository>();
                 services.AddSingleton<ICameraLogRepository, CameraLogRepository>();
@@ -549,6 +549,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<NvrIpcDeviceEditor, NvrIpcDeviceEditorViewModel>();
             ViewModelLocationProvider.Register<NvrCameraMappingEditor, NvrCameraMappingEditorViewModel>();
             ViewModelLocationProvider.Register<NvrBindingEditor, NvrBindingEditorViewModel>();
+            ViewModelLocationProvider.Register<NvrWatermarkConfigEditor, NvrWatermarkConfigEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();

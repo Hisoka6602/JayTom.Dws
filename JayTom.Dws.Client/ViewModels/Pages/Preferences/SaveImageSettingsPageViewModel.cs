@@ -460,9 +460,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 添加水印
         /// </summary>
-        public ICommand AddWatermarkItemCommand {
-            get => new DelegateCommand<string>(AddWatermarkItemDelegate);
-        }
+        public ICommand AddWatermarkItemCommand => new DelegateCommand<string>(AddWatermarkItemDelegate);
 
         private async void AddWatermarkItemDelegate(string obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -490,9 +488,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 添加子路径
         /// </summary>
-        public ICommand AddSubDirectoryItemCommand {
-            get => new DelegateCommand<string>(AddSubDirectoryItemDelegate);
-        }
+        public ICommand AddSubDirectoryItemCommand => new DelegateCommand<string>(AddSubDirectoryItemDelegate);
 
         private async void AddSubDirectoryItemDelegate(string obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -509,9 +505,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 添加图片命名元素
         /// </summary>
-        public ICommand AddImageNamingItemCommand {
-            get => new DelegateCommand<string>(AddImageNamingItemDelegate);
-        }
+        public ICommand AddImageNamingItemCommand => new DelegateCommand<string>(AddImageNamingItemDelegate);
 
         private async void AddImageNamingItemDelegate(string obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -528,9 +522,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 加载图片
         /// </summary>
-        public ICommand LoadImageCommand {
-            get => new DelegateCommand<object>(LoadImageDelegate);
-        }
+        public ICommand LoadImageCommand => new DelegateCommand<object>(LoadImageDelegate);
 
         private async void LoadImageDelegate(object obj) {
             var openFileDialog = new OpenFileDialog() {
