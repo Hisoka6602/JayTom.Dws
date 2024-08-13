@@ -18,7 +18,7 @@
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
     <b:Interaction.Triggers>
-        <b:EventTrigger EventName="Loaded" SourceName="NvrCameraBindingView">
+        <b:EventTrigger EventName="Loaded" SourceName="NvrWatermarkConfigView">
             <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
         </b:EventTrigger>
     </b:Interaction.Triggers>
@@ -56,14 +56,15 @@
                     FontSize="14"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="{Binding ShowType, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=description, UpdateSourceTrigger=PropertyChanged}" />
+                    Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" />
                 <!--  类型  -->
             </StackPanel>
             <!--  选择通道  -->
             <StackPanel
                 Grid.Row="1"
                 Margin="0,10"
-                Orientation="Horizontal">
+                Orientation="Horizontal"
+                Visibility="Collapsed">
                 <!--  图标  -->
                 <TextBlock
                     Margin="5,0"
@@ -89,19 +90,35 @@
                         materialDesign:ButtonAssist.CornerRadius="15"
                         materialDesign:ColorZoneAssist.Mode="Dark"
                         BorderThickness="0"
-                        DisplayMemberPath="Name"
                         FontSize="16"
                         FontWeight="Bold"
                         Foreground="White"
-                        ItemsSource="{Binding VolumeUnitInfoItem, UpdateSourceTrigger=PropertyChanged}"
-                        SelectedItem="{Binding SelectVolumeUnitInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        SelectedValuePath="Value"
+                        ItemsSource="{Binding ChannelIdItems, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectChannelId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignComboBox}" />
                 </Border>
             </StackPanel>
-            <!--  水印颜色  -->
             <StackPanel
                 Grid.Row="2"
+                Margin="0,10"
+                Orientation="Horizontal"
+                Visibility="Collapsed">
+                <TextBlock
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="是否应用全部通道" />
+                <CheckBox
+                    BorderBrush="DodgerBlue"
+                    BorderThickness="2"
+                    IsChecked="{Binding IsAllChannel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    Style="{StaticResource CustomCheckBoxStyle}" />
+            </StackPanel>
+            <!--  水印颜色  -->
+            <StackPanel
+                Grid.Row="3"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
                 <TextBlock
@@ -117,17 +134,11 @@
                         Height="80"
                         Focusable="False"
                         HueSliderPosition="Bottom"
-                        Color="{Binding WatermarkColor, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger EventName="PreviewMouseUp">
-                                <mvvm:InvokeCommandAction Command="{Binding ColorPickerValueChangedCommand}" />
-                            </b:EventTrigger>
-                        </b:Interaction.Triggers>
-                    </materialDesign:ColorPicker>
+                        Color="{Binding WatermarkColor, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                 </Border>
             </StackPanel>
-            <!--  间隔时间  -->
-            <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <!--  持续时间  -->
+            <StackPanel Grid.Row="4" Orientation="Horizontal">
                 <!--  图标  -->
                 <TextBlock
                     Margin="5,0"
@@ -155,11 +166,11 @@
                         FontWeight="Bold"
                         Foreground="White"
                         InputMethod.IsInputMethodEnabled="False"
-                        Text="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.ServerParameter.Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        Text="{Binding Duration, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                 </Border>
             </StackPanel>
             <!--  显示方式(叠加、单条)  -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal">
+            <StackPanel Grid.Row="5" Orientation="Horizontal">
                 <!--  图标  -->
                 <TextBlock
                     Margin="5,0"
@@ -183,23 +194,22 @@
                             Focusable="False"
                             FontWeight="Bold"
                             Foreground="White"
-                            IsChecked="{Binding BarcodeFilterSettingsInfo.FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=NotOutput}"
+                            IsChecked="{Binding IsOverlay, UpdateSourceTrigger=PropertyChanged}"
                             Template="{StaticResource CustomRadioButtonTemplate}" />
                         <RadioButton
                             Margin="10,0"
-                            Command="{Binding StartCharacterTypeChangedCommand}"
                             Content="单条"
                             Focusable="False"
                             FontWeight="Bold"
                             Foreground="White"
-                            IsChecked="{Binding BarcodeFilterSettingsInfo.FilterOutputType, Converter={StaticResource FilterOutputTypeToBooleanConverter}, ConverterParameter=Filtered}"
+                            IsChecked="{Binding IsOverlay, Converter={StaticResource InvertBooleanConverter}, UpdateSourceTrigger=PropertyChanged}"
                             Template="{StaticResource CustomRadioButtonTemplate}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
             <!--  确定、取消按钮  -->
             <StackPanel
-                Grid.Row="5"
+                Grid.Row="6"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
@@ -265,14 +275,14 @@
                 </Button>
             </StackPanel>
             <materialDesign:Snackbar
-                Grid.Row="5"
+                Grid.Row="6"
                 Width="Auto"
                 Height="Auto"
                 VerticalAlignment="Bottom"
                 Background="BlueViolet"
                 FontFamily="LoadFiraCode"
                 FontWeight="Bold"
-                MessageQueue="{Binding CameraFinderMessageQueue}" />
+                MessageQueue="{Binding NvrWatermarkConfigEditorMessageQueue}" />
         </Grid>
     </Border>
 </UserControl>

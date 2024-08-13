@@ -22,10 +22,16 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private bool _isSelect;
         private bool _isConfigured;
         private string _deviceName = string.Empty;
+        private long _id;
 
         public bool IsSelect {
             get => _isSelect;
             set => SetProperty(ref _isSelect, value);
+        }
+
+        public long Id {
+            get => _id;
+            set => SetProperty(ref _id, value);
         }
 
         /// <summary>

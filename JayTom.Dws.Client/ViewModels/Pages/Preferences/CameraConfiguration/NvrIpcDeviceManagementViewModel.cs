@@ -238,6 +238,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 var cameraList = daHuaSecurityCameras;
                 var itemInfoModels = _ipcNvrConfigInfoModels?.Select(s => new IpcNvrItemInfoModel {
                     IsConfigured = true,
+                    Id = s.Id,
                     DeviceName = s.Name,
                     IpAddress = s.IpAddress,
                     Port = s.Port,
@@ -265,6 +266,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     ChannelCount = s.CameraNvrInfo?.ChannelCount ?? 0,
                     IsConfigured = _ipcNvrConfigInfoModels?.Any(a => a.IpAddress.Equals(s.IpAddress)) == true,
                     DeviceName = s.Name,
+                    Id = s.Id,
                     SerialNumber = s.SerialNumber,
                     IpAddress = s.IpAddress,
                     Port = s.Port,
