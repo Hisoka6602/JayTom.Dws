@@ -134,11 +134,6 @@ namespace JayTom.Dws.Camera {
     public class RealPreviewEventArgs {
     }
 
-    public class RemotePlaybackEventArgs : EventArgs {
-        public Bitmap? RealtimeImage { get; set; }
-        public int PlaybackSpeed { get; set; }
-    }
-
     /// <summary>
     /// 安防相机连接参数
     /// </summary>
