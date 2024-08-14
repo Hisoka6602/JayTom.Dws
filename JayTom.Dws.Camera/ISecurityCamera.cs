@@ -5,6 +5,7 @@ using System.Timers;
 using System.Drawing;
 using JayTom.Dws.Ocr;
 using System.ComponentModel;
+using JayTom.Dws.Camera.Nvr;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Timer = System.Timers.Timer;
@@ -18,11 +19,6 @@ namespace JayTom.Dws.Camera {
         /// 相机连接参数
         /// </summary>
         string CameraConnectionParameters { get; set; }
-
-        /// <summary>
-        /// 实时预览事件
-        /// </summary>
-        event EventHandler<RealPreviewEventArgs> RealPreview;
 
         /// <summary>
         /// 保存流

@@ -90,7 +90,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                 }
                             }
                         };
-                    _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) => {
+                    _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, nint data, int reserved2) => {
                         //解析图片
 
                         //NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片");
@@ -158,10 +158,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
                         var convertToBmp = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
                         await callback(convertToBmp).ConfigureAwait(false);
-                        //NLog.LogManager.GetCurrentClassLogger().Error($"-ProcessChannel回调图片");
                     }
                 }
                 catch (Exception ex) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"处理回调异常:{ex}");
                 }
             }
         }
@@ -525,8 +525,118 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             finally {
                 _switchRealtimeFrameSlim.Release();
             }
+        }
 
-            //RealPlay
+        /// <summary>
+        /// 开始实时画面预览(通常用于NVR)
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> StartRealtimePlay(string serialNo, int channelId) {
+            try {
+                await _switchRealtimeFrameSlim.WaitAsync();
+
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
+                if (tryGetValue && dev is not null) {
+                    if (dev.IsRealTimePlay) {
+                        return new KeyValuePair<bool, string>(true, "已开启实时预览");
+                    }
+                    var playGetFreePort = DhPlaySdk.PLAY_GetFreePort(out var plPort);
+                    if (!playGetFreePort) {
+                        return new KeyValuePair<bool, string>(playGetFreePort, "获取端口失败!");
+                    }
+
+                    var exists = false;
+                    do {
+                        exists = _loginDev.Any() &&
+                                 _loginDev.FirstOrDefault(f => f.Value.PlayPort == plPort && !f.Key.Equals(serialNo))
+                                     .Value != null;
+                        plPort++;
+                    } while (exists);
+
+                    dev.PlayPort = plPort;
+                    var openMode = DhPlaySdk.PLAY_SetStreamOpenMode(plPort, 1);
+                    if (!openMode) {
+                        return new KeyValuePair<bool, string>(openMode, "设置流模式失败!");
+                    }
+
+                    var playSetDecCbStream = DhPlaySdk.PLAY_SetDecCBStream(plPort, 1);
+                    if (!playSetDecCbStream) {
+                        return new KeyValuePair<bool, string>(openMode, "设置缓存区域失败!");
+                    }
+
+                    var playOpenStream = DhPlaySdk.PLAY_OpenStream(plPort, IntPtr.Zero, 0, 1024 * 512 * 6);
+
+                    if (!playOpenStream) {
+                        return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
+                    }
+
+                    var realPlayId = NETClient.RealPlay(dev.Handle, channelId, IntPtr.Zero);
+                    if (realPlayId == IntPtr.Zero) {
+                        return new KeyValuePair<bool, string>(false, "通道播放失败!");
+                    }
+
+                    dev.PlayHandle = realPlayId;
+                    //设置播放回调
+                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, channelId,
+                        EM_REALDATA_FLAG.DATA_WITH_FRAME_INFO | EM_REALDATA_FLAG.PCM_AUDIO_DATA | EM_REALDATA_FLAG.RAW_DATA | EM_REALDATA_FLAG.YUV_DATA);
+                    if (!realDataCallBack) {
+                        return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
+                    }
+                    //设置解码模块
+
+                    var playSetEngine = DhPlaySdk.PLAY_SetEngine(plPort, DecodeType.Hevc, 0);
+
+                    if (!playSetEngine) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置解码模块失败!");
+                    }
+                    //设置图片质量
+                    var playSetPicQuality = DhPlaySdk.PLAY_SetPicQuality(plPort, true);
+
+                    if (!playSetPicQuality) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置图片质量失败!");
+                    }
+                    /*//设置颜色
+                    var playSetColor = DhPlaySdk.PLAY_SetColor(plPort, 0, 64, 64, 64, 64);
+                    if (!playSetColor) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置颜色失败!");
+                    }*/
+                    //启用高清图像内部调整策略
+
+                    var picAdjustment = DhPlaySdk.PLAY_EnableLargePicAdjustment(plPort, true);
+                    if (!picAdjustment) {
+                        return new KeyValuePair<bool, string>(picAdjustment, "启用高清图像内部调整策略失败!");
+                    }
+
+                    var playPlay = DhPlaySdk.PLAY_Play(plPort, IntPtr.Zero);
+
+                    if (!playPlay) {
+                        return new KeyValuePair<bool, string>(playPlay, "播放失败!");
+                    }
+                    var playSetDecCallBack = _decCbFun != null && DhPlaySdk.PLAY_SetDecCallBack(plPort, _decCbFun);
+                    dev.IsRealTimePlay = playSetDecCallBack;
+
+                    return new KeyValuePair<bool, string>(playSetDecCallBack, $"{(playSetDecCallBack ? "开启实时预览成功" : "设置播放回调失败!")}");
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _switchRealtimeFrameSlim.Release();
+            }
+            return new KeyValuePair<bool, string>(false, "开启实时预览失败");
+        }
+
+        /// <summary>
+        /// 停止实时画面预览(通常用于NVR)
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> StopRealtimePlay(string serialNo, int channelId) {
+            return new KeyValuePair<bool, string>(false, "停止实时预览失败");
         }
 
         /// <summary>
@@ -814,6 +924,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 }
             }
         }
+    }
+
+    public class RealtimeImageInfo {
+        public Bitmap? Bitmap { get; set; }
+        public int? ChannelId { get; set; }
     }
 
     public class RealTimeWatermarkInfo {

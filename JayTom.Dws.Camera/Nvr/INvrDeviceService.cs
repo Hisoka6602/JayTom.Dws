@@ -10,7 +10,7 @@ namespace JayTom.Dws.Camera.Nvr {
     /// <summary>
     /// NVR设备管理
     /// </summary>
-    public interface INvrDeviceService {
+    public interface INvrDeviceService : IDisposable {
 
         /// <summary>
         /// 实时预览回调
@@ -48,18 +48,30 @@ namespace JayTom.Dws.Camera.Nvr {
         event EventHandler<NvrDeviceReconnectedEventArgs> DeviceReconnected;
 
         /// <summary>
+        /// 设备异常事件
+        /// </summary>
+        event EventHandler<Exception> DeviceExcepted;
+
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, string>> Initialize(object param);
+
+        /// <summary>
         /// 开启实时预览
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId">通道ID</param>
-        void StartRealTimePreview(string serialNo, int channelId);
+        Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelId);
 
         /// <summary>
         /// 关闭实时预览
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId">通道ID</param>
-        void StopRealTimePreview(string serialNo, int channelId);
+        Task<KeyValuePair<bool, string>> StopRealTimePreview(string serialNo, int channelId);
 
         /// <summary>
         /// 开始远程回放
@@ -68,27 +80,27 @@ namespace JayTom.Dws.Camera.Nvr {
         /// <param name="channelId">通道ID</param>
         /// <param name="startTime">回放开始时间</param>
         /// <param name="endTime">回放结束时间</param>
-        void StartRemotePlayback(string serialNo, int channelId, DateTime startTime, DateTime endTime);
+        Task<KeyValuePair<bool, string>> StartRemotePlayback(string serialNo, int channelId, DateTime startTime, DateTime endTime);
 
         /// <summary>
         /// 停止远程回放
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId">通道ID</param>
-        void StopRemotePlayback(string serialNo, int channelId);
+        Task<KeyValuePair<bool, string>> StopRemotePlayback(string serialNo, int channelId);
 
         /// <summary>
         /// 暂停远程回放
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId">通道ID</param>
-        void PauseRemotePlayback(string serialNo, int channelId);
+        Task<KeyValuePair<bool, string>> PauseRemotePlayback(string serialNo, int channelId);
 
         /// <summary>
         /// 枚举设备
         /// </summary>
         /// <returns>返回设备列表</returns>
-        Task<List<CameraInfo>?> EnumerateDevices();
+        Task<List<NvrDeviceInfo>?> EnumerateDevices();
 
         /// <summary>
         /// 添加水印
@@ -116,13 +128,13 @@ namespace JayTom.Dws.Camera.Nvr {
         /// <param name="passWord"></param>
         /// <param name="playChannelId"></param>
         /// <returns>是否登录成功</returns>
-        bool Login(string serialNo, string userName, string passWord, int playChannelId = 0);
+        Task<KeyValuePair<bool, string>> Login(string serialNo, string userName, string passWord, int playChannelId = 0);
 
         /// <summary>
         /// 登出设备
         /// </summary>
         /// <param name="serialNo"></param>
-        void Logout(string serialNo);
+        Task<KeyValuePair<bool, string>> Logout(string serialNo);
 
         /// <summary>
         /// 下载回放录像

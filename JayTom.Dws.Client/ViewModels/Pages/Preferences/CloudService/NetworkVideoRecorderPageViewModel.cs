@@ -41,8 +41,10 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
     public class NetworkVideoRecorderPageViewModel : SettingsPageTemplateViewModel {
-        private readonly INvrManager _nvrManager;
+
+        //private readonly INvrManager _nvrManager;
         private NvrClientSettingsModel _vnrClientSettingsInfo = new();
+
         private ObservableCollection<int> _channelItems = new();
         private bool _isLogInProgress;
         private bool _isLoaded;
@@ -54,12 +56,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
         public NetworkVideoRecorderPageViewModel(IConfigRepository configRepository,
             INvrManager nvrManager) : base(configRepository) {
-            _nvrManager = nvrManager;
+            /*_nvrManager = nvrManager;
             _nvrManager.RealTimePreviewCallback += async delegate (object? sender, RealTimePreviewEventArgs args) {
                 /*if (args.Data is not null) {
                     args.Data.Position = 0;
                     args.Data?.CopyTo(VideoMemoryStream);
-                }*/
+                }#1#
 
                 /*if (_vlcPlay?.SourceProvider.MediaPlayer.IsPlaying() != true) {
                     _vlcPlay?.SourceProvider.MediaPlayer.Play();
@@ -75,15 +77,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                         await Task.Delay(2000);
 
                         _isPlaying = true;
-                    }#1#
+                    }#2#
                 }
                 catch (Exception ex) {
                     Console.WriteLine($"播放视频时出现错误: {ex.Message}");
                 }
                 finally {
                     _playSlim.Release();
-                }*/
-            };
+                }#1#
+            };*/
         }
 
         public MemoryStream VideoMemoryStream {
@@ -229,7 +231,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         private void LogInDelegate(object obj) {
             if (!IsLogInProgress) {
                 IsLogInProgress = true;
-                Task.Run(async () => {
+                /*Task.Run(async () => {
                     var (key, value) = await _nvrManager.Login(NvrClientSettingsInfo.Ip,
                         NvrClientSettingsInfo.Port,
                         NvrClientSettingsInfo.Username,
@@ -253,7 +255,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
                         IsLogInProgress = false;
                     }, DispatcherPriority.Background);
-                });
+                });*/
             }
         }
 
