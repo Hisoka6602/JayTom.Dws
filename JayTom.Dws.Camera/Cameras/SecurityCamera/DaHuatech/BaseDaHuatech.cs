@@ -33,15 +33,22 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static ConcurrentDictionary<string, DevLogInInfo> _loginDev = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
         private static ConcurrentDictionary<string, Func<Bitmap, Task>> _realtimeFrameEvent = new();
-        private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
+        private static ConcurrentDictionary<string, Func<RealtimePreviewInfo, Task>> _realtimePreviewEvent = new();
+
+        // private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
         private static SemaphoreSlim _snapRevPhotoSlim = new(1);
+
         private static byte[] _imageBytes = Array.Empty<byte>();
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
         private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel;
+        private static Channel<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)> _fcbChannel;
         private static DecCBFun? _decCbFun;
+        private static fCBDecode? _fCbDecode;
         private static SemaphoreSlim _upDateRealTimeWatermarkSlim = new(1);
         private static ConcurrentDictionary<long, HistoricalWatermark> _historicalWatermarkInfos = new();
+
+        private static List<DevLogInInfo> _realTimePreviewInfos = new();
 
         //播放Id队列
         private static ConcurrentDictionary<string, IntPtr> _playBackIds = new();
@@ -56,7 +63,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 if (_instance is null) {
                     _instance ??= new BaseDaHuatech();
                     _channel = Channel.CreateUnbounded<(int, IntPtr, int, DhPlaySdk.FRAME_INFO)>();
+                    _fcbChannel = Channel.CreateUnbounded<(long, DhPlaySdk.FRAME_DECODE_INFO, DhPlaySdk.FRAME_INFO_EX, IntPtr)>();
                     ProcessChannel();
+                    ProcessVisibleDecodeChannel();
                     _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
                         var info = (NET_DEVICE_NET_INFO_EX2)(Marshal.PtrToStructure(intPtr, typeof(NET_DEVICE_NET_INFO_EX2)) ?? IntPtr.Zero);
                         if (info.stuDevInfo is { iIPVersion: 4, }) {
@@ -82,22 +91,26 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     _mRealDataCallBackEx2 += delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
                         IntPtr user) {
                             if (type == 0) {
-                                var (key, value) = _loginDev.FirstOrDefault(f => f.Value != null &&
+                                /*var (key, value) = _loginDev.FirstOrDefault(f => f.Value != null &&
                                                                                  f.Value.PlayHandle == handle && f.Value.IsRealTimePlay);
                                 if (value is not null) {
-                                    NETClient.PlayInputData(value.PlayPort, buffer, size);
                                     //DhPlaySdk.PLAY_InputData(value.PlayPort, buffer, size);
-                                }
+                                }*/
+                                NETClient.PlayInputData((int)user, buffer, size);
                             }
                         };
                     _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, nint data, int reserved2) => {
                         //解析图片
 
-                        //NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片");
                         var frameInfo = info;
 
                         if (!_channel.Writer.TryWrite((port, buf, size, frameInfo))) {
-                            //NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                            NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                        }
+                    };
+                    _fCbDecode += (long port, ref FRAME_DECODE_INFO info, ref FRAME_INFO_EX frameInfo, IntPtr user) => {
+                        if (!_fcbChannel.Writer.TryWrite((port, info, frameInfo, user))) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"-回调实时流异常");
                         }
                     };
                     _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
@@ -162,6 +175,37 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 }
                 catch (Exception ex) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"处理回调异常:{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 实时预览回调
+        /// </summary>
+        private static async void ProcessVisibleDecodeChannel() {
+            await foreach (var item in _fcbChannel.Reader.ReadAllAsync()) {
+                var (port, pFrameDecodeInfo, pFrameInfo, pUser) = item;
+                try {
+                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.PlayPort == port &&
+                        f.PlayChannelId.Equals((int)pUser) &&
+                        f.IsRealTimePlay);
+                    if (devLogInInfo is not null) {
+                        var tryGetValue = _realtimePreviewEvent.TryGetValue($"{devLogInInfo.SerialNo}|{devLogInInfo.PlayChannelId}", out var callback);
+                        if (tryGetValue && callback is not null) {
+                            var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, 449, 253);
+
+                            await callback(new RealtimePreviewInfo() {
+                                ChannelId = (int)pUser,
+                                RgbData = bytes,
+                                SerialNo = devLogInInfo.SerialNo,
+                                Width = 449,
+                                Height = 253
+                            }).ConfigureAwait(false);
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"处理实时回调异常:{e}");
                 }
             }
         }
@@ -336,6 +380,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         /// <summary>
+        /// 注册NVR实时预览
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <param name="callback"></param>
+        public void RegisterRealtimePreviewCallback(string serialNo, int channelId, [NotNull] Func<RealtimePreviewInfo, Task> callback) {
+            _realtimePreviewEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
+        }
+
+        /// <summary>
         /// 获取远程实时图片
         /// </summary>
         /// <param name="serialNo"></param>
@@ -493,14 +547,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 if (tryGetValue && mLoginId is not null) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     //判断是否已经开启
-                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var mRealPlayId);
-                    if (isRealPlay && mRealPlayId != IntPtr.Zero) {
-                        var ret = NETClient.StopRealPlay(mRealPlayId);
+
+                    if (mLoginId.IsRealTimePlay && mLoginId.PlayHandle != IntPtr.Zero) {
+                        var ret = NETClient.StopRealPlay(mLoginId.PlayHandle);
                         if (!ret) {
                             var lastError = NETClient.GetLastError();
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
-                        _realPlayInfo.Remove(serialNo, out _);
                         //停止数据回调
                         var playStop = DhPlaySdk.PLAY_Stop(mLoginId.PlayPort);
                         if (playStop) {
@@ -512,7 +565,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         return new KeyValuePair<bool, string>(true, string.Empty);
                     }
                     else {
-                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mRealPlayId}");
+                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mLoginId.SerialNo}");
                     }
                 }
                 else {
@@ -533,15 +586,18 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="serialNo"></param>
         /// <param name="channelId"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, string>> StartRealtimePlay(string serialNo, int channelId) {
+        public async Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelId) {
             try {
                 await _switchRealtimeFrameSlim.WaitAsync();
 
                 var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
                 if (tryGetValue && dev is not null) {
-                    if (dev.IsRealTimePlay) {
+                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.SerialNo.Equals(serialNo) &&
+                        f.PlayChannelId.Equals(channelId));
+                    if (devLogInInfo?.IsRealTimePlay == true) {
                         return new KeyValuePair<bool, string>(true, "已开启实时预览");
                     }
+
                     var playGetFreePort = DhPlaySdk.PLAY_GetFreePort(out var plPort);
                     if (!playGetFreePort) {
                         return new KeyValuePair<bool, string>(playGetFreePort, "获取端口失败!");
@@ -549,13 +605,18 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                     var exists = false;
                     do {
-                        exists = _loginDev.Any() &&
-                                 _loginDev.FirstOrDefault(f => f.Value.PlayPort == plPort && !f.Key.Equals(serialNo))
-                                     .Value != null;
+                        exists = _realTimePreviewInfos.Any(f => f.PlayPort.Equals(plPort) &&
+                                                                !f.SerialNo.Equals(serialNo));
                         plPort++;
                     } while (exists);
 
-                    dev.PlayPort = plPort;
+                    var previewInfo = new DevLogInInfo() {
+                        SerialNo = serialNo,
+                        PlayChannelId = channelId,
+                        PlayPort = plPort,
+                        Handle = dev.Handle,
+                    };
+
                     var openMode = DhPlaySdk.PLAY_SetStreamOpenMode(plPort, 1);
                     if (!openMode) {
                         return new KeyValuePair<bool, string>(openMode, "设置流模式失败!");
@@ -572,14 +633,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
                     }
 
-                    var realPlayId = NETClient.RealPlay(dev.Handle, channelId, IntPtr.Zero);
+                    var realPlayId = NETClient.RealPlay(previewInfo.Handle, channelId, IntPtr.Zero);
                     if (realPlayId == IntPtr.Zero) {
                         return new KeyValuePair<bool, string>(false, "通道播放失败!");
                     }
-
-                    dev.PlayHandle = realPlayId;
+                    previewInfo.PlayHandle = realPlayId;
                     //设置播放回调
-                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, channelId,
+                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, plPort,
                         EM_REALDATA_FLAG.DATA_WITH_FRAME_INFO | EM_REALDATA_FLAG.PCM_AUDIO_DATA | EM_REALDATA_FLAG.RAW_DATA | EM_REALDATA_FLAG.YUV_DATA);
                     if (!realDataCallBack) {
                         return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
@@ -597,11 +657,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (!playSetPicQuality) {
                         return new KeyValuePair<bool, string>(playSetEngine, "设置图片质量失败!");
                     }
-                    /*//设置颜色
-                    var playSetColor = DhPlaySdk.PLAY_SetColor(plPort, 0, 64, 64, 64, 64);
-                    if (!playSetColor) {
-                        return new KeyValuePair<bool, string>(playSetEngine, "设置颜色失败!");
-                    }*/
                     //启用高清图像内部调整策略
 
                     var picAdjustment = DhPlaySdk.PLAY_EnableLargePicAdjustment(plPort, true);
@@ -614,9 +669,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (!playPlay) {
                         return new KeyValuePair<bool, string>(playPlay, "播放失败!");
                     }
-                    var playSetDecCallBack = _decCbFun != null && DhPlaySdk.PLAY_SetDecCallBack(plPort, _decCbFun);
-                    dev.IsRealTimePlay = playSetDecCallBack;
 
+                    var playSetDecCallBack = _fCbDecode != null &&
+                                             DhPlaySdk.PLAY_SetVisibleDecodeCallBack(plPort, _fCbDecode, channelId);
+                    previewInfo.IsRealTimePlay = playSetDecCallBack;
+                    _realTimePreviewInfos.Add(previewInfo);
                     return new KeyValuePair<bool, string>(playSetDecCallBack, $"{(playSetDecCallBack ? "开启实时预览成功" : "设置播放回调失败!")}");
                 }
             }
@@ -635,8 +692,43 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="serialNo"></param>
         /// <param name="channelId"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, string>> StopRealtimePlay(string serialNo, int channelId) {
-            return new KeyValuePair<bool, string>(false, "停止实时预览失败");
+        public async Task<KeyValuePair<bool, string>> StopRealtimePreview(string serialNo, int channelId) {
+            try {
+                await _switchRealtimeFrameSlim.WaitAsync();
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                if (tryGetValue && mLoginId is not null) {
+                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.SerialNo.Equals(serialNo) &&
+                        f.PlayChannelId.Equals(channelId));
+                    if (devLogInInfo is null ||
+                        !devLogInInfo.IsRealTimePlay ||
+                        devLogInInfo.PlayHandle == IntPtr.Zero) {
+                        return new KeyValuePair<bool, string>(false, $"未开启通道预览:{mLoginId.SerialNo}-{channelId}");
+                    }
+
+                    var ret = NETClient.StopRealPlay(devLogInInfo.PlayHandle);
+                    if (!ret) {
+                        var lastError = NETClient.GetLastError();
+                        return new KeyValuePair<bool, string>(false, lastError);
+                    }
+                    //停止数据回调
+                    var playStop = DhPlaySdk.PLAY_Stop(devLogInInfo.PlayPort);
+                    if (playStop) {
+                        DhPlaySdk.PLAY_ResetSourceBuffer(devLogInInfo.PlayPort);
+                        PLAY_CloseStream(devLogInInfo.PlayPort);
+                        _realTimePreviewInfos.Remove(devLogInInfo);
+                    }
+                    return new KeyValuePair<bool, string>(true, string.Empty);
+                }
+                else {
+                    return new KeyValuePair<bool, string>(false, "设备未登录");
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _switchRealtimeFrameSlim.Release();
+            }
         }
 
         /// <summary>
@@ -924,11 +1016,61 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 }
             }
         }
+
+        private static byte[] ConvertFrameInfoToRgbByteArray(FRAME_DECODE_INFO frameInfo, int targetWidth, int targetHeight) {
+            // 每个像素的RGB数据需要3个字节
+            var stride = targetWidth * 3;
+            var rgbData = new byte[targetHeight * stride];
+
+            var sourceWidth = frameInfo.nWidth[0];
+            var sourceHeight = frameInfo.nHeight[0];
+
+            unsafe {
+                var pY = (byte*)frameInfo.pVideoData[0];
+                var pU = (byte*)frameInfo.pVideoData[1];
+                var pV = (byte*)frameInfo.pVideoData[2];
+
+                Parallel.For(0, targetHeight, y => {
+                    for (var x = 0; x < targetWidth; x++) {
+                        // 计算源图像中的位置
+                        var sourceX = x * sourceWidth / targetWidth;
+                        var sourceY = y * sourceHeight / targetHeight;
+
+                        var yIndex = sourceY * frameInfo.nStride[0] + sourceX;
+                        var uvIndex = (sourceY / 2) * frameInfo.nStride[1] + (sourceX / 2);
+
+                        var Y = pY[yIndex];
+                        var U = pU[uvIndex] - 128;
+                        var V = pV[uvIndex] - 128;
+
+                        var R = (int)(Y + 1.402 * V);
+                        var G = (int)(Y - 0.344136 * U - 0.714136 * V);
+                        var B = (int)(Y + 1.772 * U);
+
+                        // 将RGB值限制在[0, 255]范围内
+                        R = Math.Clamp(R, 0, 255);
+                        G = Math.Clamp(G, 0, 255);
+                        B = Math.Clamp(B, 0, 255);
+
+                        // 计算目标数组中的索引，并填充RGB数据
+                        var index = (y * targetWidth + x) * 3;
+                        rgbData[index] = (byte)B;
+                        rgbData[index + 1] = (byte)G;
+                        rgbData[index + 2] = (byte)R;
+                    }
+                });
+            }
+
+            return rgbData;
+        }
     }
 
-    public class RealtimeImageInfo {
-        public Bitmap? Bitmap { get; set; }
+    public class RealtimePreviewInfo {
+        public string SerialNo { get; set; } = string.Empty;
+        public byte[]? RgbData { get; set; }
         public int? ChannelId { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
     }
 
     public class RealTimeWatermarkInfo {
@@ -945,6 +1087,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     }
 
     public class DevLogInInfo {
+
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string SerialNo { get; set; } = string.Empty;
 
         /// <summary>
         /// 指针句柄

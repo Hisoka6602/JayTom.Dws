@@ -94,22 +94,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     model.Identifier = Identifier;
                     model.IpcNvrItemInfo = info;
 
-                    //测试水印
-                    var baseDaHuatech = BaseDaHuatech.CreateInstance();
-                    var (key, value) = await baseDaHuatech.LogIn(info.SerialNumber, info.Username, info.Password);
-                    if (key) {
-                        for (int i = 0; i < 20; i++) {
-                            baseDaHuatech.AddSingleRealTimeWatermark(info.SerialNumber, 1, new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(), $"SF153-{i}", new SecurityCameraWatermarkConfig() {
-                                ForegroundColor = Color.Blue,
-                                BackgroundColor = Color.SeaGreen,
-                                Duration = 8000,
-                                MaxWatermarks = 8,
-                                Position = SecurityCameraWatermarkConfig.WatermarkPosition.TopLeft
-                            });
-                            await Task.Delay(700);
-                        }
-                    }
-
                     await DialogHost.Show(ipcPreviewDialog, model.Identifier);
                 }
             }
