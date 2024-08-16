@@ -78,6 +78,8 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
                             NLog.LogManager.GetCurrentClassLogger().Error("GetMessage failed with error: " + Marshal.GetLastWin32Error());
                         }
                     }
+
+                    Thread.Sleep(5);
                 }
             }
             catch (Exception e) {

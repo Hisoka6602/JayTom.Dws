@@ -46,6 +46,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private bool _isRefreshing;
         private SnackbarMessageQueue _nvrIpcDeviceManagemenMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoad;
 
         public ObservableCollection<IpcNvrItemInfoModel> IpcNvrItemInfos {
             get => _ipcNvrItemInfos;
@@ -77,7 +78,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private async void LoadedDelegate(object obj) {
             _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
-            RefreshDelegate(obj);
+            if (!_isLoad) {
+                _isLoad = true;
+                RefreshDelegate(obj);
+            }
         }
 
         /// <summary>
@@ -246,31 +250,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         })?.ToList() ?? new List<BarcodeScannerCameraItemInfoModel>())
                 })?.ToList() ?? new List<IpcNvrItemInfoModel>();
                 //取出本地添加的项合并(根据Ip合并)
-                var nvrItemInfoModels = cameraList.Select((s, i) => new IpcNvrItemInfoModel {
-                    ChannelCount = s.CameraNvrInfo?.ChannelCount ?? 0,
-                    IsConfigured = _ipcNvrConfigInfoModels?.Any(a => a.IpAddress.Equals(s.IpAddress)) == true,
-                    DeviceName = s.Name,
-                    Id = s.Id,
-                    SerialNumber = s.SerialNumber,
-                    IpAddress = s.IpAddress,
-                    Port = s.Port,
-                    Username = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Username ?? string.Empty,
-                    Password = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Password ?? string.Empty,
-                    Channel = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Channel ?? s.CameraNvrInfo?.ChannelCount ?? 0,
-                    Model = s.Model,
-                    Brand = s.Brand,
-                    Type = s.Type == CameraType.NvrDevice ? DeviceType.NVR : DeviceType.IPC,
-                    BindingCameraSerialNumbers = new ObservableCollection<BarcodeScannerCameraItemInfoModel>(_scannerCameraConfigInfoModels?.Where(w => (bool)w.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress)))
-                        ?.Select(s1 => new BarcodeScannerCameraItemInfoModel {
-                            Name = s1.Name,
-                            CustomName = s1.CustomName,
-                            CameraType = (CameraType)s1.CameraType,
-                            SerialNumber = s1.SerialNumber,
-                            IpAddress = s1.IpAddress,
-                            Model = s1.Model,
-                            Version = s1.Version,
-                            ConnectionType = (CameraConnectionType)s1.ConnectionType,
-                        })?.ToList() ?? new List<BarcodeScannerCameraItemInfoModel>())
+                var nvrItemInfoModels = cameraList.Select((s, i) => {
+                    var item = itemInfoModels.FirstOrDefault(f => f.IpAddress == s.IpAddress);
+                    return new IpcNvrItemInfoModel {
+                        ChannelCount = item?.ChannelCount > 0 ? item.ChannelCount : s.CameraNvrInfo?.ChannelCount ?? 0,
+                        IsConfigured = _ipcNvrConfigInfoModels?.Any(a => a.IpAddress.Equals(s.IpAddress)) == true,
+                        DeviceName = s.Name,
+                        Id = s.Id,
+                        SerialNumber = s.SerialNumber,
+                        IpAddress = s.IpAddress,
+                        Port = s.Port,
+                        Username = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Username ?? string.Empty,
+                        Password = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Password ?? string.Empty,
+                        Channel = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Channel ?? s.CameraNvrInfo?.ChannelCount ?? 0,
+                        Model = s.Model,
+                        Brand = s.Brand,
+                        Type = s.Type == CameraType.NvrDevice ? DeviceType.NVR : DeviceType.IPC,
+                        BindingCameraSerialNumbers = new ObservableCollection<BarcodeScannerCameraItemInfoModel>(_scannerCameraConfigInfoModels?.Where(w => (bool)w.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress)))
+                            ?.Select(s1 => new BarcodeScannerCameraItemInfoModel {
+                                Name = s1.Name,
+                                CustomName = s1.CustomName,
+                                CameraType = (CameraType)s1.CameraType,
+                                SerialNumber = s1.SerialNumber,
+                                IpAddress = s1.IpAddress,
+                                Model = s1.Model,
+                                Version = s1.Version,
+                                ConnectionType = (CameraConnectionType)s1.ConnectionType,
+                            })?.ToList() ?? new List<BarcodeScannerCameraItemInfoModel>())
+                    };
                 })?.Union(itemInfoModels)?.ToList();
 
                 var ipcNvrItemInfoModels = nvrItemInfoModels?.Select((s, i) => {

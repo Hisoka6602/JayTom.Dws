@@ -17,6 +17,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
+
     public class NvrWatermarkConfigEditorViewModel : BindableBase {
         private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
@@ -30,6 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private bool _isOverlay = true;
         private bool _isAllChannel;
         private SnackbarMessageQueue _nvrWatermarkConfigEditorMessageQueue = new(TimeSpan.FromSeconds(1));
+        private bool _isUseWatermark;
 
         public NvrWatermarkConfigEditorViewModel(INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
             IIpcNvrConfigRepository ipcNvrConfigRepository) {
@@ -45,6 +47,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         public string Message {
             get => _message;
             set => SetProperty(ref _message, value);
+        }
+
+        public bool IsUseWatermark {
+            get => _isUseWatermark;
+            set => SetProperty(ref _isUseWatermark, value);
         }
 
         public IpcNvrItemInfoModel IpcNvrItemInfo {
@@ -125,10 +132,13 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                         Duration = infoModel.Duration;
                         IsOverlay = infoModel.DisplayMode == 0;
                         WatermarkColor = (Color)ColorConverter.ConvertFromString(infoModel.BackgroundColorHex);
+                        IsUseWatermark = true;
+                    }
+                    else {
+                        IsUseWatermark = false;
                     }
                 }
             });
-
         }
 
         /// <summary>
@@ -140,27 +150,34 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             var isSuccess = false;
             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             var model = ipcNvrConfigInfoModels.FirstOrDefault(f => f.SerialNumber.Equals(IpcNvrItemInfo.SerialNumber));
-            if (model is not null) {
-                var infoModel = await _nvrWatermarkConfigRepository.FirstOrDefault(f =>
-                    f.IpcNvrConfigId.Equals(model.Id));
-                if (infoModel != null) {
-                    infoModel.DisplayMode = IsOverlay ? 0 : 1;
-                    infoModel.Duration = Duration;
-                    infoModel.BackgroundColorHex = WatermarkColor.ToString();
-                    isSuccess = await _nvrWatermarkConfigRepository.Update(infoModel);
+            if (IsUseWatermark) {
+                if (model is not null) {
+                    var infoModel = await _nvrWatermarkConfigRepository.FirstOrDefault(f =>
+                        f.IpcNvrConfigId.Equals(model.Id));
+                    if (infoModel != null) {
+                        infoModel.DisplayMode = IsOverlay ? 0 : 1;
+                        infoModel.Duration = Duration;
+                        infoModel.BackgroundColorHex = WatermarkColor.ToString();
+                        isSuccess = await _nvrWatermarkConfigRepository.Update(infoModel);
+                    }
+                    else {
+                        isSuccess = await _nvrWatermarkConfigRepository.Insert(new NvrWatermarkConfigInfoModel() {
+                            IpcNvrConfigId = model.Id,
+                            DisplayMode = IsOverlay ? 0 : 1,
+                            Duration = Duration,
+                            BackgroundColorHex = WatermarkColor.ToString(),
+                        });
+                    }
+                    NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
                 }
                 else {
-                    isSuccess = await _nvrWatermarkConfigRepository.Insert(new NvrWatermarkConfigInfoModel() {
-                        IpcNvrConfigId = model.Id,
-                        DisplayMode = IsOverlay ? 0 : 1,
-                        Duration = Duration,
-                        BackgroundColorHex = WatermarkColor.ToString(),
-                    });
+                    NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存失败,NVR未初始化或未登录");
                 }
-                NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
             }
             else {
-                NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存失败,NVR未初始化或未登录");
+                var models = await _nvrWatermarkConfigRepository.MemoryCacheData();
+                isSuccess = await _nvrWatermarkConfigRepository.DeleteRange(models.Where(w => w.IpcNvrConfigId.Equals(model?.Id)).ToList());
+                NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
             }
         }
 

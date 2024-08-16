@@ -30,7 +30,7 @@
     </UserControl.Resources>
     <Border
         MinWidth="561"
-        MinHeight="253"
+        MinHeight="252"
         MaxHeight="765"
         Background="#2E2E2E"
         CornerRadius="10">
@@ -54,7 +54,7 @@
             <!--  左边(通道选择)改成列表  -->
             <ListBox
                 Grid.Column="0"
-                MaxHeight="758"
+                MaxHeight="{Binding ElementName=PreviewViewListBox, Path=ActualHeight}"
                 Margin="8"
                 Panel.ZIndex="1"
                 ItemsSource="{Binding ChannelItems}"
@@ -96,6 +96,7 @@
                 Opacity="0.7" />
             <!--  右边  -->
             <ListBox
+                Name="PreviewViewListBox"
                 Grid.Column="2"
                 MinWidth="449"
                 MinHeight="253"
@@ -178,7 +179,6 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-
             <!--  关闭按钮  -->
             <Border
                 Grid.Row="0"

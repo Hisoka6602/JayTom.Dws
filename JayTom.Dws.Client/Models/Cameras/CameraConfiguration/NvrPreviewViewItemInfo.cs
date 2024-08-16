@@ -17,6 +17,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private string _displayName = string.Empty;
         private WriteableBitmap? _videoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
         private bool _isShow;
+        private string _serialNumber;
 
         public NvrPreviewViewItemInfo() {
             RealtimePreviewCallback = async info => {
@@ -37,6 +38,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
                     }, System.Windows.Threading.DispatcherPriority.Render);
                 }
             };
+        }
+
+        public string SerialNumber {
+            get => _serialNumber;
+            set => SetProperty(ref _serialNumber, value);
         }
 
         public int ChannelId {

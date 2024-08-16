@@ -18,7 +18,6 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
-
     public class IpcPreviewViewModel : BindableBase {
 
         //private WriteableBitmap _videoFrame = new(561, 316, 96, 96, PixelFormats.Bgr24, null);
@@ -53,18 +52,25 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select(s =>
-                    new PreviewViewChannelInfo {
-                        ChannelId = s,
-                        DisplayName = $"通道{s}",
-                        IsChecked = false
-                    }).ToList());
-
-                if (_baseDaHuatech is not null) {
-                    var (key, value) = await _baseDaHuatech.LogIn(IpcNvrItemInfo.SerialNumber, IpcNvrItemInfo.Username, IpcNvrItemInfo.Password);
+            if (!ChannelItems.Any(a => a.IsChecked)) {
+                ChannelItems.Clear();
+                foreach (var info in NvrPreviewViewItems) {
+                    info.Dispose();
                 }
-            });
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select(s =>
+                        new PreviewViewChannelInfo {
+                            ChannelId = s,
+                            DisplayName = $"通道{s}",
+                            IsChecked = false
+                        }).ToList());
+
+                    if (_baseDaHuatech is not null) {
+                        var (key, value) = await _baseDaHuatech.LogIn(IpcNvrItemInfo.SerialNumber, IpcNvrItemInfo.Username, IpcNvrItemInfo.Password);
+                    }
+                });
+            }
+
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);

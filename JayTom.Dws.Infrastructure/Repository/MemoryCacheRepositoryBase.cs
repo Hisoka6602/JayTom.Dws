@@ -1,6 +1,7 @@
 ﻿using NLog;
 using System.Reflection;
 using System.Linq.Expressions;
+using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Domain.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.Caching.Memory;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Infrastructure.Repository {
-
     public class MemoryCacheRepositoryBase<T> : RepositoryBase<T>, IMemoryCacheRepository<T> where T : class {
         private readonly IDbContextFactory<DbContext> _contextFactory;
         private readonly IMemoryCache _cache;
@@ -107,6 +107,15 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return deleteCount;
         }
 
+        public new async Task<bool> DeleteRange([NotNull] List<T> entities, CancellationToken token = default) {
+            var deleteRange = await base.DeleteRange(entities, token);
+            if (deleteRange) {
+                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
+                _cache.Remove(name ?? string.Empty);
+            }
+
+            return deleteRange;
+        }
         public new async Task<bool> InsertOrUpdate(T entity, CancellationToken token) {
             var insertOrUpdate = await base.InsertOrUpdate(entity, token);
             if (insertOrUpdate) {
