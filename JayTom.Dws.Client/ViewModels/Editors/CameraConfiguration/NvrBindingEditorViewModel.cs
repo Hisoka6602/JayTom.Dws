@@ -7,6 +7,7 @@ using System.Windows;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using Prism.Services.Dialogs;
 using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly IDialogService _dialogService;
 
         private ObservableCollection<NvrBindingItemModel> _nvrBindingItems = new();
 
@@ -49,10 +51,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public NvrBindingEditorViewModel(IIpcNvrConfigRepository ipcNvrConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository) {
+            INvrCameraBindingRepository nvrCameraBindingRepository,
+            IDialogService dialogService) {
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
+            _dialogService = dialogService;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
@@ -184,6 +188,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     _barcodeScannerCameraConfigRepository.UpdateMemoryCache();
                     LoadedDelegate(null);
                 }
+            }
+        }
+
+        public ICommand PreviewViewCommand => new DelegateCommand<object>(PreviewViewDelegate);
+
+        private void PreviewViewDelegate(object obj) {
+            if (obj is NvrBindingItemModel { Status: NvrStatus.Online } info) {
+                _dialogService.ShowDialog("NvrBindingPreviewViewDialog", new DialogParameters { { "NvrBindingItem", info } }, null);
             }
         }
     }
