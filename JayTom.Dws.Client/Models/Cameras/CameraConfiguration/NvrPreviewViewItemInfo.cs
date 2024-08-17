@@ -17,25 +17,27 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private string _displayName = string.Empty;
         private WriteableBitmap? _videoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
         private bool _isShow;
-        private string _serialNumber;
+        private string _serialNumber = string.Empty;
 
         public NvrPreviewViewItemInfo() {
             RealtimePreviewCallback = async info => {
                 if (info.RgbData is not null && info is { Width: > 0, Height: > 0 }) {
-                    await Application.Current.Dispatcher.InvokeAsync(() => {
-                        if (VideoFrame is not null) {
-                            VideoFrame.Lock();
-                            var rect = new Int32Rect(0, 0, info.Width, info.Height);
+                    if (Application.Current is not null) {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (VideoFrame is not null) {
+                                VideoFrame.Lock();
+                                var rect = new Int32Rect(0, 0, info.Width, info.Height);
 
-                            // 检查数据缓冲区大小
-                            if (info.RgbData.Length >= info.Width * info.Height * 3) {
-                                VideoFrame.WritePixels(rect, info.RgbData, info.Width * 3, 0);
-                                VideoFrame.AddDirtyRect(rect);
+                                // 检查数据缓冲区大小
+                                if (info.RgbData.Length >= info.Width * info.Height * 3) {
+                                    VideoFrame.WritePixels(rect, info.RgbData, info.Width * 3, 0);
+                                    VideoFrame.AddDirtyRect(rect);
+                                }
+
+                                VideoFrame.Unlock();
                             }
-
-                            VideoFrame.Unlock();
-                        }
-                    }, System.Windows.Threading.DispatcherPriority.Render);
+                        }, System.Windows.Threading.DispatcherPriority.Render);
+                    }
                 }
             };
         }

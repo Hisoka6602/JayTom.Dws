@@ -18,6 +18,7 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -263,7 +264,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
                     else if (info.Status == ApplicationStatus.Start) {
                         //重新登录大华相机(临时)
-                        var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
+                        var ipcNvrConfigInfoModels = (await _ipcNvrConfigRepository.MemoryCacheData()).Where(w => !string.IsNullOrEmpty(w.SerialNumber)).ToList();
+
                         if (ipcNvrConfigInfoModels.Any(a => a.Type == 1)) {
                             _baseDaHuatech = BaseDaHuatech.CreateInstance();
 
@@ -301,15 +303,51 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         if (nvrCameraBindingInfoModels.Any(a => a.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))) {
                             var infoModels = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))
                                 .ToList();
+                            var results = infoModels.Select(s => {
+                                // 获取异步数据并同步等待完成
+                                var infoModel = _ipcNvrConfigRepository.MemoryCacheData().Result
+                                    .FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) && f.Username.Equals(s.Username));
 
-                            foreach (var model in infoModels) {
+                                if (infoModel != null) {
+                                    var watermarkConfigInfoModel = _nvrWatermarkConfigRepository.MemoryCacheData().Result
+                                        .FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
+
+                                    if (watermarkConfigInfoModel != null) {
+                                        var watermarkConfig = new SecurityCameraWatermarkConfig {
+                                            Duration = watermarkConfigInfoModel.Duration,
+                                            MaxWatermarks = 8,
+                                            Position = 0,
+                                            BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
+                                        };
+                                        return (infoModel.SerialNumber, s.Channel, watermarkConfig, watermarkConfigInfoModel.DisplayMode);
+                                    }
+                                }
+
+                                // 如果未找到匹配的 infoModel，返回默认值
+                                return (string.Empty, 0, null, 0);
+                            }).Where(w => !string.IsNullOrEmpty(w.SerialNumber)).ToList();
+
+                            if (results?.Any() == true && results?.FirstOrDefault().watermarkConfig is not null) {
+                                if (results.FirstOrDefault().DisplayMode == 0) {
+                                    _baseDaHuatech.AddRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                        args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
+                                        results.FirstOrDefault().watermarkConfig);
+                                }
+                                else {
+                                    _baseDaHuatech.AddSingleRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                        args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
+                                        results.FirstOrDefault().watermarkConfig);
+                                }
+                            }
+
+                            /*foreach (var model in infoModels) {
                                 var infoModel = (await _ipcNvrConfigRepository.MemoryCacheData()).FirstOrDefault(f => f.IpAddress.Equals(model.IpAddress) && f.Username.Equals(model.Username));
                                 if (infoModel != null) {
                                     //获取配置
                                     var watermarkConfigInfoModel = (await _nvrWatermarkConfigRepository.MemoryCacheData()).FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
                                     if (watermarkConfigInfoModel != null) {
                                         if (watermarkConfigInfoModel.DisplayMode == 0) {
-                                            _baseDaHuatech.AddRealTimeWatermark(infoModel.SerialNumber, model.Channel - 1,
+                                            _baseDaHuatech.AddRealTimeWatermark(infoModel.SerialNumber, model.Channel,
                                                 args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
                                                 new SecurityCameraWatermarkConfig() {
                                                     Duration = watermarkConfigInfoModel.Duration,
@@ -319,7 +357,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                                 });
                                         }
                                         else {
-                                            _baseDaHuatech.AddSingleRealTimeWatermark(infoModel.SerialNumber, model.Channel - 1,
+                                            _baseDaHuatech.AddSingleRealTimeWatermark(infoModel.SerialNumber, model.Channel,
                                                 args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
                                                 new SecurityCameraWatermarkConfig() {
                                                     Duration = watermarkConfigInfoModel.Duration,
@@ -330,7 +368,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                         }
                                     }
                                 }
-                            }
+                            }*/
                         }
                     }
                 });

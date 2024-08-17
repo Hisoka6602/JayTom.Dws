@@ -533,7 +533,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             });
 
             //加载左边模板
-            CurrentViewModel = _container.Resolve<CameraHomeViewModel>();
+            CurrentViewModel = _container.Resolve<NvrPreviewHomeViewModel>();
         }
 
         /// <summary>
