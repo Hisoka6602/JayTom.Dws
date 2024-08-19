@@ -98,6 +98,34 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 if (obj.IsChecked) {
                     var previewViewItemInfo = new NvrPreviewViewItemInfo() {
                         ChannelId = obj.ChannelId,
+                        IncreaseZoomCommand = new DelegateCommand<object>(sub => {
+                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                            _baseDaHuatech?.AdjustZoomContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
+                                obj.ChannelId,
+                                true, isStart);
+                        }),
+                        DecreaseZoomCommand = new DelegateCommand<object>(sub => {
+                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                            _baseDaHuatech?.AdjustZoomContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
+                                obj.ChannelId,
+                                false, isStart);
+                        }),
+                        IncreaseFocusCommand = new DelegateCommand<object>(sub => {
+                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                            _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
+                                obj.ChannelId,
+                                true, isStart);
+                        }),
+                        DecreaseFocusCommand = new DelegateCommand<object>(sub => {
+                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                            _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
+                                obj.ChannelId,
+                                false, isStart);
+                        }),
+                        AutoFocusCommand = new DelegateCommand<object>(sub => {
+                            _baseDaHuatech?.AutoFocusAsync(IpcNvrItemInfo.SerialNumber,
+                                obj.ChannelId);
+                        }),
                     };
                     if (previewViewItemInfo.VideoFrame is not null) {
                         _baseDaHuatech.RegisterRealtimePreviewCallback(IpcNvrItemInfo.SerialNumber, obj.ChannelId, previewViewItemInfo.RealtimePreviewCallback);
@@ -122,6 +150,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 }
             }
         }
+
     }
 
     public class PreviewViewChannelInfo : BindableBase {

@@ -39,6 +39,49 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
         }
 
+        public ICommand IncreaseZoomCommand => new DelegateCommand<object>(IncreaseZoomDelegate);
+
+        private void IncreaseZoomDelegate(object obj) {
+            var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+            _baseDaHuatech?.AdjustZoomContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
+                NvrPreviewViewInfo.ChannelId,
+                true, isStart);
+        }
+
+        public ICommand DecreaseZoomCommand => new DelegateCommand<object>(DecreaseZoomDelegate);
+
+        private void DecreaseZoomDelegate(object obj) {
+            var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+            _baseDaHuatech?.AdjustZoomContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
+                NvrPreviewViewInfo.ChannelId,
+                false, isStart);
+        }
+
+        public ICommand IncreaseFocusCommand => new DelegateCommand<object>(IncreaseFocusDelegate);
+
+        private void IncreaseFocusDelegate(object obj) {
+            var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+            _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
+                NvrPreviewViewInfo.ChannelId,
+                true, isStart);
+        }
+
+        public ICommand DecreaseFocusCommand => new DelegateCommand<object>(DecreaseFocusDelegate);
+
+        private void DecreaseFocusDelegate(object obj) {
+            var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+            _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
+                NvrPreviewViewInfo.ChannelId,
+                false, isStart);
+        }
+
+        public ICommand AutoFocusCommand => new DelegateCommand<object>(AutoFocusDelegate);
+
+        private void AutoFocusDelegate(object obj) {
+            _baseDaHuatech?.AutoFocusAsync(NvrPreviewViewInfo.SerialNumber,
+                NvrPreviewViewInfo.ChannelId);
+        }
+
         public bool CanCloseDialog() {
             return true;
         }

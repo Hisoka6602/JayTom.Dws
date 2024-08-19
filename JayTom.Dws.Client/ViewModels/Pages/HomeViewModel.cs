@@ -55,7 +55,6 @@ using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationSta
 using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IDeviceService _deviceService;
@@ -708,6 +707,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             EventAggregator.Instance.Publish(new ApplicationStatusChanged {
                                 Status = ApplicationStatus.Start
                             });
+                            AppContext.SetData("IsRunning", true);
                         }
                         else {
                             //停止
@@ -719,6 +719,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             EventAggregator.Instance.Publish(new ApplicationStatusChanged {
                                 Status = ApplicationStatus.Stop
                             });
+                            AppContext.SetData("IsRunning", false);
                         }
 
                         await Application.Current.Dispatcher.BeginInvoke(() => {

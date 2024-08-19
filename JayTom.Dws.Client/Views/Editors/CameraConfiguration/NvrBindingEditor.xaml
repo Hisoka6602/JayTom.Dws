@@ -315,6 +315,16 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+            <!--  提示框  -->
+            <materialDesign:Snackbar
+                Grid.Row="1"
+                Width="Auto"
+                Height="Auto"
+                VerticalAlignment="Bottom"
+                Background="BlueViolet"
+                FontFamily="LoadFiraCode"
+                FontWeight="Bold"
+                MessageQueue="{Binding NvrBindingEditorViewMessageQueue}" />
         </Grid>
     </Border>
 </UserControl>

@@ -19,7 +19,6 @@ using static DaHua.Play.Net.DhPlaySdk;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
-
     public class BaseDaHuatech {
         private static fDisConnectCallBack? _mDisConnectCallBack;
         private static fHaveReConnectCallBack? _mReConnectCallBack;
@@ -29,6 +28,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static BaseDaHuatech? _instance;
         private static object _initLock = new();
         private static SemaphoreSlim _enumerateSlim = new(1);
+        private readonly SemaphoreSlim _ptzOperationSlim = new(1);
         private static ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
         private static ConcurrentDictionary<string, DevLogInInfo> _loginDev = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
@@ -1080,6 +1080,72 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
 
             return rgbData;
+        }
+
+        /// <summary>
+        /// 调整缩放倍率
+        /// </summary>
+        /// <param name="channelId"></param>
+        /// <param name="increase"></param>
+        /// <param name="start"></param>
+        /// <param name="serialNo"></param>
+        /// <returns></returns>
+        public async Task AdjustZoomContinuouslyAsync(string serialNo, int channelId, bool increase, bool start) {
+            var speed = 4;
+            try {
+                await _ptzOperationSlim.WaitAsync();
+                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                        increase ? EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL : EM_EXTPTZ_ControlType.ZOOM_DEC_CONTROL, 0,
+                        speed, 0, start, IntPtr.Zero);
+                    if (!ptzControl) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                }
+            }
+            finally {
+                _ptzOperationSlim.Release();
+            }
+        }
+
+        public async Task AdjustPtzFocusContinuouslyAsync(string serialNo, int channelId, bool increase, bool start) {
+            var speed = 4;
+            try {
+                await _ptzOperationSlim.WaitAsync();
+                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                        increase ? EM_EXTPTZ_ControlType.FOCUS_ADD_CONTROL : EM_EXTPTZ_ControlType.FOCUS_DEC_CONTROL, 0,
+                        speed, 0, start, IntPtr.Zero);
+                    if (!ptzControl) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                }
+            }
+            finally {
+                _ptzOperationSlim.Release();
+            }
+        }
+
+        public async Task AutoFocusAsync(string serialNo, int channelId) {
+            var speed = 1;
+            try {
+                await _ptzOperationSlim.WaitAsync();
+                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                    NETClient.PTZControl(mLoginId.Handle, channelId,
+                        EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL, 0,
+                        speed, 0, false, IntPtr.Zero);
+
+                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                        EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL, 0,
+                        speed, 0, true, IntPtr.Zero);
+                    if (!ptzControl) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                }
+            }
+            finally {
+                _ptzOperationSlim.Release();
+            }
         }
     }
 

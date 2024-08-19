@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using Prism.Commands;
 using System.Threading;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
@@ -55,8 +56,40 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                                 .ToList();
                             foreach (var model in infoModels) {
                                 await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                    var serialNumber = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
+                                            f.IpAddress.Equals(model.IpAddress) &&
+                                            f.Password.Equals(model.Password))
+                                        ?.SerialNumber ?? string.Empty;
                                     var previewViewItemInfo = new NvrPreviewViewItemInfo() {
                                         ChannelId = model.Channel,
+                                        IncreaseZoomCommand = new DelegateCommand<object>(sub => {
+                                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                                            _baseDaHuatech?.AdjustZoomContinuouslyAsync(serialNumber,
+                                                model.Channel,
+                                                true, isStart);
+                                        }),
+                                        DecreaseZoomCommand = new DelegateCommand<object>(sub => {
+                                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                                            _baseDaHuatech?.AdjustZoomContinuouslyAsync(serialNumber,
+                                                model.Channel,
+                                                false, isStart);
+                                        }),
+                                        IncreaseFocusCommand = new DelegateCommand<object>(sub => {
+                                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                                            _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(serialNumber,
+                                                model.Channel,
+                                                true, isStart);
+                                        }),
+                                        DecreaseFocusCommand = new DelegateCommand<object>(sub => {
+                                            var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
+                                            _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(serialNumber,
+                                                model.Channel,
+                                                false, isStart);
+                                        }),
+                                        AutoFocusCommand = new DelegateCommand<object>(sub => {
+                                            _baseDaHuatech?.AutoFocusAsync(serialNumber,
+                                                model.Channel);
+                                        }),
                                     };
                                     if (previewViewItemInfo.VideoFrame is not null) {
                                         var ipcNvrConfigInfoModel = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
