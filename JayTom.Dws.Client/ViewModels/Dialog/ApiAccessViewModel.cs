@@ -86,9 +86,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             set => SetProperty(ref _url, value);
         }
 
-        public ICommand CloseWinCommand {
-            get => new DelegateCommand<object>(CloseWinDelegate);
-        }
+        public ICommand CloseWinCommand => new DelegateCommand<object>(CloseWinDelegate);
 
         private void CloseWinDelegate(object obj) {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
@@ -131,9 +129,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public event Action<IDialogResult>? RequestClose;
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<UserControl>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
 
         private void LoadedDelegate(UserControl obj) {
             var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);

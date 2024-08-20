@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
+using JayTom.Dws.Camera.Nvr;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
@@ -359,8 +360,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             Status = CameraStatus.Disconnected;
             CameraExceptionOccurred?.Invoke(this, e);
         }
-
-        public event EventHandler<RealPreviewEventArgs>? RealPreview;
 
         public Task<KeyValuePair<bool, string>> SaveStream(string filePath, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();

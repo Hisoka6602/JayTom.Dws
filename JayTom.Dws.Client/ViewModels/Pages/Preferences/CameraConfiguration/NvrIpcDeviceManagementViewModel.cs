@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using System.Drawing;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
@@ -44,6 +46,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private bool _isRefreshing;
         private SnackbarMessageQueue _nvrIpcDeviceManagemenMessageQueue = new(TimeSpan.FromSeconds(2));
+        private bool _isLoad;
 
         public ObservableCollection<IpcNvrItemInfoModel> IpcNvrItemInfos {
             get => _ipcNvrItemInfos;
@@ -75,7 +78,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private async void LoadedDelegate(object obj) {
             _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
-            RefreshDelegate(obj);
+            if (!_isLoad) {
+                _isLoad = true;
+                RefreshDelegate(obj);
+            }
         }
 
         /// <summary>
@@ -85,7 +91,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void PreviewDelegate(object obj) {
             //显示预览框
-
+            if (AppContext.GetData("IsRunning") is true) {
+                NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再预览");
+                return;
+            }
             if (obj is IpcNvrItemInfoModel info) {
                 var ipcPreviewDialog = new IpcPreviewDialog();
                 if (ipcPreviewDialog.DataContext is IpcPreviewViewModel model) {
@@ -104,6 +113,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void BindDelegate(object obj) {
             //显示绑定框
+            if (AppContext.GetData("IsRunning") is true) {
+                NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
+                return;
+            }
             if (obj is IpcNvrItemInfoModel info) {
                 var nvrCameraMappingEditor = new NvrCameraMappingEditor();
                 if (nvrCameraMappingEditor.DataContext is NvrCameraMappingEditorViewModel model) {
@@ -115,12 +128,32 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         }
 
         /// <summary>
+        /// 设置水印
+        /// </summary>
+        public ICommand SetWatermarkCommand => new DelegateCommand<object>(SetWatermarkDelegate);
+
+        private async void SetWatermarkDelegate(object obj) {
+            if (obj is IpcNvrItemInfoModel { Type: DeviceType.NVR } info) {
+                var nvrWatermarkConfigEditor = new NvrWatermarkConfigEditor();
+                if (nvrWatermarkConfigEditor.DataContext is NvrWatermarkConfigEditorViewModel model) {
+                    model.Identifier = Identifier;
+                    model.IpcNvrItemInfo = info;
+                    await DialogHost.Show(nvrWatermarkConfigEditor, model.Identifier);
+                }
+            }
+        }
+
+        /// <summary>
         /// 编辑
         /// </summary>
         public ICommand EditCommand => new DelegateCommand<object>(EditDelegate);
 
         private async void EditDelegate(object obj) {
             if (IsRefreshing) return;
+            if (AppContext.GetData("IsRunning") is true) {
+                NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
+                return;
+            }
             if (obj is IpcNvrItemInfoModel info) {
                 var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
                 if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
@@ -163,6 +196,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void DeleteDelegate(object obj) {
             if (IsRefreshing) return;
+            if (AppContext.GetData("IsRunning") is true) {
+                NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再删除");
+                return;
+            }
             if (obj is IpcNvrItemInfoModel info) {
                 var ipcNvrConfigInfoModel = await _ipcNvrConfigRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress));
                 if (ipcNvrConfigInfoModel is not null) {
@@ -204,6 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 var cameraList = daHuaSecurityCameras;
                 var itemInfoModels = _ipcNvrConfigInfoModels?.Select(s => new IpcNvrItemInfoModel {
                     IsConfigured = true,
+                    Id = s.Id,
                     DeviceName = s.Name,
                     IpAddress = s.IpAddress,
                     Port = s.Port,
@@ -227,30 +265,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         })?.ToList() ?? new List<BarcodeScannerCameraItemInfoModel>())
                 })?.ToList() ?? new List<IpcNvrItemInfoModel>();
                 //取出本地添加的项合并(根据Ip合并)
-                var nvrItemInfoModels = cameraList.Select((s, i) => new IpcNvrItemInfoModel {
-                    ChannelCount = s.CameraNvrInfo?.ChannelCount ?? 0,
-                    IsConfigured = _ipcNvrConfigInfoModels?.Any(a => a.IpAddress.Equals(s.IpAddress)) == true,
-                    DeviceName = s.Name,
-                    SerialNumber = s.SerialNumber,
-                    IpAddress = s.IpAddress,
-                    Port = s.Port,
-                    Username = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Username ?? string.Empty,
-                    Password = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Password ?? string.Empty,
-                    Channel = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Channel ?? s.CameraNvrInfo?.ChannelCount ?? 0,
-                    Model = s.Model,
-                    Brand = s.Brand,
-                    Type = s.Type == CameraType.NvrDevice ? DeviceType.NVR : DeviceType.IPC,
-                    BindingCameraSerialNumbers = new ObservableCollection<BarcodeScannerCameraItemInfoModel>(_scannerCameraConfigInfoModels?.Where(w => (bool)w.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress)))
-                        ?.Select(s1 => new BarcodeScannerCameraItemInfoModel {
-                            Name = s1.Name,
-                            CustomName = s1.CustomName,
-                            CameraType = (CameraType)s1.CameraType,
-                            SerialNumber = s1.SerialNumber,
-                            IpAddress = s1.IpAddress,
-                            Model = s1.Model,
-                            Version = s1.Version,
-                            ConnectionType = (CameraConnectionType)s1.ConnectionType,
-                        })?.ToList() ?? new List<BarcodeScannerCameraItemInfoModel>())
+                var nvrItemInfoModels = cameraList.Select((s, i) => {
+                    var item = itemInfoModels.FirstOrDefault(f => f.IpAddress == s.IpAddress);
+                    return new IpcNvrItemInfoModel {
+                        ChannelCount = item?.ChannelCount > 0 ? item.ChannelCount : s.CameraNvrInfo?.ChannelCount ?? 0,
+                        IsConfigured = _ipcNvrConfigInfoModels?.Any(a => a.IpAddress.Equals(s.IpAddress)) == true,
+                        DeviceName = s.Name,
+                        Id = s.Id,
+                        SerialNumber = s.SerialNumber,
+                        IpAddress = s.IpAddress,
+                        Port = s.Port,
+                        Username = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Username ?? string.Empty,
+                        Password = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Password ?? string.Empty,
+                        Channel = _ipcNvrConfigInfoModels?.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress))?.Channel ?? s.CameraNvrInfo?.ChannelCount ?? 0,
+                        Model = s.Model,
+                        Brand = s.Brand,
+                        Type = s.Type == CameraType.NvrDevice ? DeviceType.NVR : DeviceType.IPC,
+                        BindingCameraSerialNumbers = new ObservableCollection<BarcodeScannerCameraItemInfoModel>(_scannerCameraConfigInfoModels?.Where(w => (bool)w.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress)))
+                            ?.Select(s1 => new BarcodeScannerCameraItemInfoModel {
+                                Name = s1.Name,
+                                CustomName = s1.CustomName,
+                                CameraType = (CameraType)s1.CameraType,
+                                SerialNumber = s1.SerialNumber,
+                                IpAddress = s1.IpAddress,
+                                Model = s1.Model,
+                                Version = s1.Version,
+                                ConnectionType = (CameraConnectionType)s1.ConnectionType,
+                            })?.ToList() ?? new List<BarcodeScannerCameraItemInfoModel>())
+                    };
                 })?.Union(itemInfoModels)?.ToList();
 
                 var ipcNvrItemInfoModels = nvrItemInfoModels?.Select((s, i) => {
@@ -331,6 +373,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void BatchChangePasswordDelegate(object obj) {
             if (IsRefreshing) return;
+            if (AppContext.GetData("IsRunning") is true) {
+                NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
+                return;
+            }
             var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
             if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
                 model.Identifier = Identifier;

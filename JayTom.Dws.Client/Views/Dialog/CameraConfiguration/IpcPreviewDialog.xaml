@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConfiguration="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Dialog.CameraConfiguration"
@@ -25,65 +26,340 @@
         <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
         <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
         <converters:EnumToVisibilityInvertedConverter x:Key="EnumToVisibilityInvertedConverter" />
+        <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
+        <Style
+            x:Key="MaterialDesignActionButtonStyle"
+            BasedOn="{StaticResource MaterialDesignFloatingActionButton}"
+            TargetType="Button">
+            <Setter Property="materialDesign:ButtonProgressAssist.Value" Value="-1" />
+            <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
+            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+            <Setter Property="Background" Value="DimGray" />
+            <Setter Property="BorderBrush" Value="DimGray" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Margin" Value="5,0" />
+            <Style.Triggers>
+                <!--  Trigger for when the button is pressed  -->
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="True" />
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
+                </Trigger>
+
+                <!--  Trigger for when the button is not pressed  -->
+                <Trigger Property="IsPressed" Value="False">
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Border
-        MinWidth="700"
-        MinHeight="700"
+        MinWidth="561"
+        MinHeight="252"
+        MaxHeight="765"
         Background="#2E2E2E"
-        CornerRadius="20">
+        CornerRadius="10">
+        <Border.Clip>
+            <MultiBinding Converter="{StaticResource BorderClipMultiConverter}">
+                <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="CornerRadius" RelativeSource="{RelativeSource Self}" />
+            </MultiBinding>
+        </Border.Clip>
         <Grid>
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Grid.Clip>
-                <RectangleGeometry
-                    RadiusX="20"
-                    RadiusY="20"
-                    Rect="0,0,700,700" />
-            </Grid.Clip>
-            <!--  关闭按钮  -->
-            <Border
-                Grid.Row="0"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!--  左边(通道选择)改成列表  -->
+            <ListBox
                 Grid.Column="0"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                CornerRadius="20,20,0,0">
-                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+                MaxHeight="{Binding ElementName=PreviewViewListBox, Path=ActualHeight}"
+                Margin="8"
+                ItemsSource="{Binding ChannelItems}"
+                Style="{StaticResource CustomListBoxStyle}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,10" Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="DarkGray"
+                                Text="{Binding DisplayName}" />
+                            <CheckBox
+                                BorderBrush="DodgerBlue"
+                                BorderThickness="2"
+                                Command="{Binding ElementName=IpcPreviewView, Path=DataContext.SelectChannelCommand}"
+                                CommandParameter="{Binding}"
+                                Focusable="False"
+                                IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource CustomCheckBoxStyle}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
-                    <!--  关闭  -->
-                    <Button
-                        Command="{Binding CloseDialogCommand}"
-                        CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}"
-                        Style="{StaticResource CustomCloseButtonStyle}"
-                        ToolTip="Close">
-                        <TextBlock
-                            Foreground="White"
-                            Style="{StaticResource SystemTextBlockStyle}"
-                            Text="&#xe601;" />
-                    </Button>
-                </StackPanel>
-            </Border>
-
-            <!--  默认底图  -->
-            <TextBlock
-                Grid.Row="0"
+            <!--  中间线  -->
+            <Border
+                Grid.Column="1"
+                Margin="0,20,0,20"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                Opacity="0.7" />
+            <!--  右边  -->
+            <ListBox
+                Name="PreviewViewListBox"
+                Grid.Column="2"
+                MinWidth="449"
+                MinHeight="253"
+                MaxWidth="1122"
+                MaxHeight="760"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                FontFamily="pack://application:,,,/Fonts/#iconfont"
-                FontSize="150"
-                Foreground="DimGray"
-                IsEnabled="False"
-                Text="&#xe8da;" />
-            <Image
-                Name="PackImage"
-                Grid.Row="0"
-                RenderOptions.BitmapScalingMode="LowQuality"
-                Source="{Binding Image, UpdateSourceTrigger=PropertyChanged}"
-                Stretch="Fill" />
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                Background="DarkViolet"
+                Focusable="False"
+                ItemsSource="{Binding NvrPreviewViewItems, UpdateSourceTrigger=PropertyChanged}"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                Style="{StaticResource CustomListBoxStyle}">
+                <ListBox.Template>
+                    <ControlTemplate TargetType="{x:Type ListBox}">
+                        <ScrollViewer Focusable="False">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="False">
+                                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <WrapPanel
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Top"
+                                Focusable="False"
+                                IsItemsHost="True"
+                                Orientation="Horizontal"
+                                ScrollViewer.CanContentScroll="True" />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListBox.Template>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type cameraConfiguration:NvrPreviewViewItemInfo}">
 
-            <!--  画面  -->
+                        <Grid Name="PreviewViewGrid">
+
+
+                            <!--  默认底图  -->
+                            <Border Width="449" Height="253">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                    FontSize="150"
+                                    Foreground="DimGray"
+                                    IsEnabled="False"
+                                    Text="&#xe8da;"
+                                    Visibility="{Binding IsShow, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                            </Border>
+
+                            <!--  画面  -->
+                            <Image
+                                Name="PreviewViewImage"
+                                Width="449"
+                                Height="253"
+                                RenderOptions.BitmapScalingMode="LowQuality"
+                                Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
+                                Stretch="Uniform"
+                                Visibility="{Binding IsShow, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <!--  右下角通道  -->
+                            <TextBlock
+                                Margin="5"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="SpringGreen"
+                                Text="{Binding ChannelId, StringFormat='通道{0}'}" />
+
+
+                            <!--  工具栏  -->
+                            <Border
+                                x:Name="ToolBarContainer"
+                                Height="90"
+                                Margin="0"
+                                Padding="10"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="#88202020"
+                                CornerRadius="10,10,0,0"
+                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel Background="Transparent" Orientation="Horizontal">
+                                    <!--  自动对焦  -->
+                                    <Button
+                                        Width="40"
+                                        Height="40"
+                                        materialDesign:RippleAssist.ClipToBounds="True"
+                                        materialDesign:RippleAssist.RippleOnTop="True"
+                                        Background="DimGray"
+                                        Command="{Binding AutoFocusCommand}"
+                                        Cursor="Hand"
+                                        Focusable="False"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        ToolTip="自动对焦">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="25"
+                                            Foreground="White"
+                                            Text="&#xe9e3;" />
+                                    </Button>
+                                    <StackPanel Margin="10,0" Orientation="Vertical">
+                                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                                            <!--  缩放  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="True"
+                                                Text="缩放:"
+                                                TextAlignment="Justify" />
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="+"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding IncreaseZoomCommand}" CommandParameter="Start" />
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding IncreaseZoomCommand}" CommandParameter="Stop" />
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="-"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding DecreaseZoomCommand}" CommandParameter="Start" />
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding DecreaseZoomCommand}" CommandParameter="Stop" />
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                        </StackPanel>
+                                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                                            <!--  焦距  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="True"
+                                                Text="焦距:"
+                                                TextAlignment="Justify" />
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="+"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding IncreaseFocusCommand}" CommandParameter="Start" />
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding IncreaseFocusCommand}" CommandParameter="Stop" />
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="-"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding DecreaseFocusCommand}" CommandParameter="Start" />
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding DecreaseFocusCommand}" CommandParameter="Stop" />
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <!--  关闭按钮  -->
+            <StackPanel
+                Grid.Row="0"
+                Grid.Column="0"
+                Grid.ColumnSpan="3"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top">
+
+                <!--  关闭  -->
+                <Button
+                    Command="{Binding CloseDialogCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}"
+                    IsHitTestVisible="True"
+                    Style="{StaticResource CustomCloseButtonStyle}"
+                    ToolTip="Close">
+                    <TextBlock
+                        Foreground="White"
+                        Style="{StaticResource SystemTextBlockStyle}"
+                        Text="&#xe601;" />
+                </Button>
+            </StackPanel>
         </Grid>
     </Border>
 </UserControl>

@@ -24,7 +24,6 @@ using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class ContentInputSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private bool _isUseTcpInput;
@@ -351,18 +350,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     var keyboardDevices = await _keyboardDeviceManager.EnumerateKeyboardDevices();
 
                     if (keyboardDevices.Any()) {
-                        var infoModels = keyboardDevices.Select((s, i) => new KeyboardDeviceItemInfoModel {
+                        var infoModels = keyboardDevices.Where(w => w is { DevicePath: not null, DeviceName: not null }).Select((s, i) => new KeyboardDeviceItemInfoModel {
                             DeviceName = s.DeviceName,
                             DevicePath = s.DevicePath,
                             IsConnected = s.IsConnected,
                             ManufacturerName = s.ManufacturerName,
                             ProductId = s.ProductId,
                             VendorId = s.VendorId,
-                            HasBinding = (KeyboardDevice.ProductId == s.ProductId && KeyboardDevice.VendorId == s.VendorId && KeyboardDevice.DevicePath == s.DevicePath),
+                            HasBinding = (s is { ProductId: > 0, VendorId: > 0 } && KeyboardDevice.ProductId == s.ProductId && KeyboardDevice.VendorId == s.VendorId && KeyboardDevice.DevicePath == s.DevicePath),
                             Num = i + 1,
                         }).ToList();
 
                         KeyboardDeviceItemInfo.AddRange(infoModels);
+                        if (KeyboardDeviceItemInfo.All(a => !a.HasBinding)) {
+                            KeyboardDevice = new KeyboardDevice();
+                        }
                     }
                 });
             });

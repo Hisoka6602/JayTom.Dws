@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using DaHua.Play.Net;
+using System.Windows;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Diagnostics;
@@ -18,7 +19,6 @@ using static DaHua.Play.Net.DhPlaySdk;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
-
     public class BaseDaHuatech {
         private static fDisConnectCallBack? _mDisConnectCallBack;
         private static fHaveReConnectCallBack? _mReConnectCallBack;
@@ -28,21 +28,27 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static BaseDaHuatech? _instance;
         private static object _initLock = new();
         private static SemaphoreSlim _enumerateSlim = new(1);
+        private readonly SemaphoreSlim _ptzOperationSlim = new(1);
         private static ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
         private static ConcurrentDictionary<string, DevLogInInfo> _loginDev = new();
-        private static ConcurrentQueue<CameraImageMessageInfo> _imageMessageQueue = new();
         private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
         private static ConcurrentDictionary<string, Func<Bitmap, Task>> _realtimeFrameEvent = new();
-        private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
+        private static ConcurrentDictionary<string, Func<RealtimePreviewInfo, Task>> _realtimePreviewEvent = new();
+
+        // private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
         private static SemaphoreSlim _snapRevPhotoSlim = new(1);
-        private static SemaphoreSlim _realtimeFrameSlim = new(1);
+
         private static byte[] _imageBytes = Array.Empty<byte>();
-        private static byte[] _realtimeFrameBytes = Array.Empty<byte>();
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
-        private IntPtr _mPlayBackId = IntPtr.Zero;
-        private static Channel<(int port, IntPtr buf, int size, DhPlaySdk.FRAME_INFO info)> _channel;
+        private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel;
+        private static Channel<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)> _fcbChannel;
         private static DecCBFun? _decCbFun;
+        private static fCBDecode? _fCbDecode;
+        private static SemaphoreSlim _upDateRealTimeWatermarkSlim = new(1);
+        private static ConcurrentDictionary<string, HistoricalWatermark> _historicalWatermarkInfos = new();
+
+        private static List<DevLogInInfo> _realTimePreviewInfos = new();
 
         //播放Id队列
         private static ConcurrentDictionary<string, IntPtr> _playBackIds = new();
@@ -57,7 +63,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 if (_instance is null) {
                     _instance ??= new BaseDaHuatech();
                     _channel = Channel.CreateUnbounded<(int, IntPtr, int, DhPlaySdk.FRAME_INFO)>();
+                    _fcbChannel = Channel.CreateUnbounded<(long, DhPlaySdk.FRAME_DECODE_INFO, DhPlaySdk.FRAME_INFO_EX, IntPtr)>();
                     ProcessChannel();
+                    ProcessVisibleDecodeChannel();
                     _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
                         var info = (NET_DEVICE_NET_INFO_EX2)(Marshal.PtrToStructure(intPtr, typeof(NET_DEVICE_NET_INFO_EX2)) ?? IntPtr.Zero);
                         if (info.stuDevInfo is { iIPVersion: 4, }) {
@@ -67,7 +75,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     oldValue.verifyData = info.stuDevInfo.verifyData;
                                     oldValue.szVendor = info.stuDevInfo.szVendor;
                                     oldValue.szDevName = info.stuDevInfo.szDevName;
-                                    oldValue.wVideoInputCh = info.stuDevInfo.wVideoInputCh;
+                                    if (info.stuDevInfo.wVideoInputCh > 0) {
+                                        oldValue.wVideoInputCh = info.stuDevInfo.wVideoInputCh;
+                                    }
                                     return oldValue;
                                 });
 
@@ -81,22 +91,26 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     _mRealDataCallBackEx2 += delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
                         IntPtr user) {
                             if (type == 0) {
-                                var (key, value) = _loginDev.FirstOrDefault(f => f.Value != null &&
+                                /*var (key, value) = _loginDev.FirstOrDefault(f => f.Value != null &&
                                                                                  f.Value.PlayHandle == handle && f.Value.IsRealTimePlay);
                                 if (value is not null) {
-                                    NETClient.PlayInputData(value.PlayPort, buffer, size);
                                     //DhPlaySdk.PLAY_InputData(value.PlayPort, buffer, size);
-                                }
+                                }*/
+                                NETClient.PlayInputData((int)user, buffer, size);
                             }
                         };
-                    _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) => {
+                    _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, nint data, int reserved2) => {
                         //解析图片
 
-                        //NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片");
                         var frameInfo = info;
 
                         if (!_channel.Writer.TryWrite((port, buf, size, frameInfo))) {
-                            //NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                            NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                        }
+                    };
+                    _fCbDecode += (long port, ref FRAME_DECODE_INFO info, ref FRAME_INFO_EX frameInfo, IntPtr user) => {
+                        if (!_fcbChannel.Writer.TryWrite((port, info, frameInfo, user))) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"-回调实时流异常");
                         }
                     };
                     _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
@@ -129,7 +143,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             }
                         }
                     };
-
                     NETClient.SetNetworkParam(new NET_PARAM() {
                         nWaittime = 10000,// 等待超时时间(毫秒)
                         nConnectTime = 10000,// 连接超时时间(毫秒)
@@ -158,10 +171,41 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
                         var convertToBmp = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
                         await callback(convertToBmp).ConfigureAwait(false);
-                        //NLog.LogManager.GetCurrentClassLogger().Error($"-ProcessChannel回调图片");
                     }
                 }
                 catch (Exception ex) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"处理回调异常:{ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 实时预览回调
+        /// </summary>
+        private static async void ProcessVisibleDecodeChannel() {
+            await foreach (var item in _fcbChannel.Reader.ReadAllAsync()) {
+                var (port, pFrameDecodeInfo, pFrameInfo, pUser) = item;
+                try {
+                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.PlayPort == port &&
+                        f.PlayChannelId.Equals((int)pUser) &&
+                        f.IsRealTimePlay);
+                    if (devLogInInfo is not null) {
+                        var tryGetValue = _realtimePreviewEvent.TryGetValue($"{devLogInInfo.SerialNo}|{devLogInInfo.PlayChannelId}", out var callback);
+                        if (tryGetValue && callback is not null) {
+                            var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, 449, 253);
+
+                            await callback(new RealtimePreviewInfo() {
+                                ChannelId = (int)pUser,
+                                RgbData = bytes,
+                                SerialNo = devLogInInfo.SerialNo,
+                                Width = 449,
+                                Height = 253
+                            }).ConfigureAwait(false);
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"处理实时回调异常:{e}");
                 }
             }
         }
@@ -336,6 +380,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         /// <summary>
+        /// 注册NVR实时预览
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <param name="callback"></param>
+        public void RegisterRealtimePreviewCallback(string serialNo, int channelId, [NotNull] Func<RealtimePreviewInfo, Task> callback) {
+            _realtimePreviewEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
+        }
+
+        /// <summary>
         /// 获取远程实时图片
         /// </summary>
         /// <param name="serialNo"></param>
@@ -493,14 +547,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 if (tryGetValue && mLoginId is not null) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     //判断是否已经开启
-                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var mRealPlayId);
-                    if (isRealPlay && mRealPlayId != IntPtr.Zero) {
-                        var ret = NETClient.StopRealPlay(mRealPlayId);
+
+                    if (mLoginId.IsRealTimePlay && mLoginId.PlayHandle != IntPtr.Zero) {
+                        var ret = NETClient.StopRealPlay(mLoginId.PlayHandle);
                         if (!ret) {
                             var lastError = NETClient.GetLastError();
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
-                        _realPlayInfo.Remove(serialNo, out _);
                         //停止数据回调
                         var playStop = DhPlaySdk.PLAY_Stop(mLoginId.PlayPort);
                         if (playStop) {
@@ -512,7 +565,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         return new KeyValuePair<bool, string>(true, string.Empty);
                     }
                     else {
-                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mRealPlayId}");
+                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mLoginId.SerialNo}");
                     }
                 }
                 else {
@@ -525,8 +578,157 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             finally {
                 _switchRealtimeFrameSlim.Release();
             }
+        }
 
-            //RealPlay
+        /// <summary>
+        /// 开始实时画面预览(通常用于NVR)
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelId) {
+            try {
+                await _switchRealtimeFrameSlim.WaitAsync();
+
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
+                if (tryGetValue && dev is not null) {
+                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.SerialNo.Equals(serialNo) &&
+                        f.PlayChannelId.Equals(channelId));
+                    if (devLogInInfo?.IsRealTimePlay == true) {
+                        return new KeyValuePair<bool, string>(true, "已开启实时预览");
+                    }
+
+                    var playGetFreePort = DhPlaySdk.PLAY_GetFreePort(out var plPort);
+                    if (!playGetFreePort) {
+                        return new KeyValuePair<bool, string>(playGetFreePort, "获取端口失败!");
+                    }
+
+                    var exists = false;
+                    do {
+                        exists = _realTimePreviewInfos.Any(f => f.PlayPort.Equals(plPort) &&
+                                                                !f.SerialNo.Equals(serialNo));
+                        plPort++;
+                    } while (exists);
+
+                    var previewInfo = new DevLogInInfo() {
+                        SerialNo = serialNo,
+                        PlayChannelId = channelId,
+                        PlayPort = plPort,
+                        Handle = dev.Handle,
+                    };
+
+                    var openMode = DhPlaySdk.PLAY_SetStreamOpenMode(plPort, 1);
+                    if (!openMode) {
+                        return new KeyValuePair<bool, string>(openMode, "设置流模式失败!");
+                    }
+
+                    var playSetDecCbStream = DhPlaySdk.PLAY_SetDecCBStream(plPort, 1);
+                    if (!playSetDecCbStream) {
+                        return new KeyValuePair<bool, string>(openMode, "设置缓存区域失败!");
+                    }
+
+                    var playOpenStream = DhPlaySdk.PLAY_OpenStream(plPort, IntPtr.Zero, 0, 1024 * 512 * 6);
+
+                    if (!playOpenStream) {
+                        return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
+                    }
+
+                    var realPlayId = NETClient.RealPlay(previewInfo.Handle, channelId, IntPtr.Zero);
+                    if (realPlayId == IntPtr.Zero) {
+                        return new KeyValuePair<bool, string>(false, "通道播放失败!");
+                    }
+                    previewInfo.PlayHandle = realPlayId;
+                    //设置播放回调
+                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, plPort,
+                        EM_REALDATA_FLAG.DATA_WITH_FRAME_INFO | EM_REALDATA_FLAG.PCM_AUDIO_DATA | EM_REALDATA_FLAG.RAW_DATA | EM_REALDATA_FLAG.YUV_DATA);
+                    if (!realDataCallBack) {
+                        return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
+                    }
+                    //设置解码模块
+
+                    var playSetEngine = DhPlaySdk.PLAY_SetEngine(plPort, DecodeType.Hevc, 0);
+
+                    if (!playSetEngine) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置解码模块失败!");
+                    }
+                    //设置图片质量
+                    var playSetPicQuality = DhPlaySdk.PLAY_SetPicQuality(plPort, true);
+
+                    if (!playSetPicQuality) {
+                        return new KeyValuePair<bool, string>(playSetEngine, "设置图片质量失败!");
+                    }
+                    //启用高清图像内部调整策略
+
+                    var picAdjustment = DhPlaySdk.PLAY_EnableLargePicAdjustment(plPort, true);
+                    if (!picAdjustment) {
+                        return new KeyValuePair<bool, string>(picAdjustment, "启用高清图像内部调整策略失败!");
+                    }
+
+                    var playPlay = DhPlaySdk.PLAY_Play(plPort, IntPtr.Zero);
+
+                    if (!playPlay) {
+                        return new KeyValuePair<bool, string>(playPlay, "播放失败!");
+                    }
+
+                    var playSetDecCallBack = _fCbDecode != null &&
+                                             DhPlaySdk.PLAY_SetVisibleDecodeCallBack(plPort, _fCbDecode, channelId);
+                    previewInfo.IsRealTimePlay = playSetDecCallBack;
+                    _realTimePreviewInfos.Add(previewInfo);
+                    return new KeyValuePair<bool, string>(playSetDecCallBack, $"{(playSetDecCallBack ? "开启实时预览成功" : "设置播放回调失败!")}");
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _switchRealtimeFrameSlim.Release();
+            }
+            return new KeyValuePair<bool, string>(false, "开启实时预览失败");
+        }
+
+        /// <summary>
+        /// 停止实时画面预览(通常用于NVR)
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> StopRealtimePreview(string serialNo, int channelId) {
+            try {
+                await _switchRealtimeFrameSlim.WaitAsync();
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                if (tryGetValue && mLoginId is not null) {
+                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.SerialNo.Equals(serialNo) &&
+                        f.PlayChannelId.Equals(channelId));
+                    if (devLogInInfo is null ||
+                        !devLogInInfo.IsRealTimePlay ||
+                        devLogInInfo.PlayHandle == IntPtr.Zero) {
+                        return new KeyValuePair<bool, string>(false, $"未开启通道预览:{mLoginId.SerialNo}-{channelId}");
+                    }
+
+                    var ret = NETClient.StopRealPlay(devLogInInfo.PlayHandle);
+                    if (!ret) {
+                        var lastError = NETClient.GetLastError();
+                        return new KeyValuePair<bool, string>(false, lastError);
+                    }
+                    //停止数据回调
+                    var playStop = DhPlaySdk.PLAY_Stop(devLogInInfo.PlayPort);
+                    if (playStop) {
+                        DhPlaySdk.PLAY_ResetSourceBuffer(devLogInInfo.PlayPort);
+                        PLAY_CloseStream(devLogInInfo.PlayPort);
+                        _realTimePreviewInfos.Remove(devLogInInfo);
+                    }
+                    return new KeyValuePair<bool, string>(true, string.Empty);
+                }
+                else {
+                    return new KeyValuePair<bool, string>(false, "设备未登录");
+                }
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _switchRealtimeFrameSlim.Release();
+            }
         }
 
         /// <summary>
@@ -657,6 +859,309 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 return false;
             }
         }
+
+        /// <summary>
+        /// 添加水印
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        /// <param name="packAgeTimestamp"></param>
+        /// <param name="content"></param>
+        /// <param name="config"></param>
+        public async void AddRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
+            //每行间隔是70
+            //获取位置坐标
+            await Task.Delay(10);
+            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                //添加
+                _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{serialNo}-{channelId}",
+                    new HistoricalWatermark(serialNo, mLoginId.Handle, channelId, content, DateTime.Now, config.Duration,
+                        w => {
+                            var (key, value) = _historicalWatermarkInfos.FirstOrDefault(f => f.Value != null
+                                && f.Value.AddedTime.Equals(w.AddedTime));
+                            if (value is not null) {
+                                _historicalWatermarkInfos.Remove(key, out var info);
+                                if (info is not null && !_historicalWatermarkInfos.Any(a =>
+                                        a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
+                                    DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                }
+                                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+                            }
+                        }) {
+                        BackgroundColor = config.BackgroundColor,
+                        ForegroundColor = config.ForegroundColor,
+                        Position = config.Position,
+                        Duration = config.Duration,
+                        MaxWatermarks = config.MaxWatermarks,
+                    });
+                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+            }
+
+            //判断是否超过上限
+            //获取位置偏移
+            //如果成功则添加到列表里面(填写过期移除)
+        }
+
+        public async void AddRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp, string content,
+            SecurityCameraWatermarkConfig config) {
+            //每行间隔是70
+            //获取位置坐标
+            await Task.Delay(10);
+            if (devices.Any()) {
+                foreach (var device in devices) {
+                    if (_loginDev.TryGetValue(device.SerialNumber, out var mLoginId)) {
+                        //添加
+                        _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{device.SerialNumber}-{device.Channel}",
+                            new HistoricalWatermark(device.SerialNumber, mLoginId.Handle, device.Channel, content, DateTime.Now, config.Duration,
+                                w => {
+                                    var (key, value) = _historicalWatermarkInfos.FirstOrDefault(f => f.Value != null
+                                        && f.Value.AddedTime.Equals(w.AddedTime));
+                                    if (value is not null) {
+                                        _historicalWatermarkInfos.Remove(key, out var info);
+                                        if (info is not null && !_historicalWatermarkInfos.Any(a =>
+                                                a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
+                                            DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                        }
+                                        UpDateRealTimeWatermark(_historicalWatermarkInfos);
+                                    }
+                                }) {
+                                BackgroundColor = config.BackgroundColor,
+                                ForegroundColor = config.ForegroundColor,
+                                Position = config.Position,
+                                Duration = config.Duration,
+                                MaxWatermarks = config.MaxWatermarks,
+                            });
+                    }
+                }
+                UpDateRealTimeWatermark(_historicalWatermarkInfos);
+            }
+        }
+
+        public void AddSingleRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp,
+            string content, SecurityCameraWatermarkConfig config) {
+            _historicalWatermarkInfos.Clear();
+            AddRealTimeWatermark(serialNo, channelId, packAgeTimestamp, content, config);
+        }
+
+        public void AddSingleRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp,
+            string content, SecurityCameraWatermarkConfig config) {
+            _historicalWatermarkInfos.Clear();
+            AddRealTimeWatermark(devices, packAgeTimestamp, content, config);
+        }
+
+        private void UpDateRealTimeWatermark(ConcurrentDictionary<string, HistoricalWatermark> historicalWatermarkInfos) {
+            //最小写入间隔是700
+            var waitTime = 2300;
+            historicalWatermarkInfos.GroupBy(g => new {
+                g.Value.LoginId,
+                g.Value.ChannelId
+            }).Select(s => new RealTimeWatermarkInfo() {
+                LoginId = s.Key.LoginId,
+                ChannelId = s.Key.ChannelId,
+                CustomInfo = GetNET_OSD_CUSTOM_TITLE(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+                CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+            }).Select(ac => new Action(() => {
+                var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
+                if (!osdConfig) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                }
+                /*osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLETEXTALIGN, ac.ChannelId, ac.CustomAlign, waitTime);
+                if (!osdConfig) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                }*/
+            })).ToList().ForEach(action => action.Invoke());
+        }
+
+        private NET_OSD_CUSTOM_TITLE GetNET_OSD_CUSTOM_TITLE(List<HistoricalWatermark> historicalWatermarkInfos, int maxWatermarks) {
+            var customInfo = new NET_OSD_CUSTOM_TITLE {
+                dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE)),
+                emOsdBlendType = EM_OSD_BLEND_TYPE.MAIN,
+                nCustomTitleNum = maxWatermarks,
+                stuCustomTitle = new NET_CUSTOM_TITLE_INFO[8],
+            };
+            historicalWatermarkInfos.OrderByDescending(o => o.AddedTime).Take(7).Select((s, i) =>
+                new Action(() => {
+                    customInfo.stuCustomTitle[i + 1].bEncodeBlend = true; //等于false会清除
+                    customInfo.stuCustomTitle[i + 1].stuRect.left = 10;
+                    customInfo.stuCustomTitle[i + 1].stuRect.top = (i * 70) + 10;
+                    customInfo.stuCustomTitle[i + 1].stuBackColor.nAlpha = s.BackgroundColor.A;
+                    customInfo.stuCustomTitle[i + 1].stuBackColor.nBlue = s.BackgroundColor.B;
+                    customInfo.stuCustomTitle[i + 1].stuBackColor.nGreen = s.BackgroundColor.G;
+                    customInfo.stuCustomTitle[i + 1].stuBackColor.nRed = s.BackgroundColor.R;
+                    customInfo.stuCustomTitle[i + 1].stuFrontColor.nAlpha = s.ForegroundColor.A;
+                    customInfo.stuCustomTitle[i + 1].stuFrontColor.nBlue = s.BackgroundColor.B;
+                    customInfo.stuCustomTitle[i + 1].stuFrontColor.nGreen = s.BackgroundColor.G;
+                    customInfo.stuCustomTitle[i + 1].stuFrontColor.nRed = s.BackgroundColor.R;
+                    customInfo.stuCustomTitle[i + 1].szText = s.Content;
+                })).ToList().ForEach(action => action.Invoke());
+            return customInfo;
+        }
+
+        private NET_OSD_CUSTOM_TITLE_TEXT_ALIGN GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(List<HistoricalWatermark> historicalWatermarkInfos, int maxWatermarks) {
+            var customAlign = new NET_OSD_CUSTOM_TITLE_TEXT_ALIGN {
+                dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE_TEXT_ALIGN)),
+                nCustomTitleNum = maxWatermarks,
+                emTextAlign = new EM_TITLE_TEXT_ALIGNTYPE[8]
+            };
+
+            historicalWatermarkInfos.OrderByDescending(o => o.AddedTime).Take(8).Select((s, i) =>
+                new Action(() => {
+                    //换行对齐
+                    customAlign.emTextAlign[i] = EM_TITLE_TEXT_ALIGNTYPE.CHANGELINE;
+                })).ToList().ForEach(action => action.Invoke());
+            return customAlign;
+        }
+
+        /// <summary>
+        /// 删除全部水印
+        /// </summary>
+        /// <param name="serialNo"></param>
+        /// <param name="channelId"></param>
+        public async void DeleteAllWatermarks(string serialNo, int channelId) {
+            await Task.Delay(200);
+            var waitTime = 3300;
+            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                var customInfo = new NET_OSD_CUSTOM_TITLE {
+                    dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE)),
+                    emOsdBlendType = EM_OSD_BLEND_TYPE.MAIN,
+                    nCustomTitleNum = 8,
+                    stuCustomTitle = new NET_CUSTOM_TITLE_INFO[8],
+                };
+
+                var osdConfig = NETClient.SetOSDConfig(mLoginId.Handle, EM_CFG_OSD_TYPE.CUSTOMTITLE, channelId, customInfo, waitTime);
+                if (!osdConfig) {
+                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                }
+            }
+        }
+
+        private static byte[] ConvertFrameInfoToRgbByteArray(FRAME_DECODE_INFO frameInfo, int targetWidth, int targetHeight) {
+            // 每个像素的RGB数据需要3个字节
+            var stride = targetWidth * 3;
+            var rgbData = new byte[targetHeight * stride];
+
+            var sourceWidth = frameInfo.nWidth[0];
+            var sourceHeight = frameInfo.nHeight[0];
+
+            unsafe {
+                var pY = (byte*)frameInfo.pVideoData[0];
+                var pU = (byte*)frameInfo.pVideoData[1];
+                var pV = (byte*)frameInfo.pVideoData[2];
+
+                Parallel.For(0, targetHeight, y => {
+                    for (var x = 0; x < targetWidth; x++) {
+                        // 计算源图像中的位置
+                        var sourceX = x * sourceWidth / targetWidth;
+                        var sourceY = y * sourceHeight / targetHeight;
+
+                        var yIndex = sourceY * frameInfo.nStride[0] + sourceX;
+                        var uvIndex = (sourceY / 2) * frameInfo.nStride[1] + (sourceX / 2);
+
+                        var Y = pY[yIndex];
+                        var U = pU[uvIndex] - 128;
+                        var V = pV[uvIndex] - 128;
+
+                        var R = (int)(Y + 1.402 * V);
+                        var G = (int)(Y - 0.344136 * U - 0.714136 * V);
+                        var B = (int)(Y + 1.772 * U);
+
+                        // 将RGB值限制在[0, 255]范围内
+                        R = Math.Clamp(R, 0, 255);
+                        G = Math.Clamp(G, 0, 255);
+                        B = Math.Clamp(B, 0, 255);
+
+                        // 计算目标数组中的索引，并填充RGB数据
+                        var index = (y * targetWidth + x) * 3;
+                        rgbData[index] = (byte)B;
+                        rgbData[index + 1] = (byte)G;
+                        rgbData[index + 2] = (byte)R;
+                    }
+                });
+            }
+
+            return rgbData;
+        }
+
+        /// <summary>
+        /// 调整缩放倍率
+        /// </summary>
+        /// <param name="channelId"></param>
+        /// <param name="increase"></param>
+        /// <param name="start"></param>
+        /// <param name="serialNo"></param>
+        /// <returns></returns>
+        public async Task AdjustZoomContinuouslyAsync(string serialNo, int channelId, bool increase, bool start) {
+            var speed = 4;
+            try {
+                await _ptzOperationSlim.WaitAsync();
+                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                        increase ? EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL : EM_EXTPTZ_ControlType.ZOOM_DEC_CONTROL, 0,
+                        speed, 0, start, IntPtr.Zero);
+                    if (!ptzControl) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                }
+            }
+            finally {
+                _ptzOperationSlim.Release();
+            }
+        }
+
+        public async Task AdjustPtzFocusContinuouslyAsync(string serialNo, int channelId, bool increase, bool start) {
+            var speed = 4;
+            try {
+                await _ptzOperationSlim.WaitAsync();
+                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                        increase ? EM_EXTPTZ_ControlType.FOCUS_ADD_CONTROL : EM_EXTPTZ_ControlType.FOCUS_DEC_CONTROL, 0,
+                        speed, 0, start, IntPtr.Zero);
+                    if (!ptzControl) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                }
+            }
+            finally {
+                _ptzOperationSlim.Release();
+            }
+        }
+
+        public async Task AutoFocusAsync(string serialNo, int channelId) {
+            var speed = 1;
+            try {
+                await _ptzOperationSlim.WaitAsync();
+                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+                    NETClient.PTZControl(mLoginId.Handle, channelId,
+                        EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL, 0,
+                        speed, 0, false, IntPtr.Zero);
+
+                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                        EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL, 0,
+                        speed, 0, true, IntPtr.Zero);
+                    if (!ptzControl) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                }
+            }
+            finally {
+                _ptzOperationSlim.Release();
+            }
+        }
+    }
+
+    public class RealtimePreviewInfo {
+        public string SerialNo { get; set; } = string.Empty;
+        public byte[]? RgbData { get; set; }
+        public int? ChannelId { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+    }
+
+    public class RealTimeWatermarkInfo {
+        public nint LoginId { get; set; }
+        public int ChannelId { get; set; }
+        public NET_OSD_CUSTOM_TITLE CustomInfo { get; set; }
+        public NET_OSD_CUSTOM_TITLE_TEXT_ALIGN CustomAlign { get; set; }
     }
 
     public class VideoTime {
@@ -666,6 +1171,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     }
 
     public class DevLogInInfo {
+
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string SerialNo { get; set; } = string.Empty;
 
         /// <summary>
         /// 指针句柄

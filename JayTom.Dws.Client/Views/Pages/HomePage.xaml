@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:cloudConverters="clr-namespace:JayTom.Dws.Client.Converters.CloudConverters"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -12,8 +13,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:settingsConverter="clr-namespace:JayTom.Dws.Client.Converters.SettingsConverter"
+    xmlns:subHomeViewModels="clr-namespace:JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels"
+    xmlns:subHomeViews="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.SubHomeViews"
     xmlns:unitConverter="clr-namespace:JayTom.Dws.Client.Converters.UnitConverter"
-    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     x:Name="HomePageView"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -103,48 +105,16 @@
                         </EllipseGeometry>
                     </GeometryGroup>
                 </Grid.Clip>
-                <ListBox
-                    Name="CameraListBox"
-                    Width="900"
-                    MinWidth="600"
-                    MaxWidth="900"
-                    Margin="0,10"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    HorizontalContentAlignment="Center"
-                    VerticalContentAlignment="Center"
-                    Focusable="False"
-                    ItemTemplate="{StaticResource CameraTemplate}"
-                    ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                    Style="{StaticResource CustomListBoxStyle}">
-                    <ListBox.Template>
-                        <ControlTemplate TargetType="{x:Type ListBox}">
-                            <ScrollViewer Focusable="False">
-                                <ScrollViewer.Style>
-                                    <Style TargetType="ScrollViewer">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-                                            </Trigger>
-                                            <Trigger Property="IsMouseOver" Value="False">
-                                                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ScrollViewer.Style>
-                                <WrapPanel
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Top"
-                                    Focusable="False"
-                                    IsItemsHost="True"
-                                    Orientation="Horizontal"
-                                    ScrollViewer.CanContentScroll="True" />
-                            </ScrollViewer>
-                        </ControlTemplate>
-                    </ListBox.Template>
-                </ListBox>
+                <ContentControl Content="{Binding CurrentViewModel}">
+                    <ContentControl.Resources>
+                        <DataTemplate DataType="{x:Type subHomeViewModels:CameraHomeViewModel}">
+                            <subHomeViews:CameraHomeView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type subHomeViewModels:NvrPreviewHomeViewModel}">
+                            <subHomeViews:NvrPreviewHomeView />
+                        </DataTemplate>
+                    </ContentControl.Resources>
+                </ContentControl>
             </Grid>
         </materialDesign:Card>
 

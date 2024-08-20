@@ -2,8 +2,10 @@
 using DryIoc;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using System.Threading;
 using JayTom.Dws.Camera;
+using SixLabors.ImageSharp;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
@@ -16,8 +18,13 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Service.ExternalDataService;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
+using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
 
@@ -27,6 +34,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly IExternalDataService _externalDataService;
+        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
+        private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
+        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private ContentInputSettingsDto _contentInputSettingsDto = new();
         private SemaphoreSlim _createPackageSlim = new(1);
@@ -35,6 +45,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private WeightSettingsDto _weightSettingsDto = new();
         private static bool _isWindowsClose;
         private List<ICamera> _cameras = new();
+        private BaseDaHuatech? _baseDaHuatech;
 
         public KeyboardDeviceBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
@@ -42,12 +53,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             ISortingService sortingService,
             IExternalDataService externalDataService,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            IIpcNvrConfigRepository ipcNvrConfigRepository,
+            INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
+            INvrCameraBindingRepository nvrCameraBindingRepository) {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
             _configRepository = configRepository;
             _sortingService = sortingService;
             _externalDataService = externalDataService;
+            _ipcNvrConfigRepository = ipcNvrConfigRepository;
+            _nvrWatermarkConfigRepository = nvrWatermarkConfigRepository;
+            _nvrCameraBindingRepository = nvrCameraBindingRepository;
 
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
@@ -239,11 +256,26 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 }
             });
             //程序停止
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
+            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(async item => {
                 if (item is { } info) {
                     if (info.Status == ApplicationStatus.Stop &&
                         _createPackageSettingsDto.ClearPackageQueueOnStop) {
                         PackageInfoManager.ClearAllPackages();
+                    }
+                    else if (info.Status == ApplicationStatus.Start) {
+                        //重新登录大华相机(临时)
+                        var ipcNvrConfigInfoModels = (await _ipcNvrConfigRepository.MemoryCacheData()).Where(w => !string.IsNullOrEmpty(w.SerialNumber)).ToList();
+
+                        if (ipcNvrConfigInfoModels.Any(a => a.Type == 1)) {
+                            _baseDaHuatech = BaseDaHuatech.CreateInstance();
+
+                            foreach (var model in ipcNvrConfigInfoModels) {
+                                var (b, s) = await _baseDaHuatech.LogIn(model.SerialNumber, model.Username, model.Password);
+                                if (!b) {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"大华安防相机:{model.SerialNumber},登录失败!");
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -264,6 +296,82 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     args.CompletedPackage?.VolumeInfo is not null) {
                     EventAggregator.Instance.Publish(args.CompletedPackage);
                 }
+                //写水印
+                Task.Run(async () => {
+                    if (_baseDaHuatech is not null && args.CompletedPackage?.BarCodeInfo?.SerialNumber is not null) {
+                        var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                        if (nvrCameraBindingInfoModels.Any(a => a.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))) {
+                            var infoModels = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))
+                                .ToList();
+                            var results = infoModels.Select(s => {
+                                // 获取异步数据并同步等待完成
+                                var infoModel = _ipcNvrConfigRepository.MemoryCacheData().Result
+                                    .FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) && f.Username.Equals(s.Username));
+
+                                if (infoModel != null) {
+                                    var watermarkConfigInfoModel = _nvrWatermarkConfigRepository.MemoryCacheData().Result
+                                        .FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
+
+                                    if (watermarkConfigInfoModel != null) {
+                                        var watermarkConfig = new SecurityCameraWatermarkConfig {
+                                            Duration = watermarkConfigInfoModel.Duration,
+                                            MaxWatermarks = 8,
+                                            Position = 0,
+                                            BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
+                                        };
+                                        return (infoModel.SerialNumber, s.Channel, watermarkConfig, watermarkConfigInfoModel.DisplayMode);
+                                    }
+                                }
+
+                                // 如果未找到匹配的 infoModel，返回默认值
+                                return (string.Empty, 0, null, 0);
+                            }).Where(w => !string.IsNullOrEmpty(w.SerialNumber)).ToList();
+
+                            if (results?.Any() == true && results?.FirstOrDefault().watermarkConfig is not null) {
+                                if (results.FirstOrDefault().DisplayMode == 0) {
+                                    _baseDaHuatech.AddRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                        args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
+                                        results.FirstOrDefault().watermarkConfig);
+                                }
+                                else {
+                                    _baseDaHuatech.AddSingleRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                        args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
+                                        results.FirstOrDefault().watermarkConfig);
+                                }
+                            }
+
+                            /*foreach (var model in infoModels) {
+                                var infoModel = (await _ipcNvrConfigRepository.MemoryCacheData()).FirstOrDefault(f => f.IpAddress.Equals(model.IpAddress) && f.Username.Equals(model.Username));
+                                if (infoModel != null) {
+                                    //获取配置
+                                    var watermarkConfigInfoModel = (await _nvrWatermarkConfigRepository.MemoryCacheData()).FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
+                                    if (watermarkConfigInfoModel != null) {
+                                        if (watermarkConfigInfoModel.DisplayMode == 0) {
+                                            _baseDaHuatech.AddRealTimeWatermark(infoModel.SerialNumber, model.Channel,
+                                                args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
+                                                new SecurityCameraWatermarkConfig() {
+                                                    Duration = watermarkConfigInfoModel.Duration,
+                                                    MaxWatermarks = 8,
+                                                    Position = 0,
+                                                    BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
+                                                });
+                                        }
+                                        else {
+                                            _baseDaHuatech.AddSingleRealTimeWatermark(infoModel.SerialNumber, model.Channel,
+                                                args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
+                                                new SecurityCameraWatermarkConfig() {
+                                                    Duration = watermarkConfigInfoModel.Duration,
+                                                    MaxWatermarks = 8,
+                                                    Position = 0,
+                                                    BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
+                                                });
+                                        }
+                                    }
+                                }
+                            }*/
+                        }
+                    }
+                });
             };
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is { Type: WindowsActionType.Close }) {

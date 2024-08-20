@@ -144,7 +144,7 @@ namespace JayTom.Dws.Client {
             containerRegistry.RegisterDialog<ApiAccessDialog>();
             containerRegistry.RegisterDialog<ApiTestDialog>();
             containerRegistry.RegisterDialog<PackageDetailsDialog>();
-
+            containerRegistry.RegisterDialog<NvrBindingPreviewViewDialog>();
             //插件窗口
             {
                 containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
@@ -316,7 +316,7 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<INvrCameraBindingRepository, NvrCameraBindingRepository>();
 
                 services.AddSingleton<IIpcNvrConfigRepository, IpcNvrConfigRepository>();
-
+                services.AddSingleton<INvrWatermarkConfigRepository, NvrWatermarkConfigRepository>();
                 //logs
                 services.AddSingleton<IAppLogRepository, AppLogRepository>();
                 services.AddSingleton<ICameraLogRepository, CameraLogRepository>();
@@ -551,6 +551,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<NvrIpcDeviceEditor, NvrIpcDeviceEditorViewModel>();
             ViewModelLocationProvider.Register<NvrCameraMappingEditor, NvrCameraMappingEditorViewModel>();
             ViewModelLocationProvider.Register<NvrBindingEditor, NvrBindingEditorViewModel>();
+            ViewModelLocationProvider.Register<NvrWatermarkConfigEditor, NvrWatermarkConfigEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
@@ -560,6 +561,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
             ViewModelLocationProvider.Register<PackageDetailsDialog, PackageDetailsDialogViewModel>();
             ViewModelLocationProvider.Register<IpcPreviewDialog, IpcPreviewViewModel>();
+            ViewModelLocationProvider.Register<NvrBindingPreviewViewDialog, NvrBindingPreviewViewDialogViewModel>();
 
             ViewModelLocationProvider.Register<ApiTestDialog, ApiTestViewModel>();
             ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();

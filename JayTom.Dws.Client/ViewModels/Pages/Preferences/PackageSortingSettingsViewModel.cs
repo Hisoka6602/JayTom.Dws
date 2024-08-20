@@ -147,9 +147,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _packageSortingMenuItems, value);
         }
 
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<Frame>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<Frame>(LoadedDelegate);
 
         private async void LoadedDelegate(Frame obj) {
             if (!_isLoaded) {
@@ -168,9 +166,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 点击事件
         /// </summary>
-        public ICommand ClickCommand {
-            get => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
-        }
+        public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
 
         private async void MenuClickDelegate(MenuItemInfoModel obj) {
             await Application.Current.Dispatcher.InvokeAsync(() => {

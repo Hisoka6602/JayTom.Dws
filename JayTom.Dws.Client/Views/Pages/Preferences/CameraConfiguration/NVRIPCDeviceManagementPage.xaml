@@ -1,15 +1,15 @@
 ﻿<Page
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration.NVRIPCDeviceManagementPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-    xmlns:mvvm="http://prismlibrary.com/"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
     Name="NvripcDeviceManagementView"
     Title="NVRIPCDeviceManagementPage"
     d:DesignHeight="450"
@@ -260,8 +260,8 @@
                 </DataGridTextColumn>
                 <!--  类型  -->
                 <DataGridTextColumn
-                    Width="100"
-                    MinWidth="100"
+                    Width="80"
+                    MinWidth="80"
                     Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=description}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
@@ -461,6 +461,41 @@
                                             Foreground="White"
                                             IsEnabled="True"
                                             Text="绑定"
+                                            TextAlignment="Justify" />
+                                    </StackPanel>
+                                </Button>
+                                <Button
+                                    Width="80"
+                                    Height="30"
+                                    MinWidth="60"
+                                    Margin="2,0"
+                                    materialDesign:ButtonAssist.CornerRadius="5"
+                                    Background="MediumSlateBlue"
+                                    Command="{Binding ElementName=NvripcDeviceManagementView, Path=DataContext.SetWatermarkCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Foreground="MediumSlateBlue"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    Visibility="{Binding Type, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=NVR, UpdateSourceTrigger=PropertyChanged}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="White"
+                                            Text="&#xe9d3;" />
+                                        <TextBlock
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="True"
+                                            Text="水印"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>
