@@ -282,6 +282,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             return info;
         }
 
+        public DevLogInInfo? GetLoggedInDeviceInfo(string serialNo) {
+            _loginDev.TryGetValue(serialNo, out var info);
+            return info;
+        }
+
         /// <summary>
         /// 设备登录
         /// </summary>
@@ -308,7 +313,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
                         //添加到字典
-                        _loginDev.TryAdd(serialNo, new DevLogInInfo { Handle = mLoginId, PlayChannelId = playChannelId });
+                        _loginDev.TryAdd(serialNo, new DevLogInInfo { Handle = mLoginId, PlayChannelId = playChannelId, LoggedInDeviceInfo = mDeviceInfo });
 
                         return new KeyValuePair<bool, string>(true, mLoginId.ToString());
                     }
@@ -1203,5 +1208,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// </summary>
 
         public IntPtr PlayHandle { get; set; }
+
+        /// <summary>
+        /// 登录后的设备信息
+        /// </summary>
+        public NET_DEVICEINFO_Ex? LoggedInDeviceInfo { get; set; }
     }
 }

@@ -316,10 +316,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                     device.Status = NvrStatus.LoggingIn;
                                     return Task.CompletedTask;
                                 });
+                                var nChanNum = 0;
                                 var baseDaHuatech = BaseDaHuatech.CreateInstance();
                                 var (key, value) = await baseDaHuatech.LogIn(device.SerialNumber, device.Username, device.Password);
+                                if (key) {
+                                    var info = baseDaHuatech.GetLoggedInDeviceInfo(device.SerialNumber);
+                                    nChanNum = info?.LoggedInDeviceInfo?.nChanNum ?? 0;
+                                }
                                 await Application.Current.Dispatcher.InvokeAsync(() => {
                                     device.Status = key ? NvrStatus.Online : NvrStatus.LoginFailed;
+                                    device.ChannelCount = nChanNum > 0 ? nChanNum : device.ChannelCount;
                                     return Task.CompletedTask;
                                 });
                             }
