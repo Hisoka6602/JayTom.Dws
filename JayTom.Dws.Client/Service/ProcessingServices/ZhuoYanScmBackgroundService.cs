@@ -18,8 +18,10 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
 
@@ -35,6 +37,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private DateTime _lastNoReadTime = DateTime.Now;
         private WeightSettingsDto _weightSettingsDto = new();
         private static bool _isWindowsClose;
+        private List<ICamera> _cameras = new();
 
         public ZhuoYanScmBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
@@ -46,7 +49,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _configRepository = configRepository;
             _sortingService = sortingService;
             _externalDataService = externalDataService;
-
+            //相机
+            _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
+                _cameras = list;
+            };
             //下位机创建包裹
             _sortingService.CreatePackageEvent += async delegate (object? sender, PackageInstructionEventArgs args) {
                 try {
@@ -431,6 +437,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
                         PackageInfo = packageInfo
                     });
+                }
+                else if (item is {
+                    PackageInfo: { VolumeInfo: null } createInfo, TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter
+                }) {
+                    if (_cameras.All(camera => camera.BindingType != CameraBindingType.VolumeCamera)) {
+                        createInfo.VolumeInfo = new VolumeInfoModel();
+                    }
                 }
                 else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null, VolumeInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter or TriggerPositionEnum.VolumeSetValueAfter }) {
                     PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
