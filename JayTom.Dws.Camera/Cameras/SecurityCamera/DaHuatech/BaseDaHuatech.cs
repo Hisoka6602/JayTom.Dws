@@ -19,6 +19,7 @@ using static DaHua.Play.Net.DhPlaySdk;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
+
     public class BaseDaHuatech {
         private static fDisConnectCallBack? _mDisConnectCallBack;
         private static fHaveReConnectCallBack? _mReConnectCallBack;
@@ -94,12 +95,12 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                 /*var (key, value) = _loginDev.FirstOrDefault(f => f.Value != null &&
                                                                                  f.Value.PlayHandle == handle && f.Value.IsRealTimePlay);
                                 if (value is not null) {
-                                    //DhPlaySdk.PLAY_InputData(value.PlayPort, buffer, size);
+                                    NETClient.PlayInputData(value.PlayPort, buffer, size);
                                 }*/
                                 NETClient.PlayInputData((int)user, buffer, size);
                             }
                         };
-                    _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, nint data, int reserved2) => {
+                    _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) => {
                         //解析图片
 
                         var frameInfo = info;
@@ -481,7 +482,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                     dev.PlayHandle = realPlayId;
                     //设置播放回调
-                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, IntPtr.Zero,
+                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, plPort,
                         EM_REALDATA_FLAG.DATA_WITH_FRAME_INFO | EM_REALDATA_FLAG.PCM_AUDIO_DATA | EM_REALDATA_FLAG.RAW_DATA | EM_REALDATA_FLAG.YUV_DATA);
                     if (!realDataCallBack) {
                         return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
