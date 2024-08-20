@@ -1,5 +1,6 @@
 ﻿using System;
 using DryIoc;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using JayTom.Dws.Ocr;
@@ -8,6 +9,7 @@ using System.Windows;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
+using JayTom.Dws.License;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using Prism.Services.Dialogs;
@@ -64,6 +66,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IExternalDataService _externalDataService;
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
+        private readonly IClientLicenseApi _clientLicenseApi;
         private readonly IContainer _container;
 
         private ObservableCollection<PackageItemModel> _packageItems = new();
@@ -238,6 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IExternalDataService externalDataService,
             IConfigRepository configRepository,
             ISortingService sortingService,
+            IClientLicenseApi clientLicenseApi,
             IContainer container) {
             _dialogService = dialogService;
             _deviceService = deviceService;
@@ -246,6 +250,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _externalDataService = externalDataService;
             _configRepository = configRepository;
             _sortingService = sortingService;
+            _clientLicenseApi = clientLicenseApi;
             _container = container;
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
