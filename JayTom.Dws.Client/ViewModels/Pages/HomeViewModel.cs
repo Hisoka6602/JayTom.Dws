@@ -51,6 +51,7 @@ using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class HomeViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IDeviceService _deviceService;
