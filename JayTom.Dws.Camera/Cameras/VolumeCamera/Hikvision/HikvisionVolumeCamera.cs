@@ -246,9 +246,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 default:
                     break;
             }*/
-
-            //var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_LSL_MEASURE_349) ?? -1;
-            var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_BINOSTEREO_RGBD) ?? -1;
+            //设置工作方式
+            var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_LSL_MEASURE_349) ?? -1;
+            //var nRet = _mCsVolMeasure?.SetAlgorithmType((int)CAMERATYPE_DEFINE.CAMERA_TYPE_BINOSTEREO_RGBD) ?? -1;
             if (ERROR_DEFINE.MV_VOLM_OK != (ERROR_DEFINE)nRet) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = new Exception($"设置获取模式失败:{nRet:X}")
@@ -500,22 +500,24 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             }
 
             //判断体积标记位，是否有体积信息
-            if (1 == stResultInfo.nVolumeFlag && thumbnailImage is not null) {
+            if (1 == stResultInfo.nVolumeFlag) {
                 //在界面显示体积信息
                 //画框
-                using var g = Graphics.FromImage(thumbnailImage);
-                if (stResultInfo.stVolumeInfo.rgbvertex_pnts.Length > 0) {
-                    var stPointList = new Point[4];
-                    for (var i = 0; i < 4; i++) {
-                        stPointList[i].X =
-                            (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fX *
-                                (float)(thumbnailImage.Size.Width) / stResultInfo.stExtendImage.nWidth);
-                        stPointList[i].Y =
-                            (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fY *
-                                  (float)(thumbnailImage.Size.Height) /
-                                  stResultInfo.stExtendImage.nHeight);
+                if (thumbnailImage is not null) {
+                    using var g = Graphics.FromImage(thumbnailImage);
+                    if (stResultInfo.stVolumeInfo.rgbvertex_pnts.Length > 0) {
+                        var stPointList = new Point[4];
+                        for (var i = 0; i < 4; i++) {
+                            stPointList[i].X =
+                                (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fX *
+                                    (float)(thumbnailImage.Size.Width) / stResultInfo.stExtendImage.nWidth);
+                            stPointList[i].Y =
+                                (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fY *
+                                      (float)(thumbnailImage.Size.Height) /
+                                      stResultInfo.stExtendImage.nHeight);
+                        }
+                        g.DrawPolygon(new System.Drawing.Pen(Color.Yellow, 7), stPointList);
                     }
-                    g.DrawPolygon(new System.Drawing.Pen(Color.Yellow, 7), stPointList);
                 }
 
                 var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
