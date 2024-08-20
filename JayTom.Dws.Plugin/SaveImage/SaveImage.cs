@@ -26,42 +26,41 @@ namespace JayTom.Dws.Plugin.SaveImage {
                     // 添加水印
                     var watermarkTestText = string.Join("\n", watermarkParams.WatermarkContent ?? new List<string>());
 
-                    using (var graphics = Graphics.FromImage(processedImage)) {
-                        // 在此处进行水印绘制操作
-                        using var watermarkFont = new Font("Microsoft YaHei", watermarkParams.FontSize, FontStyle.Bold);
-                        using var watermarkBrush = new SolidBrush(watermarkParams.WatermarkColor);
+                    using var graphics = Graphics.FromImage(processedImage);
+                    // 在此处进行水印绘制操作
+                    using var watermarkFont = new Font("Microsoft YaHei", watermarkParams.FontSize, FontStyle.Bold);
+                    using var watermarkBrush = new SolidBrush(watermarkParams.WatermarkColor);
 
-                        float x, y;
-                        switch (watermarkParams.WatermarkPosition) {
-                            case WatermarkPosition.TopLeft:
-                                x = 10;
-                                y = 10;
-                                break;
+                    float x, y;
+                    switch (watermarkParams.WatermarkPosition) {
+                        case WatermarkPosition.TopLeft:
+                            x = 10;
+                            y = 10;
+                            break;
 
-                            case WatermarkPosition.TopRight:
-                                x = processedImage.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
-                                y = 10;
-                                break;
+                        case WatermarkPosition.TopRight:
+                            x = processedImage.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
+                            y = 10;
+                            break;
 
-                            case WatermarkPosition.BottomLeft:
-                                x = 10;
-                                y = processedImage.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
-                                break;
+                        case WatermarkPosition.BottomLeft:
+                            x = 10;
+                            y = processedImage.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
+                            break;
 
-                            case WatermarkPosition.BottomRight:
-                                x = processedImage.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
-                                y = processedImage.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
-                                break;
+                        case WatermarkPosition.BottomRight:
+                            x = processedImage.Width - graphics.MeasureString(watermarkTestText, watermarkFont).Width - 10;
+                            y = processedImage.Height - graphics.MeasureString(watermarkTestText, watermarkFont).Height - 10;
+                            break;
 
-                            default:
-                                x = 10;
-                                y = 10;
-                                break;
-                        }
-
-                        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                        graphics.DrawString(watermarkTestText, watermarkFont, watermarkBrush, x, y);
+                        default:
+                            x = 10;
+                            y = 10;
+                            break;
                     }
+
+                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                    graphics.DrawString(watermarkTestText, watermarkFont, watermarkBrush, x, y);
                 }
                 if (!Directory.Exists(imagePath)) {
                     Directory.CreateDirectory(imagePath);

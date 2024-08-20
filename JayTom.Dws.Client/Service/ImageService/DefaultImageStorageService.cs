@@ -26,7 +26,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
         private readonly IFtp _ftp;
         private SemaphoreSlim _semaphore = new(1);
         private SemaphoreSlim _saveSemaphore = new(2);
-        private VolumeSettingsDto? _volumeSettingsDto = new();
+        private VolumeSettingsDto? _volumeSettingsDto;
 
         public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
             IFtp ftp) {
