@@ -53,11 +53,11 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
             {
                 new {
                     codeInfo = barcode,
-                    weight = Math.Round(Convert.ToDecimal(weight), 3),
-                    packageVolume = 0,
-                    packageLength = 0,
-                    packageWidth = 0,
-                    packageHeight = 0,
+                    weight = Math.Round(Convert.ToDecimal(weight), 2),
+                    packageVolume = Math.Round(Convert.ToDecimal(volume*10), 2),
+                    packageLength = Math.Round(Convert.ToDecimal(length*10), 2),
+                    packageWidth = Math.Round(Convert.ToDecimal(width * 10), 2),
+                    packageHeight = Math.Round(Convert.ToDecimal(height*10), 2),
                 }
             };
             var stopwatch = new Stopwatch();
@@ -136,11 +136,11 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
             {
                 new {
                     codeInfo = barcode,
-                    weight = Math.Round(Convert.ToDecimal(weight), 3),
-                    packageVolume = 0,
-                    packageLength = 0,
-                    packageWidth = 0,
-                    packageHeight = 0,
+                    weight = Math.Round(Convert.ToDecimal(weight), 2),
+                    packageVolume = Math.Round(Convert.ToDecimal(volume*10), 2),
+                    packageLength = Math.Round(Convert.ToDecimal(length*10), 2),
+                    packageWidth = Math.Round(Convert.ToDecimal(width * 10), 2),
+                    packageHeight = Math.Round(Convert.ToDecimal(height*10), 2),
                 }
             };
             var stopwatch = new Stopwatch();

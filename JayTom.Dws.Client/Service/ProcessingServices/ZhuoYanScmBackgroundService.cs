@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Domain.Model;
@@ -300,7 +301,81 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     _createPackageSlim.Release();
                 }
             };
+            //体积
+            _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
+                //填充长宽高
+                try {
+                    await _createPackageSlim.WaitAsync();
+                    var packageInfo =
+                   _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                       PackageInfoManager.GetPackage(f => f.Value is { VolumeInfo: null }) :
+                       PackageInfoManager.GetLastPackage(f => f.Value is { VolumeInfo: null });
+                    if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.VolumeInput) ==
+                        PackageCreationMethodsEnum.VolumeInput && packageInfo is null) {
+                        packageInfo = new PackageInfo() {
+                            Guid = new DateTimeOffset(args.Timestamp).ToUnixTimeMilliseconds(),
+                            VolumeInfo = new VolumeInfoModel() {
+                                CreateTime = args.Timestamp,
+                                FormattedHeight = args.Height,
+                                FormattedWidth = args.Width,
+                                FormattedLength = args.Length,
+                                FormattedVolume = args.Volume,
+                                SourceType = SourceType.Camera,
+                            },
+                        };
 
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                            PackageInfo = packageInfo
+                        });
+                    }
+                    else {
+                        //判断体积创建包裹
+
+                        //增加体积单位转换
+                        if (packageInfo is not null) {
+                            //VolumeInfo需要返回是否动态
+                            //如果是动态体积就需要满足条码和重量才能使用
+                            if (args.MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
+                                if (packageInfo is { WeightInfo: not null, BarCodeInfo: not null }) {
+                                    packageInfo.VolumeInfo = new VolumeInfoModel() {
+                                        CreateTime = args.Timestamp,
+                                        FormattedHeight = args.Height - packageInfo.LengthToDeduct,
+                                        FormattedWidth = args.Width - packageInfo.WidthToDeduct,
+                                        FormattedLength = args.Length - packageInfo.LengthToDeduct,
+                                        FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
+                                        SourceType = SourceType.Camera,
+                                    };
+                                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                        IsSuccess = true,
+                                        TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
+                                        PackageInfo = packageInfo
+                                    });
+                                }
+                            }
+                            else {
+                                packageInfo.VolumeInfo = new VolumeInfoModel() {
+                                    CreateTime = args.Timestamp,
+                                    FormattedHeight = args.Height - packageInfo.LengthToDeduct,
+                                    FormattedWidth = args.Width - packageInfo.WidthToDeduct,
+                                    FormattedLength = args.Length - packageInfo.LengthToDeduct,
+                                    FormattedVolume = args.Volume - packageInfo.VolumeToDeduct,
+                                    SourceType = SourceType.Camera,
+                                };
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
+                                    PackageInfo = packageInfo
+                                });
+                            }
+                        }
+                    }
+                }
+                finally {
+                    _createPackageSlim.Release();
+                }
+            };
             //配置更改
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is { } model) {
@@ -357,7 +432,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         PackageInfo = packageInfo
                     });
                 }
-                else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter }) {
+                else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null, VolumeInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter or TriggerPositionEnum.VolumeSetValueAfter }) {
                     PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                 }
             });
