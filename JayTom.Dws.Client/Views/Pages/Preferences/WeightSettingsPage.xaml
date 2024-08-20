@@ -3,7 +3,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:extensions="clr-namespace:JayTom.Dws.Client.Extensions"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -424,7 +426,7 @@
                                         <Binding
                                             Mode="TwoWay"
                                             Path="WeightSettingsInfo.CommonWeight.MinWeight"
-                                            UpdateSourceTrigger="PropertyChanged">
+                                            UpdateSourceTrigger="LostFocus">
                                             <Binding.ValidationRules>
                                                 <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
                                             </Binding.ValidationRules>
@@ -465,7 +467,7 @@
                                         <Binding
                                             Mode="TwoWay"
                                             Path="WeightSettingsInfo.CommonWeight.MaxWeight"
-                                            UpdateSourceTrigger="PropertyChanged">
+                                            UpdateSourceTrigger="LostFocus">
                                             <Binding.ValidationRules>
                                                 <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
                                             </Binding.ValidationRules>
@@ -551,7 +553,7 @@
                                                 <Binding
                                                     Mode="TwoWay"
                                                     Path="ParsedWeight"
-                                                    UpdateSourceTrigger="PropertyChanged">
+                                                    UpdateSourceTrigger="LostFocus">
                                                     <Binding.ValidationRules>
                                                         <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
                                                     </Binding.ValidationRules>
@@ -780,7 +782,7 @@
                                                 <Binding
                                                     Mode="TwoWay"
                                                     Path="WeightSettingsInfo.StaticWeight.BalanceQty"
-                                                    UpdateSourceTrigger="PropertyChanged">
+                                                    UpdateSourceTrigger="LostFocus">
                                                     <Binding.ValidationRules>
                                                         <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
                                                     </Binding.ValidationRules>
@@ -1175,7 +1177,7 @@
                                         <Binding
                                             Mode="TwoWay"
                                             Path="WeightSettingsInfo.AdditionalWeight.WeightConversionRate"
-                                            UpdateSourceTrigger="PropertyChanged">
+                                            UpdateSourceTrigger="LostFocus">
                                             <Binding.ValidationRules>
                                                 <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
                                             </Binding.ValidationRules>
@@ -1248,7 +1250,7 @@
                                         <Binding
                                             Mode="TwoWay"
                                             Path="WeightSettingsInfo.AdditionalWeight.AppendedWeightValue"
-                                            UpdateSourceTrigger="PropertyChanged">
+                                            UpdateSourceTrigger="LostFocus">
                                             <Binding.ValidationRules>
                                                 <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^-?\d+(\.\d+)?$" />
                                             </Binding.ValidationRules>
@@ -1321,7 +1323,7 @@
                                         <Binding
                                             Mode="TwoWay"
                                             Path="WeightSettingsInfo.AdditionalWeight.FixedWeightValue"
-                                            UpdateSourceTrigger="PropertyChanged">
+                                            UpdateSourceTrigger="LostFocus">
                                             <Binding.ValidationRules>
                                                 <validationRules:RegexValidationRule ErrorMessage="请输入有效的浮点数" Pattern="^\d+(\.\d+)?$" />
                                             </Binding.ValidationRules>
