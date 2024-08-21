@@ -61,7 +61,9 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
         public async Task<bool> StartListening(KeyboardDevice device) {
             await Task.Yield();
-
+            if (!_keyboardDevices.Any()) {
+                await EnumerateKeyboardDevices();
+            }
             if (IsListening || _keyboardDevices.Any(a => a.ProductId.Equals(device.ProductId) &&
                                                       a.VendorId.Equals(device.VendorId) &&
                                                       a.DeviceName?.Equals(device.DeviceName) == true) != true) {

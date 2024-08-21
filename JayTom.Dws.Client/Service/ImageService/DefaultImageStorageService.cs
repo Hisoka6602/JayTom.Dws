@@ -408,35 +408,35 @@ namespace JayTom.Dws.Client.Service.ImageService {
             return source switch {
                 "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
                 "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)} kg",
-                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch {
+                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{Math.Round(volume / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => Math.Pow(10, 3),
                     VolumeUnit.Meter => Math.Pow(1000, 3),
                     _ => 1
-                })
-                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
-                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch {
+                }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}³",
+
+                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{Math.Round(length / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
-                })
-                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
-                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch {
+                }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}",
+
+                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{Math.Round(width / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
-                })
-                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
-                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch {
+                }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}",
+
+                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{Math.Round(height / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
-                })
-                    .ToString(CultureInfo.InvariantCulture)} {vUnit}",
-                "{ScanTime}" => $"{(isWatermark ? "扫码时间:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
+                }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}",
+
+                "{ScanTime}" => $"{(isWatermark ? "扫码时间:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
                 "{TimestampedGuid}" => $"{(isWatermark ? "时间戳:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
                 "{CameraSerialNumber}" => $"{(isWatermark ? "相机序列号:" : string.Empty)}{cameraSerialNumber}",
                 "{ImageType}" => $"{(isWatermark ? "图片类型:" : string.Empty)}{type}",
