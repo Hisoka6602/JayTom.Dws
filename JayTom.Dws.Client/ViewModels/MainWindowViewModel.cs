@@ -225,7 +225,7 @@ namespace JayTom.Dws.Client.ViewModels {
             EventAggregator.Instance.Publish(new WindowsAction {
                 Type = WindowsActionType.Close
             });
-            await Task.Delay(300);
+            await Task.Delay(500);
             System.Windows.Application.Current.Shutdown();//关闭
         }
 
