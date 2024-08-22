@@ -1,0 +1,523 @@
+﻿<UserControl
+    x:Class="JayTom.Dws.Client.Views.Dialog.CameraConfiguration.NvrRecordingDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:extensions="clr-namespace:JayTom.Dws.Client.Extensions"
+    xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
+    xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Dialog.CameraConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    Name="NvrRecordingView"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    FontFamily="{StaticResource CustomFontFamily}"
+    mc:Ignorable="d">
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded" SourceName="NvrRecordingView">
+            <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <UserControl.Resources>
+        <converters:DoubleToTimeToolTipConverter x:Key="DoubleToTimeToolTipConverter" />
+        <converters:DoubleToDateTimeConverter x:Key="DoubleToDateTimeConverter" />
+        <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
+    </UserControl.Resources>
+    <Border
+        MinWidth="1000"
+        MinHeight="800"
+        Padding="10"
+        Background="#2E2E2E"
+        CornerRadius="10">
+        <Border.Clip>
+            <MultiBinding Converter="{StaticResource BorderClipMultiConverter}">
+                <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="CornerRadius" RelativeSource="{RelativeSource Self}" />
+            </MultiBinding>
+        </Border.Clip>
+        <Grid>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <!--  播放列表  -->
+
+            <Grid Grid.Row="1">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel
+                    Grid.Column="0"
+                    Margin="10"
+                    Orientation="Vertical">
+                    <!--  播放操作(暂停/播放、快放、慢放、正常、 倒放)  -->
+                    <StackPanel Margin="0,10" Orientation="Horizontal">
+                        <!--  暂停/播放  -->
+                        <Button
+                            Height="30"
+                            MinWidth="80"
+                            Margin="0,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Background="RoyalBlue"
+                            BorderThickness="0"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="20"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe9e9;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="13"
+                                    FontWeight="Normal"
+                                    Foreground="White"
+                                    Text="播放" />
+                            </StackPanel>
+                        </Button>
+                        <!--  快进  -->
+                        <materialDesign:Badged Badge="3" BadgeBackground="White">
+                            <Button
+                                Height="30"
+                                MinWidth="80"
+                                Margin="10,0,0,0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="#3D3D3D"
+                                BorderThickness="0"
+                                Focusable="False"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        FontWeight="Light"
+                                        Foreground="White"
+                                        Text="&#xe9ed;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="13"
+                                        FontWeight="Normal"
+                                        Foreground="White"
+                                        Text="快进" />
+                                </StackPanel>
+                            </Button>
+                        </materialDesign:Badged>
+                        <!--  快退  -->
+                        <materialDesign:Badged Badge="3" BadgeBackground="White">
+                            <Button
+                                Height="30"
+                                MinWidth="80"
+                                Margin="10,0,0,0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="#3D3D3D"
+                                BorderThickness="0"
+                                Focusable="False"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        FontWeight="Light"
+                                        Foreground="White"
+                                        Text="&#xe9f6;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="13"
+                                        FontWeight="Normal"
+                                        Foreground="White"
+                                        Text="快退" />
+                                </StackPanel>
+                            </Button>
+                        </materialDesign:Badged>
+                        <!--  慢放  -->
+                        <materialDesign:Badged Badge="3" BadgeBackground="White">
+                            <Button
+                                Height="30"
+                                MinWidth="80"
+                                Margin="10,0,0,0"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="#3D3D3D"
+                                BorderThickness="0"
+                                Focusable="False"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        FontWeight="Light"
+                                        Foreground="White"
+                                        Text="&#xe9f7;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="13"
+                                        FontWeight="Normal"
+                                        Foreground="White"
+                                        Text="慢放" />
+                                </StackPanel>
+                            </Button>
+                        </materialDesign:Badged>
+                        <!--  快进5秒  -->
+                        <Button
+                            Height="30"
+                            MinWidth="80"
+                            Margin="10,0,0,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Background="#3D3D3D"
+                            BorderThickness="0"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="20"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xea16;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="13"
+                                    FontWeight="Normal"
+                                    Foreground="White"
+                                    Text="快进5s" />
+                            </StackPanel>
+                        </Button>
+                        <!--  快进15秒  -->
+                        <Button
+                            Height="30"
+                            MinWidth="85"
+                            Margin="10,0,0,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Background="#3D3D3D"
+                            BorderThickness="0"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="20"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe9e5;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="13"
+                                    FontWeight="Normal"
+                                    Foreground="White"
+                                    Text="快进15s" />
+                            </StackPanel>
+                        </Button>
+                        <!--  快退5秒  -->
+                        <Button
+                            Height="30"
+                            MinWidth="80"
+                            Margin="10,0,0,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Background="#3D3D3D"
+                            BorderThickness="0"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="20"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xea15;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="13"
+                                    FontWeight="Normal"
+                                    Foreground="White"
+                                    Text="快退5s" />
+                            </StackPanel>
+                        </Button>
+                        <!--  快退15秒  -->
+                        <Button
+                            Height="30"
+                            MinWidth="85"
+                            Margin="10,0,0,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Background="#3D3D3D"
+                            BorderThickness="0"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="20"
+                                    FontWeight="Light"
+                                    Foreground="White"
+                                    Text="&#xe9e6;" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="13"
+                                    FontWeight="Normal"
+                                    Foreground="White"
+                                    Text="快退15s" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <!--  进度条(时、分、秒)  -->
+                    <Slider
+                        MinWidth="600"
+                        extensions:SliderTimeToolTip.AutoTickFrequency="True"
+                        extensions:SliderTimeToolTip.IsTimeToolTipEnabled="True"
+                        AutoToolTipPlacement="None"
+                        Focusable="False"
+                        IsSelectionRangeEnabled="True"
+                        Maximum="{Binding EndTime, Converter={StaticResource DoubleToDateTimeConverter}}"
+                        Minimum="{Binding StartTime, Converter={StaticResource DoubleToDateTimeConverter}}"
+                        Orientation="Horizontal"
+                        SelectionEnd="{Binding SelectionEndTime, Converter={StaticResource DoubleToDateTimeConverter}}"
+                        SelectionStart="{Binding SelectionStartTime, Converter={StaticResource DoubleToDateTimeConverter}}"
+                        TickPlacement="BottomRight"
+                        Value="{Binding CurrentTime, Mode=TwoWay, Converter={StaticResource DoubleToDateTimeConverter}}" />
+                </StackPanel>
+
+                <StackPanel
+                    Grid.Column="1"
+                    HorizontalAlignment="Right"
+                    Orientation="Vertical">
+                    <!--  选择开始时间  -->
+                    <StackPanel
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="开始时间:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox
+                                    Width="120"
+                                    MaxWidth="170"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    materialDesign:HintAssist.Hint="yyyy-MM-dd HH:mm:ss"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    BorderThickness="0"
+                                    Focusable="True"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                </TextBox>
+                                <Button
+                                    Width="30"
+                                    Margin="0,0,0,0"
+                                    Padding="0"
+                                    materialDesign:RippleAssist.Feedback="DodgerBlue"
+                                    Background="{x:Null}"
+                                    BorderBrush="{x:Null}"
+                                    FocusVisualStyle="{x:Null}"
+                                    Foreground="DodgerBlue"
+                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                    <materialDesign:PackIcon
+                                        Width="18"
+                                        Height="18"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FocusVisualStyle="{x:Null}"
+                                        Foreground="DimGray"
+                                        Kind="CalendarClock" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <!--  选择结束时间  -->
+                    <StackPanel
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="结束时间:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox
+                                    Width="120"
+                                    MaxWidth="170"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    materialDesign:HintAssist.Hint="yyyy-MM-dd HH:mm:ss"
+                                    materialDesign:TextFieldAssist.HasClearButton="False"
+                                    BorderThickness="0"
+                                    Focusable="True"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                </TextBox>
+                                <Button
+                                    Width="30"
+                                    Margin="0,0,0,0"
+                                    Padding="0"
+                                    materialDesign:RippleAssist.Feedback="DodgerBlue"
+                                    Background="{x:Null}"
+                                    BorderBrush="{x:Null}"
+                                    FocusVisualStyle="{x:Null}"
+                                    Foreground="DodgerBlue"
+                                    Style="{StaticResource MaterialDesignFlatButton}">
+                                    <materialDesign:PackIcon
+                                        Width="18"
+                                        Height="18"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FocusVisualStyle="{x:Null}"
+                                        Foreground="DimGray"
+                                        Kind="CalendarClock" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <!--  选择码流  -->
+                    <StackPanel
+                        Margin="5,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DimGray"
+                            Text="码流选择:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <ComboBox
+                                Height="30"
+                                MinWidth="160"
+                                Padding="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                materialDesign:ColorZoneAssist.Mode="Dark"
+                                BorderThickness="0"
+                                DisplayMemberPath="ExitName"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                ItemsSource="{Binding PackageExitDefinitionItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectExitDefinitionInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                SelectedValuePath="Id"
+                                Style="{StaticResource MaterialDesignComboBox}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!--  关闭按钮  -->
+            <Button
+                Grid.Row="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Command="{Binding CloseDialogCommand}"
+                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}"
+                Style="{StaticResource CustomCloseButtonStyle}"
+                ToolTip="Close">
+                <TextBlock
+                    Foreground="White"
+                    Style="{StaticResource SystemTextBlockStyle}"
+                    Text="&#xe601;" />
+            </Button>
+        </Grid>
+    </Border>
+</UserControl>

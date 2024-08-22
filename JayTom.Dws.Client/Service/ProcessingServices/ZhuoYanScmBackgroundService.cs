@@ -24,7 +24,6 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
-
     public class ZhuoYanScmBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
@@ -616,6 +615,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                             (bool)f.Info?.SerialNumber.Equals(
                                                 codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info
                                         ?.CustomName ?? string.Empty,
+                                    PackageTimestamped = codeInfo.Timestamp,
                                 });
                                 codeInfo.IsSavedImage = true;
                             }

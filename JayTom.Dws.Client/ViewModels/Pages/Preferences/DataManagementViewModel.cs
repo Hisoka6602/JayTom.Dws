@@ -20,6 +20,7 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
 using Microsoft.EntityFrameworkCore;
+using LibreHardwareMonitor.Hardware;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Editors;
@@ -34,10 +35,13 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
+using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class DataManagementViewModel : BindableBase {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
@@ -699,6 +703,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private void ShowDetailsDelegate(object obj) {
             _dialogService.Show("PackageDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
+        }
+
+        /// <summary>
+        /// 获取或设置查看NVR录像命令。
+        /// </summary>
+        public ICommand ViewNvrRecordingCommand => new DelegateCommand<object>(ViewNvrRecordingDelegate);
+
+        private async void ViewNvrRecordingDelegate(object obj) {
+            var nvrRecordingDialog = new NvrRecordingDialog();
+            if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model) {
+                model.Identifier = "SettingDialog";
+
+                await DialogHost.Show(nvrRecordingDialog, model.Identifier);
+            }
         }
     }
 }

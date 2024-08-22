@@ -140,9 +140,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 页面加载完成
         /// </summary>
-        public ICommand LoadedCommand {
-            get => new DelegateCommand<object>(LoadedDelegate);
-        }
+        public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
             if (!_isLoaded) {
