@@ -30,7 +30,7 @@
         <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
     </UserControl.Resources>
     <Border
-        MinWidth="1000"
+        MinWidth="1200"
         MinHeight="800"
         Padding="10"
         Background="#2E2E2E"
@@ -380,8 +380,7 @@
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                </TextBox>
+                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"
@@ -437,8 +436,7 @@
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                </TextBox>
+                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"
