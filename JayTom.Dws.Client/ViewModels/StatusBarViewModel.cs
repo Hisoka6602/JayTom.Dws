@@ -639,9 +639,7 @@ namespace JayTom.Dws.Client.ViewModels {
             set => SetProperty(ref _computerInfo, value);
         }
 
-        public ICommand ClearExceptionCommand {
-            get => new DelegateCommand<object>(ClearExceptionDelegate);
-        }
+        public ICommand ClearExceptionCommand => new DelegateCommand<object>(ClearExceptionDelegate);
 
         private async void ClearExceptionDelegate(object obj) {
             //清空异常信息
