@@ -324,7 +324,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                     nChanNum = info?.LoggedInDeviceInfo?.nChanNum ?? 0;
                                 }
                                 await Application.Current.Dispatcher.InvokeAsync(() => {
-                                    device.Status = key ? NvrStatus.Online : NvrStatus.LoginFailed;
+                                    if (!key && value.Contains("未枚举")) {
+                                        device.Status = NvrStatus.Offline;
+                                    }
+                                    else {
+                                        device.Status = key ? NvrStatus.Online : NvrStatus.LoginFailed;
+                                    }
                                     device.ChannelCount = nChanNum > 0 ? nChanNum : device.ChannelCount;
                                     return Task.CompletedTask;
                                 });

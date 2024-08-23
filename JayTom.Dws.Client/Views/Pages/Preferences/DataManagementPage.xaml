@@ -893,8 +893,7 @@
                         Width="120"
                         MinWidth="40"
                         MaxWidth="600"
-                        CellStyle="{StaticResource CustomDataGridTextCellStyle}"
-                        Visibility="Collapsed">
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                         <DataGridTemplateColumn.Header>
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="视频" />
                         </DataGridTemplateColumn.Header>

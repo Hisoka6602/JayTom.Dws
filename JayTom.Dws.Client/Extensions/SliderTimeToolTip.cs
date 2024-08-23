@@ -61,6 +61,7 @@ namespace JayTom.Dws.Client.Extensions {
         private static void OnIsTimeToolTipEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
             if (d is Slider slider && e.NewValue is bool isEnabled) {
                 if (isEnabled) {
+                    slider.Tag = false;
                     // Set up the ToolTip and event handlers
                     slider.AutoToolTipPlacement = AutoToolTipPlacement.None; // Disable the default AutoToolTipPlacement
                     var toolTip = new ToolTip();
@@ -68,16 +69,26 @@ namespace JayTom.Dws.Client.Extensions {
 
                     slider.MouseMove += (sender, args) => {
                         var mousePosition = args.MouseDevice.GetPosition(slider);
-                        var relativePosition = mousePosition.X / slider.ActualWidth;
-                        var sliderValue = slider.Minimum + (relativePosition * (slider.Maximum - slider.Minimum));
-                        toolTip.PlacementTarget = slider;
-                        toolTip.Content = new DoubleToTimeToolTipConverter().Convert(sliderValue, typeof(string), null, null);
-                        toolTip.HorizontalOffset = mousePosition.X - (slider.ActualWidth / 2);
-                        toolTip.HorizontalAlignment = HorizontalAlignment.Left;
-                        toolTip.VerticalAlignment = VerticalAlignment.Top;
-                        toolTip.VerticalOffset = -70;
-                        if (!toolTip.IsOpen) {
-                            toolTip.IsOpen = true;
+                        // 获取Slider的Track
+                        if (slider.Template.FindName("PART_Track", slider) is Track track && !track.Thumb.IsDragging) {
+                            // 计算鼠标相对于 Track 的位置
+                            var relativePosition = (mousePosition.X - (track.Thumb.ActualWidth / 2)) / (track.ActualWidth - track.Thumb.ActualWidth);
+
+                            // 确保 relativePosition 在 [0, 1] 范围内
+                            relativePosition = Math.Max(0, Math.Min(1, relativePosition));
+                            // 计算滑块在此位置的值
+                            var sliderValue = slider.Minimum + (relativePosition * (slider.Maximum - slider.Minimum));
+
+                            toolTip.PlacementTarget = slider;
+                            toolTip.Content = new DoubleToTimeToolTipConverter().Convert(sliderValue, typeof(string), null, null);
+                            toolTip.HorizontalOffset = mousePosition.X - (slider.ActualWidth / 2);
+                            toolTip.HorizontalAlignment = HorizontalAlignment.Left;
+                            toolTip.VerticalAlignment = VerticalAlignment.Top;
+                            toolTip.VerticalOffset = -70;
+
+                            if (!toolTip.IsOpen) {
+                                toolTip.IsOpen = true;
+                            }
                         }
                     };
                     slider.MouseLeave += (s, args) => {

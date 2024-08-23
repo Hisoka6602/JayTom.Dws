@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConfiguration="clr-namespace:JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration"
+    xmlns:cameraConfiguration1="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:extensions="clr-namespace:JayTom.Dws.Client.Extensions"
@@ -25,7 +27,7 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <UserControl.Resources>
-        <converters:DoubleToTimeToolTipConverter x:Key="DoubleToTimeToolTipConverter" />
+        <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
         <converters:DoubleToDateTimeConverter x:Key="DoubleToDateTimeConverter" />
         <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
     </UserControl.Resources>
@@ -49,6 +51,60 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <!--  播放列表  -->
+            <ListBox
+                Grid.Row="0"
+                MinWidth="449"
+                MinHeight="253"
+                MaxWidth="1122"
+                MaxHeight="760"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                Focusable="False"
+                ItemTemplate="{StaticResource VideoPlayerTemplate}"
+                ItemsSource="{Binding VideoPlayerItems, UpdateSourceTrigger=PropertyChanged}"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                Style="{StaticResource CustomListBoxStyle}">
+                <ListBox.Clip>
+                    <MultiBinding Converter="{StaticResource BorderClipMultiConverter}">
+                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
+                        <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
+                        <Binding>
+                            <Binding.Source>
+                                <CornerRadius>8</CornerRadius>
+                            </Binding.Source>
+                        </Binding>
+                    </MultiBinding>
+                </ListBox.Clip>
+
+                <ListBox.Template>
+                    <ControlTemplate TargetType="{x:Type ListBox}">
+                        <ScrollViewer Focusable="False">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="False">
+                                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <WrapPanel
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Top"
+                                Focusable="False"
+                                IsItemsHost="True"
+                                Orientation="Horizontal"
+                                ScrollViewer.CanContentScroll="True" />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListBox.Template>
+            </ListBox>
 
             <Grid Grid.Row="1">
 
@@ -436,7 +492,7 @@
                                     FontSize="12"
                                     FontWeight="Bold"
                                     Foreground="White"
-                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    Text="{Binding CurrentTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button
                                     Width="30"
                                     Margin="0,0,0,0"
@@ -489,14 +545,36 @@
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 materialDesign:ColorZoneAssist.Mode="Dark"
                                 BorderThickness="0"
-                                DisplayMemberPath="ExitName"
                                 FontSize="12"
                                 FontWeight="Bold"
                                 Foreground="White"
-                                ItemsSource="{Binding PackageExitDefinitionItems, UpdateSourceTrigger=PropertyChanged}"
-                                SelectedItem="{Binding SelectExitDefinitionInfo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                SelectedValuePath="Id"
-                                Style="{StaticResource MaterialDesignComboBox}" />
+                                ItemsSource="{Binding PlaybackStreamItems, UpdateSourceTrigger=PropertyChanged}"
+                                SelectedItem="{Binding SelectPlaybackStream, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignComboBox}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type cameraConfiguration:PlaybackStream}">
+                                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                            <!--  图标  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="22"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                Text="{Binding ., Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
+                                            <!--  文字  -->
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="13"
+                                                FontWeight="Bold"
+                                                Foreground="White"
+                                                Text="{Binding ., Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </Border>
                     </StackPanel>
                 </StackPanel>
