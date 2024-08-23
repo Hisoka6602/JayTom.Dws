@@ -4,7 +4,7 @@
     xmlns:cameraConfiguration="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <DataTemplate x:Key="VideoPlayerTemplate" DataType="{x:Type cameraConfiguration:VideoPlayerModel}">
-        <Grid Name="PreviewViewGrid" Background="DarkViolet">
+        <Grid Name="PreviewViewGrid">
             <!--  加载进度条  -->
             <Border
                 Grid.Row="0"
@@ -15,7 +15,7 @@
                     VerticalAlignment="Center"
                     FontFamily="pack://application:,,,/Fonts/#iconfont"
                     FontSize="150"
-                    Foreground="DimGray"
+                    Foreground="MediumSeaGreen"
                     IsEnabled="False"
                     Text="&#xe8da;"
                     Visibility="{Binding IsBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />

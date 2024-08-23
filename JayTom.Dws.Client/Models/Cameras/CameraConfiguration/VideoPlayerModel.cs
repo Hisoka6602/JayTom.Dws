@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
@@ -19,15 +21,16 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private string _password = string.Empty;
         private int _channel;
         private double _downloadProgress;
-        private bool _isMaximized;
         private bool _isRegularDownload;
         private double _playbackSpeed;
         private bool _isReversed;
-        private bool _isConvertingFormat;
         private ICommand? _videoScreenShotCommand;
         private ICommand? _downloadCommand;
         private ICommand? _maximizeCommand;
         private bool _isBuffering;
+        private ScreenState _screenState;
+        private ScreenshotState _screenshotState = ScreenshotState.Ready;
+        private DownloadState _downloadState = DownloadState.Ready;
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
@@ -104,20 +107,17 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             set => SetProperty(ref _downloadProgress, value);
         }
 
-        /// <summary>
-        /// 获取或设置一个值，该值指示窗口是否最大化。
-        /// </summary>
-        public bool IsMaximized {
-            get => _isMaximized;
-            set => SetProperty(ref _isMaximized, value);
+        public ScreenState ScreenState {
+            get => _screenState;
+            set => SetProperty(ref _screenState, value);
         }
 
         /// <summary>
-        /// 获取或设置一个值，该值指示是否为常规下载。
+        /// 下载状态
         /// </summary>
-        public bool IsRegularDownload {
-            get => _isRegularDownload;
-            set => SetProperty(ref _isRegularDownload, value);
+        public DownloadState DownloadState {
+            get => _downloadState;
+            set => SetProperty(ref _downloadState, value);
         }
 
         /// <summary>
@@ -137,11 +137,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         }
 
         /// <summary>
-        /// 获取或设置一个值，该值指示是否正在转换格式。
+        /// 截图状态
         /// </summary>
-        public bool IsConvertingFormat {
-            get => _isConvertingFormat;
-            set => SetProperty(ref _isConvertingFormat, value);
+        public ScreenshotState ScreenshotState {
+            get => _screenshotState;
+            set => SetProperty(ref _screenshotState, value);
         }
 
         /// <summary>
@@ -180,5 +180,35 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             get => _isBuffering;
             set => SetProperty(ref _isBuffering, value);
         }
+    }
+
+    public enum ScreenState {
+
+        [Description("设置最大化画面"), FontIcon("\xea02")]
+        Normal,
+
+        [Description("还原画面"), FontIcon("\xea00")]
+        Maximized
+    }
+
+    public enum ScreenshotState {
+
+        [Description("截图准备就绪"), FontIcon("\xea03")]
+        Ready,
+
+        [Description("截图中"), FontIcon("\xea1e")]
+        Screenshotting
+    }
+
+    public enum DownloadState {
+
+        [Description("视频下载准备就绪"), FontIcon("\xe9fc")]
+        Ready,
+
+        [Description("下载中"), FontIcon("\xea23")]
+        Downloading,
+
+        [Description("转码中"), FontIcon("\xea20")]
+        Transcoding
     }
 }

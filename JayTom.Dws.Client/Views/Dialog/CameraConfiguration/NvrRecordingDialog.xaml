@@ -30,10 +30,20 @@
         <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
         <converters:DoubleToDateTimeConverter x:Key="DoubleToDateTimeConverter" />
         <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
+
+        <Storyboard x:Key="OpacityAnimation">
+            <DoubleAnimation
+                AutoReverse="True"
+                RepeatBehavior="Forever"
+                Storyboard.TargetProperty="Opacity"
+                From="0"
+                To="0.6"
+                Duration="0:0:1" />
+        </Storyboard>
     </UserControl.Resources>
     <Border
-        MinWidth="1200"
-        MinHeight="800"
+        MinWidth="1400"
+        MinHeight="650"
         Padding="10"
         Background="#2E2E2E"
         CornerRadius="10">
@@ -55,14 +65,13 @@
                 Grid.Row="0"
                 MinWidth="449"
                 MinHeight="253"
-                MaxWidth="1122"
+                MaxWidth="{Binding ElementName=NvrRecordingView, Path=ActualWidth}"
                 MaxHeight="760"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 HorizontalContentAlignment="Center"
                 VerticalContentAlignment="Center"
                 Focusable="False"
-                ItemTemplate="{StaticResource VideoPlayerTemplate}"
                 ItemsSource="{Binding VideoPlayerItems, UpdateSourceTrigger=PropertyChanged}"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -104,6 +113,505 @@
                         </ScrollViewer>
                     </ControlTemplate>
                 </ListBox.Template>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type cameraConfiguration1:VideoPlayerModel}">
+                        <Grid Name="PreviewViewGrid">
+                            <!--  加载进度条  -->
+                            <!--<Border
+                                Grid.Row="0"
+                                Width="449"
+                                Height="253"
+                                Cursor="">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                    FontSize="150"
+                                    Foreground="White"
+                                    IsEnabled="False"
+                                    Text="&#xe8da;"
+                                    Visibility="{Binding IsBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </Border>-->
+                            <Canvas Width="100" Height="100">
+                                <!--  Segment 1  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="0" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard Storyboard="{StaticResource OpacityAnimation}" />
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 2  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="36" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.1"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 3  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="72" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.2"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 4  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="108" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.3"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 5  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="144" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.4"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 6  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="180" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.5"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 7  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="216" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.6"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 8  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="252" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.7"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 9  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="288" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.8"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+
+                                <!--  Segment 10  -->
+                                <Path
+                                    Fill="Transparent"
+                                    Opacity="0"
+                                    Stroke="White"
+                                    StrokeThickness="15">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="324" CenterX="50" CenterY="50" />
+                                    </Path.RenderTransform>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="50,10">
+                                                <ArcSegment
+                                                    IsLargeArc="False"
+                                                    Point="65.36,14.64"
+                                                    Size="30,30"
+                                                    SweepDirection="Clockwise" />
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        BeginTime="0:0:0.9"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="0"
+                                                        To="0.6"
+                                                        Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Path.Triggers>
+                                </Path>
+                            </Canvas>
+
+
+
+
+
+
+
+
+                            <!--  画面  -->
+                            <Image
+                                Grid.Row="0"
+                                Width="449"
+                                Height="253"
+                                RenderOptions.BitmapScalingMode="LowQuality"
+                                Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
+                                Stretch="Uniform" />
+                            <!--  右下角通道  -->
+                            <TextBlock
+                                Margin="5"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="SpringGreen"
+                                Text="{Binding Channel, StringFormat='通道{0}'}" />
+                            <!--  工具  -->
+                            <Border
+                                x:Name="ToolBarContainer"
+                                Height="60"
+                                MinWidth="130"
+                                Margin="0"
+                                Padding="10"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="#88202020"
+                                CornerRadius="10,10,0,0"
+                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <!--  左右分、进度条全遮挡  -->
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <!--  截图  -->
+                                    <Button
+                                        Width="35"
+                                        Height="35"
+                                        Margin="10,0"
+                                        HorizontalAlignment="Center"
+                                        materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+                                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
+                                        materialDesign:ButtonProgressAssist.Value="-1"
+                                        materialDesign:RippleAssist.ClipToBounds="True"
+                                        materialDesign:RippleAssist.RippleOnTop="True"
+                                        Background="#3D3D3D"
+                                        BorderBrush="Transparent"
+                                        Command="{Binding AutoFocusCommand}"
+                                        Cursor=""
+                                        Focusable="False"
+                                        Style="{StaticResource MaterialDesignFloatingActionButton}"
+                                        ToolTip="截图">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="20"
+                                            Foreground="White"
+                                            Text="&#xea03;" />
+                                    </Button>
+                                    <!--  下载  -->
+                                    <Button
+                                        Width="35"
+                                        Height="35"
+                                        Margin="10,0"
+                                        HorizontalAlignment="Center"
+                                        materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+                                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
+                                        materialDesign:ButtonProgressAssist.Value="-1"
+                                        materialDesign:RippleAssist.ClipToBounds="True"
+                                        materialDesign:RippleAssist.RippleOnTop="True"
+                                        Background="RoyalBlue"
+                                        BorderBrush="Transparent"
+                                        Command="{Binding AutoFocusCommand}"
+                                        Cursor=""
+                                        Focusable="False"
+                                        Style="{StaticResource MaterialDesignFloatingActionButton}"
+                                        ToolTip="下载">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="20"
+                                            Foreground="White"
+                                            Text="&#xe9fc;" />
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <!--  页面放大缩小  -->
+                            <Button
+                                Grid.Row="0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Style="{StaticResource SystemButtonStyle}"
+                                ToolTip="Close">
+                                <TextBlock
+                                    FontSize="22"
+                                    Foreground="White"
+                                    Style="{StaticResource SystemTextBlockStyle}"
+                                    Text="&#xea02;" />
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
             </ListBox>
 
             <Grid Grid.Row="1">

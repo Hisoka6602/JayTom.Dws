@@ -21,7 +21,15 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new()
         {
-            new VideoPlayerModel()
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
+            new VideoPlayerModel(),
         };
 
         private string _identifier = string.Empty;
