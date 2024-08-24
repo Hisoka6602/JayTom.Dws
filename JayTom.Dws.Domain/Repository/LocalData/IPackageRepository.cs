@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -40,5 +41,13 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         Task<KeyValuePair<bool, PackageInfoModel>> FirstOrDefaultInfo([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
 
         new Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
+
+        /// <summary>
+        /// 获取缓存包裹数据
+        /// </summary>
+        /// <param name="packageTimestamped"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default);
     }
 }
