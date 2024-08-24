@@ -88,24 +88,27 @@ namespace JayTom.Dws.Client.Views.Editors {
 
             for (var i = 0; i < SegmentCount; i++) {
                 var segmentPath = CreateSegmentPath(radius, center, i * angleStep);
-                MainCanvas.Children.Add(segmentPath);
+                if (segmentPath is not null) {
+                    MainCanvas.Children.Add(segmentPath);
 
-                var opacityAnimation = new DoubleAnimation {
-                    From = 0,
-                    To = MaxOpacity,
-                    Duration = TimeSpan.FromSeconds(AnimationDuration),
-                    AutoReverse = true,
-                    RepeatBehavior = RepeatBehavior.Forever,
-                    BeginTime = TimeSpan.FromSeconds(i * (AnimationDuration / SegmentCount))
-                };
+                    var opacityAnimation = new DoubleAnimation {
+                        From = 0,
+                        To = MaxOpacity,
+                        Duration = TimeSpan.FromSeconds(AnimationDuration),
+                        AutoReverse = true,
+                        RepeatBehavior = RepeatBehavior.Forever,
+                        BeginTime = TimeSpan.FromSeconds(i * (AnimationDuration / SegmentCount))
+                    };
 
-                Storyboard.SetTarget(opacityAnimation, segmentPath);
-                Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
-                _storyboard.Children.Add(opacityAnimation);
+                    Storyboard.SetTarget(opacityAnimation, segmentPath);
+                    Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+                    _storyboard.Children.Add(opacityAnimation);
+                }
             }
         }
 
-        private Path CreateSegmentPath(double radius, Point center, double angle) {
+        private Path? CreateSegmentPath(double radius, Point center, double angle) {
+            if (radius <= 0) return null;
             var startAngle = angle - 5; // 每个段的角度范围，可以根据需要调整
             var endAngle = angle + 5;
 
@@ -161,7 +164,9 @@ namespace JayTom.Dws.Client.Views.Editors {
             for (var i = 0; i < SegmentCount; i++) {
                 var angle = i * (360.0 / SegmentCount);
                 var segmentPath = (Path)MainCanvas.Children[i];
-                segmentPath.Data = CreateSegmentPath(radius, center, angle).Data;
+
+                segmentPath.Data = CreateSegmentPath(radius, center, angle)?.Data;
+
                 segmentPath.RenderTransform = new RotateTransform(0, center.X, center.Y);
             }
         }

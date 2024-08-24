@@ -31,6 +31,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ScreenshotState _screenshotState = ScreenshotState.Ready;
         private DownloadState _downloadState = DownloadState.Ready;
         private Size _maxSize = new(898, 506);
+        private PlaybackError _playbackError = PlaybackError.None;
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
@@ -110,6 +111,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public ScreenState ScreenState {
             get => _screenState;
             set => SetProperty(ref _screenState, value);
+        }
+
+        /// <summary>
+        /// 播放异常状态
+        /// </summary>
+        public PlaybackError PlaybackError {
+            get => _playbackError;
+            set => SetProperty(ref _playbackError, value);
         }
 
         /// <summary>
@@ -218,5 +227,29 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
 
         [Description("转码中"), FontIcon("\xea20")]
         Transcoding
+    }
+
+    public enum PlaybackError {
+
+        [Description("正常播放"), FontIcon("\xea28")]
+        None,
+
+        /// <summary>
+        /// 视频文件不存在
+        /// </summary>
+        [Description("视频文件不存在"), FontIcon("\xea2e")]
+        VideoFileNotFound,
+
+        /// <summary>
+        /// 取流连接中断
+        /// </summary>
+        [Description("取流连接中断"), FontIcon("\xea33")]
+        StreamConnectionInterrupted,
+
+        /// <summary>
+        /// 未知异常
+        /// </summary>
+        [Description("未知异常"), FontIcon("\xea31")]
+        UnknownError
     }
 }

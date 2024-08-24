@@ -34,6 +34,7 @@
         <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
         <cameraConverter:VideoPlayerSizeConverter x:Key="VideoPlayerSizeConverter" />
         <converters:EnumToVisibilityInvertedConverter x:Key="EnumToVisibilityInvertedConverter" />
+        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
     </UserControl.Resources>
     <Border
         MinWidth="1200"
@@ -272,7 +273,32 @@
                                     </Button>
                                 </StackPanel>
                             </Border>
-
+                            <!--  异常底图  -->
+                            <Border>
+                                <StackPanel
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Orientation="Vertical">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                        FontSize="120"
+                                        Foreground="DimGray"
+                                        IsEnabled="False"
+                                        Text="{Binding PlaybackError, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}"
+                                        Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}" />
+                                    <TextBlock
+                                        Margin="5,20"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        Foreground="DimGray"
+                                        Text="{Binding PlaybackError, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                </StackPanel>
+                            </Border>
                             <!--  页面放大缩小  -->
                             <Button
                                 Grid.Row="0"
@@ -317,8 +343,9 @@
                             VerticalAlignment="Center"
                             VerticalContentAlignment="Center"
                             materialDesign:ButtonAssist.CornerRadius="15"
-                            Background="RoyalBlue"
+                            Background="{Binding PlaybackState, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=BackgroundColor}"
                             BorderThickness="0"
+                            Command="{Binding PlaybackCommand}"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
                             <StackPanel Orientation="Horizontal">
@@ -329,18 +356,18 @@
                                     FontSize="20"
                                     FontWeight="Light"
                                     Foreground="White"
-                                    Text="&#xe9e9;" />
+                                    Text="{Binding PlaybackState, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     FontFamily="{StaticResource CustomFontFamily}"
                                     FontSize="13"
                                     FontWeight="Normal"
                                     Foreground="White"
-                                    Text="播放" />
+                                    Text="{Binding PlaybackState, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=AuxiliaryDescription}" />
                             </StackPanel>
                         </Button>
                         <!--  快进  -->
-                        <materialDesign:Badged Badge="3" BadgeBackground="White">
+                        <materialDesign:Badged Badge="{Binding FastForwardSpeed, UpdateSourceTrigger=PropertyChanged}" BadgeBackground="White">
                             <Button
                                 Height="30"
                                 MinWidth="80"
@@ -352,6 +379,7 @@
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Background="#3D3D3D"
                                 BorderThickness="0"
+                                Command="{Binding FastForwardCommand}"
                                 Focusable="False"
                                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
                                 <StackPanel Orientation="Horizontal">
@@ -374,7 +402,7 @@
                             </Button>
                         </materialDesign:Badged>
                         <!--  快退  -->
-                        <materialDesign:Badged Badge="3" BadgeBackground="White">
+                        <materialDesign:Badged Badge="{Binding RewindSpeed, UpdateSourceTrigger=PropertyChanged}" BadgeBackground="White">
                             <Button
                                 Height="30"
                                 MinWidth="80"
@@ -386,6 +414,7 @@
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Background="#3D3D3D"
                                 BorderThickness="0"
+                                Command="{Binding RewindCommand}"
                                 Focusable="False"
                                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
                                 <StackPanel Orientation="Horizontal">
@@ -408,7 +437,7 @@
                             </Button>
                         </materialDesign:Badged>
                         <!--  慢放  -->
-                        <materialDesign:Badged Badge="3" BadgeBackground="White">
+                        <materialDesign:Badged Badge="{Binding SlowMotionSpeed, UpdateSourceTrigger=PropertyChanged}" BadgeBackground="White">
                             <Button
                                 Height="30"
                                 MinWidth="80"
@@ -420,6 +449,7 @@
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Background="#3D3D3D"
                                 BorderThickness="0"
+                                Command="{Binding SlowMotionCommand}"
                                 Focusable="False"
                                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
                                 <StackPanel Orientation="Horizontal">
@@ -453,6 +483,8 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="#3D3D3D"
                             BorderThickness="0"
+                            Command="{Binding FastForwardBySecondsCommand}"
+                            CommandParameter="5"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
                             <StackPanel Orientation="Horizontal">
@@ -485,6 +517,8 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="#3D3D3D"
                             BorderThickness="0"
+                            Command="{Binding FastForwardBySecondsCommand}"
+                            CommandParameter="15"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
                             <StackPanel Orientation="Horizontal">
@@ -517,6 +551,8 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="#3D3D3D"
                             BorderThickness="0"
+                            Command="{Binding RewindBySecondsCommand}"
+                            CommandParameter="5"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
                             <StackPanel Orientation="Horizontal">
@@ -549,6 +585,8 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="#3D3D3D"
                             BorderThickness="0"
+                            Command="{Binding RewindBySecondsCommand}"
+                            CommandParameter="5"
                             Focusable="False"
                             Style="{StaticResource MaterialDesignRaisedDarkButton}">
                             <StackPanel Orientation="Horizontal">
@@ -577,6 +615,7 @@
                         extensions:SliderTimeToolTip.IsTimeToolTipEnabled="True"
                         AutoToolTipPlacement="None"
                         Focusable="False"
+                        Foreground="{Binding PlaybackState, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=LabelColor}"
                         IsSelectionRangeEnabled="True"
                         Maximum="{Binding EndTime, Converter={StaticResource DoubleToDateTimeConverter}}"
                         Minimum="{Binding StartTime, Converter={StaticResource DoubleToDateTimeConverter}}"
@@ -584,7 +623,13 @@
                         SelectionEnd="{Binding SelectionEndTime, Converter={StaticResource DoubleToDateTimeConverter}}"
                         SelectionStart="{Binding SelectionStartTime, Converter={StaticResource DoubleToDateTimeConverter}}"
                         TickPlacement="BottomRight"
-                        Value="{Binding CurrentTime, Mode=TwoWay, Converter={StaticResource DoubleToDateTimeConverter}}" />
+                        Value="{Binding CurrentTime, Mode=TwoWay, Converter={StaticResource DoubleToDateTimeConverter}}">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="PreviewMouseUp">
+                                <mvvm:InvokeCommandAction Command="{Binding ProgressChangedCommand}" />
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </Slider>
                 </StackPanel>
 
                 <StackPanel
