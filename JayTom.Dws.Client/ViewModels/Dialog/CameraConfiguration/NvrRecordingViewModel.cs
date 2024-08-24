@@ -216,14 +216,16 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             Debug.WriteLine($"快退");
         }
 
-        public ICommand ProgressChangedCommand => new DelegateCommand<object>(ProgressChangedDelegate);
+        public ICommand ProgressChangedCommand => new DelegateCommand<MouseButtonEventArgs>(ProgressChangedDelegate);
 
         /// <summary>
         /// 改变进度后
         /// </summary>
         /// <param name="obj"></param>
-        private void ProgressChangedDelegate(object obj) {
-            Debug.WriteLine($"{CurrentTime}");
+        private void ProgressChangedDelegate(MouseButtonEventArgs obj) {
+            if (obj.ChangedButton == MouseButton.Left) {
+                Debug.WriteLine($"{CurrentTime}");
+            }
         }
     }
 
