@@ -18,19 +18,7 @@ using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
     public class NvrRecordingViewModel : BindableBase {
-
-        private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new()
-        {
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-            new VideoPlayerModel(),
-        };
+        private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
         private string _identifier = string.Empty;
         private DateTime _startTime = DateTime.Now;
@@ -40,6 +28,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private DateTime _selectionEndTime = DateTime.Now.AddSeconds(400);
         private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
         private PlaybackStream? _selectPlaybackStream;
+        private double _dynamicWidth = 898;
+        private double _dynamicHeight = 506;
 
         public string Identifier {
             get => _identifier;
@@ -86,9 +76,43 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             set => SetProperty(ref _selectionEndTime, value);
         }
 
+        public double DynamicWidth {
+            get => _dynamicWidth;
+            set => SetProperty(ref _dynamicWidth, value);
+        }
+
+        public double DynamicHeight {
+            get => _dynamicHeight;
+            set => SetProperty(ref _dynamicHeight, value);
+        }
+
+        public ICommand ToggleImageSizeCommand => new DelegateCommand<VideoPlayerModel>(ToggleImageSizeDelegate);
+
+        private void ToggleImageSizeDelegate(VideoPlayerModel obj) {
+            if (obj.ScreenState == ScreenState.Normal) {
+                foreach (var videoPlayerModel in VideoPlayerItems) {
+                    videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
+                }
+            }
+            else {
+                foreach (var videoPlayerModel in VideoPlayerItems) {
+                    videoPlayerModel.ScreenState = ScreenState.Normal;
+                }
+            }
+        }
+
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private void LoadedDelegate(object obj) {
+            VideoPlayerItems.AddRange(new List<VideoPlayerModel>()
+            {
+                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
+                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
+                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
+                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
+                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
+                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
+            });
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);

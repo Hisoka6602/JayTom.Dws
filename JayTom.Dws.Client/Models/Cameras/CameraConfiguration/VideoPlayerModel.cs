@@ -21,16 +21,16 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private string _password = string.Empty;
         private int _channel;
         private double _downloadProgress;
-        private bool _isRegularDownload;
         private double _playbackSpeed;
         private bool _isReversed;
         private ICommand? _videoScreenShotCommand;
         private ICommand? _downloadCommand;
-        private ICommand? _maximizeCommand;
-        private bool _isBuffering;
+        private ICommand? _toggleImageSizeCommand;
+        private bool _isBuffering = true;
         private ScreenState _screenState;
         private ScreenshotState _screenshotState = ScreenshotState.Ready;
         private DownloadState _downloadState = DownloadState.Ready;
+        private Size _maxSize = new(898, 506);
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
@@ -163,9 +163,9 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置最大化窗口命令。
         /// </summary>
-        public ICommand? MaximizeCommand {
-            get => _maximizeCommand;
-            set => SetProperty(ref _maximizeCommand, value);
+        public ICommand? ToggleImageSizeCommand {
+            get => _toggleImageSizeCommand;
+            set => SetProperty(ref _toggleImageSizeCommand, value);
         }
 
         /// <summary>
@@ -180,6 +180,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             get => _isBuffering;
             set => SetProperty(ref _isBuffering, value);
         }
+
+        public Size MaxSize {
+            get => _maxSize;
+            set => SetProperty(ref _maxSize, value);
+        }
     }
 
     public enum ScreenState {
@@ -188,7 +193,10 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         Normal,
 
         [Description("还原画面"), FontIcon("\xea00")]
-        Maximized
+        Maximized,
+
+        [Description("隐藏画面"), FontIcon("\xea00")]
+        Hidden
     }
 
     public enum ScreenshotState {
