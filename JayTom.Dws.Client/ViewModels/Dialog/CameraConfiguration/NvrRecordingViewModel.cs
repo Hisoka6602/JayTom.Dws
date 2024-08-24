@@ -128,9 +128,9 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private void LoadedDelegate(object obj) {
             VideoPlayerItems.AddRange(new List<VideoPlayerModel>()
             {
-                new() { IsBuffering = false, ToggleImageSizeCommand = ToggleImageSizeCommand, PlaybackError = PlaybackError.StreamConnectionInterrupted},
-                new() {IsBuffering = false, ToggleImageSizeCommand = ToggleImageSizeCommand , PlaybackError = PlaybackError.VideoFileNotFound},
-                new() { IsBuffering = false,ToggleImageSizeCommand = ToggleImageSizeCommand , PlaybackError = PlaybackError.UnknownError},
+                new() { IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand, },
+                new() {IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand , },
+                new() { IsBuffering = true,ToggleImageSizeCommand = ToggleImageSizeCommand , },
                 /*new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
                 new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
                 new() { ToggleImageSizeCommand = ToggleImageSizeCommand },*/

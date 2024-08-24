@@ -274,7 +274,7 @@
                                 </StackPanel>
                             </Border>
                             <!--  异常底图  -->
-                            <Border>
+                            <Border Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}">
                                 <StackPanel
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
