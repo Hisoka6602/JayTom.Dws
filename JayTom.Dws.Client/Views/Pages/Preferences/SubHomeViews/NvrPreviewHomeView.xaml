@@ -55,7 +55,6 @@
         VerticalAlignment="Center"
         HorizontalContentAlignment="Center"
         VerticalContentAlignment="Center"
-        Background="DarkViolet"
         Focusable="False"
         ItemsSource="{Binding NvrPreviewViewItems, UpdateSourceTrigger=PropertyChanged}"
         ScrollViewer.HorizontalScrollBarVisibility="Disabled"

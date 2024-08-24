@@ -1,0 +1,89 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cameraConfiguration="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <DataTemplate x:Key="VideoPlayerTemplate" DataType="{x:Type cameraConfiguration:VideoPlayerModel}">
+        <Grid Name="PreviewViewGrid">
+            <!--  加载进度条  -->
+            <Border
+                Grid.Row="0"
+                Width="449"
+                Height="253">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontFamily="pack://application:,,,/Fonts/#iconfont"
+                    FontSize="150"
+                    Foreground="MediumSeaGreen"
+                    IsEnabled="False"
+                    Text="&#xe8da;"
+                    Visibility="{Binding IsBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </Border>
+
+            <!--  画面  -->
+            <Image
+                Grid.Row="0"
+                Width="449"
+                Height="253"
+                RenderOptions.BitmapScalingMode="LowQuality"
+                Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
+                Stretch="Uniform" />
+            <!--  工具  -->
+            <Border
+                x:Name="ToolBarContainer"
+                Height="90"
+                Margin="0"
+                Padding="10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Background="#88202020"
+                CornerRadius="10,10,0,0"
+                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!--  左右分、进度条全遮挡  -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <!--  截图  -->
+                    <Button
+                        Grid.Column="0"
+                        Width="40"
+                        Height="40"
+                        materialDesign:RippleAssist.ClipToBounds="True"
+                        materialDesign:RippleAssist.RippleOnTop="True"
+                        Background="DimGray"
+                        Command="{Binding AutoFocusCommand}"
+                        Cursor="Hand"
+                        Focusable="False"
+                        Style="{StaticResource MaterialDesignIconButton}"
+                        ToolTip="截图">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="25"
+                            Foreground="White"
+                            Text="&#xea03;" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!--  页面放大缩小  -->
+            <Button
+                Grid.Row="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Style="{StaticResource CustomCloseButtonStyle}"
+                ToolTip="Close">
+                <TextBlock
+                    FontSize="22"
+                    Foreground="White"
+                    Style="{StaticResource SystemTextBlockStyle}"
+                    Text="&#xea02;" />
+            </Button>
+
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>

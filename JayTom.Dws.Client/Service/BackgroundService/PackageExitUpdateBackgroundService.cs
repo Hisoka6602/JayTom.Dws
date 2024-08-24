@@ -238,7 +238,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     ?.ExitId;
                                 var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
-                                NLog.LogManager.GetCurrentClassLogger().Error($"判断到落格信号");
                                 //更新理论格口
                                 EventAggregator.Instance.Publish(new PackageExitUpdateEvent {
                                     ExitType = SortingExitType.PhysicalExit,

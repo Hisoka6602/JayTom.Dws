@@ -842,7 +842,7 @@
                     </DataGridTemplateColumn>
                     <!--  扫码图片  -->
                     <DataGridTemplateColumn
-                        Width="260"
+                        Width="120"
                         MinWidth="40"
                         MaxWidth="600"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}">
@@ -882,6 +882,53 @@
                                             Foreground="White"
                                             IsEnabled="True"
                                             Text="{x:Static languages:Language.ViewImage}"
+                                            TextAlignment="Justify" />
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--  视频  -->
+                    <DataGridTemplateColumn
+                        Width="120"
+                        MinWidth="40"
+                        MaxWidth="600"
+                        CellStyle="{StaticResource CustomDataGridTextCellStyle}">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="视频" />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <!--  查看按钮  -->
+                                <Button
+                                    Height="30"
+                                    MinWidth="90"
+                                    materialDesign:ButtonAssist.CornerRadius="2"
+                                    Background="Transparent"
+                                    Command="{Binding ElementName=DataManagementPageView, Path=DataContext.ViewNvrRecordingCommand}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    ToolTip="查看NVR视频">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="18"
+                                            Foreground="White"
+                                            Text="&#xe9da;" />
+                                        <TextBlock
+                                            Margin="5,0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                            FontSize="13"
+                                            FontWeight="Light"
+                                            Foreground="White"
+                                            IsEnabled="True"
+                                            Text="NVR视频"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>

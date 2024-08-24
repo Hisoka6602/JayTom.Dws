@@ -562,6 +562,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<PackageDetailsDialog, PackageDetailsDialogViewModel>();
             ViewModelLocationProvider.Register<IpcPreviewDialog, IpcPreviewViewModel>();
             ViewModelLocationProvider.Register<NvrBindingPreviewViewDialog, NvrBindingPreviewViewDialogViewModel>();
+            ViewModelLocationProvider.Register<NvrRecordingDialog, NvrRecordingViewModel>();
 
             ViewModelLocationProvider.Register<ApiTestDialog, ApiTestViewModel>();
             ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();
