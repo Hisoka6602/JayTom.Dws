@@ -166,7 +166,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         /// <param name="token"></param>
         /// <returns></returns>
         public new async Task<bool> Insert([NotNull] PackageInfoModel entity, CancellationToken token) {
-            var insert = await Insert(entity, token);
+            var insert = await base.Insert(entity, token);
             if (insert) {
                 //加入缓存
                 base._cache.Set(entity.PackageTimestamped, entity, new MemoryCacheEntryOptions()
