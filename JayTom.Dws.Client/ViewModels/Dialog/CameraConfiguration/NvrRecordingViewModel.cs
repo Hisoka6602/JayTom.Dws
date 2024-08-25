@@ -1,16 +1,20 @@
 ﻿using System;
+using NetSDKCS;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
+using System.Windows;
 using System.Diagnostics;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.ComponentModel;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
+using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
@@ -20,9 +24,9 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
     public class NvrRecordingViewModel : BindableBase {
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
-
+        private BaseDaHuatech? _baseDaHuatech;
         private string _identifier = string.Empty;
-        private DateTime _startTime = DateTime.Now;
+        private DateTime _startTime = DateTime.Now.AddSeconds(-20);
         private DateTime _endTime = DateTime.Now.AddHours(1);
         private DateTime _currentTime = DateTime.Now;
         private DateTime _selectionStartTime = DateTime.Now.AddSeconds(10);
@@ -125,16 +129,37 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj) {
+            _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
+            await BaseDaHuatech.EnumDevices();
             VideoPlayerItems.AddRange(new List<VideoPlayerModel>()
             {
-                new() { IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand, },
-                new() {IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand , },
-                new() { IsBuffering = true,ToggleImageSizeCommand = ToggleImageSizeCommand , },
+                new() { IsBuffering = true,
+                    ToggleImageSizeCommand = ToggleImageSizeCommand,
+                    IpAddress = "192.168.31.111",
+                    Port = 37777,
+                    Username = "admin",
+                    Password = "a12345678",
+                    Channel = 1
+                },
+                /*new() {IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand , },
+                new() { IsBuffering = true,ToggleImageSizeCommand = ToggleImageSizeCommand , },*/
                 /*new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
                 new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
                 new() { ToggleImageSizeCommand = ToggleImageSizeCommand },*/
             });
+
+            //登录
+
+            var logInInfo = _baseDaHuatech.GetLoggedInDeviceInfo("AD01467PAZ4E76D");
+            if (logInInfo is null) {
+                //登录
+                var (key, value) = await _baseDaHuatech.LogIn("AD01467PAZ4E76D", "admin",
+                    "a12345678", 1);
+                if (!key) {
+                    Console.WriteLine("登录失败");
+                }
+            }
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
@@ -152,15 +177,39 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// 播放
         /// </summary>
         /// <param name="obj"></param>
-        private void PlaybackDelegate(object obj) {
-            if (PlaybackState == PlaybackState.Ready) {
-                PlaybackState = PlaybackState.Playing;
-                Debug.WriteLine($"播放");
-            }
-            else {
-                PlaybackState = PlaybackState.Ready;
-                Debug.WriteLine($"停止");
-            }
+        private async void PlaybackDelegate(object obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                if (PlaybackState == PlaybackState.Ready) {
+                    PlaybackState = PlaybackState.Playing;
+                    Debug.WriteLine($"播放");
+
+                    //登录
+                    if (_baseDaHuatech is not null) {
+                        var (key, value) = await _baseDaHuatech.QueryVideoFile("AD01467PAZ4E76D",
+                            1, StartTime, EndTime, 0);
+
+                        if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
+                            VideoPlayerItems[0].VideoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
+                            _baseDaHuatech.RegisterRealtimePreviewCallback("AD01467PAZ4E76D", 1, VideoPlayerItems[0].RealtimePreviewCallback);
+
+                            var (b, o) = await _baseDaHuatech.PlayBackVideo("AD01467PAZ4E76D",
+                                1, recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5), recordFileInfos[0].endtime.ToDateTime());
+                            if (b) {
+                                VideoPlayerItems[0].IsBuffering = false;
+                            }
+
+                            Console.WriteLine(o);
+                        }
+                        else {
+                            //失败
+                        }
+                    }
+                }
+                else {
+                    PlaybackState = PlaybackState.Ready;
+                    Debug.WriteLine($"停止");
+                }
+            });
         }
 
         public ICommand FastForwardCommand => new DelegateCommand<object>(FastForwardDelegate);

@@ -32,6 +32,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private DownloadState _downloadState = DownloadState.Ready;
         private Size _maxSize = new(898, 506);
         private PlaybackError _playbackError = PlaybackError.None;
+        private string _ipAddress;
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
@@ -66,6 +67,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public WriteableBitmap? VideoFrame {
             get => _videoFrame;
             set => SetProperty(ref _videoFrame, value);
+        }
+
+        /// <summary>
+        /// Ip地址
+        /// </summary>
+        public string IpAddress {
+            get => _ipAddress;
+            set => SetProperty(ref _ipAddress, value);
         }
 
         /// <summary>

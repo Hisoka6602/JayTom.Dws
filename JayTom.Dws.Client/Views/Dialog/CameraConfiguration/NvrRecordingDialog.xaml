@@ -306,6 +306,7 @@
                                 VerticalAlignment="Top"
                                 Command="{Binding ToggleImageSizeCommand}"
                                 CommandParameter="{Binding}"
+                                Opacity="0.7"
                                 Style="{StaticResource SystemButtonStyle}"
                                 ToolTip="Close">
                                 <TextBlock
