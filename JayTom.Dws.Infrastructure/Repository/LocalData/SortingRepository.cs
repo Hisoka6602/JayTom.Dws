@@ -13,8 +13,9 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
     public class SortingRepository : LocalRepositoryBase<SortingInfoModel>, ISortingRepository {
 
-        public SortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
-
+        public SortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(
+            contextFactory, cache) {
+        }
 
         public new async Task<bool> Insert([NotNull] SortingInfoModel entity, CancellationToken token) {
             var insert = await base.Insert(entity, token);
