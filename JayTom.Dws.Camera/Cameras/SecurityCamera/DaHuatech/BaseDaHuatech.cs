@@ -11,12 +11,14 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Threading.Channels;
 using System.Collections.Generic;
+using Size = System.Drawing.Size;
 using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 using static DaHua.Play.Net.DhPlaySdk;
 using static JayTom.Dws.Ocr.Yolo.YoloParser;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
@@ -331,18 +333,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             finally {
                 _enumerateSlim.Release();
             }
-        }
-
-        /// <summary>
-        /// 设备登录
-        /// </summary>
-        /// <param name="ipAddress"></param>
-        /// <param name="port"></param>
-        /// <param name="userName"></param>
-        /// <param name="passWord"></param>
-        /// <returns></returns>
-        public async Task<KeyValuePair<bool, object>> LogIn(string ipAddress, int port, string userName, string passWord) {
-            return new KeyValuePair<bool, object>(false, null);
         }
 
         /// <summary>
@@ -1262,7 +1252,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     }
 
     public class RealtimePreviewInfo {
-        public string SerialNo { get; set; } = string.Empty;
         public byte[]? RgbData { get; set; }
         public int? ChannelId { get; set; }
         public int Width { get; set; }
@@ -1270,7 +1259,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     }
 
     public class PlayBackProgressInfo {
-        public string SerialNo { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = string.Empty;
         public int? ChannelId { get; set; }
         public int Size { get; set; }
         public int LoadSize { get; set; }
@@ -1281,6 +1270,127 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         public int ChannelId { get; set; }
         public NET_OSD_CUSTOM_TITLE CustomInfo { get; set; }
         public NET_OSD_CUSTOM_TITLE_TEXT_ALIGN CustomAlign { get; set; }
+    }
+
+    public enum PlaybackMode {
+
+        /// <summary>
+        /// 未播放
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// 实时
+        /// </summary>
+        RealTime,
+
+        /// <summary>
+        /// 录像回放
+        /// </summary>
+        Recording
+    }
+
+    public class DevPlayInfo {
+
+        /// <summary>
+        /// 播放端口
+        /// </summary>
+        public int PlayPort { get; set; }
+
+        /// <summary>
+        /// 播放通道
+        /// </summary>
+        public int PlayChannelId { get; set; }
+
+        /// <summary>
+        /// 播放句柄
+        /// </summary>
+
+        public IntPtr PlayHandle { get; set; }
+
+        /// <summary>
+        /// 播放模式
+        /// </summary>
+        public PlaybackMode PlaybackMode { get; set; }
+
+        /// <summary>
+        /// NVR指定播放尺寸
+        /// </summary>
+        public Size NvrPreviewSize { get; set; } = new(449, 253);
+
+        /// <summary>
+        /// 实时图片回调
+        /// </summary>
+        public Func<Bitmap, Task>? RealtimeFrameBitmapCallBack { get; set; }
+
+        /// <summary>
+        /// 截图尺寸
+        /// </summary>
+        public Size? CaptureSize { get; set; }
+
+        /// <summary>
+        /// 截图回调
+        /// </summary>
+        public Func<CaptureInfo, Task>? CaptureCallBack { get; set; }
+
+        /// <summary>
+        /// NVR实时预览回调
+        /// </summary>
+        public Func<RealtimePreviewInfo, Task>? RealtimePreviewCallBack { get; set; }
+
+        /// <summary>
+        /// 回放回调
+        /// </summary>
+        public Func<RealtimePreviewInfo, Task>? PlayBackCallBack { get; set; }
+
+        /// <summary>
+        /// 回放进度回调
+        /// </summary>
+        public Func<PlayBackProgressInfo, Task>? PlayBackProgressCallBack { get; set; }
+    }
+
+    public class IpcDevInfo {
+
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string SerialNo { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 登录句柄
+        /// </summary>
+        public IntPtr LogInHandle { get; set; }
+
+        /// <summary>
+        /// 登录后的设备信息
+        /// </summary>
+        public NET_DEVICEINFO_Ex? LoggedInDeviceInfo { get; set; }
+
+        /// <summary>
+        /// 播放信息
+        /// </summary>
+        public DevPlayInfo DevPlayInfo { get; set; } = new();
+    }
+
+    public class NvrDevInfo {
+        public string IpAddress { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 通道数
+        /// </summary>
+        public int ChannelCount { get; set; }
+
+        /// <summary>
+        /// 登录句柄
+        /// </summary>
+        public IntPtr LogInHandle { get; set; }
+
+        /// <summary>
+        /// 登录后的设备信息
+        /// </summary>
+        public NET_DEVICEINFO_Ex? LoggedInDeviceInfo { get; set; }
+
+        public List<DevPlayInfo> DevPlayInfos { get; set; } = new();
     }
 
     public class DevLogInInfo {
@@ -1325,5 +1435,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 回放/录像Id
         /// </summary>
         public IntPtr PlayBackId { get; set; }
+
+        /// <summary>
+        /// 图片尺寸
+        /// </summary>
+        public Size? BitmapSize { get; set; }
     }
 }
