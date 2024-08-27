@@ -12,10 +12,12 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 using static DaHua.Play.Net.DhPlaySdk;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
 
     public class DaHuatechIPC {
+        private static readonly Lazy<DaHuatechIPC> _ipcInstance = new(() => new DaHuatechIPC());
         private static BaseDaHuatech? _instance;
         private static ConcurrentDictionary<string, IpcDevInfo> _loginDev = new();
         private static SemaphoreSlim _logInSlim = new(1);
@@ -23,22 +25,19 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
         private static SemaphoreSlim _captureSlim = new(1);
         private static DecCBFun? _decCbFun;
         private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel = Channel.CreateUnbounded<(int, IntPtr, int, DhPlaySdk.FRAME_INFO)>();
-        private static bool _isloaded;
+        public static DaHuatechIPC Instance => _ipcInstance.Value;
 
-        public DaHuatechIPC() {
+        private DaHuatechIPC() {
             _instance ??= BaseDaHuatech.CreateInstance();
-            if (!_isloaded) {
-                _isloaded = true;
-                _decCbFun += delegate (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) {
-                    // 解析图片
-                    var frameInfo = info;
+            _decCbFun += delegate (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) {
+                // 解析图片
+                var frameInfo = info;
 
-                    if (!_channel.Writer.TryWrite((port, buf, size, frameInfo))) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
-                    }
-                };
-                ProcessChannel();
-            }
+                if (!_channel.Writer.TryWrite((port, buf, size, frameInfo))) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                }
+            };
+            ProcessChannel();
         }
 
         /// <summary>

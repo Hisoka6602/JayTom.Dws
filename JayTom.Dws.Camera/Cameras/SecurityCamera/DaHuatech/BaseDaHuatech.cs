@@ -200,7 +200,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             await callback(new RealtimePreviewInfo() {
                                 ChannelId = (int)pUser,
                                 RgbData = bytes,
-                                SerialNo = devLogInInfo.SerialNo,
                                 Width = 449,
                                 Height = 253
                             }).ConfigureAwait(false);
@@ -1193,7 +1192,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     await callback(new PlayBackProgressInfo() {
                                         ChannelId = inInfo.PlayChannelId,
                                         LoadSize = (int)loadSize,
-                                        SerialNo = inInfo.SerialNo,
                                         Size = (int)size
                                     }).ConfigureAwait(false);
                                 }
@@ -1259,10 +1257,60 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     }
 
     public class PlayBackProgressInfo {
+
+        /// <summary>
+        /// 获取或设置设备的 IP 地址。
+        /// </summary>
         public string IpAddress { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 获取或设置通道 ID。
+        /// 这是一个可选值，可能为空。
+        /// </summary>
         public int? ChannelId { get; set; }
+
+        /// <summary>
+        /// 获取或设置文件的总大小（以字节为单位）。
+        /// </summary>
         public int Size { get; set; }
+
+        /// <summary>
+        /// 获取或设置已经下载或加载的大小（以字节为单位）。
+        /// </summary>
         public int LoadSize { get; set; }
+    }
+
+    public class DownLoadProgressInfo {
+
+        /// <summary>
+        /// 下载总大小
+        /// </summary>
+        public int TotalSize { get; set; }
+
+        /// <summary>
+        /// 已下载的大小
+        /// </summary>
+        public int LoadSize { get; set; }
+
+        /// <summary>
+        /// 文件序列
+        /// </summary>
+        public int Index { get; set; }
+
+        /// <summary>
+        /// 录像文件信息
+        /// </summary>
+        public object? RecordFileInfo { get; set; }
+
+        /// <summary>
+        /// 获取或设置一个值，指示是否下载已完成。
+        /// </summary>
+        public bool IsDownloadComplete { get; set; }
+
+        /// <summary>
+        /// 获取或设置一个值，指示下载过程中是否发生异常。
+        /// </summary>
+        public bool IsDownloadError { get; set; }
     }
 
     public class RealTimeWatermarkInfo {
@@ -1347,6 +1395,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 回放进度回调
         /// </summary>
         public Func<PlayBackProgressInfo, Task>? PlayBackProgressCallBack { get; set; }
+
+        /// <summary>
+        /// 下载进度回调
+        /// </summary>
+        public Func<DownLoadProgressInfo, Task>? DownLoadProgressCallBack { get; set; }
     }
 
     public class IpcDevInfo {
@@ -1391,6 +1444,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         public NET_DEVICEINFO_Ex? LoggedInDeviceInfo { get; set; }
 
         public List<DevPlayInfo> DevPlayInfos { get; set; } = new();
+        //是否下载中
     }
 
     public class DevLogInInfo {

@@ -235,7 +235,9 @@
                                         Margin="10,0"
                                         HorizontalAlignment="Center"
                                         materialDesign:ButtonProgressAssist.IndicatorForeground="GreenYellow"
-                                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="False"
+                                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
+                                        materialDesign:ButtonProgressAssist.Maximum="100"
+                                        materialDesign:ButtonProgressAssist.Minimum="0"
                                         materialDesign:ButtonProgressAssist.Value="{Binding DownloadProgress, UpdateSourceTrigger=PropertyChanged}"
                                         materialDesign:RippleAssist.ClipToBounds="True"
                                         materialDesign:RippleAssist.RippleOnTop="True"
@@ -308,7 +310,8 @@
                                 CommandParameter="{Binding}"
                                 Opacity="0.7"
                                 Style="{StaticResource SystemButtonStyle}"
-                                ToolTip="Close">
+                                ToolTip="Close"
+                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock
                                     FontSize="22"
                                     Foreground="White"

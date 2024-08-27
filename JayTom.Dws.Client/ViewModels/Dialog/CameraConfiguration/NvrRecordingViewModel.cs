@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using Microsoft.Win32;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -19,12 +20,16 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
     public class NvrRecordingViewModel : BindableBase {
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
-        private BaseDaHuatech? _baseDaHuatech;
+
+        //private BaseDaHuatech? _baseDaHuatech;
+        private DaHuatechNVR? _daHuatechNvr;
+
         private string _identifier = string.Empty;
         private DateTime _startTime = DateTime.Now.AddSeconds(-20);
         private DateTime _endTime = DateTime.Now.AddHours(1);
@@ -130,7 +135,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
+            _daHuatechNvr ??= DaHuatechNVR.Instance;
             await BaseDaHuatech.EnumDevices();
             VideoPlayerItems.AddRange(new List<VideoPlayerModel>()
             {
@@ -140,7 +145,9 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     Port = 37777,
                     Username = "admin",
                     Password = "a12345678",
-                    Channel = 1
+                    Channel = 1,
+                    VideoScreenShotCommand = CaptureScreenShotCommand,
+                    DownloadCommand = DownloadVideoCommand
                 },
                 /*new() {IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand , },
                 new() { IsBuffering = true,ToggleImageSizeCommand = ToggleImageSizeCommand , },*/
@@ -150,12 +157,12 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             });
 
             //登录
+            var any = _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals("192.168.31.111"))?.ToList().Any();
 
-            var logInInfo = _baseDaHuatech.GetLoggedInDeviceInfo("AD01467PAZ4E76D");
-            if (logInInfo is null) {
+            if (any != true) {
                 //登录
-                var (key, value) = await _baseDaHuatech.LogIn("AD01467PAZ4E76D", "admin",
-                    "a12345678", 1);
+                var (key, value) = await _daHuatechNvr.LogIn("192.168.31.111", 37777,
+                    "admin", "a12345678");
                 if (!key) {
                     Console.WriteLine("登录失败");
                 }
@@ -166,6 +173,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
         private void CloseDialogDelegate(object obj) {
             //退出播放
+            //全部注销
             if (DialogHost.IsDialogOpen(Identifier)) {
                 DialogHost.Close(Identifier);
             }
@@ -179,21 +187,26 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// <param name="obj"></param>
         private async void PlaybackDelegate(object obj) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
-                if (PlaybackState == PlaybackState.Ready) {
-                    PlaybackState = PlaybackState.Playing;
-                    Debug.WriteLine($"播放");
-
-                    //登录
-                    if (_baseDaHuatech is not null) {
-                        var (key, value) = await _baseDaHuatech.QueryVideoFile("AD01467PAZ4E76D",
+                if (_daHuatechNvr is not null) {
+                    if (PlaybackState == PlaybackState.Ready) {
+                        PlaybackState = PlaybackState.Playing;
+                        var (key, value) = await _daHuatechNvr.QueryVideoFile("192.168.31.111",
                             1, StartTime, EndTime, 0);
 
                         if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
                             VideoPlayerItems[0].VideoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
-                            _baseDaHuatech.RegisterRealtimePreviewCallback("AD01467PAZ4E76D", 1, VideoPlayerItems[0].RealtimePreviewCallback);
 
-                            var (b, o) = await _baseDaHuatech.PlayBackVideo("AD01467PAZ4E76D",
-                                1, recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5), recordFileInfos[0].endtime.ToDateTime());
+                            var (b, o) = await _daHuatechNvr.PlayBackVideo("192.168.31.111", 1,
+                                recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5),
+                                recordFileInfos[0].endtime.ToDateTime(), VideoPlayerItems[0].RealtimePreviewCallback
+                                , async info => {
+                                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                                        var addSeconds = StartTime.AddSeconds(info.LoadSize);
+                                        if (!CurrentTime.Equals(addSeconds)) {
+                                            CurrentTime = addSeconds;
+                                        }
+                                    });
+                                });
                             if (b) {
                                 VideoPlayerItems[0].IsBuffering = false;
                             }
@@ -204,10 +217,18 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                             //失败
                         }
                     }
-                }
-                else {
-                    PlaybackState = PlaybackState.Ready;
-                    Debug.WriteLine($"停止");
+                    else if (PlaybackState == PlaybackState.Paused) {
+                        var (key, value) = await _daHuatechNvr.ResumePlayback("192.168.31.111", 1);
+                        if (key) {
+                            PlaybackState = PlaybackState.Playing;
+                        }
+                    }
+                    else {
+                        var (key, value) = await _daHuatechNvr.PausePlayback("192.168.31.111", 1);
+                        if (key) {
+                            PlaybackState = PlaybackState.Paused;
+                        }
+                    }
                 }
             });
         }
@@ -276,6 +297,64 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 Debug.WriteLine($"{CurrentTime}");
             }
         }
+
+        /// <summary>
+        /// 截图
+        /// </summary>
+        public ICommand CaptureScreenShotCommand => new DelegateCommand<VideoPlayerModel>(CaptureScreenShotDelegate);
+
+        private async void CaptureScreenShotDelegate(VideoPlayerModel obj) {
+            if (_daHuatechNvr is not null) {
+                var saveFileDialog = new SaveFileDialog() {
+                    DefaultExt = ".bmp",
+                    Filter = "Bitmap files (*.bmp)|*.bmp|All files (*.*)|*.*",
+                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop), // 初始路径
+                    FileName = "image",
+                    Title = "保存截图"
+                };
+                var showDialog = saveFileDialog.ShowDialog();
+                if (showDialog == true) {
+                    await _daHuatechNvr.CaptureAsync(obj.IpAddress, obj.Channel,
+                        DateTimeOffset.Now.ToUnixTimeMilliseconds(), async info => {
+                            Console.WriteLine("截图完成");
+                        });
+                }
+            }
+        }
+
+        /// <summary>
+        /// 视频下载
+        /// </summary>
+        public ICommand DownloadVideoCommand => new DelegateCommand<VideoPlayerModel>(DownloadVideoDelegate);
+
+        private async void DownloadVideoDelegate(VideoPlayerModel obj) {
+            if (_daHuatechNvr is not null) {
+                var saveFileDialog = new SaveFileDialog() {
+                    DefaultExt = ".bmp",
+                    Filter = "dav files (*.dav)|*.dav|All files (*.*)|*.*",
+                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop), // 初始路径
+                    FileName = "video",
+                    Title = "保存视频"
+                };
+                var showDialog = saveFileDialog.ShowDialog();
+                if (showDialog == true) {
+                    var (key, value) = await _daHuatechNvr.QueryVideoFile(obj.IpAddress,
+                        obj.Channel, StartTime, EndTime, 0);
+                    if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
+                        await _daHuatechNvr.DownloadRecording(obj.IpAddress,
+                             obj.Channel,
+                             recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5),
+                             recordFileInfos[0].endtime.ToDateTime(), 0,
+                             saveFileDialog.FileName, async info => {
+                                 await Application.Current.Dispatcher.InvokeAsync(() => {
+                                     obj.DownloadState = DownloadState.Downloading;
+                                     obj.DownloadProgress = ((double)info.LoadSize / info.TotalSize) * 100;
+                                 });
+                             });
+                    }
+                }
+            }
+        }
     }
 
     public enum PlaybackStream {
@@ -312,6 +391,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         [Description("慢放中"), AuxiliaryDescription("停止"),
          FontIcon("\xea2a"), BackgroundColor("#8B0000"),
          LabelColor("#00FA9A")]
-        SlowMotion
+        SlowMotion,
+
+        [Description("暂停中"), AuxiliaryDescription("播放"),
+         FontIcon("\xe9e9"), BackgroundColor("#4169E1"),
+         LabelColor("#FFFFFF")]
+        Paused
     }
 }
