@@ -32,23 +32,28 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private DownloadState _downloadState = DownloadState.Ready;
         private Size _maxSize = new(898, 506);
         private PlaybackError _playbackError = PlaybackError.None;
-        private string _ipAddress;
+        private string _ipAddress = string.Empty;
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
                 if (info.RgbData is not null && info is { Width: > 0, Height: > 0 }) {
                     if (Application.Current is not null) {
                         await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (VideoFrame is not null) {
-                                VideoFrame.Lock();
-                                var rect = new Int32Rect(0, 0, info.Width, info.Height);
-                                // 检查数据缓冲区大小
-                                if (info.RgbData.Length >= info.Width * info.Height * 3) {
-                                    VideoFrame.WritePixels(rect, info.RgbData, info.Width * 3, 0);
-                                    VideoFrame.AddDirtyRect(rect);
-                                }
+                            try {
+                                if (VideoFrame is not null) {
+                                    VideoFrame.Lock();
+                                    var rect = new Int32Rect(0, 0, info.Width, info.Height);
+                                    // 检查数据缓冲区大小
+                                    if (info.RgbData.Length >= info.Width * info.Height * 3) {
+                                        VideoFrame.WritePixels(rect, info.RgbData, info.Width * 3, 0);
+                                        VideoFrame.AddDirtyRect(rect);
+                                    }
 
-                                VideoFrame.Unlock();
+                                    VideoFrame.Unlock();
+                                }
+                            }
+                            catch (Exception e) {
+                                Console.WriteLine(e);
                             }
                         }, System.Windows.Threading.DispatcherPriority.Render);
                     }

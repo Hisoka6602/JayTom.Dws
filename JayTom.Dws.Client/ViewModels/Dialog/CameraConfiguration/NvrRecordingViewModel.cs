@@ -1,5 +1,6 @@
 ﻿using System;
 using NetSDKCS;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Plugin.Speech;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
@@ -21,6 +23,7 @@ using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
+using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
@@ -31,22 +34,36 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private DaHuatechNVR? _daHuatechNvr;
 
         private string _identifier = string.Empty;
-        private DateTime _startTime = DateTime.Now.AddSeconds(-20);
-        private DateTime _endTime = DateTime.Now.AddHours(1);
-        private DateTime _currentTime = DateTime.Now;
-        private DateTime _selectionStartTime = DateTime.Now.AddSeconds(10);
-        private DateTime _selectionEndTime = DateTime.Now.AddSeconds(400);
+        private DateTime _startTime = DateTime.Now.AddMinutes(-10);
+        private DateTime _endTime = DateTime.Now.AddMinutes(-5);
+        private DateTime _currentTime;
+        private DateTime _selectionStartTime;
+        private DateTime _selectionEndTime;
         private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
-        private PlaybackStream? _selectPlaybackStream;
-        private int? _fastForwardSpeed;
-        private int? _rewindSpeed;
-        private int? _slowMotionSpeed;
+        private PlaybackStream _selectPlaybackStream = PlaybackStream.MainStream;
+        private string? _fastForwardSpeed;
+        private string? _rewindSpeed;
+        private string? _slowMotionSpeed;
         private PlaybackState _playbackState = PlaybackState.Ready;
+        private DateTime _playDateTime;
+
+        private readonly DaHuatechNVR.FastForwardSpeed[] _fastForwardSpeeds =
+            { DaHuatechNVR.FastForwardSpeed.X2,
+                DaHuatechNVR.FastForwardSpeed.X4,
+                DaHuatechNVR.FastForwardSpeed.X8,
+                DaHuatechNVR.FastForwardSpeed.X16,
+                DaHuatechNVR.FastForwardSpeed.Normal
+            };
+
+        private int _currentSpeedIndex = 0;
+        private double _speed = 1;
 
         public string Identifier {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
+
+        public bool ProgressRelease { get; private set; }
 
         public ObservableCollection<VideoPlayerModel> VideoPlayerItems {
             get => _videoPlayerItems;
@@ -58,7 +75,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             set => SetProperty(ref _playbackStreamItems, value);
         }
 
-        public PlaybackStream? SelectPlaybackStream {
+        public PlaybackStream SelectPlaybackStream {
             get => _selectPlaybackStream;
             set => SetProperty(ref _selectPlaybackStream, value);
         }
@@ -78,6 +95,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             set => SetProperty(ref _currentTime, value);
         }
 
+        public DateTime PlayDateTime {
+            get => _playDateTime;
+            set => SetProperty(ref _playDateTime, value);
+        }
+
         public DateTime SelectionStartTime {
             get => _selectionStartTime;
             set => SetProperty(ref _selectionStartTime, value);
@@ -91,7 +113,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// <summary>
         /// 快进倍数
         /// </summary>
-        public int? FastForwardSpeed {
+        public string? FastForwardSpeed {
             get => _fastForwardSpeed;
             set => SetProperty(ref _fastForwardSpeed, value);
         }
@@ -99,7 +121,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// <summary>
         /// 快退倍数
         /// </summary>
-        public int? RewindSpeed {
+        public string? RewindSpeed {
             get => _rewindSpeed;
             set => SetProperty(ref _rewindSpeed, value);
         }
@@ -107,9 +129,14 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// <summary>
         /// 慢放倍数
         /// </summary>
-        public int? SlowMotionSpeed {
+        public string? SlowMotionSpeed {
             get => _slowMotionSpeed;
             set => SetProperty(ref _slowMotionSpeed, value);
+        }
+
+        public double Speed {
+            get => _speed;
+            set => SetProperty(ref _speed, value);
         }
 
         public PlaybackState PlaybackState {
@@ -119,24 +146,57 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
         public ICommand ToggleImageSizeCommand => new DelegateCommand<VideoPlayerModel>(ToggleImageSizeDelegate);
 
-        private void ToggleImageSizeDelegate(VideoPlayerModel obj) {
+        private async void ToggleImageSizeDelegate(VideoPlayerModel obj) {
             if (obj.ScreenState == ScreenState.Normal) {
                 foreach (var videoPlayerModel in VideoPlayerItems) {
                     videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
                 }
-            }
-            else {
-                foreach (var videoPlayerModel in VideoPlayerItems) {
-                    videoPlayerModel.ScreenState = ScreenState.Normal;
+                if (_daHuatechNvr is not null) {
+                    obj.VideoFrame = new WriteableBitmap((int)obj.MaxSize.Width,
+                        (int)obj.MaxSize.Height, 96, 96, PixelFormats.Bgr24, null);
+                    _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)obj.MaxSize.Width,
+                        (int)obj.MaxSize.Height);
                 }
             }
+            else {
+                var size = GetVideoPlayerSize();
+
+                foreach (var videoPlayerModel in VideoPlayerItems) {
+                    videoPlayerModel.ScreenState = ScreenState.Normal;
+                    if (_daHuatechNvr is not null) {
+                        obj.VideoFrame = new WriteableBitmap((int)size.Width,
+                            (int)size.Height, 96, 96, PixelFormats.Bgr24, null);
+                        _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)size.Width,
+                            (int)size.Height);
+                    }
+                }
+            }
+        }
+
+        private Size GetVideoPlayerSize() {
+            var size = new Size(449, 253);
+            switch (VideoPlayerItems.Count) {
+                case 1:
+                    size = new Size(584, 329);
+                    break;
+
+                case > 1 and <= 4:
+                    size = new Size(449, 253);
+                    break;
+
+                case > 4:
+                    size = new Size(374, 211);
+                    break;
+            }
+            return size;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            _daHuatechNvr ??= DaHuatechNVR.Instance;
-            await BaseDaHuatech.EnumDevices();
+            CurrentTime = StartTime;
+            SelectionStartTime = StartTime.AddSeconds(10);
+            SelectionEndTime = StartTime.AddSeconds(400);
             VideoPlayerItems.AddRange(new List<VideoPlayerModel>()
             {
                 new() { IsBuffering = true,
@@ -146,6 +206,18 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     Username = "admin",
                     Password = "a12345678",
                     Channel = 1,
+                    VideoFrame =  new(449, 253, 96, 96, PixelFormats.Bgr24, null),
+                    VideoScreenShotCommand = CaptureScreenShotCommand,
+                    DownloadCommand = DownloadVideoCommand
+                },
+                new() { IsBuffering = true,
+                    ToggleImageSizeCommand = ToggleImageSizeCommand,
+                    IpAddress = "192.168.31.111",
+                    Port = 37777,
+                    Username = "admin",
+                    Password = "a12345678",
+                    Channel = 3,
+                    VideoFrame =  new(449, 253, 96, 96, PixelFormats.Bgr24, null),
                     VideoScreenShotCommand = CaptureScreenShotCommand,
                     DownloadCommand = DownloadVideoCommand
                 },
@@ -155,7 +227,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
                 new() { ToggleImageSizeCommand = ToggleImageSizeCommand },*/
             });
-
+            _daHuatechNvr ??= DaHuatechNVR.Instance;
+            await BaseDaHuatech.EnumDevices();
             //登录
             var any = _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals("192.168.31.111"))?.ToList().Any();
 
@@ -186,51 +259,78 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// </summary>
         /// <param name="obj"></param>
         private async void PlaybackDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                if (_daHuatechNvr is not null) {
-                    if (PlaybackState == PlaybackState.Ready) {
-                        PlaybackState = PlaybackState.Playing;
-                        var (key, value) = await _daHuatechNvr.QueryVideoFile("192.168.31.111",
-                            1, StartTime, EndTime, 0);
+            if (_daHuatechNvr is not null) {
+                Speed = 1;
+                _currentSpeedIndex = 0;
+                FastForwardSpeed = null;
+                if (PlaybackState == PlaybackState.Ready) {
+                    PlaybackState = PlaybackState.Playing;
+                    PlayDateTime = CurrentTime;
+                    Parallel.ForEach(VideoPlayerItems, async item => {
+                        item.IsBuffering = true;
+                        await Application.Current.Dispatcher.InvokeAsync(async () => {
+                            var (key, value) = await _daHuatechNvr.QueryVideoFile(item.IpAddress,
+                                item.Channel, CurrentTime, EndTime, (int)SelectPlaybackStream);
+                            if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
+                                //临时显示
 
-                        if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
-                            VideoPlayerItems[0].VideoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
+                                var (b, o) = await _daHuatechNvr.PlayBackVideo(item.IpAddress, item.Channel,
+                                    CurrentTime,
+                                    EndTime, item.RealtimePreviewCallback
+                                    , async info => {
+                                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                                            if (item.IsBuffering) {
+                                                item.IsBuffering = false;
+                                            }
 
-                            var (b, o) = await _daHuatechNvr.PlayBackVideo("192.168.31.111", 1,
-                                recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5),
-                                recordFileInfos[0].endtime.ToDateTime(), VideoPlayerItems[0].RealtimePreviewCallback
-                                , async info => {
-                                    await Application.Current.Dispatcher.InvokeAsync(() => {
-                                        var addSeconds = StartTime.AddSeconds(info.LoadSize);
-                                        if (!CurrentTime.Equals(addSeconds)) {
-                                            CurrentTime = addSeconds;
-                                        }
+                                            var addSeconds = PlayDateTime.AddSeconds(info.LoadSize * Speed);
+                                            if (CurrentTime.CompareTo(addSeconds) < 0 && !ProgressRelease) {
+                                                CurrentTime = addSeconds;
+                                            }
+                                        });
                                     });
-                                });
-                            if (b) {
-                                VideoPlayerItems[0].IsBuffering = false;
+                                if (b) {
+                                    if (item.ScreenState == ScreenState.Maximized) {
+                                        item.VideoFrame = new WriteableBitmap((int)item.MaxSize.Width,
+                                            (int)item.MaxSize.Height, 96, 96, PixelFormats.Bgr24, null);
+                                        _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)item.MaxSize.Width,
+                                            (int)item.MaxSize.Height);
+                                    }
+                                    else {
+                                        var size = GetVideoPlayerSize();
+                                        item.VideoFrame = new WriteableBitmap((int)size.Width,
+                                            (int)size.Height, 96, 96, PixelFormats.Bgr24, null);
+                                        _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)size.Width,
+                                            (int)size.Height);
+                                    }
+                                    item.IsBuffering = false;
+                                }
                             }
-
-                            Console.WriteLine(o);
-                        }
-                        else {
-                            //失败
-                        }
-                    }
-                    else if (PlaybackState == PlaybackState.Paused) {
-                        var (key, value) = await _daHuatechNvr.ResumePlayback("192.168.31.111", 1);
-                        if (key) {
-                            PlaybackState = PlaybackState.Playing;
-                        }
-                    }
-                    else {
-                        var (key, value) = await _daHuatechNvr.PausePlayback("192.168.31.111", 1);
-                        if (key) {
-                            PlaybackState = PlaybackState.Paused;
-                        }
-                    }
+                            else {
+                                if (value is string msg && msg.Contains("录像文件")) {
+                                    item.PlaybackError = PlaybackError.VideoFileNotFound;
+                                }
+                                else {
+                                    item.PlaybackError = PlaybackError.UnknownError;
+                                }
+                                item.IsBuffering = false;
+                            }
+                        });
+                    });
                 }
-            });
+                else if (PlaybackState == PlaybackState.Paused) {
+                    Parallel.ForEach(VideoPlayerItems, async item => {
+                        await _daHuatechNvr.ResumePlayback(item.IpAddress, item.Channel);
+                    });
+                    PlaybackState = PlaybackState.Playing;
+                }
+                else {
+                    Parallel.ForEach(VideoPlayerItems, async item => {
+                        await _daHuatechNvr.PausePlayback(item.IpAddress, item.Channel);
+                    });
+                    PlaybackState = PlaybackState.Paused;
+                }
+            }
         }
 
         public ICommand FastForwardCommand => new DelegateCommand<object>(FastForwardDelegate);
@@ -240,8 +340,29 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// </summary>
         /// <param name="obj"></param>
         private void FastForwardDelegate(object obj) {
-            PlaybackState = PlaybackState.FastForwarding;
-            Debug.WriteLine($"快进");
+            if (_daHuatechNvr is not null) {
+                if (PlaybackState is PlaybackState.Ready or PlaybackState.Paused) {
+                    PlaybackDelegate(obj);
+                }
+                // 获取当前的快进倍速
+                var currentSpeed = _fastForwardSpeeds[_currentSpeedIndex];
+                Speed = currentSpeed switch {
+                    DaHuatechNVR.FastForwardSpeed.X2 => 1,
+                    DaHuatechNVR.FastForwardSpeed.X4 => 1,
+                    DaHuatechNVR.FastForwardSpeed.X8 => 2.2,
+                    DaHuatechNVR.FastForwardSpeed.X16 => 5,
+                    DaHuatechNVR.FastForwardSpeed.Normal => 1,
+                    _ => 1
+                };
+                Parallel.ForEach(VideoPlayerItems, async item => {
+                    await _daHuatechNvr.FastForward(item.IpAddress, item.Channel, currentSpeed);
+                });
+                PlaybackState = PlaybackState.FastForwarding;
+                // 更新索引，指向下一个倍速
+                FastForwardSpeed = currentSpeed != DaHuatechNVR.FastForwardSpeed.Normal ? currentSpeed.ToString() : null;
+
+                _currentSpeedIndex = (_currentSpeedIndex + 1) % _fastForwardSpeeds.Length;
+            }
         }
 
         public ICommand RewindCommand => new DelegateCommand<object>(RewindDelegate);
@@ -293,8 +414,23 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// </summary>
         /// <param name="obj"></param>
         private void ProgressChangedDelegate(MouseButtonEventArgs obj) {
+            if (obj.ChangedButton == MouseButton.Left && ProgressRelease) {
+                PlaybackDelegate(obj);
+                ProgressRelease = false;
+            }
+        }
+
+        public ICommand ProgressReleaseCommand => new DelegateCommand<MouseButtonEventArgs>(ProgressReleaseDelegate);
+
+        private void ProgressReleaseDelegate(MouseButtonEventArgs obj) {
             if (obj.ChangedButton == MouseButton.Left) {
-                Debug.WriteLine($"{CurrentTime}");
+                ProgressRelease = true;
+                if (_daHuatechNvr is not null) {
+                    Parallel.ForEach(VideoPlayerItems, async item => {
+                        await _daHuatechNvr.StopPlayback(item.IpAddress, item.Channel);
+                    });
+                    PlaybackState = PlaybackState.Ready;
+                }
             }
         }
 
@@ -314,10 +450,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 };
                 var showDialog = saveFileDialog.ShowDialog();
                 if (showDialog == true) {
-                    await _daHuatechNvr.CaptureAsync(obj.IpAddress, obj.Channel,
-                        DateTimeOffset.Now.ToUnixTimeMilliseconds(), async info => {
-                            Console.WriteLine("截图完成");
-                        });
+                    await _daHuatechNvr.CaptureAsync(obj.IpAddress, obj.Channel, saveFileDialog.FileName);
                 }
             }
         }
@@ -328,7 +461,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public ICommand DownloadVideoCommand => new DelegateCommand<VideoPlayerModel>(DownloadVideoDelegate);
 
         private async void DownloadVideoDelegate(VideoPlayerModel obj) {
-            if (_daHuatechNvr is not null) {
+            if (_daHuatechNvr is not null && obj.DownloadState == DownloadState.Ready) {
                 var saveFileDialog = new SaveFileDialog() {
                     DefaultExt = ".bmp",
                     Filter = "dav files (*.dav)|*.dav|All files (*.*)|*.*",
@@ -346,9 +479,31 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                              recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5),
                              recordFileInfos[0].endtime.ToDateTime(), 0,
                              saveFileDialog.FileName, async info => {
-                                 await Application.Current.Dispatcher.InvokeAsync(() => {
-                                     obj.DownloadState = DownloadState.Downloading;
-                                     obj.DownloadProgress = ((double)info.LoadSize / info.TotalSize) * 100;
+                                 await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                     if (info.IsDownloadComplete) {
+                                         obj.DownloadState = DownloadState.Transcoding;
+                                         await _daHuatechNvr.StartAviConvert(saveFileDialog.FileName,
+                                              Path.ChangeExtension(saveFileDialog.FileName, ".avi"),
+                                              (i, i1) => {
+                                                  return false;
+                                              });
+                                         obj.DownloadState = DownloadState.Ready;
+                                     }
+                                     else if (info.IsDownloadError) {
+                                         //下载错误
+                                         Console.WriteLine("下载错误");
+                                         obj.DownloadState = DownloadState.Ready;
+                                     }
+                                     else {
+                                         if (obj.DownloadState != DownloadState.Downloading) {
+                                             obj.DownloadState = DownloadState.Downloading;
+                                         }
+                                     }
+
+                                     var infoTotalSize = ((double)info.LoadSize / info.TotalSize) * 100;
+                                     if (infoTotalSize - obj.DownloadProgress > 2) {
+                                         obj.DownloadProgress = infoTotalSize;
+                                     }
                                  });
                              });
                     }

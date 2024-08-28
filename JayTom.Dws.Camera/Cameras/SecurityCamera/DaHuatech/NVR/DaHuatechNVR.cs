@@ -2,6 +2,7 @@
 using NetSDKCS;
 using System.Linq;
 using System.Text;
+using Accord.Video;
 using System.Drawing;
 using DaHua.Play.Net;
 using Microsoft.Win32;
@@ -25,6 +26,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         private static ConcurrentDictionary<string, HistoricalWatermark> _historicalWatermarkInfos = new();
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
         private static SemaphoreSlim _captureSlim = new(1);
+        private static SemaphoreSlim _changingViewSizeSlim = new(1);
+
         private static fCBDecode? _fCbDecode;
         private static fCBDecode? _recordingfCbDecode;
         private static fTimeDownLoadPosCallBack? _timeDownLoadPosCallBack;
@@ -33,6 +36,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         private static Channel<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)> _recordingChannel = Channel.CreateUnbounded<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)>();
         private readonly SemaphoreSlim _ptzOperationSlim = new(1);
         public static DaHuatechNVR Instance => _nvrInstance.Value;
+        private static bool _isChangingViewSize;
 
         private DaHuatechNVR() {
             _instance ??= BaseDaHuatech.CreateInstance();
@@ -104,7 +108,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     var callBack = playInfo?.PlayBackCallBack;
                     /*var playInfo = _loginDev.FirstOrDefault().Value?.DevPlayInfos?.FirstOrDefault();
                     var callBack = playInfo?.PlayBackCallBack;*/
-                    if (callBack != null && playInfo is not null) {
+                    if (callBack != null && playInfo is not null && !_isChangingViewSize) {
                         var bytes = DaHuatechNVR.ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
 
                         await callBack(new RealtimePreviewInfo() {
@@ -372,60 +376,28 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// </summary>
         /// <param name="ipAddress"></param>
         /// <param name="channelId"></param>
-        /// <param name="timestamp"></param>
-        /// <param name="captureCallBack"></param>
+        /// <param name="fileName"></param>
         /// <param name="cancellation"></param>
         /// <returns></returns>
-        public async Task CaptureAsync(string ipAddress, int channelId, long timestamp, Func<CaptureInfo, Task>? captureCallBack = null, CancellationToken cancellation = default) {
-            //获取已登录的设备
-
-            var playInfo = _loginDev.Values
-                .Where(nvrDevInfo => nvrDevInfo.IpAddress == ipAddress)
-                .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos)
-                .FirstOrDefault(devPlayInfo => devPlayInfo.PlayChannelId == channelId && devPlayInfo.CaptureSize != null);
-
-            if (playInfo?.CaptureSize != null) {
-                uint bmpSize = 0;
-                // 计算缓冲区大小
-                var bufferSize = (uint)(40 + playInfo.CaptureSize.Value.Width * playInfo.CaptureSize.Value.Height * 4);
-
-                // 分配缓冲区
-                var bmpBuffer = Marshal.AllocHGlobal((int)bufferSize);
-
-                try {
-                    await _captureSlim.WaitAsync(cancellation);
-                    if (DhPlaySdk.PLAY_GetPicBMP(playInfo.PlayPort, bmpBuffer, bufferSize, ref bmpSize)) {
-                        // 使用非托管内存中的数据创建 Bitmap 对象
-                        using var stream = new System.IO.MemoryStream();
-                        var bmpData = new byte[bmpSize];
-                        Marshal.Copy(bmpBuffer, bmpData, 0, (int)bmpSize);
-                        stream.Write(bmpData, 0, bmpData.Length);
-                        stream.Seek(0, System.IO.SeekOrigin.Begin);
-                        var bitmap = new Bitmap(stream);
-                        if (captureCallBack != null) {
-                            playInfo.CaptureCallBack = captureCallBack;
-                        }
-
-                        if (playInfo.CaptureCallBack is not null) {
-                            await playInfo.CaptureCallBack(new CaptureInfo() {
-                                Bitmap = bitmap,
-                                ChannelId = playInfo.PlayChannelId,
-                                Timestamp = timestamp
-                            }).ConfigureAwait(false);
-                        }
-                    }
-                    else {
-                        var lastError = NETClient.GetLastError();
-                    }
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                }
-                finally {
-                    Marshal.FreeHGlobal(bmpBuffer);
-                    _captureSlim.Release();
+        public async Task<bool> CaptureAsync(string ipAddress, int channelId, string fileName, CancellationToken cancellation = default) {
+            try {
+                await _captureSlim.WaitAsync(cancellation);
+                var playInfo = _loginDev.Values
+                    .Where(nvrDevInfo => nvrDevInfo.IpAddress == ipAddress)
+                    .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos)
+                    .FirstOrDefault(devPlayInfo =>
+                        devPlayInfo.PlayChannelId == channelId && devPlayInfo.CaptureSize != null);
+                if (playInfo?.CaptureSize != null) {
+                    return DhPlaySdk.PLAY_CatchPic(playInfo.PlayPort, fileName);
                 }
             }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"截图异常:{e}");
+            }
+            finally {
+                _captureSlim.Release();
+            }
+            return false;
         }
 
         /// <summary>
@@ -914,13 +886,22 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="channelId"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        public void SetResolution(string ipAddress, int channelId, int width, int height) {
-            var playInfo = _loginDev.Values
-                .Where(nvrDevInfo => nvrDevInfo.IpAddress == ipAddress)
-                .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos)
-                .FirstOrDefault(devPlayInfo => devPlayInfo.PlayChannelId == channelId);
-            if (playInfo is not null) {
-                playInfo.NvrPreviewSize = new Size(width, height);
+        public async void SetResolution(string ipAddress, int channelId, int width, int height) {
+            try {
+                await _changingViewSizeSlim.WaitAsync();
+                _isChangingViewSize = true;
+                var playInfo = _loginDev.Values
+                    .Where(nvrDevInfo => nvrDevInfo.IpAddress == ipAddress)
+                    .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos)
+                    .FirstOrDefault(devPlayInfo => devPlayInfo.PlayChannelId == channelId);
+                if (playInfo is not null) {
+                    playInfo.NvrPreviewSize = new Size(width, height);
+                }
+
+                _isChangingViewSize = false;
+            }
+            finally {
+                _changingViewSizeSlim.Release();
             }
         }
 
@@ -1002,7 +983,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="channelId"></param>
         /// <param name="speed"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, object>> FastForward(string ipAddress, int channelId, int speed) {
+        public async Task<KeyValuePair<bool, object>> FastForward(string ipAddress, int channelId, FastForwardSpeed speed) {
             await Task.Yield();
 
             var b = _loginDev.TryGetValue(ipAddress, out var dev);
@@ -1013,10 +994,30 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             if (playInfo is null || playInfo.PlaybackMode != PlaybackMode.Recording) {
                 return new KeyValuePair<bool, object>(false, "还未开启回放");
             }
+            switch (speed) {
+                case FastForwardSpeed.X2:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.FAST_2);
+                    break;
 
-            var control = NETClient.PlayBackControl(playInfo.PlayHandle, PlayBackType.Fast);
+                case FastForwardSpeed.X4:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.FAST_4);
+                    break;
 
-            return new KeyValuePair<bool, object>(control, control ? "快进成功" : "快进失败");
+                case FastForwardSpeed.X8:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.FAST_8);
+                    break;
+
+                case FastForwardSpeed.X16:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.FAST_16);
+                    break;
+
+                case FastForwardSpeed.Normal:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.NORMAL);
+                    break;
+            }
+            /*var control = NETClient.PlayBackControl(playInfo.PlayHandle, PlayBackType.Fast);
+            return new KeyValuePair<bool, object>(control, control ? "快进成功" : "快进失败");*/
+            return new KeyValuePair<bool, object>(true, string.Empty);
         }
 
         /// <summary>
@@ -1026,7 +1027,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="channelId"></param>
         /// <param name="speed"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, object>> Rewind(string ipAddress, int channelId, int speed) {
+        public async Task<KeyValuePair<bool, object>> Rewind(string ipAddress, int channelId, FastRewindSpeed speed) {
             await Task.Yield();
 
             var b = _loginDev.TryGetValue(ipAddress, out var dev);
@@ -1039,10 +1040,41 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             }
 
             var control = NETClient.PlayBackControl(playInfo.PlayHandle, PlayBackType.Slow);
+            switch (speed) {
+                case FastRewindSpeed.X2:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_2);
+                    break;
 
+                case FastRewindSpeed.X4:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_4);
+                    break;
+
+                case FastRewindSpeed.X8:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_8);
+                    break;
+
+                case FastRewindSpeed.X16:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_16);
+                    break;
+
+                case FastRewindSpeed.Normal:
+                    NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.NORMAL);
+                    break;
+            }
             return new KeyValuePair<bool, object>(control, control ? "快退成功" : "快退失败");
         }
 
+        /// <summary>
+        /// 下载录像
+        /// </summary>
+        /// <param name="ipAddress"></param>
+        /// <param name="channelId"></param>
+        /// <param name="startDateTime"></param>
+        /// <param name="endDateTime"></param>
+        /// <param name="videoStreamType"></param>
+        /// <param name="savePath"></param>
+        /// <param name="downLoadProgressCallBack"></param>
+        /// <returns></returns>
         public async Task<KeyValuePair<bool, object>> DownloadRecording(string ipAddress, int channelId, DateTime startDateTime,
             DateTime endDateTime, int videoStreamType, string savePath, Func<DownLoadProgressInfo, Task>? downLoadProgressCallBack = null) {
             await Task.Yield();
@@ -1085,11 +1117,18 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             return new KeyValuePair<bool, object>(true, "开启下载成功");
         }
 
+        /// <summary>
+        /// 转码
+        /// </summary>
+        /// <param name="sourceFileName"></param>
+        /// <param name="targetFileName"></param>
+        /// <param name="progressCallback"></param>
+        /// <returns></returns>
         public async Task<KeyValuePair<bool, object>> StartAviConvert(string sourceFileName,
             string targetFileName,
             Func<int, int, bool> progressCallback) {
             await Task.Yield();
-            var freePort = DhPlaySdk.PLAY_GetFreePort(out var plPort);
+            /*var freePort = DhPlaySdk.PLAY_GetFreePort(out var plPort);
             if (!freePort) {
                 return new KeyValuePair<bool, object>(false, "获取端口失败");
             }
@@ -1101,13 +1140,15 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
 
             var playStartAviConvert = DhPlaySdk.PLAY_StartAVIConvert(plPort, targetFileName,
                 (int port, int type, IntPtr data, ref bool @continue, IntPtr name) => {
-                    Console.WriteLine(type);
-                }, IntPtr.Zero);
+                    @continue = true;
+                }
+              , IntPtr.Zero);
             if (!playStartAviConvert) {
                 return new KeyValuePair<bool, object>(false, "启动转换失败");
             }
+            */
 
-            return new KeyValuePair<bool, object>(true, plPort);
+            return new KeyValuePair<bool, object>(true, "plPort");
         }
 
         public async Task<KeyValuePair<bool, object>> StopAviConvert(int port) {
@@ -1162,6 +1203,22 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             }
 
             return rgbData;
+        }
+
+        public enum FastForwardSpeed {
+            X2 = 0,
+            X4 = 1,
+            X8 = 2,
+            X16 = 3,
+            Normal
+        }
+
+        public enum FastRewindSpeed {
+            X2 = 0,
+            X4 = 1,
+            X8 = 2,
+            X16 = 3,
+            Normal
         }
     }
 }
