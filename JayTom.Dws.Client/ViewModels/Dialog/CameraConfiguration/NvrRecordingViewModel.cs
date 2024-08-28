@@ -236,8 +236,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 //登录
                 var (key, value) = await _daHuatechNvr.LogIn("192.168.31.111", 37777,
                     "admin", "a12345678");
-                if (!key) {
-                    Console.WriteLine("登录失败");
+                if (key) {
+                    PlaybackDelegate(obj);
                 }
             }
         }
@@ -247,6 +247,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private void CloseDialogDelegate(object obj) {
             //退出播放
             //全部注销
+            if (_daHuatechNvr is not null) {
+                Parallel.ForEach(VideoPlayerItems, async item => {
+                    await _daHuatechNvr.StopPlayback(item.IpAddress, item.Channel);
+                });
+                _daHuatechNvr.LogOut(VideoPlayerItems.FirstOrDefault().IpAddress);
+            }
+
             if (DialogHost.IsDialogOpen(Identifier)) {
                 DialogHost.Close(Identifier);
             }
