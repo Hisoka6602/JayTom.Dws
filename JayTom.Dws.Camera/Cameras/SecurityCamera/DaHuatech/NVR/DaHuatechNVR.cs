@@ -13,6 +13,7 @@ using System.Threading.Channels;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using static DaHua.Play.Net.DhPlaySdk;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC;
 
@@ -1120,42 +1121,85 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <summary>
         /// 转码
         /// </summary>
-        /// <param name="sourceFileName"></param>
-        /// <param name="targetFileName"></param>
+        /// <param name="inputFilePath"></param>
+        /// <param name="outputFilePath"></param>
         /// <param name="progressCallback"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, object>> StartAviConvert(string sourceFileName,
-            string targetFileName,
-            Func<int, int, bool> progressCallback) {
+
+        public async Task<KeyValuePair<bool, object>> ConvertDavToMp4(string inputFilePath, string outputFilePath, Func<int, int, bool> progressCallback) {
             await Task.Yield();
-            /*var freePort = DhPlaySdk.PLAY_GetFreePort(out var plPort);
-            if (!freePort) {
-                return new KeyValuePair<bool, object>(false, "获取端口失败");
-            }
+            var ffmpegPath = $"{AppDomain.CurrentDomain.BaseDirectory}ffmpeg\\bin\\ffmpeg.exe";
+            if (File.Exists(ffmpegPath)) {
+                try {
+                    // 设置 ProcessStartInfo
+                    ProcessStartInfo startInfo = new ProcessStartInfo {
+                        FileName = ffmpegPath,
+                        Arguments = $"-f dhav -i {inputFilePath} -an -c:v copy {outputFilePath}",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
 
-            var playOpenFile = DhPlaySdk.PLAY_OpenFile(plPort, sourceFileName);
-            if (!playOpenFile) {
-                return new KeyValuePair<bool, object>(false, "打开文件失败");
-            }
+                    using (Process process = new Process { StartInfo = startInfo }) {
+                        var totalFileSize = new FileInfo(inputFilePath).Length;
 
-            var playStartAviConvert = DhPlaySdk.PLAY_StartAVIConvert(plPort, targetFileName,
-                (int port, int type, IntPtr data, ref bool @continue, IntPtr name) => {
-                    @continue = true;
+                        // 异步读取错误输出
+                        process.ErrorDataReceived += (sender, args) => {
+                            if (args.Data != null) {
+                                // 解析 FFmpeg 的输出信息
+                                ParseProgress(args.Data, totalFileSize, progressCallback);
+                            }
+                        };
+
+                        // 可选：异步读取标准输出
+                        process.OutputDataReceived += (sender, args) => {
+                            Console.WriteLine(args.Data); // 输出到控制台（或根据需要处理）
+                        };
+
+                        process.Start();  // 启动进程
+                        process.BeginErrorReadLine();  // 开始异步读取错误输出
+                        process.BeginOutputReadLine(); // 开始异步读取标准输出
+                        process.StandardInput.Close(); // 关闭标准输入，避免挂起
+
+                        await process.WaitForExitAsync();  // 异步等待进程结束
+
+                        if (process.ExitCode != 0) {
+                            var error = await process.StandardError.ReadToEndAsync();
+                            throw new Exception($"FFmpeg failed with error: {error}");
+                        }
+                    }
+                    return new KeyValuePair<bool, object>(true, "转码启动成功");
                 }
-              , IntPtr.Zero);
-            if (!playStartAviConvert) {
-                return new KeyValuePair<bool, object>(false, "启动转换失败");
+                catch (Exception e) {
+                    return new KeyValuePair<bool, object>(false, e.Message);
+                }
             }
-            */
-
-            return new KeyValuePair<bool, object>(true, "plPort");
+            else {
+                return new KeyValuePair<bool, object>(false, "ffmpeg文件不存在");
+            }
         }
 
-        public async Task<KeyValuePair<bool, object>> StopAviConvert(int port) {
-            //停止转码
-            await Task.Yield();
-            var stopAviConvert = DhPlaySdk.PLAY_StopAVIConvert(port);
-            return new KeyValuePair<bool, object>(stopAviConvert, $"停止转换{(stopAviConvert ? "成功" : "失败")}");
+        private bool ParseProgress(string output, long totalFileSize, Func<int, int, bool>? progressCallback) {
+            var match = Regex.Match(output, @"size=\s*(\d+)kB");
+            if (match.Success) {
+                var processedSize = long.Parse(match.Groups[1].Value) * 1024; // 转换为字节数
+                var currentProgress = (int)processedSize;
+                var totalProgress = (int)totalFileSize;
+
+                // 回调进度
+                if (progressCallback != null) {
+                    bool continueProcessing = progressCallback(currentProgress, totalProgress);
+                    // 如果当前进度达到或超过总大小，则认为转换完成
+                    if (currentProgress >= totalProgress) {
+                        // 在转换完成时回调，通知完成状态
+                        progressCallback(totalProgress, totalProgress);
+                    }
+                    return continueProcessing;
+                }
+            }
+            return true;
         }
 
         public static byte[] ConvertFrameInfoToRgbByteArray(FRAME_DECODE_INFO frameInfo, int targetWidth, int targetHeight) {

@@ -26,6 +26,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
+
     public class NvrRecordingViewModel : BindableBase {
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
@@ -518,16 +519,28 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                         obj.DownloadProgress = 0;
                         await _daHuatechNvr.DownloadRecording(obj.IpAddress,
                              obj.Channel,
-                             recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5),
-                             recordFileInfos[0].endtime.ToDateTime(), 0,
+                             StartTime, EndTime, (int)SelectPlaybackStream,
                              saveFileDialog.FileName, async info => {
                                  await Application.Current.Dispatcher.InvokeAsync(async () => {
                                      if (info.IsDownloadComplete) {
                                          obj.DownloadState = DownloadState.Transcoding;
-                                         await _daHuatechNvr.StartAviConvert(saveFileDialog.FileName,
-                                              Path.ChangeExtension(saveFileDialog.FileName, ".avi"),
+                                         await _daHuatechNvr.ConvertDavToMp4(saveFileDialog.FileName,
+                                              Path.ChangeExtension(saveFileDialog.FileName, ".mp4"),
                                               (i, i1) => {
-                                                  return false;
+                                                  if (obj.DownloadState != DownloadState.Transcoding) {
+                                                      obj.DownloadState = DownloadState.Transcoding;
+                                                      obj.DownloadProgress = 0;
+                                                  }
+                                                  var d = ((double)i / i1) * 100;
+                                                  if (d - obj.DownloadProgress > 2) {
+                                                      obj.DownloadProgress = d;
+                                                  }
+
+                                                  if (i == i1) {
+                                                      obj.DownloadState = DownloadState.Ready;
+                                                      obj.DownloadProgress = 100;
+                                                  }
+                                                  return true;
                                               });
                                          obj.DownloadState = DownloadState.Ready;
                                          obj.DownloadProgress = 100;
