@@ -37,8 +37,8 @@
         <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
     </UserControl.Resources>
     <Border
-        MinWidth="1200"
-        MinHeight="650"
+        MinWidth="1400"
+        MinHeight="800"
         Padding="10"
         Background="#2E2E2E"
         CornerRadius="10">
@@ -82,7 +82,6 @@
                         </Binding>
                     </MultiBinding>
                 </ListBox.Clip>
-
                 <ListBox.Template>
                     <ControlTemplate TargetType="{x:Type ListBox}">
                         <ScrollViewer Focusable="False">
@@ -111,215 +110,237 @@
 
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type cameraConfiguration1:VideoPlayerModel}">
-                        <Grid
-                            Name="PreviewViewGrid"
-                            Background="Transparent"
-                            Visibility="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=Hidden}">
-                            <!--  加载进度条  -->
-                            <editors:AnimatedRingControl
-                                Width="100"
-                                Height="100"
-                                ControlOpacity="0.8"
-                                IsAnimationEnabled="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged}"
-                                IsHitTestVisible="False"
-                                Visibility="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <Border BorderBrush="Transparent">
+                            <Border.Style>
 
-                            <!--  画面  -->
-                            <Image
-                                RenderOptions.BitmapScalingMode="LowQuality"
-                                Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
-                                Stretch="Uniform"
-                                Visibility="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ScreenState}" Value="Maximized">
-                                                <Setter Property="Width" Value="{Binding MaxSize.Width, UpdateSourceTrigger=PropertyChanged}" />
-                                                <Setter Property="Height" Value="{Binding MaxSize.Height, UpdateSourceTrigger=PropertyChanged}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding ScreenState}" Value="Normal">
-                                                <Setter Property="Width">
-                                                    <Setter.Value>
-                                                        <Binding
-                                                            Converter="{StaticResource VideoPlayerSizeConverter}"
-                                                            ConverterParameter="Width"
-                                                            FallbackValue="200"
-                                                            Path="Items.Count"
-                                                            RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}"
-                                                            UpdateSourceTrigger="PropertyChanged" />
-                                                    </Setter.Value>
-                                                </Setter>
-                                                <Setter Property="Height">
-                                                    <Setter.Value>
-                                                        <Binding
-                                                            Converter="{StaticResource VideoPlayerSizeConverter}"
-                                                            ConverterParameter="Height"
-                                                            FallbackValue="150"
-                                                            Path="Items.Count"
-                                                            RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}"
-                                                            UpdateSourceTrigger="PropertyChanged" />
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <!--  右下角通道  -->
-                            <TextBlock
-                                Margin="5"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="SpringGreen"
-                                Text="{Binding Channel, StringFormat='通道{0}'}" />
-                            <!--  工具  -->
-                            <Border
-                                x:Name="ToolBarContainer"
-                                Height="60"
-                                MinWidth="130"
-                                Margin="0"
-                                Padding="10"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Bottom"
-                                Background="#88202020"
-                                CornerRadius="10,10,0,0"
-                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <!--  左右分、进度条全遮挡  -->
-                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                    <!--  截图  -->
-                                    <Button
-                                        Width="35"
-                                        Height="35"
-                                        Margin="10,0"
-                                        HorizontalAlignment="Center"
-                                        materialDesign:ButtonProgressAssist.IsIndeterminate="False"
-                                        materialDesign:ButtonProgressAssist.IsIndicatorVisible="False"
-                                        materialDesign:ButtonProgressAssist.Value="-1"
-                                        materialDesign:RippleAssist.ClipToBounds="True"
-                                        materialDesign:RippleAssist.RippleOnTop="True"
-                                        Background="#3D3D3D"
-                                        BorderBrush="Transparent"
-                                        Command="{Binding VideoScreenShotCommand}"
-                                        CommandParameter="{Binding}"
-                                        Cursor=""
-                                        Focusable="False"
-                                        ToolTip="{Binding ScreenshotState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}">
-                                        <Button.Style>
-                                            <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ScreenshotState}" Value="Screenshotting">
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="True" />
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding ScreenshotState}" Value="Ready">
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <TextBlock
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            FontFamily="{StaticResource IconFontFamily}"
-                                            FontSize="20"
-                                            Foreground="White"
-                                            Text="{Binding ScreenshotState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
-                                    </Button>
-                                    <!--  下载  -->
-                                    <Button
-                                        Width="35"
-                                        Height="35"
-                                        Margin="10,0"
-                                        HorizontalAlignment="Center"
-                                        materialDesign:ButtonProgressAssist.Maximum="100"
-                                        materialDesign:ButtonProgressAssist.Minimum="0"
-                                        materialDesign:ButtonProgressAssist.Value="{Binding DownloadProgress, UpdateSourceTrigger=PropertyChanged}"
-                                        materialDesign:RippleAssist.ClipToBounds="True"
-                                        materialDesign:RippleAssist.RippleOnTop="True"
-                                        Background="RoyalBlue"
-                                        BorderBrush="Transparent"
-                                        Command="{Binding DownloadCommand}"
-                                        CommandParameter="{Binding}"
-                                        Cursor=""
-                                        Focusable="False"
-                                        ToolTip="{Binding DownloadState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}">
-                                        <Button.Style>
-                                            <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
-                                                <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
-                                                <Setter Property="materialDesign:ButtonProgressAssist.IndicatorForeground" Value="GreenYellow" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DownloadState}" Value="Downloading">
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IndicatorForeground" Value="GreenYellow" />
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding DownloadState}" Value="Transcoding">
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IndicatorForeground" Value="GhostWhite" />
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding DownloadState}" Value="Ready">
-                                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <TextBlock
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            FontFamily="{StaticResource IconFontFamily}"
-                                            FontSize="20"
-                                            Foreground="White"
-                                            Text="{Binding DownloadState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
-                                    </Button>
-                                </StackPanel>
-                            </Border>
-                            <!--  异常底图  -->
-                            <Border Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}">
-                                <StackPanel
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Orientation="Vertical">
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="pack://application:,,,/Fonts/#iconfont"
-                                        FontSize="120"
-                                        Foreground="DimGray"
-                                        IsEnabled="False"
-                                        Text="{Binding PlaybackError, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}"
-                                        Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}" />
-                                    <TextBlock
-                                        Margin="5,20"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="16"
-                                        FontWeight="Bold"
-                                        Foreground="DimGray"
-                                        Text="{Binding PlaybackError, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
-                                </StackPanel>
-                            </Border>
-                            <!--  页面放大缩小  -->
-                            <Button
-                                Grid.Row="0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Top"
-                                Command="{Binding ToggleImageSizeCommand}"
-                                CommandParameter="{Binding}"
-                                Opacity="0.7"
-                                Style="{StaticResource SystemButtonStyle}"
-                                ToolTip="Close"
-                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Style TargetType="Border">
+                                    <Style.Setters>
+                                        <Setter Property="BorderThickness" Value="0,0,1,1" />
+                                    </Style.Setters>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ScreenState}" Value="Maximized">
+                                            <Setter Property="BorderThickness" Value="0" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid
+                                Name="PreviewViewGrid"
+                                Background="Transparent"
+                                Visibility="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=Hidden}">
+                                <!--  加载进度条  -->
+                                <editors:AnimatedRingControl
+                                    Width="100"
+                                    Height="100"
+                                    ControlOpacity="0.8"
+                                    IsAnimationEnabled="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged}"
+                                    IsHitTestVisible="False"
+                                    Visibility="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                <!--  画面  -->
+                                <Image
+                                    RenderOptions.BitmapScalingMode="LowQuality"
+                                    Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
+                                    Stretch="Uniform"
+                                    Visibility="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ScreenState}" Value="Maximized">
+                                                    <Setter Property="Width" Value="{Binding MaxSize.Width, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Setter Property="Height" Value="{Binding MaxSize.Height, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ScreenState}" Value="Normal">
+                                                    <Setter Property="Width">
+                                                        <Setter.Value>
+                                                            <Binding
+                                                                Converter="{StaticResource VideoPlayerSizeConverter}"
+                                                                ConverterParameter="Width"
+                                                                FallbackValue="200"
+                                                                Path="Items.Count"
+                                                                RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}"
+                                                                UpdateSourceTrigger="PropertyChanged" />
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Setter Property="Height">
+                                                        <Setter.Value>
+                                                            <Binding
+                                                                Converter="{StaticResource VideoPlayerSizeConverter}"
+                                                                ConverterParameter="Height"
+                                                                FallbackValue="150"
+                                                                Path="Items.Count"
+                                                                RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}"
+                                                                UpdateSourceTrigger="PropertyChanged" />
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                    <Image.InputBindings>
+                                        <MouseBinding
+                                            Command="{Binding ToggleImageSizeCommand}"
+                                            CommandParameter="{Binding}"
+                                            Gesture="LeftDoubleClick" />
+                                    </Image.InputBindings>
+                                </Image>
+
+                                <!--  右下角通道  -->
                                 <TextBlock
-                                    FontSize="22"
-                                    Foreground="White"
-                                    Style="{StaticResource SystemTextBlockStyle}"
-                                    Text="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}"
-                                    ToolTip="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
-                            </Button>
-                        </Grid>
+                                    Margin="5"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    FontSize="13"
+                                    FontWeight="Bold"
+                                    Foreground="SpringGreen"
+                                    Text="{Binding Channel, StringFormat='通道{0}'}" />
+                                <!--  工具  -->
+                                <Border
+                                    x:Name="ToolBarContainer"
+                                    Height="60"
+                                    MinWidth="130"
+                                    Margin="0"
+                                    Padding="10"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Bottom"
+                                    Background="#88202020"
+                                    CornerRadius="10,10,0,0"
+                                    Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <!--  左右分、进度条全遮挡  -->
+                                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                        <!--  截图  -->
+                                        <Button
+                                            Width="35"
+                                            Height="35"
+                                            Margin="10,0"
+                                            HorizontalAlignment="Center"
+                                            materialDesign:ButtonProgressAssist.IsIndeterminate="False"
+                                            materialDesign:ButtonProgressAssist.IsIndicatorVisible="False"
+                                            materialDesign:ButtonProgressAssist.Value="-1"
+                                            materialDesign:RippleAssist.ClipToBounds="True"
+                                            materialDesign:RippleAssist.RippleOnTop="True"
+                                            Background="#3D3D3D"
+                                            BorderBrush="Transparent"
+                                            Command="{Binding VideoScreenShotCommand}"
+                                            CommandParameter="{Binding}"
+                                            Cursor=""
+                                            Focusable="False"
+                                            ToolTip="{Binding ScreenshotState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}">
+                                            <Button.Style>
+                                                <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ScreenshotState}" Value="Screenshotting">
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="True" />
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding ScreenshotState}" Value="Ready">
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="20"
+                                                Foreground="White"
+                                                Text="{Binding ScreenshotState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
+                                        </Button>
+                                        <!--  下载  -->
+                                        <Button
+                                            Width="35"
+                                            Height="35"
+                                            Margin="10,0"
+                                            HorizontalAlignment="Center"
+                                            materialDesign:ButtonProgressAssist.Maximum="100"
+                                            materialDesign:ButtonProgressAssist.Minimum="0"
+                                            materialDesign:ButtonProgressAssist.Value="{Binding DownloadProgress, UpdateSourceTrigger=PropertyChanged}"
+                                            materialDesign:RippleAssist.ClipToBounds="True"
+                                            materialDesign:RippleAssist.RippleOnTop="True"
+                                            Background="RoyalBlue"
+                                            BorderBrush="Transparent"
+                                            Command="{Binding DownloadCommand}"
+                                            CommandParameter="{Binding}"
+                                            Cursor=""
+                                            Focusable="False"
+                                            ToolTip="{Binding DownloadState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}">
+                                            <Button.Style>
+                                                <Style BasedOn="{StaticResource MaterialDesignFloatingActionButton}" TargetType="Button">
+                                                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+                                                    <Setter Property="materialDesign:ButtonProgressAssist.IndicatorForeground" Value="GreenYellow" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DownloadState}" Value="Downloading">
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IndicatorForeground" Value="GreenYellow" />
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding DownloadState}" Value="Transcoding">
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IndicatorForeground" Value="GhostWhite" />
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding DownloadState}" Value="Ready">
+                                                            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource IconFontFamily}"
+                                                FontSize="20"
+                                                Foreground="White"
+                                                Text="{Binding DownloadState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                                <!--  异常底图  -->
+                                <Border Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}">
+                                    <StackPanel
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Orientation="Vertical">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                            FontSize="120"
+                                            Foreground="DimGray"
+                                            IsEnabled="False"
+                                            Text="{Binding PlaybackError, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}"
+                                            Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}" />
+                                        <TextBlock
+                                            Margin="5,20"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource CustomFontFamily}"
+                                            FontSize="16"
+                                            FontWeight="Bold"
+                                            Foreground="DimGray"
+                                            Text="{Binding PlaybackError, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                    </StackPanel>
+                                </Border>
+                                <!--  页面放大缩小  -->
+                                <Button
+                                    Grid.Row="0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Command="{Binding ToggleImageSizeCommand}"
+                                    CommandParameter="{Binding}"
+                                    Opacity="0.7"
+                                    Style="{StaticResource SystemButtonStyle}"
+                                    ToolTip="Close"
+                                    Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock
+                                        FontSize="22"
+                                        Foreground="White"
+                                        Style="{StaticResource SystemTextBlockStyle}"
+                                        Text="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}"
+                                        ToolTip="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                </Button>
+                            </Grid>
+                        </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

@@ -16,7 +16,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
     public class NvrPreviewViewItemInfo : BindableBase, IDisposable {
         private int _channelId;
         private string _displayName = string.Empty;
-        private WriteableBitmap? _videoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
+        private WriteableBitmap? _videoFrame = new(768, 432, 96, 96, PixelFormats.Bgr24, null);
         private bool _isShow;
         private string _serialNumber = string.Empty;
         private ICommand? _increaseZoomCommand;
@@ -24,6 +24,9 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ICommand? _increaseFocusCommand;
         private ICommand? _decreaseFocusCommand;
         private ICommand? _autoFocusCommand;
+        private ScreenState _screenState = ScreenState.Normal;
+        private Size _maxSize = new(768, 432);
+        private ICommand? _toggleImageSizeCommand;
 
         public NvrPreviewViewItemInfo() {
             RealtimePreviewCallback = async info => {
@@ -73,6 +76,16 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             set => SetProperty(ref _isShow, value);
         }
 
+        public ScreenState ScreenState {
+            get => _screenState;
+            set => SetProperty(ref _screenState, value);
+        }
+
+        public Size MaxSize {
+            get => _maxSize;
+            set => SetProperty(ref _maxSize, value);
+        }
+
         public void Dispose() {
             IsShow = false;
             VideoFrame?.Freeze();
@@ -118,6 +131,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public ICommand? AutoFocusCommand {
             get => _autoFocusCommand;
             set => SetProperty(ref _autoFocusCommand, value);
+        }
+
+        public ICommand? ToggleImageSizeCommand {
+            get => _toggleImageSizeCommand;
+            set => SetProperty(ref _toggleImageSizeCommand, value);
         }
 
         public Func<RealtimePreviewInfo, Task> RealtimePreviewCallback { get; private set; }

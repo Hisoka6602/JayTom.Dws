@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ScreenState _screenState;
         private ScreenshotState _screenshotState = ScreenshotState.Ready;
         private DownloadState _downloadState = DownloadState.Ready;
-        private Size _maxSize = new(898, 506);
+        private Size _maxSize = new(1152, 648);
         private PlaybackError _playbackError = PlaybackError.None;
         private string _ipAddress = string.Empty;
 

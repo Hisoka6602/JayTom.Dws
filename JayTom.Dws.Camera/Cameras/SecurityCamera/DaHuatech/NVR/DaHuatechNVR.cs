@@ -76,7 +76,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     if (callBack != null && playInfo is not null) {
                         var bytes = DhPlaySdk.ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
 
-                        await callBack(new RealtimePreviewInfo() {
+                        _ = callBack(new RealtimePreviewInfo() {
                             ChannelId = (int)pUser,
                             RgbData = bytes,
                             Width = playInfo.NvrPreviewSize.Width,
@@ -112,7 +112,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     if (callBack != null && playInfo is not null && !_isChangingViewSize) {
                         var bytes = DaHuatechNVR.ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
 
-                        await callBack(new RealtimePreviewInfo() {
+                        _ = callBack(new RealtimePreviewInfo() {
                             ChannelId = (int)pUser,
                             RgbData = bytes,
                             Width = playInfo.NvrPreviewSize.Width,
@@ -1132,7 +1132,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             if (File.Exists(ffmpegPath)) {
                 try {
                     // 设置 ProcessStartInfo
-                    ProcessStartInfo startInfo = new ProcessStartInfo {
+                    var startInfo = new ProcessStartInfo {
                         FileName = ffmpegPath,
                         Arguments = $"-f dhav -i {inputFilePath} -an -c:v copy {outputFilePath}",
                         UseShellExecute = false,
@@ -1142,7 +1142,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                         RedirectStandardError = true
                     };
 
-                    using (Process process = new Process { StartInfo = startInfo }) {
+                    using (var process = new Process { StartInfo = startInfo }) {
                         var totalFileSize = new FileInfo(inputFilePath).Length;
 
                         // 异步读取错误输出

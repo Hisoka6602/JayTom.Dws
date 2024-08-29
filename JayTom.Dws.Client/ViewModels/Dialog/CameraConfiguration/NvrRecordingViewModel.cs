@@ -178,18 +178,18 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         }
 
         private Size GetVideoPlayerSize() {
-            var size = new Size(449, 253);
+            var size = new Size(768, 432);
             switch (VideoPlayerItems.Count) {
                 case 1:
-                    size = new Size(584, 329);
+                    size = new Size(768, 432);
                     break;
 
                 case > 1 and <= 4:
-                    size = new Size(449, 253);
+                    size = new Size(614, 346);
                     break;
 
                 case > 4:
-                    size = new Size(374, 211);
+                    size = new Size(449, 253);
                     break;
             }
             return size;
@@ -316,8 +316,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                                     }
                                     item.IsBuffering = false;
                                 }
+
+                                item.PlaybackError = PlaybackError.None;
                             }
                             else {
+                                item.VideoFrame = null;
                                 if (value is string msg && msg.Contains("录像文件")) {
                                     item.PlaybackError = PlaybackError.VideoFileNotFound;
                                 }
@@ -325,6 +328,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                                     item.PlaybackError = PlaybackError.UnknownError;
                                 }
                                 item.IsBuffering = false;
+                                PlaybackState = PlaybackState.Ready;
                             }
                         });
                     });
@@ -519,7 +523,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                         obj.DownloadProgress = 0;
                         await _daHuatechNvr.DownloadRecording(obj.IpAddress,
                              obj.Channel,
-                             StartTime, EndTime, (int)SelectPlaybackStream,
+                             StartTime.AddSeconds(-2), EndTime, (int)SelectPlaybackStream,
                              saveFileDialog.FileName, async info => {
                                  await Application.Current.Dispatcher.InvokeAsync(async () => {
                                      if (info.IsDownloadComplete) {

@@ -195,13 +195,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (devLogInInfo is not null) {
                         var tryGetValue = _realtimePreviewEvent.TryGetValue($"{devLogInInfo.SerialNo}|{devLogInInfo.PlayChannelId}", out var callback);
                         if (tryGetValue && callback is not null) {
-                            var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, 449, 253);
+                            var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, 768, 432);
 
-                            await callback(new RealtimePreviewInfo() {
+                            _ = callback(new RealtimePreviewInfo() {
                                 ChannelId = (int)pUser,
                                 RgbData = bytes,
-                                Width = 449,
-                                Height = 253
+                                Width = 768,
+                                Height = 432
                             }).ConfigureAwait(false);
                         }
                     }
@@ -521,12 +521,12 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     if (!playSetEngine) {
                         return new KeyValuePair<bool, string>(playSetEngine, "设置解码模块失败!");
                     }
-                    //设置图片质量
+                    /*//设置图片质量
                     var playSetPicQuality = DhPlaySdk.PLAY_SetPicQuality(plPort, true);
 
                     if (!playSetPicQuality) {
                         return new KeyValuePair<bool, string>(playSetEngine, "设置图片质量失败!");
-                    }
+                    }*/
                     /*//设置颜色
                     var playSetColor = DhPlaySdk.PLAY_SetColor(plPort, 0, 64, 64, 64, 64);
                     if (!playSetColor) {
@@ -534,10 +534,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     }*/
                     //启用高清图像内部调整策略
 
-                    var picAdjustment = DhPlaySdk.PLAY_EnableLargePicAdjustment(plPort, true);
+                    /*var picAdjustment = DhPlaySdk.PLAY_EnableLargePicAdjustment(plPort, true);
                     if (!picAdjustment) {
                         return new KeyValuePair<bool, string>(picAdjustment, "启用高清图像内部调整策略失败!");
-                    }
+                    }*/
 
                     var playPlay = DhPlaySdk.PLAY_Play(plPort, IntPtr.Zero);
 
@@ -966,24 +966,33 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             var sourceWidth = frameInfo.nWidth[0];
             var sourceHeight = frameInfo.nHeight[0];
 
+            // 获取指针
             unsafe {
                 var pY = (byte*)frameInfo.pVideoData[0];
                 var pU = (byte*)frameInfo.pVideoData[1];
                 var pV = (byte*)frameInfo.pVideoData[2];
 
+                // 计算UV分量的步长
+                var uvStride = frameInfo.nStride[1];
+                var yStride = frameInfo.nStride[0];
+
+                // 计算每个像素的RGB值
                 Parallel.For(0, targetHeight, y => {
+                    var yOffset = y * stride;
+                    var sourceY = y * sourceHeight / targetHeight;
+                    var uvRow = sourceY / 2 * uvStride;
+
                     for (var x = 0; x < targetWidth; x++) {
-                        // 计算源图像中的位置
                         var sourceX = x * sourceWidth / targetWidth;
-                        var sourceY = y * sourceHeight / targetHeight;
+                        var yIndex = sourceY * yStride + sourceX;
+                        var uvIndex = (sourceY / 2) * uvStride + (sourceX / 2);
 
-                        var yIndex = sourceY * frameInfo.nStride[0] + sourceX;
-                        var uvIndex = (sourceY / 2) * frameInfo.nStride[1] + (sourceX / 2);
-
+                        // 获取YUV分量
                         var Y = pY[yIndex];
                         var U = pU[uvIndex] - 128;
                         var V = pV[uvIndex] - 128;
 
+                        // 计算RGB值
                         var R = (int)(Y + 1.402 * V);
                         var G = (int)(Y - 0.344136 * U - 0.714136 * V);
                         var B = (int)(Y + 1.772 * U);
@@ -994,7 +1003,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         B = Math.Clamp(B, 0, 255);
 
                         // 计算目标数组中的索引，并填充RGB数据
-                        var index = (y * targetWidth + x) * 3;
+                        var index = yOffset + x * 3;
                         rgbData[index] = (byte)B;
                         rgbData[index + 1] = (byte)G;
                         rgbData[index + 2] = (byte)R;
