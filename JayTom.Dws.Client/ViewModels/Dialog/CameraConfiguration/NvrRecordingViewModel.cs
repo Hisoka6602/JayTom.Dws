@@ -26,7 +26,6 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
-
     public class NvrRecordingViewModel : BindableBase {
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
@@ -42,7 +41,6 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
         private PlaybackStream _selectPlaybackStream = PlaybackStream.MainStream;
         private string? _fastForwardSpeed;
-        private string? _rewindSpeed;
         private string? _slowMotionSpeed;
         private PlaybackState _playbackState = PlaybackState.Ready;
         private DateTime _playDateTime;
@@ -56,6 +54,19 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             };
 
         private int _currentSpeedIndex = 0;
+
+        // 定义慢放速度数组
+        private readonly DaHuatechNVR.SlowSpeed[] _slowMotionSpeeds = {
+            DaHuatechNVR.SlowSpeed.X2,
+            DaHuatechNVR.SlowSpeed.X4,
+            DaHuatechNVR.SlowSpeed.X8,
+            DaHuatechNVR.SlowSpeed.X16,
+            DaHuatechNVR.SlowSpeed.Normal,
+        };
+
+        // 当前慢放速度索引
+        private int _currentSlowMotionSpeedIndex = 0;
+
         private double _speed = 1;
 
         public string Identifier {
@@ -116,14 +127,6 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public string? FastForwardSpeed {
             get => _fastForwardSpeed;
             set => SetProperty(ref _fastForwardSpeed, value);
-        }
-
-        /// <summary>
-        /// 快退倍数
-        /// </summary>
-        public string? RewindSpeed {
-            get => _rewindSpeed;
-            set => SetProperty(ref _rewindSpeed, value);
         }
 
         /// <summary>
@@ -268,8 +271,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private async void PlaybackDelegate(object obj) {
             if (_daHuatechNvr is not null) {
                 Speed = 1;
-                _currentSpeedIndex = 0;
-                FastForwardSpeed = null;
+                _currentSpeedIndex = _currentSlowMotionSpeedIndex = 0;
+                FastForwardSpeed = SlowMotionSpeed = null;
                 if (PlaybackState == PlaybackState.Ready) {
                     PlaybackState = PlaybackState.Playing;
                     PlayDateTime = CurrentTime;
@@ -367,20 +370,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 PlaybackState = PlaybackState.FastForwarding;
                 // 更新索引，指向下一个倍速
                 FastForwardSpeed = currentSpeed != DaHuatechNVR.FastForwardSpeed.Normal ? currentSpeed.ToString() : null;
-
+                if (FastForwardSpeed == null) {
+                    PlaybackState = PlaybackState.Playing;
+                }
                 _currentSpeedIndex = (_currentSpeedIndex + 1) % _fastForwardSpeeds.Length;
             }
-        }
-
-        public ICommand RewindCommand => new DelegateCommand<object>(RewindDelegate);
-
-        /// <summary>
-        /// 快退
-        /// </summary>
-        /// <param name="obj"></param>
-        private void RewindDelegate(object obj) {
-            PlaybackState = PlaybackState.Rewinding;
-            Debug.WriteLine($"快退");
         }
 
         public ICommand SlowMotionCommand => new DelegateCommand<object>(SlowMotionDelegate);
@@ -390,8 +384,22 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// </summary>
         /// <param name="obj"></param>
         private void SlowMotionDelegate(object obj) {
-            PlaybackState = PlaybackState.SlowMotion;
-            Debug.WriteLine($"慢放");
+            if (_daHuatechNvr is not null) {
+                if (PlaybackState is PlaybackState.Ready or PlaybackState.Paused) {
+                    PlaybackDelegate(obj);
+                }
+                var currentSlowSpeed = _slowMotionSpeeds[_currentSlowMotionSpeedIndex];
+                Parallel.ForEach(VideoPlayerItems, async item => {
+                    await _daHuatechNvr.Slow(item.IpAddress, item.Channel, currentSlowSpeed);
+                });
+                PlaybackState = PlaybackState.SlowMotion;
+                SlowMotionSpeed = currentSlowSpeed != DaHuatechNVR.SlowSpeed.Normal ? currentSlowSpeed.ToString() : null;
+                // 更新索引，指向下一个慢放倍速
+                if (SlowMotionSpeed == null) {
+                    PlaybackState = PlaybackState.Playing;
+                }
+                _currentSlowMotionSpeedIndex = (_currentSlowMotionSpeedIndex + 1) % _slowMotionSpeeds.Length;
+            }
         }
 
         public ICommand FastForwardBySecondsCommand => new DelegateCommand<object>(FastForwardBySecondsDelegate);
@@ -400,8 +408,21 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// 快进指定秒数
         /// </summary>
         /// <param name="obj"></param>
-        private void FastForwardBySecondsDelegate(object obj) {
-            Debug.WriteLine($"快进");
+        private async void FastForwardBySecondsDelegate(object obj) {
+            if (int.TryParse(obj as string, out var seconds)) {
+                ProgressRelease = true;
+                if (_daHuatechNvr is not null) {
+                    Parallel.ForEach(VideoPlayerItems, async item => {
+                        await _daHuatechNvr.StopPlayback(item.IpAddress, item.Channel);
+                    });
+                    PlaybackState = PlaybackState.Ready;
+                }
+
+                await Task.Delay(600);
+                CurrentTime = CurrentTime.AddSeconds(seconds);
+                PlaybackDelegate(obj);
+                ProgressRelease = false;
+            }
         }
 
         public ICommand RewindBySecondsCommand => new DelegateCommand<object>(RewindBySecondsDelegate);
@@ -410,8 +431,21 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// 快退指定秒数
         /// </summary>
         /// <param name="obj"></param>
-        private void RewindBySecondsDelegate(object obj) {
-            Debug.WriteLine($"快退");
+        private async void RewindBySecondsDelegate(object obj) {
+            if (int.TryParse(obj as string, out var seconds)) {
+                ProgressRelease = true;
+                if (_daHuatechNvr is not null) {
+                    Parallel.ForEach(VideoPlayerItems, async item => {
+                        await _daHuatechNvr.StopPlayback(item.IpAddress, item.Channel);
+                    });
+                    PlaybackState = PlaybackState.Ready;
+                }
+
+                await Task.Delay(600);
+                CurrentTime = CurrentTime.AddSeconds(0 - seconds);
+                PlaybackDelegate(obj);
+                ProgressRelease = false;
+            }
         }
 
         public ICommand ProgressChangedCommand => new DelegateCommand<MouseButtonEventArgs>(ProgressChangedDelegate);
@@ -481,6 +515,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     var (key, value) = await _daHuatechNvr.QueryVideoFile(obj.IpAddress,
                         obj.Channel, StartTime, EndTime, 0);
                     if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
+                        obj.DownloadProgress = 0;
                         await _daHuatechNvr.DownloadRecording(obj.IpAddress,
                              obj.Channel,
                              recordFileInfos[0].endtime.ToDateTime().AddMinutes(-5),
@@ -495,6 +530,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                                                   return false;
                                               });
                                          obj.DownloadState = DownloadState.Ready;
+                                         obj.DownloadProgress = 100;
                                      }
                                      else if (info.IsDownloadError) {
                                          //下载错误
@@ -544,11 +580,6 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
          FontIcon("\xea2a"), BackgroundColor("#8B0000"),
          LabelColor("#FFA500")]
         FastForwarding,
-
-        [Description("快退中"), AuxiliaryDescription("停止"),
-         FontIcon("\xea2a"), BackgroundColor("#8B0000"),
-         LabelColor("#00BFFF")]
-        Rewinding,
 
         [Description("慢放中"), AuxiliaryDescription("停止"),
          FontIcon("\xea2a"), BackgroundColor("#8B0000"),

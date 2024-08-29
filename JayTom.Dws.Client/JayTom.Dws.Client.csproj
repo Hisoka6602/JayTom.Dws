@@ -169,6 +169,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\JayTom.Dws.Camera\ffmpegFiles\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="favicon.ico" />
     <Content Include="ico.ico" />
   </ItemGroup>

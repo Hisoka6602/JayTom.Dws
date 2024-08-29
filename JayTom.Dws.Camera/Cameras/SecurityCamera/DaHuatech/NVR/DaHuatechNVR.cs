@@ -1021,13 +1021,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         }
 
         /// <summary>
-        /// 快退
+        /// 慢放
         /// </summary>
         /// <param name="ipAddress"></param>
         /// <param name="channelId"></param>
         /// <param name="speed"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, object>> Rewind(string ipAddress, int channelId, FastRewindSpeed speed) {
+        public async Task<KeyValuePair<bool, object>> Slow(string ipAddress, int channelId, SlowSpeed speed) {
             await Task.Yield();
 
             var b = _loginDev.TryGetValue(ipAddress, out var dev);
@@ -1041,27 +1041,27 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
 
             var control = NETClient.PlayBackControl(playInfo.PlayHandle, PlayBackType.Slow);
             switch (speed) {
-                case FastRewindSpeed.X2:
+                case SlowSpeed.X2:
                     NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_2);
                     break;
 
-                case FastRewindSpeed.X4:
+                case SlowSpeed.X4:
                     NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_4);
                     break;
 
-                case FastRewindSpeed.X8:
+                case SlowSpeed.X8:
                     NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_8);
                     break;
 
-                case FastRewindSpeed.X16:
+                case SlowSpeed.X16:
                     NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.SLOW_16);
                     break;
 
-                case FastRewindSpeed.Normal:
+                case SlowSpeed.Normal:
                     NETClient.SetPlayBackSpeed(playInfo.PlayHandle, EM_PLAY_BACK_SPEED.NORMAL);
                     break;
             }
-            return new KeyValuePair<bool, object>(control, control ? "快退成功" : "快退失败");
+            return new KeyValuePair<bool, object>(control, control ? "慢放成功" : "慢放失败");
         }
 
         /// <summary>
@@ -1213,7 +1213,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             Normal
         }
 
-        public enum FastRewindSpeed {
+        public enum SlowSpeed {
             X2 = 0,
             X4 = 1,
             X8 = 2,
