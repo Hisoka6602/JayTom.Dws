@@ -33,10 +33,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private Size _maxSize = new(1152, 648);
         private PlaybackError _playbackError = PlaybackError.None;
         private string _ipAddress = string.Empty;
+        private bool _isStopRead = false;
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
-                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 }) {
+                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead) {
                     if (Application.Current is not null) {
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             try {
@@ -207,6 +208,15 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public Size MaxSize {
             get => _maxSize;
             set => SetProperty(ref _maxSize, value);
+        }
+
+        public async void Dispose() {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                _isStopRead = true;
+                VideoFrame?.Freeze();
+                VideoFrame = null;
+                RealtimePreviewCallback = null;
+            });
         }
     }
 

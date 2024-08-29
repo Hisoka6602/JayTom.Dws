@@ -65,6 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                                             f.Password.Equals(model.Password))
                                         ?.SerialNumber ?? string.Empty;
                                     var previewViewItemInfo = new NvrPreviewViewItemInfo() {
+                                        SerialNumber = serialNumber,
                                         ChannelId = model.Channel,
                                         IncreaseZoomCommand = new DelegateCommand<object>(sub => {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;

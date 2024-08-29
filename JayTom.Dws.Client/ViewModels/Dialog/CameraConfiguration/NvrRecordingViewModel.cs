@@ -16,11 +16,15 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Plugin.Speech;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.DataModels;
+using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
+using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR;
@@ -28,6 +32,8 @@ using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
     public class NvrRecordingViewModel : BindableBase {
+        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly IPackageRepository _packageRepository;
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
         //private BaseDaHuatech? _baseDaHuatech;
@@ -69,10 +75,22 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private int _currentSlowMotionSpeedIndex = 0;
 
         private double _speed = 1;
+        private PackageItemModel _packageItemModel = new();
+
+        public NvrRecordingViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
+            IPackageRepository packageRepository) {
+            _nvrCameraBindingRepository = nvrCameraBindingRepository;
+            _packageRepository = packageRepository;
+        }
 
         public string Identifier {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
+        }
+
+        public PackageItemModel PackageItemModel {
+            get => _packageItemModel;
+            set => SetProperty(ref _packageItemModel, value);
         }
 
         public bool ProgressRelease { get; private set; }
@@ -198,48 +216,53 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
+            if (PackageItemModel.TimestampedGuid <= 0) {
+                return;
+            }
+
+            var (b, packageInfoModel) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(PackageItemModel.TimestampedGuid));
+
+            var serialNumber = packageInfoModel?.BarCodeInfo?.SerialNumber;
+            if (serialNumber is null) {
+                return;
+            }
+
+            StartTime = packageInfoModel?.BarCodeInfo?.ScanTime.AddSeconds(-3) ?? DateTime.Now.AddSeconds(-60);
+            EndTime = StartTime.AddMinutes(2);
             CurrentTime = StartTime;
-            SelectionStartTime = StartTime.AddSeconds(10);
-            SelectionEndTime = StartTime.AddSeconds(400);
-            VideoPlayerItems.AddRange(new List<VideoPlayerModel>()
-            {
-                new() { IsBuffering = true,
-                    ToggleImageSizeCommand = ToggleImageSizeCommand,
-                    IpAddress = "192.168.31.111",
-                    Port = 37777,
-                    Username = "admin",
-                    Password = "a12345678",
-                    Channel = 1,
-                    VideoFrame =  new(449, 253, 96, 96, PixelFormats.Bgr24, null),
+            SelectionStartTime = packageInfoModel?.BarCodeInfo?.ScanTime ?? StartTime;
+            SelectionEndTime = SelectionStartTime.AddSeconds(10);
+            //获取Nvr
+            var nvrBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+            var nvrCameraBindingInfoModels = nvrBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
+
+            var videoPlayerModels = nvrCameraBindingInfoModels?.Select(s =>
+                new VideoPlayerModel {
+                    Channel = s.Channel,
+                    IpAddress = s.IpAddress,
+                    Password = s.Password,
+                    Port = s.Port,
+                    Username = s.Username,
+                    VideoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null),
                     VideoScreenShotCommand = CaptureScreenShotCommand,
-                    DownloadCommand = DownloadVideoCommand
-                },
-                new() { IsBuffering = true,
+                    DownloadCommand = DownloadVideoCommand,
                     ToggleImageSizeCommand = ToggleImageSizeCommand,
-                    IpAddress = "192.168.31.111",
-                    Port = 37777,
-                    Username = "admin",
-                    Password = "a12345678",
-                    Channel = 3,
-                    VideoFrame =  new(449, 253, 96, 96, PixelFormats.Bgr24, null),
-                    VideoScreenShotCommand = CaptureScreenShotCommand,
-                    DownloadCommand = DownloadVideoCommand
-                },
-                /*new() {IsBuffering = true, ToggleImageSizeCommand = ToggleImageSizeCommand , },
-                new() { IsBuffering = true,ToggleImageSizeCommand = ToggleImageSizeCommand , },*/
-                /*new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
-                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },
-                new() { ToggleImageSizeCommand = ToggleImageSizeCommand },*/
-            });
+                })?.ToList();
+
+            VideoPlayerItems.AddRange(videoPlayerModels);
+            if (!VideoPlayerItems.Any()) {
+                return;
+            }
             _daHuatechNvr ??= DaHuatechNVR.Instance;
             await BaseDaHuatech.EnumDevices();
             //登录
-            var any = _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals("192.168.31.111"))?.ToList().Any();
+
+            var any = _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals(VideoPlayerItems.FirstOrDefault().IpAddress))?.ToList().Any();
 
             if (any != true) {
                 //登录
-                var (key, value) = await _daHuatechNvr.LogIn("192.168.31.111", 37777,
-                    "admin", "a12345678");
+                var (key, value) = await _daHuatechNvr.LogIn(VideoPlayerItems.FirstOrDefault().IpAddress, VideoPlayerItems.FirstOrDefault().Port,
+                    VideoPlayerItems.FirstOrDefault().Username, VideoPlayerItems.FirstOrDefault().Password);
                 if (key) {
                     PlaybackDelegate(obj);
                 }
@@ -253,7 +276,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             //全部注销
             if (_daHuatechNvr is not null) {
                 Parallel.ForEach(VideoPlayerItems, async item => {
-                    await _daHuatechNvr.StopPlayback(item.IpAddress, item.Channel);
+                    await _daHuatechNvr.ClosePlayBackVideo(item.IpAddress, item.Channel);
+                    item.Dispose();
                 });
                 _daHuatechNvr.LogOut(VideoPlayerItems.FirstOrDefault().IpAddress);
             }

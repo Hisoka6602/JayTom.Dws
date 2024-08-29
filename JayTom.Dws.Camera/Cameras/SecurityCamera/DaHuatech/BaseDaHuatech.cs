@@ -314,7 +314,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
                         //添加到字典
-                        _loginDev.TryAdd(serialNo, new DevLogInInfo { Handle = mLoginId, PlayChannelId = playChannelId, LoggedInDeviceInfo = mDeviceInfo });
+                        _loginDev.TryAdd(serialNo, new DevLogInInfo { SerialNo = serialNo, Handle = mLoginId, PlayChannelId = playChannelId, LoggedInDeviceInfo = mDeviceInfo });
 
                         return new KeyValuePair<bool, string>(true, mLoginId.ToString());
                     }

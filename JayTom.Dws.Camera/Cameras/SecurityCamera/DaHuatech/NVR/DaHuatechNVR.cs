@@ -838,7 +838,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     });
                 };
             }
-
             var realPlayId = NETClient.PlayBackByTime(dev.LogInHandle, channelId, stuInfo, ref stuOut);
             if (IntPtr.Zero == realPlayId) {
                 return new KeyValuePair<bool, object>(false, "播放失败");
@@ -878,6 +877,24 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                 dev.DevPlayInfos.Add(playInfo);
             }
             return new KeyValuePair<bool, object>(true, "播放成功");
+        }
+
+        public async Task<KeyValuePair<bool, object>> ClosePlayBackVideo(string ipAddress, int channelId) {
+            var b = _loginDev.TryGetValue(ipAddress, out var dev);
+            if (!b || dev is null) {
+                return new KeyValuePair<bool, object>(false, "设备未登录");
+            }
+            var playInfo = dev.DevPlayInfos.FirstOrDefault(f => f.PlayChannelId.Equals(channelId));
+            if (playInfo is not null) {
+                var playStop = DhPlaySdk.PLAY_Stop(playInfo.PlayPort);
+                if (playStop) {
+                    DhPlaySdk.PLAY_ResetSourceBuffer(playInfo.PlayPort);
+                    PLAY_CloseStream(playInfo.PlayPort);
+                    dev.DevPlayInfos.Remove(playInfo);
+                }
+            }
+
+            return new KeyValuePair<bool, object>(true, "关闭成功");
         }
 
         /// <summary>
@@ -925,10 +942,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             }
 
             var control = NETClient.PlayBackControl(playInfo.PlayHandle, PlayBackType.Stop);
-            //释放
-            if (control) {
-                dev.DevPlayInfos.Remove(playInfo);
-            }
             return new KeyValuePair<bool, object>(control, control ? "停止成功" : "停止失败");
         }
 

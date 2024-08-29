@@ -27,10 +27,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ScreenState _screenState = ScreenState.Normal;
         private Size _maxSize = new(768, 432);
         private ICommand? _toggleImageSizeCommand;
+        private bool _isStopRead = false;
 
         public NvrPreviewViewItemInfo() {
             RealtimePreviewCallback = async info => {
-                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 }) {
+                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead) {
                     if (Application.Current is not null) {
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             if (VideoFrame is not null) {
@@ -86,11 +87,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             set => SetProperty(ref _maxSize, value);
         }
 
-        public void Dispose() {
-            IsShow = false;
-            VideoFrame?.Freeze();
-            VideoFrame = null;
-            RealtimePreviewCallback = null;
+        public async void Dispose() {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                _isStopRead = true;
+                IsShow = false;
+                VideoFrame?.Freeze();
+                VideoFrame = null;
+                RealtimePreviewCallback = null;
+            });
         }
 
         /// <summary>
