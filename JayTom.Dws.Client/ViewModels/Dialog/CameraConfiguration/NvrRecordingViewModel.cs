@@ -25,6 +25,7 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using System.Windows.Controls.Primitives;
 using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Domain.Dto.LocalVideoDto;
@@ -283,7 +284,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 return;
             }
             _daHuatechNvr ??= DaHuatechNVR.Instance;
-            await BaseDaHuatech.EnumDevices();
+
             //登录
 
             var any = _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals(VideoPlayerItems.FirstOrDefault().IpAddress))?.ToList().Any();
@@ -300,7 +301,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
 
-        private void CloseDialogDelegate(object obj) {
+        private async void CloseDialogDelegate(object obj) {
             //退出播放
             //全部注销
             if (_daHuatechNvr is not null) {

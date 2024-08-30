@@ -265,7 +265,17 @@ namespace JayTom.Dws.Client.EventMediators {
         /// <summary>
         /// 激活
         /// </summary>
-        Activate
+        Activate,
+
+        /// <summary>
+        /// 返回主页
+        /// </summary>
+        ReturnToHome,
+
+        /// <summary>
+        /// 进入设置
+        /// </summary>
+        EnterSettings
     }
 
     public class ApplicationStatusChanged {

@@ -73,7 +73,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                             devPlayInfo.PlayPort == port &&
                             devPlayInfo.PlaybackMode == PlaybackMode.RealTime);
                     var callBack = playInfo?.RealtimePreviewCallBack;
-                    if (callBack != null && playInfo is not null) {
+                    if (callBack != null && playInfo is not null && !_isChangingViewSize) {
                         var bytes = DhPlaySdk.ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
 
                         _ = callBack(new RealtimePreviewInfo() {
@@ -82,9 +82,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                             Width = playInfo.NvrPreviewSize.Width,
                             Height = playInfo.NvrPreviewSize.Height,
                         }).ConfigureAwait(false);
-                        if (playInfo.CaptureSize is not null) {
-                            playInfo.CaptureSize = new Size(pFrameInfo.nWidth, pFrameInfo.nHeight);
-                        }
+                        playInfo.CaptureSize ??= new Size(pFrameInfo.nWidth, pFrameInfo.nHeight);
                     }
                 }
                 catch (Exception e) {

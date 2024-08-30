@@ -247,7 +247,7 @@
                                 materialDesign:ButtonProgressAssist.IndicatorForeground="White"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
-                                Command="{x:Static materialDesign:Transitioner.MoveNextCommand}"
+                                Command="{Binding EnterSettingsCommand}"
                                 Cursor="Hand"
                                 WindowChrome.IsHitTestVisibleInChrome="True">
                                 <Button.RenderTransform>
@@ -373,7 +373,7 @@
                                 Grid.RowSpan="2"
                                 Focusable="False"
                                 NavigationUIVisibility="Hidden"
-                                Source="Pages/HomePage.xaml">
+                                Source="Pages/NvrHomePage.xaml">
                                 <Frame.Style>
                                     <Style TargetType="Frame">
                                         <Setter Property="Visibility" Value="Hidden" />
@@ -434,7 +434,7 @@
                                 Margin="20,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Command="{x:Static materialDesign:Transitioner.MoveFirstCommand}"
+                                Command="{Binding ReturnToHomeCommand}"
                                 Style="{StaticResource MaterialDesignIconButton}"
                                 WindowChrome.IsHitTestVisibleInChrome="True">
                                 <TextBlock

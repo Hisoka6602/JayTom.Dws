@@ -554,7 +554,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
             ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
-            ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
+            ViewModelLocationProvider.Register<NvrHomePage, NvrHomePageViewModel>();
             ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
             ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
             ViewModelLocationProvider.Register<PackageDetailsDialog, PackageDetailsDialogViewModel>();

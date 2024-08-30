@@ -37,7 +37,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
-                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead) {
+                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 }
+                                             && !_isStopRead && ScreenState != ScreenState.Hidden) {
                     if (Application.Current is not null) {
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             try {
@@ -274,6 +275,12 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// 未知异常
         /// </summary>
         [Description("未知异常"), FontIcon("\xea31")]
-        UnknownError
+        UnknownError,
+
+        /// <summary>
+        /// 无效通道
+        /// </summary>
+        [Description("无效通道"), FontIcon("\xea38")]
+        InvalidChannel
     }
 }

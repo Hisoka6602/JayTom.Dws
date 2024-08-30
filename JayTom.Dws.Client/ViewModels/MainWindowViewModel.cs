@@ -28,6 +28,7 @@ using System.Runtime.InteropServices;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using MaterialDesignThemes.Wpf.Transitions;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Client.Models.AppSettingModel;
@@ -225,7 +226,7 @@ namespace JayTom.Dws.Client.ViewModels {
             EventAggregator.Instance.Publish(new WindowsAction {
                 Type = WindowsActionType.Close
             });
-            await Task.Delay(500);
+            await Task.Delay(700);
             System.Windows.Application.Current.Shutdown();//关闭
         }
 
@@ -441,6 +442,24 @@ namespace JayTom.Dws.Client.ViewModels {
                     Type = LogType.Information
                 });
             }
+        }
+
+        public ICommand ReturnToHomeCommand => new DelegateCommand<object>(ReturnToHomeDelegate);
+
+        private void ReturnToHomeDelegate(object obj) {
+            EventAggregator.Instance.Publish(new WindowsAction() {
+                Type = WindowsActionType.ReturnToHome
+            });
+            Transitioner.MoveFirstCommand.Execute(null, null);
+        }
+
+        public ICommand EnterSettingsCommand => new DelegateCommand<object>(EnterSettingsDelegate);
+
+        private void EnterSettingsDelegate(object obj) {
+            EventAggregator.Instance.Publish(new WindowsAction() {
+                Type = WindowsActionType.EnterSettings
+            });
+            Transitioner.MoveNextCommand.Execute(null, null);
         }
 
         [DllImport("User32.dll")]
