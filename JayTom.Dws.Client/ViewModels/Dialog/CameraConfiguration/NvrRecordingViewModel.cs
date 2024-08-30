@@ -7,21 +7,31 @@ using System.Text;
 using Prism.Commands;
 using System.Windows;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.ComponentModel;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Plugin.Speech;
+using System.Windows.Threading;
 using NPOI.SS.Formula.Functions;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using System.Windows.Controls.Primitives;
 using JayTom.Dws.Client.Models.DataModels;
+using JayTom.Dws.Domain.Dto.LocalVideoDto;
 using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Client.Models.VideoSettingModel;
+using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -34,6 +44,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
     public class NvrRecordingViewModel : BindableBase {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IPackageRepository _packageRepository;
+        private readonly IConfigRepository _configRepository;
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
         //private BaseDaHuatech? _baseDaHuatech;
@@ -43,14 +54,15 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private DateTime _startTime = DateTime.Now.AddMinutes(-10);
         private DateTime _endTime = DateTime.Now.AddMinutes(-5);
         private DateTime _currentTime;
-        private DateTime _selectionStartTime;
-        private DateTime _selectionEndTime;
+        private DateTime? _selectionStartTime;
+        private DateTime? _selectionEndTime;
         private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
         private PlaybackStream _selectPlaybackStream = PlaybackStream.MainStream;
         private string? _fastForwardSpeed;
         private string? _slowMotionSpeed;
         private PlaybackState _playbackState = PlaybackState.Ready;
         private DateTime _playDateTime;
+        private int _loadedSize = 0;
 
         private readonly DaHuatechNVR.FastForwardSpeed[] _fastForwardSpeeds =
             { DaHuatechNVR.FastForwardSpeed.X2,
@@ -76,16 +88,24 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
         private double _speed = 1;
         private PackageItemModel _packageItemModel = new();
+        private VideoPlaybackSettingsInfoModel _videoPlaybackSettingsInfo = new();
 
         public NvrRecordingViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
-            IPackageRepository packageRepository) {
+            IPackageRepository packageRepository,
+            IConfigRepository configRepository) {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _packageRepository = packageRepository;
+            _configRepository = configRepository;
         }
 
         public string Identifier {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
+        }
+
+        public VideoPlaybackSettingsInfoModel VideoPlaybackSettingsInfo {
+            get => _videoPlaybackSettingsInfo;
+            set => SetProperty(ref _videoPlaybackSettingsInfo, value);
         }
 
         public PackageItemModel PackageItemModel {
@@ -130,12 +150,12 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             set => SetProperty(ref _playDateTime, value);
         }
 
-        public DateTime SelectionStartTime {
+        public DateTime? SelectionStartTime {
             get => _selectionStartTime;
             set => SetProperty(ref _selectionStartTime, value);
         }
 
-        public DateTime SelectionEndTime {
+        public DateTime? SelectionEndTime {
             get => _selectionEndTime;
             set => SetProperty(ref _selectionEndTime, value);
         }
@@ -220,6 +240,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 return;
             }
 
+            var settingsDto = await _configRepository.FirstOrDefaultEntity<VideoPlaybackSettingsDto>("VideoPlaybackSettings") ?? new VideoPlaybackSettingsDto();
+            VideoPlaybackSettingsInfo = new VideoPlaybackSettingsInfoModel() {
+                IsWatermarkTimeMarked = settingsDto.IsWatermarkTimeMarked,
+                SecondsToSubtract = settingsDto.SecondsToSubtract,
+                VideoLengthInSeconds = settingsDto.VideoLengthInSeconds,
+            };
+
             var (b, packageInfoModel) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(PackageItemModel.TimestampedGuid));
 
             var serialNumber = packageInfoModel?.BarCodeInfo?.SerialNumber;
@@ -227,11 +254,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 return;
             }
 
-            StartTime = packageInfoModel?.BarCodeInfo?.ScanTime.AddSeconds(-3) ?? DateTime.Now.AddSeconds(-60);
-            EndTime = StartTime.AddMinutes(2);
+            StartTime = packageInfoModel?.BarCodeInfo?.ScanTime.AddSeconds(0 - VideoPlaybackSettingsInfo.SecondsToSubtract) ?? DateTime.Now.AddSeconds(-60);
+            EndTime = StartTime.AddSeconds(VideoPlaybackSettingsInfo.VideoLengthInSeconds);
             CurrentTime = StartTime;
-            SelectionStartTime = packageInfoModel?.BarCodeInfo?.ScanTime ?? StartTime;
-            SelectionEndTime = SelectionStartTime.AddSeconds(10);
+            if (VideoPlaybackSettingsInfo.IsWatermarkTimeMarked) {
+                SelectionStartTime = packageInfoModel?.BarCodeInfo?.ScanTime;
+                SelectionEndTime = SelectionStartTime?.AddSeconds(10);
+            }
             //获取Nvr
             var nvrBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
             var nvrCameraBindingInfoModels = nvrBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
@@ -295,6 +324,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         /// <param name="obj"></param>
         private async void PlaybackDelegate(object obj) {
             if (_daHuatechNvr is not null) {
+                _loadedSize = 0;
                 Speed = 1;
                 _currentSpeedIndex = _currentSlowMotionSpeedIndex = 0;
                 FastForwardSpeed = SlowMotionSpeed = null;
@@ -313,16 +343,18 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                                     CurrentTime,
                                     EndTime, item.RealtimePreviewCallback
                                     , async info => {
-                                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                                            if (item.IsBuffering) {
-                                                item.IsBuffering = false;
-                                            }
+                                        if (info.LoadSize > _loadedSize) {
+                                            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                                if (item.IsBuffering) {
+                                                    item.IsBuffering = false;
+                                                }
 
-                                            var addSeconds = PlayDateTime.AddSeconds(info.LoadSize * Speed);
-                                            if (CurrentTime.CompareTo(addSeconds) < 0 && !ProgressRelease) {
-                                                CurrentTime = addSeconds;
-                                            }
-                                        });
+                                                var addSeconds = PlayDateTime.AddSeconds(info.LoadSize * Speed);
+                                                if (CurrentTime.CompareTo(addSeconds) < 0 && !ProgressRelease) {
+                                                    CurrentTime = addSeconds;
+                                                }
+                                            }, DispatcherPriority.Render);
+                                        }
                                     });
                                 if (b) {
                                     if (item.ScreenState == ScreenState.Maximized) {
@@ -515,7 +547,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     DefaultExt = ".bmp",
                     Filter = "Bitmap files (*.bmp)|*.bmp|All files (*.*)|*.*",
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop), // 初始路径
-                    FileName = "image",
+                    FileName = $"img_{PackageItemModel.Barcode}",
                     Title = "保存截图"
                 };
                 var showDialog = saveFileDialog.ShowDialog();
@@ -536,7 +568,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     DefaultExt = ".bmp",
                     Filter = "dav files (*.dav)|*.dav|All files (*.*)|*.*",
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop), // 初始路径
-                    FileName = "video",
+                    FileName = $"vid_{PackageItemModel.Barcode}",
                     Title = "保存视频"
                 };
                 var showDialog = saveFileDialog.ShowDialog();
@@ -592,6 +624,45 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                              });
                     }
                 }
+            }
+        }
+
+        public ICommand ChangedTimeCommand => new DelegateCommand<TextBox>(ChangedTimeDelegate);
+
+        private async void ChangedTimeDelegate(TextBox textBox) {
+            ProgressRelease = true;
+            if (_daHuatechNvr is not null) {
+                Parallel.ForEach(VideoPlayerItems, async item => {
+                    await _daHuatechNvr.StopPlayback(item.IpAddress, item.Channel);
+                });
+                PlaybackState = PlaybackState.Ready;
+            }
+            var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+            binding?.UpdateSource();
+            if (binding is not null) {
+                //重新播放
+                CurrentTime = StartTime;
+                if (ProgressRelease) {
+                    await Task.Delay(300);
+                    PlaybackDelegate(null);
+                }
+            }
+            ProgressRelease = false;
+        }
+
+        public ICommand SaveVideoPlaybackSettingsCommand => new DelegateCommand<Popup>(SaveVideoPlaybackSettingsDelegate);
+
+        private async void SaveVideoPlaybackSettingsDelegate(Popup obj) {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                ConfigName = "VideoPlaybackSettings",
+                Value = JsonConvert.SerializeObject(new VideoPlaybackSettingsDto {
+                    IsWatermarkTimeMarked = VideoPlaybackSettingsInfo.IsWatermarkTimeMarked,
+                    SecondsToSubtract = VideoPlaybackSettingsInfo.SecondsToSubtract,
+                    VideoLengthInSeconds = VideoPlaybackSettingsInfo.VideoLengthInSeconds
+                })
+            });
+            if (insertOrUpdate) {
+                obj.IsOpen = false;
             }
         }
     }
