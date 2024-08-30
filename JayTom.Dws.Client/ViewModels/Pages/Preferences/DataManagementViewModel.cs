@@ -704,13 +704,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 获取或设置查看NVR录像命令。
         /// </summary>
-        public ICommand ViewNvrRecordingCommand => new DelegateCommand<object>(ViewNvrRecordingDelegate);
+        public ICommand ViewNvrRecordingCommand => new DelegateCommand<PackageItemModel>(ViewNvrRecordingDelegate);
 
-        private async void ViewNvrRecordingDelegate(object obj) {
+        private async void ViewNvrRecordingDelegate(PackageItemModel obj) {
             var nvrRecordingDialog = new NvrRecordingDialog();
             if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model) {
                 model.Identifier = "SettingDialog";
-
+                model.PackageItemModel = obj;
                 await DialogHost.Show(nvrRecordingDialog, model.Identifier);
             }
         }

@@ -60,44 +60,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<bool> Insert(T entity, CancellationToken token) {
-            /*try {
-                await _changeSlim.WaitAsync(token);
-                await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    if (!string.IsNullOrEmpty(name)) {
-                        var columns = new List<string>();
-                        var values = new List<string>();
-                        var sqlParameters = new List<SqliteParameter>();
-                        var propertyInfos = typeof(T).GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
-
-                        var list = propertyInfos?.Where(w => w.GetCustomAttribute<ColumnAttribute>() != null &&
-                                                             w.GetCustomAttribute<DatabaseGeneratedAttribute>() == null)?.ToList();
-                        if (list?.Any() == true) {
-                            columns.AddRange(list.Select(s => s.Name));
-                            values.AddRange(list.Select(s => $"@{s.Name}vaule"));
-                            sqlParameters.AddRange(list.Select(s => new SqliteParameter($"@{s.Name}vaule", s.GetValue(entity, null) ?? DBNull.Value)));
-                            var sql = @$" INSERT INTO {name}
-                                     ({string.Join(",", columns)})
-                                     VALUES ({string.Join(",", values)})";
-                            var executeSqlRawAsync = await concardContext.Database.ExecuteSqlRawAsync(sql, sqlParameters.ToArray(), token);
-
-                            return executeSqlRawAsync > 0;
-                        }
-                    }
-                }
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            finally {
-                _changeSlim.Release();
-            }
-            return false;*/
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();

@@ -245,7 +245,6 @@
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Top"
                                 materialDesign:ButtonProgressAssist.IndicatorForeground="White"
-                                materialDesign:ButtonProgressAssist.IsIndicatorVisible="True"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 Command="{x:Static materialDesign:Transitioner.MoveNextCommand}"
@@ -263,6 +262,7 @@
                                         <Setter Property="Visibility" Value="Visible" />
                                         <Setter Property="Opacity" Value="1" />
                                         <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="True" />
+                                        <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
                                         <Setter Property="materialDesign:ButtonProgressAssist.Value" Value="-1" />
                                         <Setter Property="IsHitTestVisible" Value="False" />
                                         <Style.Triggers>

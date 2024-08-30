@@ -5,10 +5,13 @@ using System.Text;
 using System.Windows;
 using Prism.Commands;
 using System.Threading;
+using System.Windows.Input;
+using System.Windows.Media;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
+using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
@@ -16,6 +19,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
 using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
@@ -61,6 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                                             f.Password.Equals(model.Password))
                                         ?.SerialNumber ?? string.Empty;
                                     var previewViewItemInfo = new NvrPreviewViewItemInfo() {
+                                        SerialNumber = serialNumber,
                                         ChannelId = model.Channel,
                                         IncreaseZoomCommand = new DelegateCommand<object>(sub => {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
@@ -90,6 +95,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                                             _baseDaHuatech?.AutoFocusAsync(serialNumber,
                                                 model.Channel);
                                         }),
+                                        ToggleImageSizeCommand = ToggleImageSizeCommand
                                     };
                                     if (previewViewItemInfo.VideoFrame is not null) {
                                         var ipcNvrConfigInfoModel = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
@@ -137,6 +143,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                     }
                 }
             });
+        }
+
+        public ICommand ToggleImageSizeCommand => new DelegateCommand<NvrPreviewViewItemInfo>(ToggleImageSizeDelegate);
+
+        private void ToggleImageSizeDelegate(NvrPreviewViewItemInfo obj) {
+            if (obj.ScreenState == ScreenState.Normal) {
+                foreach (var videoPlayerModel in NvrPreviewViewItems) {
+                    videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
+                }
+            }
+            else {
+                foreach (var videoPlayerModel in NvrPreviewViewItems) {
+                    videoPlayerModel.ScreenState = ScreenState.Normal;
+                }
+            }
         }
     }
 }

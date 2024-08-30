@@ -16,7 +16,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
     public class NvrPreviewViewItemInfo : BindableBase, IDisposable {
         private int _channelId;
         private string _displayName = string.Empty;
-        private WriteableBitmap? _videoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null);
+        private WriteableBitmap? _videoFrame = new(768, 432, 96, 96, PixelFormats.Bgr24, null);
         private bool _isShow;
         private string _serialNumber = string.Empty;
         private ICommand? _increaseZoomCommand;
@@ -24,10 +24,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ICommand? _increaseFocusCommand;
         private ICommand? _decreaseFocusCommand;
         private ICommand? _autoFocusCommand;
+        private ScreenState _screenState = ScreenState.Normal;
+        private Size _maxSize = new(768, 432);
+        private ICommand? _toggleImageSizeCommand;
+        private bool _isStopRead = false;
 
         public NvrPreviewViewItemInfo() {
             RealtimePreviewCallback = async info => {
-                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 }) {
+                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead) {
                     if (Application.Current is not null) {
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             if (VideoFrame is not null) {
@@ -73,11 +77,24 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             set => SetProperty(ref _isShow, value);
         }
 
-        public void Dispose() {
-            IsShow = false;
-            VideoFrame?.Freeze();
-            VideoFrame = null;
-            RealtimePreviewCallback = null;
+        public ScreenState ScreenState {
+            get => _screenState;
+            set => SetProperty(ref _screenState, value);
+        }
+
+        public Size MaxSize {
+            get => _maxSize;
+            set => SetProperty(ref _maxSize, value);
+        }
+
+        public async void Dispose() {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                _isStopRead = true;
+                IsShow = false;
+                VideoFrame?.Freeze();
+                VideoFrame = null;
+                RealtimePreviewCallback = null;
+            });
         }
 
         /// <summary>
@@ -118,6 +135,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public ICommand? AutoFocusCommand {
             get => _autoFocusCommand;
             set => SetProperty(ref _autoFocusCommand, value);
+        }
+
+        public ICommand? ToggleImageSizeCommand {
+            get => _toggleImageSizeCommand;
+            set => SetProperty(ref _toggleImageSizeCommand, value);
         }
 
         public Func<RealtimePreviewInfo, Task> RealtimePreviewCallback { get; private set; }

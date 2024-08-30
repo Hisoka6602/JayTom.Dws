@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:cameraConfiguration="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
+    xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences.SubHomeViews"
@@ -45,6 +46,8 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <cameraConverter:NvrPreviewViewSizeConverter x:Key="NvrPreviewViewSizeConverter" />
+        <converters:EnumToVisibilityInvertedConverter x:Key="EnumToVisibilityInvertedConverter" />
     </UserControl.Resources>
     <ListBox
         MinWidth="449"
@@ -100,7 +103,7 @@
         <ListBox.ItemTemplate>
             <DataTemplate DataType="{x:Type cameraConfiguration:NvrPreviewViewItemInfo}">
 
-                <Grid Name="PreviewViewGrid">
+                <Grid Name="PreviewViewGrid" Visibility="{Binding ScreenState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=Hidden}">
                     <!--  默认底图  -->
                     <Border
                         Grid.Row="0"
@@ -119,12 +122,51 @@
                     <!--  画面  -->
                     <Image
                         Grid.Row="0"
-                        Width="449"
-                        Height="253"
                         RenderOptions.BitmapScalingMode="LowQuality"
                         Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
                         Stretch="Uniform"
-                        Visibility="{Binding IsShow, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        Visibility="{Binding IsShow, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ScreenState}" Value="Maximized">
+                                        <Setter Property="Width" Value="{Binding MaxSize.Width, UpdateSourceTrigger=PropertyChanged}" />
+                                        <Setter Property="Height" Value="{Binding MaxSize.Height, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ScreenState}" Value="Normal">
+                                        <Setter Property="Width">
+                                            <Setter.Value>
+                                                <Binding
+                                                    Converter="{StaticResource NvrPreviewViewSizeConverter}"
+                                                    ConverterParameter="Width"
+                                                    FallbackValue="200"
+                                                    Path="Items.Count"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Height">
+                                            <Setter.Value>
+                                                <Binding
+                                                    Converter="{StaticResource NvrPreviewViewSizeConverter}"
+                                                    ConverterParameter="Height"
+                                                    FallbackValue="150"
+                                                    Path="Items.Count"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                        <Image.InputBindings>
+                            <MouseBinding
+                                Command="{Binding ToggleImageSizeCommand}"
+                                CommandParameter="{Binding}"
+                                Gesture="LeftDoubleClick" />
+                        </Image.InputBindings>
+                    </Image>
                     <!--  右下角通道  -->
                     <TextBlock
                         Margin="5"

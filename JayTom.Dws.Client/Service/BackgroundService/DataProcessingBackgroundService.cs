@@ -28,12 +28,10 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
-
     /// <summary>
     /// 数据处理器
     /// </summary>
     public class DataProcessingBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
-
         //private readonly IPanoramaImageRepository _panoramaImageRepository;
         private readonly IPackageRepository _packageRepository;
 
@@ -159,11 +157,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 if (isSaved && savedImageInfo is not null) {
                                     if (savedImageInfo.ImageType == SaveImageType.BarcodeImage) {
                                         //扫码图
-                                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(f =>
+                                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f =>
                                                 f.PackageTimestamped.Equals(savedImageInfo.PackageTimestamp),
-                                            stoppingToken);
+                                            stoppingToken);*/
+                                        var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(savedImageInfo.PackageTimestamp, stoppingToken);
 
-                                        if (key && value is { } packageInfoModel) {
+                                        if (packageInfo is { Id: > 0 } packageInfoModel) {
                                             //获取相机信息
                                             var cameraConfigInfoModel =
                                                 await _barcodeScannerCameraConfigRepository.FirstOrDefault(
@@ -190,10 +189,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
                                         //全景图
-                                        var (key, value) = await _packageRepository.FirstOrDefaultInfo(f =>
+                                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f =>
                                             f.PackageTimestamped.Equals(savedImageInfo.PackageTimestamp),
-                                            stoppingToken);
-                                        if (key && value is { } packageInfoModel) {
+                                            stoppingToken);*/
+                                        var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(savedImageInfo.PackageTimestamp, stoppingToken);
+
+                                        if (packageInfo is { Id: > 0 } packageInfoModel) {
                                             var cameraConfigInfoModel =
                                                 await _barcodeScannerCameraConfigRepository.FirstOrDefault(
                                                     f =>
@@ -224,13 +225,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 if (isSorting && sortingModel is not null) {
                                     var (key, value) = await _packageRepository.FirstOrDefaultInfo(
                                         f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
-                                        stoppingToken);
-                                    if (key && value is { } packageInfoModel) {
-                                        //判断是否已存在记录
+                                        stoppingToken);*/
+
+                                    var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(sortingModel.Timestamp, stoppingToken);
+
+                                    if (packageInfo is { Id: > 0 } packageInfoModel) {
+                                        /*//判断是否已存在记录
                                         var sortingInfoModel = await _sortingRepository.FirstOrDefault(f =>
-                                            f.PackageId.Equals(packageInfoModel.Id), stoppingToken);
+                                            f.PackageId.Equals(packageInfoModel.Id), stoppingToken);*/
                                         bool isSortingUpdateInfo;
-                                        if (sortingInfoModel is null) {
+                                        if (packageInfo.SortingInfo is null) {
                                             //存到表
                                             isSortingUpdateInfo = await _sortingRepository.Insert(new SortingInfoModel() {
                                                 PackageId = packageInfoModel.Id,
@@ -250,19 +254,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
                                         else {
                                             //更新
-                                            sortingInfoModel.InstructionInfos ??= new List<InstructionInfoModel>();
-                                            sortingInfoModel.IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine;
-                                            sortingInfoModel.IsSortingUsed = true;
+                                            packageInfo.SortingInfo.InstructionInfos ??= new List<InstructionInfoModel>();
+                                            packageInfo.SortingInfo.IsCreatedByLowerMachine = sortingModel.IsCreatedByLowerMachine;
+                                            packageInfo.SortingInfo.IsSortingUsed = true;
                                             if (!string.IsNullOrEmpty(sortingModel.ChecksumProtocolName)) {
-                                                sortingInfoModel.ChecksumProtocolName = sortingModel.ChecksumProtocolName;
+                                                packageInfo.SortingInfo.ChecksumProtocolName = sortingModel.ChecksumProtocolName;
                                             }
 
                                             if (sortingModel.CommunicationMethod != CommunicationsType.None) {
-                                                sortingInfoModel.CommunicationMethod = sortingModel.CommunicationMethod;
+                                                packageInfo.SortingInfo.CommunicationMethod = sortingModel.CommunicationMethod;
                                             }
 
                                             if (sortingModel.SortingMode != SortMode.None) {
-                                                sortingInfoModel.SortingMode = sortingModel.SortingMode;
+                                                packageInfo.SortingInfo.SortingMode = sortingModel.SortingMode;
                                             }
 
                                             var instructionInfoModels = sortingModel.InstructionInfos?.Select(s =>
@@ -272,11 +276,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                     InstructionGeneratedTime = s.InstructionGeneratedTime,
                                                 })?.ToList() ?? new List<InstructionInfoModel>();
                                             foreach (var instructionInfoModel in instructionInfoModels) {
-                                                sortingInfoModel.InstructionInfos.Add(instructionInfoModel);
+                                                packageInfo.SortingInfo.InstructionInfos.Add(instructionInfoModel);
                                             }
 
                                             isSortingUpdateInfo =
-                                                await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                                                await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
                                         }
 
                                         if (!isSortingUpdateInfo) {
@@ -291,20 +295,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                 var isExceptionSorting = _exceptionSortingItems.TryDequeue(out var exceptionSortingModel);
                                 if (isExceptionSorting && exceptionSortingModel is not null) {
-                                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
+                                    /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
                                             f.BarCodeInfo.Barcode.Equals(exceptionSortingModel.BarCode) &&
                                             f.BarCodeInfo.ScanTime.Equals(exceptionSortingModel.ScanTime),
-                                        stoppingToken);
-                                    var sortingInfoModel =
+                                        stoppingToken);*/
+
+                                    var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(exceptionSortingModel.Timestamp, stoppingToken);
+                                    /*var sortingInfoModel =
                                         await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id),
-                                            stoppingToken);
-                                    if (sortingInfoModel is not null) {
-                                        sortingInfoModel.AbnormalSortingType =
+                                            stoppingToken);*/
+                                    if (packageInfo?.SortingInfo is not null) {
+                                        packageInfo.SortingInfo.AbnormalSortingType =
                                             (AbnormalSortingType)exceptionSortingModel.PackageCloudAbnormalSortingType;
-                                        sortingInfoModel.IsAbnormalSorting =
+                                        packageInfo.SortingInfo.IsAbnormalSorting =
                                             exceptionSortingModel.PackageCloudAbnormalSortingType !=
                                             PackageCloudAbnormalSortingType.None;
-                                        var update = await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                                        var update = await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
                                         if (!update) {
                                             _exceptionSortingItems.Enqueue(exceptionSortingModel);
                                         }
@@ -318,31 +324,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var packageExitUpdate = _packageExitUpdateItems.TryDequeue(out var packageExitUpdateModel);
                                 if (packageExitUpdate && packageExitUpdateModel is not null) {
                                     //找到对应的包裹
-                                    var (key, value) = await _packageRepository.FirstOrDefaultInfo(
+                                    /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(
                                         f => f.PackageTimestamped.Equals(packageExitUpdateModel.Timestamp),
-                                        stoppingToken);
-                                    if (key && value is not null) {
+                                        stoppingToken);*/
+                                    var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(packageExitUpdateModel.Timestamp, stoppingToken);
+                                    if (packageInfo is not null) {
                                         //更新格口
 
                                         //如果出现异常则不再更新
 
-                                        var model = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id),
-                                            stoppingToken);
+                                        /*var model = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id),
+                                            stoppingToken);*/
 
-                                        if (model is not null) {
+                                        if (packageInfo.ExitInfo is not null) {
                                             //更新
                                             switch (packageExitUpdateModel.ExitType) {
                                                 case SortingExitType.PhysicalExit:
-                                                    model.PhysicalExit = packageExitUpdateModel.ExitName;
-                                                    model.PhysicalExitId = packageExitUpdateModel.ExitId;
+                                                    packageInfo.ExitInfo.PhysicalExit = packageExitUpdateModel.ExitName;
+                                                    packageInfo.ExitInfo.PhysicalExitId = packageExitUpdateModel.ExitId;
                                                     break;
 
                                                 case SortingExitType.TheoreticalExit:
-                                                    model.TheoreticalExit = packageExitUpdateModel.ExitName;
+                                                    packageInfo.ExitInfo.TheoreticalExit = packageExitUpdateModel.ExitName;
                                                     break;
                                             }
 
-                                            var update = await _exitInfoRepository.Update(model, stoppingToken);
+                                            var update = await _exitInfoRepository.Update(packageInfo.ExitInfo, stoppingToken);
                                             if (!update) {
                                                 _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
                                                 return;
@@ -352,12 +359,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             //添加
                                             var exitInfoModel = packageExitUpdateModel.ExitType switch {
                                                 SortingExitType.PhysicalExit => new ExitInfoModel() {
-                                                    PackageId = value.Id,
+                                                    PackageId = packageInfo.Id,
                                                     PhysicalExit = packageExitUpdateModel.ExitName,
                                                     PhysicalExitId = packageExitUpdateModel.ExitId,
                                                 },
                                                 SortingExitType.TheoreticalExit => new ExitInfoModel() {
-                                                    PackageId = value.Id,
+                                                    PackageId = packageInfo.Id,
                                                     TheoreticalExit = packageExitUpdateModel.ExitName,
                                                     PhysicalExit = packageExitUpdateModel.ExitName,
                                                     PhysicalExitId = packageExitUpdateModel.ExitId,
@@ -374,19 +381,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                         if (packageExitUpdateModel.PackageAbnormalSortingType !=
                                             PackageAbnormalSortingType.None &&
-                                            model?.PackageId > 0) {
+                                            packageInfo.ExitInfo?.PackageId > 0) {
                                             //更新异常
-                                            var sortingInfoModel =
+                                            /*var sortingInfoModel =
 
                                                 await _sortingRepository.FirstOrDefault(
-                                                    f => f.PackageId.Equals(model.PackageId), stoppingToken);
-                                            if (sortingInfoModel is not null) {
-                                                sortingInfoModel.AbnormalSortingType =
+                                                    f => f.PackageId.Equals(packageInfo.ExitInfo.PackageId), stoppingToken);*/
+                                            if (packageInfo.SortingInfo is not null) {
+                                                packageInfo.SortingInfo.AbnormalSortingType =
                                                     (AbnormalSortingType)packageExitUpdateModel.PackageAbnormalSortingType;
-                                                sortingInfoModel.IsAbnormalSorting =
+                                                packageInfo.SortingInfo.IsAbnormalSorting =
                                                     packageExitUpdateModel.PackageAbnormalSortingType !=
                                                     PackageAbnormalSortingType.None;
-                                                await _sortingRepository.Update(sortingInfoModel, stoppingToken);
+                                                await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
                                             }
                                         }
                                     }

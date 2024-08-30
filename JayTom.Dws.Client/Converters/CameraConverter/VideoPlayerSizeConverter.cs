@@ -9,20 +9,23 @@ using System.Collections.Generic;
 using Size = System.Windows.Size;
 
 namespace JayTom.Dws.Client.Converters.CameraConverter {
+
     public class VideoPlayerSizeConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is int itemCount) {
-                var size = new Size(449, 253);
+                var size = new Size(768, 432);
                 switch (itemCount) {
                     case 1:
-                        size = new Size(584, 329);
+                        size = new Size(768, 432);
                         break;
+
                     case > 1 and <= 4:
-                        size = new Size(449, 253);
+                        size = new Size(614, 346);
                         break;
+
                     case > 4:
-                        size = new Size(374, 211);
+                        size = new Size(449, 253);
                         break;
                 }
 

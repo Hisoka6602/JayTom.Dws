@@ -14,7 +14,6 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
-
     public class PackageRepository : LocalRepositoryBase<PackageInfoModel>, IPackageRepository {
         private static TimeSpan _cacheDuration = TimeSpan.FromSeconds(60);
         private SemaphoreSlim _cacheSlim = new(1);
