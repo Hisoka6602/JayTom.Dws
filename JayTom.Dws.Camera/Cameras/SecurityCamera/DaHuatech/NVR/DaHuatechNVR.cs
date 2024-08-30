@@ -110,7 +110,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     /*var playInfo = _loginDev.FirstOrDefault().Value?.DevPlayInfos?.FirstOrDefault();
                     var callBack = playInfo?.PlayBackCallBack;*/
                     if (callBack != null && playInfo is not null && !_isChangingViewSize) {
-                        var bytes = DaHuatechNVR.ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
+                        var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
 
                         _ = callBack(new RealtimePreviewInfo() {
                             ChannelId = (int)pUser,
@@ -1213,53 +1213,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                 }
             }
             return true;
-        }
-
-        public static byte[] ConvertFrameInfoToRgbByteArray(FRAME_DECODE_INFO frameInfo, int targetWidth, int targetHeight) {
-            // 每个像素的RGB数据需要3个字节
-            var stride = targetWidth * 3;
-            var rgbData = new byte[targetHeight * stride];
-
-            var sourceWidth = frameInfo.nWidth[0];
-            var sourceHeight = frameInfo.nHeight[0];
-
-            unsafe {
-                var pY = (byte*)frameInfo.pVideoData[0];
-                var pU = (byte*)frameInfo.pVideoData[1];
-                var pV = (byte*)frameInfo.pVideoData[2];
-
-                Parallel.For(0, targetHeight, y => {
-                    for (var x = 0; x < targetWidth; x++) {
-                        // 计算源图像中的位置
-                        var sourceX = x * sourceWidth / targetWidth;
-                        var sourceY = y * sourceHeight / targetHeight;
-
-                        var yIndex = sourceY * frameInfo.nStride[0] + sourceX;
-                        var uvIndex = (sourceY / 2) * frameInfo.nStride[1] + (sourceX / 2);
-
-                        var b = pY[yIndex];
-                        var u = pU[uvIndex] - 128;
-                        var v = pV[uvIndex] - 128;
-
-                        var r = (int)(b + 1.402 * v);
-                        var g = (int)(b - 0.344136 * u - 0.714136 * v);
-                        var clamp = (int)(b + 1.772 * u);
-
-                        // 将RGB值限制在[0, 255]范围内
-                        r = Math.Clamp(r, 0, 255);
-                        g = Math.Clamp(g, 0, 255);
-                        clamp = Math.Clamp(clamp, 0, 255);
-
-                        // 计算目标数组中的索引，并填充RGB数据
-                        var index = (y * targetWidth + x) * 3;
-                        rgbData[index] = (byte)clamp;
-                        rgbData[index + 1] = (byte)g;
-                        rgbData[index + 2] = (byte)r;
-                    }
-                });
-            }
-
-            return rgbData;
         }
 
         public enum FastForwardSpeed {
