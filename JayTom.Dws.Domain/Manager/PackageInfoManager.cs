@@ -329,6 +329,11 @@ namespace JayTom.Dws.Domain.Manager {
         public GrayscaleResult? GrayscaleResultInfo { get; set; }
 
         /// <summary>
+        /// Nvr信息
+        /// </summary>
+        public List<NvrInfoModel>? NvrInfo { get; set; }
+
+        /// <summary>
         /// 联动车辆
         /// </summary>
         public int LinkedCarCount { get; set; } = 0;

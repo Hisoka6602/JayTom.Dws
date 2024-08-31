@@ -152,6 +152,19 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<CloudVideoUploadInfoModel>().HasKey(c => new {
                     c.Id
                 });
+
+                //Nvr信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasMany(b => b.NvrInfos)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey(n => new { n.PackageId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<NvrInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<NvrInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //声音
                 modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
                     c.Id

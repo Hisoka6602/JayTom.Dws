@@ -90,6 +90,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         WeightInfo = model.WeightInfo,
                         VolumeInfo = model.VolumeInfo,
                         PackageCreateTime = model.CreateTime,
+                        NvrInfos = model.NvrInfo,
                         PackageTimestamped = new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds(),
                     });
                 }

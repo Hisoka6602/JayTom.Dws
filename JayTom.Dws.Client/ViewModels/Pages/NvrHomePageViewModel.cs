@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using Prism.Commands;
 using System.Windows;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using JayTom.Dws.License;
 using System.Windows.Input;
 using System.Windows.Media;
 using JayTom.Dws.Domain.Dto;
@@ -13,9 +15,11 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
+using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using JayTom.Dws.Interface.License;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
@@ -36,6 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IConfigRepository _configRepository;
+        private readonly IClientLicenseApi _clientLicenseApi;
         private ObservableCollection<NvrRealTimePreviewItemInfo> _nvrRealTimePreviewItems = new();
 
         private DaHuatechNVR? _daHuatechNvr;
@@ -45,15 +50,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private SolidColorBrush _iconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#4FFFFFFF"));
         private SnackbarMessageQueue _homeMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _itemIsExpanded = true;
+        private bool? _isUnauthorized;
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
                 INvrCameraBindingRepository nvrCameraBindingRepository,
-            IConfigRepository configRepository) {
+            IConfigRepository configRepository,
+            IClientLicenseApi clientLicenseApi) {
             _deviceService = deviceService;
             _keyboardDeviceManager = keyboardDeviceManager;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _configRepository = configRepository;
+            _clientLicenseApi = clientLicenseApi;
             _daHuatechNvr ??= DaHuatechNVR.Instance;
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is { Type: WindowsActionType.Close }) {
@@ -133,6 +141,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             set => SetProperty(ref _itemIsExpanded, value);
         }
 
+        public bool? IsUnauthorized {
+            get => _isUnauthorized;
+            set => SetProperty(ref _isUnauthorized, value);
+        }
+
         public SnackbarMessageQueue HomeMessageQueue {
             get => _homeMessageQueue;
             set => SetProperty(ref _homeMessageQueue, value);
@@ -158,9 +171,68 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async void LoadedDelegate(object obj) {
             NvrRealTimePreviewItems.Clear();
 
-            //验证授权
-            //加载相机
-            //加载读码
+            //授权
+#if !DEBUG
+            if (IsUnauthorized != false) {
+                var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
+                if (!Directory.Exists(licenseDirectory)) {
+                    Directory.CreateDirectory(licenseDirectory);
+                }
+                var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                if (firstOrDefault is not null) {
+                    //解密授权
+                    var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+
+                    if (data is not null) {
+                        //重新下载
+                        Task.Run(async () => {
+                            var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
+                            if (o is ApiResult result &&
+                                !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
+                                if (key1) {
+                                    var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
+                                    var files = Directory.GetFiles(licenseDirectory, "*.key");
+                                    Parallel.ForEach(files, File.Delete);
+
+                                    await _clientLicenseApi.DownloadFileAsync(result.Data?.ToString() ?? string.Empty,
+                                        $"{licenseDirectory}\\License.key");
+                                }
+                            }
+                        });
+                    }
+                    if (!b) {
+                        IsUnauthorized = true;
+                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            CreateTime = DateTime.Now,
+                            Message = s,
+                            Type = LogType.Exception
+                        });
+                        HomeMessageQueue.Enqueue(s);
+                        return;
+                    }
+                    else {
+                        IsUnauthorized = false;
+                        //提交激活
+                        if (data is not null) {
+                            Task.Run(async () => {
+                                await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
+                            });
+                        }
+                    }
+                }
+                else {
+                    IsUnauthorized = true;
+                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                        CreateTime = DateTime.Now,
+                        Message = "未检测到授权文件",
+                        Type = LogType.Exception
+                    });
+                    HomeMessageQueue.Enqueue("未检测到授权文件");
+                    return;
+                }
+            }
+
+#endif
 
             //获取绑定的相机
             var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();

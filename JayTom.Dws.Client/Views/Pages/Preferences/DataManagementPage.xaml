@@ -909,7 +909,8 @@
                                     CommandParameter="{Binding}"
                                     Focusable="False"
                                     Style="{StaticResource MaterialDesignFlatLightButton}"
-                                    ToolTip="查看NVR视频">
+                                    ToolTip="查看NVR视频"
+                                    Visibility="{Binding IsVideoExists, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock
                                             HorizontalAlignment="Center"

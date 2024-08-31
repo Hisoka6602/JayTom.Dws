@@ -256,6 +256,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     PackageInfo: { BarCodeInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or
                              TriggerPositionEnum.CreateTimePackageAfter or TriggerPositionEnum.BarcodeScannerReturn
                 }) {
+                    if (info.NvrInfo?.Any() != true) {
+                        var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+
+                        info.NvrInfo = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(info.BarCodeInfo.SerialNumber))
+                            ?.Select(s => new NvrInfoModel() {
+                                Channel = s.Channel,
+                                IpAddress = s.IpAddress,
+                                Password = s.Password,
+                                Port = s.Port,
+                                Username = s.Username,
+                            })?.ToList() ?? new List<NvrInfoModel>();
+                    }
+
                     PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                 }
             });

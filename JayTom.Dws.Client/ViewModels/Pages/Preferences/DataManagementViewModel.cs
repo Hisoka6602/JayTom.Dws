@@ -678,7 +678,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
                                     TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
                                 },
-                                IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
+
+                                IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null },
+                                IsVideoExists = s.NvrInfos?.Any() ?? false
                             })?.ToList();
                             await Task.Delay(100);
                             PackageItems.AddRange(itemModels);

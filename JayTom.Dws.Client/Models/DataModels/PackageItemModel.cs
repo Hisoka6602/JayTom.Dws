@@ -32,6 +32,7 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private bool _isUploadedToCloudVideo;
         private ExitInfoItemModel _exitInfo = new();
         private PackageExitStatus _packageExitStatus = PackageExitStatus.None;
+        private bool _isVideoExists;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
@@ -223,6 +224,14 @@ namespace JayTom.Dws.Client.Models.DataModels {
         public bool IsBarcodeImageExists {
             get => _isBarcodeImageExists;
             set => SetProperty(ref _isBarcodeImageExists, value);
+        }
+
+        /// <summary>
+        /// 视频是否存在
+        /// </summary>
+        public bool IsVideoExists {
+            get => _isVideoExists;
+            set => SetProperty(ref _isVideoExists, value);
         }
 
         /// <summary>
