@@ -32,6 +32,7 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
+using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 
@@ -88,6 +89,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             }
                         });
                         await _daHuatechNvr.LogOut(NvrRealTimePreviewItems.FirstOrDefault()?.IpAddress ?? string.Empty);
+                        await _deviceService.Stop();
+                        EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                            Status = ApplicationStatus.Stop
+                        });
                     }
                 }
                 else if (item is { Type: WindowsActionType.ReturnToHome }) {

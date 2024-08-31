@@ -90,11 +90,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public ICommand PreviewCommand => new DelegateCommand<object>(PreviewDelegate);
 
         private async void PreviewDelegate(object obj) {
+            if (IsRefreshing) return;
             //显示预览框
-            if (AppContext.GetData("IsRunning") is true) {
+            /*if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再预览");
                 return;
-            }
+            }*/
             if (obj is IpcNvrItemInfoModel info) {
                 var ipcPreviewDialog = new IpcPreviewDialog();
                 if (ipcPreviewDialog.DataContext is IpcPreviewViewModel model) {
@@ -112,11 +113,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public ICommand BindCommand => new DelegateCommand<object>(BindDelegate);
 
         private async void BindDelegate(object obj) {
+            if (IsRefreshing) return;
             //显示绑定框
-            if (AppContext.GetData("IsRunning") is true) {
+            /*if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
                 return;
-            }
+            }*/
             if (obj is IpcNvrItemInfoModel info) {
                 var nvrCameraMappingEditor = new NvrCameraMappingEditor();
                 if (nvrCameraMappingEditor.DataContext is NvrCameraMappingEditorViewModel model) {
@@ -150,10 +152,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void EditDelegate(object obj) {
             if (IsRefreshing) return;
-            if (AppContext.GetData("IsRunning") is true) {
+            /*if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
                 return;
-            }
+            }*/
             if (obj is IpcNvrItemInfoModel info) {
                 var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
                 if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
@@ -322,6 +324,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 if (key) {
                                     var info = baseDaHuatech.GetLoggedInDeviceInfo(device.SerialNumber);
                                     nChanNum = info?.LoggedInDeviceInfo?.nChanNum ?? 0;
+
+                                    //刷新通道数
+
+                                    var ipcNvrConfigInfoModel = await _ipcNvrConfigRepository.FirstOrDefault(f =>
+                                        f.SerialNumber.Equals(device.SerialNumber));
+                                    if (ipcNvrConfigInfoModel is not null) {
+                                        ipcNvrConfigInfoModel.ChannelCount = nChanNum;
+                                        await _ipcNvrConfigRepository.Update(ipcNvrConfigInfoModel);
+                                    }
                                 }
                                 await Application.Current.Dispatcher.InvokeAsync(() => {
                                     if (!key && value.Contains("未枚举")) {

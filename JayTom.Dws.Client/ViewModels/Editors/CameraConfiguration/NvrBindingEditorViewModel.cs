@@ -24,6 +24,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
+
     public class NvrBindingEditorViewModel : BindableBase {
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
@@ -198,11 +199,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         public ICommand PreviewViewCommand => new DelegateCommand<object>(PreviewViewDelegate);
 
         private void PreviewViewDelegate(object obj) {
-            if (AppContext.GetData("IsRunning") is true) {
-
+            /*if (AppContext.GetData("IsRunning") is true) {
                 NvrBindingEditorViewMessageQueue.Enqueue("请先停止运行再预览");
                 return;
-            }
+            }*/
             if (obj is NvrBindingItemModel { Status: NvrStatus.Online } info) {
                 _dialogService.ShowDialog("NvrBindingPreviewViewDialog", new DialogParameters { { "NvrBindingItem", info } }, null);
             }

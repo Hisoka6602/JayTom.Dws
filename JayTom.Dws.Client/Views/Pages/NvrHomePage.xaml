@@ -633,11 +633,11 @@
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                                 <!--  条码  -->
-                                <GridViewColumn Width="150" Header="{x:Static languages:Language.TableHeaderBarCode}">
+                                <GridViewColumn Width="200" Header="{x:Static languages:Language.TableHeaderBarCode}">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock
-                                                Width="150"
+                                                Width="200"
                                                 MinWidth="150"
                                                 RenderOptions.EdgeMode="Unspecified"
                                                 Style="{StaticResource CustomGridViewTextBlockCellStyle}"
