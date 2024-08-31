@@ -448,6 +448,7 @@ namespace JayTom.Dws.Client {
                     Type = LogType.Exception
                 });
             };
+            RenderOptions.ProcessRenderMode = RenderMode.Default;
             base.OnStartup(e);
 
             var container = Container.GetContainer();

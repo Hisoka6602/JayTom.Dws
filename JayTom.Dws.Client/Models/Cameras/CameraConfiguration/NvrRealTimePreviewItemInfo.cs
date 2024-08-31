@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using Newtonsoft.Json;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -24,12 +25,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private bool _isBuffering = true;
         private ScreenState _screenState = ScreenState.Normal;
         private Size _maxSize = new(1800, 1012);
-        private ICommand? _increaseZoomCommand;
-        private ICommand? _decreaseZoomCommand;
-        private ICommand? _increaseFocusCommand;
-        private ICommand? _decreaseFocusCommand;
-        private ICommand? _autoFocusCommand;
         private ICommand? _toggleImageSizeCommand;
+        private ICommand? _realtimePreviewOperationCommand;
 
         public NvrRealTimePreviewItemInfo() {
             RealtimePreviewCallback = async info => {
@@ -140,43 +137,11 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         }
 
         /// <summary>
-        /// 增加缩放倍数
+        /// 实时预览操作
         /// </summary>
-        public ICommand? IncreaseZoomCommand {
-            get => _increaseZoomCommand;
-            set => SetProperty(ref _increaseZoomCommand, value);
-        }
-
-        /// <summary>
-        /// 减少缩放倍数
-        /// </summary>
-        public ICommand? DecreaseZoomCommand {
-            get => _decreaseZoomCommand;
-            set => SetProperty(ref _decreaseZoomCommand, value);
-        }
-
-        /// <summary>
-        /// 增加焦距倍数
-        /// </summary>
-        public ICommand? IncreaseFocusCommand {
-            get => _increaseFocusCommand;
-            set => SetProperty(ref _increaseFocusCommand, value);
-        }
-
-        /// <summary>
-        /// 减少焦距倍数
-        /// </summary>
-        public ICommand? DecreaseFocusCommand {
-            get => _decreaseFocusCommand;
-            set => SetProperty(ref _decreaseFocusCommand, value);
-        }
-
-        /// <summary>
-        /// 自动焦距
-        /// </summary>
-        public ICommand? AutoFocusCommand {
-            get => _autoFocusCommand;
-            set => SetProperty(ref _autoFocusCommand, value);
+        public ICommand? RealtimePreviewOperationCommand {
+            get => _realtimePreviewOperationCommand;
+            set => SetProperty(ref _realtimePreviewOperationCommand, value);
         }
 
         /// <summary>
@@ -190,6 +155,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 回调事件
         /// </summary>
+        [JsonIgnore]
         public Func<RealtimePreviewInfo, Task> RealtimePreviewCallback { get; private set; }
 
         public WriteableBitmap? VideoFrame {

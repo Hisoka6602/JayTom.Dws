@@ -6,6 +6,7 @@
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:cameraConfiguration1="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
     xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
+    xmlns:cloudConverters="clr-namespace:JayTom.Dws.Client.Converters.CloudConverters"
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:editors="clr-namespace:JayTom.Dws.Client.Views.Editors"
@@ -33,6 +34,35 @@
         <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
         <cameraConverter:NvrRealTimePreviewHomeSizeConverter x:Key="NvrRealTimePreviewHomeSizeConverter" />
         <converters:EnumToVisibilityInvertedConverter x:Key="EnumToVisibilityInvertedConverter" />
+        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+        <cameraConverter:RealtimePreviewParametersConverter x:Key="RealtimePreviewParametersConverter" />
+        <cloudConverters:IsUploadedToCloudVideoTagColorConvert x:Key="IsUploadedToCloudVideoTagColorConvert" />
+        <Style
+            x:Key="MaterialDesignActionButtonStyle"
+            BasedOn="{StaticResource MaterialDesignFloatingActionButton}"
+            TargetType="Button">
+            <Setter Property="materialDesign:ButtonProgressAssist.Value" Value="-1" />
+            <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
+            <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+            <Setter Property="Background" Value="DimGray" />
+            <Setter Property="BorderBrush" Value="DimGray" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Margin" Value="5,0" />
+            <Style.Triggers>
+                <!--  Trigger for when the button is pressed  -->
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="True" />
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="True" />
+                </Trigger>
+
+                <!--  Trigger for when the button is not pressed  -->
+                <Trigger Property="IsPressed" Value="False">
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndeterminate" Value="False" />
+                    <Setter Property="materialDesign:ButtonProgressAssist.IsIndicatorVisible" Value="False" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Page.Resources>
     <Grid Name="BackgroundGrid">
 
@@ -88,13 +118,12 @@
                             IsItemsHost="True"
                             Orientation="Horizontal"
                             ScrollViewer.CanContentScroll="True" />
-
                     </ScrollViewer>
                 </ControlTemplate>
             </ListBox.Template>
 
             <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type cameraConfiguration1:VideoPlayerModel}">
+                <DataTemplate DataType="{x:Type cameraConfiguration1:NvrRealTimePreviewItemInfo}">
                     <Border BorderBrush="Transparent">
                         <Border.Style>
 
@@ -124,6 +153,7 @@
 
                             <!--  画面  -->
                             <Image
+                                x:Name="VideoImage"
                                 RenderOptions.BitmapScalingMode="LowQuality"
                                 Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
                                 Stretch="Fill"
@@ -179,8 +209,241 @@
                                 FontWeight="Bold"
                                 Foreground="SpringGreen"
                                 Text="{Binding Channel, StringFormat='通道{0}'}" />
-                            <!--  工具  -->
+                            <!--  工具栏  -->
+                            <Border
+                                x:Name="ToolBarContainer"
+                                Height="90"
+                                Margin="0"
+                                Padding="10"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="#88202020"
+                                CornerRadius="10,10,0,0"
+                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel
+                                    Background="Transparent"
+                                    Orientation="Horizontal"
+                                    Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=None}">
+                                    <!--  自动对焦  -->
+                                    <Button
+                                        Width="40"
+                                        Height="40"
+                                        materialDesign:RippleAssist.ClipToBounds="True"
+                                        materialDesign:RippleAssist.RippleOnTop="True"
+                                        Background="DimGray"
+                                        Command="{Binding RealtimePreviewOperationCommand}"
+                                        Cursor="Hand"
+                                        Focusable="False"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        ToolTip="自动对焦">
+                                        <Button.CommandParameter>
+                                            <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                <!--  绑定点击的item  -->
+                                                <Binding />
+                                                <!--  绑定操作动作  -->
+                                                <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.AutoFocus}" />
+                                                <!--  绑定操作类型  -->
+                                                <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Auto}" />
+                                            </MultiBinding>
+                                        </Button.CommandParameter>
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource IconFontFamily}"
+                                            FontSize="25"
+                                            Foreground="White"
+                                            Text="&#xe9e3;" />
+                                    </Button>
+                                    <StackPanel Margin="10,0" Orientation="Vertical">
+                                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                                            <!--  缩放  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="True"
+                                                Text="缩放:"
+                                                TextAlignment="Justify" />
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="+"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.IncreaseZoom}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Start}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
 
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.IncreaseZoom}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Stop}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="-"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.DecreaseZoom}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Start}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.DecreaseZoom}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Stop}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                        </StackPanel>
+                                        <StackPanel Margin="0,5" Orientation="Horizontal">
+                                            <!--  焦距  -->
+                                            <TextBlock
+                                                Margin="5,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                FontFamily="{StaticResource CustomFontFamily}"
+                                                FontSize="13"
+                                                FontWeight="Light"
+                                                Foreground="White"
+                                                IsEnabled="True"
+                                                Text="焦距:"
+                                                TextAlignment="Justify" />
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="+"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.IncreaseFocus}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Start}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.IncreaseFocus}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Stop}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                            <Button
+                                                Width="25"
+                                                Height="25"
+                                                Content="-"
+                                                Style="{StaticResource MaterialDesignActionButtonStyle}">
+                                                <b:Interaction.Triggers>
+                                                    <!--  PreviewMouseDown Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseDown">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.DecreaseFocus}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Start}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+
+                                                    <!--  PreviewMouseUp Event  -->
+                                                    <b:EventTrigger EventName="PreviewMouseUp">
+                                                        <b:InvokeCommandAction Command="{Binding RealtimePreviewOperationCommand}">
+                                                            <b:InvokeCommandAction.CommandParameter>
+                                                                <MultiBinding Converter="{StaticResource RealtimePreviewParametersConverter}">
+                                                                    <!--  绑定点击的item  -->
+                                                                    <Binding />
+                                                                    <!--  绑定操作动作  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewAction.DecreaseFocus}" />
+                                                                    <!--  绑定操作类型  -->
+                                                                    <Binding Mode="OneTime" Source="{x:Static cameraConfiguration1:NvrPreviewOperationType.Stop}" />
+                                                                </MultiBinding>
+                                                            </b:InvokeCommandAction.CommandParameter>
+                                                        </b:InvokeCommandAction>
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
                             <!--  异常底图  -->
                             <Border Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}">
                                 <StackPanel
@@ -225,7 +488,7 @@
             ExpandDirection="Right"
             Focusable="False"
             Foreground="White"
-            IsExpanded="True"
+            IsExpanded="{Binding ItemIsExpanded, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
             Opacity="{Binding ElementName=OpacitySlider, Path=Value, Mode=TwoWay}">
             <b:Interaction.Triggers>
                 <b:EventTrigger EventName="Expanded">
@@ -264,7 +527,7 @@
                             FontFamily="{StaticResource IconFontFamily}"
                             FontSize="80"
                             FontWeight="Bold"
-                            Foreground="#4FFFFFFF"
+                            Foreground="{Binding IconColor, UpdateSourceTrigger=PropertyChanged}"
                             Text="&#xe9ad;"
                             TextAlignment="Center" />
                         <!--  条码  -->
@@ -279,7 +542,7 @@
                             FontSize="40"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="SF1234567890123456"
+                            Text="{Binding BarCode, UpdateSourceTrigger=PropertyChanged}"
                             TextAlignment="Center"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="Wrap" />
@@ -397,56 +660,6 @@
                                                     Foreground="{Binding IsUploadedToCloudVideo, Converter={StaticResource IsUploadedToCloudVideoTagColorConvert}}"
                                                     RenderOptions.EdgeMode="Unspecified"
                                                     Text="&#xe8dc;" />
-                                                <Button
-                                                    Height="20"
-                                                    Padding="0"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Command="{Binding ElementName=HomePageView, Path=DataContext.UploadStatusCommand}"
-                                                    CommandParameter="{Binding}"
-                                                    Focusable="False"
-                                                    Foreground="Transparent"
-                                                    Style="{StaticResource MaterialDesignFlatButton}">
-                                                    <Grid
-                                                        MinWidth="30"
-                                                        Margin="0"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="30" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <!--  图标  -->
-                                                        <TextBlock
-                                                            Grid.Column="0"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            FontFamily="{StaticResource IconFontFamily}"
-                                                            FontSize="18"
-                                                            Foreground="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
-                                                            RenderOptions.EdgeMode="Unspecified"
-                                                            Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
-                                                        <!--  文字  -->
-                                                        <TextBlock
-                                                            Grid.Column="1"
-                                                            Margin="10,0"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
-                                                            FontSize="13"
-                                                            FontWeight="Light"
-                                                            Foreground="White"
-                                                            IsEnabled="False"
-                                                            RenderOptions.EdgeMode="Unspecified"
-                                                            TextAlignment="Justify"
-                                                            TextTrimming="WordEllipsis"
-                                                            Visibility="Collapsed">
-                                                            <Run Text="{Binding RequestStatus, Converter={StaticResource UploadStatusConverter}, ConverterParameter=Text}" />
-                                                        </TextBlock>
-                                                    </Grid>
-
-                                                    <!--  点击后弹出对应的信息框  -->
-                                                </Button>
                                             </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -474,10 +687,20 @@
                         VerticalContentAlignment="Bottom"
                         Focusable="False"
                         Maximum="1"
-                        Minimum="0.05"
+                        Minimum="0.08"
                         Value="1" />
                 </Grid>
             </Border>
         </Expander>
+
+        <!--  提示框  -->
+        <materialDesign:Snackbar
+            Width="Auto"
+            Height="Auto"
+            VerticalAlignment="Bottom"
+            Background="BlueViolet"
+            FontFamily="{StaticResource CustomFontFamily}"
+            FontWeight="Bold"
+            MessageQueue="{Binding HomeMessageQueue}" />
     </Grid>
 </Page>

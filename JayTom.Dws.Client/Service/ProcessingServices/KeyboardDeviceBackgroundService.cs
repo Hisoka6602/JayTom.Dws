@@ -24,6 +24,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
@@ -45,7 +46,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private WeightSettingsDto _weightSettingsDto = new();
         private static bool _isWindowsClose;
         private List<ICamera> _cameras = new();
-        private BaseDaHuatech? _baseDaHuatech;
+
+        //private BaseDaHuatech? _baseDaHuatech;
+        private DaHuatechNVR? _daHuatechNvr;
 
         public KeyboardDeviceBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
@@ -69,6 +72,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
                 _cameras = list;
+
                 List<PanoramaCameraConfigInfoModel> panoramaCameras = panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id)
                     ?.ConfigureAwait(false).GetAwaiter().GetResult()?.ToList() ?? new List<PanoramaCameraConfigInfoModel>();
                 var scannerCameraConfigInfoModels = barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id)
@@ -267,12 +271,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         var ipcNvrConfigInfoModels = (await _ipcNvrConfigRepository.MemoryCacheData()).Where(w => !string.IsNullOrEmpty(w.SerialNumber)).ToList();
 
                         if (ipcNvrConfigInfoModels.Any(a => a.Type == 1)) {
-                            _baseDaHuatech = BaseDaHuatech.CreateInstance();
+                            _daHuatechNvr = DaHuatechNVR.Instance;
 
-                            foreach (var model in ipcNvrConfigInfoModels) {
-                                var (b, s) = await _baseDaHuatech.LogIn(model.SerialNumber, model.Username, model.Password);
+                            foreach (var model in ipcNvrConfigInfoModels.Where(model => _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals(model.IpAddress))?.Any() != true)) {
+                                var (b, s) = await _daHuatechNvr.LogIn(model.IpAddress, model.Port, model.Username, model.Password);
                                 if (!b) {
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"大华安防相机:{model.SerialNumber},登录失败!");
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"大华安防相机:{model.IpAddress},登录失败!");
                                 }
                             }
                         }
@@ -298,7 +302,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 }
                 //写水印
                 Task.Run(async () => {
-                    if (_baseDaHuatech is not null && args.CompletedPackage?.BarCodeInfo?.SerialNumber is not null) {
+                    if (_daHuatechNvr is not null && args.CompletedPackage?.BarCodeInfo?.SerialNumber is not null) {
                         var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
                         if (nvrCameraBindingInfoModels.Any(a => a.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))) {
                             var infoModels = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))
@@ -319,56 +323,26 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                             Position = 0,
                                             BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
                                         };
-                                        return (infoModel.SerialNumber, s.Channel, watermarkConfig, watermarkConfigInfoModel.DisplayMode);
+                                        return (infoModel.IpAddress, s.Channel, watermarkConfig, watermarkConfigInfoModel.DisplayMode);
                                     }
                                 }
 
                                 // 如果未找到匹配的 infoModel，返回默认值
                                 return (string.Empty, 0, null, 0);
-                            }).Where(w => !string.IsNullOrEmpty(w.SerialNumber)).ToList();
+                            }).Where(w => !string.IsNullOrEmpty(w.IpAddress)).ToList();
 
-                            if (results?.Any() == true && results?.FirstOrDefault().watermarkConfig is not null) {
+                            if (results?.Any() == true && results?.ToList()?.FirstOrDefault().watermarkConfig is not null) {
                                 if (results.FirstOrDefault().DisplayMode == 0) {
-                                    _baseDaHuatech.AddRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                    _daHuatechNvr.AddRealTimeWatermark(results.Select(s => (s.IpAddress, s.Channel)).ToList(),
                                         args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
                                         results.FirstOrDefault().watermarkConfig);
                                 }
                                 else {
-                                    _baseDaHuatech.AddSingleRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                    _daHuatechNvr.AddSingleRealTimeWatermark(results.Select(s => (s.IpAddress, s.Channel)).ToList(),
                                         args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
                                         results.FirstOrDefault().watermarkConfig);
                                 }
                             }
-
-                            /*foreach (var model in infoModels) {
-                                var infoModel = (await _ipcNvrConfigRepository.MemoryCacheData()).FirstOrDefault(f => f.IpAddress.Equals(model.IpAddress) && f.Username.Equals(model.Username));
-                                if (infoModel != null) {
-                                    //获取配置
-                                    var watermarkConfigInfoModel = (await _nvrWatermarkConfigRepository.MemoryCacheData()).FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
-                                    if (watermarkConfigInfoModel != null) {
-                                        if (watermarkConfigInfoModel.DisplayMode == 0) {
-                                            _baseDaHuatech.AddRealTimeWatermark(infoModel.SerialNumber, model.Channel,
-                                                args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
-                                                new SecurityCameraWatermarkConfig() {
-                                                    Duration = watermarkConfigInfoModel.Duration,
-                                                    MaxWatermarks = 8,
-                                                    Position = 0,
-                                                    BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
-                                                });
-                                        }
-                                        else {
-                                            _baseDaHuatech.AddSingleRealTimeWatermark(infoModel.SerialNumber, model.Channel,
-                                                args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
-                                                new SecurityCameraWatermarkConfig() {
-                                                    Duration = watermarkConfigInfoModel.Duration,
-                                                    MaxWatermarks = 8,
-                                                    Position = 0,
-                                                    BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
-                                                });
-                                        }
-                                    }
-                                }
-                            }*/
                         }
                     }
                 });

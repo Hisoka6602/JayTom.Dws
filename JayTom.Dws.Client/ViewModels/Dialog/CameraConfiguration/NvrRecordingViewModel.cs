@@ -277,7 +277,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     VideoScreenShotCommand = CaptureScreenShotCommand,
                     DownloadCommand = DownloadVideoCommand,
                     ToggleImageSizeCommand = ToggleImageSizeCommand,
-                })?.ToList();
+                })
+                ?.OrderBy(o => o.Channel)?.ToList();
 
             VideoPlayerItems.AddRange(videoPlayerModels);
             if (!VideoPlayerItems.Any()) {

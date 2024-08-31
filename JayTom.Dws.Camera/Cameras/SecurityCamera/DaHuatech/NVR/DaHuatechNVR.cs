@@ -603,16 +603,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="ipAddress"></param>
         /// <param name="channelId"></param>
         /// <param name="increase"></param>
-        /// <param name="start"></param>
+        /// <param name="stop"></param>
         /// <returns></returns>
-        public async Task AdjustZoomContinuouslyAsync(string ipAddress, int channelId, bool increase, bool start) {
+        public async Task AdjustZoomContinuouslyAsync(string ipAddress, int channelId, bool increase, bool stop) {
             var speed = 4;
             try {
                 await _ptzOperationSlim.WaitAsync();
                 if (_loginDev.TryGetValue(ipAddress, out var dev)) {
                     var ptzControl = NETClient.PTZControl(dev.LogInHandle, channelId,
                         increase ? EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL : EM_EXTPTZ_ControlType.ZOOM_DEC_CONTROL, 0,
-                        speed, 0, start, IntPtr.Zero);
+                        speed, 0, stop, IntPtr.Zero);
                     if (!ptzControl) {
                         NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
                     }
@@ -629,16 +629,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="ipAddress"></param>
         /// <param name="channelId"></param>
         /// <param name="increase"></param>
-        /// <param name="start"></param>
+        /// <param name="stop"></param>
         /// <returns></returns>
-        public async Task AdjustPtzFocusContinuouslyAsync(string ipAddress, int channelId, bool increase, bool start) {
+        public async Task AdjustPtzFocusContinuouslyAsync(string ipAddress, int channelId, bool increase, bool stop) {
             var speed = 4;
             try {
                 await _ptzOperationSlim.WaitAsync();
                 if (_loginDev.TryGetValue(ipAddress, out var dev)) {
                     var ptzControl = NETClient.PTZControl(dev.LogInHandle, channelId,
                         increase ? EM_EXTPTZ_ControlType.FOCUS_ADD_CONTROL : EM_EXTPTZ_ControlType.FOCUS_DEC_CONTROL, 0,
-                        speed, 0, start, IntPtr.Zero);
+                        speed, 0, stop, IntPtr.Zero);
                     if (!ptzControl) {
                         NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
                     }

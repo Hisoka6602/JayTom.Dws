@@ -8,7 +8,7 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     IsHitTestVisible="False"
-    Opacity="{Binding Path=Opacity, RelativeSource={RelativeSource AncestorType=UserControl}}"
+    Opacity="0.8"
     mc:Ignorable="d">
     <UserControl.Resources>
         <Storyboard x:Key="OpacityAnimation">
