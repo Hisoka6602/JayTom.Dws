@@ -38,7 +38,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "CloudVideoPage",
                     ClickCommand = ClickCommand
                 },
-                new()
+                /*new()
                 {
                     Title = "录像NVR",
                     IconFont = new IconInfoModel()
@@ -51,7 +51,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Description = "录像NVR",
                     PageClassName = "NetworkVideoRecorderPage",
                     ClickCommand = ClickCommand
-                },
+                },*/
                 /*new()
                 {
                     Title = "云端数据",

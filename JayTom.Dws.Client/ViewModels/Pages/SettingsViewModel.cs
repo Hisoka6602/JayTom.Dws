@@ -78,7 +78,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "CameraConfigurationPage"
                 },
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -103,7 +103,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = Languages.Language.ResourceManager.GetString("存图相关设置") ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "SaveImageSettingsPage"
-                },
+                },*/
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
@@ -117,7 +117,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "BarcodeFilterSettingsPage"
                 },
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -142,7 +142,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = Languages.Language.ResourceManager.GetString("体积设置相关") ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "VolumeSettingsPage"
-                },
+                },*/
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "ContentInputSettingsPage"
                 },
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -181,7 +181,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "分拣相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "PackageSortingSettingsPage"
-                },
+                },*/
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
@@ -195,7 +195,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "CreatePackageSettingsPage"
                 },
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -207,7 +207,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "Ocr相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "OcrSettingsPage"
-                },
+                },*/
                 new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()

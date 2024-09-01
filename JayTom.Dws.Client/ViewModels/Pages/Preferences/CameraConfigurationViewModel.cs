@@ -60,7 +60,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 PageClassName = "BarcodeScannerCameraConfigPage",
                 ClickCommand = ClickCommand,
             },
-            new MenuItemInfoModel()
+            /*new MenuItemInfoModel()
             {
                 Title = Languages.Language.ResourceManager.GetString("CompactCamera")??string.Empty,
                 IconFont = new IconInfoModel()
@@ -85,7 +85,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Description ="Usb相机设置",
                 PageClassName = "UsbCameraSettingsPage",
                 ClickCommand = ClickCommand,
-            },
+            },*/
             new MenuItemInfoModel()
             {
                 Title = "NVR/IPC设备管理",
@@ -99,7 +99,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 PageClassName = "NVRIPCDeviceManagementPage",
                 ClickCommand = ClickCommand,
             },
-            new MenuItemInfoModel()
+            /*new MenuItemInfoModel()
             {
                 Title = "算法配置",
                 IconFont = new IconInfoModel()
@@ -111,7 +111,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Description ="扫码算法配置",
                 PageClassName = "AlgorithmSettingsPage",
                 ClickCommand = ClickCommand,
-            },
+            },*/
         };
         }
 

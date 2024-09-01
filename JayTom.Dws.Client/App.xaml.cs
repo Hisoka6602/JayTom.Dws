@@ -393,7 +393,7 @@ namespace JayTom.Dws.Client {
                 //把后台注册服务写在这里
                 services.AddHostedService<KeyboardDeviceBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
-                services.AddHostedService<SubmitApiBackgroundService>();//提交Api
+                //services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
                 services.AddHostedService<CleanupService>();//清理
                 services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
@@ -402,7 +402,7 @@ namespace JayTom.Dws.Client {
                 services.AddHostedService<TimerBackgroundService>();//计时
                 services.AddHostedService<CloudBackgroundService>();//上传云端
                 //services.AddHostedService<PackageAggregationService>();//集包服务
-                services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
+                //services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
             });
         }
 
