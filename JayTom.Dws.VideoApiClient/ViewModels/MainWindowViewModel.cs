@@ -684,9 +684,9 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                                     var barCodeItemModels = infos.Select((s, i) => new BarCodeItemModel {
                                         Num = i + 1,
                                         BarCode = s.BarCodeInfo?.Barcode,
-                                        CameraCustomName = s?.BarCodeInfo?.CameraSerialNumber,
+                                        CameraCustomName = s?.BarCodeInfo?.SerialNumber,
 
-                                        CameraSerialNumber = s?.BarCodeInfo?.CameraSerialNumber,
+                                        CameraSerialNumber = s?.BarCodeInfo?.SerialNumber,
                                         NodeName = s?.DeviceInfo?.NodeName,
                                         ScanImageUrl = s?.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.ImageUrl,
                                         ScanTime = s?.BarCodeInfo?.ScanTime ?? DateTime.MinValue,
