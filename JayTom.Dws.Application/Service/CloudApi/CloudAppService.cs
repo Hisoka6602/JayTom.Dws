@@ -162,6 +162,10 @@ namespace JayTom.Dws.Application.Service.CloudApi {
             return _cloudService.ExceptionRule(token);
         }
 
+        public Task<KeyValuePair<bool, object>> GetCloudConfig(string settingsName, CancellationToken token = default) {
+            return _cloudService.GetCloudConfig(settingsName, token);
+        }
+
         public double ConvertBytesToMb(long bytes) {
             return (bytes / 1024f) / 1024f;
         }

@@ -18,9 +18,11 @@ using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Cloud;
 using System.Windows.Media.Imaging;
 using JayTom.Dws.Interface.License;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
@@ -42,6 +44,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IConfigRepository _configRepository;
         private readonly IClientLicenseApi _clientLicenseApi;
+        private readonly ICloud _cloud;
         private ObservableCollection<NvrRealTimePreviewItemInfo> _nvrRealTimePreviewItems = new();
 
         private DaHuatechNVR? _daHuatechNvr;
@@ -52,17 +55,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private SnackbarMessageQueue _homeMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _itemIsExpanded = true;
         private bool? _isUnauthorized;
+        private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
                 INvrCameraBindingRepository nvrCameraBindingRepository,
             IConfigRepository configRepository,
-            IClientLicenseApi clientLicenseApi) {
+            IClientLicenseApi clientLicenseApi,
+            ICloud cloud) {
             _deviceService = deviceService;
             _keyboardDeviceManager = keyboardDeviceManager;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _configRepository = configRepository;
             _clientLicenseApi = clientLicenseApi;
+            _cloud = cloud;
             _daHuatechNvr ??= DaHuatechNVR.Instance;
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is { Type: WindowsActionType.Close }) {
@@ -115,6 +121,41 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     });
                 }
             });
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
+                if (item is { } model) {
+                    switch (model.SettingsName) {
+                        case "CreatePackageSettings":
+                            var defaultEntity = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
+                                                           new CreatePackageSettingsDto();
+                            await _cloud.SubmitCloudConfiguration(model.SettingsName, defaultEntity, "/api/Config/SaveConfig");
+
+                            break;
+
+                        case "ContentInputSettings":
+                            var contentInputSettingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>(model.SettingsName) ??
+                                                          new ContentInputSettingsDto();
+                            await _cloud.SubmitCloudConfiguration(model.SettingsName, contentInputSettingsDto, "/api/Config/SaveConfig");
+                            break;
+
+                        case "BarcodeFilterSettings":
+                            var barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
+                                                           new BarcodeFilterSettingsDto();
+                            await _cloud.SubmitCloudConfiguration(model.SettingsName, barcodeFilterSettingsDto, "/api/Config/SaveConfig");
+
+                            break;
+
+                        case "CloudVideoSettings":
+                            _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(model.SettingsName) ?? new CloudVideoSettingsDto();
+                            await _cloud.SetParameters(new Dictionary<string, object>()
+                              {
+                                { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
+                                { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
+                            });
+                            break;
+                    }
+                }
+            });
+
             _deviceService.BarCodeKeyReceived += async (sender, args) => {
                 //显示条码
                 await Application.Current.Dispatcher.InvokeAsync(() => {
@@ -174,6 +215,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
+            if (string.IsNullOrEmpty(_cloudVideoSettingsDto.WebDoMain)) {
+                _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>("CloudVideoSettings")
+                                         ?? new CloudVideoSettingsDto();
+                await _cloud.SetParameters(new Dictionary<string, object>()
+                {
+                    { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
+                    { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
+                });
+            }
+
             NvrRealTimePreviewItems.Clear();
 
             //授权

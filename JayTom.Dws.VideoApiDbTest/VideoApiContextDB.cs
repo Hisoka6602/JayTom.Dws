@@ -1,4 +1,5 @@
 ﻿using JayTom.Dws.Data.Package;
+using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.VideoApiData;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Data.LocalConf.CloudConfig;
@@ -72,6 +73,14 @@ namespace JayTom.Dws.VideoApiDbTest {
             modelBuilder.Entity<NvrInfoModel>().HasKey(c => new {
                 c.Id
             });
+
+            //基础配置
+            modelBuilder.Entity<ConfigInfoModel>().HasKey(c => new {
+                c.Id
+            });
+            modelBuilder.Entity<ConfigInfoModel>()
+                .HasIndex(b => b.ConfigName)
+                .IsUnique();
         }
     }
 }

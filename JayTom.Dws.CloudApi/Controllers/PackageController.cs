@@ -128,7 +128,7 @@ namespace JayTom.Dws.CloudApi.Controllers {
                     Other = s.Other,
                     BarCodeInfo = new BarCodeInfoDto() {
                         Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
-                        CameraSerialNumber = s.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                        SerialNumber = s.BarCodeInfo?.SerialNumber ?? string.Empty,
                         Source = s.BarCodeInfo?.Source ?? SourceType.None,
                         ScanTime = s.BarCodeInfo?.ScanTime ?? DateTime.MinValue,
                     },

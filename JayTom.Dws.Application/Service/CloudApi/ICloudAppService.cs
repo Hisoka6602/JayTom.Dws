@@ -174,5 +174,13 @@ namespace JayTom.Dws.Application.Service.CloudApi {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> ExceptionRule(CancellationToken token = default);
+
+        /// <summary>
+        /// 获取云端设置
+        /// </summary>
+        /// <param name="settingsName"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> GetCloudConfig(string settingsName, CancellationToken token = default);
     }
 }

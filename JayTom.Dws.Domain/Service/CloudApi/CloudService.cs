@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Data.CloudApiData;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
@@ -14,13 +15,16 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
         private readonly ICloudPackageRepository _cloudPackageRepository;
         private readonly IExceptionTypeRepository _exceptionTypeRepository;
         private readonly IExceptionMatchRepository _exceptionMatchRepository;
+        private readonly ICloudConfigRepository _cloudConfigRepository;
 
         public CloudService(ICloudPackageRepository cloudPackageRepository,
             IExceptionTypeRepository exceptionTypeRepository,
-            IExceptionMatchRepository exceptionMatchRepository) {
+            IExceptionMatchRepository exceptionMatchRepository,
+            ICloudConfigRepository cloudConfigRepository) {
             _cloudPackageRepository = cloudPackageRepository;
             _exceptionTypeRepository = exceptionTypeRepository;
             _exceptionMatchRepository = exceptionMatchRepository;
+            _cloudConfigRepository = cloudConfigRepository;
         }
 
         public async Task<KeyValuePair<bool, object>> SavePackageInfo(PackageDto packageInfo, CancellationToken cancellationToken = default) {
@@ -310,6 +314,13 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
                 Keywords = s.Keywords,
                 Priority = s.Priority,
             })?.ToList() ?? new List<ExceptionRuleDto>());
+        }
+
+        public async Task<KeyValuePair<bool, object>> GetCloudConfig(string settingsName, CancellationToken token = default) {
+            var configInfoModels = await _cloudConfigRepository.MemoryCacheData();
+            var configInfoModel = configInfoModels.FirstOrDefault(f =>
+                f.ConfigName.Equals(settingsName, StringComparison.CurrentCultureIgnoreCase));
+            return new KeyValuePair<bool, object>(configInfoModel != null, configInfoModel ?? new ConfigInfoModel());
         }
     }
 }

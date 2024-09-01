@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Data.ServerData;
 using JayTom.Dws.Data.VideoApiData;
@@ -110,6 +111,14 @@ namespace JayTom.Dws.Infrastructure {
             modelBuilder.Entity<NvrInfoModel>().HasKey(c => new {
                 c.Id
             });
+
+            //基础配置
+            modelBuilder.Entity<ConfigInfoModel>().HasKey(c => new {
+                c.Id
+            });
+            modelBuilder.Entity<ConfigInfoModel>()
+                .HasIndex(b => b.ConfigName)
+                .IsUnique();
         }
     }
 }

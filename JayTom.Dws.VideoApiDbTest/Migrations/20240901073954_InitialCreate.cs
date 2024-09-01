@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace JayTom.Dws.VideoApiDbTest.Migrations
 {
-    public partial class AddIndexes : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -12,6 +12,24 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
                 name: "dbo");
 
             migrationBuilder.AlterDatabase()
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Conf_ConfigInfo",
+                schema: "dbo",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    ConfigName = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Value = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Conf_ConfigInfo", x => x.Id);
+                })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
@@ -63,11 +81,13 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Barcode = table.Column<string>(type: "varchar(255)", nullable: false)
+                    Barcode = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ScanTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Source = table.Column<int>(type: "int", nullable: false),
-                    CameraSerialNumber = table.Column<string>(type: "longtext", nullable: false)
+                    SerialNumber = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DisplayIdentifier = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PackageId = table.Column<long>(type: "bigint", nullable: false)
                 },
@@ -478,10 +498,11 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Data_BarCodeInfo_Barcode",
+                name: "IX_Conf_ConfigInfo_ConfigName",
                 schema: "dbo",
-                table: "Data_BarCodeInfo",
-                column: "Barcode");
+                table: "Conf_ConfigInfo",
+                column: "ConfigName",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Data_BarCodeInfo_PackageId",
@@ -489,12 +510,6 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
                 table: "Data_BarCodeInfo",
                 column: "PackageId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Data_BarCodeInfo_ScanTime",
-                schema: "dbo",
-                table: "Data_BarCodeInfo",
-                column: "ScanTime");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Data_DeviceInfo_PackageId",
@@ -532,6 +547,10 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AggregatePackagesInfoModel");
+
+            migrationBuilder.DropTable(
+                name: "Conf_ConfigInfo",
+                schema: "dbo");
 
             migrationBuilder.DropTable(
                 name: "Data_BarCodeInfo",

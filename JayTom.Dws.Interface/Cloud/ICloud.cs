@@ -35,6 +35,24 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <param name="parameters"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, string>> SetParameters(Dictionary<string, object> parameters);
+
+        /// <summary>
+        /// 获取云端配置
+        /// </summary>
+        /// <typeparam name="T">配置类型</typeparam>
+        /// <returns>返回云端配置的对象</returns>
+        Task<KeyValuePair<bool, object>> GetCloudConfiguration(string settingsName, string path = "", CancellationToken token = default);
+
+        /// <summary>
+        /// 提交云端配置
+        /// </summary>
+        /// <typeparam name="T">配置类型</typeparam>
+        /// <param name="settingsName"></param>
+        /// <param name="path"></param>
+        /// <param name="configuration">要提交的云端配置对象</param>
+        /// <param name="token"></param>
+        /// <returns>包含操作结果的键值对，键表示操作是否成功，值表示相关的消息</returns>
+        Task<KeyValuePair<bool, string>> SubmitCloudConfiguration<T>(string settingsName, T configuration, string path = "", CancellationToken token = default);
     }
 
     public class CloudVideoUploadMessage {

@@ -134,12 +134,15 @@ internal class Program {
                 builder.Services.AddSingleton<IVideoScanNodeRepository, VideoScanNodeRepository>();
 
                 builder.Services.AddSingleton<IVideoPackageRepository, VideoPackageRepository>();
+                builder.Services.AddSingleton<IVideoConfigRepository, VideoConfigRepository>();
             }
         }
         //Service注入
         {
             builder.Services.AddSingleton<IVideoBarCodeAppService, VideoBarCodeAppService>();
             builder.Services.AddSingleton<IVideoBarCodeService, VideoBarCodeService>();
+            builder.Services.AddSingleton<IVideoConfigAppService, VideoConfigAppService>();
+            builder.Services.AddSingleton<IVideoConfigService, VideoConfigService>();
             builder.Services.AddSingleton<IMessageHub, MessageHub>();
         }
         //后台服务

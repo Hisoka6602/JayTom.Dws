@@ -1,6 +1,7 @@
 ﻿using JayTom.Dws.Data.License;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Data.CloudApiData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -253,6 +254,16 @@ internal class Program {
                 modelBuilder.Entity<ExceptionMatchInfoModel>().HasKey(c => new {
                     c.Id
                 });
+
+                //复用的本地配置
+
+                //基础配置
+                modelBuilder.Entity<ConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<ConfigInfoModel>()
+                    .HasIndex(b => b.ConfigName)
+                    .IsUnique();
             }
         }
     }

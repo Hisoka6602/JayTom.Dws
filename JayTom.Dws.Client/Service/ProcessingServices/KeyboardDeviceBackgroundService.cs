@@ -3,6 +3,7 @@ using DryIoc;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using SixLabors.ImageSharp;
@@ -11,10 +12,15 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Interface.License;
+using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
@@ -38,14 +44,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly ICloud _cloud;
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private ContentInputSettingsDto _contentInputSettingsDto = new();
+        private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
+        private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
         private SemaphoreSlim _createPackageSlim = new(1);
         private DateTime _lastReadTime = DateTime.Now;
         private DateTime _lastNoReadTime = DateTime.Now;
         private WeightSettingsDto _weightSettingsDto = new();
         private static bool _isWindowsClose;
         private List<ICamera> _cameras = new();
+
+        private BarCodeFilterContainer _barCodeFilterContainer = new();
 
         //private BaseDaHuatech? _baseDaHuatech;
         private DaHuatechNVR? _daHuatechNvr;
@@ -59,7 +70,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IIpcNvrConfigRepository ipcNvrConfigRepository,
             INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository) {
+            INvrCameraBindingRepository nvrCameraBindingRepository,
+            ICloud cloud) {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
             _configRepository = configRepository;
@@ -68,6 +80,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _nvrWatermarkConfigRepository = nvrWatermarkConfigRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
+            _cloud = cloud;
 
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
@@ -148,54 +161,60 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 }
             };
             _deviceService.BarCodeKeyReceived += async (sender, args) => {
-                //验证多条码
-                try {
-                    await _createPackageSlim.WaitAsync();
-                    _lastReadTime = DateTime.Now;
-                    var packageInfo =
-                        _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
+                //效验正则
+                var validationResult = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
+                    BarCode = args.Barcode,
+                    ScanTime = DateTime.Now,
+                });
+                if (validationResult.IsValidationPassed) {
+                    try {
+                        await _createPackageSlim.WaitAsync();
+                        _lastReadTime = DateTime.Now;
+                        var packageInfo =
+                            _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                                PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                                PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
 
-                    if (_createPackageSettingsDto.PackageCreationMethods.HasFlag(PackageCreationMethodsEnum.BarcodeScannerInput) && packageInfo is null) {
-                        //支持扫码枪创建
-                        packageInfo = new PackageInfo() {
-                            Guid = args.Timestamp,
-                            BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
-                                SerialNumber = $"{args.Device?.DevicePath}",
-                                DisplayIdentifier = $"{args.Device?.DeviceName}-{args.Device?.ManufacturerName}",
-                                ScanTime = args.ScanTime,
-                                Source = SourceType.Camera,
-                                BindTime = DateTime.Now
-                            },
-                        };
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                            IsSuccess = true,
-                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                            PackageInfo = packageInfo
-                        });
-                    }
-                    else {
-                        if (packageInfo is not null) {
-                            packageInfo.BarCodeInfo = new BarCodeInfoModel() {
-                                Barcode = args.Barcode,
-                                SerialNumber = $"{args.Device?.DevicePath}",
-                                DisplayIdentifier = $"{args.Device?.DeviceName}-{args.Device?.ManufacturerName}",
-                                ScanTime = args.ScanTime,
-                                Source = SourceType.Camera,
-                                BindTime = DateTime.Now
+                        if (_createPackageSettingsDto.PackageCreationMethods.HasFlag(PackageCreationMethodsEnum.BarcodeScannerInput) && packageInfo is null) {
+                            //支持扫码枪创建
+                            packageInfo = new PackageInfo() {
+                                Guid = args.Timestamp,
+                                BarCodeInfo = new BarCodeInfoModel() {
+                                    Barcode = args.Barcode,
+                                    SerialNumber = $"{args.Device?.DevicePath}",
+                                    DisplayIdentifier = $"{args.Device?.DeviceName}-{args.Device?.ManufacturerName}",
+                                    ScanTime = args.ScanTime,
+                                    Source = SourceType.Camera,
+                                    BindTime = DateTime.Now
+                                },
                             };
                             EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                                 IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.BarcodeScannerReturn,
-                                PackageInfo = packageInfo,
+                                TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                                PackageInfo = packageInfo
                             });
                         }
+                        else {
+                            if (packageInfo is not null) {
+                                packageInfo.BarCodeInfo = new BarCodeInfoModel() {
+                                    Barcode = args.Barcode,
+                                    SerialNumber = $"{args.Device?.DevicePath}",
+                                    DisplayIdentifier = $"{args.Device?.DeviceName}-{args.Device?.ManufacturerName}",
+                                    ScanTime = args.ScanTime,
+                                    Source = SourceType.Camera,
+                                    BindTime = DateTime.Now
+                                };
+                                EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                    IsSuccess = true,
+                                    TriggerPosition = TriggerPositionEnum.BarcodeScannerReturn,
+                                    PackageInfo = packageInfo,
+                                });
+                            }
+                        }
                     }
-                }
-                finally {
-                    _createPackageSlim.Release();
+                    finally {
+                        _createPackageSlim.Release();
+                    }
                 }
             };
             //配置更改
@@ -211,6 +230,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         case "ContentInputSettings":
                             _contentInputSettingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>(model.SettingsName) ??
                                                        new ContentInputSettingsDto();
+
+                            break;
+
+                        case "BarcodeFilterSettings":
+                            _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
+                                                        new BarcodeFilterSettingsDto();
 
                             break;
                     }
@@ -296,7 +321,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
                 }
             });
-
             //移除包裹事件
             PackageInfoManager.PackageRemoved += (sender, args) => {
                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -369,11 +393,48 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             try {
-                //读配置
+                _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>("CloudVideoSettings", stoppingToken) ?? new CloudVideoSettingsDto();
+                if (_cloudVideoSettingsDto.IsUseCloudVideoUpload) {
+                    await _cloud.SetParameters(new Dictionary<string, object>()
+                    {
+                        { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
+                        { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
+                    });
+                    // 创建任务列表
+                    var tasks = new List<Task>
+                    {
+                        FetchAndUpdateConfig("CreatePackageSettings", stoppingToken),
+                        FetchAndUpdateConfig("ContentInputSettings", stoppingToken),
+                        FetchAndUpdateConfig("BarcodeFilterSettings", stoppingToken)
+                    };
+
+                    // 等待所有任务完成
+                    await Task.WhenAll(tasks);
+                }
 
                 _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
                 _contentInputSettingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings", stoppingToken) ??
                                            new ContentInputSettingsDto();
+                _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ??
+                                            new BarcodeFilterSettingsDto();
+
+                _barCodeFilterContainer = new BarCodeFilterContainer {
+                    Pattern = _barcodeFilterSettingsDto.BasicFilterInfo.RegularExpression,
+                    MaxSize = _barcodeFilterSettingsDto.DuplicateBarcodeFilterCount,
+                    ExpirationTime = TimeSpan.FromMilliseconds(_barcodeFilterSettingsDto.ScanInterval),
+                    BarCodeFilterMode = (BarCodeFilterMode)_barcodeFilterSettingsDto.BarCodeFilterOptions,
+                    CustomRegularExpressionItems = _barcodeFilterSettingsDto.CustomRegexFilterItems.Where(w => w.IsActive)
+                        .Select(s => s.RegexPattern).ToList(),
+                    IsUseCustomRegexReplacement = _barcodeFilterSettingsDto.IsUseCustomRegexReplacement,
+                    IsUseFilteredBarcodeTypes = _barcodeFilterSettingsDto.IsUseFilteredBarcodeTypes,
+                    CustomRegexReplacementItems = _barcodeFilterSettingsDto.CustomRegexReplacementItems
+                        .Where(w => w.IsActive).Select(
+                            s => new CustomRegexReplacementItemInfo {
+                                RegexPattern = s.RegexPattern,
+                                ReplaceContent = s.ReplaceContent
+                            }).ToList()
+                };
+                BarCodeFilterContainer.ResetFilter();
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -431,6 +492,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
                 }, stoppingToken);
+            }
+        }
+
+        private async Task FetchAndUpdateConfig(string configName, CancellationToken token) {
+            var (key, value) = await _cloud.GetCloudConfiguration(configName, "/api/Config/GetConfig", token: token);
+
+            if (key && value is ApiResult { Result: true, Data: not null } result) {
+                var configInfoModel = JsonConvert.DeserializeObject<ConfigInfoModel>(result.Data.ToString());
+                if (configInfoModel is not null) {
+                    await _configRepository.InsertOrUpdate(configInfoModel, token);
+                }
             }
         }
     }

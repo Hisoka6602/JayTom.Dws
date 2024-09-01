@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -10,8 +11,10 @@ using SixLabors.ImageSharp;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using Image = System.Drawing.Image;
+using JayTom.Dws.Interface.License;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 
@@ -239,6 +242,81 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
+        public async Task<KeyValuePair<bool, object>> GetCloudConfiguration(string settingsName, string path = "/api/Config/GetConfig", CancellationToken token = default) {
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(5);
+                var httpResult = await httpClient.GetStringAsync($"{GetBaseUrl(_parameters.WebDoMain)}{path}?settingsName={settingsName}",
+                    token);
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+
+                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, object>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, "接口访问异常!");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, string>> SubmitCloudConfiguration<T>(string settingsName, T configuration, string path = "/api/Config/SaveConfig", CancellationToken token = default) {
+            try {
+                var requestJson = JsonConvert.SerializeObject(new {
+                    SettingsName = settingsName,
+                    ConfigJson = JsonConvert.SerializeObject(configuration)
+                });
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromSeconds(2);
+                HttpResponseMessage message;
+                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    var s = $"{GetBaseUrl(_parameters.WebDoMain)}{path}";
+                    message = await httpClient.PostAsync($"{GetBaseUrl(_parameters.WebDoMain)}{path}", content, token)
+                        .ConfigureAwait(false);
+                }
+                string httpResult;
+                switch (message.StatusCode) {
+                    case HttpStatusCode.OK: {
+                            using (message) {
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            }
+                            break;
+                        }
+                    case HttpStatusCode.NotFound:
+                        return new KeyValuePair<bool, string>(false, $"该地址不存在!");
+
+                    default:
+                        httpResult = $"{message}";
+                        break;
+                }
+
+                //解码
+                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                return new KeyValuePair<bool, string>(result?.Result ?? false, result?.Msg ?? "上传失败");
+            }
+            catch (HttpRequestException) {
+                return new KeyValuePair<bool, string>(false, "Http访问异常!");
+            }
+            catch (AggregateException) {
+                return new KeyValuePair<bool, string>(false, "接口访问异常!");
+            }
+            catch (TaskCanceledException) {
+                return new KeyValuePair<bool, string>(false, "接口访问返回超时!");
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, "接口访问异常!");
+            }
+        }
+
         public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
             try {
                 using var memoryStream = new MemoryStream();
@@ -281,6 +359,15 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             /// 请求超时时间
             /// </summary>
             public int Timeout { get; set; } = 2000;
+        }
+
+        public string GetBaseUrl(string url) {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri)) {
+                // 获取协议和主机部分
+                return uri.GetLeftPart(UriPartial.Authority);
+            }
+
+            return string.Empty;
         }
     }
 }

@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JayTom.Dws.VideoApiDbTest.Migrations
 {
     [DbContext(typeof(VideoApiContextDb))]
-    [Migration("20240725065729_AddIndexesAndNewFields")]
-    partial class AddIndexesAndNewFields
+    [Migration("20240901073954_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -18,6 +18,31 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
                 .HasAnnotation("ProductVersion", "5.0.17");
+
+            modelBuilder.Entity("JayTom.Dws.Data.LocalConf.ConfigInfoModel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("ConfigName")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("ConfigName");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("Value");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfigName")
+                        .IsUnique();
+
+                    b.ToTable("Conf_ConfigInfo", "dbo");
+                });
 
             modelBuilder.Entity("JayTom.Dws.Data.Package.AggregatePackagesInfoModel", b =>
                 {
@@ -56,10 +81,10 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("Barcode");
 
-                    b.Property<string>("CameraSerialNumber")
+                    b.Property<string>("DisplayIdentifier")
                         .IsRequired()
                         .HasColumnType("longtext")
-                        .HasColumnName("CameraSerialNumber");
+                        .HasColumnName("DisplayIdentifier");
 
                     b.Property<long>("PackageId")
                         .HasColumnType("bigint")
@@ -68,6 +93,11 @@ namespace JayTom.Dws.VideoApiDbTest.Migrations
                     b.Property<DateTime>("ScanTime")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("ScanTime");
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("SerialNumber");
 
                     b.Property<int>("Source")
                         .HasColumnType("int")

@@ -4,12 +4,12 @@ using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Data.CloudApiData;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {
-
     public class CloudApiContext : DbContext {
 
         public CloudApiContext(DbContextOptions<CloudApiContext> options) : base(options) {
@@ -185,6 +185,19 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<ExceptionMatchInfoModel>().HasKey(c => new {
                     c.Id
                 });
+
+
+                //复用的本地配置
+
+                //基础配置
+                modelBuilder.Entity<ConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<ConfigInfoModel>()
+                    .HasIndex(b => b.ConfigName)
+                    .IsUnique();
+
+
             }
         }
     }

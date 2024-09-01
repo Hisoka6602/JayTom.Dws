@@ -1,20 +1,27 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using TouchSocket.Sockets;
 using System.Configuration;
+using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
+using JayTom.Dws.Domain.Repository.CloudApi;
 using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
 
 namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
 
     public class CloudApiMessageHub : Hub, ICloudApiMessageHub {
         private readonly IHubContext<CloudApiMessageHub> _hubContext;
+        private readonly ICloudConfigRepository _cloudConfigRepository;
 
-        public CloudApiMessageHub(IHubContext<CloudApiMessageHub> hubContext) {
+        public CloudApiMessageHub(IHubContext<CloudApiMessageHub> hubContext,
+            ICloudConfigRepository cloudConfigRepository) {
             _hubContext = hubContext;
+            _cloudConfigRepository = cloudConfigRepository;
         }
 
         public async void Stop(List<string> excludedClients) {
@@ -47,6 +54,8 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
                     SettingsInfo = message
                 }
             });
+
+            await SaveSettings(settingsName, message);
         }
 
         public async void MessageAll(string messageType, object message) {
@@ -79,6 +88,24 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
                 messageType,
                 message
               });
+        }
+
+        private async Task<bool> SaveSettings(string settingsName, object settingsInfo, CancellationToken cancellationToken = default) {
+            if (settingsName.Equals("BarcodeFilterSettings", StringComparison.CurrentCultureIgnoreCase)) {
+                try {
+                    var barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(settingsInfo.ToString() ?? string.Empty);
+                    if (barcodeFilterSettingsDto is not null) {
+                        return await _cloudConfigRepository.InsertOrUpdate(new ConfigInfoModel() {
+                            ConfigName = "BarcodeFilterSettings",
+                            Value = settingsInfo.ToString() ?? string.Empty,
+                        }, cancellationToken);
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
+            }
+            return false;
         }
     }
 }
