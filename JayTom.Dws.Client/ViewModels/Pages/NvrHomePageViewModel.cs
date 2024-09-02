@@ -37,6 +37,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class NvrHomePageViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
@@ -154,7 +155,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }
             });
-
+            //更新云视频上传状态
+            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
+                if (item is { } model) {
+                    await Application.Current.Dispatcher.InvokeAsync(async () => {
+                        var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(item.Barcode) &&
+                            f.ScanTime.Equals(item.ScanTime));
+                        if (barCodeItemModel is not null) {
+                            barCodeItemModel.IsUploadedToCloudVideo = item.IsSuccessful;
+                        }
+                    }, DispatcherPriority.Render);
+                }
+            });
             _deviceService.BarCodeKeyReceived += async (sender, args) => {
                 //显示条码
                 await Application.Current.Dispatcher.InvokeAsync(() => {

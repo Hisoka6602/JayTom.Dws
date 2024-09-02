@@ -25,6 +25,7 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -45,6 +46,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly ICloud _cloud;
+        private readonly IResultOutputService _resultOutputService;
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private ContentInputSettingsDto _contentInputSettingsDto = new();
         private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
@@ -71,7 +73,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             IIpcNvrConfigRepository ipcNvrConfigRepository,
             INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
             INvrCameraBindingRepository nvrCameraBindingRepository,
-            ICloud cloud) {
+            ICloud cloud, IResultOutputService resultOutputService) {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
             _configRepository = configRepository;
@@ -81,6 +83,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             _nvrWatermarkConfigRepository = nvrWatermarkConfigRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _cloud = cloud;
+            _resultOutputService = resultOutputService;
 
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
