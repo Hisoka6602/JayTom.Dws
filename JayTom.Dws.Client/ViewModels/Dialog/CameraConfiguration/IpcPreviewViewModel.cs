@@ -18,6 +18,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
+
     public class IpcPreviewViewModel : BindableBase {
 
         //private WriteableBitmap _videoFrame = new(561, 316, 96, 96, PixelFormats.Bgr24, null);
@@ -90,7 +91,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public ICommand SelectChannelCommand => new DelegateCommand<PreviewViewChannelInfo>(SelectChannelDelegate);
 
         private async void SelectChannelDelegate(PreviewViewChannelInfo obj) {
-            if (NvrPreviewViewItems.Count(c => c.IsShow) >= 6) {
+            if (NvrPreviewViewItems.Count(c => c.IsShow) >= 6 &&
+                obj.IsChecked) {
                 return;
             }
             if (_baseDaHuatech is not null) {
