@@ -18,6 +18,7 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private string _remarks = string.Empty;
         private int _channel;
         private int _num;
+        private string _channelName = string.Empty;
 
         public int Num {
             get => _num;
@@ -86,6 +87,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public int Channel {
             get => _channel;
             set => SetProperty(ref _channel, value);
+        }
+
+        /// <summary>
+        /// 通道名称
+        /// </summary>
+        public string ChannelName {
+            get => _channelName;
+            set => SetProperty(ref _channelName, value);
         }
     }
 }

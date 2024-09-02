@@ -149,7 +149,7 @@
                     <DataGridTextColumn
                         Width="80"
                         MinWidth="80"
-                        Binding="{Binding Channel, UpdateSourceTrigger=PropertyChanged}"
+                        Binding="{Binding DeviceName, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>

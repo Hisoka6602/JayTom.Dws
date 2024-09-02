@@ -79,17 +79,18 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                         Name = s.Name,
                         SerialNumber = s.SerialNumber,
                         IsConfigured = true,
-                        Channel = channelIndex,
+                        Channel = (channelIndex - 1),
                         CustomName = s.Name,
                         Type = (DeviceType)s.Type,
                         Username = s.Username,
                         Password = s.Password,
                         Port = s.Port,
+                        DeviceName = $"通道{channelIndex}",
                         /*IsNvrBound = _scannerCameraConfigInfoModels
                             .FirstOrDefault(f => f.SerialNumber.Equals(CameraFinderItemInfo.SerialNumber) &&
                                 f.NvrCameraBindingInfos?.Any(a => a.IpAddress.Equals(s.IpAddress) && a.Channel == channelIndex) == true) != null,*/
                         IsNvrBound = bindingInfoModels.Any(a => a.SerialNumber.Equals(NvrBindingParamInfoModel.SerialNumber) &&
-                                                              a.Channel == channelIndex &&
+                                                              a.Channel == (channelIndex - 1) &&
                                                               a.IpAddress.Equals(s.IpAddress))
                     }))
                     ?.ToList();

@@ -37,7 +37,6 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class NvrHomePageViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
@@ -301,6 +300,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         Port = s.Port,
                         Username = s.Username,
                         Channel = s.Channel,
+                        DisplayName = $"通道:{s.Channel + 1}",
                         RealtimePreviewOperationCommand = RealtimePreviewOperationCommand,
                         IsBuffering = true,
                     }).OrderBy(o => o.Channel).ToList();

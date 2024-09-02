@@ -208,7 +208,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="SpringGreen"
-                                Text="{Binding Channel, StringFormat='通道{0}'}" />
+                                Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
                             <!--  工具栏  -->
                             <Border
                                 x:Name="ToolBarContainer"

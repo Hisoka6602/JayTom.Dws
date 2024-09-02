@@ -11,7 +11,6 @@ using System.Windows.Media.Imaging;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
-
     public class NvrRealTimePreviewItemInfo : BindableBase {
         private bool _isStopRead = false;
         private WriteableBitmap? _videoFrame;
@@ -27,6 +26,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private Size _maxSize = new(1800, 1012);
         private ICommand? _toggleImageSizeCommand;
         private ICommand? _realtimePreviewOperationCommand;
+        private string _displayName = string.Empty;
 
         public NvrRealTimePreviewItemInfo() {
             RealtimePreviewCallback = async info => {
@@ -102,6 +102,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public int Channel {
             get => _channel;
             set => SetProperty(ref _channel, value);
+        }
+
+        /// <summary>
+        /// 通道显示名称
+        /// </summary>
+        public string DisplayName {
+            get => _displayName;
+            set => SetProperty(ref _displayName, value);
         }
 
         /// <summary>

@@ -167,7 +167,6 @@
 
                         <Grid Name="PreviewViewGrid">
 
-
                             <!--  默认底图  -->
                             <Border Width="449" Height="253">
                                 <TextBlock
@@ -198,8 +197,7 @@
                                 FontSize="13"
                                 FontWeight="Bold"
                                 Foreground="SpringGreen"
-                                Text="{Binding ChannelId, StringFormat='通道{0}'}" />
-
+                                Text="{Binding DisplayName}" />
 
                             <!--  工具栏  -->
                             <Border

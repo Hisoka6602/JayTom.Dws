@@ -58,9 +58,9 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     info.Dispose();
                 }
                 await Application.Current.Dispatcher.InvokeAsync(async () => {
-                    ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select(s =>
+                    ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select((s, i) =>
                         new PreviewViewChannelInfo {
-                            ChannelId = s,
+                            ChannelId = i,
                             DisplayName = $"通道{s}",
                             IsChecked = false
                         }).ToList());
@@ -70,7 +70,6 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     }
                 });
             }
-
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
@@ -97,6 +96,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             if (_baseDaHuatech is not null) {
                 if (obj.IsChecked) {
                     var previewViewItemInfo = new NvrPreviewViewItemInfo() {
+                        DisplayName = obj.DisplayName,
                         ChannelId = obj.ChannelId,
                         IncreaseZoomCommand = new DelegateCommand<object>(sub => {
                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
@@ -150,7 +150,6 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 }
             }
         }
-
     }
 
     public class PreviewViewChannelInfo : BindableBase {

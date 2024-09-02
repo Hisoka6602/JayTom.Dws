@@ -27,7 +27,6 @@
         <attributeConverters:EnumAttributeConverter x:Key="EnumAttributeConverter" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
         <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
-
     </Page.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="CameraFinderView">
@@ -149,7 +148,7 @@
                     </b:EventTrigger>
                 </b:Interaction.Triggers>
 
-                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <!--<ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseHikvisionSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseHikvisionSmartCameraSdk" />
@@ -176,7 +175,7 @@
                         FontWeight="Bold"
                         Foreground="WhiteSmoke"
                         Text="海康工业相机" />
-                </ListBoxItem>
+                </ListBoxItem>-->
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
@@ -191,11 +190,6 @@
                         Foreground="WhiteSmoke"
                         Text="大华智能相机" />
                 </ListBoxItem>
-                <!--<b:Interaction.Triggers>
-                    <b:EventTrigger EventName="Selected">
-                        <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDaHuaSecurityCameraSdk" />
-                    </b:EventTrigger>
-                </b:Interaction.Triggers>-->
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaSecurityCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
@@ -210,7 +204,7 @@
                         Foreground="WhiteSmoke"
                         Text="大华安防相机" />
                 </ListBoxItem>
-                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <!--<ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseWayzimSmartCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseWayzimSmartCameraSdk" />
@@ -254,7 +248,7 @@
                         FontWeight="Bold"
                         Foreground="WhiteSmoke"
                         Text="海康体积相机" />
-                </ListBoxItem>
+                </ListBoxItem>-->
                 <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDaHuaVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
@@ -270,7 +264,7 @@
                         Foreground="WhiteSmoke"
                         Text="大华体积相机" />
                 </ListBoxItem>
-                <ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDimensionVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <!--<ListBoxItem IsSelected="{Binding CameraSdkSelectorInfo.IsUseDimensionVolumeCameraSdk, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="PreviewMouseLeftButtonDown">
                             <mvvm:InvokeCommandAction Command="{Binding SdkSelectedCommand}" CommandParameter="IsUseDimensionVolumeCameraSdk" />
@@ -299,7 +293,7 @@
                         FontWeight="Bold"
                         Foreground="WhiteSmoke"
                         Text="USB相机" />
-                </ListBoxItem>
+                </ListBoxItem>-->
             </ListBox>
         </StackPanel>
         <!--  用数据表代替  -->

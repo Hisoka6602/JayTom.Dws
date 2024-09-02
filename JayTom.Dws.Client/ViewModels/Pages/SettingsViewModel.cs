@@ -151,8 +151,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe641",
                         IconSize = 30
                     },
-                    Title = Languages.Language.ResourceManager.GetString("OutputResults")??string.Empty,
+                    //Title = Languages.Language.ResourceManager.GetString("OutputResults")??string.Empty,
+
                     Description = Languages.Language.ResourceManager.GetString("结果输出相关设置") ?? string.Empty,
+                    Title = "数据输出",
                     ClickCommand = ClickCommand,
                     PageClassName = "ResultOutputSettingsPage"
                 },
@@ -164,8 +166,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         IconCode = "\xe6b5",
                         IconSize = 30
                     },
-                    Title = Languages.Language.ResourceManager.GetString("InputContent")??string.Empty,
+                    //Title = Languages.Language.ResourceManager.GetString("InputContent")??string.Empty,
                     Description = Languages.Language.ResourceManager.GetString("内容输入相关设置") ?? string.Empty,
+                    Title = "数据输入",
                     ClickCommand = ClickCommand,
                     PageClassName = "ContentInputSettingsPage"
                 },
@@ -182,7 +185,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     ClickCommand = ClickCommand,
                     PageClassName = "PackageSortingSettingsPage"
                 },*/
-                new MenuItemInfoModel()
+                /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()
                     {
@@ -194,7 +197,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Description = "组包相关设置" ?? string.Empty,
                     ClickCommand = ClickCommand,
                     PageClassName = "CreatePackageSettingsPage"
-                },
+                },*/
                 /*new MenuItemInfoModel()
                 {
                     IconFont = new IconInfoModel()

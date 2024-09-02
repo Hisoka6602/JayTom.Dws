@@ -1,5 +1,7 @@
 using NLog;
 using NLog.Web;
+using System.Net;
+using System.Text;
 using Newtonsoft.Json;
 using System.Text.Json;
 using System.Text.Unicode;
@@ -197,6 +199,43 @@ internal class Program {
             a.ApplicationMaxBufferSize = 0;
             a.WebSockets.CloseTimeout = TimeSpan.FromSeconds(10);
         });
+        var serverIps = Dns.GetHostAddresses(Dns.GetHostName())
+            .Where(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            .ToList();
+        app.MapGet("/", (HttpContext context, IEnumerable<EndpointDataSource> endpointSources) => {
+            var requestIp = context.Connection.RemoteIpAddress;
+            var currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            // 检查请求是否来自服务器本地 IP 地址
+            if ((requestIp != null && serverIps.Any(ip => ip.Equals(requestIp))) ||
+                 requestIp?.ToString() == "127.0.0.1" || requestIp?.ToString() == "::1") {
+                // 如果请求来自服务器本地，显示路径和访问方法
+                var routes = endpointSources
+                    .SelectMany(ds => ds.Endpoints)
+                    .OfType<RouteEndpoint>()
+                    .Select(re => new {
+                        Route = re.RoutePattern.RawText,
+                        Methods = re.Metadata.OfType<HttpMethodMetadata>().FirstOrDefault()?.HttpMethods
+                    })
+                    .Where(r => !string.IsNullOrEmpty(r.Route))
+                    .ToList();
+
+                var responseText = new StringBuilder();
+                responseText.AppendLine($"Current Time: {currentTime}");
+                responseText.AppendLine("Available Routes:");
+                foreach (var route in routes) {
+                    var methods = route.Methods != null ? string.Join("/", route.Methods) : "Any";
+                    responseText.AppendLine($"{methods}: {route.Route}");
+                }
+
+                return Results.Text(responseText.ToString(), "text/plain");
+            }
+            else {
+                // 如果请求来自其他机器，仅显示时间
+                return Results.Text($"Current Time: {currentTime}", "text/plain");
+            }
+        });
+
         app.Run();
     }
 }

@@ -563,7 +563,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                 var process = new Process();
                 process.StartInfo.FileName = $"{AppDomain.CurrentDomain.BaseDirectory}x64Demo\\PlayBackAndDownloadDemo.exe";
                 process.StartInfo.Arguments = JsonConvert.SerializeObject(new {
-                    Channel = obj?.Channel,
+                    Channel = obj?.Channel + 1,
                     IpAddress = string.IsNullOrEmpty(nvrIpAddress) ? obj?.IpAddress : nvrIpAddress,
                     Port = obj?.Port,
                     Password = obj?.Password?.ToString(),
@@ -684,9 +684,8 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                                     var barCodeItemModels = infos.Select((s, i) => new BarCodeItemModel {
                                         Num = i + 1,
                                         BarCode = s.BarCodeInfo?.Barcode,
-                                        CameraCustomName = s?.BarCodeInfo?.SerialNumber,
-
-                                        CameraSerialNumber = s?.BarCodeInfo?.SerialNumber,
+                                        CameraCustomName = s?.BarCodeInfo?.DisplayIdentifier,
+                                        CameraSerialNumber = s?.BarCodeInfo?.Source == SourceType.Camera ? s?.BarCodeInfo?.SerialNumber : string.Empty,
                                         NodeName = s?.DeviceInfo?.NodeName,
                                         ScanImageUrl = s?.ImageInfos?.FirstOrDefault(f => f.Type == 0)?.ImageUrl,
                                         ScanTime = s?.BarCodeInfo?.ScanTime ?? DateTime.MinValue,

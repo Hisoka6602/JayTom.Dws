@@ -217,7 +217,7 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    <!--  格口  -->
+                    <!--~1~  格口  @1@
                     <StackPanel
                         Margin="5,0"
                         VerticalAlignment="Center"
@@ -255,7 +255,7 @@
                                 SelectedValuePath="Id"
                                 Style="{StaticResource MaterialDesignComboBox}" />
                         </Border>
-                    </StackPanel>
+                    </StackPanel>-->
                     <!--  条码  -->
                     <StackPanel
                         Margin="5,0"
@@ -293,7 +293,7 @@
                             </TextBox>
                         </Border>
                     </StackPanel>
-                    <!--  重量范围  -->
+                    <!--~1~  重量范围  @1@
                     <StackPanel
                         Margin="5,0"
                         VerticalAlignment="Center"
@@ -305,7 +305,7 @@
                             FontWeight="Bold"
                             Foreground="WhiteSmoke"
                             Text="{x:Static languages:Language.Weight}" />
-                        <!--  最小重量  -->
+                        ~1~  最小重量  @1@
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -344,7 +344,7 @@
                             FontWeight="SemiBold"
                             Foreground="White"
                             Text="~" />
-                        <!--  最大重量  -->
+                        ~1~  最大重量  @1@
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -376,8 +376,8 @@
                                 </TextBox.Text>
                             </TextBox>
                         </Border>
-                    </StackPanel>
-                    <!--  上传状态  -->
+                    </StackPanel>-->
+                    <!--~1~  上传状态  @1@
                     <StackPanel
                         Margin="5,0"
                         VerticalAlignment="Center"
@@ -428,7 +428,7 @@
                                                     <ColumnDefinition Width="20" />
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
-                                                <!--  图标  -->
+                                                ~1~  图标  @1@
                                                 <TextBlock
                                                     Grid.Column="0"
                                                     HorizontalAlignment="Center"
@@ -437,7 +437,7 @@
                                                     FontSize="16"
                                                     Foreground="{Binding Converter={StaticResource UploadStatusConverter}, ConverterParameter=Background}"
                                                     Text="{Binding Converter={StaticResource UploadStatusConverter}, ConverterParameter=FontText}" />
-                                                <!--  文字  -->
+                                                ~1~  文字  @1@
                                                 <TextBlock
                                                     Grid.Column="1"
                                                     Margin="5,0"
@@ -453,13 +453,13 @@
                                                     TextTrimming="WordEllipsis" />
                                             </Grid>
 
-                                            <!--  点击后弹出对应的信息框  -->
+                                            ~1~  点击后弹出对应的信息框  @1@
                                         </Border>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                         </Border>
-                    </StackPanel>
+                    </StackPanel>-->
                     <!--  按钮  -->
                     <StackPanel
                         Margin="5,0,-6,0"
@@ -581,7 +581,9 @@
                         <Setter Property="Height" Value="35" />
                     </Style>
                 </DataGrid.RowStyle>
+
                 <DataGrid.Columns>
+                    <!--  序列号  -->
                     <DataGridTextColumn
                         Width="45"
                         MinWidth="45"
@@ -592,6 +594,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="No." />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    <!--  时间戳  -->
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
@@ -602,7 +605,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderTimestampGuid}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-
+                    <!--  条码  -->
                     <DataGridTextColumn
                         Width="120"
                         MinWidth="120"
@@ -613,6 +616,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderBarCode}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    <!--~1~  重量  @1@
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
@@ -623,6 +627,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderWeight}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    ~1~  长度  @1@
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
@@ -641,6 +646,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderLength}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    ~1~  宽度  @1@
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
@@ -659,6 +665,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderWidth}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    ~1~  高度  @1@
                     <DataGridTextColumn
                         Width="70"
                         MinWidth="70"
@@ -677,6 +684,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderHeight}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    ~1~  体积  @1@
                     <DataGridTextColumn
                         Width="80"
                         MinWidth="70"
@@ -697,7 +705,8 @@
                         <DataGridTextColumn.Header>
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderVolume}" />
                         </DataGridTextColumn.Header>
-                    </DataGridTextColumn>
+                    </DataGridTextColumn>-->
+                    <!--  扫码时间  -->
                     <DataGridTextColumn
                         Width="130"
                         MinWidth="130"
@@ -708,6 +717,7 @@
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="{x:Static languages:Language.TableHeaderScanTime}" />
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
+                    <!--  上传状态  -->
                     <DataGridTemplateColumn
                         Width="100"
                         MinWidth="100"
@@ -779,7 +789,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <!--  格口  -->
+                    <!--~1~  格口  @1@
                     <DataGridTextColumn
                         Width="60"
                         MinWidth="60"
@@ -789,7 +799,7 @@
                         <DataGridTextColumn.Header>
                             <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="格口" />
                         </DataGridTextColumn.Header>
-                    </DataGridTextColumn>
+                    </DataGridTextColumn>-->
                     <!--  详细信息  -->
                     <DataGridTemplateColumn
                         Width="120"

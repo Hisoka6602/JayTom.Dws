@@ -184,7 +184,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     SerialNumber = $"{args.Device?.DevicePath}",
                                     DisplayIdentifier = $"{args.Device?.DeviceName}-{args.Device?.ManufacturerName}",
                                     ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera,
+                                    Source = SourceType.BarcodeScanner,
                                     BindTime = DateTime.Now
                                 },
                             };
@@ -201,7 +201,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     SerialNumber = $"{args.Device?.DevicePath}",
                                     DisplayIdentifier = $"{args.Device?.DeviceName}-{args.Device?.ManufacturerName}",
                                     ScanTime = args.ScanTime,
-                                    Source = SourceType.Camera,
+                                    Source = SourceType.BarcodeScanner,
                                     BindTime = DateTime.Now
                                 };
                                 EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -216,6 +216,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         _createPackageSlim.Release();
                     }
                 }
+
+                SetWatermark(args.Device?.DevicePath ?? string.Empty, args.Timestamp, args.Barcode);
             };
             //配置更改
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
@@ -338,51 +340,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     EventAggregator.Instance.Publish(args.CompletedPackage);
                 }
                 //写水印
-                Task.Run(async () => {
-                    if (_daHuatechNvr is not null && args.CompletedPackage?.BarCodeInfo?.SerialNumber is not null) {
-                        var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-                        if (nvrCameraBindingInfoModels.Any(a => a.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))) {
-                            var infoModels = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))
-                                .ToList();
-                            var results = infoModels.Select(s => {
-                                // 获取异步数据并同步等待完成
-                                var infoModel = _ipcNvrConfigRepository.MemoryCacheData().Result
-                                    .FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) && f.Username.Equals(s.Username));
-
-                                if (infoModel != null) {
-                                    var watermarkConfigInfoModel = _nvrWatermarkConfigRepository.MemoryCacheData().Result
-                                        .FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
-
-                                    if (watermarkConfigInfoModel != null) {
-                                        var watermarkConfig = new SecurityCameraWatermarkConfig {
-                                            Duration = watermarkConfigInfoModel.Duration,
-                                            MaxWatermarks = 8,
-                                            Position = 0,
-                                            BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
-                                        };
-                                        return (infoModel.IpAddress, s.Channel, watermarkConfig, watermarkConfigInfoModel.DisplayMode);
-                                    }
-                                }
-
-                                // 如果未找到匹配的 infoModel，返回默认值
-                                return (string.Empty, 0, null, 0);
-                            }).Where(w => !string.IsNullOrEmpty(w.IpAddress)).ToList();
-
-                            if (results?.Any() == true && results?.ToList()?.FirstOrDefault().watermarkConfig is not null) {
-                                if (results.FirstOrDefault().DisplayMode == 0) {
-                                    _daHuatechNvr.AddRealTimeWatermark(results.Select(s => (s.IpAddress, s.Channel)).ToList(),
-                                        args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
-                                        results.FirstOrDefault().watermarkConfig);
-                                }
-                                else {
-                                    _daHuatechNvr.AddSingleRealTimeWatermark(results.Select(s => (s.IpAddress, s.Channel)).ToList(),
-                                        args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
-                                        results.FirstOrDefault().watermarkConfig);
-                                }
-                            }
-                        }
-                    }
-                });
             };
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is { Type: WindowsActionType.Close }) {
@@ -504,6 +461,57 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     await _configRepository.InsertOrUpdate(configInfoModel, token);
                 }
             }
+        }
+
+        /// <summary>
+        /// 写水印
+        /// </summary>
+        public void SetWatermark(string serialNumber, long timestamp, string barcode) {
+            Task.Run(async () => {
+                if (_daHuatechNvr is not null) {
+                    var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                    if (nvrCameraBindingInfoModels.Any(a => a.SerialNumber.Equals(serialNumber))) {
+                        var infoModels = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(serialNumber))
+                            .ToList();
+                        var results = infoModels.Select(s => {
+                            // 获取异步数据并同步等待完成
+                            var infoModel = _ipcNvrConfigRepository.MemoryCacheData().Result
+                                .FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) && f.Username.Equals(s.Username));
+
+                            if (infoModel != null) {
+                                var watermarkConfigInfoModel = _nvrWatermarkConfigRepository.MemoryCacheData().Result
+                                    .FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
+
+                                if (watermarkConfigInfoModel != null) {
+                                    var watermarkConfig = new SecurityCameraWatermarkConfig {
+                                        Duration = watermarkConfigInfoModel.Duration,
+                                        MaxWatermarks = 8,
+                                        Position = 0,
+                                        BackgroundColor = ColorTranslator.FromHtml(watermarkConfigInfoModel.BackgroundColorHex)
+                                    };
+                                    return (infoModel.IpAddress, s.Channel, watermarkConfig, watermarkConfigInfoModel.DisplayMode);
+                                }
+                            }
+
+                            // 如果未找到匹配的 infoModel，返回默认值
+                            return (string.Empty, 0, null, 0);
+                        }).Where(w => !string.IsNullOrEmpty(w.IpAddress)).ToList();
+
+                        if (results?.Any() == true && results?.ToList()?.FirstOrDefault().watermarkConfig is not null) {
+                            if (results.FirstOrDefault().DisplayMode == 0) {
+                                _daHuatechNvr.AddRealTimeWatermark(results.Select(s => (s.IpAddress, s.Channel)).ToList(),
+                                    timestamp, barcode,
+                                    results.FirstOrDefault().watermarkConfig);
+                            }
+                            else {
+                                _daHuatechNvr.AddSingleRealTimeWatermark(results.Select(s => (s.IpAddress, s.Channel)).ToList(),
+                                    timestamp, barcode,
+                                    results.FirstOrDefault().watermarkConfig);
+                            }
+                        }
+                    }
+                }
+            });
         }
     }
 }

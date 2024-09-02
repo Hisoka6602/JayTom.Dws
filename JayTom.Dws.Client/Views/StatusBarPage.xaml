@@ -565,27 +565,44 @@
                 </ToggleButton.Template>
             </ToggleButton>
         </StackPanel>
-        <!--  运行时间  -->
         <StackPanel
             Margin="10,0"
             HorizontalAlignment="Right"
             Orientation="Horizontal">
-            <TextBlock
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                FontFamily="{StaticResource IconFontFamily}"
-                FontSize="20"
-                Foreground="DimGray"
-                Text="&#xe635;" />
+            <!--  版本号  -->
             <TextBlock
                 Margin="5,0"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 FontFamily="{StaticResource CustomFontFamily}"
-                FontSize="14"
+                FontSize="16"
                 FontWeight="Bold"
-                Foreground="DimGray"
-                Text="{Binding FormattedElapsed, UpdateSourceTrigger=PropertyChanged}" />
+                Foreground="DimGray">
+                <Run>V</Run><Run FontSize="12">1.0.0.0</Run>
+            </TextBlock>
+            <!--  运行时间  -->
+            <StackPanel
+                Margin="10,0"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="20"
+                    Foreground="DimGray"
+                    Text="&#xe635;" />
+                <TextBlock
+                    Margin="5,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource CustomFontFamily}"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Foreground="DimGray"
+                    Text="{Binding FormattedElapsed, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
         </StackPanel>
+
     </Grid>
 </Page>

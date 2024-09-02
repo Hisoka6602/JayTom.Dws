@@ -18,7 +18,6 @@ using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
-
     public class NvrCameraMappingEditorViewModel : BindableBase {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
 
@@ -52,6 +51,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 Num = i + 1,
                 DisplayIdentifier = s.DisplayIdentifier,
                 Channel = s.Channel,
+                ChannelName = $"通道{s.Channel + 1}",
                 IpAddress = s.IpAddress,
                 Username = s.Username,
                 SerialNumber = s.SerialNumber,
