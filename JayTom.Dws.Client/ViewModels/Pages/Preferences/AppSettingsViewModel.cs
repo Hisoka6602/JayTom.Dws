@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
-
     public class AppSettingsViewModel : BindableBase {
         private readonly IRegionManager _regionManager;
         private ObservableCollection<MenuItemInfoModel> _appSettingsMenuItems;
@@ -64,7 +63,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     PageClassName = "LicensePage",
                     ClickCommand = ClickCommand
                 },
-                new()
+                /*new()
                 {
                     Title = "设置同步",
                     IconFont = new IconInfoModel()
@@ -89,7 +88,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Description = "密码设置",
                     PageClassName = "PassWordSettingsPage",
                     ClickCommand = ClickCommand
-                },
+                },*/
             };
         }
 

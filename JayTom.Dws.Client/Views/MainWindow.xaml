@@ -178,6 +178,7 @@
                                     SelectedIndex="0"
                                     SelectedItem="{Binding SelectedLanguage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                    Visibility="Collapsed"
                                     WindowChrome.IsHitTestVisibleInChrome="True">
                                     <b:Interaction.Triggers>
                                         <b:EventTrigger EventName="SelectionChanged">
