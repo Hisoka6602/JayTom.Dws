@@ -225,6 +225,15 @@
 
                 <PropertyColumn Property="x => x.ExitInfo.PhysicalExit" Title="物理格口" />
                 <PropertyColumn Property="x => x.DeviceInfos.DeviceName" Title="设备" />
+                <TemplateColumn Title="视频">
+                    <CellTemplate>
+                        <MudIconButton OnClick="@(() => OpenImageLink(context.Item.ImageInfos.FirstOrDefault(f=>f.Type==0)?.ImageUrl))" Style="width:30px;height:30px;">
+                            <span class="iconfont icon-8tupian-2" style="font-size: 20px;color:#008DFF"></span>
+                        </MudIconButton>
+
+                    </CellTemplate>
+
+                </TemplateColumn>
                 <TemplateColumn Title="扫码图">
                     <CellTemplate>
                         @if (!string.IsNullOrEmpty(context.Item.ImageInfos.FirstOrDefault(f => f.Type == 0)?.ImageUrl)) {

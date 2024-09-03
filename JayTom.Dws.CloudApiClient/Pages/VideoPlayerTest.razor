@@ -1,0 +1,38 @@
+﻿@page "/video-player-test"
+
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@inject IJSRuntime JSRuntime
+<h3>视频播放器测试</h3>
+
+<div>
+    <video @ref="videoPlayer" width="640" controls>
+        <source src="https://v3.cdnpk.net/videvo_files/video/free/2014-12/large_preview/Raindrops_Videvo.mp4" type="video/mp4">
+        您的浏览器不支持 HTML5 视频标签。
+    </video>
+</div>
+
+<div>
+    <button @onclick="PlayVideo">播放</button>
+    <button @onclick="PauseVideo">暂停</button>
+    <button @onclick="StopVideo">停止</button>
+</div>
+
+@code {
+    private ElementReference videoPlayer;
+
+    private void PlayVideo() {
+        // 使用JS调用播放方法
+        JSRuntime.InvokeVoidAsync("playVideo", videoPlayer);
+    }
+
+    private void PauseVideo() {
+        // 使用JS调用暂停方法
+        JSRuntime.InvokeVoidAsync("pauseVideo", videoPlayer);
+    }
+
+    private void StopVideo() {
+        // 使用JS调用停止方法
+        JSRuntime.InvokeVoidAsync("stopVideo", videoPlayer);
+    }
+}
