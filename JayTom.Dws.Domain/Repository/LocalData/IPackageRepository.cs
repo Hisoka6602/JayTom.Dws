@@ -9,7 +9,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace JayTom.Dws.Domain.Repository.LocalData {
+
     public interface IPackageRepository : IRepository<PackageInfoModel> {
+
         /// <summary>
         /// 查询条码数据(联表)
         /// </summary>
@@ -74,6 +76,14 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         /// <param name="duration"></param>
         /// <returns></returns>
         bool SetCacheDuration(TimeSpan duration);
+
+        /// <summary>
+        /// 获取缓存包裹数据
+        /// </summary>
+        /// <param name="packageTimestamped"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default);
 
         /// <summary>
         /// 填充信息

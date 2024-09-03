@@ -130,7 +130,7 @@ namespace JayTom.Dws.Domain.Manager {
                         CameraCustomName = packageInfo.BarCodeInfo?.CameraCustomName ?? string.Empty,
 
                         CameraName = packageInfo.BarCodeInfo?.CameraName ?? string.Empty,
-                        CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                        CameraSerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                     }, token: cancellation);
                 packageInfo.UploadResponses.Add(uploadInformation);
                 OnApiResponseEvent(new PackageUploadResponseEvent() {
@@ -168,7 +168,7 @@ namespace JayTom.Dws.Domain.Manager {
                        CameraCustomName = packageInfo.BarCodeInfo?.CameraCustomName ?? string.Empty,
 
                        CameraName = packageInfo.BarCodeInfo?.CameraName ?? string.Empty,
-                       CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                       CameraSerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                    }, token: cancellation);
             }
         }
@@ -195,7 +195,7 @@ namespace JayTom.Dws.Domain.Manager {
                         CameraCustomName = packageInfo.BarCodeInfo?.CameraCustomName ?? string.Empty,
 
                         CameraName = packageInfo.BarCodeInfo?.CameraName ?? string.Empty,
-                        CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                        CameraSerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                     }, token: cancellation);
                 packageInfo.UploadResponses.Add(uploadInformation);
                 OnApiResponseEvent(new PackageUploadResponseEvent() {
@@ -227,7 +227,7 @@ namespace JayTom.Dws.Domain.Manager {
                         CameraCustomName = packageInfo.BarCodeInfo?.CameraCustomName ?? string.Empty,
 
                         CameraName = packageInfo.BarCodeInfo?.CameraName ?? string.Empty,
-                        CameraSerialNumber = packageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
+                        CameraSerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                     }, token: cancellation);
                 packageInfo.UploadResponses.Add(uploadInformation);
                 OnApiResponseEvent(new PackageUploadResponseEvent() {

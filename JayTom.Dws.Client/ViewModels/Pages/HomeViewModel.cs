@@ -29,6 +29,7 @@ using JayTom.Dws.Domain.Dto.AppDto;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Interface.Cloud;
 using JayTom.Dws.Client.Models.DataModels;
@@ -44,12 +45,7 @@ using LogType = JayTom.Dws.Data.LocalLog.LogType;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels;
-using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {

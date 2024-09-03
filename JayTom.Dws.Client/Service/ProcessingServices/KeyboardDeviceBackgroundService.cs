@@ -13,7 +13,7 @@ using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;

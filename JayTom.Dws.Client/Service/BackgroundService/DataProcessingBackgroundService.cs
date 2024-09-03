@@ -28,10 +28,12 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
+
     /// <summary>
     /// 数据处理器
     /// </summary>
     public class DataProcessingBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
+
         //private readonly IPanoramaImageRepository _panoramaImageRepository;
         private readonly IPackageRepository _packageRepository;
 
@@ -225,7 +227,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 if (isSorting && sortingModel is not null) {
                                     var (key, value) = await _packageRepository.FirstOrDefaultInfo(
                                         f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
-                                        stoppingToken);*/
+                                        stoppingToken);
 
                                     var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(sortingModel.Timestamp, stoppingToken);
 

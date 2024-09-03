@@ -131,8 +131,18 @@
                                     Focusable="True"
                                     FontSize="12"
                                     FontWeight="Bold"
-                                    Foreground="White"
-                                    Text="{Binding StartTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    Foreground="White">
+                                    <TextBox.Text>
+                                        <Binding
+                                            Mode="TwoWay"
+                                            Path="StartTime"
+                                            StringFormat="{}{0:yyyy-MM-dd HH:mm:ss}"
+                                            UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <validationRules:RegexValidationRule ErrorMessage="请输入有效的日期时间格式：yyyy-MM-dd HH:mm:ss" Pattern="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$" />
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
                                     </TextBox.InputBindings>
@@ -187,8 +197,18 @@
                                     BorderThickness="0"
                                     FontSize="12"
                                     FontWeight="Bold"
-                                    Foreground="White"
-                                    Text="{Binding EndTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    Foreground="White">
+                                    <TextBox.Text>
+                                        <Binding
+                                            Mode="TwoWay"
+                                            Path="EndTime"
+                                            StringFormat="{}{0:yyyy-MM-dd HH:mm:ss}"
+                                            UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <validationRules:RegexValidationRule ErrorMessage="请输入有效的日期时间格式：yyyy-MM-dd HH:mm:ss" Pattern="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$" />
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Enter" Command="{Binding SearchDataCommand}" />
                                     </TextBox.InputBindings>
