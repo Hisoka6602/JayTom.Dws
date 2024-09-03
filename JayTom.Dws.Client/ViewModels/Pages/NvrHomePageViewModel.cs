@@ -96,6 +96,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         });
                         await _daHuatechNvr.LogOut(NvrRealTimePreviewItems.FirstOrDefault()?.IpAddress ?? string.Empty);
                         await _deviceService.Stop();
+                        AppContext.SetData("IsRunning", false);
                         EventAggregator.Instance.Publish(new ApplicationStatusChanged {
                             Status = ApplicationStatus.Stop
                         });

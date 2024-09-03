@@ -207,7 +207,7 @@
                             FontSize="14"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="批量改密" />
+                            Text="批量登录" />
                     </StackPanel>
                 </StackPanel>
             </Button>
@@ -529,7 +529,7 @@
                                             FontWeight="Light"
                                             Foreground="White"
                                             IsEnabled="True"
-                                            Text="编辑"
+                                            Text="登录"
                                             TextAlignment="Justify" />
                                     </StackPanel>
                                 </Button>

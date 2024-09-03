@@ -287,44 +287,6 @@
                             Text="{Binding IpcNvrItemInfo.Password, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
-                <!--  登录测试  -->
-                <StackPanel
-                    Margin="5"
-                    HorizontalAlignment="Center"
-                    Cursor=""
-                    Orientation="Horizontal"
-                    Visibility="{Binding ShowType, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=BatchChangePassword, UpdateSourceTrigger=PropertyChanged}">
-                    <Button
-                        Height="30"
-                        MinWidth="80"
-                        Margin="10,0"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        materialDesign:ButtonAssist.CornerRadius="15"
-                        Background="DodgerBlue"
-                        BorderThickness="0"
-                        Command="{Binding TestLogInCommand}"
-                        Focusable="False"
-                        Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                FontFamily="{StaticResource IconFontFamily}"
-                                FontSize="16"
-                                FontWeight="Light"
-                                Foreground="White"
-                                Text="&#xe636;" />
-                            <TextBlock
-                                FontFamily="{StaticResource CustomFontFamily}"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                Text="登录测试" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
             </StackPanel>
             <!--  确定、取消按钮  -->
             <StackPanel

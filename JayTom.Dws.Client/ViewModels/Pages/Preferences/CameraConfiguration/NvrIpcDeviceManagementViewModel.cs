@@ -23,6 +23,7 @@ using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Client.Views.Editors.CloudService;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
+using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
@@ -39,6 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         private readonly IConfigRepository _configRepository;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
         private List<BarcodeScannerCameraConfigInfoModel>? _scannerCameraConfigInfoModels;
 
@@ -67,10 +69,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         public NvrIpcDeviceManagementViewModel(IConfigRepository configRepository,
             IIpcNvrConfigRepository ipcNvrConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            INvrCameraBindingRepository nvrCameraBindingRepository) {
             _configRepository = configRepository;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+            _nvrCameraBindingRepository = nvrCameraBindingRepository;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
@@ -198,16 +202,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void DeleteDelegate(object obj) {
             if (IsRefreshing) return;
-            if (AppContext.GetData("IsRunning") is true) {
+            /*if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再删除");
                 return;
-            }
+            }*/
             if (obj is IpcNvrItemInfoModel info) {
                 var ipcNvrConfigInfoModel = await _ipcNvrConfigRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress));
                 if (ipcNvrConfigInfoModel is not null) {
                     var delete = await _ipcNvrConfigRepository.Delete(ipcNvrConfigInfoModel);
                     if (!delete) {
                         NvrIpcDeviceManagemenMessageQueue.Enqueue("删除失败!");
+                    }
+                    else {
+                        //清空关联项
+                        var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(
+                            s => s.SerialNumber.Equals(ipcNvrConfigInfoModel.SerialNumber),
+                            o => o.Id);
+                        if (nvrCameraBindingInfoModels?.Any() == true) {
+                            var deleteRange = await _nvrCameraBindingRepository.DeleteRange(nvrCameraBindingInfoModels);
+                            if (deleteRange) {
+                                _nvrCameraBindingRepository.UpdateMemoryCache();
+                            }
+                        }
                     }
 
                     RefreshDelegate(obj);
@@ -395,10 +411,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private async void BatchChangePasswordDelegate(object obj) {
             if (IsRefreshing) return;
-            if (AppContext.GetData("IsRunning") is true) {
+            /*if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
                 return;
-            }
+            }*/
             var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
             if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
                 model.Identifier = Identifier;
