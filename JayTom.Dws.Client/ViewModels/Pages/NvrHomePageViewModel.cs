@@ -56,6 +56,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private bool _itemIsExpanded = true;
         private bool? _isUnauthorized;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
+        private bool _isRealTimeVideoEnabled;
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
@@ -72,35 +73,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _daHuatechNvr ??= DaHuatechNVR.Instance;
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is { Type: WindowsActionType.Close }) {
-                    if (_daHuatechNvr is not null) {
-                        Parallel.ForEach(NvrRealTimePreviewItems, async item => {
-                            if (!string.IsNullOrEmpty(item.IpAddress) &&
-                                item.Channel > 0) {
-                                await _daHuatechNvr.StopRealtimePreview(item.IpAddress, item.Channel);
-                                item.Dispose();
-                            }
-                        });
-                        await _daHuatechNvr.LogOut(NvrRealTimePreviewItems.FirstOrDefault()?.IpAddress ?? string.Empty);
+                    await SetRealTimeVideo(false);
 
-                        await _deviceService.Stop();
-                    }
+                    await _deviceService.Stop();
                 }
                 else if (item is { Type: WindowsActionType.EnterSettings }) {
-                    if (_daHuatechNvr is not null) {
-                        Parallel.ForEach(NvrRealTimePreviewItems, async item => {
-                            if (!string.IsNullOrEmpty(item.IpAddress) &&
-                                item.Channel > 0) {
-                                await _daHuatechNvr.StopRealtimePreview(item.IpAddress, item.Channel);
-                                item.Dispose();
-                            }
-                        });
-                        await _daHuatechNvr.LogOut(NvrRealTimePreviewItems.FirstOrDefault()?.IpAddress ?? string.Empty);
-                        await _deviceService.Stop();
-                        AppContext.SetData("IsRunning", false);
-                        EventAggregator.Instance.Publish(new ApplicationStatusChanged {
-                            Status = ApplicationStatus.Stop
-                        });
-                    }
+                    await SetRealTimeVideo(false);
+                    await _deviceService.Stop();
+                    AppContext.SetData("IsRunning", false);
+                    EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                        Status = ApplicationStatus.Stop
+                    });
                 }
                 else if (item is { Type: WindowsActionType.ReturnToHome }) {
                     LoadedDelegate(null);
@@ -184,6 +167,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             };
         }
 
+        /// <summary>
+        /// 是否使用实时视频
+        /// </summary>
+        public bool IsRealTimeVideoEnabled {
+            get => _isRealTimeVideoEnabled;
+            set => SetProperty(ref _isRealTimeVideoEnabled, value);
+        }
+
         public string BarCode {
             get => _barCode;
             set => SetProperty(ref _barCode, value);
@@ -236,8 +227,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                 });
             }
-
-            NvrRealTimePreviewItems.Clear();
 
             //授权
 #if !DEBUG
@@ -301,64 +290,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
 
 #endif
-
-            //获取绑定的相机
-            var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
-            if (settingsDto is { IsUseBarcodeScannerInput: true, KeyboardDevice: { ProductId: > 0, VendorId: > 0 } }) {
-                var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-                var nvrRealTimePreviewItemInfos = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath))
-                    .Select(s => new NvrRealTimePreviewItemInfo {
-                        IpAddress = s.IpAddress,
-                        Password = s.Password,
-                        Port = s.Port,
-                        Username = s.Username,
-                        Channel = s.Channel,
-                        DisplayName = $"通道:{s.Channel + 1}",
-                        RealtimePreviewOperationCommand = RealtimePreviewOperationCommand,
-                        IsBuffering = true,
-                    }).OrderBy(o => o.Channel).ToList();
-                NvrRealTimePreviewItems.AddRange(nvrRealTimePreviewItemInfos);
-                if (NvrRealTimePreviewItems.Count is > 1 and < 4) {
-                    var itemsToAdd = 4 - NvrRealTimePreviewItems.Count;
-
-                    for (var i = 0; i < itemsToAdd; i++) {
-                        NvrRealTimePreviewItems.Add(new NvrRealTimePreviewItemInfo());
-                    }
-                }
-
-                var nvrRealTimePreviewItemInfo = nvrRealTimePreviewItemInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.IpAddress) &&
-                    !string.IsNullOrEmpty(f.Username) &&
-                    !string.IsNullOrWhiteSpace(f.Password) &&
-                    f.Port > 0);
-                if (nvrRealTimePreviewItemInfo is not null) {
-                    _daHuatechNvr ??= DaHuatechNVR.Instance;
-                    var (key, value) = await _daHuatechNvr.LogIn(nvrRealTimePreviewItemInfo.IpAddress, nvrRealTimePreviewItemInfo.Port, nvrRealTimePreviewItemInfo.Username, nvrRealTimePreviewItemInfo.Password);
-                    if (key) {
-                        var videoPlayerSize = GetVideoPlayerSize();
-                        Parallel.ForEach(NvrRealTimePreviewItems, async item => {
-                            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                                if (!string.IsNullOrEmpty(item.IpAddress) &&
-                                    item is { Channel: >= 0, Port: > 0 }) {
-                                    var (b, s) = await _daHuatechNvr.StartRealTimePreview(item.IpAddress, item.Channel, item.RealtimePreviewCallback);
-                                    if (b) {
-                                        _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)videoPlayerSize.Width, (int)videoPlayerSize.Height);
-                                        item.VideoFrame = new((int)videoPlayerSize.Width, (int)videoPlayerSize.Height, 96, 96, PixelFormats.Bgr24, null);
-                                        item.ToggleImageSizeCommand = ToggleImageSizeCommand;
-                                        item.PlaybackError = PlaybackError.None;
-                                    }
-                                    else {
-                                        item.PlaybackError = PlaybackError.StreamConnectionInterrupted;
-                                    }
-                                }
-                                else {
-                                    item.PlaybackError = PlaybackError.InvalidChannel;
-                                }
-
-                                item.IsBuffering = false;
-                            });
-                        });
-                    }
-                }
+            if (IsRealTimeVideoEnabled) {
+                await SetRealTimeVideo(true);
             }
 
             if (!_keyboardDeviceManager.IsListening) {
@@ -467,6 +400,90 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         break;
                 }
             }
+        }
+
+        public ICommand ToggleRealTimeVideoCommand => new DelegateCommand<object>(ToggleRealTimeVideoDelegate);
+
+        private async void ToggleRealTimeVideoDelegate(object obj) {
+            await SetRealTimeVideo(IsRealTimeVideoEnabled);
+        }
+
+        private async Task SetRealTimeVideo(bool isEnabled) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                if (isEnabled) {
+                    NvrRealTimePreviewItems.Clear();
+                    //获取绑定的相机
+                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
+                    if (settingsDto is { IsUseBarcodeScannerInput: true, KeyboardDevice: { ProductId: > 0, VendorId: > 0 } }) {
+                        var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                        var nvrRealTimePreviewItemInfos = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath))
+                            .Select(s => new NvrRealTimePreviewItemInfo {
+                                IpAddress = s.IpAddress,
+                                Password = s.Password,
+                                Port = s.Port,
+                                Username = s.Username,
+                                Channel = s.Channel,
+                                DisplayName = $"通道:{s.Channel + 1}",
+                                RealtimePreviewOperationCommand = RealtimePreviewOperationCommand,
+                                IsBuffering = true,
+                            }).OrderBy(o => o.Channel).ToList();
+                        NvrRealTimePreviewItems.AddRange(nvrRealTimePreviewItemInfos);
+                        if (NvrRealTimePreviewItems.Count is > 1 and < 4) {
+                            var itemsToAdd = 4 - NvrRealTimePreviewItems.Count;
+
+                            for (var i = 0; i < itemsToAdd; i++) {
+                                NvrRealTimePreviewItems.Add(new NvrRealTimePreviewItemInfo());
+                            }
+                        }
+
+                        var nvrRealTimePreviewItemInfo = nvrRealTimePreviewItemInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.IpAddress) &&
+                            !string.IsNullOrEmpty(f.Username) &&
+                            !string.IsNullOrWhiteSpace(f.Password) &&
+                            f.Port > 0);
+                        if (nvrRealTimePreviewItemInfo is not null) {
+                            _daHuatechNvr ??= DaHuatechNVR.Instance;
+                            var (key, value) = await _daHuatechNvr.LogIn(nvrRealTimePreviewItemInfo.IpAddress, nvrRealTimePreviewItemInfo.Port, nvrRealTimePreviewItemInfo.Username, nvrRealTimePreviewItemInfo.Password);
+                            if (key) {
+                                var videoPlayerSize = GetVideoPlayerSize();
+                                Parallel.ForEach(NvrRealTimePreviewItems, async item => {
+                                    await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                        if (!string.IsNullOrEmpty(item.IpAddress) &&
+                                            item is { Channel: >= 0, Port: > 0 }) {
+                                            var (b, s) = await _daHuatechNvr.StartRealTimePreview(item.IpAddress, item.Channel, item.RealtimePreviewCallback);
+                                            if (b) {
+                                                _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)videoPlayerSize.Width, (int)videoPlayerSize.Height);
+                                                item.VideoFrame = new((int)videoPlayerSize.Width, (int)videoPlayerSize.Height, 96, 96, PixelFormats.Bgr24, null);
+                                                item.ToggleImageSizeCommand = ToggleImageSizeCommand;
+                                                item.PlaybackError = PlaybackError.None;
+                                            }
+                                            else {
+                                                item.PlaybackError = PlaybackError.StreamConnectionInterrupted;
+                                            }
+                                        }
+                                        else {
+                                            item.PlaybackError = PlaybackError.InvalidChannel;
+                                        }
+
+                                        item.IsBuffering = false;
+                                    });
+                                });
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (_daHuatechNvr is not null) {
+                        Parallel.ForEach(NvrRealTimePreviewItems, async item => {
+                            if (!string.IsNullOrEmpty(item.IpAddress) &&
+                                item.Channel > 0) {
+                                await _daHuatechNvr.StopRealtimePreview(item.IpAddress, item.Channel);
+                                item.Dispose();
+                            }
+                        });
+                        await _daHuatechNvr.LogOut(NvrRealTimePreviewItems.FirstOrDefault()?.IpAddress ?? string.Empty);
+                    }
+                }
+            });
         }
 
         private async void AddNewRow(PackageItemModel item) {

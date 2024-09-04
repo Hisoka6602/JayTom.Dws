@@ -5,6 +5,8 @@
 @using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
+@using SkiaSharp
+@using SkiaSharp.Views.Blazor
 @inject IJSRuntime JSRuntime
 
 <h3>视频播放器测试</h3>
@@ -16,7 +18,7 @@
     </video>
 </div>
 <div>
-    <canvas id="videoCanvas" width="449" height="253"></canvas>
+    <SKCanvasView @ref="canvasView" OnPaintSurface="OnPaintSurface" />
 </div>
 
 <div>
@@ -26,7 +28,8 @@
 </div>
 
 @code {
-    private ElementReference videoPlayer;
+    private SKBitmap _videoFrame;
+    private SKCanvasView canvasView;
     private DaHuatechNVR _daHuatechNvr = DaHuatechNVR.Instance;
 
     protected override async Task OnInitializedAsync() {
@@ -37,61 +40,78 @@
 
 
     private async void PlayVideo() {
-        // 使用JS调用播放方法
+
         await _daHuatechNvr.StartRealTimePreview("192.168.31.111", 1, async info => {
-            /*var rgbaData = ConvertRgbToRgba(info.RgbData, info.Width, info.Height);
+            try {
+                // 将 RGB 数据转换为 RGBA 数据
+                var rgbaData = ConvertRgbToRgba(info.RgbData, info.Width, info.Height);
 
-            var stopwatch = new System.Diagnostics.Stopwatch();
-            stopwatch.Start();
+                var stopwatch = new System.Diagnostics.Stopwatch();
+                stopwatch.Start();
 
+                // 更新 SKCanvasView 的内容
+                await InvokeAsync(() => UpdateCanvas(rgbaData, info.Width, info.Height));
 
-
-            await JSRuntime.InvokeVoidAsync("updateCanvasWithTiming", "videoCanvas", rgbaData, info.Width, info.Height);
-            stopwatch.Stop();
-
-            var elapsedTime = stopwatch.ElapsedMilliseconds;
-            Debug.WriteLine($"C# Total time including JS: {elapsedTime} ms");*/
-            // 通过固定数组来获取内存地址
-            var rgbaData = ConvertRgbToRgba(info.RgbData, info.Width, info.Height);
-            GCHandle handle = GCHandle.Alloc(rgbaData, GCHandleType.Pinned);
-            IntPtr pointer = handle.AddrOfPinnedObject();
-
-            // 传递内存地址和大小给JavaScript
-            await JSRuntime.InvokeVoidAsync("updateCanvasFromMemory", pointer.ToInt64(), info.Width, info.Height);
-            handle.Free();
-
-
-
+                stopwatch.Stop();
+                var elapsedTime = stopwatch.ElapsedMilliseconds;
+                Debug.WriteLine($"C# Total time: {elapsedTime} ms");
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"Error during video playback: {ex.Message}");
+            }
 
         });
+
 
     }
 
     private void PauseVideo() {
         // 使用JS调用暂停方法
-        JSRuntime.InvokeVoidAsync("pauseVideo", videoPlayer);
+
     }
+
 
     private void StopVideo() {
         // 使用JS调用停止方法
-        JSRuntime.InvokeVoidAsync("stopVideo", videoPlayer);
+
+
     }
 
-    private byte[] ConvertRgbToRgba(byte[] rgbData, int width, int height) {
-        var pixelCount = width * height;
-        var rgbaData = new byte[pixelCount * 4];
+    private void UpdateCanvas(byte[] rgbaData, int width, int height) {
+        // 创建一个 SKColor 数组来存储 RGBA 数据
+        var colorData = new SKColor[width * height];
 
-        // 使用 Parallel.For 并行处理每个像素
-        Parallel.For(0, pixelCount, i => {
-            var rgbIndex = i * 3;  // RGB数据的索引
-            var rgbaIndex = i * 4; // RGBA数据的索引
+        for (int i = 0; i < colorData.Length; i++) {
+            byte r = rgbaData[i * 4];
+            byte g = rgbaData[i * 4 + 1];
+            byte b = rgbaData[i * 4 + 2];
+            byte a = rgbaData[i * 4 + 3];
+            colorData[i] = new SKColor(r, g, b, a);
+        }
 
-            rgbaData[rgbaIndex] = rgbData[rgbIndex];       // R
-            rgbaData[rgbaIndex + 1] = rgbData[rgbIndex + 1]; // G
-            rgbaData[rgbaIndex + 2] = rgbData[rgbIndex + 2]; // B
-            rgbaData[rgbaIndex + 3] = 255;                  // A (完全不透明)
+        // 创建 SKBitmap 并设置像素数据
+        _videoFrame = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        _videoFrame.SetPixels(colorData);
+
+        // 标记组件需要重新渲染
+        StateHasChanged();
+    }
+
+
+    private static byte[] ConvertRgbToRgba(byte[] rgbData, int width, int height) {
+        var rgbaData = new byte[width * height * 4];
+        Parallel.For(0, height, y => {
+            int srcIndex = y * width * 3;
+            int dstIndex = y * width * 4;
+            for (int x = 0; x < width; x++) {
+                rgbaData[dstIndex] = rgbData[srcIndex]; // R
+                rgbaData[dstIndex + 1] = rgbData[srcIndex + 1]; // G
+                rgbaData[dstIndex + 2] = rgbData[srcIndex + 2]; // B
+                rgbaData[dstIndex + 3] = 255; // A
+                srcIndex += 3;
+                dstIndex += 4;
+            }
         });
-
         return rgbaData;
     }
 

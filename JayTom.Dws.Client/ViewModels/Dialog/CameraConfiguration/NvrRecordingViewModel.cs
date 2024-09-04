@@ -290,13 +290,14 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
             var any = _daHuatechNvr.GetDevLogInInfo(f => f.IpAddress.Equals(VideoPlayerItems.FirstOrDefault().IpAddress))?.ToList().Any();
 
-            if (any != true) {
-                //登录
-                var (key, value) = await _daHuatechNvr.LogIn(VideoPlayerItems.FirstOrDefault().IpAddress, VideoPlayerItems.FirstOrDefault().Port,
-                    VideoPlayerItems.FirstOrDefault().Username, VideoPlayerItems.FirstOrDefault().Password);
-                if (key) {
-                    PlaybackDelegate(obj);
-                }
+            if (any == true) {
+                await _daHuatechNvr.LogOut(VideoPlayerItems.FirstOrDefault().IpAddress);
+            }
+            //登录
+            var (key, value) = await _daHuatechNvr.LogIn(VideoPlayerItems.FirstOrDefault().IpAddress, VideoPlayerItems.FirstOrDefault().Port,
+                VideoPlayerItems.FirstOrDefault().Username, VideoPlayerItems.FirstOrDefault().Password);
+            if (key) {
+                PlaybackDelegate(obj);
             }
         }
 

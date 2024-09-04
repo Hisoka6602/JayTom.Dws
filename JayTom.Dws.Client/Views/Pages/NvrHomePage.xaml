@@ -83,7 +83,8 @@
             ItemsSource="{Binding NvrRealTimePreviewItems, UpdateSourceTrigger=PropertyChanged}"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
             ScrollViewer.VerticalScrollBarVisibility="Disabled"
-            Style="{StaticResource CustomListBoxStyle}">
+            Style="{StaticResource CustomListBoxStyle}"
+            Visibility="{Binding IsRealTimeVideoEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
             <ListBox.Clip>
                 <MultiBinding Converter="{StaticResource BorderClipMultiConverter}">
                     <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
@@ -509,6 +510,7 @@
                         <RowDefinition Height="2" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <!--  条码  -->
                     <Grid
@@ -676,10 +678,34 @@
                             </ContextMenu>
                         </ListView.ContextMenu>
                     </ListView>
+                    <StackPanel
+                        Grid.Row="3"
+                        Margin="5,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+
+                        <TextBlock
+                            Margin="5,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource CustomFontFamily}"
+                            FontSize="13"
+                            Foreground="White"
+                            Text="是否实时预览:" />
+                        <ToggleButton
+                            Margin="5"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="Azure"
+                            Command="{Binding ToggleRealTimeVideoCommand}"
+                            Focusable="False"
+                            IsChecked="{Binding IsRealTimeVideoEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    </StackPanel>
                     <!--  透明度  -->
                     <Slider
                         x:Name="OpacitySlider"
-                        Grid.Row="3"
+                        Grid.Row="4"
                         Width="200"
                         Margin="10"
                         HorizontalAlignment="Center"
