@@ -332,13 +332,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     f.Port > 0);
                 if (nvrRealTimePreviewItemInfo is not null) {
                     _daHuatechNvr ??= DaHuatechNVR.Instance;
-                    var (key, value) = await _daHuatechNvr.LogIn("192.168.31.111", 37777, "admin", "a12345678");
+                    var (key, value) = await _daHuatechNvr.LogIn(nvrRealTimePreviewItemInfo.IpAddress, nvrRealTimePreviewItemInfo.Port, nvrRealTimePreviewItemInfo.Username, nvrRealTimePreviewItemInfo.Password);
                     if (key) {
                         var videoPlayerSize = GetVideoPlayerSize();
                         Parallel.ForEach(NvrRealTimePreviewItems, async item => {
                             await Application.Current.Dispatcher.InvokeAsync(async () => {
                                 if (!string.IsNullOrEmpty(item.IpAddress) &&
-                                    item is { Channel: > 0, Port: > 0 }) {
+                                    item is { Channel: >= 0, Port: > 0 }) {
                                     var (b, s) = await _daHuatechNvr.StartRealTimePreview(item.IpAddress, item.Channel, item.RealtimePreviewCallback);
                                     if (b) {
                                         _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)videoPlayerSize.Width, (int)videoPlayerSize.Height);

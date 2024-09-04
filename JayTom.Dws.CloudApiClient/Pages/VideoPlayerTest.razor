@@ -1,8 +1,12 @@
 ﻿@page "/video-player-test"
 
+@using System.Diagnostics
+@using System.Runtime.InteropServices
+@using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
 @inject IJSRuntime JSRuntime
+
 <h3>视频播放器测试</h3>
 
 <div>
@@ -10,6 +14,9 @@
         <source src="https://v3.cdnpk.net/videvo_files/video/free/2014-12/large_preview/Raindrops_Videvo.mp4" type="video/mp4">
         您的浏览器不支持 HTML5 视频标签。
     </video>
+</div>
+<div>
+    <canvas id="videoCanvas" width="449" height="253"></canvas>
 </div>
 
 <div>
@@ -20,10 +27,44 @@
 
 @code {
     private ElementReference videoPlayer;
+    private DaHuatechNVR _daHuatechNvr = DaHuatechNVR.Instance;
 
-    private void PlayVideo() {
+    protected override async Task OnInitializedAsync() {
+        await _daHuatechNvr.LogIn("192.168.31.111", 37777, "admin", "a12345678");
+        await base.OnInitializedAsync();
+
+    }
+
+
+    private async void PlayVideo() {
         // 使用JS调用播放方法
-        JSRuntime.InvokeVoidAsync("playVideo", videoPlayer);
+        await _daHuatechNvr.StartRealTimePreview("192.168.31.111", 1, async info => {
+            /*var rgbaData = ConvertRgbToRgba(info.RgbData, info.Width, info.Height);
+
+            var stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+
+
+
+            await JSRuntime.InvokeVoidAsync("updateCanvasWithTiming", "videoCanvas", rgbaData, info.Width, info.Height);
+            stopwatch.Stop();
+
+            var elapsedTime = stopwatch.ElapsedMilliseconds;
+            Debug.WriteLine($"C# Total time including JS: {elapsedTime} ms");*/
+            // 通过固定数组来获取内存地址
+            var rgbaData = ConvertRgbToRgba(info.RgbData, info.Width, info.Height);
+            GCHandle handle = GCHandle.Alloc(rgbaData, GCHandleType.Pinned);
+            IntPtr pointer = handle.AddrOfPinnedObject();
+
+            // 传递内存地址和大小给JavaScript
+            await JSRuntime.InvokeVoidAsync("updateCanvasFromMemory", pointer.ToInt64(), info.Width, info.Height);
+            handle.Free();
+
+
+
+
+        });
+
     }
 
     private void PauseVideo() {
@@ -35,4 +76,23 @@
         // 使用JS调用停止方法
         JSRuntime.InvokeVoidAsync("stopVideo", videoPlayer);
     }
+
+    private byte[] ConvertRgbToRgba(byte[] rgbData, int width, int height) {
+        var pixelCount = width * height;
+        var rgbaData = new byte[pixelCount * 4];
+
+        // 使用 Parallel.For 并行处理每个像素
+        Parallel.For(0, pixelCount, i => {
+            var rgbIndex = i * 3;  // RGB数据的索引
+            var rgbaIndex = i * 4; // RGBA数据的索引
+
+            rgbaData[rgbaIndex] = rgbData[rgbIndex];       // R
+            rgbaData[rgbaIndex + 1] = rgbData[rgbIndex + 1]; // G
+            rgbaData[rgbaIndex + 2] = rgbData[rgbIndex + 2]; // B
+            rgbaData[rgbaIndex + 3] = 255;                  // A (完全不透明)
+        });
+
+        return rgbaData;
+    }
+
 }
