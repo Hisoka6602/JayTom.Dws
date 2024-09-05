@@ -28,6 +28,29 @@
     }
 
 
+    /*window.updateCanvasWithByteArray = (byteArray, width, height) => {
+        // 获取 canvas 元素
+        const canvas = document.getElementById('videoCanvas');
+        if (!canvas || !byteArray || byteArray.length === 0) {
+        console.error("Canvas not found or byte array is invalid.");
+        return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(width, height);
+
+        const rgbaData = new Uint8Array(byteArray);
+
+        // 填充 imageData
+        for (let i = 0; i < rgbaData.length; i++) {
+        imageData.data[i] = rgbaData[i];
+        }
+
+        // 将 imageData 应用到 canvas 上
+        ctx.putImageData(imageData, 0, 0);
+        };*/
+    // 初始化WebGL上下文
+
 
 
 
@@ -50,5 +73,6 @@
 
     <script src="_framework/blazor.server.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="js/videoPlayer.js"></script>
 </body>
 </html>
