@@ -56,7 +56,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private bool _itemIsExpanded = true;
         private bool? _isUnauthorized;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
-        private bool _isRealTimeVideoEnabled;
+        private bool _isRealTimeVideoEnabled = true;
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
@@ -70,6 +70,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _configRepository = configRepository;
             _clientLicenseApi = clientLicenseApi;
             _cloud = cloud;
+
             _daHuatechNvr ??= DaHuatechNVR.Instance;
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
                 if (item is { Type: WindowsActionType.Close }) {
