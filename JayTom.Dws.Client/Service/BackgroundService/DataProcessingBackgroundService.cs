@@ -313,6 +313,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         if (!isSortingUpdateInfo) {
                                             _instructionItems.Enqueue(sortingModel);
                                         }
+                                        _packageRepository.UpDateMemoryCachePackageInfo(packageInfo, stoppingToken);
                                     }
                                     else {
                                         _instructionItems.Enqueue(sortingModel);
@@ -423,6 +424,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
                                             }
                                         }
+                                        _packageRepository.UpDateMemoryCachePackageInfo(packageInfo, stoppingToken);
                                     }
                                     else {
                                         _packageExitUpdateItems.Enqueue(packageExitUpdateModel);

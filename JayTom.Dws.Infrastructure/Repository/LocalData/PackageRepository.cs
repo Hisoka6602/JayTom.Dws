@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -13,6 +14,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
     public class PackageRepository : LocalRepositoryBase<PackageInfoModel>, IPackageRepository {
+        private static SemaphoreSlim _updateSlim = new(1);
 
         public PackageRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
@@ -157,6 +159,18 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 return result.Key ? result.Value : // 查询成功，返回数据
                     null; // 查询失败，返回 null
             });
+        }
+
+        public async void UpDateMemoryCachePackageInfo(PackageInfoModel info, CancellationToken token = default) {
+            try {
+                await _updateSlim.WaitAsync(token);
+                _cache.Set(info.PackageTimestamped, info, new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                _updateSlim.Release();
+            }
         }
 
         /// <summary>

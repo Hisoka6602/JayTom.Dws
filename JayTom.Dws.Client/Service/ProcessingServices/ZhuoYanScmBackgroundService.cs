@@ -24,6 +24,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
+
     public class ZhuoYanScmBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
@@ -523,6 +524,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
                         });
                     }
+                    //重量超时
+                    if (_weightSettingsDto.AdditionalWeight is { IsUseMergedWeightTimeout: true, MergedWeightTimeout: > 0 }) {
+                        packageRemoveTimers.Add(new PackageAssignmentTimer() {
+                            AssignmentTimeSpan = TimeSpan.FromMilliseconds(_weightSettingsDto.AdditionalWeight.MergedWeightTimeout),
+                            Predicate = w => w.Value.WeightInfo == null,
+                            AssignmentCallback = a => {
+                                a.WeightInfo = new WeightInfoModel();
+                                return false;
+                            },
+                        });
+                    }
+                    //体积超时
                     PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
                     //触发创建包裹事件
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {

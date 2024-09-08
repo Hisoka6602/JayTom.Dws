@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Drawing;
 using System.Diagnostics;
+using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
@@ -249,6 +250,11 @@ namespace JayTom.Dws.Domain.Manager {
         public WeightInfoModel? WeightInfo { get; set; }
 
         /// <summary>
+        /// 格口信息
+        /// </summary>
+        public virtual ExitInfoModel? ExitInfo { get; set; }
+
+        /// <summary>
         /// 是否已完成(完成输出、上传、但未从集合删除)
         /// </summary>
         public bool IsCompleted;
@@ -303,16 +309,6 @@ namespace JayTom.Dws.Domain.Manager {
         /// </summary>
         public long Timestamp { get; set; }
 
-        /*/// <summary>
-        /// 包裹异常信息
-        /// </summary>
-        public string PackageExceptionMsg { get; set; } = "分拣成功";
-
-        /// <summary>
-        /// 包裹异常状态
-        /// </summary>
-        public int PackageExceptionStatus { get; set; } = 0;*/
-
         /// <summary>
         /// 包裹异常类型
         /// </summary>
@@ -322,6 +318,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// 供包台信号类型
         /// </summary>
         public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
+
+        /// <summary>
+        /// 接口返回内容
+        /// </summary>
+        public List<UploadResponse> UploadResponses { get; set; } = new();
 
         /// <summary>
         /// 灰度仪信息
@@ -334,6 +335,11 @@ namespace JayTom.Dws.Domain.Manager {
         public int LinkedCarCount { get; set; } = 0;
 
         /// <summary>
+        /// 分拣异常信息
+        /// </summary>
+        public string? SortingExceptionInfo { get; set; }
+
+        /// <summary>
         /// 移除包裹计时器
         /// </summary>
         public List<PackageRemoveTimer>? PackageRemoveTimers { get; private set; } = new();
@@ -342,6 +348,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// 完成包裹计时器
         /// </summary>
         public List<PackCompletedTimer>? PackCompletedTimers { get; private set; } = new();
+
+        /// <summary>
+        /// 包裹赋值计时器
+        /// </summary>
+        public List<PackageAssignmentTimer>? PackageAssignmentTimers { get; private set; } = new();
 
         /// <summary>
         /// 其他
@@ -353,13 +364,21 @@ namespace JayTom.Dws.Domain.Manager {
 
         public void StartTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageTimer> removeTimers) {
             foreach (var timer in removeTimers) {
-                if (timer is PackageRemoveTimer packageRemoveTimer) {
-                    packageRemoveTimer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer), packageRemoveTimer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
-                    PackageRemoveTimers?.Add(packageRemoveTimer);
-                }
-                else if (timer is PackCompletedTimer packCompletedTimer) {
-                    packCompletedTimer.CompletTimer = new Timer(CompletedCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer), packCompletedTimer.CompletTimeSpan, Timeout.InfiniteTimeSpan);
-                    PackCompletedTimers?.Add(packCompletedTimer);
+                switch (timer) {
+                    case PackageRemoveTimer packageRemoveTimer:
+                        packageRemoveTimer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer), packageRemoveTimer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
+                        PackageRemoveTimers?.Add(packageRemoveTimer);
+                        break;
+
+                    case PackCompletedTimer packCompletedTimer:
+                        packCompletedTimer.CompletTimer = new Timer(CompletedCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer), packCompletedTimer.CompletTimeSpan, Timeout.InfiniteTimeSpan);
+                        PackCompletedTimers?.Add(packCompletedTimer);
+                        break;
+
+                    case PackageAssignmentTimer packageAssignmentTimer:
+                        packageAssignmentTimer.AssignmentTimer = new Timer(AssignmentCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>(packageInfos, packageAssignmentTimer), packageAssignmentTimer.AssignmentTimeSpan, Timeout.InfiniteTimeSpan);
+                        PackageAssignmentTimers?.Add(packageAssignmentTimer);
+                        break;
                 }
             }
         }
@@ -394,6 +413,38 @@ namespace JayTom.Dws.Domain.Manager {
                 }
             }
         }
+
+        private void AssignmentCollection(object? state) {
+            if (state is not null) {
+                // 解构传递进来的状态，获取包信息字典和赋值计时器
+                var (packageInfos, assignmentTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>)state;
+
+                if (assignmentTimer.Predicate is not null) {
+                    // 根据Predicate找到匹配的包信息
+                    var valuePair = packageInfos.Where(assignmentTimer.Predicate)
+                        ?.FirstOrDefault(f => f.Value != null && f.Value.CreateTime.Equals(CreateTime));
+
+                    if (valuePair is { Value: not null } &&
+                        assignmentTimer.AssignmentCallback is not null) {
+                        // 执行赋值逻辑
+                        assignmentTimer.AssignmentCallback(valuePair.Value.Value);
+                        // 停止并释放计时器
+                        assignmentTimer.AssignmentTimer?.Dispose();
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 赋值计时器
+    /// </summary>
+    public class PackageAssignmentTimer : PackageTimer {
+        public TimeSpan AssignmentTimeSpan { get; set; }
+        public Timer? AssignmentTimer { get; set; }
+
+        // 回调方法，接收PackageInfo参数，返回是否继续保留计时器
+        public Func<PackageInfo, bool>? AssignmentCallback { get; set; }
     }
 
     /// <summary>

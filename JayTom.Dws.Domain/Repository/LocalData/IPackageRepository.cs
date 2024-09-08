@@ -49,5 +49,13 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default);
+
+        /// <summary>
+        /// 更新缓存
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        void UpDateMemoryCachePackageInfo(PackageInfoModel info, CancellationToken token = default);
     }
 }
