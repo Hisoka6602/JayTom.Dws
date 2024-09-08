@@ -13,7 +13,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     xmlns:validationRules="clr-namespace:JayTom.Dws.Client.ValidationRules"
-    xmlns:wpf="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
     Name="NetworkVideoRecorderView"
     Title="NetworkVideoRecorderPage"
     d:DesignHeight="450"
@@ -463,19 +462,7 @@
             <StackPanel Orientation="Vertical">
                 <!--  视频框  -->
                 <Grid>
-                    <wpf:VlcControl
-                        x:Name="VlcPlayer"
-                        Width="640"
-                        MinHeight="600"
-                        Background="Black"
-                        Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <wpf:VlcControl.Clip>
-                            <RectangleGeometry
-                                RadiusX="15"
-                                RadiusY="15"
-                                Rect="0,0,635,600" />
-                        </wpf:VlcControl.Clip>
-                    </wpf:VlcControl>
+
                     <Border
                         Width="640"
                         MinHeight="600"

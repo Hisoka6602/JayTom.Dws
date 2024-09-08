@@ -8,7 +8,7 @@ using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Camera.Attributes;
-using JayTom.Dws.PluginInterface.Utils;
+using JayTom.Dws.Client.Attributes;
 
 namespace JayTom.Dws.Client.Converters.CameraConverter {
 

@@ -5,16 +5,11 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
-using JayTom.Dws.Nvr;
 using System.Windows;
-using FFmpeg.AutoGen;
-using Vlc.DotNet.Wpf;
 using Newtonsoft.Json;
 using System.Security;
-using Vlc.DotNet.Core;
 using System.Threading;
 using System.Diagnostics;
-using JayTom.Dws.Nvr.Nvr;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Forms;
@@ -50,12 +45,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         private bool _isLoaded;
         private int _selectChannel;
         private MemoryStream _videoMemoryStream = new();
-        private VlcControl? _vlcPlay;
         private bool _isPlaying;
         private SemaphoreSlim _playSlim = new(1);
 
-        public NetworkVideoRecorderPageViewModel(IConfigRepository configRepository,
-            INvrManager nvrManager) : base(configRepository) {
+        public NetworkVideoRecorderPageViewModel(IConfigRepository configRepository) : base(configRepository) {
             /*_nvrManager = nvrManager;
             _nvrManager.RealTimePreviewCallback += async delegate (object? sender, RealTimePreviewEventArgs args) {
                 /*if (args.Data is not null) {
@@ -150,11 +143,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
                 try {
                     if (obj is Page page) {
-                        var visualChild = PluginInterface.Utils.Utils.GetVisualChild<VlcControl>(page, f => f.Name.Equals("VlcPlayer"));
+                        /*var visualChild = PluginInterface.Utils.Utils.GetVisualChild<VlcControl>(page, f => f.Name.Equals("VlcPlayer"));
                         if (visualChild != null) {
                             _vlcPlay = visualChild;
                             _vlcPlay.SourceProvider.CreatePlayer(new DirectoryInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}VideoLAN\\VLC"));
-                        }
+                        }*/
                     }
                 }
                 catch (Exception e) {
@@ -183,7 +176,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             try {
                 await _playSlim.WaitAsync();
                 if (IsPlaying) {
-                    _vlcPlay?.SourceProvider?.MediaPlayer?.Pause();
+                    // _vlcPlay?.SourceProvider?.MediaPlayer?.Pause();
                     IsPlaying = false;
                 }
             }
@@ -199,7 +192,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
         private async void PlayDelegate(SelectionChangedEventArgs obj) {
             //播放
-            try {
+            /*try {
                 await _playSlim.WaitAsync();
                 if (IsPlaying) {
                     _vlcPlay?.SourceProvider?.MediaPlayer?.Pause();
@@ -219,7 +212,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             }
             finally {
                 _playSlim.Release();
-            }
+            }*/
         }
 
         /// <summary>

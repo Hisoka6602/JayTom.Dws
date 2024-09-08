@@ -1,7 +1,7 @@
-﻿using JayTom.Dws.PluginInterface;
-using System;
-using System.Globalization;
+﻿using System;
 using System.Windows.Data;
+using System.Globalization;
+using JayTom.Dws.Client.EventMediators;
 
 namespace JayTom.Dws.Client.Converters {
 

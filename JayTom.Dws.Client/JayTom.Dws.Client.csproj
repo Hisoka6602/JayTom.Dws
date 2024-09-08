@@ -70,7 +70,6 @@
     <Folder Include="Service\ResultOutput\Communication\SerialComm\" />
     <Folder Include="Service\Input\" />
     <Folder Include="Icons\" />
-    <Folder Include="PluginInterface\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,7 +82,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Prism.DryIoc" Version="8.1.97" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.3.5" />
-    <PackageReference Include="Vlc.DotNet.Wpf" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -91,7 +89,6 @@
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
-    <ProjectReference Include="..\JayTom.Dws.Nvr\JayTom.Dws.Nvr.csproj" />
     <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
@@ -156,12 +153,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <!-- Include the files from JayTom.Dws.Nvr\VideoLAN folder -->
+  <!--<ItemGroup>
+    ~1~ Include the files from JayTom.Dws.Nvr\VideoLAN folder @1@
     <Content Include="..\JayTom.Dws.Nvr\VideoLAN\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
+  </ItemGroup>-->
   <ItemGroup>
     <!-- Include the files from JayTom.Dws.Nvr\VideoLAN folder -->
     <Content Include="..\JayTom.Dws.Camera\UsbCameraDll\**\*">
@@ -172,6 +169,12 @@
     <Content Include="..\JayTom.Dws.Camera\ffmpegFiles\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="PluginInterface\**" />
+    <EmbeddedResource Remove="PluginInterface\**" />
+    <None Remove="PluginInterface\**" />
+    <Page Remove="PluginInterface\**" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />

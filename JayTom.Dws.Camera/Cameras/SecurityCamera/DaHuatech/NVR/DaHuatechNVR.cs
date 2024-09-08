@@ -2,7 +2,6 @@
 using NetSDKCS;
 using System.Linq;
 using System.Text;
-using Accord.Video;
 using System.Drawing;
 using DaHua.Play.Net;
 using Microsoft.Win32;

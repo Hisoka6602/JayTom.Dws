@@ -1,0 +1,13 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+  <Bundle Name="Bundle1" Manufacturer="TODO Manufacturer" Version="1.0.0.0" UpgradeCode="1a3b992a-d11c-4d36-a7fa-9ba54bf3c7e1">
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication LicenseUrl="https://www.example.com/license" Theme="hyperlinkLicense" />
+    </BootstrapperApplication>
+
+    <Chain>
+      <!-- TODO: Define the list of chained packages. -->
+      <!-- <MsiPackage SourceFile="path\to\your.msi" /> -->
+    </Chain>
+
+  </Bundle>
+</Wix>

@@ -1,8 +1,8 @@
-﻿using JayTom.Dws.PluginInterface;
-using System;
-using System.Globalization;
+﻿using System;
 using System.Windows.Data;
+using System.Globalization;
 using System.Windows.Media;
+using JayTom.Dws.PluginInterface;
 
 namespace JayTom.Dws.Client.Converters {
 

@@ -7,7 +7,6 @@ using Prism.Mvvm;
 using Prism.DryIoc;
 using System.Windows;
 using JayTom.Dws.Ocr;
-using JayTom.Dws.Nvr;
 using Newtonsoft.Json;
 using System.IO.Pipes;
 using System.Net.Http;
@@ -16,7 +15,6 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Plugin;
 using System.Diagnostics;
-using JayTom.Dws.Nvr.Nvr;
 using JayTom.Dws.Interface;
 using System.Globalization;
 using System.Windows.Media;
@@ -382,8 +380,8 @@ namespace JayTom.Dws.Client {
 
                 //云视频云端
                 services.AddSingleton<ICloud, CloudVideoUploadApi>();
-                //Nvr
-                services.AddSingleton<INvrManager, DaHuaNvr>();
+                /*//Nvr
+                services.AddSingleton<INvrManager, DaHuaNvr>();*/
                 //授权接口
                 services.AddSingleton<IClientLicenseApi, DefaultClientLicenseApi>();
                 //SignalR
