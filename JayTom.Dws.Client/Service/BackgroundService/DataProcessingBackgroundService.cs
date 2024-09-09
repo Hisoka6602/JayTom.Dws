@@ -263,7 +263,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         bool isSortingUpdateInfo;
                                         if (packageInfo.SortingInfo is null) {
                                             //存到表
-                                            isSortingUpdateInfo = await _sortingRepository.Insert(new SortingInfoModel() {
+                                            packageInfo.SortingInfo = new SortingInfoModel() {
                                                 PackageId = packageInfoModel.Id,
                                                 ChecksumProtocolName = sortingModel.ChecksumProtocolName,
                                                 CommunicationMethod = sortingModel.CommunicationMethod,
@@ -277,7 +277,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                         InstructionContent = s.InstructionContent,
                                                         InstructionGeneratedTime = s.InstructionGeneratedTime,
                                                     })?.ToList() ?? new List<InstructionInfoModel>()
-                                            }, stoppingToken);
+                                            };
+                                            isSortingUpdateInfo = await _sortingRepository.Insert(packageInfo.SortingInfo, stoppingToken);
                                         }
                                         else {
                                             //更新
@@ -385,7 +386,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
                                         else {
                                             //添加
-                                            var exitInfoModel = packageExitUpdateModel.ExitType switch {
+                                            packageInfo.ExitInfo = packageExitUpdateModel.ExitType switch {
                                                 SortingExitType.PhysicalExit => new ExitInfoModel() {
                                                     PackageId = packageInfo.Id,
                                                     PhysicalExit = packageExitUpdateModel.ExitName,
@@ -400,7 +401,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 _ => new()
                                             };
 
-                                            var insert = await _exitInfoRepository.Insert(exitInfoModel, stoppingToken);
+                                            var insert = await _exitInfoRepository.Insert(packageInfo.ExitInfo, stoppingToken);
                                             if (!insert) {
                                                 _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
                                                 return;
