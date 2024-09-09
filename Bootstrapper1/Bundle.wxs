@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <WixVariable Id="WixMbaPrereqPackageId" Value="" />
+  <WixVariable Id="WixMbaPrereqLicenseUrl" Value="http://example.com/license" />
+  <Bundle Name="Bootstrapper1" Version="1.0.0.0" Manufacturer="无限创科" UpgradeCode="586e382a-7fd1-4023-af65-9026722826e1">
+    <!--<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense" />-->
+    <BootstrapperApplicationRef Id="ManagedBootstrapperApplicationHost">
+      <Payload SourceFile="$(var.WpfApp4.TargetPath)" />
+      <Payload Name="BootstrapperCore.config" SourceFile="D:\Workspace\JayTom\JayTom.Dws\WpfApp4\bin\Debug\net7.0-windows\WpfApp4.dll.config" />
+    </BootstrapperApplicationRef>
+    <Chain>
+      <!-- TODO: Define the list of chained packages. -->
+      <MsiPackage Compressed="yes" SourceFile="$(var.SetupProject1.TargetPath)" />
+    </Chain>
+  </Bundle>
+</Wix>
