@@ -1,0 +1,11 @@
+﻿<Project Sdk="WixToolset.Sdk/5.0.1">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Cultures>zh-CN</Cultures>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Icons\ico.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.1" />
+  </ItemGroup>
+</Project>

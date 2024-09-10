@@ -1,9 +1,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
     <ComponentGroup Id="ExampleComponents" Directory="INSTALLFOLDER">
-      <Component>
-        <File Source="ExampleComponents.wxs" />
-      </Component>
+      <Files Include="..\jaytom.dws.client\bin\release\net7.0-windows\publish\win-x64\**" />
     </ComponentGroup>
   </Fragment>
 </Wix>

@@ -1,0 +1,35 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal" xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
+  <Bundle Name="JayTom.Dws.Installation" Manufacturer="无限创科" Version="1.0.0.1" UpgradeCode="ddeca030-e0b6-49b4-8571-0e69e1ac3562">
+    <BootstrapperApplication>
+      <bal:WixInternalUIBootstrapperApplication Theme="standard" />
+    </BootstrapperApplication>
+    <netfx:DotNetCoreSearch RuntimeType="desktop" MajorVersion="7" Platform="x64" Variable="DOTNETDESKTOPVERSION" />
+    <netfx:DotNetCoreSearch RuntimeType="aspnet" MajorVersion="7" Platform="x64" Variable="DOTNETHOSTINGVERSION" />
+    <Chain>
+      <!-- TODO: Define the list of chained packages. -->
+      <ExePackage Id="DotNetSdk704"
+                  DetectCondition="DOTNETSDKVERSION &gt;= &quot;7.0.20&quot;"
+                  Permanent="yes"
+                  Vital="no"
+                  InstallArguments="windowsdesktop-runtime-7.0.20-win-x64.exe /install /quiet /norestart"
+                  RepairArguments="windowsdesktop-runtime-7.0.20-win-x64.exe /repair /quiet /norestart"
+                  UninstallArguments="windowsdesktop-runtime-7.0.20-win-x64.exe /uninstall /quiet /norestart">
+        <ExePackagePayload
+          Name="windowsdesktop-runtime-7.0.20-win-x64.exe"
+          SourceFile="Assets\windowsdesktop-runtime-7.0.20-win-x64.exe" />
+      </ExePackage>
+      <ExePackage Id="DotNetHosting702"
+                  DetectCondition="DOTNETHOSTINGVERSION &gt;= &quot;7.0.20&quot;"
+                  Permanent="yes"
+                  Vital="no"
+                  InstallArguments="dotnet-hosting-7.0.20-win.exe /install /quiet /norestart"
+                  RepairArguments="dotnet-hosting-7.0.20-win.exe /repair /quiet /norestart"
+                  UninstallArguments="dotnet-hosting-7.0.20-win.exe /uninstall /quiet /norestart">
+        <ExePackagePayload
+          Name="dotnet-hosting-7.0.20-win.exe.exe"
+          SourceFile="Assets\dotnet-hosting-7.0.20-win.exe" />
+      </ExePackage>
+      <MsiPackage SourceFile="JayTom.Dws.Msi.msi" bal:DisplayInternalUICondition="yes" />
+    </Chain>
+  </Bundle>
+</Wix>

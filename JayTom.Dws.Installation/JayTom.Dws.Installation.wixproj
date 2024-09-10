@@ -1,1 +1,19 @@
-﻿<Project Sdk="WixToolset.Sdk/5.0.1" />
+﻿<Project Sdk="WixToolset.Sdk/5.0.1">
+  <PropertyGroup>
+    <OutputType>Bundle</OutputType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Cultures>zh-CN</Cultures>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Bal.wixext" Version="5.0.1" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="5.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\dotnet-hosting-7.0.20-win.exe" />
+    <None Include="Assets\windowsdesktop-runtime-7.0.20-win-x64.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Msi\JayTom.Dws.Msi.wixproj" />
+  </ItemGroup>
+</Project>

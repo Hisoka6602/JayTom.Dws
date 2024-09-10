@@ -1,0 +1,17 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <!-- 引用 UI 扩展 -->
+  <Package Name="JayTom.Dws.Client" Manufacturer="无限创科" Codepage="65001" Version="1.0.0.1" UpgradeCode="ef81cebc-b4cb-46b8-9366-46466cd398de">
+
+    <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
+    <ui:WixUI
+      Id="WixUI_InstallDir"
+      InstallDirectory="INSTALLFOLDER" />
+    <MediaTemplate EmbedCab="yes" />
+    <Icon Id="appIcon" SourceFile="Icons\ico.ico" />
+    <Feature Id="Main">
+      <ComponentRef Id="ShortcutsComponent" />
+      <ComponentGroupRef Id="ExampleComponents" />
+    </Feature>
+  </Package>
+</Wix>

@@ -1,9 +1,0 @@
-﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="JayTom.Dws.Installation" Manufacturer="TODO Manufacturer" Version="1.0.0.0" UpgradeCode="c6b97aec-634b-468b-ba4d-3162ab3f0756">
-    <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
-
-    <Feature Id="Main">
-      <ComponentGroupRef Id="ExampleComponents" />
-    </Feature>
-  </Package>
-</Wix>
