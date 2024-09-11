@@ -1,6 +1,7 @@
 ﻿using DryIoc;
 using System;
 using Example;
+using Velopack;
 using Prism.Ioc;
 using System.IO;
 using Prism.Mvvm;
@@ -657,6 +658,7 @@ namespace JayTom.Dws.Client {
         }
 
         protected override async void OnInitialized() {
+            VelopackApp.Build().Run();
             await Task.Yield();
             base.OnInitialized();
             // 获取 IServiceProvider

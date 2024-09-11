@@ -8,4 +8,8 @@
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="0.0.594" />
+  </ItemGroup>
+
 </Project>
