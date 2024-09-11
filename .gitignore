@@ -362,3 +362,7 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /JayTom.Dws.VideoApi/wwwroot/barcodeImages/2024/07/24
+/JayTom.Dws.Installation/Assets/dotnet-hosting-7.0.20-win.exe
+/JayTom.Dws.Installation/Assets/windowsdesktop-runtime-7.0.20-win-x64.exe
+/temp/windowsdesktop-runtime-7.0.20-win-x64.exe
+/temp/windowsdesktop-runtime-7.0.20-win-x64.exe
