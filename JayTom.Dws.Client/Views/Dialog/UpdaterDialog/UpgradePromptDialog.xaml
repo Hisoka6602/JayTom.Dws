@@ -6,6 +6,7 @@
     xmlns:converters="clr-namespace:JayTom.Dws.Client.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Dialog.UpdaterDialog"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
     Name="UpgradePromptView"
@@ -13,6 +14,7 @@
     d:DesignWidth="800"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Background="#2E2E2E"
+    FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="UpgradePromptView">
@@ -20,6 +22,7 @@
         </b:EventTrigger>
     </b:Interaction.Triggers>
     <UserControl.Resources>
+        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
         <converters:BorderClipMultiConverter x:Key="BorderClipMultiConverter" />
     </UserControl.Resources>
     <mvvm:Dialog.WindowStyle>
@@ -27,8 +30,8 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="ResizeMode" Value="NoResize" />
             <Setter Property="WindowStyle" Value="None" />
-            <Setter Property="Width" Value="800" />
-            <Setter Property="Height" Value="600" />
+            <Setter Property="Width" Value="600" />
+            <Setter Property="Height" Value="400" />
             <Setter Property="SizeToContent" Value="Manual" />
             <Setter Property="WindowChrome.WindowChrome">
                 <Setter.Value>
@@ -67,7 +70,8 @@
                     Command="{Binding CloseDialogCommand}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}"
                     Style="{StaticResource CustomCloseButtonStyle}"
-                    ToolTip="Close">
+                    ToolTip="Close"
+                    Visibility="{Binding UpgradeStatus, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=WaitingForUpgrade}">
                     <TextBlock
                         Foreground="White"
                         Style="{StaticResource SystemTextBlockStyle}"
@@ -75,5 +79,166 @@
                 </Button>
             </StackPanel>
         </Border>
+        <Grid Visibility="{Binding UpgradeStatus, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=WaitingForUpgrade|Upgrading}">
+            <!--  背景大图  -->
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                FontSize="320"
+                Foreground="DimGray"
+                IsEnabled="False"
+                Opacity="0.3"
+                Text="&#xea50;" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <!--  版本号  -->
+                <StackPanel
+                    Grid.Row="0"
+                    Margin="0,20"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="10,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DimGray"
+                        Text="版本号:" />
+                    <!--  图标  -->
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontFamily="pack://application:,,,/Fonts/#iconfont"
+                        FontSize="25"
+                        Foreground="DimGray"
+                        IsEnabled="False"
+                        Text="&#xea63;" />
+                    <!--  版本号  -->
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DimGray"
+                        Text="1.1.0" />
+                </StackPanel>
+                <!--  更新内容  -->
+                <ScrollViewer
+                    Grid.Row="1"
+                    Width="550"
+                    MaxHeight="210"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Focusable="False"
+                    VerticalScrollBarVisibility="Auto">
+                    <!--  可根据需要调整高度  -->
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Opacity="0.7"
+                        Text="  // ISSUE: reference to a compiler-generated field                           // ISSUE: reference to a compiler-generated field "
+                        TextWrapping="Wrap" />
+                </ScrollViewer>
+
+                <!--  更新按钮/下载进度  -->
+                <StackPanel
+                    Grid.Row="2"
+                    MinHeight="80"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <!--  立即更新按钮  -->
+                    <Button
+                        Width="100"
+                        Height="50"
+                        Margin="2,0"
+                        materialDesign:ButtonAssist.CornerRadius="25"
+                        Background="RoyalBlue"
+                        BorderThickness="0"
+                        Command="{Binding ImmediateUpdateCommand}"
+                        Focusable="False"
+                        Foreground="RoyalBlue"
+                        Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                        Visibility="{Binding UpgradeStatus, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=WaitingForUpgrade}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                FontFamily="pack://application:,,,/Fonts/#Sarasa Mono SC Nerd"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                IsEnabled="True"
+                                Text="立即更新"
+                                TextAlignment="Justify" />
+                        </StackPanel>
+                    </Button>
+
+                    <!--  更新进度  -->
+                    <Grid Margin="10" Visibility="{Binding UpgradeStatus, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Upgrading}">
+                        <ProgressBar
+                            Name="UpgradeProgressBar"
+                            Width="560"
+                            Height="40"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            materialDesign:TransitionAssist.DisableTransitions="True"
+                            Background="#096e3dff"
+                            Foreground="BlueViolet"
+                            Maximum="100"
+                            Opacity="0.8"
+                            Style="{StaticResource CustomProgressBarStyle}"
+                            Value="{Binding DownloadProgress, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            FontWeight="Normal"
+                            Foreground="White"
+                            Opacity="0.5">
+                            <Run Text="正在更新:" />  <Run Text="{Binding ElementName=UpgradeProgressBar, Path=Value}" /><Run Text="%" />
+                        </TextBlock>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </Grid>
+        <Grid Visibility="{Binding UpgradeStatus, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=UpgradeFailed}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <!--  背景大图  -->
+            <TextBlock
+                Grid.Row="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                FontSize="300"
+                Foreground="DimGray"
+                IsEnabled="False"
+                Opacity="0.3"
+                Text="&#xea66;" />
+            <!--  信息  -->
+            <TextBlock
+                Grid.Row="1"
+                Margin="10,5"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontSize="13"
+                FontWeight="Bold"
+                Foreground="DimGray"
+                TextWrapping="WrapWithOverflow">
+                <Run Text="更新异常:" /> <Run Text="{Binding ExceptionMessage, UpdateSourceTrigger=PropertyChanged}" />
+            </TextBlock>
+        </Grid>
     </Grid>
 </UserControl>

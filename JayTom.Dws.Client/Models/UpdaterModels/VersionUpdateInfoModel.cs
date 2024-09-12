@@ -2,6 +2,7 @@
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -35,5 +36,26 @@ namespace JayTom.Dws.Client.Models.UpdaterModels {
             get => _updateMessage;
             set => SetProperty(ref _updateMessage, value);
         }
+    }
+
+    public enum UpgradeStatus {
+
+        /// <summary>
+        /// 等待升级
+        /// </summary>
+        [Description("等待升级")]
+        WaitingForUpgrade,
+
+        /// <summary>
+        /// 升级中
+        /// </summary>
+        [Description("升级中")]
+        Upgrading,
+
+        /// <summary>
+        /// 升级异常
+        /// </summary>
+        [Description("升级异常")]
+        UpgradeFailed
     }
 }
