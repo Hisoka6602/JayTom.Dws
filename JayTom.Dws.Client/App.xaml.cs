@@ -71,6 +71,7 @@ using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Views.Editors.CloudService;
 using JayTom.Dws.Client.Service.ProcessingServices;
+using JayTom.Dws.Client.Views.Dialog.UpdaterDialog;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Infrastructure.Repository.LocalLog;
 using DryIoc.Microsoft.DependencyInjection.Extension;
@@ -80,6 +81,7 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
+using JayTom.Dws.Client.ViewModels.Dialog.UpdaterDialog;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
@@ -157,6 +159,11 @@ namespace JayTom.Dws.Client {
             //全景指定触发
             {
                 containerRegistry.RegisterDialog<ScanCameraSelectionDialog>();
+            }
+            //升级
+            {
+                containerRegistry.RegisterDialog<UpgradePromptDialog>();
+                containerRegistry.RegisterDialog<UpgradeProgressDialog>();
             }
             //跳转注册
             {
@@ -527,7 +534,11 @@ namespace JayTom.Dws.Client {
         protected override void ConfigureViewModelLocator() {
             base.ConfigureViewModelLocator();
             //绑定页面
-
+            //升级
+            {
+                ViewModelLocationProvider.Register<UpgradePromptDialog, UpgradePromptViewModel>();
+                ViewModelLocationProvider.Register<UpgradeProgressDialog, UpgradeProgressViewModel>();
+            }
             ViewModelLocationProvider.Register<ExportDialog, ExportDialogViewModel>();
             ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
             ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();

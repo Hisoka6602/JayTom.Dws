@@ -1,4 +1,5 @@
 ﻿using System;
+using Velopack;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -18,10 +19,12 @@ using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
+using NPOI.SS.Formula.Functions;
 using Size = System.Windows.Size;
 using System.Windows.Media.Imaging;
 using JayTom.Dws.Domain.Dto.AppDto;
 using Point = System.Windows.Point;
+using Microsoft.Extensions.Logging;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
@@ -31,6 +34,7 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using MaterialDesignThemes.Wpf.Transitions;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.SyncSettings;
+using JayTom.Dws.Client.Models.UpdaterModels;
 using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
@@ -46,6 +50,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private readonly IDialogService _dialogService;
         private readonly IConfigRepository _configRepository;
         private readonly ISyncSettingsService _syncSettingsService;
+        private readonly ILogger<MainWindowViewModel> _logger;
         private double _uniformCornerRadius = 5;
         private string _maxBtnIcon = "\xe600";
         private string _maxBtnToolTip = "Maximize";
@@ -57,6 +62,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private bool _isLoaded;
         private SyncSettingsDto _syncSettingsDto = new();
         private ObservableCollection<HomeToolInfoModel> _homeToolItems = new();
+        private UpdateManager? _um;
 
         private LanguageInfoModel? _selectedLanguage = new() {
             DisplayName = "中文",
@@ -73,11 +79,13 @@ namespace JayTom.Dws.Client.ViewModels {
         public MainWindowViewModel(IRegionManager regionManager,
             IDialogService dialogService,
             IConfigRepository configRepository,
-            ISyncSettingsService syncSettingsService) {
+            ISyncSettingsService syncSettingsService,
+            ILogger<MainWindowViewModel> logger) {
             _regionManager = regionManager;
             _dialogService = dialogService;
             _configRepository = configRepository;
             _syncSettingsService = syncSettingsService;
+            _logger = logger;
             HomeToolItems = new ObservableCollection<HomeToolInfoModel>()
             {
                 new()
@@ -357,6 +365,33 @@ namespace JayTom.Dws.Client.ViewModels {
             });
 
             //连接同步配置
+
+            //判断升级
+            /*_um = new UpdateManager("文件地址", logger: _logger);
+            if (_um is not null) {
+                var updateInfo = await _um.CheckForUpdatesAsync().ConfigureAwait(true);
+                if (updateInfo?.DeltasToTarget.Any() == true) {
+                    //提示升级
+
+                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                        _dialogService.ShowDialog("UpgradeProgressDialog", new DialogParameters { { "VersionUpdateInfo", new VersionUpdateInfoModel
+                        {
+                            VersionNumber = updateInfo.DeltasToTarget[0].Version.Metadata??string.Empty,
+                            UpdateMessage = updateInfo.DeltasToTarget[0].NotesMarkdown,
+                            PackageSize =  updateInfo.DeltasToTarget[0].Size
+                        } } }, null);
+                    });
+                }
+            }*/
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                await Task.Delay(5000);
+                _dialogService.ShowDialog("UpgradePromptDialog", new DialogParameters { { "VersionUpdateInfo", new VersionUpdateInfoModel
+                {
+                    VersionNumber = "1.1.0",
+                    UpdateMessage = "测试更新信息",
+                    PackageSize =  8064
+                } } }, null);
+            });
         }
 
         private void SizeChangeDelegate(object sender, SizeChangedEventArgs e) {
