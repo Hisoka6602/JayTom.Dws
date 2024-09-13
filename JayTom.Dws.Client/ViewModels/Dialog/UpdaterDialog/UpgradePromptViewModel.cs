@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Threading.Tasks;
@@ -48,24 +49,29 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.UpdaterDialog {
 
         private async void ImmediateUpdateDelegate(object obj) {
             //立即更新
-            if (UpgradeStatus == UpgradeStatus.WaitingForUpgrade &&
-                _um is not null && _update is not null) {
-                UpgradeStatus = UpgradeStatus.Upgrading;
-                try {
-                    await _um.DownloadUpdatesAsync(_update, async p => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            DownloadProgress = p;
-                            if (DownloadProgress >= 100 && _um.IsUpdatePendingRestart) {
-                                _um.ApplyUpdatesAndRestart(_update);
-                            }
-                        });
-                    }).ConfigureAwait(true);
-                }
-                catch (Exception e) {
-                    ExceptionMessage = e.Message;
-                    UpgradeStatus = UpgradeStatus.UpgradeFailed;
-                }
-            }
+            await Task.Yield();
+            _ = Task.Run(async () => {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    if (UpgradeStatus == UpgradeStatus.WaitingForUpgrade &&
+                        _um is not null && _update is not null) {
+                        UpgradeStatus = UpgradeStatus.Upgrading;
+                        await Task.Delay(1000);
+                        try {
+                            await _um.DownloadUpdatesAsync(_update, async p => {
+                                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                    DownloadProgress = p;
+                                });
+                            }).ConfigureAwait(true);
+                            _um.ApplyUpdatesAndRestart(_update);
+                        }
+                        catch (Exception e) {
+                            ExceptionMessage = e.Message;
+                            UpgradeStatus = UpgradeStatus.UpgradeFailed;
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                        }
+                    }
+                });
+            });
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);

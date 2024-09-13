@@ -1,4 +1,5 @@
 ﻿using System;
+using Velopack;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -12,8 +13,10 @@ using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
 using JayTom.Dws.Client.Service;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.Timer;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
@@ -48,6 +51,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private readonly ISortingConnectionService _sortingConnectionService;
         private readonly ISoundRepository _soundRepository;
         private readonly IGrayscaleService _grayscaleService;
+        private readonly ILogger<StatusBarViewModel> _logger;
         private static readonly SemaphoreSlim UpdateSlim = new(1, 1);
 
         private ObservableCollection<string> _exceptionItems = new()
@@ -119,6 +123,7 @@ namespace JayTom.Dws.Client.ViewModels {
         private ObservableCollection<ConnectionItemInfoModel> _connectionItems = new();
         private SolidColorBrush _connectionSolidColorBrush = new(Colors.DarkGray);
         private SolidColorBrush _cameraSolidColorBrush = new(Colors.DarkGray);
+        private string _currentVersion = string.Empty;
 
         public StatusBarViewModel(IComputerInfoReporter computerInfoReporter,
             IDeviceService deviceService, IConfigRepository configRepository,
@@ -130,7 +135,8 @@ namespace JayTom.Dws.Client.ViewModels {
             IStackedPackageService stackedPackageService,
             ISortingConnectionService sortingConnectionService,
             ISoundRepository soundRepository,
-            IGrayscaleService grayscaleService) {
+            IGrayscaleService grayscaleService,
+            ILogger<StatusBarViewModel> logger) {
             _computerInfoReporter = computerInfoReporter;
             _deviceService = deviceService;
             _ftp = ftp;
@@ -144,6 +150,7 @@ namespace JayTom.Dws.Client.ViewModels {
             _sortingConnectionService = sortingConnectionService;
             _soundRepository = soundRepository;
             _grayscaleService = grayscaleService;
+            _logger = logger;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
                 await Task.Run(async () => {
                     try {
@@ -591,6 +598,25 @@ namespace JayTom.Dws.Client.ViewModels {
                     model.ConnectionState = ConnectionState.ConnectionFailed;
                 }
             };
+
+            //加载版本
+            Task.Run(() => {
+                try {
+                    var um = new UpdateManager("http://up.wxck.top", logger: _logger);
+
+                    if (um?.CurrentVersion is not null) {
+                        CurrentVersion = um.CurrentVersion.ToString();
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
+            });
+        }
+
+        public string CurrentVersion {
+            get => _currentVersion;
+            set => SetProperty(ref _currentVersion, value);
         }
 
         public string FormattedElapsed {

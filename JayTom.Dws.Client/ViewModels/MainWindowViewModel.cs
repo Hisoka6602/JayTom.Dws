@@ -368,29 +368,41 @@ namespace JayTom.Dws.Client.ViewModels {
             //连接同步配置
 
             //判断升级
-            _um = new UpdateManager("http://up.wxck.top/updater", logger: _logger);
-            if (_um is not null && _um.IsInstalled) {
-                _update = await _um.CheckForUpdatesAsync().ConfigureAwait(true);
-                if (_um.IsUpdatePendingRestart && _update is not null) {
-                    _um.ApplyUpdatesAndRestart(_update);
-                }
-                else {
-                    if (_update?.DeltasToTarget.Any() == true) {
-                        //提示升级
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            _dialogService.ShowDialog("UpgradePromptDialog", new DialogParameters { { "VersionUpdateInfo", new VersionUpdateInfoModel
-                                {
-                                    VersionNumber = _update.DeltasToTarget[0].Version.Metadata??string.Empty,
-                                    UpdateMessage = _update.DeltasToTarget[0].NotesMarkdown,
-                                    PackageSize =  _update.DeltasToTarget[0].Size
-                                } },
-                                {"UpdateManager",_um},
-                                {"UpdateInfo",_update},
-                            }, null);
-                        });
+            _ = Task.Run(async () => {
+                try {
+                    _um = new UpdateManager("http://up.wxck.top", logger: _logger);
+                    if (_um is not null && _um.IsInstalled) {
+                        _update = await _um.CheckForUpdatesAsync().ConfigureAwait(true);
+                        if (_um.IsUpdatePendingRestart && _update is not null) {
+                            _um.ApplyUpdatesAndRestart(_update);
+                        }
+                        else {
+                            if (_update?.DeltasToTarget.Any() == true) {
+                                //提示升级
+                                await Application.Current.Dispatcher.InvokeAsync(() => {
+                                    _dialogService.ShowDialog("UpgradePromptDialog", new DialogParameters
+                                    {
+                                        {
+                                            "VersionUpdateInfo", new VersionUpdateInfoModel
+                                            {
+                                                VersionNumber = _update.DeltasToTarget[0].Version.ToString(),
+                                                UpdateMessage = _update.DeltasToTarget[0].NotesMarkdown,
+                                                PackageSize = _update.DeltasToTarget[0].Size
+                                            }
+                                        },
+                                        { "UpdateManager", _um },
+                                        { "UpdateInfo", _update },
+                                    }, null);
+                                });
+                            }
+                        }
                     }
                 }
-            }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
+            });
+
             /*await Application.Current.Dispatcher.InvokeAsync(async () => {
                 await Task.Delay(5000);
                 _dialogService.ShowDialog("UpgradePromptDialog", new DialogParameters { { "VersionUpdateInfo", new VersionUpdateInfoModel

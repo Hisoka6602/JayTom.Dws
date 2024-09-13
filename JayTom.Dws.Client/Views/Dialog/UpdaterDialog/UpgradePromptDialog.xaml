@@ -126,7 +126,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="DimGray"
-                        Text="1.1.0" />
+                        Text="{Binding VersionUpdateInfo.VersionNumber, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
                 <!--  更新内容  -->
                 <ScrollViewer
@@ -139,11 +139,12 @@
                     VerticalScrollBarVisibility="Auto">
                     <!--  可根据需要调整高度  -->
                     <TextBlock
+                        HorizontalAlignment="Center"
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="White"
                         Opacity="0.7"
-                        Text="  // ISSUE: reference to a compiler-generated field                           // ISSUE: reference to a compiler-generated field "
+                        Text="{Binding VersionUpdateInfo.UpdateMessage, UpdateSourceTrigger=PropertyChanged}"
                         TextWrapping="Wrap" />
                 </ScrollViewer>
 

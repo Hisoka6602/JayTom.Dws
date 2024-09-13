@@ -578,7 +578,7 @@
                 FontSize="16"
                 FontWeight="Bold"
                 Foreground="DimGray">
-                <Run>V</Run><Run FontSize="12">1.0.2</Run>
+                <Run>V</Run><Run FontSize="12" Text="{Binding CurrentVersion, UpdateSourceTrigger=PropertyChanged}" />
             </TextBlock>
             <!--  运行时间  -->
             <StackPanel
