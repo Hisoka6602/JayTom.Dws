@@ -53,11 +53,11 @@ internal class Program {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            var (key, value) = await new PostInApi(_httpClientFactory).
+            /*var (key, value) = await new PostInApi(_httpClientFactory).
                 SweepTopReceiveByCsb("0123456789", stoppingToken);
-            Console.WriteLine(value);
+            Console.WriteLine(value);*/
 
-            /*await _baseClientMessageHub.StartAsync("http://100.248.248.101:8080/Message", a => {
+            await _baseClientMessageHub.StartAsync("http://100.248.248.101:8080/Message", a => {
                 a.On<object>("SystemInfo", async data => {
                     var computerInfo = JsonConvert.DeserializeObject<ComputerInfoModel>(data.ToString() ?? string.Empty);
 
@@ -67,7 +67,7 @@ internal class Program {
                     Console.WriteLine(data);
                 });
             }, "aa");
-            return;*/
+            return;
         }
     }
 }
