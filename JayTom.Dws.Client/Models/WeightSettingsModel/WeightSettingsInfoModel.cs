@@ -1,6 +1,10 @@
-﻿using JayTom.Dws.Client.Models.SettingsCommomModels;
-using JayTom.Dws.Domain.Dto;
+﻿using System;
 using Prism.Mvvm;
+using System.Linq;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Scale;
+using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
 
 namespace JayTom.Dws.Client.Models.WeightSettingsModel {
 
@@ -11,6 +15,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         private StaticWeightParamsModel _staticWeight = new();
         private DynamicWeightParamsModel _dynamicWeight = new();
         private AdditionalWeightPropertiesModel _additionalWeight = new();
+        private ScaleCommunicationMode _scaleCommunicationMode;
+        private TcpSettingsInfoModel _tcpSettingsInfo = new();
 
         /// <summary>
         /// 称重模式
@@ -21,11 +27,28 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         }
 
         /// <summary>
+        /// 连接模式
+        /// </summary>
+
+        public ScaleCommunicationMode ScaleCommunicationMode {
+            get => _scaleCommunicationMode;
+            set => SetProperty(ref _scaleCommunicationMode, value);
+        }
+
+        /// <summary>
         /// 连接参数
         /// </summary>
         public SerialPortSettingsInfoModel Connection {
             get => _connection;
             set => SetProperty(ref _connection, value);
+        }
+
+        /// <summary>
+        /// Tcp连接参数
+        /// </summary>
+        public TcpSettingsInfoModel TcpSettingsInfo {
+            get => _tcpSettingsInfo;
+            set => SetProperty(ref _tcpSettingsInfo, value);
         }
 
         /// <summary>

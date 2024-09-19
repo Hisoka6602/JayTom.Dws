@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Client.Models;
@@ -21,7 +22,9 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.WeightSettingsModel;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
+using TcpConnectParam = JayTom.Dws.Plugin.Scale.TcpConnectParam;
 using WeightAccessMode = JayTom.Dws.Domain.Dto.WeightAccessMode;
+using TcpConnectionMode = JayTom.Dws.Plugin.Scale.TcpConnectionMode;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
@@ -31,59 +34,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private WeightSettingsInfoModel _weightSettingsInfo = new();
         private ObservableCollection<string> _portItems = new();
 
-        private ObservableCollection<ParityInfoModel> _parityItems = new()
-        {
-            new ParityInfoModel()
-            {
-                Name = "None",
-                Value = Parity.None
-            },
-            new ParityInfoModel()
-            {
-                Name = "Odd",
-                Value = Parity.Odd
-            },
-            new ParityInfoModel()
-            {
-                Name = "Even",
-                Value = Parity.Even
-            },
-            new ParityInfoModel()
-            {
-                Name = "Mark",
-                Value = Parity.Mark
-            },
-            new ParityInfoModel()
-            {
-                Name = "Space",
-                Value = Parity.Space
-            },
-        };
-
-        private ObservableCollection<StopBitsInfoModel> _stopBitsItems = new()
-        {
-            new StopBitsInfoModel()
-            {
-                Name = "None",
-                Value = 0,
-            },
-            new StopBitsInfoModel()
-            {
-                Name = "One",
-                Value = StopBits.One,
-            },
-            new StopBitsInfoModel()
-            {
-                Name = "Two",
-                Value = StopBits.Two,
-            },
-            new StopBitsInfoModel()
-            {
-                Name = "OnePointFive",
-                Value = StopBits.OnePointFive,
-            },
-        };
-
         private ObservableCollection<int> _baudRateItems = new()
         {
             4800,9600,14400,19200,38400,115200
@@ -92,20 +42,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private ObservableCollection<int> _dataBitsItems = new()
         {
             5,6,7,8,
-        };
-
-        private ObservableCollection<DataFormatTypeInfoModel> _dataFormatTypeItems = new()
-        {
-            new DataFormatTypeInfoModel()
-            {
-                Name = "Ascii",
-                Value = DataFormatType.Ascii
-            },
-            new DataFormatTypeInfoModel()
-            {
-                Name = "Hex",
-                Value = DataFormatType.Hex
-            },
         };
 
         private ObservableCollection<WeightModeInfoModel> _weightModeItems = new()
@@ -127,9 +63,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
         };
 
-        private ParityInfoModel _selectParity = new();
-        private StopBitsInfoModel _selectStopBits = new();
-        private DataFormatTypeInfoModel _selectDataFormat = new();
         private DataFormatTypeInfoModel _sendDataFormat = new();
 
         private ObservableCollection<WeightAccessInfoMode> _weightAccessItems = new()
@@ -154,6 +87,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private string _receivedData = string.Empty;
         private string _weightSourceContent = string.Empty;
         private float _parsedWeight;
+        private ObservableCollection<ScaleCommunicationMode> _scaleCommunicationModeItem = new(Enum.GetValues(typeof(ScaleCommunicationMode)).Cast<ScaleCommunicationMode>());
+        private ObservableCollection<Parity> _parityItems = new(Enum.GetValues(typeof(Parity)).Cast<Parity>());
+        private ObservableCollection<StopBits> _stopBitsItems = new(Enum.GetValues(typeof(StopBits)).Cast<StopBits>());
+        private ObservableCollection<DataFormatType> _dataFormatTypeItems = new(Enum.GetValues(typeof(DataFormatType)).Cast<DataFormatType>());
 
         public WeightSettingViewModel(IDynamicScale dynamicScale,
             IStaticScale staticScale, IConfigRepository configRepository) : base(configRepository) {
@@ -219,6 +156,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             };
         }
 
+        public ObservableCollection<ScaleCommunicationMode> ScaleCommunicationModeItem {
+            get => _scaleCommunicationModeItem;
+            set => SetProperty(ref _scaleCommunicationModeItem, value);
+        }
+
         public WeightSettingsInfoModel WeightSettingsInfo {
             get => _weightSettingsInfo;
             set => SetProperty(ref _weightSettingsInfo, value);
@@ -229,7 +171,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _weightModeItems, value);
         }
 
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatType> DataFormatTypeItems {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
@@ -247,11 +189,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public WeightAccessInfoMode SelectedWeightAccess {
             get => _selectedWeightAccess;
             set => SetProperty(ref _selectedWeightAccess, value);
-        }
-
-        public DataFormatTypeInfoModel SelectDataFormat {
-            get => _selectDataFormat;
-            set => SetProperty(ref _selectDataFormat, value);
         }
 
         /// <summary>
@@ -273,33 +210,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 效验位下拉选项
         /// </summary>
-        public ObservableCollection<ParityInfoModel> ParityItems {
+        public ObservableCollection<Parity> ParityItems {
             get => _parityItems;
             set => SetProperty(ref _parityItems, value);
         }
 
         /// <summary>
-        /// 效验位
-        /// </summary>
-        public ParityInfoModel SelectParity {
-            get => _selectParity;
-            set => SetProperty(ref _selectParity, value);
-        }
-
-        /// <summary>
-        /// 停止位下拉选项
-        /// </summary>
-        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
-            get => _stopBitsItems;
-            set => SetProperty(ref _stopBitsItems, value);
-        }
-
-        /// <summary>
         /// 停止位
         /// </summary>
-        public StopBitsInfoModel SelectStopBits {
-            get => _selectStopBits;
-            set => SetProperty(ref _selectStopBits, value);
+        public ObservableCollection<StopBits> StopBitsItems {
+            get => _stopBitsItems;
+            set => SetProperty(ref _stopBitsItems, value);
         }
 
         /// <summary>
@@ -361,9 +282,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 串口刷新
         /// </summary>
-        public ICommand PortUpdateCommand {
-            get => new DelegateCommand(PortUpdateDelegate);
-        }
+        public ICommand PortUpdateCommand => new DelegateCommand(PortUpdateDelegate);
 
         private async void PortUpdateDelegate() {
             //重新枚举串口
@@ -409,7 +328,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             switch (SelectWeightMode.Value) {
                 //连接、并保存设置
                 case WeightMode.Static:
-                    _staticScale.WeightFormat = (ScaleWeightFormat)SelectDataFormat.Value;
+                    _staticScale.WeightFormat = (ScaleWeightFormat)WeightSettingsInfo.Connection.DataFormat;
                     _staticScale.WeightAdditionalProperties = properties;
                     _staticScale.SetWeightCalculationParameters(new DefaultStaticScaleValueParameters() {
                         AccessMode = (Plugin.Scale.StaticScale.WeightAccessMode)SelectedWeightAccess.Value,
@@ -430,28 +349,60 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         MinWeight = WeightSettingsInfo.CommonWeight.MinWeight
                     });
                     _staticScale.Connect(new BaseScaleConnectParam() {
-                        PortName = WeightSettingsInfo.Connection.PortName,
-                        BaudRate = WeightSettingsInfo.Connection.BaudRate,
-                        DataBits = WeightSettingsInfo.Connection.DataBits,
-                        Parity = SelectParity.Value,
-                        StopBits = SelectStopBits.Value
+                        Mode = WeightSettingsInfo.ScaleCommunicationMode,
+                        SerialPortInfo = new SerialPortConnectParam() {
+                            BaudRate = WeightSettingsInfo.Connection.BaudRate,
+                            DataFormat = (FormatType)WeightSettingsInfo.Connection.DataFormat,
+                            DataBits = WeightSettingsInfo.Connection.DataBits,
+                            Parity = WeightSettingsInfo.Connection.Parity,
+                            PortName = WeightSettingsInfo.Connection.PortName,
+                            StopBits = WeightSettingsInfo.Connection.StopBits,
+                        },
+                        TcpConnectInfo = new TcpConnectParam() {
+                            ClientConfig = new TcpParamInfo() {
+                                IpAddress = WeightSettingsInfo.TcpSettingsInfo.ClientConfig.IpAddress,
+                                Port = WeightSettingsInfo.TcpSettingsInfo.ClientConfig.Port,
+                            },
+                            ServerConfig = new TcpParamInfo() {
+                                IpAddress = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.IpAddress,
+                                Port = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
+                            },
+                            ConnectionMode = (TcpConnectionMode?)WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
+                            DataFormat = WeightSettingsInfo.TcpSettingsInfo.DataFormat,
+                        },
                     });
                     //连接静态称
                     break;
 
                 case WeightMode.Dynamic:
                     //连接动态称
-                    _dynamicScale.WeightFormat = (ScaleWeightFormat)SelectDataFormat.Value;
+                    _dynamicScale.WeightFormat = (ScaleWeightFormat)WeightSettingsInfo.Connection.DataFormat;
                     _dynamicScale.WeightAdditionalProperties = properties;
                     _dynamicScale.SetWeightCalculationParameters(new DefaultDynamicScaleValueParameters() {
                         DecimalPlaces = WeightSettingsInfo.DynamicWeight.DecimalPrecision
                     });
                     _dynamicScale.Connect(new BaseScaleConnectParam() {
-                        PortName = WeightSettingsInfo.Connection.PortName,
-                        BaudRate = WeightSettingsInfo.Connection.BaudRate,
-                        DataBits = WeightSettingsInfo.Connection.DataBits,
-                        Parity = SelectParity.Value,
-                        StopBits = SelectStopBits.Value
+                        Mode = WeightSettingsInfo.ScaleCommunicationMode,
+                        SerialPortInfo = new SerialPortConnectParam() {
+                            BaudRate = WeightSettingsInfo.Connection.BaudRate,
+                            DataFormat = (FormatType)WeightSettingsInfo.Connection.DataFormat,
+                            DataBits = WeightSettingsInfo.Connection.DataBits,
+                            Parity = WeightSettingsInfo.Connection.Parity,
+                            PortName = WeightSettingsInfo.Connection.PortName,
+                            StopBits = WeightSettingsInfo.Connection.StopBits,
+                        },
+                        TcpConnectInfo = new TcpConnectParam() {
+                            ClientConfig = new TcpParamInfo() {
+                                IpAddress = WeightSettingsInfo.TcpSettingsInfo.ClientConfig.IpAddress,
+                                Port = WeightSettingsInfo.TcpSettingsInfo.ClientConfig.Port,
+                            },
+                            ServerConfig = new TcpParamInfo() {
+                                IpAddress = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.IpAddress,
+                                Port = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
+                            },
+                            ConnectionMode = (TcpConnectionMode?)WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
+                            DataFormat = WeightSettingsInfo.TcpSettingsInfo.DataFormat,
+                        },
                     });
                     break;
             }
@@ -460,13 +411,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 ConfigName = SettingsName,
                 Value = JsonConvert.SerializeObject(new WeightSettingsDto {
                     Mode = SelectWeightMode.Value,
+                    ScaleCommunicationMode = WeightSettingsInfo.ScaleCommunicationMode,
                     Connection = new SerialPortSettingsInfo {
                         BaudRate = WeightSettingsInfo.Connection.BaudRate,
                         DataBits = WeightSettingsInfo.Connection.DataBits,
-                        DataFormat = SelectDataFormat.Value,
-                        Parity = SelectParity.Value,
+                        DataFormat = WeightSettingsInfo.Connection.DataFormat,
+                        Parity = WeightSettingsInfo.Connection.Parity,
                         PortName = WeightSettingsInfo.Connection.PortName,
-                        StopBits = SelectStopBits.Value
+                        StopBits = WeightSettingsInfo.Connection.StopBits
+                    },
+                    TcpSettingsInfo = new TcpSettingsInfo() {
+                        ConnectionMode = WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
+                        ClientConfig = new TcpInfo() {
+                            IpAddress = WeightSettingsInfo.TcpSettingsInfo.ClientConfig.IpAddress,
+                            Port = WeightSettingsInfo.TcpSettingsInfo.ClientConfig.Port,
+                        },
+                        ServerConfig = new TcpInfo() {
+                            IpAddress = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.IpAddress,
+                            Port = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
+                        },
+                        DataFormat = (DataFormatType)WeightSettingsInfo.TcpSettingsInfo.DataFormat
                     },
                     CommonWeight = new CommonWeightParams {
                         MaxWeight = WeightSettingsInfo.CommonWeight.MaxWeight,
@@ -519,26 +483,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(SettingsName) ??
                                       new WeightSettingsDto();
                     SelectWeightMode = WeightModeItems.FirstOrDefault(f => f.Value == settingsDto.Mode) ?? new WeightModeInfoModel();
-                    SelectDataFormat =
-                        DataFormatTypeItems.FirstOrDefault(
-                            f => f.Value == settingsDto.Connection.DataFormat) ??
-                        new DataFormatTypeInfoModel();
-                    SelectParity =
-                        ParityItems.FirstOrDefault(f => f.Value == settingsDto.Connection.Parity) ??
-                        new ParityInfoModel();
-                    SelectStopBits =
-                        StopBitsItems.FirstOrDefault(f => f.Value == settingsDto.Connection.StopBits) ??
-                        new StopBitsInfoModel();
                     SelectedWeightAccess =
                         WeightAccessItems.FirstOrDefault(
                             f => f.Value == settingsDto.StaticWeight.AccessMode) ??
                         new WeightAccessInfoMode();
-                    SendDataFormat =
-                        DataFormatTypeItems.FirstOrDefault(f =>
-                            f.Value == settingsDto.StaticWeight.SendingFormat) ??
-                        new DataFormatTypeInfoModel();
                     WeightSettingsInfo = new WeightSettingsInfoModel() {
                         Mode = settingsDto.Mode,
+                        ScaleCommunicationMode = settingsDto.ScaleCommunicationMode,
                         Connection = new SerialPortSettingsInfoModel() {
                             BaudRate = settingsDto.Connection.BaudRate,
                             DataBits = settingsDto.Connection.DataBits,
@@ -546,6 +497,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             Parity = settingsDto.Connection.Parity,
                             PortName = settingsDto.Connection.PortName,
                             StopBits = settingsDto.Connection.StopBits
+                        },
+                        TcpSettingsInfo = new TcpSettingsInfoModel() {
+                            ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
+                            ClientConfig = new TcpInfoModel() {
+                                IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
+                            },
+                            ServerConfig = new TcpInfoModel() {
+                                IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
+                            },
+                            DataFormat = (FormatType)settingsDto.TcpSettingsInfo.DataFormat
                         },
                         CommonWeight = new CommonWeightParamsModel() {
                             MaxWeight = settingsDto.CommonWeight.MaxWeight,
@@ -585,9 +548,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }
         }
 
-        public ICommand WeightParserCommand {
-            get => new DelegateCommand<object>(WeightParserDelegate);
-        }
+        public ICommand WeightParserCommand => new DelegateCommand<object>(WeightParserDelegate);
 
         private async void WeightParserDelegate(object obj) {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {

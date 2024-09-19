@@ -1,5 +1,6 @@
-﻿using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using Prism.Mvvm;
+﻿using Prism.Mvvm;
+using JayTom.Dws.Plugin.Tcp;
+using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Client.Models.SettingsCommomModels {
 
@@ -7,6 +8,7 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         private TcpConnectionMode? _connectionMode;
         private TcpInfoModel _clientConfig = new();
         private TcpInfoModel _serverConfig = new();
+        private FormatType _dataFormat = FormatType.Ascii;
 
         /// <summary>
         /// 连接模式(客户端、服务端)
@@ -30,6 +32,14 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         public TcpInfoModel ServerConfig {
             get => _serverConfig;
             set => SetProperty(ref _serverConfig, value);
+        }
+
+        /// <summary>
+        /// 数据格式
+        /// </summary>
+        public FormatType DataFormat {
+            get => _dataFormat;
+            set => SetProperty(ref _dataFormat, value);
         }
     }
 }

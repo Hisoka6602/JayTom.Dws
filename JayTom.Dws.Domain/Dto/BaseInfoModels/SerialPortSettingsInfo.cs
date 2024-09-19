@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;

@@ -2,11 +2,13 @@
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 
 namespace JayTom.Dws.Plugin.Scale {
+
     public interface IScale : IDisposable {
 
         /// <summary>
@@ -23,10 +25,12 @@ namespace JayTom.Dws.Plugin.Scale {
         /// 稳定重量
         /// </summary>
         event EventHandler<float> StabledWeight;
+
         /// <summary>
         /// 稳定重量(含原文)
         /// </summary>
         event EventHandler<WeightChangedEventArgs> WeightStabilized;
+
         /// <summary>
         /// 接收内容
         /// </summary>
@@ -63,7 +67,7 @@ namespace JayTom.Dws.Plugin.Scale {
         /// 连接
         /// </summary>
         /// <returns></returns>
-        bool Connect(BaseScaleConnectParam connectParam);
+        Task<bool> Connect(BaseScaleConnectParam connectParam);
     }
 
     public enum ScaleStatus {
@@ -146,17 +150,40 @@ namespace JayTom.Dws.Plugin.Scale {
         public double FormattedWeight { get; set; }
         public WeightType Type { get; set; }
         public ScaleWeightFormat Format { get; set; }
-
     }
+
     public enum WeightType {
+
         /// <summary>
         /// 动态称重
         /// </summary>
         Dynamic,
+
         /// <summary>
         /// 静态称重
         /// </summary>
         Static
     }
 
+    public enum TcpConnectionMode {
+
+        /// <summary>
+        /// 客户端
+        /// </summary>
+        Client,
+
+        /// <summary>
+        /// 服务端
+        /// </summary>
+        Server
+    }
+
+    public enum ScaleCommunicationMode {
+
+        [Description("串口")]
+        SerialPort,
+
+        [Description("TCP")]
+        Tcp
+    }
 }

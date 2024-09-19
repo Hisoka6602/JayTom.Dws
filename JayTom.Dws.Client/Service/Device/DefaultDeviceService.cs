@@ -8,6 +8,7 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using Newtonsoft.Json.Linq;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Client.Models;
@@ -38,6 +39,7 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera;
+using TcpConnectParam = JayTom.Dws.Plugin.Scale.TcpConnectParam;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.Device {
@@ -219,16 +221,34 @@ namespace JayTom.Dws.Client.Service.Device {
                 OnWeightStabilized(args);
             };
             _dynamicScale.Connected += delegate (object? sender, IScale scale) {
-                OnScaleConnected(new ScaleConnectedEventArgs() {
-                    ConnectionParameters = new BaseScaleConnectParam() {
-                        BaudRate = _weightSettingsDto?.Connection?.BaudRate ?? 0,
-                        DataBits = _weightSettingsDto?.Connection?.DataBits ?? 0,
-                        Parity = _weightSettingsDto?.Connection?.Parity ?? 0,
-                        PortName = _weightSettingsDto?.Connection?.PortName ?? string.Empty,
-                        StopBits = _weightSettingsDto?.Connection?.StopBits ?? 0
-                    },
-                    ScaleType = ScaleType.Dynamic
-                });
+                if (_weightSettingsDto is not null) {
+                    OnScaleConnected(new ScaleConnectedEventArgs() {
+                        ConnectionParameters = new BaseScaleConnectParam() {
+                            Mode = _weightSettingsDto.ScaleCommunicationMode,
+                            SerialPortInfo = new SerialPortConnectParam() {
+                                BaudRate = _weightSettingsDto.Connection.BaudRate,
+                                DataFormat = (FormatType)_weightSettingsDto.Connection.DataFormat,
+                                DataBits = _weightSettingsDto.Connection.DataBits,
+                                Parity = _weightSettingsDto.Connection.Parity,
+                                PortName = _weightSettingsDto.Connection.PortName,
+                                StopBits = _weightSettingsDto.Connection.StopBits
+                            },
+                            TcpConnectInfo = new TcpConnectParam() {
+                                ClientConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ClientConfig.Port,
+                                },
+                                ServerConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ServerConfig.Port,
+                                },
+                                ConnectionMode = (TcpConnectionMode?)_weightSettingsDto.TcpSettingsInfo.ConnectionMode,
+                                DataFormat = (FormatType)_weightSettingsDto.TcpSettingsInfo.DataFormat
+                            }
+                        },
+                        ScaleType = ScaleType.Dynamic
+                    });
+                }
             };
             _dynamicScale.Excepted += delegate (object? sender, Exception exception) {
                 OnDeviceException(new DeviceExceptionEventArgs() {
@@ -254,16 +274,34 @@ namespace JayTom.Dws.Client.Service.Device {
                 OnWeightCleared(args);
             };
             _staticScale.Connected += delegate (object? sender, IScale scale) {
-                OnScaleConnected(new ScaleConnectedEventArgs() {
-                    ConnectionParameters = new BaseScaleConnectParam() {
-                        BaudRate = _weightSettingsDto?.Connection?.BaudRate ?? 0,
-                        DataBits = _weightSettingsDto?.Connection?.DataBits ?? 0,
-                        Parity = _weightSettingsDto?.Connection?.Parity ?? 0,
-                        PortName = _weightSettingsDto?.Connection?.PortName ?? string.Empty,
-                        StopBits = _weightSettingsDto?.Connection?.StopBits ?? 0
-                    },
-                    ScaleType = ScaleType.Static
-                });
+                if (_weightSettingsDto is not null) {
+                    OnScaleConnected(new ScaleConnectedEventArgs() {
+                        ConnectionParameters = new BaseScaleConnectParam() {
+                            Mode = _weightSettingsDto.ScaleCommunicationMode,
+                            SerialPortInfo = new SerialPortConnectParam() {
+                                BaudRate = _weightSettingsDto.Connection.BaudRate,
+                                DataFormat = (FormatType)_weightSettingsDto.Connection.DataFormat,
+                                DataBits = _weightSettingsDto.Connection.DataBits,
+                                Parity = _weightSettingsDto.Connection.Parity,
+                                PortName = _weightSettingsDto.Connection.PortName,
+                                StopBits = _weightSettingsDto.Connection.StopBits
+                            },
+                            TcpConnectInfo = new TcpConnectParam() {
+                                ClientConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ClientConfig.Port,
+                                },
+                                ServerConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ServerConfig.Port,
+                                },
+                                ConnectionMode = (TcpConnectionMode?)_weightSettingsDto.TcpSettingsInfo.ConnectionMode,
+                                DataFormat = (FormatType)_weightSettingsDto.TcpSettingsInfo.DataFormat
+                            }
+                        },
+                        ScaleType = ScaleType.Static
+                    });
+                }
             };
             //扫码枪
             _keyboardDeviceManager.BarCodeReceived += (sender, s) => {
@@ -447,23 +485,55 @@ namespace JayTom.Dws.Client.Service.Device {
             if (_weightSettingsDto is not null) {
                 switch (_weightSettingsDto.Mode) {
                     case WeightMode.Static:
-                        _staticScale.Connect(new BaseScaleConnectParam() {
-                            PortName = _weightSettingsDto.Connection.PortName,
-                            BaudRate = _weightSettingsDto.Connection.BaudRate,
-                            DataBits = _weightSettingsDto.Connection.DataBits,
-                            Parity = _weightSettingsDto.Connection.Parity,
-                            StopBits = _weightSettingsDto.Connection.StopBits
+                        await _staticScale.Connect(new BaseScaleConnectParam() {
+                            Mode = _weightSettingsDto.ScaleCommunicationMode,
+                            SerialPortInfo = new SerialPortConnectParam() {
+                                BaudRate = _weightSettingsDto.Connection.BaudRate,
+                                DataFormat = (FormatType)_weightSettingsDto.Connection.DataFormat,
+                                DataBits = _weightSettingsDto.Connection.DataBits,
+                                Parity = _weightSettingsDto.Connection.Parity,
+                                PortName = _weightSettingsDto.Connection.PortName,
+                                StopBits = _weightSettingsDto.Connection.StopBits
+                            },
+                            TcpConnectInfo = new TcpConnectParam() {
+                                ClientConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ClientConfig.Port,
+                                },
+                                ServerConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ServerConfig.Port,
+                                },
+                                ConnectionMode = (TcpConnectionMode?)_weightSettingsDto.TcpSettingsInfo.ConnectionMode,
+                                DataFormat = (FormatType)_weightSettingsDto.TcpSettingsInfo.DataFormat
+                            }
                         });
                         //连接静态称
                         break;
 
                     case WeightMode.Dynamic:
-                        _dynamicScale.Connect(new BaseScaleConnectParam() {
-                            PortName = _weightSettingsDto.Connection.PortName,
-                            BaudRate = _weightSettingsDto.Connection.BaudRate,
-                            DataBits = _weightSettingsDto.Connection.DataBits,
-                            Parity = _weightSettingsDto.Connection.Parity,
-                            StopBits = _weightSettingsDto.Connection.StopBits
+                        await _dynamicScale.Connect(new BaseScaleConnectParam() {
+                            Mode = _weightSettingsDto.ScaleCommunicationMode,
+                            SerialPortInfo = new SerialPortConnectParam() {
+                                BaudRate = _weightSettingsDto.Connection.BaudRate,
+                                DataFormat = (FormatType)_weightSettingsDto.Connection.DataFormat,
+                                DataBits = _weightSettingsDto.Connection.DataBits,
+                                Parity = _weightSettingsDto.Connection.Parity,
+                                PortName = _weightSettingsDto.Connection.PortName,
+                                StopBits = _weightSettingsDto.Connection.StopBits
+                            },
+                            TcpConnectInfo = new TcpConnectParam() {
+                                ClientConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ClientConfig.Port,
+                                },
+                                ServerConfig = new TcpParamInfo() {
+                                    IpAddress = _weightSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
+                                    Port = _weightSettingsDto.TcpSettingsInfo.ServerConfig.Port,
+                                },
+                                ConnectionMode = (TcpConnectionMode?)_weightSettingsDto.TcpSettingsInfo.ConnectionMode,
+                                DataFormat = (FormatType)_weightSettingsDto.TcpSettingsInfo.DataFormat
+                            }
                         });
                         break;
                 }

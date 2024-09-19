@@ -4,6 +4,7 @@ using System.Text;
 using System.IO.Ports;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
@@ -21,7 +22,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// 连接模式
         /// </summary>
 
-        public WeightCommunicationType WeightCommunicationType { get; set; }
+        public ScaleCommunicationMode ScaleCommunicationMode { get; set; }
 
         /// <summary>
         /// 串口连接参数
@@ -226,14 +227,5 @@ namespace JayTom.Dws.Domain.Dto {
         /// 融合重量超时时间
         /// </summary>
         public int MergedWeightTimeout { get; set; } = 300;
-    }
-
-    public enum WeightCommunicationType {
-
-        [Description("串口")]
-        SerialPort,
-
-        [Description("Tcp")]
-        Tcp
     }
 }

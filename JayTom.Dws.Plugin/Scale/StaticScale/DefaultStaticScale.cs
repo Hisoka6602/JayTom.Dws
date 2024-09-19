@@ -71,88 +71,91 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         public ScaleStatus Status { get; private set; } = ScaleStatus.NotConnected;
 
-        public bool Connect(BaseScaleConnectParam connectParam) {
+        public async Task<bool> Connect(BaseScaleConnectParam connectParam) {
+            await Task.Yield();
             _baseScaleConnectParam = connectParam;
             if (_serialPort?.IsOpen == true) {
                 return true;
             }
             try {
-                if (_serialPort is null) {
-                    _serialPort = new System.IO.Ports.SerialPort() {
-                        BaudRate = _baseScaleConnectParam.BaudRate,
-                        DataBits = _baseScaleConnectParam.DataBits,
-                        Parity = _baseScaleConnectParam.Parity,
-                        StopBits = _baseScaleConnectParam.StopBits,
-                        PortName = _baseScaleConnectParam.PortName,
-                    };
-                    //注册事件
-                    _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
-                        try {
-                            await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
-                            await _semaphore.WaitAsync();
-                            if (_serialPort?.IsOpen == true) {
-                                if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port && !_tokenSource.IsCancellationRequested) {
-                                    string receivedData;
-                                    if (WeightFormat == ScaleWeightFormat.Ascii) {
-                                        // 读取接收到的数据
-                                        receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
+                if (_baseScaleConnectParam.SerialPortInfo is not null) {
+                    if (_serialPort is null) {
+                        _serialPort = new System.IO.Ports.SerialPort() {
+                            BaudRate = _baseScaleConnectParam.SerialPortInfo.BaudRate,
+                            DataBits = _baseScaleConnectParam.SerialPortInfo.DataBits,
+                            Parity = _baseScaleConnectParam.SerialPortInfo.Parity,
+                            StopBits = _baseScaleConnectParam.SerialPortInfo.StopBits,
+                            PortName = _baseScaleConnectParam.SerialPortInfo.PortName,
+                        };
+                        //注册事件
+                        _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
+                            try {
+                                await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
+                                await _semaphore.WaitAsync();
+                                if (_serialPort?.IsOpen == true) {
+                                    if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port && !_tokenSource.IsCancellationRequested) {
+                                        string receivedData;
+                                        if (WeightFormat == ScaleWeightFormat.Ascii) {
+                                            // 读取接收到的数据
+                                            receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
+                                        }
+                                        else {
+                                            //接收十六进制内容
+                                            // 接收数据存储的字节数组
+                                            var buffer = new byte[port.BytesToRead];
+
+                                            // 读取数据到字节数组
+                                            port.Read(buffer, 0, buffer.Length);
+
+                                            // 将字节数组转换为十六进制表示
+                                            receivedData = BitConverter.ToString(buffer).Replace("-", "");
+                                        }
+                                        _character.Enqueue(receivedData);
+                                        // 添加到接收数据缓冲区
+                                        //receivedDataBuffer += receivedData;
+
+                                        OnReceived(receivedData);
                                     }
-                                    else {
-                                        //接收十六进制内容
-                                        // 接收数据存储的字节数组
-                                        var buffer = new byte[port.BytesToRead];
-
-                                        // 读取数据到字节数组
-                                        port.Read(buffer, 0, buffer.Length);
-
-                                        // 将字节数组转换为十六进制表示
-                                        receivedData = BitConverter.ToString(buffer).Replace("-", "");
-                                    }
-                                    _character.Enqueue(receivedData);
-                                    // 添加到接收数据缓冲区
-                                    //receivedDataBuffer += receivedData;
-
-                                    OnReceived(receivedData);
                                 }
                             }
-                        }
-                        catch (TaskCanceledException) { }
-                        catch (Exception e) {
-                            OnExcepted(e);
-                        }
-                        finally {
-                            _semaphore.Release();
-                        }
-                    };
-                    _serialPort.Disposed += delegate {
-                        OnDisconnected(this);
-                    };
-                    _serialPort.ErrorReceived += delegate (object sender, SerialErrorReceivedEventArgs args) {
-                        OnExcepted(new Exception(args.ToString()));
-                    };
-                }
-                else {
-                    _serialPort.BaudRate = _baseScaleConnectParam.BaudRate;
-                    _serialPort.DataBits = _baseScaleConnectParam.DataBits;
-                    _serialPort.Parity = _baseScaleConnectParam.Parity;
-                    _serialPort.StopBits = _baseScaleConnectParam.StopBits;
-                    _serialPort.PortName = _baseScaleConnectParam.PortName;
-                }
-
-                _serialPort.Open();
-                NLog.LogManager.GetCurrentClassLogger().Error("静态称连接");
-                if (_serialPort.IsOpen) {
-                    //注册转换事件
-                    _tokenSource?.Cancel();
-                    _tokenSource = new();
-                    Task.Factory.StartNew(ProcessReceivedData, TaskCreationOptions.LongRunning);
-                    if (_defaultStaticScaleValueParameters.AccessMode == WeightAccessMode.QuestionAnswer) {
-                        //问答式
-                        Task.Factory.StartNew(ProcessSending, TaskCreationOptions.LongRunning);
+                            catch (TaskCanceledException) { }
+                            catch (Exception e) {
+                                OnExcepted(e);
+                            }
+                            finally {
+                                _semaphore.Release();
+                            }
+                        };
+                        _serialPort.Disposed += delegate {
+                            OnDisconnected(this);
+                        };
+                        _serialPort.ErrorReceived += delegate (object sender, SerialErrorReceivedEventArgs args) {
+                            OnExcepted(new Exception(args.ToString()));
+                        };
                     }
-                    OnConnected(this);
-                    _isZeroed = true;
-                    return true;
+                    else {
+                        _serialPort.BaudRate = _baseScaleConnectParam.SerialPortInfo.BaudRate;
+                        _serialPort.DataBits = _baseScaleConnectParam.SerialPortInfo.DataBits;
+                        _serialPort.Parity = _baseScaleConnectParam.SerialPortInfo.Parity;
+                        _serialPort.StopBits = _baseScaleConnectParam.SerialPortInfo.StopBits;
+                        _serialPort.PortName = _baseScaleConnectParam.SerialPortInfo.PortName;
+                    }
+
+                    _serialPort.Open();
+                    NLog.LogManager.GetCurrentClassLogger().Error("静态称连接");
+                    if (_serialPort.IsOpen) {
+                        //注册转换事件
+                        _tokenSource?.Cancel();
+                        _tokenSource = new();
+                        Task.Factory.StartNew(ProcessReceivedData, TaskCreationOptions.LongRunning);
+                        if (_defaultStaticScaleValueParameters.AccessMode == WeightAccessMode.QuestionAnswer) {
+                            //问答式
+                            Task.Factory.StartNew(ProcessSending, TaskCreationOptions.LongRunning);
+                        }
+                        OnConnected(this);
+                        _isZeroed = true;
+                        return true;
+                    }
                 }
             }
             catch (Exception e) {
