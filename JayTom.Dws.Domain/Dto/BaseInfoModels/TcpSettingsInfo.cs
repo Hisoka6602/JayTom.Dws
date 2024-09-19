@@ -12,7 +12,7 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// <summary>
         /// 连接模式(客户端、服务端)
         /// </summary>
-        public TcpConnectionMode? ConnectionMode { get; set; }
+        public TcpConnectionMode? ConnectionMode { get; set; } = TcpConnectionMode.Client;
 
         /// <summary>
         /// 客户端配置

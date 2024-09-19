@@ -368,7 +368,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Port = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
                             },
                             ConnectionMode = (TcpConnectionMode?)WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
-                            DataFormat = WeightSettingsInfo.TcpSettingsInfo.DataFormat,
+                            DataFormat = (FormatType)WeightSettingsInfo.TcpSettingsInfo.DataFormat,
                         },
                     });
                     //连接静态称
@@ -401,7 +401,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Port = WeightSettingsInfo.TcpSettingsInfo.ServerConfig.Port,
                             },
                             ConnectionMode = (TcpConnectionMode?)WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
-                            DataFormat = WeightSettingsInfo.TcpSettingsInfo.DataFormat,
+                            DataFormat = (FormatType)WeightSettingsInfo.TcpSettingsInfo.DataFormat,
                         },
                     });
                     break;
@@ -508,7 +508,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
                                 Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
                             },
-                            DataFormat = (FormatType)settingsDto.TcpSettingsInfo.DataFormat
+                            DataFormat = settingsDto.TcpSettingsInfo.DataFormat
                         },
                         CommonWeight = new CommonWeightParamsModel() {
                             MaxWeight = settingsDto.CommonWeight.MaxWeight,

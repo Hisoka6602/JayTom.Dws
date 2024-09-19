@@ -22,7 +22,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// 连接模式
         /// </summary>
 
-        public ScaleCommunicationMode ScaleCommunicationMode { get; set; }
+        public ScaleCommunicationMode ScaleCommunicationMode { get; set; } = ScaleCommunicationMode.SerialPort;
 
         /// <summary>
         /// 串口连接参数

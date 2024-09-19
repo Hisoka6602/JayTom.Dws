@@ -595,7 +595,7 @@
                                     FontWeight="Bold"
                                     Foreground="White"
                                     ItemsSource="{Binding DataFormatTypeItems, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding CommunicationConnectionItem.TcpConnectionConfigInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedItem="{Binding WeightSettingsInfo.TcpSettingsInfo.DataFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Style="{StaticResource MaterialDesignComboBox}" />
                             </Border>
                         </StackPanel>
