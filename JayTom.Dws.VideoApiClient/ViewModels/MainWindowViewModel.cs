@@ -709,7 +709,7 @@ namespace JayTom.Dws.VideoApiClient.ViewModels {
                                                         !string.IsNullOrEmpty(nvr.Password) &&
                                                         !string.IsNullOrEmpty(nvr.Username) &&
                                                         !string.IsNullOrEmpty(nvr.IpAddress) &&
-                                                        nvr is { Port: > 0, Channel: > 0 })(),
+                                                        nvr is { Port: > 0, Channel: >= 0 })(),
                                                 BarCode = s?.BarCodeInfo?.Barcode ?? string.Empty,
                                                 ScanTime = s?.BarCodeInfo?.ScanTime ?? DateTime.MinValue,
                                             })?.ToList() ?? new List<NvrCameraBindingItemInfo>()
