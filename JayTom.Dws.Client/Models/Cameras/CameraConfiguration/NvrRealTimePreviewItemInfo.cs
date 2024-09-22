@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
+
     public class NvrRealTimePreviewItemInfo : BindableBase {
         private bool _isStopRead = false;
         private WriteableBitmap? _videoFrame;
@@ -23,7 +24,10 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private PlaybackError _playbackError = PlaybackError.None;
         private bool _isBuffering = true;
         private ScreenState _screenState = ScreenState.Normal;
-        private Size _maxSize = new(1800, 1012);
+
+        //private Size _maxSize = new(1800, 1012);
+        private Size _maxSize = new(3840, 2160);
+
         private ICommand? _toggleImageSizeCommand;
         private ICommand? _realtimePreviewOperationCommand;
         private string _displayName = string.Empty;

@@ -317,10 +317,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
                 }
                 if (_daHuatechNvr is not null) {
-                    obj.VideoFrame = new WriteableBitmap((int)(obj.MaxSize.Width * 0.8),
-                        (int)(obj.MaxSize.Height * 0.8), 96, 96, PixelFormats.Bgr24, null);
-                    _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)(obj.MaxSize.Width * 0.8),
-                        (int)(obj.MaxSize.Height * 0.8));
+                    obj.VideoFrame = new WriteableBitmap((int)(obj.MaxSize.Width),
+                        (int)(obj.MaxSize.Height), 96, 96, PixelFormats.Bgr24, null);
+                    _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)(obj.MaxSize.Width),
+                        (int)(obj.MaxSize.Height));
                 }
             }
             else {

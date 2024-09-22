@@ -57,6 +57,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private float _minWeight;
         private float _maxWeight;
         private bool _isLoaded;
+        private SemaphoreSlim _nvrSemaphoreSlim = new(1);
 
         private ObservableCollection<PackageItemModel> _packageItems = new() {
         };
@@ -713,11 +714,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public ICommand ViewNvrRecordingCommand => new DelegateCommand<PackageItemModel>(ViewNvrRecordingDelegate);
 
         private async void ViewNvrRecordingDelegate(PackageItemModel obj) {
-            var nvrRecordingDialog = new NvrRecordingDialog();
-            if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model) {
-                model.Identifier = "SettingDialog";
-                model.PackageItemModel = obj;
-                await DialogHost.Show(nvrRecordingDialog, model.Identifier);
+            try {
+                await _nvrSemaphoreSlim.WaitAsync();
+                if (!DialogHost.IsDialogOpen("SettingDialog")) {
+                    var nvrRecordingDialog = new NvrRecordingDialog();
+                    if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model) {
+                        model.Identifier = "SettingDialog";
+                        model.PackageItemModel = obj;
+                        await DialogHost.Show(nvrRecordingDialog, model.Identifier);
+                    }
+                }
+            }
+            finally {
+                _nvrSemaphoreSlim.Release();
             }
         }
     }
