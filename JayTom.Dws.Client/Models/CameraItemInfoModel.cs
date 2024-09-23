@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Collections.Concurrent;
 using System.Collections.Specialized;
 using Image = System.Windows.Controls.Image;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Models {
 
@@ -29,6 +30,7 @@ namespace JayTom.Dws.Client.Models {
         private bool _isRealtimeImageEnabled;
         private Image? _imageControl;
         private readonly CancellationTokenSource _tokenSource = new();
+        private CameraDisplayStatus _cameraDisplayStatus;
 
         public CameraItemInfoModel() {
             if (this is INotifyCollectionChanged notifyCollectionChanged) {
@@ -204,6 +206,14 @@ namespace JayTom.Dws.Client.Models {
         public CameraBindingType BindingType { get; set; }
 
         /// <summary>
+        /// 主页显示状态
+        /// </summary>
+        public CameraDisplayStatus CameraDisplayStatus {
+            get => _cameraDisplayStatus;
+            set => SetProperty(ref _cameraDisplayStatus, value);
+        }
+
+        /// <summary>
         /// 图像点击事件
         /// </summary>
         public ICommand? ImageClickCommand { get; set; }
@@ -222,81 +232,15 @@ namespace JayTom.Dws.Client.Models {
         /// 拍照
         /// </summary>
         public ICommand? TakePhotoCommand { get; set; }
+
+        /// <summary>
+        /// 点击隐藏事件
+        /// </summary>
+        public ICommand? HideCommand { get; set; }
+
+        /// <summary>
+        /// 点击显示事件
+        /// </summary>
+        public ICommand? ShowCommand { get; set; }
     }
-
-    /*public enum CameraStatus {
-        /// <summary>
-        /// 运行中
-        /// </summary>
-        Running,
-
-        /// <summary>
-        /// 未连接
-        /// </summary>
-        Disconnected,
-
-        /// <summary>
-        /// 故障
-        /// </summary>
-        Failure,
-
-        /// <summary>
-        /// 暂停中
-        /// </summary>
-        Paused
-    }
-
-    public enum CameraType {
-        /// <summary>
-        /// 工业相机
-        /// </summary>
-        IndustrialCamera = 0,
-
-        /// <summary>
-        /// 全景相机
-        /// </summary>
-        PanoramaCamera = 1,
-
-        /// <summary>
-        /// 3D相机
-        /// </summary>
-        ThreeDCamera = 2,
-
-        /// <summary>
-        /// 智能相机
-        /// </summary>
-        SmartCamera = 3,
-
-        /// <summary>
-        /// 录像相机
-        /// </summary>
-        VideoCamera = 4,
-    }
-
-    public enum ConnectionType {
-        /// <summary>
-        /// USB连接
-        /// </summary>
-        Usb = 0,
-
-        /// <summary>
-        /// 网口连接
-        /// </summary>
-        Ethernet = 1,
-
-        /// <summary>
-        /// 串口连接
-        /// </summary>
-        SerialPort = 2,
-
-        /// <summary>
-        /// 蓝牙连接
-        /// </summary>
-        Bluetooth = 3,
-
-        /// <summary>
-        /// Tcp连接
-        /// </summary>
-        Tcp = 4
-    }*/
 }

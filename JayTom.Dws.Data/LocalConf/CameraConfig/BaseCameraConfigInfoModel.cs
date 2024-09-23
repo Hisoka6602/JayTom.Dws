@@ -1,4 +1,5 @@
-﻿using JayTom.Dws.Data.Attributes;
+﻿using System.ComponentModel;
+using JayTom.Dws.Data.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -53,5 +54,26 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// </summary>
         [Column("ConnectionType"), Required, InsertOrUpdata]
         public int ConnectionType { get; set; } = 0;
+
+        /// <summary>
+        /// 相机显示方式
+        /// </summary>
+        [Column("CameraDisplayStatus"), Required, InsertOrUpdata]
+        public CameraDisplayStatus CameraDisplayStatus { get; set; } = CameraDisplayStatus.Visible;
+    }
+
+    public enum CameraDisplayStatus {
+
+        /// <summary>
+        /// 显示
+        /// </summary>
+        [Description("显示")]
+        Visible,
+
+        /// <summary>
+        /// 隐藏
+        /// </summary>
+        [Description("隐藏")]
+        Hidden
     }
 }
