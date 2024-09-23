@@ -531,6 +531,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             Predicate = w => w.Value.WeightInfo == null,
                             AssignmentCallback = a => {
                                 a.WeightInfo = new WeightInfoModel();
+                                if (a.BarCodeInfo is not null && a.WeightInfo is not null && a.VolumeInfo is not null) {
+                                    PackageInfoManager.CompletedPackage(f => f.Key.Equals(a.CreateTime));
+                                }
                                 return false;
                             },
                         });

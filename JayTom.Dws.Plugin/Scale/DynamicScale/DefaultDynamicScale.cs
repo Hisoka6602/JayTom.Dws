@@ -165,92 +165,97 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                             return true;
                         }
                     }
-                    else if (_baseScaleConnectParam.TcpConnectInfo is not null) {
-                        if (TcpOperations?.ConnectionStatus == ConnectionStatus.Connected) {
-                            return true;
-                        }
+                }
+                else if (_baseScaleConnectParam is { Mode: ScaleCommunicationMode.Tcp, TcpConnectInfo: not null }) {
+                    if (TcpOperations?.ConnectionStatus == ConnectionStatus.Connected) {
+                        return true;
+                    }
 
-                        if (TcpOperations is null) {
-                            TcpOperations = new BaseTcpOperations(new TouchSocketTcpClient(), new TouchSocketTcpServer());
-                            TcpOperations.Communication += (sender, info) => {
-                                if (info.Type == CommunicationType.Receive) {
-                                    string receivedData;
-                                    if (WeightFormat == ScaleWeightFormat.Ascii) {
-                                        // 读取接收到的数据
-                                        receivedData = info.Content /*.Trim().Replace(" ", string.Empty)*/;
+                    if (TcpOperations is null) {
+                        TcpOperations = new BaseTcpOperations(new TouchSocketTcpClient(), new TouchSocketTcpServer());
+                        TcpOperations.Communication += (sender, info) => {
+                            if (info.Type == CommunicationType.Receive) {
+                                string receivedData;
+                                if (WeightFormat == ScaleWeightFormat.Ascii) {
+                                    // 读取接收到的数据
+                                    receivedData = info.Content /*.Trim().Replace(" ", string.Empty)*/;
 
-                                        NLog.LogManager.GetCurrentClassLogger().Error($"接收到的重量内容:{receivedData}");
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"接收到的重量内容:{receivedData}");
 
-                                        // 定义匹配重量的正则表达式模式(不考虑负数)
-                                        const string pattern = @"\b\d+\.\d+\b";
-                                        var regex = new Regex(pattern);
-                                        // 在输入字符串中查找匹配项
-                                        var match = regex.Match(receivedData);
-                                        // 提取重量值
-                                        if (match.Success) {
-                                            var weight = match.Value;
-                                            var tryParse = float.TryParse(weight, out var result);
-                                            if (tryParse) {
-                                                //输出重量
-                                                OnStabledWeight(result);
-                                                //输出重量原文
-                                                OnWeightStabilized(new WeightChangedEventArgs() {
-                                                    Format = WeightFormat,
-                                                    FormattedWeight = result,
-                                                    OriginalContent = receivedData,
-                                                    Type = WeightType.Static
-                                                });
-                                            }
+                                    // 定义匹配重量的正则表达式模式(不考虑负数)
+                                    //const string pattern = @"\b\d+\.\d+\b";
+                                    const string pattern = @"-?\b\d+(\.\d+)?\b";
+
+                                    var regex = new Regex(pattern);
+                                    // 在输入字符串中查找匹配项
+                                    var match = regex.Match(receivedData);
+                                    // 提取重量值
+                                    if (match.Success) {
+                                        var weight = match.Value;
+                                        var tryParse = float.TryParse(weight, out var result);
+                                        if (!weight.Contains(".")) {
+                                            result = result / 1000;
                                         }
-                                    }
-                                    else {
-                                        receivedData = info.Content;
-                                        if (!string.IsNullOrEmpty(receivedData)) {
-                                            var weightFromHex = ExtractWeightFromHex(receivedData);
+                                        if (tryParse) {
                                             //输出重量
-                                            OnStabledWeight(weightFromHex);
+                                            OnStabledWeight(result);
                                             //输出重量原文
                                             OnWeightStabilized(new WeightChangedEventArgs() {
                                                 Format = WeightFormat,
-                                                FormattedWeight = weightFromHex,
+                                                FormattedWeight = result,
                                                 OriginalContent = receivedData,
                                                 Type = WeightType.Static
                                             });
                                         }
                                     }
-
-                                    OnReceived(receivedData);
                                 }
-                            };
-                            TcpOperations.Connected += (sender, s) => {
-                                OnConnected(this);
-                                NLog.LogManager.GetCurrentClassLogger().Error("连接成功");
-                            };
-                            TcpOperations.Disconnected += (sender, s) => {
-                                OnDisconnected(this);
-                            };
-                            TcpOperations.ConnectionException += (sender, s) => {
-                                OnExcepted(new Exception(s));
-                            };
-                            TcpOperations.Exception += (sender, exception) => {
-                                OnExcepted(exception);
-                            };
-                        }
+                                else {
+                                    receivedData = info.Content;
+                                    if (!string.IsNullOrEmpty(receivedData)) {
+                                        var weightFromHex = ExtractWeightFromHex(receivedData);
+                                        //输出重量
+                                        OnStabledWeight(weightFromHex);
+                                        //输出重量原文
+                                        OnWeightStabilized(new WeightChangedEventArgs() {
+                                            Format = WeightFormat,
+                                            FormattedWeight = weightFromHex,
+                                            OriginalContent = receivedData,
+                                            Type = WeightType.Static
+                                        });
+                                    }
+                                }
 
-                        //定义事件
-                        var isConnect = _baseScaleConnectParam.TcpConnectInfo.ConnectionMode switch {
-                            TcpConnectionMode.Client => await TcpOperations.Connect(
-                                _baseScaleConnectParam.TcpConnectInfo.ClientConfig.IpAddress,
-                                _baseScaleConnectParam.TcpConnectInfo.ClientConfig.Port, ConnectionType.Client, 1000,
-                                _baseScaleConnectParam.TcpConnectInfo.DataFormat),
-                            TcpConnectionMode.Server => await TcpOperations.Connect(
-                                _baseScaleConnectParam.TcpConnectInfo.ServerConfig.IpAddress,
-                                _baseScaleConnectParam.TcpConnectInfo.ServerConfig.Port, ConnectionType.Server, 1000,
-                                _baseScaleConnectParam.TcpConnectInfo.DataFormat),
-                            _ => false
+                                OnReceived(receivedData);
+                            }
                         };
-                        return isConnect;
+                        TcpOperations.Connected += (sender, s) => {
+                            OnConnected(this);
+                            NLog.LogManager.GetCurrentClassLogger().Error("连接成功");
+                        };
+                        TcpOperations.Disconnected += (sender, s) => {
+                            OnDisconnected(this);
+                        };
+                        TcpOperations.ConnectionException += (sender, s) => {
+                            OnExcepted(new Exception(s));
+                        };
+                        TcpOperations.Exception += (sender, exception) => {
+                            OnExcepted(exception);
+                        };
                     }
+
+                    //定义事件
+                    var isConnect = _baseScaleConnectParam.TcpConnectInfo.ConnectionMode switch {
+                        TcpConnectionMode.Client => await TcpOperations.Connect(
+                            _baseScaleConnectParam.TcpConnectInfo.ClientConfig.IpAddress,
+                            _baseScaleConnectParam.TcpConnectInfo.ClientConfig.Port, ConnectionType.Client, 1000,
+                            _baseScaleConnectParam.TcpConnectInfo.DataFormat),
+                        TcpConnectionMode.Server => await TcpOperations.Connect(
+                            _baseScaleConnectParam.TcpConnectInfo.ServerConfig.IpAddress,
+                            _baseScaleConnectParam.TcpConnectInfo.ServerConfig.Port, ConnectionType.Server, 1000,
+                            _baseScaleConnectParam.TcpConnectInfo.DataFormat),
+                        _ => false
+                    };
+                    return isConnect;
                 }
             }
             catch (Exception e) {
