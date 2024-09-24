@@ -11,16 +11,22 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
+using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
     public class CameraHomeViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
+        private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
+        private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
 
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
 
@@ -37,9 +43,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         }
 
         public CameraHomeViewModel(IDeviceService deviceService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
+            IUsbCameraConfigRepository usbCameraConfigRepository,
+            IVolumeCameraConfigRepository volumeCameraConfigRepository) {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+            _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
+            _usbCameraConfigRepository = usbCameraConfigRepository;
+            _volumeCameraConfigRepository = volumeCameraConfigRepository;
             //判断启停
             _deviceService.CameraStarted += async (sender, args) => {
                 await Task.Delay(500);
@@ -66,9 +78,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                         TakePhotoCommand = TakePhotoCommand,
                         SwitchRealtimeImageCommand = SwitchRealtimeImageCommand,
                         IsRealtimeImageEnabled = s?.IsRealtimeImageEnabled ?? false,
-                        BindingType = s?.BindingType ?? new CameraBindingType()
+                        BindingType = s?.BindingType ?? new CameraBindingType(),
+                        CameraDisplayStatus = GetCameraDisplayStatus(s?.Info?.SerialNumber ?? string.Empty)
                     })?.ToList();
-                    CameraItems.AddRange(infoModels);
+                    CameraItems.AddRange(infoModels?.Where(w => w.CameraDisplayStatus == CameraDisplayStatus.Visible));
+
+                    HiddenCameraItems.AddRange(infoModels?.Where(w => w.CameraDisplayStatus == CameraDisplayStatus.Hidden));
                 });
             };
             _deviceService.CameraReleased += async delegate (object? sender, string s) {
@@ -238,10 +253,41 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
         private async void HideDelegate(CameraItemInfoModel obj) {
             //加载到隐藏中
-            await Application.Current.Dispatcher.BeginInvoke(() => {
+            await Application.Current.Dispatcher.BeginInvoke(async () => {
                 var remove = CameraItems.Remove(obj);
                 if (remove) {
                     HiddenCameraItems.Add(obj);
+                    var barcodeScannerCameraConfigInfoModel = (await _barcodeScannerCameraConfigRepository.MemoryCacheData())
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (barcodeScannerCameraConfigInfoModel is not null) {
+                        barcodeScannerCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Hidden;
+                        await _barcodeScannerCameraConfigRepository.InsertOrUpdate(barcodeScannerCameraConfigInfoModel);
+                        return;
+                    }
+
+                    var panoramaCameraConfigInfoModel = (await _panoramaCameraConfigRepository.MemoryCacheData())
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (panoramaCameraConfigInfoModel is not null) {
+                        panoramaCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Hidden;
+                        await _panoramaCameraConfigRepository.InsertOrUpdate(panoramaCameraConfigInfoModel);
+                        return;
+                    }
+
+                    var usbCameraConfigInfoModel = await _usbCameraConfigRepository
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (usbCameraConfigInfoModel is not null) {
+                        usbCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Hidden;
+                        await _usbCameraConfigRepository.InsertOrUpdate(usbCameraConfigInfoModel);
+                        return;
+                    }
+
+                    var volumeCameraConfigInfoModel = (await _volumeCameraConfigRepository.MemoryCacheData())
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (volumeCameraConfigInfoModel is not null) {
+                        volumeCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Hidden;
+                        await _volumeCameraConfigRepository.InsertOrUpdate(volumeCameraConfigInfoModel);
+                        return;
+                    }
                 }
             });
         }
@@ -253,12 +299,78 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
         private async void ShowDelegate(CameraItemInfoModel obj) {
             //加载到显示中
-            await Application.Current.Dispatcher.BeginInvoke(() => {
+            await Application.Current.Dispatcher.BeginInvoke(async () => {
                 var remove = HiddenCameraItems.Remove(obj);
                 if (remove) {
                     CameraItems.Add(obj);
+                    var barcodeScannerCameraConfigInfoModel = (await _barcodeScannerCameraConfigRepository.MemoryCacheData())
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (barcodeScannerCameraConfigInfoModel is not null) {
+                        barcodeScannerCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Visible;
+                        await _barcodeScannerCameraConfigRepository.InsertOrUpdate(barcodeScannerCameraConfigInfoModel);
+                        return;
+                    }
+
+                    var panoramaCameraConfigInfoModel = (await _panoramaCameraConfigRepository.MemoryCacheData())
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (panoramaCameraConfigInfoModel is not null) {
+                        panoramaCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Visible;
+                        await _panoramaCameraConfigRepository.InsertOrUpdate(panoramaCameraConfigInfoModel);
+                        return;
+                    }
+
+                    var usbCameraConfigInfoModel = await _usbCameraConfigRepository
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (usbCameraConfigInfoModel is not null) {
+                        usbCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Visible;
+                        await _usbCameraConfigRepository.InsertOrUpdate(usbCameraConfigInfoModel);
+                        return;
+                    }
+
+                    var volumeCameraConfigInfoModel = (await _volumeCameraConfigRepository.MemoryCacheData())
+                        .FirstOrDefault(f => f.SerialNumber.Equals(obj.SerialNumber));
+                    if (volumeCameraConfigInfoModel is not null) {
+                        volumeCameraConfigInfoModel.CameraDisplayStatus = CameraDisplayStatus.Visible;
+                        await _volumeCameraConfigRepository.InsertOrUpdate(volumeCameraConfigInfoModel);
+                        return;
+                    }
                 }
             });
+        }
+
+        private CameraDisplayStatus GetCameraDisplayStatus(string serialNumber) {
+            try {
+                var barcodeScannerCameraConfigInfoModel = _barcodeScannerCameraConfigRepository.MemoryCacheData().Result
+                    .FirstOrDefault(f => f.SerialNumber.Equals(serialNumber));
+                if (barcodeScannerCameraConfigInfoModel is not null) {
+                    return barcodeScannerCameraConfigInfoModel.CameraDisplayStatus;
+                }
+
+                var panoramaCameraConfigInfoModel = _panoramaCameraConfigRepository.MemoryCacheData().Result
+                    .FirstOrDefault(f => f.SerialNumber.Equals(serialNumber));
+
+                if (panoramaCameraConfigInfoModel is not null) {
+                    return panoramaCameraConfigInfoModel.CameraDisplayStatus;
+                }
+
+                var volumeCameraConfigInfoModel = _volumeCameraConfigRepository.MemoryCacheData().Result
+                    .FirstOrDefault(f => f.SerialNumber.Equals(serialNumber));
+                if (volumeCameraConfigInfoModel is not null) {
+                    return volumeCameraConfigInfoModel.CameraDisplayStatus;
+                }
+
+                var usbCameraConfigInfoModel = _usbCameraConfigRepository.FirstOrDefault(f =>
+                        f.SerialNumber.Equals(serialNumber))
+                    .Result;
+
+                if (usbCameraConfigInfoModel is not null) {
+                    return usbCameraConfigInfoModel.CameraDisplayStatus;
+                }
+            }
+            catch (Exception e) {
+                return CameraDisplayStatus.Visible;
+            }
+            return CameraDisplayStatus.Visible;
         }
 
         /// <summary>
