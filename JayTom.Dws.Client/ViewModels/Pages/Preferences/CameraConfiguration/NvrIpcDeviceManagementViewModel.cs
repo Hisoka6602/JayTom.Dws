@@ -336,8 +336,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                 });
                                 var nChanNum = 0;
                                 var baseDaHuatech = BaseDaHuatech.CreateInstance();
-                                var (key, value) = await baseDaHuatech.LogIn(device.SerialNumber, device.Username, device.Password);
-                                if (key) {
+                                KeyValuePair<bool, string> loginPair;
+                                if (string.IsNullOrEmpty(device.SerialNumber) || string.IsNullOrEmpty(device.Model)) {
+                                    loginPair = await baseDaHuatech.LogIn(device.IpAddress, device.Port, device.Username, device.Password);
+                                }
+                                else {
+                                    loginPair = await baseDaHuatech.LogIn(device.SerialNumber, device.Username, device.Password);
+                                }
+                                if (loginPair.Key) {
                                     var info = baseDaHuatech.GetLoggedInDeviceInfo(device.SerialNumber);
                                     nChanNum = info?.LoggedInDeviceInfo?.nChanNum ?? 0;
 
@@ -351,11 +357,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                     }
                                 }
                                 await Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (!key && value.Contains("未枚举")) {
+                                    if (!loginPair.Key && loginPair.Value.Contains("未枚举")) {
                                         device.Status = NvrStatus.Offline;
                                     }
                                     else {
-                                        device.Status = key ? NvrStatus.Online : NvrStatus.LoginFailed;
+                                        device.Status = loginPair.Key ? NvrStatus.Online : NvrStatus.LoginFailed;
                                     }
                                     device.ChannelCount = nChanNum > 0 ? nChanNum : device.ChannelCount;
                                     return Task.CompletedTask;
@@ -392,6 +398,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         Port = model.IpcNvrItemInfo.Port,
                         Type = (int)model.IpcNvrItemInfo.Type,
                         Username = model.IpcNvrItemInfo.Username,
+                        SerialNumber = $"{model.IpcNvrItemInfo.IpAddress}-{model.IpcNvrItemInfo.Port}",
                         ChannelCount = 1
                     });
 
