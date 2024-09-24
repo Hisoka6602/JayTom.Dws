@@ -335,6 +335,41 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         /// <summary>
+        /// 设备登录
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="userName"></param>
+        /// <param name="passWord"></param>
+        /// <param name="playChannelId"></param>
+        /// <returns></returns>
+        public async Task<KeyValuePair<bool, string>> LogIn(string ip, int port, string userName, string passWord,
+            int playChannelId = 0) {
+            await Task.Yield();
+            try {
+                await _enumerateSlim.WaitAsync();
+                var mDeviceInfo = new NET_DEVICEINFO_Ex();
+                var mLoginId = NETClient.LoginWithHighLevelSecurity(ip
+                    , (ushort)port, userName, passWord,
+                    EM_LOGIN_SPAC_CAP_TYPE.TCP, IntPtr.Zero, ref mDeviceInfo);
+                if (IntPtr.Zero == mLoginId) {
+                    var lastError = NETClient.GetLastError();
+                    return new KeyValuePair<bool, string>(false, lastError);
+                }
+                //添加到字典
+                _loginDev.TryAdd($"{ip}-{port}", new DevLogInInfo { SerialNo = $"{ip}-{port}", Handle = mLoginId, PlayChannelId = playChannelId, LoggedInDeviceInfo = mDeviceInfo });
+
+                return new KeyValuePair<bool, string>(true, mLoginId.ToString());
+            }
+            catch (Exception e) {
+                return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _enumerateSlim.Release();
+            }
+        }
+
+        /// <summary>
         /// 设备注销
         /// </summary>
         /// <param name="serialNo"></param>
