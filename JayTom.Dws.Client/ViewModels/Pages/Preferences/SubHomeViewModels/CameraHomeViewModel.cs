@@ -192,7 +192,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
 
         private async void LoadedDelegate(UserControl obj) {
-            CameraItems = new ObservableCollection<CameraItemInfoModel>()
+            /*CameraItems = new ObservableCollection<CameraItemInfoModel>()
             {
                 new CameraItemInfoModel()
                 {
@@ -243,7 +243,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                     HideCommand = HideCommand,
                     ShowCommand = ShowCommand
                 },
-            };
+            };*/
         }
 
         /// <summary>
