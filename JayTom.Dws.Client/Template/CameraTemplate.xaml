@@ -269,6 +269,30 @@
                             IsEnabled="False"
                             Text="{Binding CameraName, UpdateSourceTrigger=PropertyChanged}"
                             TextAlignment="Center" />
+                        <!--  隐藏按钮  -->
+                        <Button
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Width="40"
+                            Height="30"
+                            Padding="0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Background="#3C3C3C"
+                            BorderThickness="0"
+                            Command="{Binding HideCommand}"
+                            CommandParameter="{Binding}"
+                            Style="{StaticResource MaterialDesignRaisedButton}">
+                            <TextBlock
+                                Margin="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="pack://application:,,,/Fonts/#iconfont"
+                                FontSize="25"
+                                Foreground="FloralWhite"
+                                Opacity="0.6"
+                                Text="&#xea6b;" />
+                        </Button>
                     </Grid>
                 </Border>
             </Grid>

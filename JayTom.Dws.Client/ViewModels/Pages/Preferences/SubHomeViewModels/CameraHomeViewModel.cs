@@ -9,6 +9,7 @@ using JayTom.Dws.Data;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,11 +21,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
     public class CameraHomeViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+
         private ObservableCollection<CameraItemInfoModel> _cameraItems = new();
+
+        private ObservableCollection<CameraItemInfoModel> _hiddenCameraItems = new();
 
         public ObservableCollection<CameraItemInfoModel> CameraItems {
             get => _cameraItems;
             set => SetProperty(ref _cameraItems, value);
+        }
+
+        public ObservableCollection<CameraItemInfoModel> HiddenCameraItems {
+            get => _hiddenCameraItems;
+            set => SetProperty(ref _hiddenCameraItems, value);
         }
 
         public CameraHomeViewModel(IDeviceService deviceService,
@@ -163,6 +172,93 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                     Barcode = new Random().Next(100000000, 999999999).ToString()
                 });
             });*/
+        }
+
+        public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
+
+        private async void LoadedDelegate(UserControl obj) {
+            CameraItems = new ObservableCollection<CameraItemInfoModel>()
+            {
+                new CameraItemInfoModel()
+                {
+                    Type = CameraType.SmartCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+                new CameraItemInfoModel()
+                {
+                    Type = CameraType.SmartCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+                new CameraItemInfoModel()
+                {
+                    Type = CameraType.IndustrialCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+                new CameraItemInfoModel()
+                {
+                    Type = CameraType.ThreeDCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+                new CameraItemInfoModel()
+                {
+                    Type = CameraType.ThreeDCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+            };
+            HiddenCameraItems = new ObservableCollection<CameraItemInfoModel>()
+            {
+                new CameraItemInfoModel()
+                {
+                    Type = CameraType.SmartCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+                new CameraItemInfoModel() {
+                    Type = CameraType.IndustrialCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+                new CameraItemInfoModel() {
+                    Type = CameraType.ThreeDCamera,
+                    HideCommand = HideCommand,
+                    ShowCommand = ShowCommand
+                },
+            };
+        }
+
+        /// <summary>
+        /// 隐藏画面
+        /// </summary>
+        public ICommand? HideCommand => new DelegateCommand<CameraItemInfoModel>(HideDelegate);
+
+        private async void HideDelegate(CameraItemInfoModel obj) {
+            //加载到隐藏中
+            await Application.Current.Dispatcher.BeginInvoke(() => {
+                var remove = CameraItems.Remove(obj);
+                if (remove) {
+                    HiddenCameraItems.Add(obj);
+                }
+            });
+        }
+
+        /// <summary>
+        /// 点击显示事件
+        /// </summary>
+        public ICommand? ShowCommand => new DelegateCommand<CameraItemInfoModel>(ShowDelegate);
+
+        private async void ShowDelegate(CameraItemInfoModel obj) {
+            //加载到显示中
+            await Application.Current.Dispatcher.BeginInvoke(() => {
+                var remove = HiddenCameraItems.Remove(obj);
+                if (remove) {
+                    CameraItems.Add(obj);
+                }
+            });
         }
 
         /// <summary>
