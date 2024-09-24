@@ -79,7 +79,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                         SwitchRealtimeImageCommand = SwitchRealtimeImageCommand,
                         IsRealtimeImageEnabled = s?.IsRealtimeImageEnabled ?? false,
                         BindingType = s?.BindingType ?? new CameraBindingType(),
-                        CameraDisplayStatus = GetCameraDisplayStatus(s?.Info?.SerialNumber ?? string.Empty)
+
+                        CameraDisplayStatus = GetCameraDisplayStatus(s?.Info?.SerialNumber ?? string.Empty),
+                        HideCommand = HideCommand,
+                        ShowCommand = ShowCommand
                     })?.ToList();
                     CameraItems.AddRange(infoModels?.Where(w => w.CameraDisplayStatus == CameraDisplayStatus.Visible));
 

@@ -11,7 +11,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
 
             //return itemCount <= 4 ? new Size(312, 360) : new Size(1, 1);
             if (itemCount <= 1) {
-                return 500;
+                return 700;
             }
             return itemCount <= 4 ? 312 : 260;
         }
@@ -19,7 +19,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             var itemCount = (int)value;
             if (itemCount <= 1) {
-                return 500;
+                return 700;
             }
             return itemCount <= 4 ? 312 : 260;
         }

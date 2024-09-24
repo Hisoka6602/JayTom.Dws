@@ -9,7 +9,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             var itemCount = (int)value;
             if (itemCount <= 1) {
-                return 576;
+                return 776;
             }
             return itemCount <= 4 ? 360 : 300;
         }
@@ -17,7 +17,7 @@ namespace JayTom.Dws.Client.Converters.CameraConverter {
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             var itemCount = (int)value;
             if (itemCount <= 1) {
-                return 576;
+                return 776;
             }
             return itemCount <= 4 ? 360 : 300;
         }
