@@ -95,6 +95,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                     if (model != null) {
                         CameraItems.Remove(model);
                     }
+                    else {
+                        var cameraItemInfoModel = HiddenCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(s));
+                        if (cameraItemInfoModel != null) {
+                            HiddenCameraItems.Remove(cameraItemInfoModel);
+                        }
+                    }
                 });
             };
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
