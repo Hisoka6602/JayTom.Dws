@@ -1212,6 +1212,95 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             return true;
         }
 
+        public async Task<KeyValuePair<bool, object>> MergeVideos(string[] inputFiles, string outputFile, double totalDuration, Action<double> progressCallback, Func<bool> cancelCallback) {
+            if (inputFiles.Length is < 2 and <= 9) {
+                return new KeyValuePair<bool, object>(false, "合并的视频需要大于1并且小于10");
+            }
+
+            foreach (var file in inputFiles) {
+                var exists = File.Exists(file);
+                if (!exists) {
+                    return new KeyValuePair<bool, object>(false, $"{file}--文件不存在");
+                }
+            }
+            var ffmpegPath = $"{AppDomain.CurrentDomain.BaseDirectory}ffmpeg\\bin\\ffmpeg.exe";
+            if (File.Exists(ffmpegPath)) {
+                var arguments = BuildFfmpegArguments(inputFiles, outputFile);
+
+                var process = new Process {
+                    StartInfo = new ProcessStartInfo {
+                        FileName = ffmpegPath,
+                        Arguments = arguments,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.OutputDataReceived += (sender, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
+                process.ErrorDataReceived += (sender, e) => {
+                    if (e.Data != null) {
+                        Console.WriteLine(e.Data);
+                        ParseProgress(e.Data, progressCallback, cancelCallback, process, totalDuration);
+                    }
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                await process.WaitForExitAsync();
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "ffmpeg文件不存在");
+            }
+            return new KeyValuePair<bool, object>(true, "操作成功");
+        }
+
+        private string BuildFfmpegArguments(string[] inputFiles, string outputFile) {
+            var arguments = new List<string>();
+            for (int i = 0; i < inputFiles.Length; i++) {
+                arguments.Add($"-i \"{inputFiles[i]}\"");
+            }
+
+            arguments.Add("-filter_complex");
+            arguments.Add("[0:v]scale=1920:1080,fps=30[v0]; " +
+                          $"[1:v]scale=1920:1080,fps=30[v1]; " +
+                          $"[2:v]scale=1920:1080,fps=30[v2]; " +
+                          "color=black:size=1920x1080[blank]; " +
+                          "[v0][v1]hstack=inputs=2[row1]; " +
+                          "[v2][blank]hstack=inputs=2[row2]; " +
+                          "[row1][row2]vstack=inputs=2[vout]");
+
+            arguments.Add("-map [vout]");
+            arguments.Add($"-c:v libx264 -preset ultrafast -crf 18 -r 30 -t 30 -shortest -pix_fmt yuv420p \"{outputFile}\"");
+
+            return string.Join(" ", arguments);
+        }
+
+        private void ParseProgress(string data, Action<double> progressCallback, Func<bool> cancelCallback,
+            Process process, double totalDuration) {
+            var match = Regex.Match(data, @"time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})");
+            if (match.Success) {
+                int hours = int.Parse(match.Groups[1].Value);
+                int minutes = int.Parse(match.Groups[2].Value);
+                int seconds = int.Parse(match.Groups[3].Value);
+                int milliseconds = int.Parse(match.Groups[4].Value);
+
+                double currentSeconds = hours * 3600 + minutes * 60 + seconds + milliseconds / 100.0;
+                double progress = currentSeconds / totalDuration * 100;
+
+                progressCallback(progress);
+
+                // 检查是否需要取消
+                if (cancelCallback()) {
+                    process.Kill();
+                    Console.WriteLine("合并已取消");
+                }
+            }
+        }
+
         public enum FastForwardSpeed {
             X2 = 0,
             X4 = 1,
