@@ -1212,7 +1212,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             return true;
         }
 
-        public async Task<KeyValuePair<bool, object>> MergeVideos(string[] inputFiles, string outputFile, double totalDuration, Action<double> progressCallback, Func<bool> cancelCallback) {
+        public async Task<KeyValuePair<bool, object>> MergeVideos(string[] inputFiles, string outputFile, int totalDuration, Action<double> progressCallback, Func<bool> cancelCallback) {
             if (inputFiles.Length is < 2 and <= 9) {
                 return new KeyValuePair<bool, object>(false, "合并的视频需要大于1并且小于10");
             }
@@ -1225,7 +1225,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             }
             var ffmpegPath = $"{AppDomain.CurrentDomain.BaseDirectory}ffmpeg\\bin\\ffmpeg.exe";
             if (File.Exists(ffmpegPath)) {
-                var arguments = BuildFfmpegArguments(inputFiles, outputFile);
+                var arguments = BuildFfmpegArguments(inputFiles, outputFile, totalDuration);
 
                 var process = new Process {
                     StartInfo = new ProcessStartInfo {
@@ -1242,7 +1242,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                 process.ErrorDataReceived += (sender, e) => {
                     if (e.Data != null) {
                         Console.WriteLine(e.Data);
-                        ParseProgress(e.Data, progressCallback, cancelCallback, process, totalDuration);
+                        ParseProgress(e.Data, progressCallback, cancelCallback, process);
                     }
                 };
 
@@ -1258,29 +1258,72 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             return new KeyValuePair<bool, object>(true, "操作成功");
         }
 
-        private string BuildFfmpegArguments(string[] inputFiles, string outputFile) {
-            var arguments = new List<string>();
-            for (int i = 0; i < inputFiles.Length; i++) {
-                arguments.Add($"-i \"{inputFiles[i]}\"");
+        private string BuildFfmpegArguments(string[] inputFiles, string outputFile, int totalDuration) {
+            var videoCount = inputFiles.Length;
+            // 添加输入文件
+            var arguments = inputFiles.Select(file => $"-i \"{file}\"").ToList();
+            arguments.Insert(0, "-y");
+
+            List<string> videoIndexList = new();
+
+            // 生成 scale 和 fps 过滤器
+            var scaleFilters = new List<string>();
+            for (var i = 0; i < videoCount; i++) {
+                scaleFilters.Add($"[{i}:v]scale=1920:1080,fps=30[v{i}];");
+                videoIndexList.Add($"[v{i}]");
             }
 
-            arguments.Add("-filter_complex");
-            arguments.Add("[0:v]scale=1920:1080,fps=30[v0]; " +
-                          $"[1:v]scale=1920:1080,fps=30[v1]; " +
-                          $"[2:v]scale=1920:1080,fps=30[v2]; " +
-                          "color=black:size=1920x1080[blank]; " +
-                          "[v0][v1]hstack=inputs=2[row1]; " +
-                          "[v2][blank]hstack=inputs=2[row2]; " +
-                          "[row1][row2]vstack=inputs=2[vout]");
+            // 生成占位符
+            var blankPlaceholder = "color=black:size=1920x1080[blank]; ";
 
+            var isUseBlankPlaceHolder = scaleFilters.Count is 2 or 4 or 6 or 9;
+
+            while (!isUseBlankPlaceHolder) {
+                scaleFilters.Add(blankPlaceholder);
+                videoIndexList.Add($"[blank]");
+                isUseBlankPlaceHolder = scaleFilters.Count is 2 or 4 or 6 or 9;
+            }
+
+            // 生成布局过滤器
+            var layoutFilters = new List<string>();
+            switch (videoCount) {
+                case 2:
+                    layoutFilters.Add($"{string.Join("", videoIndexList)}hstack=inputs=2[vout]");
+                    break;
+
+                case 3:
+                case 4:
+                    layoutFilters.Add($"{string.Join("", videoIndexList.Take(2))}hstack=inputs=2[row1]; {string.Join("", videoIndexList.Skip(2).Take(2))}hstack=inputs=2[row2]; [row1][row2]vstack=inputs=2[vout]");
+                    break;
+
+                case 5:
+                case 6:
+                    layoutFilters.Add($"{string.Join("", videoIndexList.Take(2))}hstack=inputs=2[row1]; {string.Join("", videoIndexList.Skip(2).Take(2))}hstack=inputs=2[row2]; {string.Join("", videoIndexList.Skip(4).Take(2))}hstack=inputs=2[row3]; [row1][row2]vstack=inputs=2[rowFinal]; [rowFinal][row3]vstack=inputs=2[vout]");
+                    break;
+
+                case 7:
+                case 8:
+                case 9:
+                    layoutFilters.Add($"{string.Join("", videoIndexList.Take(3))}hstack=inputs=3[row1]; {string.Join("", videoIndexList.Skip(3).Take(3))}hstack=inputs=3[row2]; {string.Join("", videoIndexList.Skip(6).Take(3))}hstack=inputs=3[row3]; [row1][row2]vstack=inputs=2[rowFinal]; [rowFinal][row3]vstack=inputs=2[vout]");
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException("视频数量超出范围，支持的最大数量为 9。");
+            }
+
+            // 合并过滤器
+            var filterComplex = string.Join(" ", scaleFilters) + string.Join(" ", layoutFilters);
+
+            // 添加 filter_complex 和输出参数
+            arguments.Add($"-filter_complex \"{filterComplex}\"");
             arguments.Add("-map [vout]");
-            arguments.Add($"-c:v libx264 -preset ultrafast -crf 18 -r 30 -t 30 -shortest -pix_fmt yuv420p \"{outputFile}\"");
+            arguments.Add($"-c:v libx264 -preset ultrafast -crf 18 -r 30 -t {totalDuration} -shortest -pix_fmt yuv420p");
+            arguments.Add($"\"{outputFile}\"");
 
             return string.Join(" ", arguments);
         }
 
-        private void ParseProgress(string data, Action<double> progressCallback, Func<bool> cancelCallback,
-            Process process, double totalDuration) {
+        private void ParseProgress(string data, Action<double> progressCallback, Func<bool> cancelCallback, Process process) {
             var match = Regex.Match(data, @"time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})");
             if (match.Success) {
                 int hours = int.Parse(match.Groups[1].Value);
@@ -1289,7 +1332,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                 int milliseconds = int.Parse(match.Groups[4].Value);
 
                 double currentSeconds = hours * 3600 + minutes * 60 + seconds + milliseconds / 100.0;
-                double progress = currentSeconds / totalDuration * 100;
+
+                // 这里可以使用一个默认值，比如假设总时长为60秒（或其他逻辑）
+                double progress = currentSeconds / 60 * 100; // 假设总时长为60秒
 
                 progressCallback(progress);
 

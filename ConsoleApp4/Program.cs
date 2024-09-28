@@ -20,10 +20,22 @@ using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
+using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var daHuatechNvr = DaHuatechNVR.Instance;
+
+        var (key, value) = await daHuatechNvr.MergeVideos(new[]
+            {
+               "C:\\Users\\77051\\Desktop\\a.mp4",
+               "C:\\Users\\77051\\Desktop\\b.mp4",
+           }, "C:\\Users\\77051\\Desktop\\out.mp4",
+            30, p => {
+                Console.WriteLine(p);
+            }, () => false);
+
         var buildFfmpegArguments = BuildFfmpegArguments(new[]
         {
             "C:\\Users\\Administrator\\Desktop\\1.mp4",
@@ -36,6 +48,7 @@ internal class Program {
         }, "C:\\Users\\Administrator\\Desktop\\output_4k_2x2grid.mp4");
 
         Console.WriteLine(buildFfmpegArguments);
+        Console.ReadLine();
         return;
         var gwGrayscaleDevice = new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer());
         string hexString = "3A 73 30 36 35 2C 31 2C B3 00 6F 01 2C C5 02 42 03 2C 32 2C CD 00 51 01 2C C9 00 92 01 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 2C 30 2C 00 00 00 00 2C 00 00 00 00 0D 0A";
@@ -74,7 +87,7 @@ internal class Program {
     }
 
     private static string BuildFfmpegArguments(string[] inputFiles, string outputFile) {
-        int videoCount = inputFiles.Length;
+        var videoCount = inputFiles.Length;
         // 添加输入文件
         var arguments = inputFiles.Select(file => $"-i \"{file}\"").ToList();
         arguments.Insert(0, "-y");
@@ -127,7 +140,7 @@ internal class Program {
         }
 
         // 合并过滤器
-        string filterComplex = string.Join(" ", scaleFilters) + string.Join(" ", layoutFilters);
+        var filterComplex = string.Join(" ", scaleFilters) + string.Join(" ", layoutFilters);
 
         // 添加 filter_complex 和输出参数
         arguments.Add($"-filter_complex \"{filterComplex}\"");
