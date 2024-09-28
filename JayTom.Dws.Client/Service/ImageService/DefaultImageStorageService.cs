@@ -408,12 +408,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
             return source switch {
                 "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
                 "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)} kg",
-                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{Math.Round(volume / _volumeSettingsDto?.Unit switch {
-                    VolumeUnit.Millimeter => 1,
-                    VolumeUnit.Centimeter => Math.Pow(10, 3),
-                    VolumeUnit.Meter => Math.Pow(1000, 3),
-                    _ => 1
-                }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}³",
+                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{Math.Round(length * width * height, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}³",
 
                 "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{Math.Round(length / _volumeSettingsDto?.Unit switch {
                     VolumeUnit.Millimeter => 1,

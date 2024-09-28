@@ -58,7 +58,7 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// <summary>
         /// 相机显示方式
         /// </summary>
-        [Column("CameraDisplayStatus"), Required, InsertOrUpdata]
+        [Column("CameraDisplayStatus"), NotMapped,/* Required, InsertOrUpdata*/]
         public CameraDisplayStatus CameraDisplayStatus { get; set; } = CameraDisplayStatus.Visible;
     }
 
