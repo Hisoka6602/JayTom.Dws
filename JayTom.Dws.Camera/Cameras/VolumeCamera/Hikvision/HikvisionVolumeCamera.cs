@@ -525,9 +525,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
                     Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
                     //Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
-                    Volume = Math.Round(stResultInfo.stVolumeInfo.length *
-                                        stResultInfo.stVolumeInfo.width *
-                                        stResultInfo.stVolumeInfo.height, 2),
+                    Volume = Math.Round(Math.Round(stResultInfo.stVolumeInfo.length, 2) *
+                                        Math.Round(stResultInfo.stVolumeInfo.width, 2) *
+                                        Math.Round(stResultInfo.stVolumeInfo.height, 2), 2),
                     Image = bitmap,
                     Thumbnail = thumbnailImage,
                     Timestamp = dateTime,
