@@ -38,7 +38,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// 创建包裹方式
         /// </summary>
         public PackageCreationMethodsEnum PackageCreationMethods { get; set; } =
-            PackageCreationMethodsEnum.ScanBarcodeCamera;
+            PackageCreationMethodsEnum.BarcodeScannerInput;
 
         /// <summary>
         /// 是否使用NoRead

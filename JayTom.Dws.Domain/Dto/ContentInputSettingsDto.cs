@@ -23,7 +23,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 是否使用扫码枪输入
         /// </summary>
-        public bool IsUseBarcodeScannerInput { get; set; }
+        public bool IsUseBarcodeScannerInput { get; set; } = true;
 
         /// <summary>
         /// 是否使用常规过滤

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:attributeConverters="clr-namespace:JayTom.Dws.Client.Converters.AttributeConverters"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:cameraConfiguration="clr-namespace:JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration"
     xmlns:cameraConfiguration1="clr-namespace:JayTom.Dws.Client.Models.Cameras.CameraConfiguration"
     xmlns:cameraConverter="clr-namespace:JayTom.Dws.Client.Converters.CameraConverter"
     xmlns:cloudConverters="clr-namespace:JayTom.Dws.Client.Converters.CloudConverters"
@@ -678,30 +679,102 @@
                             </ContextMenu>
                         </ListView.ContextMenu>
                     </ListView>
+                    <!--  实时预览、码流  -->
                     <StackPanel
                         Grid.Row="3"
                         Margin="5,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-
-                        <TextBlock
+                        <!--  实时预览  -->
+                        <StackPanel
                             Margin="5,0"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            FontFamily="{StaticResource CustomFontFamily}"
-                            FontSize="13"
-                            Foreground="White"
-                            Text="是否实时预览:" />
-                        <ToggleButton
-                            Margin="5"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
-                            materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="Azure"
-                            Command="{Binding ToggleRealTimeVideoCommand}"
-                            Focusable="False"
-                            IsChecked="{Binding IsRealTimeVideoEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            Orientation="Horizontal">
+
+                            <TextBlock
+                                Margin="5,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource CustomFontFamily}"
+                                FontSize="13"
+                                Foreground="White"
+                                Text="是否实时预览:" />
+                            <ToggleButton
+                                Margin="5"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
+                                materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="Azure"
+                                Command="{Binding ToggleRealTimeVideoCommand}"
+                                Focusable="False"
+                                IsChecked="{Binding IsRealTimeVideoEnabled, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                        </StackPanel>
+                        <!--  选择码流  -->
+                        <StackPanel
+                            Margin="5,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource CustomFontFamily}"
+                                FontSize="13"
+                                FontWeight="Light"
+                                Foreground="White"
+                                Text="码流选择:" />
+                            <Border
+                                Margin="5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="#1A696969"
+                                CornerRadius="5">
+                                <ComboBox
+                                    Height="30"
+                                    MinWidth="160"
+                                    Padding="5,0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    materialDesign:ButtonAssist.CornerRadius="15"
+                                    materialDesign:ColorZoneAssist.Mode="Dark"
+                                    BorderThickness="0"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    ItemsSource="{Binding PlaybackStreamItems, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedItem="{Binding SelectPlaybackStream, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Style="{StaticResource MaterialDesignComboBox}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type cameraConfiguration:PlaybackStream}">
+                                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                <!--  图标  -->
+                                                <TextBlock
+                                                    Margin="5,0"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource IconFontFamily}"
+                                                    FontSize="22"
+                                                    FontWeight="Light"
+                                                    Foreground="White"
+                                                    Text="{Binding ., Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
+                                                <!--  文字  -->
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource CustomFontFamily}"
+                                                    FontSize="13"
+                                                    FontWeight="Bold"
+                                                    Foreground="White"
+                                                    Text="{Binding ., Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
+
                     <!--  透明度  -->
                     <Slider
                         x:Name="OpacitySlider"

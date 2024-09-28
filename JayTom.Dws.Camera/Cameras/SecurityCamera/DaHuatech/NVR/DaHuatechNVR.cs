@@ -1212,7 +1212,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             return true;
         }
 
-        public async Task<KeyValuePair<bool, object>> MergeVideos(string[] inputFiles, string outputFile, int totalDuration, Action<double> progressCallback, Func<bool> cancelCallback) {
+        public async Task<KeyValuePair<bool, object>> MergeVideos(string[] inputFiles, string outputFile, double totalDuration, Action<double> progressCallback, Func<bool> cancelCallback) {
             if (inputFiles.Length is < 2 and <= 9) {
                 return new KeyValuePair<bool, object>(false, "合并的视频需要大于1并且小于10");
             }
@@ -1223,42 +1223,52 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     return new KeyValuePair<bool, object>(false, $"{file}--文件不存在");
                 }
             }
-            var ffmpegPath = $"{AppDomain.CurrentDomain.BaseDirectory}ffmpeg\\bin\\ffmpeg.exe";
-            if (File.Exists(ffmpegPath)) {
-                var arguments = BuildFfmpegArguments(inputFiles, outputFile, totalDuration);
 
-                var process = new Process {
-                    StartInfo = new ProcessStartInfo {
-                        FileName = ffmpegPath,
-                        Arguments = arguments,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                };
+            try {
+                var ffmpegPath = $"{AppDomain.CurrentDomain.BaseDirectory}ffmpeg\\bin\\ffmpeg.exe";
+                if (File.Exists(ffmpegPath)) {
+                    var arguments = BuildFfmpegArguments(inputFiles, outputFile, totalDuration);
 
-                process.OutputDataReceived += (sender, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
-                process.ErrorDataReceived += (sender, e) => {
-                    if (e.Data != null) {
-                        Console.WriteLine(e.Data);
-                        ParseProgress(e.Data, progressCallback, cancelCallback, process);
-                    }
-                };
+                    var process = new Process {
+                        StartInfo = new ProcessStartInfo {
+                            FileName = ffmpegPath,
+                            Arguments = arguments,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }
+                    };
 
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
+                    process.OutputDataReceived += (sender, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
+                    process.ErrorDataReceived += (sender, e) => {
+                        if (e.Data != null) {
+                            if (e.Data.Contains("Duration") && inputFiles.Length == 2) {
+                                totalDuration = ParseDurationFromOutput(e.Data);
+                            }
+                            /*Console.WriteLine(e.Data);*/
+                            ParseProgress(e.Data, progressCallback, cancelCallback, process, totalDuration);
+                        }
+                    };
 
-                await process.WaitForExitAsync();
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    await process.WaitForExitAsync();
+                }
+                else {
+                    return new KeyValuePair<bool, object>(false, "ffmpeg文件不存在");
+                }
             }
-            else {
-                return new KeyValuePair<bool, object>(false, "ffmpeg文件不存在");
+            catch (Exception e) {
+                return new KeyValuePair<bool, object>(false, e.Message);
             }
-            return new KeyValuePair<bool, object>(true, "操作成功");
+
+            return new KeyValuePair<bool, object>(true, "保存成功");
         }
 
-        private string BuildFfmpegArguments(string[] inputFiles, string outputFile, int totalDuration) {
+        private string BuildFfmpegArguments(string[] inputFiles, string outputFile, double totalDuration) {
             var videoCount = inputFiles.Length;
             // 添加输入文件
             var arguments = inputFiles.Select(file => $"-i \"{file}\"").ToList();
@@ -1323,18 +1333,18 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             return string.Join(" ", arguments);
         }
 
-        private void ParseProgress(string data, Action<double> progressCallback, Func<bool> cancelCallback, Process process) {
+        private void ParseProgress(string data, Action<double> progressCallback, Func<bool> cancelCallback, Process process, double totalDuration) {
             var match = Regex.Match(data, @"time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})");
             if (match.Success) {
-                int hours = int.Parse(match.Groups[1].Value);
-                int minutes = int.Parse(match.Groups[2].Value);
-                int seconds = int.Parse(match.Groups[3].Value);
-                int milliseconds = int.Parse(match.Groups[4].Value);
+                var hours = int.Parse(match.Groups[1].Value);
+                var minutes = int.Parse(match.Groups[2].Value);
+                var seconds = int.Parse(match.Groups[3].Value);
+                var milliseconds = int.Parse(match.Groups[4].Value);
 
-                double currentSeconds = hours * 3600 + minutes * 60 + seconds + milliseconds / 100.0;
+                var currentSeconds = hours * 3600 + minutes * 60 + seconds + milliseconds / 100.0;
 
-                // 这里可以使用一个默认值，比如假设总时长为60秒（或其他逻辑）
-                double progress = currentSeconds / 60 * 100; // 假设总时长为60秒
+                // 使用传入的 totalDuration 进行进度计算
+                var progress = currentSeconds / totalDuration * 100;
 
                 progressCallback(progress);
 
@@ -1344,6 +1354,22 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     Console.WriteLine("合并已取消");
                 }
             }
+        }
+
+        private double ParseDurationFromOutput(string ffmpegOutput) {
+            var durationRegex = new Regex(@"Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})");
+            var match = durationRegex.Match(ffmpegOutput);
+
+            if (match.Success) {
+                var hours = int.Parse(match.Groups[1].Value);
+                var minutes = int.Parse(match.Groups[2].Value);
+                var seconds = int.Parse(match.Groups[3].Value);
+                var milliseconds = int.Parse(match.Groups[4].Value);
+
+                return hours * 3600 + minutes * 60 + seconds + milliseconds / 100.0;
+            }
+
+            return 0;
         }
 
         public enum FastForwardSpeed {

@@ -31,6 +31,7 @@ internal class Program {
             {
                "C:\\Users\\77051\\Desktop\\a.mp4",
                "C:\\Users\\77051\\Desktop\\b.mp4",
+               "C:\\Users\\77051\\Desktop\\c.mp4",
            }, "C:\\Users\\77051\\Desktop\\out.mp4",
             30, p => {
                 Console.WriteLine(p);
