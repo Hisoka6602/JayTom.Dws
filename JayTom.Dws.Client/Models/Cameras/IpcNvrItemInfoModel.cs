@@ -11,7 +11,7 @@ using JayTom.Dws.Client.Attributes.WinClientAttributes;
 namespace JayTom.Dws.Client.Models.Cameras {
 
     public class IpcNvrItemInfoModel : BaseCameraItemInfoModel {
-        private int _port;
+        private int _port = 37777;
         private string _username = string.Empty;
         private string _password = string.Empty;
         private int _channel;

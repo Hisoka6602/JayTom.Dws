@@ -26,8 +26,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private bool _isBuffering = true;
         private ScreenState _screenState = ScreenState.Normal;
 
-        //private Size _maxSize = new(1800, 1012);
-        private Size _maxSize = new(3840, 2160);
+        //private Size _maxSize = new(3840, 2160);
 
         private ICommand? _toggleImageSizeCommand;
         private ICommand? _realtimePreviewOperationCommand;
@@ -144,13 +143,13 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             set => SetProperty(ref _screenState, value);
         }
 
-        /// <summary>
+        /*/// <summary>
         /// 最大尺寸
         /// </summary>
         public Size MaxSize {
             get => _maxSize;
             set => SetProperty(ref _maxSize, value);
-        }
+        }*/
 
         /// <summary>
         /// 清晰度列表

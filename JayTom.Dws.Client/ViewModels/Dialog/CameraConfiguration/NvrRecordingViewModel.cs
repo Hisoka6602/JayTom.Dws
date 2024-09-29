@@ -24,6 +24,7 @@ using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using JayTom.Dws.Client.Attributes;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using System.Windows.Controls.Primitives;
@@ -195,43 +196,39 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
                 }
                 if (_daHuatechNvr is not null) {
-                    obj.VideoFrame = new WriteableBitmap((int)obj.MaxSize.Width,
-                        (int)obj.MaxSize.Height, 96, 96, PixelFormats.Bgr24, null);
-                    _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)obj.MaxSize.Width,
-                        (int)obj.MaxSize.Height);
+                    obj.VideoQuality = VideoQuality.Ultra;
+                    SetQuality(obj);
                 }
             }
             else {
-                var size = GetVideoPlayerSize();
+                var (key, value) = GetVideoPlayerQuality();
 
                 foreach (var videoPlayerModel in VideoPlayerItems) {
                     videoPlayerModel.ScreenState = ScreenState.Normal;
                     if (_daHuatechNvr is not null) {
-                        obj.VideoFrame = new WriteableBitmap((int)size.Width,
-                            (int)size.Height, 96, 96, PixelFormats.Bgr24, null);
-                        _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)size.Width,
-                            (int)size.Height);
+                        obj.VideoQuality = key;
+                        SetQuality(obj);
                     }
                 }
             }
         }
 
-        private Size GetVideoPlayerSize() {
-            var size = new Size(768, 432);
+        private KeyValuePair<VideoQuality, System.Drawing.Size> GetVideoPlayerQuality() {
+            var size = VideoQuality.FullHd.GetResolution();
             switch (VideoPlayerItems.Count) {
                 case 1:
-                    size = new Size(768, 432);
-                    break;
+                    size = VideoQuality.FullHd.GetResolution();
+                    return new KeyValuePair<VideoQuality, System.Drawing.Size>(VideoQuality.FullHd, size);
 
                 case > 1 and <= 4:
-                    size = new Size(614, 346);
-                    break;
+                    size = VideoQuality.Standard.GetResolution();
+                    return new KeyValuePair<VideoQuality, System.Drawing.Size>(VideoQuality.Standard, size);
 
                 case > 4:
-                    size = new Size(449, 253);
-                    break;
+                    size = VideoQuality.Smooth.GetResolution();
+                    return new KeyValuePair<VideoQuality, System.Drawing.Size>(VideoQuality.Smooth, size);
             }
-            return size;
+            return new KeyValuePair<VideoQuality, System.Drawing.Size>(VideoQuality.FullHd, size);
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
@@ -273,10 +270,12 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                     Password = s.Password,
                     Port = s.Port,
                     Username = s.Username,
+                    VideoQuality = VideoQuality.High,
                     VideoFrame = new(449, 253, 96, 96, PixelFormats.Bgr24, null),
                     VideoScreenShotCommand = CaptureScreenShotCommand,
                     DownloadCommand = DownloadVideoCommand,
                     ToggleImageSizeCommand = ToggleImageSizeCommand,
+                    SwitchQualityCommand = SwitchQualityCommand
                 })
                 ?.OrderBy(o => o.Channel)?.ToList();
 
@@ -361,18 +360,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                                     });
                                 if (b) {
                                     if (item.ScreenState == ScreenState.Maximized) {
-                                        item.VideoFrame = new WriteableBitmap((int)item.MaxSize.Width,
-                                            (int)item.MaxSize.Height, 96, 96, PixelFormats.Bgr24, null);
-                                        _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)item.MaxSize.Width,
-                                            (int)item.MaxSize.Height);
+                                        item.VideoQuality = VideoQuality.Original;
                                     }
                                     else {
-                                        var size = GetVideoPlayerSize();
-                                        item.VideoFrame = new WriteableBitmap((int)size.Width,
-                                            (int)size.Height, 96, 96, PixelFormats.Bgr24, null);
-                                        _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)size.Width,
-                                            (int)size.Height);
+                                        var (videoQuality, value1) = GetVideoPlayerQuality();
+                                        item.VideoQuality = videoQuality;
                                     }
+                                    SetQuality(item);
                                     item.IsBuffering = false;
                                 }
 
@@ -666,6 +660,28 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             });
             if (insertOrUpdate) {
                 obj.IsOpen = false;
+            }
+        }
+
+        public ICommand SwitchQualityCommand => new DelegateCommand<VideoPlayerModel>(SwitchQualityDelegate);
+
+        private void SwitchQualityDelegate(VideoPlayerModel obj) {
+            //获取分辨率尺寸
+            //设置分辨率
+            SetQuality(obj);
+        }
+
+        /// <summary>
+        /// 设置清晰度
+        /// </summary>
+        /// <param name="obj"></param>
+        private async void SetQuality(VideoPlayerModel obj) {
+            var resolution = obj.VideoQuality.GetResolution();
+            if (_daHuatechNvr is not null) {
+                obj.VideoFrame = new WriteableBitmap((int)(resolution.Width),
+                    (int)(resolution.Height), 96, 96, PixelFormats.Bgr24, null);
+                _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)(resolution.Width),
+                    (int)(resolution.Height));
             }
         }
     }

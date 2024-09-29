@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Drawing;
 using System.Reflection;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.Attributes.VideoAttribute;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 
 namespace JayTom.Dws.Client.Attributes {
@@ -63,6 +65,14 @@ namespace JayTom.Dws.Client.Attributes {
                 .Cast<EnumToVisibilityAttribute>()
                 .FirstOrDefault();
             return attribute?.Visibility ?? false;
+        }
+
+        public static Size GetResolution(this Enum value) {
+            var field = value.GetType().GetField(value.ToString());
+            var attribute = field?.GetCustomAttributes(typeof(ResolutionAttribute), false)
+                .Cast<ResolutionAttribute>()
+                .FirstOrDefault();
+            return attribute is null ? Size.Empty : new Size(attribute.Width, attribute.Height);
         }
     }
 }

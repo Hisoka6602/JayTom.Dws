@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Attributes.VideoAttribute;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
@@ -31,10 +32,12 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ScreenState _screenState;
         private ScreenshotState _screenshotState = ScreenshotState.Ready;
         private DownloadState _downloadState = DownloadState.Ready;
-        private Size _maxSize = new(1152, 648);
         private PlaybackError _playbackError = PlaybackError.None;
         private string _ipAddress = string.Empty;
         private bool _isStopRead = false;
+        private VideoQuality _videoQuality = VideoQuality.Smooth;
+        private ObservableCollection<VideoQuality> _videoQualityItems = new(Enum.GetValues(typeof(VideoQuality)).Cast<VideoQuality>());
+        private ICommand? _switchQualityCommand;
 
         public VideoPlayerModel() {
             RealtimePreviewCallback = async info => {
@@ -171,6 +174,30 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         }
 
         /// <summary>
+        /// 清晰度列表
+        /// </summary>
+        public ObservableCollection<VideoQuality> VideoQualityItems {
+            get => _videoQualityItems;
+            set => SetProperty(ref _videoQualityItems, value);
+        }
+
+        /// <summary>
+        /// 清晰度
+        /// </summary>
+        public VideoQuality VideoQuality {
+            get => _videoQuality;
+            set => SetProperty(ref _videoQuality, value);
+        }
+
+        /// <summary>
+        /// 切换清晰度
+        /// </summary>
+        public ICommand? SwitchQualityCommand {
+            get => _switchQualityCommand;
+            set => SetProperty(ref _switchQualityCommand, value);
+        }
+
+        /// <summary>
         /// 获取或设置视频截图命令。
         /// </summary>
         public ICommand? VideoScreenShotCommand {
@@ -205,11 +232,6 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public bool IsBuffering {
             get => _isBuffering;
             set => SetProperty(ref _isBuffering, value);
-        }
-
-        public Size MaxSize {
-            get => _maxSize;
-            set => SetProperty(ref _maxSize, value);
         }
 
         public async void Dispose() {

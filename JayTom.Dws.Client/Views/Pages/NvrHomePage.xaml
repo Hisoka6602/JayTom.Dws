@@ -456,11 +456,13 @@
                                 Background="#88202020"
                                 CornerRadius="10,0,0,10"
                                 Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+
                                 <ListBox
                                     x:Name="RadioButtonGroupChoiceChip"
                                     VerticalAlignment="Center"
                                     ItemsSource="{Binding VideoQualityItems}"
-                                    SelectedItem="{Binding VideoQuality, UpdateSourceTrigger=PropertyChanged}">
+                                    SelectedItem="{Binding VideoQuality, UpdateSourceTrigger=PropertyChanged}"
+                                    Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=None}">
                                     <ListBox.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <StackPanel Orientation="Vertical" />
@@ -504,7 +506,7 @@
                                     </ListBox.ItemContainerStyle>
                                     <b:Interaction.Triggers>
                                         <b:EventTrigger EventName="SelectionChanged">
-                                            <b:InvokeCommandAction Command="{Binding SwitchQualityCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}" />
+                                            <b:InvokeCommandAction Command="{Binding SwitchQualityCommand}" CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type ListBox}, AncestorLevel=1}}" />
                                         </b:EventTrigger>
                                     </b:Interaction.Triggers>
                                 </ListBox>

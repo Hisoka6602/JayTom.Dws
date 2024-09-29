@@ -19,8 +19,10 @@ using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
+using Size = System.Drawing.Size;
 using System.Windows.Media.Imaging;
 using JayTom.Dws.Interface.License;
+using JayTom.Dws.Client.Attributes;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
@@ -321,10 +323,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
         }
 
-        public ICommand SwitchQualityCommand => new DelegateCommand<VideoQuality>(SwitchQualityDelegate);
+        public ICommand SwitchQualityCommand => new DelegateCommand<NvrRealTimePreviewItemInfo>(SwitchQualityDelegate);
 
-        private void SwitchQualityDelegate(VideoQuality obj) {
-            Console.WriteLine(obj);
+        private void SwitchQualityDelegate(NvrRealTimePreviewItemInfo obj) {
+            //获取分辨率尺寸
+            //设置分辨率
+            SetQuality(obj);
         }
 
         public ICommand ToggleImageSizeCommand => new DelegateCommand<NvrRealTimePreviewItemInfo>(ToggleImageSizeDelegate);
@@ -336,43 +340,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
                 }
                 if (_daHuatechNvr is not null) {
-                    obj.VideoFrame = new WriteableBitmap((int)(obj.MaxSize.Width),
-                        (int)(obj.MaxSize.Height), 96, 96, PixelFormats.Bgr24, null);
-                    _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)(obj.MaxSize.Width),
-                        (int)(obj.MaxSize.Height));
+                    obj.VideoQuality = VideoQuality.Original;
+                    SetQuality(obj);
                 }
             }
             else {
-                var size = GetVideoPlayerSize();
+                var (key, value) = GetVideoPlayerQuality();
 
                 foreach (var videoPlayerModel in NvrRealTimePreviewItems) {
                     videoPlayerModel.ScreenState = ScreenState.Normal;
-                    if (_daHuatechNvr is not null) {
-                        obj.VideoFrame = new WriteableBitmap((int)size.Width,
-                            (int)size.Height, 96, 96, PixelFormats.Bgr24, null);
-                        _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)size.Width,
-                            (int)size.Height);
+                    if (_daHuatechNvr is not null && videoPlayerModel.PlaybackError == PlaybackError.None) {
+                        videoPlayerModel.VideoQuality = key;
+                        SetQuality(videoPlayerModel);
                     }
                 }
             }
         }
 
-        private Size GetVideoPlayerSize() {
-            var size = new Size(1200, 675);
+        private KeyValuePair<VideoQuality, System.Drawing.Size> GetVideoPlayerQuality() {
+            var size = VideoQuality.FullHd.GetResolution();
             switch (NvrRealTimePreviewItems.Count) {
                 case 1:
-                    size = new Size(1200, 675);
-                    break;
+                    size = VideoQuality.FullHd.GetResolution();
+                    return new KeyValuePair<VideoQuality, Size>(VideoQuality.FullHd, size);
 
                 case > 1 and <= 4:
-                    size = new Size(614, 346);
-                    break;
+                    size = VideoQuality.Standard.GetResolution();
+                    return new KeyValuePair<VideoQuality, Size>(VideoQuality.Standard, size);
 
                 case > 4:
-                    size = new Size(449, 253);
-                    break;
+                    size = VideoQuality.Smooth.GetResolution();
+                    return new KeyValuePair<VideoQuality, Size>(VideoQuality.Smooth, size);
             }
-            return size;
+            return new KeyValuePair<VideoQuality, Size>(VideoQuality.FullHd, size);
         }
 
         public ICommand ExpanderExpandedCommand => new DelegateCommand<object>(ExpanderExpandedDelegate);
@@ -464,17 +464,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             _daHuatechNvr ??= DaHuatechNVR.Instance;
                             var (key, value) = await _daHuatechNvr.LogIn(nvrRealTimePreviewItemInfo.IpAddress, nvrRealTimePreviewItemInfo.Port, nvrRealTimePreviewItemInfo.Username, nvrRealTimePreviewItemInfo.Password);
                             if (key) {
-                                var videoPlayerSize = GetVideoPlayerSize();
+                                var (videoQuality, size) = GetVideoPlayerQuality();
                                 Parallel.ForEach(NvrRealTimePreviewItems, async item => {
                                     await Application.Current.Dispatcher.InvokeAsync(async () => {
                                         if (!string.IsNullOrEmpty(item.IpAddress) &&
                                             item is { Channel: >= 0, Port: > 0 }) {
                                             var (b, s) = await _daHuatechNvr.StartRealTimePreview(item.IpAddress, item.Channel, item.RealtimePreviewCallback);
                                             if (b) {
-                                                _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)videoPlayerSize.Width, (int)videoPlayerSize.Height);
-                                                item.VideoFrame = new((int)videoPlayerSize.Width, (int)videoPlayerSize.Height, 96, 96, PixelFormats.Bgr24, null);
+                                                item.VideoQuality = videoQuality;
+                                                _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)size.Width, (int)size.Height);
+                                                item.VideoFrame = new((int)size.Width, (int)size.Height, 96, 96, PixelFormats.Bgr24, null);
                                                 item.ToggleImageSizeCommand = ToggleImageSizeCommand;
-                                                //item.SwitchQualityCommand = SwitchQualityCommand;
+                                                item.SwitchQualityCommand = SwitchQualityCommand;
                                                 item.PlaybackError = PlaybackError.None;
                                             }
                                             else {
@@ -518,6 +519,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
                 //item.IsInserting = true;
             }, DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// 设置清晰度
+        /// </summary>
+        /// <param name="obj"></param>
+        private async void SetQuality(NvrRealTimePreviewItemInfo obj) {
+            var resolution = obj.VideoQuality.GetResolution();
+            if (_daHuatechNvr is not null) {
+                obj.VideoFrame = new WriteableBitmap((int)(resolution.Width),
+                    (int)(resolution.Height), 96, 96, PixelFormats.Bgr24, null);
+                _daHuatechNvr.SetResolution(obj.IpAddress, obj.Channel, (int)(resolution.Width),
+                    (int)(resolution.Height));
+            }
         }
     }
 }

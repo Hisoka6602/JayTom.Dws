@@ -142,14 +142,14 @@
                                 <Image
                                     RenderOptions.BitmapScalingMode="LowQuality"
                                     Source="{Binding VideoFrame, UpdateSourceTrigger=PropertyChanged}"
-                                    Stretch="Uniform"
+                                    Stretch="Fill"
                                     Visibility="{Binding IsBuffering, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                     <Image.Style>
                                         <Style TargetType="Image">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding ScreenState}" Value="Maximized">
-                                                    <Setter Property="Width" Value="{Binding MaxSize.Width, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <Setter Property="Height" Value="{Binding MaxSize.Height, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Setter Property="Width" Value="1280" />
+                                                    <Setter Property="Height" Value="720" />
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding ScreenState}" Value="Normal">
                                                     <Setter Property="Width">
@@ -295,6 +295,71 @@
                                                 Text="{Binding DownloadState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumAttributeConverter}, ConverterParameter=FontIcon}" />
                                         </Button>
                                     </StackPanel>
+                                </Border>
+                                <!--  清晰度  -->
+                                <Border
+                                    Height="220"
+                                    MinWidth="50"
+                                    Margin="0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Background="#88202020"
+                                    CornerRadius="10,0,0,10"
+                                    Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                                    <ListBox
+                                        x:Name="RadioButtonGroupChoiceChip"
+                                        VerticalAlignment="Center"
+                                        ItemsSource="{Binding VideoQualityItems}"
+                                        SelectedItem="{Binding VideoQuality, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=None}">
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Vertical" />
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="10,8">
+                                                    <TextBlock
+                                                        FontFamily="{StaticResource CustomFontFamily}"
+                                                        FontSize="13"
+                                                        Text="{Binding Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="White" />
+                                                <Setter Property="Padding" Value="0" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border
+                                                                x:Name="Border"
+                                                                Background="{TemplateBinding Background}"
+                                                                BorderBrush="Transparent"
+                                                                BorderThickness="0">
+                                                                <ContentPresenter />
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Border" Property="Background" Value="White" />
+                                                                    <Setter Property="Foreground" Value="Black" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <b:Interaction.Triggers>
+                                            <b:EventTrigger EventName="SelectionChanged">
+                                                <b:InvokeCommandAction Command="{Binding SwitchQualityCommand}" CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type ListBox}, AncestorLevel=1}}" />
+                                            </b:EventTrigger>
+                                        </b:Interaction.Triggers>
+                                    </ListBox>
                                 </Border>
                                 <!--  异常底图  -->
                                 <Border Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}">
@@ -600,6 +665,50 @@
                                     Text="快退15s" />
                             </StackPanel>
                         </Button>
+
+                        <!--  合并下载  -->
+                        <Button
+                            Height="30"
+                            MinWidth="100"
+                            Margin="10,0,0,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Background="#3D3D3D"
+                            BorderThickness="0"
+                            Command="{Binding RewindBySecondsCommand}"
+                            CommandParameter="15"
+                            Focusable="False"
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
+
+                            <Grid>
+
+                                <!--  显示  -->
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="20"
+                                        FontWeight="Light"
+                                        Foreground="White"
+                                        Text="&#xea6f;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="13"
+                                        FontWeight="Normal"
+                                        Foreground="White"
+                                        Text="合并下载" />
+                                </StackPanel>
+                                <!--  下载进度  -->
+
+                            </Grid>
+
+                        </Button>
+
                     </StackPanel>
                     <!--  进度条(时、分、秒)  -->
                     <Slider
