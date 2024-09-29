@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using JayTom.Dws.Client.Attributes.VideoAttribute;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
@@ -282,5 +283,44 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// </summary>
         [Description("无效通道"), FontIcon("\xea38")]
         InvalidChannel
+    }
+
+    public enum VideoQuality {
+
+        /// <summary>
+        /// 流畅
+        /// </summary>
+        [Description("流畅"), Resolution(480, 360)]
+        Smooth,
+
+        /// <summary>
+        /// 标清
+        /// </summary>
+        [Description("标清"), Resolution(640, 480)]
+        Standard,
+
+        /// <summary>
+        /// 高清
+        /// </summary>
+        [Description("高清"), Resolution(1280, 720)]
+        High,
+
+        /// <summary>
+        /// 全高清
+        /// </summary>
+        [Description("全高清"), Resolution(1920, 1080)]
+        FullHd,
+
+        /// <summary>
+        /// 超清
+        /// </summary>
+        [Description("超清"), Resolution(2560, 1440)]
+        Ultra,
+
+        /// <summary>
+        /// 原画
+        /// </summary>
+        [Description("原画"), Resolution(3840, 2160)]
+        Original
     }
 }

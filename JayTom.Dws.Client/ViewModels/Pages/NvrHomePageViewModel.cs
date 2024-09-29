@@ -34,6 +34,7 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
+using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
@@ -57,10 +58,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private bool? _isUnauthorized;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
         private bool _isRealTimeVideoEnabled = true;
+        private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
+        private PlaybackStream _selectPlaybackStream = PlaybackStream.MainStream;
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
-                INvrCameraBindingRepository nvrCameraBindingRepository,
+            INvrCameraBindingRepository nvrCameraBindingRepository,
             IConfigRepository configRepository,
             IClientLicenseApi clientLicenseApi,
             ICloud cloud) {
@@ -211,6 +214,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             set => SetProperty(ref _nvrRealTimePreviewItems, value);
         }
 
+        public ObservableCollection<PlaybackStream> PlaybackStreamItems {
+            get => _playbackStreamItems;
+            set => SetProperty(ref _playbackStreamItems, value);
+        }
+
+        public PlaybackStream SelectPlaybackStream {
+            get => _selectPlaybackStream;
+            set => SetProperty(ref _selectPlaybackStream, value);
+        }
+
         public HorizontalAlignment PlayerHorizontalAlignment {
             get => _playerHorizontalAlignment;
             set => SetProperty(ref _playerHorizontalAlignment, value);
@@ -306,6 +319,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#2E8B57"));
                 }
             }
+        }
+
+        public ICommand SwitchQualityCommand => new DelegateCommand<VideoQuality>(SwitchQualityDelegate);
+
+        private void SwitchQualityDelegate(VideoQuality obj) {
+            Console.WriteLine(obj);
         }
 
         public ICommand ToggleImageSizeCommand => new DelegateCommand<NvrRealTimePreviewItemInfo>(ToggleImageSizeDelegate);
@@ -455,6 +474,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                                 _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)videoPlayerSize.Width, (int)videoPlayerSize.Height);
                                                 item.VideoFrame = new((int)videoPlayerSize.Width, (int)videoPlayerSize.Height, 96, 96, PixelFormats.Bgr24, null);
                                                 item.ToggleImageSizeCommand = ToggleImageSizeCommand;
+                                                //item.SwitchQualityCommand = SwitchQualityCommand;
                                                 item.PlaybackError = PlaybackError.None;
                                             }
                                             else {

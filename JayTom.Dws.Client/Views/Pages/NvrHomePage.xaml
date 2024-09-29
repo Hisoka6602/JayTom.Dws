@@ -446,6 +446,69 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
+                            <!--  清晰度  -->
+                            <Border
+                                Height="220"
+                                MinWidth="50"
+                                Margin="0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Background="#88202020"
+                                CornerRadius="10,0,0,10"
+                                Visibility="{Binding ElementName=PreviewViewGrid, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <ListBox
+                                    x:Name="RadioButtonGroupChoiceChip"
+                                    VerticalAlignment="Center"
+                                    ItemsSource="{Binding VideoQualityItems}"
+                                    SelectedItem="{Binding VideoQuality, UpdateSourceTrigger=PropertyChanged}">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Vertical" />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="10,8">
+                                                <TextBlock
+                                                    FontFamily="{StaticResource CustomFontFamily}"
+                                                    FontSize="13"
+                                                    Text="{Binding Converter={StaticResource EnumAttributeConverter}, ConverterParameter=Description}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border
+                                                            x:Name="Border"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="Transparent"
+                                                            BorderThickness="0">
+                                                            <ContentPresenter />
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="Border" Property="Background" Value="White" />
+                                                                <Setter Property="Foreground" Value="Black" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="SelectionChanged">
+                                            <b:InvokeCommandAction Command="{Binding SwitchQualityCommand}" CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
+                                </ListBox>
+                            </Border>
                             <!--  异常底图  -->
                             <Border Visibility="{Binding PlaybackError, Converter={StaticResource EnumToVisibilityInvertedConverter}, ConverterParameter=None}">
                                 <StackPanel

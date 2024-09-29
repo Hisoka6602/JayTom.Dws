@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
 namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
@@ -31,6 +32,9 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private ICommand? _toggleImageSizeCommand;
         private ICommand? _realtimePreviewOperationCommand;
         private string _displayName = string.Empty;
+        private VideoQuality _videoQuality = VideoQuality.Smooth;
+        private ObservableCollection<VideoQuality> _videoQualityItems = new(Enum.GetValues(typeof(VideoQuality)).Cast<VideoQuality>());
+        private ICommand? _switchQualityCommand;
 
         public NvrRealTimePreviewItemInfo() {
             RealtimePreviewCallback = async info => {
@@ -149,6 +153,22 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         }
 
         /// <summary>
+        /// 清晰度列表
+        /// </summary>
+        public ObservableCollection<VideoQuality> VideoQualityItems {
+            get => _videoQualityItems;
+            set => SetProperty(ref _videoQualityItems, value);
+        }
+
+        /// <summary>
+        /// 清晰度
+        /// </summary>
+        public VideoQuality VideoQuality {
+            get => _videoQuality;
+            set => SetProperty(ref _videoQuality, value);
+        }
+
+        /// <summary>
         /// 实时预览操作
         /// </summary>
         public ICommand? RealtimePreviewOperationCommand {
@@ -162,6 +182,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         public ICommand? ToggleImageSizeCommand {
             get => _toggleImageSizeCommand;
             set => SetProperty(ref _toggleImageSizeCommand, value);
+        }
+
+        /// <summary>
+        /// 切换清晰度
+        /// </summary>
+        public ICommand? SwitchQualityCommand {
+            get => _switchQualityCommand;
+            set => SetProperty(ref _switchQualityCommand, value);
         }
 
         /// <summary>
