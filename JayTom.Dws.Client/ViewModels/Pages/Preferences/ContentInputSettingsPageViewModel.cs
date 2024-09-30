@@ -10,6 +10,7 @@ using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.UsbDevice;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
@@ -24,6 +25,7 @@ using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ContentInputSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private bool _isUseTcpInput;
@@ -39,19 +41,67 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public ContentInputSettingsPageViewModel(IConfigRepository configRepository,
             IKeyboardDeviceManager keyboardDeviceManager) : base(configRepository) {
             _keyboardDeviceManager = keyboardDeviceManager;
-        }
 
-        /// <summary>
-        /// Json示例
-        /// </summary>
-        public string ExampleJson => JsonConvert.SerializeObject(new {
-            barcode = "123456",
-            weight = 10.1,
-            length = 5.1,
-            width = 4.1,
-            height = 3.1,
-            volume = 2.1
-        }, Formatting.Indented);
+            //监控Usb
+            UsbManager.Instance.UsbDeviceInserted += (sender, args) => {
+                Task.Run(async () => {
+                    await Task.Delay(300);
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                        var keyboardDevices = await _keyboardDeviceManager.EnumerateKeyboardDevices();
+
+                        var devices = keyboardDevices.Where(w => !KeyboardDeviceItemInfo.Any(a => !string.IsNullOrEmpty(a.DevicePath) && (a.DevicePath.Equals(w.DevicePath) &&
+                                a.VendorId.Equals(w.VendorId) && a.ProductId.Equals(w.ProductId))))
+                            .ToList();
+
+                        if (devices.Any()) {
+                            var infoModels = devices.Where(w => w is { DevicePath: not null, DeviceName: not null }).Select((s, i) => new KeyboardDeviceItemInfoModel {
+                                DeviceName = s.DeviceName,
+                                DevicePath = s.DevicePath,
+                                IsConnected = s.IsConnected,
+                                ManufacturerName = s.ManufacturerName,
+                                ProductId = s.ProductId,
+                                VendorId = s.VendorId,
+                                HasBinding = (s is { ProductId: > 0, VendorId: > 0 } && KeyboardDevice.ProductId == s.ProductId && KeyboardDevice.VendorId == s.VendorId && KeyboardDevice.DevicePath == s.DevicePath),
+                                Num = i + 1,
+                                IsNewlyAdded = true
+                            }).ToList();
+                            KeyboardDeviceItemInfo.AddRange(infoModels);
+                            for (var i = 0; i < KeyboardDeviceItemInfo.Count; i++) {
+                                KeyboardDeviceItemInfo[i].Num = i + 1;
+                            }
+                            if (KeyboardDeviceItemInfo.All(a => !a.HasBinding)) {
+                                KeyboardDevice = new KeyboardDevice();
+                            }
+                        }
+                    });
+                });
+            };
+            UsbManager.Instance.UsbDeviceRemoved += (sender, args) => {
+                Task.Run(async () => {
+                    await Task.Delay(300);
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                        var keyboardDevices = await _keyboardDeviceManager.EnumerateKeyboardDevices();
+
+                        var devices = KeyboardDeviceItemInfo.Where(w => !keyboardDevices.Any(a => !string.IsNullOrEmpty(a.DevicePath) && (a.DevicePath.Equals(w.DevicePath) &&
+                                a.VendorId.Equals(w.VendorId) && a.ProductId.Equals(w.ProductId))))
+                            .ToList();
+
+                        if (devices.Any()) {
+                            foreach (var device in devices) {
+                                KeyboardDeviceItemInfo.Remove(device);
+                            }
+                            for (var i = 0; i < KeyboardDeviceItemInfo.Count; i++) {
+                                KeyboardDeviceItemInfo[i].Num = i + 1;
+                                KeyboardDeviceItemInfo[i].IsNewlyAdded = false;
+                            }
+                            if (KeyboardDeviceItemInfo.All(a => !a.HasBinding)) {
+                                KeyboardDevice = new KeyboardDevice();
+                            }
+                        }
+                    });
+                });
+            };
+        }
 
         /// <summary>
         /// 是否使用Tcp输入

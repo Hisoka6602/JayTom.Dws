@@ -601,6 +601,13 @@
                     <DataGrid.RowStyle>
                         <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
                             <Setter Property="Height" Value="35" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsNewlyAdded}" Value="True">
+                                    <Setter Property="BorderBrush" Value="DarkGray" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Setter Property="Height" Value="40" />
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGrid.RowStyle>
                     <DataGrid.Columns>

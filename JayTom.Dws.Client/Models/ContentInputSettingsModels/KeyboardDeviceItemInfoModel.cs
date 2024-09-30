@@ -16,6 +16,7 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         private bool _isConnected;
         private int _num;
         private bool _hasBinding;
+        private bool _isNewlyAdded;
 
         public int Num {
             get => _num;
@@ -55,6 +56,14 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         public bool HasBinding {
             get => _hasBinding;
             set => SetProperty(ref _hasBinding, value);
+        }
+
+        /// <summary>
+        /// 新加入
+        /// </summary>
+        public bool IsNewlyAdded {
+            get => _isNewlyAdded;
+            set => SetProperty(ref _isNewlyAdded, value);
         }
     }
 }

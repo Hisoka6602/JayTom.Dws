@@ -4,10 +4,12 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Text.Json;
 using FluentFTP.Helpers;
+using System.Management;
 using System.Configuration;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Interface.Post;
+using JayTom.Dws.Domain.Manager;
 using JayTom.Dws.Interface.geek_;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
@@ -25,6 +27,17 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 internal class Program {
 
     private static async Task Main(string[] args) {
+        var usbManager = UsbManager.Instance;
+
+        usbManager.UsbDeviceInserted += (sender, s1) => {
+            Console.WriteLine("USB插入");
+        };
+        usbManager.UsbDeviceRemoved += (sender, s1) => {
+            Console.WriteLine("USB移除");
+        };
+        Console.ReadLine();
+        usbManager.StopMonitoring();
+        return;
         var daHuatechNvr = DaHuatechNVR.Instance;
 
         var (key, value) = await daHuatechNvr.MergeVideos(new[]
@@ -85,6 +98,23 @@ internal class Program {
             Console.WriteLine(e);
         }*/
         Console.ReadLine();
+    }
+
+    private static void DeviceInserted(object sender, EventArrivedEventArgs e) {
+        Console.WriteLine("USB device inserted.");
+        ListUsbDevices();
+    }
+
+    private static void DeviceRemoved(object sender, EventArrivedEventArgs e) {
+        Console.WriteLine("USB device removed.");
+        ListUsbDevices();
+    }
+
+    private static void ListUsbDevices() {
+        var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_USBControllerDevice");
+        foreach (ManagementObject device in searcher.Get()) {
+            Console.WriteLine($"Device: {device["Dependent"]}");
+        }
     }
 
     private static string BuildFfmpegArguments(string[] inputFiles, string outputFile) {
