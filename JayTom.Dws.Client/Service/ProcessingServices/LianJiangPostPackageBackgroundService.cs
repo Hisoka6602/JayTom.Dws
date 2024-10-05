@@ -93,7 +93,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 try {
                     await _createPackageSlim.WaitAsync();
                     //测试间隔200,记得删掉
-                    await Task.Delay(200);
+                    await Task.Delay(50);
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
                         var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
@@ -141,7 +141,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             //下位机(包裹异常)
             _sortingService.PackageException += async (sender, args) => {
                 try {
-                    await Task.Delay(500);
                     await _createPackageSlim.WaitAsync();
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
@@ -176,8 +175,20 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null } &&
+                                                               (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
+                                                                (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
+                                                                 DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
+                                                               )) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
+                                                                   (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
+                                                                    (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
+                                                                     DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
+                                                                   ));
+                    /*var packageInfo =
+                        _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                             PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });*/
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null) {
                         packageInfo = new PackageInfo() {
