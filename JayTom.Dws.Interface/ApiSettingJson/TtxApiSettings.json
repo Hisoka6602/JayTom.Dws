@@ -1,0 +1,10 @@
+//通天晓
+{
+  "Api": "wms.weight.update",
+  "WarehouseCode": "YC001",
+  "DeviceId": "abc",
+  //超时时间
+  "TimeOut": 600,
+  //地址
+  "Url": "https://ttx.yskc.cn/api/wms/sync/in"
+}

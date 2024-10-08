@@ -286,9 +286,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 return;*/
 
                 try {
+                    await Task.Delay(200);
                     await _createPackageSlim.WaitAsync();
                     //测试间隔200,记得删掉
-                    await Task.Delay(200);
+
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse) {
                         var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));

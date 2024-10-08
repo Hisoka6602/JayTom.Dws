@@ -91,5 +91,15 @@ namespace JayTom.Dws.Domain.Dto {
         /// 长沙拙燕Api
         /// </summary>
         ZhuoYanScm = 15,
+
+        /// <summary>
+        /// 通天晓Api
+        /// </summary>
+        TtxApi = 16,
+
+        /// <summary>
+        /// 旺店通Wms+通天晓
+        /// </summary>
+        WdtWmsApiAndTtxApi = 17
     }
 }

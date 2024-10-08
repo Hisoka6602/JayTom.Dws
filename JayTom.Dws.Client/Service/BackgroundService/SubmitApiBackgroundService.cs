@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Interface.Wdt;
+using JayTom.Dws.Interface.ttx;
 using JayTom.Dws.Data.LocalConf;
 using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Interface.Post;
@@ -644,6 +645,74 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                             }
                                             break;
+
+                                        case ApiType.TtxApi: {
+                                                uploader = new TtxApi(_httpClientFactory);
+                                                uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                    info.Weight, info.ScanTime,
+                                                    info.Length, info.Width,
+                                                    info.Height, info.Volume,
+                                                    null, null,
+                                                    info.IsStackedPackage, stoppingToken);
+                                            }
+                                            break;
+
+                                        case ApiType.WdtWmsApiAndTtxApi: {
+                                                var cancellationTokenSource = new CancellationTokenSource();
+                                                var wdtTask = Task.Run(async () => {
+                                                    var apiUploader = new WdtWmsApi(_httpClientFactory);
+                                                    var (key, value) = await apiUploader.SetParameters(_wdtWmsApiParameter);
+                                                    if (key) {
+                                                        return await apiUploader.UploadData(info.Barcode ?? string.Empty,
+                                                             info.Weight, info.ScanTime,
+                                                             info.Length, info.Width,
+                                                             info.Height, info.Volume,
+                                                             null, null,
+                                                             info.Other, stoppingToken);
+                                                    }
+                                                    else {
+                                                        Console.WriteLine("设置参数失败!");
+                                                        return new UploadResponse() {
+                                                            ExceptionMsg = value
+                                                        };
+                                                    }
+                                                }, cancellationTokenSource.Token);
+
+                                                var ttxTask = Task.Run(async () => {
+                                                    var apiUploader = new TtxApi(_httpClientFactory);
+                                                    return await apiUploader.UploadData(info.Barcode ?? string.Empty,
+                                                         info.Weight, info.ScanTime,
+                                                         info.Length, info.Width,
+                                                         info.Height, info.Volume,
+                                                         null, null,
+                                                         info.IsStackedPackage, stoppingToken);
+                                                }, cancellationTokenSource.Token);
+
+                                                var completedTask = await Task.WhenAny(wdtTask, ttxTask);
+
+                                                if (completedTask == wdtTask && wdtTask.Result.IsSuccess) {
+                                                    cancellationTokenSource.Cancel(); // 取消 其他
+                                                    uploadResponse = wdtTask.Result;
+                                                }
+                                                else if (completedTask == ttxTask && ttxTask.Result.IsSuccess) {
+                                                    cancellationTokenSource.Cancel(); // 取消 其他
+                                                    uploadResponse = ttxTask.Result;
+                                                }
+                                                else {
+                                                    var timeoutTask = Task.Delay(2000, stoppingToken);
+                                                    var completedTasks = await Task.WhenAny(Task.WhenAll(wdtTask, ttxTask), timeoutTask);
+                                                    if (completedTasks == timeoutTask) {
+                                                        cancellationTokenSource.Cancel(); // 超时后取消其他任务
+                                                        uploadResponse = new UploadResponse() {
+                                                            ExceptionMsg = "多个上传接口皆超时"
+                                                        };
+                                                    }
+                                                    else {
+                                                        uploadResponse = wdtTask.Result;
+                                                    }
+                                                }
+                                            }
+                                            break;
                                     }
                                     if (_apiSettingsDto?.Type is not null &&
                                         _apiSettingsDto.Type != ApiType.None) {
@@ -712,45 +781,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
 
                             //获取需要提交到备用格口的数据
-
-                            /*
-                        var keyValuePairs = _packageSubmissionPushItems?.Any(f => (f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.PackageExceptionEx) == true
-                                                                                   && f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SendSorting) == true)
-                                                                                  && f.Value.PackageInfo is not null
-                                                                                  && !f.Value.WasPushedAlternateExitSorter) == true
-                            ? _packageSubmissionPushItems?.Where(f => (f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.PackageExceptionEx) == true
-                                                                       && f.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SendSorting) == true)
-                                                                      && f.Value.PackageInfo is not null && !f.Value.WasPushedAlternateExitSorter)?.ToList()
-                            : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
-
-                        if (keyValuePairs?.Any() == true) {
-                            Parallel.ForEach(keyValuePairs, async packageValue => {
-                                try {
-                                    await _takePackageSlim.WaitAsync(stoppingToken);
-                                    //获取包裹信息
-                                    var updateEvent = packageValue.Value.PackageExitUpdateItems.FirstOrDefault(f =>
-                                        f.InstructionType == InstructionType.SendSorting);
-                                    if (packageValue.Value.PackageInfo is not null &&
-                                        updateEvent is not null) {
-                                        //推送
-                                        EventAggregator.Instance.Publish(new PushAlternateExitSorterEvent() {
-                                            PackageInfo = packageValue.Value.PackageInfo,
-                                            LockTime = packageValue.Value.PackageExitUpdateItems
-                                                           .FirstOrDefault(
-                                                               f => f.InstructionType == InstructionType.PackageExceptionEx)
-                                                           ?.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime ??
-                                                       DateTime.Now,
-                                            OriginalExitId = updateEvent.ExitId,
-                                            OriginalExitName = updateEvent.ExitName
-                                        });
-                                        packageValue.Value.WasPushedAlternateExitSorter = true;
-                                    }
-                                }
-                                finally {
-                                    _takePackageSlim.Release();
-                                }
-                            });
-                        }*/
 
                             //获取包裹
                             var pairs = _packageSubmissionPushItems?.Any(f => f.Value.PackageExitUpdateItems?.Any() == true

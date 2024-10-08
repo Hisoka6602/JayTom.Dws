@@ -1,36 +1,47 @@
 ﻿using System.Drawing;
 using JayTom.Dws.Interface;
+using JayTom.Dws.Interface.ttx;
 using JayTom.Dws.Interface.geek_;
+using JayTom.Dws.Interface.JdyWms;
+using Microsoft.Extensions.Hosting;
+using System.Net.NetworkInformation;
+using Microsoft.Extensions.DependencyInjection;
 
 internal class Program {
 
     private static async Task Main(string[] args) {
         Console.WriteLine("Hello, World!");
 
-        /*var uploadResponse = await new GeekPlusApi(null).UploadData("SF123456",
-            0.1, 0.2, 0.3, 0.4, 0.5);
-        Console.WriteLine(uploadResponse);*/
+        Host.CreateDefaultBuilder().ConfigureServices((builder, services) => {
+            services.AddHttpClient("INSURANCE", httpClient => {
+                // httpClient.Timeout = TimeSpan.FromSeconds(10);
+            }).ConfigurePrimaryHttpMessageHandler(() => {
+                var handler = new HttpClientHandler() {
+                    UseDefaultCredentials = true,
+                    MaxConnectionsPerServer = 1000,
+                    ServerCertificateCustomValidationCallback = (m, c, ch, e) => true,
+                    //UseProxy = false,
+                    //SslProtocols = SslProtocols.Tls13
+                };
 
-        var bitmap = new Bitmap($@"C:\Users\{Environment.UserName}\Desktop\73510566875475_1698285892241.jpg");
-
-        new GeekPlusApi(null).UploadInBackground("SF123456",
-            0.1, DateTime.Now, 0.3, 0.4, 0.5, imageInfo: new UploadImageInfo() {
-                CameraSerialNumber = "扫码相机",
-                Image = bitmap
-            }, panoramaImageInfos: new List<UploadImageInfo>()
-            {
-                new UploadImageInfo()
-                {
-                    CameraSerialNumber = "全景相机1",
-                    Image = bitmap
-                },
-                new UploadImageInfo()
-                {
-                    CameraSerialNumber = "全景相机2",
-                    Image = bitmap
-                },
+                return handler;
             });
+            services.AddHostedService<Worker>();
+            services.AddScoped<IDataUploader, TtxApi>();
+            //services.AddScoped<IPackageUpload, WdtUltimateApi>();
+        }).Build().Run();
+    }
+}
 
-        await Task.Delay(100000);
+public class Worker : BackgroundService {
+    private readonly IDataUploader _dataUploader;
+
+    public Worker(IDataUploader dataUploader) {
+        _dataUploader = dataUploader;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        var uploadData = await _dataUploader.UploadData("9876418933477", 1.2, token: stoppingToken);
+        return;
     }
 }
