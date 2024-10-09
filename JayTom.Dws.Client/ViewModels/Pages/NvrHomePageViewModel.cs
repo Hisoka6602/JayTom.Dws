@@ -63,6 +63,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private bool _isRealTimeVideoEnabled = true;
         private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
         private PlaybackStream _selectPlaybackStream = PlaybackStream.MainStream;
+        private bool _isLoaded;
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
@@ -235,17 +236,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            if (string.IsNullOrEmpty(_cloudVideoSettingsDto.WebDoMain)) {
-                _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>("CloudVideoSettings")
-                                         ?? new CloudVideoSettingsDto();
-                await _cloud.SetParameters(new Dictionary<string, object>()
-                {
+            if (!_isLoaded) {
+                if (string.IsNullOrEmpty(_cloudVideoSettingsDto.WebDoMain)) {
+                    _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>("CloudVideoSettings")
+                                             ?? new CloudVideoSettingsDto();
+                    await _cloud.SetParameters(new Dictionary<string, object>()
+                    {
                     { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
                     { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                 });
-            }
+                }
 
-            //授权
+                //授权
 #if !DEBUG
             if (IsUnauthorized != false) {
                 var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
@@ -307,6 +309,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
 
 #endif
+                //判断多个绑定
+                var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
+                if (settingsDto is { IsUseBarcodeScannerInput: true, KeyboardDevice: { ProductId: > 0, VendorId: > 0 } }) {
+                    var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                    var count = nvrCameraBindingInfoModels
+                        .Count(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath));
+                    if (count > 1) {
+                        SelectPlaybackStream = PlaybackStream.SubStream;
+                    }
+                }
+                _isLoaded = true;
+            }
+
             if (IsRealTimeVideoEnabled) {
                 await SetRealTimeVideo(true);
             }
