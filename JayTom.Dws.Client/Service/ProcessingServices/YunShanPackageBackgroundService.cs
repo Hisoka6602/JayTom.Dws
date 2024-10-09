@@ -642,6 +642,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             //存图
                             if (codeInfo?.Image != null) {
                                 EventAggregator.Instance.Publish(new ImageMessageInfo {
+                                    PackageTimestamped = codeInfo.Timestamp,
                                     BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                     CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                                     Weight = (float)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
