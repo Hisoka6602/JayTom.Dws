@@ -216,7 +216,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     else {
                         //清空关联项
                         var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(
-                            s => s.SerialNumber.Equals(ipcNvrConfigInfoModel.SerialNumber),
+                            s => s.IpAddress.Equals(ipcNvrConfigInfoModel.IpAddress) &&
+                            s.Port.Equals(ipcNvrConfigInfoModel.Port) &&
+                            s.Username.Equals(ipcNvrConfigInfoModel.Username) &&
+                            s.Password.Equals(ipcNvrConfigInfoModel.Password),
                             o => o.Id);
                         if (nvrCameraBindingInfoModels?.Any() == true) {
                             var deleteRange = await _nvrCameraBindingRepository.DeleteRange(nvrCameraBindingInfoModels);

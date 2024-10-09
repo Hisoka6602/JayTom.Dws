@@ -835,6 +835,11 @@
                                             </StackPanel>
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
+                                    <b:Interaction.Triggers>
+                                        <b:EventTrigger EventName="SelectionChanged">
+                                            <mvvm:InvokeCommandAction Command="{Binding PlaybackStreamSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ComboBox}}, Path=SelectionChangedEventArgs}" />
+                                        </b:EventTrigger>
+                                    </b:Interaction.Triggers>
                                 </ComboBox>
                             </Border>
                         </StackPanel>

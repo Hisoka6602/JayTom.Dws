@@ -324,9 +324,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     };
                 }
                 _isLoaded = true;
-                //加载数据
-                FirstPageDelegate(obj);
             }
+            //加载数据
+            FirstPageDelegate(obj);
         }
 
         public ICommand OpenDateTimeDialogCommand => new DelegateCommand<object>(OpenDateTimeDialogDelegate);

@@ -1,4 +1,5 @@
 ﻿using System;
+using NetSDKCS;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -320,6 +321,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 if (_keyboardDeviceManager.IsListening) {
                     IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#2E8B57"));
                 }
+                else {
+                    IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#4FFFFFFF"));
+                }
             }
         }
 
@@ -341,6 +345,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
                 if (_daHuatechNvr is not null) {
                     obj.VideoQuality = VideoQuality.Original;
+                    //设置
                     SetQuality(obj);
                 }
             }
@@ -428,6 +433,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             await SetRealTimeVideo(IsRealTimeVideoEnabled);
         }
 
+        public ICommand PlaybackStreamSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(PlaybackStreamSelectionChangedDelegate);
+
+        private async void PlaybackStreamSelectionChangedDelegate(SelectionChangedEventArgs obj) {
+            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                await SetRealTimeVideo(false);
+
+                await _deviceService.Stop();
+                await SetRealTimeVideo(true);
+            }, DispatcherPriority.Background);
+        }
+
         private async Task SetRealTimeVideo(bool isEnabled) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 if (isEnabled) {
@@ -469,7 +485,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                     await Application.Current.Dispatcher.InvokeAsync(async () => {
                                         if (!string.IsNullOrEmpty(item.IpAddress) &&
                                             item is { Channel: >= 0, Port: > 0 }) {
-                                            var (b, s) = await _daHuatechNvr.StartRealTimePreview(item.IpAddress, item.Channel, item.RealtimePreviewCallback);
+                                            var (b, s) = await _daHuatechNvr.StartRealTimePreview(item.IpAddress, item.Channel, item.RealtimePreviewCallback, null, _selectPlaybackStream == PlaybackStream.MainStream ? EM_RealPlayType.Realplay : EM_RealPlayType.Realplay_1);
                                             if (b) {
                                                 item.VideoQuality = videoQuality;
                                                 _daHuatechNvr.SetResolution(item.IpAddress, item.Channel, (int)size.Width, (int)size.Height);

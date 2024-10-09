@@ -202,10 +202,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="channelId"></param>
         /// <param name="realtimePreviewCallBack"></param>
         /// <param name="viewSize"></param>
+        /// <param name="realPlayType"></param>
         /// <returns></returns>
         public async Task<KeyValuePair<bool, string>> StartRealTimePreview(string ipAddress, int channelId,
             Func<RealtimePreviewInfo, Task>? realtimePreviewCallBack = null,
-            Size? viewSize = null) {
+            Size? viewSize = null, EM_RealPlayType realPlayType = EM_RealPlayType.Realplay) {
             try {
                 await _switchRealtimeFrameSlim.WaitAsync();
 
@@ -261,7 +262,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                         return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
                     }
 
-                    var realPlayId = NETClient.RealPlay(dev.LogInHandle, channelId, IntPtr.Zero);
+                    var realPlayId = NETClient.RealPlay(dev.LogInHandle, channelId, IntPtr.Zero, realPlayType);
                     if (realPlayId == IntPtr.Zero) {
                         return new KeyValuePair<bool, string>(false, "通道播放失败!");
                     }
@@ -743,11 +744,12 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="playBackCallBack"></param>
         /// <param name="playBackProgressCallBack"></param>
         /// <param name="viewSize"></param>
+        /// <param name="realPlayType"></param>
         /// <returns></returns>
         public async Task<KeyValuePair<bool, object>> PlayBackVideo(string ipAddress, int channelId, DateTime startDateTime, DateTime endDateTime,
             Func<RealtimePreviewInfo, Task>? playBackCallBack = null,
             Func<PlayBackProgressInfo, Task>? playBackProgressCallBack = null,
-            Size? viewSize = null) {
+            Size? viewSize = null, EM_RealPlayType realPlayType = EM_RealPlayType.Realplay) {
             await Task.Yield();
 
             var b = _loginDev.TryGetValue(ipAddress, out var dev);
