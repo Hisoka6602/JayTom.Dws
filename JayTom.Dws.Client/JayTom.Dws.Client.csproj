@@ -172,6 +172,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\JayTom.Dws.Camera\Cameras\SecurityCamera\DaHuatech\Dll\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Remove="PluginInterface\**" />
     <EmbeddedResource Remove="PluginInterface\**" />
     <None Remove="PluginInterface\**" />

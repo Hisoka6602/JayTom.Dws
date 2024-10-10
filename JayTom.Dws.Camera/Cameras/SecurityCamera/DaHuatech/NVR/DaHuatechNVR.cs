@@ -1146,7 +1146,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     // 设置 ProcessStartInfo
                     var startInfo = new ProcessStartInfo {
                         FileName = ffmpegPath,
-                        Arguments = $"-f dhav -i {inputFilePath} -an -c:v copy {outputFilePath}",
+                        Arguments = $"-y -f dhav -i {inputFilePath} -an -c:v copy {outputFilePath}",
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardInput = true,

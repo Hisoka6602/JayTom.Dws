@@ -36,6 +36,7 @@
         <cameraConverter:VideoPlayerSizeConverter x:Key="VideoPlayerSizeConverter" />
         <converters:EnumToVisibilityInvertedConverter x:Key="EnumToVisibilityInvertedConverter" />
         <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+        <cameraConverter:MergeDownloadVisibilityConverter x:Key="MergeDownloadVisibilityConverter" />
     </UserControl.Resources>
     <Border
         MinWidth="1400"
@@ -58,6 +59,7 @@
             </Grid.RowDefinitions>
             <!--  播放列表  -->
             <ListBox
+                Name="VideoListBox"
                 Grid.Row="0"
                 MinWidth="449"
                 MinHeight="253"
@@ -668,6 +670,7 @@
 
                         <!--  合并下载  -->
                         <Button
+                            Name="MergeDownloadButton"
                             Height="30"
                             MinWidth="100"
                             Margin="10,0,0,0"
@@ -678,11 +681,10 @@
                             materialDesign:ButtonAssist.CornerRadius="15"
                             Background="#3D3D3D"
                             BorderThickness="0"
-                            Command="{Binding RewindBySecondsCommand}"
-                            CommandParameter="15"
+                            Command="{Binding MergeDownloadVideoCommand}"
                             Focusable="False"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}">
-
+                            Style="{StaticResource MaterialDesignRaisedDarkButton}"
+                            Visibility="{Binding ElementName=VideoListBox, Path=Items.Count, Converter={StaticResource MergeDownloadVisibilityConverter}}">
                             <Grid>
 
                                 <!--  显示  -->
@@ -703,12 +705,22 @@
                                         Foreground="White"
                                         Text="合并下载" />
                                 </StackPanel>
-                                <!--  下载进度  -->
-
+                                <!--  合并进度  -->
+                                <ProgressBar
+                                    Width="{Binding ElementName=MergeDownloadButton, Path=ActualWidth}"
+                                    Height="{Binding ElementName=MergeDownloadButton, Path=ActualHeight}"
+                                    Padding="0"
+                                    materialDesign:TransitionAssist.DisableTransitions="True"
+                                    Background="#096e3dff"
+                                    Foreground="BlueViolet"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    Opacity="0.7"
+                                    Style="{StaticResource CustomProgressBarStyle}"
+                                    Visibility="{Binding MergeState, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Merging}"
+                                    Value="{Binding MergeProgress, UpdateSourceTrigger=PropertyChanged}" />
                             </Grid>
-
                         </Button>
-
                     </StackPanel>
                     <!--  进度条(时、分、秒)  -->
                     <Slider

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Domain.Dto {
+
     public class CameraSdkSelectorDto {
 
         /// <summary>
@@ -25,7 +26,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 是否使用大华安防相机SDK
         /// </summary>
-        public bool IsUseDaHuaSecurityCameraSdk { get; set; }
+        public bool IsUseDaHuaSecurityCameraSdk { get; set; } = true;
 
         /// <summary>
         /// 是否使用中科微至智能相机SDK
@@ -36,14 +37,17 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否使用中科微至工业相机SDK
         /// </summary>
         public bool IsUseWayzimIndustrialCameraSdk { get; set; }
+
         /// <summary>
         /// 是否使用海康体积相机
         /// </summary>
         public bool IsUseHikvisionVolumeCameraSdk { get; set; }
+
         /// <summary>
         /// 是否使用大华体积相机
         /// </summary>
         public bool IsUseDaHuaVolumeCameraSdk { get; set; }
+
         /// <summary>
         /// 是否使用量房体积相机
         /// </summary>

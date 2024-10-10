@@ -252,27 +252,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 _isLoaded = true;
                 //读配置
                 try {
-                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                        f.ConfigName.Equals("CameraSdkSelector"));
-                    if (configInfoModel is not null) {
-                        var cameraSdkSelectorDto = JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value);
-                        if (cameraSdkSelectorDto is not null) {
-                            CameraSdkSelectorInfo = new CameraSdkSelectorInfoModel() {
-                                IsUseDaHuaSecurityCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSecurityCameraSdk,
-                                IsUseDaHuaSmartCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSmartCameraSdk,
-                                IsUseHikvisionIndustrialCameraSdk =
-                                    cameraSdkSelectorDto.IsUseHikvisionIndustrialCameraSdk,
-                                IsUseHikvisionSmartCameraSdk = cameraSdkSelectorDto.IsUseHikvisionSmartCameraSdk,
-                                IsUseWayzimIndustrialCameraSdk = cameraSdkSelectorDto.IsUseWayzimIndustrialCameraSdk,
-                                IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk,
-                                IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
-                                IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk,
-                                IsUseDimensionVolumeCameraSdk = cameraSdkSelectorDto.IsUseDimensionVolumeCameraSdk,
-                                IsUsbCameraSdk = cameraSdkSelectorDto.IsUsbCameraSdk,
-                            };
-                        }
-                    }
-                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
+                    var cameraSdkSelectorDto = await _configRepository.FirstOrDefaultEntity<CameraSdkSelectorDto>("CameraSdkSelector") ?? new CameraSdkSelectorDto();
+                    CameraSdkSelectorInfo = new CameraSdkSelectorInfoModel() {
+                        IsUseDaHuaSecurityCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSecurityCameraSdk,
+                        IsUseDaHuaSmartCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSmartCameraSdk,
+                        IsUseHikvisionIndustrialCameraSdk =
+                            cameraSdkSelectorDto.IsUseHikvisionIndustrialCameraSdk,
+                        IsUseHikvisionSmartCameraSdk = cameraSdkSelectorDto.IsUseHikvisionSmartCameraSdk,
+                        IsUseWayzimIndustrialCameraSdk = cameraSdkSelectorDto.IsUseWayzimIndustrialCameraSdk,
+                        IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk,
+                        IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
+                        IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk,
+                        IsUseDimensionVolumeCameraSdk = cameraSdkSelectorDto.IsUseDimensionVolumeCameraSdk,
+                        IsUsbCameraSdk = cameraSdkSelectorDto.IsUsbCameraSdk,
+                    };
+                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
                     _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto();
                 }
                 catch (Exception e) {

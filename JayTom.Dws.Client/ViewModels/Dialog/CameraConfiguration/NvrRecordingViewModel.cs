@@ -12,8 +12,11 @@ using System.Diagnostics;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Forms;
 using System.ComponentModel;
 using JayTom.Dws.Domain.Dto;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Windows.Controls;
@@ -32,8 +35,11 @@ using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Domain.Dto.LocalVideoDto;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using Application = System.Windows.Application;
+using TextBox = System.Windows.Controls.TextBox;
 using JayTom.Dws.Client.Models.VideoSettingModel;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
@@ -91,6 +97,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private double _speed = 1;
         private PackageItemModel _packageItemModel = new();
         private VideoPlaybackSettingsInfoModel _videoPlaybackSettingsInfo = new();
+        private int _mergeProgress;
+        private MergeState _mergeState;
 
         public NvrRecordingViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
             IPackageRepository packageRepository,
@@ -186,6 +194,22 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         public PlaybackState PlaybackState {
             get => _playbackState;
             set => SetProperty(ref _playbackState, value);
+        }
+
+        /// <summary>
+        /// 合并进度
+        /// </summary>
+        public int MergeProgress {
+            get => _mergeProgress;
+            set => SetProperty(ref _mergeProgress, value);
+        }
+
+        /// <summary>
+        /// 合并状态
+        /// </summary>
+        public MergeState MergeState {
+            get => _mergeState;
+            set => SetProperty(ref _mergeState, value);
         }
 
         public ICommand ToggleImageSizeCommand => new DelegateCommand<VideoPlayerModel>(ToggleImageSizeDelegate);
@@ -562,7 +586,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private async void DownloadVideoDelegate(VideoPlayerModel obj) {
             if (_daHuatechNvr is not null && obj.DownloadState == DownloadState.Ready) {
                 var saveFileDialog = new SaveFileDialog() {
-                    DefaultExt = ".bmp",
+                    DefaultExt = ".dav",
                     Filter = "dav files (*.dav)|*.dav|All files (*.*)|*.*",
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop), // 初始路径
                     FileName = $"vid_{PackageItemModel.Barcode}",
@@ -570,56 +594,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 };
                 var showDialog = saveFileDialog.ShowDialog();
                 if (showDialog == true) {
-                    var (key, value) = await _daHuatechNvr.QueryVideoFile(obj.IpAddress,
-                        obj.Channel, StartTime, EndTime, 0);
-                    if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
-                        obj.DownloadProgress = 0;
-                        await _daHuatechNvr.DownloadRecording(obj.IpAddress,
-                             obj.Channel,
-                             StartTime.AddSeconds(-2), EndTime, (int)SelectPlaybackStream,
-                             saveFileDialog.FileName, async info => {
-                                 await Application.Current.Dispatcher.InvokeAsync(async () => {
-                                     if (info.IsDownloadComplete) {
-                                         obj.DownloadState = DownloadState.Transcoding;
-                                         await _daHuatechNvr.ConvertDavToMp4(saveFileDialog.FileName,
-                                              Path.ChangeExtension(saveFileDialog.FileName, ".mp4"),
-                                              (i, i1) => {
-                                                  if (obj.DownloadState != DownloadState.Transcoding) {
-                                                      obj.DownloadState = DownloadState.Transcoding;
-                                                      obj.DownloadProgress = 0;
-                                                  }
-                                                  var d = ((double)i / i1) * 100;
-                                                  if (d - obj.DownloadProgress > 2) {
-                                                      obj.DownloadProgress = d;
-                                                  }
-
-                                                  if (i == i1) {
-                                                      obj.DownloadState = DownloadState.Ready;
-                                                      obj.DownloadProgress = 100;
-                                                  }
-                                                  return true;
-                                              });
-                                         obj.DownloadState = DownloadState.Ready;
-                                         obj.DownloadProgress = 100;
-                                     }
-                                     else if (info.IsDownloadError) {
-                                         //下载错误
-                                         Console.WriteLine("下载错误");
-                                         obj.DownloadState = DownloadState.Ready;
-                                     }
-                                     else {
-                                         if (obj.DownloadState != DownloadState.Downloading) {
-                                             obj.DownloadState = DownloadState.Downloading;
-                                         }
-                                     }
-
-                                     var infoTotalSize = ((double)info.LoadSize / info.TotalSize) * 100;
-                                     if (infoTotalSize - obj.DownloadProgress > 2) {
-                                         obj.DownloadProgress = infoTotalSize;
-                                     }
-                                 });
-                             });
-                    }
+                    await DownloadVideoSub(obj, saveFileDialog.FileName);
                 }
             }
         }
@@ -669,6 +644,183 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
             //获取分辨率尺寸
             //设置分辨率
             SetQuality(obj);
+        }
+
+        public ICommand MergeDownloadVideoCommand => new DelegateCommand<object>(MergeDownloadVideoDelegate);
+
+        private async void MergeDownloadVideoDelegate(object obj) {
+            //如果只有一个则点击无效
+            //选择路径
+            if (MergeState == MergeState.Merging) return;
+            if (_daHuatechNvr is not null && VideoPlayerItems.All(a => a.DownloadState == DownloadState.Ready)) {
+                var saveFileDialog = new SaveFileDialog() {
+                    DefaultExt = ".mp4",
+                    Filter = "mp4 files (*.mp4)|*.mp4|All files (*.*)|*.*",
+                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop), // 初始路径
+                    FileName = $"vid_{PackageItemModel.Barcode}",
+                    Title = "保存视频"
+                };
+                var showDialog = saveFileDialog.ShowDialog();
+                if (showDialog == true) {
+                    //创建临时文件夹
+
+                    var fullName = Directory.GetParent(saveFileDialog.FileName)?.FullName;
+                    if (fullName is not null) {
+                        MergeState = MergeState.Merging;
+                        MergeProgress = 2;
+                        var combine = Path.Combine(fullName, "vid_temp");
+                        if (Directory.Exists(combine)) {
+                            Directory.Delete(combine, true);
+                        }
+
+                        Directory.CreateDirectory(combine);
+
+                        List<Task<string>> downTasks = (from videoPlayerModel in VideoPlayerItems let path = $"{Path.Combine(combine, $"vid_{PackageItemModel.Barcode}_{videoPlayerModel.Channel}.dav")}" select DownloadVideoSub(videoPlayerModel, path)).ToList();
+
+                        var results = await Task.WhenAll(downTasks);
+
+                        await _daHuatechNvr.MergeVideos(results, saveFileDialog.FileName,
+                             (int)(EndTime.Subtract(StartTime).TotalSeconds), async p => {
+                                 await Application.Current.Dispatcher.InvokeAsync(() => {
+                                     MergeProgress = (int)p;
+                                 });
+                             }, () => false);
+
+                        MergeState = MergeState.Ready;
+                        Directory.Delete(combine, true);
+                    }
+                }
+            }
+        }
+
+        private async Task<string> DownloadVideoSub1(VideoPlayerModel obj, string filePath) {
+            if (_daHuatechNvr is not null) {
+                var (key, value) = await _daHuatechNvr.QueryVideoFile(obj.IpAddress,
+                      obj.Channel, StartTime, EndTime, 0);
+                if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
+                    obj.DownloadProgress = 0;
+                    var (b, o) = await _daHuatechNvr.DownloadRecording(obj.IpAddress,
+                        obj.Channel,
+                        StartTime.AddSeconds(-2), EndTime, (int)SelectPlaybackStream,
+                        filePath, async info => {
+                            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                if (info.IsDownloadComplete) {
+                                    obj.DownloadState = DownloadState.Transcoding;
+                                    await _daHuatechNvr.ConvertDavToMp4(filePath,
+                                        Path.ChangeExtension(filePath, ".mp4"),
+                                        (i, i1) => {
+                                            if (obj.DownloadState != DownloadState.Transcoding) {
+                                                obj.DownloadState = DownloadState.Transcoding;
+                                                obj.DownloadProgress = 0;
+                                            }
+                                            var d = ((double)i / i1) * 100;
+                                            if (d - obj.DownloadProgress > 2) {
+                                                obj.DownloadProgress = d;
+                                            }
+
+                                            if (i == i1) {
+                                                obj.DownloadState = DownloadState.Ready;
+                                                obj.DownloadProgress = 100;
+                                            }
+                                            return true;
+                                        });
+                                    obj.DownloadState = DownloadState.Ready;
+                                    obj.DownloadProgress = 100;
+                                }
+                                else if (info.IsDownloadError) {
+                                    //下载错误
+                                    Console.WriteLine("下载错误");
+                                    obj.DownloadState = DownloadState.Ready;
+                                }
+                                else {
+                                    if (obj.DownloadState != DownloadState.Downloading) {
+                                        obj.DownloadState = DownloadState.Downloading;
+                                    }
+                                }
+
+                                var infoTotalSize = ((double)info.LoadSize / info.TotalSize) * 100;
+                                if (infoTotalSize - obj.DownloadProgress > 2) {
+                                    obj.DownloadProgress = infoTotalSize;
+                                }
+                            });
+                        });
+
+                    if (b) {
+                        return Path.ChangeExtension(filePath, ".mp4");
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private async Task<string> DownloadVideoSub(VideoPlayerModel obj, string filePath) {
+            if (_daHuatechNvr is not null) {
+                var (key, value) = await _daHuatechNvr.QueryVideoFile(obj.IpAddress,
+                    obj.Channel, StartTime, EndTime, 0);
+                if (key && value is NET_RECORDFILE_INFO[] recordFileInfos) {
+                    obj.DownloadProgress = 0;
+
+                    // 用于监控下载和转换过程的任务完成情况
+                    var tcs = new TaskCompletionSource<string>();
+
+                    var (b, o) = await _daHuatechNvr.DownloadRecording(obj.IpAddress,
+                        obj.Channel,
+                        StartTime.AddSeconds(-2), EndTime, (int)SelectPlaybackStream,
+                        filePath, async info => {
+                            await Application.Current.Dispatcher.InvokeAsync(async () => {
+                                if (info.IsDownloadComplete) {
+                                    obj.DownloadState = DownloadState.Transcoding;
+
+                                    await _daHuatechNvr.ConvertDavToMp4(filePath,
+                                        Path.ChangeExtension(filePath, ".mp4"),
+                                        (i, i1) => {
+                                            if (obj.DownloadState != DownloadState.Transcoding) {
+                                                obj.DownloadState = DownloadState.Transcoding;
+                                                obj.DownloadProgress = 0;
+                                            }
+                                            var d = ((double)i / i1) * 100;
+                                            if (d - obj.DownloadProgress > 2) {
+                                                obj.DownloadProgress = d;
+                                            }
+                                            if (i == i1) {
+                                                obj.DownloadState = DownloadState.Ready;
+                                                obj.DownloadProgress = 100;
+                                                tcs.TrySetResult(Path.ChangeExtension(filePath, ".mp4"));
+                                            }
+                                            return true;
+                                        });
+                                    obj.DownloadState = DownloadState.Ready;
+                                    obj.DownloadProgress = 100;
+                                    tcs.TrySetResult(Path.ChangeExtension(filePath, ".mp4"));
+                                }
+                                else if (info.IsDownloadError) {
+                                    // 下载错误
+                                    Console.WriteLine("下载错误");
+                                    obj.DownloadState = DownloadState.Ready;
+                                    tcs.TrySetResult(string.Empty); // 设置为空字符串表示失败
+                                }
+                                else {
+                                    if (obj.DownloadState != DownloadState.Downloading) {
+                                        obj.DownloadState = DownloadState.Downloading;
+                                    }
+
+                                    var infoTotalSize = ((double)info.LoadSize / info.TotalSize) * 100;
+                                    if (infoTotalSize - obj.DownloadProgress > 2) {
+                                        obj.DownloadProgress = infoTotalSize;
+                                    }
+                                }
+                            });
+                        });
+
+                    if (b) {
+                        // 等待转换和下载过程完成
+                        return await tcs.Task;
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         /// <summary>
@@ -721,5 +873,18 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
          FontIcon("\xe9e9"), BackgroundColor("#4169E1"),
          LabelColor("#FFFFFF")]
         Paused
+    }
+
+    public enum MergeState {
+
+        /// <summary>
+        /// 准备就绪
+        /// </summary>
+        Ready,
+
+        /// <summary>
+        /// 正在合并
+        /// </summary>
+        Merging,
     }
 }
