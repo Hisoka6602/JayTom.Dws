@@ -19,14 +19,16 @@ namespace JayTom.Dws.Infrastructure {
 
         public SqliteConfContext(DbContextOptions<SqliteConfContext> options) : base(options) {
             lock (System.AppDomain.CurrentDomain.BaseDirectory) {
-                var s = $"{System.AppDomain.CurrentDomain.BaseDirectory}Configuration.db";
-                if (!File.Exists(s)) {
+                var parentDirectory = Directory.GetParent(Directory.GetParent(System.AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? System.AppDomain.CurrentDomain.BaseDirectory)?.FullName;
+                var dbPath = Path.Combine(parentDirectory ?? System.AppDomain.CurrentDomain.BaseDirectory, "Configuration.db");
+
+                if (!File.Exists(dbPath)) {
                     Database.EnsureCreated();
                     Database.Migrate();
                 }
                 else {
                     if (Database.GetPendingMigrations().Any()) {
-                        Database.Migrate(); //执行迁移
+                        Database.Migrate(); // 执行迁移
                     }
                 }
             }

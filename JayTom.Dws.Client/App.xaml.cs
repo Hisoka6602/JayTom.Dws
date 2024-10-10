@@ -219,19 +219,20 @@ namespace JayTom.Dws.Client {
             //其他注册
             containerRegistry.GetContainer().RegisterServices(services => {
                 services.AddPooledDbContextFactory<SqliteContext>(options => {
+                    var parentDirectory = Directory.GetParent(Directory.GetParent(System.AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? System.AppDomain.CurrentDomain.BaseDirectory)?.FullName;
                     options.UseSqlite(
-                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Data.db",
+                        $"Data Source={Path.Combine(parentDirectory ?? System.AppDomain.CurrentDomain.BaseDirectory, "Data.db")}",
                         builder => {
-                            builder.CommandTimeout(100); //180秒超时
+                            builder.CommandTimeout(100); // 100秒超时
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 }, 300);
-
                 services.AddPooledDbContextFactory<SqliteConfContext>(options => {
+                    var parentDirectory = Directory.GetParent(Directory.GetParent(System.AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? System.AppDomain.CurrentDomain.BaseDirectory)?.FullName;
                     options.UseSqlite(
-                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Configuration.db",
+                        $"Data Source={Path.Combine(parentDirectory ?? System.AppDomain.CurrentDomain.BaseDirectory, "Configuration.db")}",
                         builder => {
-                            builder.CommandTimeout(100); //180秒超时
+                            builder.CommandTimeout(100); // 100秒超时
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                 }, 300);
