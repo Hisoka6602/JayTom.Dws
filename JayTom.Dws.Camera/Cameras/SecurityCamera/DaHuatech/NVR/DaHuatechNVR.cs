@@ -889,7 +889,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                 if (playStop) {
                     DhPlaySdk.PLAY_ResetSourceBuffer(playInfo.PlayPort);
                     PLAY_CloseStream(playInfo.PlayPort);
-                    dev.DevPlayInfos.Remove(playInfo);
+                    dev.DevPlayInfos.ToList().Remove(playInfo);
                 }
             }
 
