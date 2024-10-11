@@ -286,7 +286,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// Usb相机
         /// </summary>
-        [Description("UsbCamera"), CameraFontIcon("\xe9f5")]
+        [Description("Usb相机"), CameraFontIcon("\xe9f5")]
         UsbCamera = 4,
 
         /// <summary>
