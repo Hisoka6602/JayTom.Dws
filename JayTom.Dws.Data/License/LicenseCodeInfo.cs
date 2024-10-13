@@ -24,6 +24,12 @@ namespace JayTom.Dws.Data.License {
         [ForeignKey("Id")]
         public virtual LicensePermissionTemplateInfo? LicensePermissionTemplateInfo { get; set; }
 
+        [Column("LicenseGroupInfoId")]
+        public long? LicenseGroupInfoId { get; set; }
+
+        [ForeignKey("Id")]
+        public virtual LicenseGroupInfo? LicenseGroupInfo { get; set; }
+
         /// <summary>
         /// 授权码
         /// </summary>
