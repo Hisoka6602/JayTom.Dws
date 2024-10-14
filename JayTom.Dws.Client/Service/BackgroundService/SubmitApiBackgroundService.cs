@@ -349,11 +349,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         if (value is not null) {
                             //更新格口信息
                             value.PackageExitUpdateItems.Add(model);
-                            //推送集包信息
-                            /*EventAggregator.Instance.Publish(new PushPackageInfo() {
-                                PackageInfo = value.PackageInfo ?? new PackageInfo(),
-                                PackageExitUpdateEvent = model
-                            });*/
                         }
                         else {
                             NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent} 操作指令");
@@ -1125,22 +1120,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                                 return;
                             }
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 80 ||
+                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 80 &&
                                 packageValue.Value.PackageExitUpdateItems?.Any(a =>
-                                    a.InstructionType == InstructionType.SendSorting) != true) {
+                                    a.InstructionType == InstructionType.SignalCallback) != true) {
                                 return;
                             }
                             var (b, s) = await uploader.SetParameters(_postInApiParam);
                             if (b) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
-                                }
+                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                    packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
+                                    packageValue.Value.ApiResponse.UploadResponse, token: token);
+                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                             }
                             break;
 
