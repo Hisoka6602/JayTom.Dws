@@ -32,14 +32,17 @@
 
     </MudOverlay>
     <PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
-    <MudDataGrid RowsPerPage="@(_isGrouping ? int.MaxValue : 10)" Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" QuickFilter="@Filter"
-                 Hover="true" Groupable="true" GroupExpanded="false" Items="@_items" ColumnResizeMode="ResizeMode.Column">
+    <MudDataGrid T="LicenseCodeItemInfoModel"
+                 Elevation="1" Class="custom-datagrid" Filterable="false"
+                 SortMode="@SortMode.None" QuickFilter="@Filter" Hover="true"
+                 GroupExpanded="false" Groupable="@IsGrouping"
+                 Items="@_items" ColumnResizeMode="ResizeMode.Column">
 
         <ToolBarContent>
             <MudButton Style="border-radius: 15px; margin-left:3px; background-color:dodgerblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface" OnClick="@(e => { AuthCodeEditorIsVisible = true; AuthCodeIsEdit = false;AuthCodeInfo = new AuthCodeInfoModel();})">添加授权+</MudButton>
 
-            <MudToggleGroup Rounded="true" T="bool" Style=" height:35px;margin:10px;" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="_isGrouping" Color="Color.Primary">
-                <MudToggleItem Value="@(false)" Text="列表显示" Style="font-size:small;font-weight:600" />
+            <MudToggleGroup Rounded="true" T="bool" Style=" height:35px;margin:10px;" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="IsGrouping" Color="Color.Primary" On>
+                <MudToggleItem Value="@(false)" Text="列表显示" />
                 <MudToggleItem Value="@(true)" Text="分组显示" />
             </MudToggleGroup>
 
@@ -71,18 +74,25 @@
             <PropertyColumn Style="width:50px" Property="x => x.MaxClientCount" Title="上限数量" />
             <PropertyColumn Style="width:50px" Property="x => x.ActivatedClientCount" Title="已激活数量" />
             @if (Info is { Role: 1 }) {
-                @*<PropertyColumn Property="x => x.UserName" Title="租户" />*@
-                <PropertyColumn Property="x => x.UserName" Title="租户" Grouping GroupBy="@_groupBy">
-                    <GroupTemplate>
-                        <span style="font-weight:bold">
-                            分组名: @context.Grouping.Key
-                            <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
-                                数量 @context.Grouping.Count()
-                            </MudChip>
-                            <MudButton Style="border-radius: 15px; margin-left:3px;font-weight:600" Size="@Size.Small" Variant="Variant.Outlined" Color="@Color.Primary" OnClick="() => { }">导出Excel</MudButton>
-                        </span>
-                    </GroupTemplate>
-                </PropertyColumn>
+                @*<PropertyColumn Property="x => x.UserName" Title="租户" Groupable="true" Grouping="IsGrouping" Hideable="true">
+
+            </PropertyColumn>*@
+                @if (@IsGrouping) {
+                    <PropertyColumn Property="x => x.UserName" Title="租户" GroupBy="@_groupBy" Grouping="@IsGrouping" Hidden="_isGrouping">
+                        <GroupTemplate>
+                            <span style="font-weight:bold" @key="IsGrouping">
+                                分组名: @context.Grouping.Key
+                                <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+                                    数量 @context.Grouping.Count()
+                                </MudChip>
+                                <MudButton Style="border-radius: 15px; margin-left:3px;font-weight:600" Size="@Size.Small" Variant="Variant.Outlined" Color="@Color.Primary" OnClick="() => { }">导出Excel</MudButton>
+                            </span>
+
+                        </GroupTemplate>
+                    </PropertyColumn>
+                }
+
+
             }
             <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
             <PropertyColumn Property="x => x.ClientName" Title="客户" />
@@ -110,15 +120,7 @@
         </Columns>
         <!-- 当不分组时显示分页内容 -->
         <!-- 分页内容 -->
-        <PagerContent>
-            @if (!_isGrouping) {
-                <MudStack Row Justify="Justify.Center" Style="text-align:center">
-                    <div style="flex-grow: 1; text-align: right;">
-                        <MudDataGridPager Style="border-top: none" T="LicenseCodeItemInfoModel" DisableRowsPerPage="true" />
-                    </div>
-                </MudStack>
-            }
-        </PagerContent>
+
 
     </MudDataGrid>
 </MudPaper>
@@ -158,7 +160,19 @@
 
     public Func<LicenseCodeItemInfoModel, bool>? Filter { get; set; }
 
+    private bool _isPagingEnabled = true;
     private bool _isGrouping;
+    private bool IsGrouping {
+        get => _isGrouping;
+        set {
+            if (_isGrouping != value) {
+                _isGrouping = value;
+                _groupBy = x => x.UserName;
+                StateHasChanged();
+            }
+        }
+    }
+
     private string GetUserStatusChipStyle(UserStatus status) {
         return status switch {
             UserStatus.Active => "background-color: rgba(0, 255, 0, 0.2)",
