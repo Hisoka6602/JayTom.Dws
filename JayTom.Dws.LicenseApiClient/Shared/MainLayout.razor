@@ -9,7 +9,12 @@
 @inject NotificationService NotificationService
 
 <MudThemeProvider />
-<MudDialogProvider />
+@*<MudDialogProvider />*@
+
+<MudDialogProvider NoHeader="true"
+                   MaxWidth="MaxWidth.False"
+                   Position="DialogPosition.Center"
+                   CloseOnEscapeKey="true" />
 <MudSnackbarProvider />
 @*这里判断页面名称是否调用以下内容*@
 <MudLayout>
@@ -36,7 +41,7 @@
                     </button>
 
                     <MudText Style="font-weight:bold; margin-left:8px; color:white" Typo="Typo.h6">@Info.UserName</MudText>
-                        @if (Info.Role == 1) {
+                    @if (Info.Role == 1) {
                         <span class="iconfont icon-vips" style="color:gold; font-size: 20px; margin-bottom:5px; margin-left:5px;"></span>
                     }
                 </div>

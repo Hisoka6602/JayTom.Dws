@@ -1,4 +1,5 @@
 namespace JayTom.Dws.LicenseApiClient.Data {
+
     public class WeatherForecast {
         public DateOnly Date { get; set; }
 

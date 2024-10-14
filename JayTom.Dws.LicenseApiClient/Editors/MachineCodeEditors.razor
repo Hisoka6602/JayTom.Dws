@@ -15,7 +15,7 @@
         </div>
         @*列表*@
         <div>
-            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@LicenseCodeItemInfo.MachineCodeItem"
+            <MudTable Height="480px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;" Items="@LicenseCodeItemInfo.MachineCodeItem"
                       Dense="false" Hover="true" CanCancelEdit="true" Filter="_quickFilter">
 
                 <ToolBarContent>
@@ -32,32 +32,32 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="机器码">@context.MachineCode</MudTd>
-                        <MudTd DataLabel="首次激活时间">@context.FirstActivatedDate</MudTd>
-                        <MudTd DataLabel="最后效验时间">@context.LastVerifiedDate</MudTd>
-                        <MudTd DataLabel="备注">@context.Remarks</MudTd>
-                        <MudTd>
-                            @*解绑*@
-                            <MudButton OnClick="() => { UnbindMachineCode(LicenseCodeItemInfo.LicenseCode, context.MachineCode); }" Style="border-radius: 15px; margin-left:3px; background-color:red;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">解绑</MudButton>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </div>
+                    <MudTd DataLabel="首次激活时间">@context.FirstActivatedDate</MudTd>
+                    <MudTd DataLabel="最后效验时间">@context.LastVerifiedDate</MudTd>
+                    <MudTd DataLabel="备注">@context.Remarks</MudTd>
+                    <MudTd>
+                        @*解绑*@
+                        <MudButton OnClick="() => { UnbindMachineCode(LicenseCodeItemInfo.LicenseCode, context.MachineCode); }" Style="border-radius: 15px; margin-left:3px; background-color:red;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">解绑</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
 
-        </MudCardContent>
-        <MudCardActions Class="card-actions-right">
-            <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确定</MudButton>
-        </MudCardActions>
-    </MudCard>
-    <style>
-        .card-actions-right {
-            margin-right: 10px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-end;
-        @*height: 95%; width: 99%;*@
-        }
-    </style>
-    @code {
+    </MudCardContent>
+    <MudCardActions Class="card-actions-right">
+        <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确定</MudButton>
+    </MudCardActions>
+</MudCard>
+<style>
+    .card-actions-right {
+        margin-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    @*height: 95%; width: 99%;*@
+    }
+</style>
+@code {
 
     [Parameter]
     public LicenseCodeItemInfoModel LicenseCodeItemInfo { get; set; } = new();
