@@ -37,7 +37,12 @@
             @*到期时间*@
             <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
                 <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">到期时间:</span>
-                <DateTimeEditors @bind-DateTime="AuthCodeInfo.ExpirationDate"></DateTimeEditors>
+                <DateTimeEditor Style="width: 170px;" @bind-DateTime="AuthCodeInfo.ExpirationDate"></DateTimeEditor>
+                <MudButton OnClick="() => {SetQuickTime(1,TimeUnit.Week);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">1周</MudButton>
+                <MudButton OnClick="() => {SetQuickTime(1,TimeUnit.Month);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">1个月</MudButton>
+                <MudButton OnClick="() => {SetQuickTime(3,TimeUnit.Month);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">3个月</MudButton>
+                <MudButton OnClick="() => {SetQuickTime(1,TimeUnit.Year);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">1年</MudButton>
+
             </div>
 
             @*客户*@
@@ -145,5 +150,30 @@
            info
         };
         AuthCodeInfo.TemplateInfoId = info.Id;
+    }
+
+    public void SetQuickTime(int value, TimeUnit unit) {
+        switch (unit) {
+            case TimeUnit.Week:
+                AuthCodeInfo.ExpirationDate = DateTime.Today.AddDays(value * 7);
+                break;
+            case TimeUnit.Month:
+                AuthCodeInfo.ExpirationDate = DateTime.Today.AddMonths(value);
+                break;
+            case TimeUnit.Year:
+                AuthCodeInfo.ExpirationDate = DateTime.Today.AddYears(value);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(unit), unit, null);
+        }
+
+        StateHasChanged();
+    }
+
+    // 时间单位枚举类型
+    public enum TimeUnit {
+        Week,
+        Month,
+        Year
     }
 }
