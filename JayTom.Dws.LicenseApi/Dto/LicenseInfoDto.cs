@@ -48,6 +48,16 @@
         /// </summary>
         public string UserName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime CreateTime { get; set; }
+
+        /// <summary>
+        /// 分组名称
+        /// </summary>
+        public string GroupName { get; set; } = string.Empty;
+
         public List<LicenseClientBindingDto> MachineCodeItem { get; set; } = new();
     }
 

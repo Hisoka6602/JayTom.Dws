@@ -30,6 +30,13 @@
                 console.error('Error downloading file: ', error);
             });
     };
+    window.saveAsFile = function (fileName, byteBase64, contentType) {
+        const linkSource = `data:${contentType};base64,${byteBase64}`;
+        const downloadLink = document.createElement('a');
+        downloadLink.href = linkSource;
+        downloadLink.download = fileName;
+        downloadLink.click();
+    }
 </script>
 
 

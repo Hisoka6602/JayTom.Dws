@@ -3,8 +3,10 @@
 @using JayTom.Dws.LicenseApiClient.Editors
 @using JayTom.Dws.LicenseApiClient.Notification
 @using JayTom.Dws.LicenseApiClient.Api
+@using JayTom.Dws.LicenseApiClient.Plugin.Excel
 @using Newtonsoft.Json
 @inject ILicenseApiRequest LicenseApiRequest
+@inject IExcelService ExcelService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject NotificationService NotificationService
@@ -32,7 +34,7 @@
 
     </MudOverlay>
     <PageTitleTemplate Title="授权管理" Description="授权管理" IconClass="iconfont icon-lingpaiguanli"></PageTitleTemplate>
-    <MudDataGrid T="LicenseCodeItemInfoModel"
+    <MudDataGrid T="LicenseCodeItemInfoModel" Height="800px" FixedHeader="true"
                  Elevation="1" Class="custom-datagrid" Filterable="false"
                  SortMode="@SortMode.None" QuickFilter="@Filter" Hover="true"
                  GroupExpanded="false" Groupable="@IsGrouping"
@@ -74,28 +76,33 @@
             <PropertyColumn Style="width:50px" Property="x => x.MaxClientCount" Title="上限数量" />
             <PropertyColumn Style="width:50px" Property="x => x.ActivatedClientCount" Title="已激活数量" />
             @if (Info is { Role: 1 }) {
-                @*<PropertyColumn Property="x => x.UserName" Title="租户" Groupable="true" Grouping="IsGrouping" Hideable="true">
+                <PropertyColumn Property="x => x.UserName" Title="租户" />
 
-            </PropertyColumn>*@
-                @if (@IsGrouping) {
-                    <PropertyColumn Property="x => x.UserName" Title="租户" GroupBy="@_groupBy" Grouping="@IsGrouping" Hidden="_isGrouping">
-                        <GroupTemplate>
-                            <span style="font-weight:bold" @key="IsGrouping">
-                                分组名: @context.Grouping.Key
-                                <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
-                                    数量 @context.Grouping.Count()
-                                </MudChip>
-                                <MudButton Style="border-radius: 15px; margin-left:3px;font-weight:600" Size="@Size.Small" Variant="Variant.Outlined" Color="@Color.Primary" OnClick="() => { }">导出Excel</MudButton>
-                            </span>
 
-                        </GroupTemplate>
-                    </PropertyColumn>
-                }
+
 
 
             }
             <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
-            <PropertyColumn Property="x => x.ClientName" Title="客户" />
+            @*<PropertyColumn Property="x => x.ClientName" Title="客户" />*@
+            @if (@IsGrouping) {
+                <PropertyColumn Property="x => x.ClientName" Title="客户" GroupBy="@_groupBy" Grouping="@IsGrouping" Hidden="IsGrouping">
+                    <GroupTemplate>
+                        <span style="font-weight:bold" @key="IsGrouping">
+                            客户名: @context.Grouping.Key
+                            <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+                                数量 @context.Grouping.Count()
+                            </MudChip>
+                            <MudButton Style="border-radius: 15px; margin-left:3px;font-weight:600" Size="@Size.Small" Variant="Variant.Outlined" Color="@Color.Primary"
+                                       OnClick="@(args => ExportGroupDetailedInfo(context.Grouping.Key.ToString()))">导出Excel</MudButton>
+                        </span>
+
+                    </GroupTemplate>
+                </PropertyColumn>
+            }
+            else {
+                @*<PropertyColumn Property="x => x.ClientName" Title="客户" />*@
+            }
             <TemplateColumn Title="是否可用">
                 <CellTemplate>
                     <MudStack Row Style="text-align:center;width:40px">
@@ -109,7 +116,10 @@
                     <MudStack Row Style="text-align:center;width:450px">
                         <MudButton Style="border-radius: 15px; margin-left:3px; background-color:dodgerblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface" OnClick="@(e => { AuthCodeEditorIsVisible = true; AuthCodeIsEdit = true; AuthCodeInfo = new AuthCodeInfoModel() {
                                                                                                                                                                                                           ClientName = context.Item.ClientName,
-                                                                                                                                                                                                          ExpirationDate = context.Item.ExpirationDate,                                                                                                                                                                          MaxClientCount = context.Item.MaxClientCount }; SelectInfoModel = context.Item; })">编辑</MudButton>
+                                                                                                                                                                                                          ExpirationDate = context.Item.ExpirationDate,
+                                                                                                                                                                                                          TemplateInfoId=AppTemplateItemItems.FirstOrDefault(f=>f.TemplateName.Equals(context.Item.TemplateName))?.Id??0,
+                                                                                                                                                                                                          MaxClientCount = context.Item.MaxClientCount};
+                                                                                                                                                                                                                 SelectInfoModel = context.Item; })">编辑</MudButton>
                         <MudButton Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary" OnClick="() => {SelectInfoModel = context.Item; MachineCodeEditorsIsVisible = true; }">详细信息</MudButton>
                         <MudButton Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Success" OnClick="() => {SelectInfoModel = context.Item; LicenseRenewalEditorIsVisible = true; }">续期</MudButton>
                         <MudButton OnClick="() => { FreezeLicenseCode(context.Item); }" Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.IsAvailable)">@ConvertStatusButtonText(context.Item.IsAvailable)</MudButton>
@@ -132,6 +142,7 @@
 
 </style>
 @code {
+    [Inject] private IDialogService DialogService { get; set; }
     public bool AuthCodeEditorIsVisible { get; set; }
     public bool LicenseRenewalEditorIsVisible { get; set; }
     public bool MachineCodeEditorsIsVisible { get; set; }
@@ -160,14 +171,13 @@
 
     public Func<LicenseCodeItemInfoModel, bool>? Filter { get; set; }
 
-    private bool _isPagingEnabled = true;
     private bool _isGrouping;
     private bool IsGrouping {
         get => _isGrouping;
         set {
             if (_isGrouping != value) {
                 _isGrouping = value;
-                _groupBy = x => x.UserName;
+                _groupBy = x => x.ClientName;
                 StateHasChanged();
             }
         }
@@ -339,7 +349,7 @@
         var (key, value) = await LicenseApiRequest.LicenseCodeData();
         if (key && value is List<LicenseCodeItemInfoModel> items) {
             _items.Clear();
-            var licenseCodeItemInfoModels = items?.Select((s, i) => new LicenseCodeItemInfoModel {
+            var licenseCodeItemInfoModels = items?.OrderByDescending(o => o.CreateTime)?.Select((s, i) => new LicenseCodeItemInfoModel {
                     ActivatedClientCount = s.ActivatedClientCount,
                     TemplateName = s.TemplateName,
                     LicenseCode = s.LicenseCode,
@@ -448,17 +458,38 @@
 
     public JayTom.Dws.LicenseApiClient.Data.Models.UserInfo Info = new();
 
-
-
     private async void HandleUserInfoNotification(JayTom.Dws.LicenseApiClient.Data.Models.UserInfo obj) {
         Info = obj;
         await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "info", JsonConvert.SerializeObject(Info));
         StateHasChanged();
     }
+
+    public async void ExportGroupDetailedInfo(string groupName) {
+        var licenseCodeItemInfoModels = _items.Where(w => w.ClientName.Equals(groupName)).ToList();
+
+
+        var (key, value) = await ExcelService.Export(groupName, "授权码分组信息", licenseCodeItemInfoModels,
+            new List<string>() { },
+            p => {
+
+            }, async ex => {
+                await DialogService.ShowMessageBox(
+                "导出异常",
+                ex.Message);
+            });
+        if (key && value is not null) {
+            var fileName = "授权码列表.xlsx";
+
+            await JSRuntime.InvokeVoidAsync("saveAsFile",
+                fileName, Convert.ToBase64String(value),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+
+    }
     public void Dispose() {
         NotificationService.Unsubscribe<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo>(HandleUserInfoNotification);
     }
 
-    Func<LicenseCodeItemInfoModel, object> _groupBy = x => x.UserName;
+    Func<LicenseCodeItemInfoModel, object> _groupBy = x => x.ClientName;
 
 }

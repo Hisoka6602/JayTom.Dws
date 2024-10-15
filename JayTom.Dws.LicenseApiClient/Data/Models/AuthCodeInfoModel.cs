@@ -26,5 +26,20 @@
         /// 客户
         /// </summary>
         public string ClientName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否分组批量生成
+        /// </summary>
+        public bool IsGroupedBatchGeneration { get; set; }
+
+        /// <summary>
+        /// 授权码生成数量
+        /// </summary>
+        public int AuthCodeGenerationCount { get; set; }
+
+        /// <summary>
+        /// 分组名
+        /// </summary>
+        public string GroupName { get; set; } = string.Empty;
     }
 }

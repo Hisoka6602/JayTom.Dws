@@ -2,6 +2,7 @@ using MudBlazor.Services;
 using JayTom.Dws.LicenseApiClient.Api;
 using JayTom.Dws.LicenseApiClient.Data;
 using JayTom.Dws.LicenseApiClient.Notification;
+using JayTom.Dws.LicenseApiClient.Plugin.Excel;
 
 namespace JayTom.Dws.LicenseApiClient;
 
@@ -29,6 +30,8 @@ internal class Program {
         });
         //接口注入
         builder.Services.AddScoped<ILicenseApiRequest, LicenseApiRequest>();
+        //插件注入
+        builder.Services.AddSingleton<IExcelService, NpoiExport>();
         //订阅事件
         builder.Services.AddScoped<NotificationService>();
         builder.Services.AddOptions();

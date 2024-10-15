@@ -106,6 +106,8 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     IsAvailable = s.IsAvailable,
                     UserName = s.UserInfo?.UserName ?? string.Empty,
                     UserCode = s.UserInfo?.UserCode ?? string.Empty,
+                    CreateTime = s.CreateTime,
+                    GroupName = s.LicenseGroupInfo?.GroupName ?? string.Empty,
                     MachineCodeItem = s.LicenseClientBindingInfo?.Select(s1 => new LicenseClientBindingDto {
                         FirstActivatedDate = s1.FirstActivatedDate,
                         LastVerifiedDate = s1.LastVerifiedDate,

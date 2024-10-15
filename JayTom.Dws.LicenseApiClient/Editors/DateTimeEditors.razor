@@ -75,7 +75,8 @@
     }
 
     public void Confirm() {
-        if (Date != null && Time != null) {
+        if (Date != null) {
+            Time ??= new TimeSpan(Date.Value.Hour, Date.Value.Minute, 0);
             DateTime = new DateTime(Date.Value.Year, Date.Value.Month, Date.Value.Day, Time.Value.Hours, Time.Value.Minutes, Time.Value.Seconds);
             DisplayDateTime = $"{Date.Value:yyyy-MM-dd} {Time.Value:hh\\:mm\\:ss}";
 
