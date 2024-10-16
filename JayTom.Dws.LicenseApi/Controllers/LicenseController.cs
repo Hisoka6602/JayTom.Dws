@@ -54,6 +54,33 @@ namespace JayTom.Dws.LicenseApi.Controllers {
         }
 
         /// <summary>
+        /// 批量创建授权码
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [Produces("application/json")]
+        [HttpPost("BulkCreateLicenseCode"),
+         UserStatus(Status = UserStatus.Active),
+         UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
+         Authorize]
+        public async Task<JsonResult> BulkCreateLicenseCode([FromBody] BulkCreateLicenseCodeDo param,
+            CancellationToken cancellationToken) {
+            var isSuperAdminCreated = false;
+            var code = HttpContext.Response.HttpContext.User.Identity?.Name ?? string.Empty;
+            var (b, o) = await _licenseUserAppService.Info(code, cancellationToken);
+            if (b && o is LicenseUserInfo { Role: UserRole.SuperAdmin } && !string.IsNullOrEmpty(param.UserCode)) {
+                code = param.UserCode;
+                isSuperAdminCreated = true;
+            }
+
+            var (key, value) = await _licenseCodeAppService.BulkCreateLicenseCode(param.TemplateInfoId,
+                code, param.ExpirationDate, param.ClientName,
+                param.LicenseCodeCount, isSuperAdminCreated, cancellationToken);
+            return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
+        }
+
+        /// <summary>
         /// 修改授权码
         /// </summary>
         /// <param name="param"></param>
@@ -64,7 +91,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
          UserStatus(Status = UserStatus.Active),
          UserRole(Role = (int)(UserRole.SuperAdmin | UserRole.Tenant)),
          Authorize]
-        public async Task<JsonResult> UpdateLicenseCode([FromBody] CreateLicenseCodeDo param,
+        public async Task<JsonResult> UpdateLicenseCode([FromBody] UpdateLicenseCodeDo param,
             CancellationToken cancellationToken) {
             var code = HttpContext.Response.HttpContext.User.Identity?.Name;
 

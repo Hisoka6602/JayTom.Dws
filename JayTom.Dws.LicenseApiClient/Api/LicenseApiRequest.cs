@@ -1048,6 +1048,74 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             }
         }
 
+        public async Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, DateTime expirationDate, string clientName, int licenseCodeCount,
+            string? userCode, CancellationToken token = default) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        templateInfoId = templateInfoId,
+                        licenseCodeCount = licenseCodeCount,
+                        expirationDate = expirationDate,
+                        clientName = clientName,
+                        userCode = userCode
+                    });
+
+                    using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                        httpClient.Timeout = TimeSpan.FromSeconds(20);
+                        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                        HttpResponseMessage message;
+                        await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                            using (HttpContent content = new StreamContent(dataStream)) {
+                                content.Headers.Add("Content-Type", "application/json");
+                                message = await httpClient.PostAsync($"{Domain}{"/api/License/BulkCreateLicenseCode"}", content, token)
+                                    .ConfigureAwait(false);
+                            }
+                        }
+                        string httpResult;
+                        switch (message.StatusCode) {
+                            case HttpStatusCode.OK: {
+                                    using (message) {
+                                        httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                                    }
+                                    break;
+                                }
+                            case HttpStatusCode.NotFound:
+                                return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                            case HttpStatusCode.Unauthorized:
+                                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", token, "token");
+                                return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                            default:
+                                httpResult = $"{message}";
+                                break;
+                        }
+
+                        //解码
+                        var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                        return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
+        }
+
         public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
             DateTime expirationDate, string clientName, CancellationToken token) {
             var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");

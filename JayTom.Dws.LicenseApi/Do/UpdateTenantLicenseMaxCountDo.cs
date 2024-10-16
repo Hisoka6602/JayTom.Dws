@@ -11,7 +11,9 @@ namespace JayTom.Dws.LicenseApi.Do {
         [Required(ErrorMessage = "模板Id不能为空"), TemplateIdExists(IsExists = true, ErrorMessage = "模板Id不存在")]
         public long LicensePermissionTemplateInfoId { get; set; }
 
-        [Required(ErrorMessage = "授权码上限不能为空"), Range(1, int.MaxValue, ErrorMessage = "授权码上限超出允许范围")]
+        [Required(ErrorMessage = "授权码上限不能为空"),
+         Range(1, int.MaxValue, ErrorMessage = "授权码上限超出允许范围"),
+        MaxLicenseCodeCount(ErrorMessage = "设置的数量上限不能小于已创建的数量")]
         public int MaxLicenseCodeCount { get; set; }
     }
 }

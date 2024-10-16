@@ -33,6 +33,7 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                     .Include(b => b.LicensePermissionTemplateInfo)
                     .Include(c => c.UserInfo)
                     .Include(d => d.LicenseClientBindingInfo)
+                    .Include(e => e.LicenseGroupInfo)
                     .ToListAsync(cancellationToken: token);
                 return new KeyValuePair<bool, object>(true, applicationInfo);
             }
@@ -53,6 +54,7 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                     .Include(b => b.LicensePermissionTemplateInfo)
                     .Include(c => c.UserInfo)
                     .Include(d => d.LicenseClientBindingInfo)
+                    .Include(e => e.LicenseGroupInfo)
                     .FirstOrDefaultAsync(cancellationToken: token);
                 return new KeyValuePair<bool, object>(true, applicationInfo);
             }
@@ -72,6 +74,38 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                         if (contextTransaction is not null) {
                             var licenseCodeInfos = concardContext?.Set<LicenseCodeInfo>();
                             licenseCodeInfos.UpdateRange(entities);
+                            await concardContext?.SaveChangesAsync(token);
+                            await contextTransaction.CommitAsync(token);
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
+            catch (Win32Exception) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (TaskCanceledException) {
+                await contextTransaction?.RollbackAsync(token)!;
+            }
+            catch (Exception e) {
+                await contextTransaction?.RollbackAsync(token)!;
+                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
+            }
+            return false;
+        }
+
+        public new async Task<bool> InsertRange(List<LicenseCodeInfo> entities, CancellationToken token) {
+            IDbContextTransaction? contextTransaction = null;
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var strategy = concardContext.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () => {
+                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
+                        if (contextTransaction is not null) {
+                            var licenseCodeInfos = concardContext?.Set<LicenseCodeInfo>();
+                            licenseCodeInfos.AddRange(entities);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
                             return true;

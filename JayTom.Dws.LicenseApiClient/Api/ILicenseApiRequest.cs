@@ -1,6 +1,7 @@
 ﻿using JayTom.Dws.LicenseApiClient.Data.Models;
 
 namespace JayTom.Dws.LicenseApiClient.Api {
+
     public interface ILicenseApiRequest {
 
         /// <summary>
@@ -179,6 +180,23 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            string? userCode,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 批量创建授权码
+        /// </summary>
+        /// <param name="templateInfoId"></param>
+        /// <param name="expirationDate"></param>
+        /// <param name="clientName"></param>
+        /// <param name="licenseCodeCount"></param>
+        /// <param name="userCode"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId,
+            DateTime expirationDate,
+            string clientName,
+            int licenseCodeCount,
             string? userCode,
             CancellationToken token = default);
 

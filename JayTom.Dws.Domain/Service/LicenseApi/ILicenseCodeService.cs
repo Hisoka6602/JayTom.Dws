@@ -30,6 +30,25 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             CancellationToken token);
 
         /// <summary>
+        /// 批量创建授权码
+        /// </summary>
+        /// <param name="templateInfoId"></param>
+        /// <param name="userCode"></param>
+        /// <param name="licenseCode"></param>
+        /// <param name="expirationDate"></param>
+        /// <param name="clientName"></param>
+        /// <param name="isSuperAdminCreated"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId,
+            string userCode,
+            List<string> licenseCode,
+            DateTime expirationDate,
+            string clientName,
+            bool isSuperAdminCreated = false,
+            CancellationToken token = default);
+
+        /// <summary>
         /// 修改授权码
         /// </summary>
         /// <param name="templateInfoId"></param>

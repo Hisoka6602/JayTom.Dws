@@ -20,12 +20,24 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             bool isSuperAdminCreated,
             CancellationToken token) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            var random = new Random();
+            var random = new Random((int)DateTime.Now.Ticks);
             var licenseCode = new string(Enumerable.Repeat(chars, 32)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
             return _licenseCodeService.CreateLicenseCode(templateInfoId, userCode, licenseCode, maxClientCount, expirationDate,
                  clientName, isSuperAdminCreated, token);
+        }
+
+        public Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, string userCode, DateTime expirationDate, string clientName,
+            int licenseCodeCount, bool isSuperAdminCreated = false, CancellationToken token = default) {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random((int)DateTime.Now.Ticks);
+            var licenseCodes = Enumerable.Range(0, licenseCodeCount)
+                .Select(_ => new string(Enumerable.Repeat(chars, 32)
+                    .Select(s => s[random.Next(s.Length)]).ToArray()))
+                .ToList();
+            return _licenseCodeService.BulkCreateLicenseCode(templateInfoId, userCode,
+                licenseCodes, expirationDate, clientName, isSuperAdminCreated, token);
         }
 
         public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,

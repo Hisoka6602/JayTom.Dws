@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.License;
+using SixLabors.Fonts.Unicode;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Repository.License;
 
@@ -25,28 +26,6 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             DateTime expirationDate, string clientName, bool isSuperAdminCreated, CancellationToken token) {
             var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (key && value is LicenseUserInfo licenseUserInfo) {
-                var codeCount = 1;
-                var licenseAppLicenseInfo = licenseUserInfo.AppLicenseInfos
-                    ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
-                if (licenseAppLicenseInfo is null) {
-                    if (isSuperAdminCreated) {
-                        codeCount = maxClientCount;
-                    }
-                    await _licenseUserRepository.UpdateTenantLicenseMaxCount(userCode,
-                         templateInfoId, codeCount, token);
-                }
-                var maxLicenseCodeCount = licenseAppLicenseInfo
-                    ?.MaxLicenseCodeCount ?? 1;
-                if (isSuperAdminCreated && licenseAppLicenseInfo is null) {
-                    maxLicenseCodeCount = codeCount;
-                }
-                var sum = licenseUserInfo.LicenseCodeInfos?.Where(w => w.LicensePermissionTemplateInfoId.Equals(templateInfoId))
-                    ?.Sum(s => s.MaxClientCount) ?? 0;
-
-                if (sum + maxClientCount > maxLicenseCodeCount) {
-                    return new KeyValuePair<bool, object>(false, "授权数量超过可配置上限");
-                }
-
                 var insert = await _licenseCodeRepository.Insert(new LicenseCodeInfo() {
                     LicensePermissionTemplateInfoId = templateInfoId,
                     MaxClientCount = maxClientCount,
@@ -57,7 +36,56 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     CreateTime = DateTime.Now,
                     LicenseClientBindingInfo = new List<LicenseClientBindingInfo>()
                 }, token);
+
+                //判断修改上限
+
+                var licenseAppLicenseInfo = licenseUserInfo.AppLicenseInfos
+                    ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
+                if (licenseAppLicenseInfo is null) {
+                    await _licenseUserRepository.UpdateTenantLicenseMaxCount(userCode,
+                        templateInfoId, maxClientCount, token);
+                }
                 if (!insert) {
+                    return new KeyValuePair<bool, object>(false, "创建失败!");
+                }
+                return new KeyValuePair<bool, object>(true, licenseCode);
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "您无访问权限");
+            }
+        }
+
+        public async Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, string userCode, List<string> licenseCode, DateTime expirationDate,
+            string clientName, bool isSuperAdminCreated = false, CancellationToken token = default) {
+            var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
+            if (key && value is LicenseUserInfo licenseUserInfo) {
+                var licenseCodeInfos = licenseCode.Select(s => new LicenseCodeInfo {
+                    LicensePermissionTemplateInfoId = templateInfoId,
+                    MaxClientCount = 1,
+                    ExpirationDate = expirationDate,
+                    ClientName = clientName,
+                    LicenseCode = s,
+                    UserId = licenseUserInfo.Id,
+                    CreateTime = DateTime.Now,
+                    LicenseGroupInfo = new LicenseGroupInfo() {
+                        GroupName = clientName,
+                        CreateTime = DateTime.Now,
+                    },
+                    LicenseClientBindingInfo = new List<LicenseClientBindingInfo>()
+                }).ToList();
+
+                var insertRange = await _licenseCodeRepository.InsertRange(licenseCodeInfos, token);
+
+                //判断修改上限
+
+                var licenseAppLicenseInfo = licenseUserInfo.AppLicenseInfos
+                    ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
+                if (licenseAppLicenseInfo is null) {
+                    await _licenseUserRepository.UpdateTenantLicenseMaxCount(userCode,
+                        templateInfoId, licenseCode.Count, token);
+                }
+
+                if (!insertRange) {
                     return new KeyValuePair<bool, object>(false, "创建失败!");
                 }
                 return new KeyValuePair<bool, object>(true, licenseCode);
@@ -72,16 +100,6 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             var isSuperAdmin = false;
             var (b, o) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (b && o is LicenseUserInfo userInfo) {
-                isSuperAdmin = userInfo.Role == UserRole.SuperAdmin;
-                var licenseAppLicenseInfo = userInfo.AppLicenseInfos
-                    ?.FirstOrDefault(f => f.LicensePermissionTemplateInfoId.Equals(templateInfoId));
-                var maxLicenseCodeCount = licenseAppLicenseInfo
-                    ?.MaxLicenseCodeCount ?? 1;
-
-                if (maxClientCount > maxLicenseCodeCount) {
-                    return new KeyValuePair<bool, object>(false, "授权数量超过可配置上限");
-                }
-
                 var activatedClientCount = userInfo.LicenseCodeInfos?.Where(w => w.LicenseCode.Equals(licenseCode))
                     ?.Sum(s => s.ActivatedClientCount);
                 if (activatedClientCount > maxClientCount) {

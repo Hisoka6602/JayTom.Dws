@@ -15,7 +15,6 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService {
-
     public class ExternalDataService : IExternalDataService {
         private readonly IConfigRepository _configRepository;
         private readonly ITcpVolumeInput _tcpVolumeInput;
@@ -39,7 +38,6 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
         }
 
         public event EventHandler<Exception>? ExternalDataException;
@@ -244,7 +242,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 var split = Regex.Escape(e.Content).Split(_volumeSettingsDto.Separator);
                 if (split.Length == _volumeSettingsDto.DataTemplate.Count(c => c.Type != 2)) {
                     var templateInfos = _volumeSettingsDto.DataTemplate.Where(w => w.Type != 2).ToList();
-                    for (int i = 0; i < split.Length; i++) {
+                    for (var i = 0; i < split.Length; i++) {
                         if (templateInfos[i].Content.ToLower().Contains("length")) {
                             float.TryParse(split[i], out length);
                         }
@@ -264,17 +262,16 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 }
 
                 _volumeBarCodeItems.TryDequeue(out var barcode);
-                if (barcode is not null) {
-                    OnVolumeReceived(new ExternalVolumeInputEventArgs() {
-                        BarCode = barcode,
-                        Length = length,
-                        Width = width,
-                        Height = height,
-                        Volume = volume,
-                        ReceiveSource = string.Empty,
-                        ReceiveTime = DateTime.Now
-                    });
-                }
+                OnVolumeReceived(new ExternalVolumeInputEventArgs() {
+                    BarCode = barcode ?? string.Empty,
+                    Length = length,
+                    Width = width,
+                    Height = height,
+                    Volume = volume,
+                    ReceiveSource = string.Empty,
+                    ReceiveTime = DateTime.Now
+                });
+                _volumeBarCodeItems.Clear();
                 //取出模板组合
 
                 //判断消息是否符合模板

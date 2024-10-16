@@ -77,16 +77,11 @@
             <PropertyColumn Style="width:50px" Property="x => x.ActivatedClientCount" Title="已激活数量" />
             @if (Info is { Role: 1 }) {
                 <PropertyColumn Property="x => x.UserName" Title="租户" />
-
-
-
-
-
             }
             <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
-            @*<PropertyColumn Property="x => x.ClientName" Title="客户" />*@
+            <PropertyColumn Property="x => x.ClientName" Title="客户" />
             @if (@IsGrouping) {
-                <PropertyColumn Property="x => x.ClientName" Title="客户" GroupBy="@_groupBy" Grouping="@IsGrouping" Hidden="IsGrouping">
+                <PropertyColumn Property="x => x.GroupName" GroupBy="@_groupBy" Grouping="@IsGrouping" Hidden="IsGrouping">
                     <GroupTemplate>
                         <span style="font-weight:bold" @key="IsGrouping">
                             客户名: @context.Grouping.Key
@@ -117,6 +112,7 @@
                         <MudButton Style="border-radius: 15px; margin-left:3px; background-color:dodgerblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface" OnClick="@(e => { AuthCodeEditorIsVisible = true; AuthCodeIsEdit = true; AuthCodeInfo = new AuthCodeInfoModel() {
                                                                                                                                                                                                           ClientName = context.Item.ClientName,
                                                                                                                                                                                                           ExpirationDate = context.Item.ExpirationDate,
+                                                                                                                                                                                                          UserCode=context.Item.UserCode,
                                                                                                                                                                                                           TemplateInfoId=AppTemplateItemItems.FirstOrDefault(f=>f.TemplateName.Equals(context.Item.TemplateName))?.Id??0,
                                                                                                                                                                                                           MaxClientCount = context.Item.MaxClientCount};
                                                                                                                                                                                                                  SelectInfoModel = context.Item; })">编辑</MudButton>
@@ -204,7 +200,6 @@
         AuthCodeEditorIsVisible = false;
         //提交到Api
         //AuthCodeInfoModel
-
         //效验数据是否为空
         if (info.TemplateInfoId <= 0) {
             Snackbar.Clear();
@@ -232,14 +227,26 @@
             return;
         }
         KeyValuePair<bool, object> keyValuePair;
-        if (!AuthCodeIsEdit) {
-            keyValuePair = await LicenseApiRequest.CreateLicenseCode(info.TemplateInfoId, info.MaxClientCount,
-                info.ExpirationDate.Value, info.ClientName, info.UserCode);
+        //判断是否批量
+        if (info.IsGroupedBatchGeneration && !AuthCodeIsEdit) {
+
+            keyValuePair = await LicenseApiRequest.BulkCreateLicenseCode(info.TemplateInfoId,
+                info.ExpirationDate.Value,
+                info.ClientName,
+                info.AuthCodeGenerationCount,
+                info.UserCode);
         }
         else {
-            keyValuePair = await LicenseApiRequest.UpdateLicenseCode(info.TemplateInfoId, info.UserCode ?? string.Empty, SelectInfoModel.LicenseCode, info.MaxClientCount,
-                info.ExpirationDate.Value, info.ClientName);
+            if (!AuthCodeIsEdit) {
+                keyValuePair = await LicenseApiRequest.CreateLicenseCode(info.TemplateInfoId, info.MaxClientCount,
+                    info.ExpirationDate.Value, info.ClientName, info.UserCode);
+            }
+            else {
+                keyValuePair = await LicenseApiRequest.UpdateLicenseCode(info.TemplateInfoId, info.UserCode ?? string.Empty, SelectInfoModel.LicenseCode, info.MaxClientCount,
+                    info.ExpirationDate.Value, info.ClientName);
+            }
         }
+
 
         if (keyValuePair.Value is ApiResult result) {
 
@@ -358,6 +365,7 @@
                     IsAvailable = s.IsAvailable,
                     ExpirationDate = s.ExpirationDate,
                     ClientName = s.ClientName,
+                    GroupName = s.GroupName,
                     UserName = s.UserName,
                     UserCode = s.UserCode,
                     Num = i + 1
@@ -490,6 +498,6 @@
         NotificationService.Unsubscribe<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo>(HandleUserInfoNotification);
     }
 
-    Func<LicenseCodeItemInfoModel, object> _groupBy = x => x.ClientName;
+    Func<LicenseCodeItemInfoModel, object> _groupBy = x => x.GroupName;
 
 }
