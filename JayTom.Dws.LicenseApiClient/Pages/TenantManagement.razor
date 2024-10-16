@@ -40,8 +40,8 @@
             <TemplateColumn Title="租户状态">
                 <CellTemplate>
                     <MudStack Row Style="text-align:center">
-                         <MudChip Size="@Size.Small" Variant="Variant.Filled" Style="@(GetUserStatusChipStyle(context.Item.Status))">
-                             @GetUserStatusDisplay(context.Item.Status)
+                        <MudChip Size="@Size.Small" Variant="Variant.Filled" Style="@(GetUserStatusChipStyle(context.Item.Status))">
+                            @GetUserStatusDisplay(context.Item.Status)
                         </MudChip>
                     </MudStack>
                 </CellTemplate>
@@ -52,33 +52,33 @@
             <TemplateColumn>
                 <CellTemplate>
                     <MudStack Row Style="text-align:center">
-                         @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
-                         <MudButton OnClick="() => { SelectTenantInfo=context.Item;_appLicenseInfoEditorIsVisible=true; }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="Color.Primary">授权信息</MudButton>
-                         <MudButton OnClick="() => { FreezeUser(context.Item); }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
-                        </MudStack>
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-            <PagerContent>
-                <MudStack Row Justify="Justify.Center" Style="text-align:center">
-                 <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
-                     <MudFab OnClick="()=>{_tenantEditorIsVisible=true;}" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
-                 </div>
-                 <div style="flex-grow: 1; text-align: right;">
-                     <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
-                 </div>
-             </MudStack>
-         </PagerContent>
-     </MudDataGrid>
- </MudPaper>
- <style>
-     .custom-datagrid .mud-table-row {
-         height: 10px;
-     }
+                        @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
+                        <MudButton OnClick="() => { SelectTenantInfo=context.Item;_appLicenseInfoEditorIsVisible=true; }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="Color.Primary">授权信息</MudButton>
+                        <MudButton OnClick="() => { FreezeUser(context.Item); }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudStack Row Justify="Justify.Center" Style="text-align:center">
+                <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
+                    <MudFab OnClick="()=>{_tenantEditorIsVisible=true;}" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+                </div>
+                <div style="flex-grow: 1; text-align: right;">
+                    <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
+                </div>
+            </MudStack>
+        </PagerContent>
+    </MudDataGrid>
+</MudPaper>
+<style>
+    .custom-datagrid .mud-table-row {
+        height: 10px;
+    }
 
- </style>
+</style>
 
- @code {
+@code {
     private List<TenantItemInfoModel> _elements = new() {
 
     };
@@ -146,7 +146,7 @@
         if (key && value is List<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo> items) {
             _elements.Clear();
             _elements.AddRange(items.Select((s, i) => new TenantItemInfoModel {
-                    LicenseCodeCount = s.LicenseCodeInfos?.Count ?? 0,
+                    LicenseCodeCount = s.LicenseCodeInfos?.Sum(s2 => s2.MaxClientCount) ?? 0,
                     UserCode = s.UserCode,
                     UserIcon = s.UserIcon,
                     UserName = s.UserName,
@@ -253,5 +253,5 @@
         await GetTenantInfos();
         StateHasChanged();
     }
- }
+}
 
