@@ -1127,6 +1127,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                             var (b, s) = await uploader.SetParameters(_postInApiParam);
                             if (b) {
+                                var exitName = packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f =>
+                                        f.InstructionType == InstructionType.SignalCallback)
+                                    ?.ExitName ?? string.Empty;
+                                if (!string.IsNullOrEmpty(packageValue.Value.ApiResponse.UploadResponse?.RequestContent) &&
+                                    !packageValue.Value.ApiResponse.UploadResponse.IsSuccess &&
+                                    !packageValue.Value.ApiResponse.UploadResponse.ResponseContent.Contains("#HEAD")) {
+                                    packageValue.Value.ApiResponse.UploadResponse.RequestContent += $"落格:[{exitName}]";
+                                }
+
                                 uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                     packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
                                     packageValue.Value.ApiResponse.UploadResponse, token: token);

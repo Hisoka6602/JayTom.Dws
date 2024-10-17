@@ -241,10 +241,14 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
 
         public async Task<KeyValuePair<bool, object>> UnbindMachineCode(string userCode, string licenseCode, string machineCode, CancellationToken token) {
             //获取授权码
+            //判断是否管理员
+            var licenseUserInfo = await _licenseUserRepository.
+                FirstOrDefault(f => f.UserCode.Equals(userCode), token);
+            var isSuperAdmin = licenseUserInfo?.Role == UserRole.SuperAdmin;
 
             var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
                 f.LicenseClientBindingInfo != null &&
-                (f.UserInfo.Role == UserRole.SuperAdmin ||
+                (isSuperAdmin ||
                  f.UserInfo.UserCode.Equals(userCode)) &&
                 f.LicenseCode.Equals(licenseCode) &&
                 f.LicenseClientBindingInfo.Any(a =>

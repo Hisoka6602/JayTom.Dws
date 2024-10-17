@@ -330,7 +330,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             IsStackedPackage = model.IsStackedPackage,
                             LinkedCarCount = model.LinkedCarCount
                         });
-                        //NLog.LogManager.GetCurrentClassLogger().Error($"DefaultSortingService:{model.LinkedCarCount}");
                     }
                 }
             });
@@ -338,7 +337,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             EventAggregator.Instance.Subscribe<PackageOcrInfo>(async item => {
                 if (item is { } model) {
                     if (_sortingMethodDto.SortMode == SortMode.OcrSorting) {
-                        NLog.LogManager.GetCurrentClassLogger().Error("进入");
                         ExecuteSorting(new SortingParam {
                             Guid = model.RecognitionTimestamp,
                             BarCode = model.BarCode ?? string.Empty,

@@ -6,6 +6,7 @@ using TouchSocket.Core;
 using System.Text.Json;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
+using Microsoft.VisualBasic;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -314,7 +315,7 @@ namespace JayTom.Dws.Interface.Post {
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             //提交落格信息
-            if (other is UploadResponse { IsSuccess: true } uploadResponse) {
+            if (other is UploadResponse uploadResponse && uploadResponse.ResponseContent.Contains("#HEAD")) {
                 var chuteCode = "0";
                 var routingDirection = "0";
                 var mailType = "0";
@@ -415,6 +416,103 @@ namespace JayTom.Dws.Interface.Post {
                         ResponseTime = DateTime.Now
                     };
                     NLog.LogManager.GetCurrentClassLogger().Error($"落格返回：{JsonConvert.SerializeObject(response)}");
+                }
+            }
+            else if (other is UploadResponse exceptionResponse) {
+                //提交异常口
+                if (!string.IsNullOrWhiteSpace(exceptionResponse.ResponseContent)) {
+                    var chuteCode = "0";
+                    var routingDirection = "0";
+                    var mailType = "0";
+                    var sortingSchemeCode = "0";
+                    string pattern = @"落格:\[(\d+)\]";
+                    var match = Regex.Match(exceptionResponse.ResponseContent, pattern);
+                    if (match.Success) {
+                        var content = match.Groups[1].Value;
+                        int.TryParse(content, out var exit);
+                        chuteCode = exit.ToString();
+                    }
+                    //取出路向
+                    pattern = @"#HEAD::(.*?)::\|\|#END";
+                    match = Regex.Match(exceptionResponse.RequestContent, pattern);
+                    if (match.Success) {
+                        var content = match.Groups[1].Value;
+                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+
+                        if (parts.Length > 1) {
+                            //路向
+                            routingDirection = parts[1];
+                        }
+                    }
+                    UploadResponse response;
+                    var resultContent = string.Empty;
+                    var exceptionMsg = string.Empty;
+                    var isSuccess = false;
+                    var requestTime = DateTime.Now;
+                    var data = string.Empty;
+
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    try {
+                        NLog.LogManager.GetCurrentClassLogger().Error(JsonConvert.SerializeObject("开始提交扫描信息"));
+                        data = $@"
+<soapenv:Envelope xmlns:web=""http://serverNs.webservice.pcs.jdpt.chinapost.cn/"" xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+    <soapenv:Header />
+    <soapenv:Body>
+        <web:getYJLG>
+            <arg0>#HEAD::{Parameters?.DeviceId}::{barcode}::{0}::{0}::{Parameters?.EmployeeNumber}::{0}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{mailType}::{chuteCode}::{1}::{0}::{0}::{0}::{0}::{0}::{0}::{0}::{sortingSchemeCode}||#END</arg0>
+        </web:getYJLG>
+    </soapenv:Body>
+</soapenv:Envelope>";
+                        using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                        httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
+                        HttpResponseMessage message;
+                        await using (Stream dataStream =
+                                     new MemoryStream(Encoding.UTF8.GetBytes(data))) {
+                            using HttpContent content = new StreamContent(dataStream);
+                            content.Headers.Add("Content-Type", "text/xml");
+                            message = await httpClient.PostAsync(Parameters?.Url, content, token)
+                                .ConfigureAwait(false);
+                        }
+
+                        resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                        resultContent = Regex.Unescape(resultContent);
+                    }
+                    catch (HttpRequestException e) {
+                        isSuccess = false;
+                        resultContent += exceptionMsg = e.Message;
+                    }
+                    catch (AggregateException) {
+                        isSuccess = false;
+                        resultContent += exceptionMsg = "接口访问异常!";
+                    }
+                    catch (Newtonsoft.Json.JsonException) {
+                        isSuccess = false;
+                        resultContent += exceptionMsg = "报文解析异常!";
+                    }
+                    catch (TaskCanceledException) {
+                        isSuccess = false;
+                        resultContent += exceptionMsg = "接口访问返回超时!";
+                    }
+                    catch (Exception e) {
+                        isSuccess = false;
+                        resultContent += exceptionMsg = e.Message;
+                    }
+                    finally {
+                        stopwatch.Stop();
+                        response = new UploadResponse() {
+                            ExceptionMsg = exceptionMsg,
+                            ApiParameters = JsonConvert.SerializeObject(this),
+                            IsSuccess = isSuccess,
+                            Duration = stopwatch.Elapsed.TotalSeconds,
+                            RequestContent = data,
+                            RequestTime = requestTime,
+                            RequestUrl = Parameters?.Url ?? string.Empty,
+                            ResponseContent = resultContent,
+                            ResponseTime = DateTime.Now
+                        };
+                        NLog.LogManager.GetCurrentClassLogger().Error($"落格返回：{JsonConvert.SerializeObject(response)}");
+                    }
                 }
             }
         }
