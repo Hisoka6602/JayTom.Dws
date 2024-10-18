@@ -1131,8 +1131,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         f.InstructionType == InstructionType.SignalCallback)
                                     ?.ExitName ?? string.Empty;
                                 if (!string.IsNullOrEmpty(packageValue.Value.ApiResponse.UploadResponse?.RequestContent) &&
-                                    !packageValue.Value.ApiResponse.UploadResponse.IsSuccess &&
-                                    !packageValue.Value.ApiResponse.UploadResponse.ResponseContent.Contains("#HEAD")) {
+                                    !packageValue.Value.ApiResponse.UploadResponse.IsSuccess) {
                                     packageValue.Value.ApiResponse.UploadResponse.RequestContent += $"落格:[{exitName}]";
                                 }
 

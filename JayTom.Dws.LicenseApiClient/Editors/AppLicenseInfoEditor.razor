@@ -97,7 +97,7 @@
 
     }
     private int ConvertLicenseCodeUsedCount(long licensePermissionTemplateInfoId) {
-        var appTemplateItemInfoModel = AppTemplateItems.FirstOrDefault(f => f.LicenseApplicationInfoId.Equals(licensePermissionTemplateInfoId));
+        var appTemplateItemInfoModel = AppTemplateItems.FirstOrDefault(f => f.Id.Equals(licensePermissionTemplateInfoId));
         if (appTemplateItemInfoModel is null) {
             return 0;
 
@@ -174,7 +174,7 @@
         //弹出授权码明细页面
         var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.False };
         var parameters = new DialogParameters<LicenseDetailDialog>
-                                                                                                                                                                                {
+                                                                                                                                                                                                    {
             { x => x.UserCode, userCode },
             { x => x.TemplateName, ConvertTemplateName(licensePermissionTemplateInfoId) },
         };

@@ -315,7 +315,7 @@ namespace JayTom.Dws.Interface.Post {
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             //提交落格信息
-            if (other is UploadResponse uploadResponse && uploadResponse.ResponseContent.Contains("#HEAD")) {
+            if (other is UploadResponse { IsSuccess: true } uploadResponse && uploadResponse.ResponseContent.Contains("#HEAD")) {
                 var chuteCode = "0";
                 var routingDirection = "0";
                 var mailType = "0";

@@ -81,13 +81,15 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             catch (HttpRequestException) {
                 return new KeyValuePair<bool, object>(false, "Http访问异常!");
             }
-            catch (AggregateException) {
+            catch (AggregateException e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "接口访问异常!");
             }
             catch (TaskCanceledException) {
                 return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
             }
-            catch (Exception) {
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "接口访问异常!");
             }
         }
@@ -138,13 +140,15 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             catch (HttpRequestException) {
                 return new KeyValuePair<bool, object>(false, "Http访问异常!");
             }
-            catch (AggregateException) {
+            catch (AggregateException e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "接口访问异常!");
             }
             catch (TaskCanceledException) {
                 return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
             }
-            catch (Exception) {
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "接口访问异常!");
             }
         }
