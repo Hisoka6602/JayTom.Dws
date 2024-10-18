@@ -163,10 +163,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                         try {
                             LicenseStatus = false;
                             var (key, value) = await _clientLicenseApi.CreateAuthorization(LicenseCode, MachineCode, Remarks);
-                            if (value is ApiResult result &&
-                                !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
+                            if (value is ApiResult result) {
                                 //获取授权文件地址
-                                if (result.Result) {
+                                if (result.Result && !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
                                     var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                                     if (!Directory.Exists(licenseDirectory)) {
                                         Directory.CreateDirectory(licenseDirectory);
