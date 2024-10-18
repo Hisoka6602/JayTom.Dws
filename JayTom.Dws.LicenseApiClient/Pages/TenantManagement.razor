@@ -10,7 +10,7 @@
 <MudPaper Elevation="0" Style="height:95.2vh">
     <MudOverlay Visible="_tenantEditorIsVisible" DarkBackground="true">
 
-        <TenantEditor OnCancel="() => { _tenantEditorIsVisible=false;}" OnConfirm="HandleConfirm" />
+        <TenantEditor AppTemplateItems="@AppTemplateItems" OnCancel="() => { _tenantEditorIsVisible=false;}" OnConfirm="HandleConfirm" />
 
     </MudOverlay>
     <MudOverlay Visible="_appLicenseInfoEditorIsVisible" DarkBackground="true">

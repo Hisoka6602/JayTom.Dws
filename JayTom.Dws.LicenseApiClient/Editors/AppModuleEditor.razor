@@ -49,50 +49,50 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="序号">@context.Num</MudTd>
-                        <MudTd DataLabel="模块名称">@context.FeatureName</MudTd>
-                        <MudTd DataLabel="模块Guid">@context.FeatureGuid</MudTd>
-                        <MudTd DataLabel="说明">@context.Description</MudTd>
-                    </RowTemplate>
-                    <RowEditingTemplate>
-                        <MudTd DataLabel="序号">
-                            <MudTextField @bind-Value="@context.Num" Required ReadOnly="true" />
-                     </MudTd>
-                     <MudTd DataLabel="模块名称">
-                         <MudTextField @bind-Value="@context.FeatureName" Required />
-                     </MudTd>
-                     <MudTd DataLabel="模块Guid">
-                         <MudTextField @bind-Value="@context.FeatureGuid" Required />
-                     </MudTd>
-                     <MudTd DataLabel="说明">
-                         <MudTextField @bind-Value="@context.Description" Required />
-                     </MudTd>
-                 </RowEditingTemplate>
-             </MudTable>
-         </div>
+                    <MudTd DataLabel="模块名称">@context.FeatureName</MudTd>
+                    <MudTd DataLabel="模块Guid">@context.FeatureGuid</MudTd>
+                    <MudTd DataLabel="说明">@context.Description</MudTd>
+                </RowTemplate>
+                <RowEditingTemplate>
+                    <MudTd DataLabel="序号">
+                        <MudTextField @bind-Value="@context.Num" Required ReadOnly="true" />
+                    </MudTd>
+                    <MudTd DataLabel="模块名称">
+                        <MudTextField @bind-Value="@context.FeatureName" Required />
+                    </MudTd>
+                    <MudTd DataLabel="模块Guid">
+                        <MudTextField @bind-Value="@context.FeatureGuid" Required />
+                    </MudTd>
+                    <MudTd DataLabel="说明">
+                        <MudTextField @bind-Value="@context.Description" Required />
+                    </MudTd>
+                </RowEditingTemplate>
+            </MudTable>
+        </div>
 
-         <MudCardActions Class="card-actions-right">
-             <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="AddItem" Color="Color.Primary">添加模块</MudButton>
-             <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确认保存</MudButton>
-             <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Error">取消</MudButton>
-         </MudCardActions>
-     </MudCard>
+        <MudCardActions Class="card-actions-right">
+            <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="AddItem" Color="Color.Primary">添加模块</MudButton>
+            <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确认保存</MudButton>
+            <MudButton Variant="Variant.Filled" OnClick="Cancel" Color="Color.Error">取消</MudButton>
+        </MudCardActions>
+    </MudCard>
 
- </div>
- <style>
-     .card-actions-right {
-         margin-right: 10px;
-         display: flex;
-         justify-content: flex-end;
-         align-items: flex-end;
-     @*height: 95%; width: 99%;*@
-     }
+</div>
+<style>
+    .card-actions-right {
+        margin-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    @*height: 95%; width: 99%;*@
+    }
 
-     .center {
-         margin: auto;
-         width: 50%;
-     }
- </style>
- @code {
+    .center {
+        margin: auto;
+        width: 50%;
+    }
+</style>
+@code {
 
 
 
@@ -159,7 +159,7 @@
     private void BackupItem(object element) {
         Console.WriteLine(element);
         /*FeatureInfoBeforeEdit = new() {
-
+         *
             Sign = ((Element)element).Sign,
             Name = ((Element)element).Name,
             Molar = ((Element)element).Molar,
