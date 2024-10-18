@@ -7,70 +7,68 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject NotificationService NotificationService
-<MudPaper Elevation="0" Style="height:95.2vh">
-    <MudOverlay Visible="_tenantEditorIsVisible" DarkBackground="true">
+<MudOverlay Visible="_tenantEditorIsVisible" DarkBackground="true">
 
-        <TenantEditor AppTemplateItems="@AppTemplateItems" OnCancel="() => { _tenantEditorIsVisible=false;}" OnConfirm="HandleConfirm" />
+    <TenantEditor AppTemplateItems="@AppTemplateItems" OnCancel="() => { _tenantEditorIsVisible=false;}" OnConfirm="HandleConfirm" />
 
-    </MudOverlay>
-    <MudOverlay Visible="_appLicenseInfoEditorIsVisible" DarkBackground="true">
+</MudOverlay>
+<MudOverlay Visible="_appLicenseInfoEditorIsVisible" DarkBackground="true">
 
-        <AppLicenseInfoEditor LicenseCodeItems="@LicenseCodeItem" AppTemplateItems="@AppTemplateItems" UserInfo="@SelectTenantInfo" OnConfirm="HandleUpdateConfirm" />
+    <AppLicenseInfoEditor LicenseCodeItems="@LicenseCodeItem" AppTemplateItems="@AppTemplateItems" UserInfo="@SelectTenantInfo" OnConfirm="HandleUpdateConfirm" />
 
-    </MudOverlay>
-    <PageTitleTemplate Title="租户管理" Description="租户管理" IconClass="iconfont icon-yonghu"></PageTitleTemplate>
-    <MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements" QuickFilter="@_quickFilter"
-                 Hover="true">
-        <ToolBarContent>
-            <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="模糊搜索" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        </ToolBarContent>
-        <Columns>
-            <PropertyColumn Property="x => x.Num" Title="" />
-            <TemplateColumn>
-                <CellTemplate>
-                    <img src="@context.Item?.UserIcon" alt="用户头像" style="width: 30px; height: 30px; border-radius: 50%;" />
-                </CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
-            <PropertyColumn Property="x => x.UserName" Title="租户名称" />
-            <PropertyColumn Property="x => x.Phone" Title="租户手机号" />
-            <PropertyColumn Property="x => x.CompanyName" Title="公司名" />
-            <TemplateColumn Title="租户状态">
-                <CellTemplate>
-                    <MudStack Row Style="text-align:center">
-                        <MudChip Size="@Size.Small" Variant="Variant.Filled" Style="@(GetUserStatusChipStyle(context.Item.Status))">
-                            @GetUserStatusDisplay(context.Item.Status)
-                        </MudChip>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.MaxLicenseCodeCount" Title="授权码上限" />
-            <PropertyColumn Property="x => x.LicenseCodeCount" Title="已创建数量" />
-            <PropertyColumn Style="text-align:center" Property="x => x.RegisterTime" Title="注册时间" />
-            <TemplateColumn>
-                <CellTemplate>
-                    <MudStack Row Style="text-align:center">
-                        @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
-                        <MudButton OnClick="() => { SelectTenantInfo=context.Item;_appLicenseInfoEditorIsVisible=true; }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="Color.Primary">授权信息</MudButton>
-                        <MudButton OnClick="() => { FreezeUser(context.Item); }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent>
-            <MudStack Row Justify="Justify.Center" Style="text-align:center">
-                <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
-                    <MudFab OnClick="()=>{_tenantEditorIsVisible=true;}" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
-                </div>
-                <div style="flex-grow: 1; text-align: right;">
-                    <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
-                </div>
-            </MudStack>
-        </PagerContent>
-    </MudDataGrid>
-</MudPaper>
+</MudOverlay>
+<PageTitleTemplate Title="租户管理" Description="租户管理" IconClass="iconfont icon-yonghu"></PageTitleTemplate>
+<MudDataGrid Elevation="1" Class="custom-datagrid" Filterable="false" SortMode="@SortMode.None" Groupable="false" Items="@_elements" QuickFilter="@_quickFilter"
+             Hover="true">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="模糊搜索" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Num" Title="" />
+        <TemplateColumn>
+            <CellTemplate>
+                <img src="@context.Item?.UserIcon" alt="用户头像" style="width: 30px; height: 30px; border-radius: 50%;" />
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.UserCode" Title="租户代码" />
+        <PropertyColumn Property="x => x.UserName" Title="租户名称" />
+        <PropertyColumn Property="x => x.Phone" Title="租户手机号" />
+        <PropertyColumn Property="x => x.CompanyName" Title="公司名" />
+        <TemplateColumn Title="租户状态">
+            <CellTemplate>
+                <MudStack Row Style="text-align:center">
+                    <MudChip Size="@Size.Small" Variant="Variant.Filled" Style="@(GetUserStatusChipStyle(context.Item.Status))">
+                        @GetUserStatusDisplay(context.Item.Status)
+                    </MudChip>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.MaxLicenseCodeCount" Title="授权码上限" />
+        <PropertyColumn Property="x => x.LicenseCodeCount" Title="已创建数量" />
+        <PropertyColumn Style="text-align:center" Property="x => x.RegisterTime" Title="注册时间" />
+        <TemplateColumn>
+            <CellTemplate>
+                <MudStack Row Style="text-align:center">
+                    @*<MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">取消授权</MudButton>*@
+                    <MudButton OnClick="() => { SelectTenantInfo=context.Item;_appLicenseInfoEditorIsVisible=true; }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="Color.Primary">授权信息</MudButton>
+                    <MudButton OnClick="() => { FreezeUser(context.Item); }" Style="border-radius: 15px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@ConvertStatusButtonColor(context.Item.Status)">@ConvertStatusButtonText(context.Item.Status)</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudStack Row Justify="Justify.Center" Style="text-align:center">
+            <div style="flex-grow: 2; flex-basis: 0; text-align: right;">
+                <MudFab OnClick="()=>{_tenantEditorIsVisible=true;}" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+            </div>
+            <div style="flex-grow: 1; text-align: right;">
+                <MudDataGridPager T="TenantItemInfoModel" DisableRowsPerPage="true" />
+            </div>
+        </MudStack>
+    </PagerContent>
+</MudDataGrid>
 <style>
     .custom-datagrid .mud-table-row {
         height: 10px;

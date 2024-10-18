@@ -1,68 +1,68 @@
 ﻿@using JayTom.Dws.LicenseApiClient.Data.Models
 @using JayTom.Dws.LicenseApiClient.Api
+@using JayTom.Dws.LicenseApiClient.Dialog
 @inject ILicenseApiRequest LicenseApiRequest
 @inject ISnackbar Snackbar
-<MudPaper Elevation="0">
+@inject IDialogService DialogService
+<MudOverlay Visible="_updateTenantLicenseMaxCountEditorIsVisible" DarkBackground="true">
 
-    <MudOverlay Visible="_updateTenantLicenseMaxCountEditorIsVisible" DarkBackground="true">
+    <UpdateTenantLicenseMaxCountEditor MaxCount="@_maxLicenseCodeCount" OnCancel="() => { _updateTenantLicenseMaxCountEditorIsVisible=false;}" OnConfirm="HandleUpdateConfirm" />
 
-        <UpdateTenantLicenseMaxCountEditor MaxCount="@_maxLicenseCodeCount" OnCancel="() => { _updateTenantLicenseMaxCountEditorIsVisible=false;}" OnConfirm="HandleUpdateConfirm" />
+</MudOverlay>
+<MudCard Style="width:1000px;height:730px; border-radius:5px;">
+    <MudCardContent Class="center">
 
-    </MudOverlay>
-    <MudCard Style="width:1000px;height:730px; border-radius:5px;">
-        <MudCardContent Class="center">
-
-            <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
-                <img src="@UserInfo.UserIcon" alt="用户头像" style="width: 30px; height: 30px; border-radius: 50%;" />
-                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@UserInfo.UserName</span>
-            </div>
-            <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
-                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@UserInfo.CompanyName</span>
-            </div>
-            @*列表*@
-            <div>
-                <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@UserInfo.AppLicenseInfos"
-                          Dense="false" Hover="true" CanCancelEdit="true">
+        <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
+            <img src="@UserInfo.UserIcon" alt="用户头像" style="width: 30px; height: 30px; border-radius: 50%;" />
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@UserInfo.UserName</span>
+        </div>
+        <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
+            <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@UserInfo.CompanyName</span>
+        </div>
+        @*列表*@
+        <div>
+            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@UserInfo.AppLicenseInfos"
+                      Dense="false" Hover="true" CanCancelEdit="true">
 
 
-                    <HeaderContent>
-                        <MudTh>程序模板名称</MudTh>
-                        <MudTh>授权码上限</MudTh>
-                        <MudTh>创建数量</MudTh>
-                        <MudTh>激活数量</MudTh>
-                        <MudTh>管理</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="程序模板名称">@ConvertTemplateName(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
-                            <MudTd DataLabel="授权码上限">@context.MaxLicenseCodeCount</MudTd>
-                            <MudTd DataLabel="创建数量">@ConvertLicenseCodeCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
-                            <MudTd DataLabel="激活数量">@ConvertLicenseCodeUsedCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
-                            <MudTd>
-                                @*解绑*@
-                                <MudButton OnClick="() => { UpdateTenantLicenseMaxCount(UserInfo.UserCode, context.LicensePermissionTemplateInfoId??0,context.MaxLicenseCodeCount); }" Style="border-radius: 15px; margin-left:3px; background-color:slateblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">设置授权码上限</MudButton>
-                            </MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                </div>
+                <HeaderContent>
+                    <MudTh>程序模板名称</MudTh>
+                    <MudTh>授权码上限</MudTh>
+                    <MudTh>创建数量</MudTh>
+                    <MudTh>激活数量</MudTh>
+                    <MudTh>管理</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="程序模板名称">@ConvertTemplateName(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
+                    <MudTd DataLabel="授权码上限">@context.MaxLicenseCodeCount</MudTd>
+                    <MudTd DataLabel="创建数量">@ConvertLicenseCodeCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
+                    <MudTd DataLabel="激活数量">@ConvertLicenseCodeUsedCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
+                    <MudTd>
+                        @*设置授权码上限*@
+                        <MudButton OnClick="() => { UpdateTenantLicenseMaxCount(UserInfo.UserCode, context.LicensePermissionTemplateInfoId??0,context.MaxLicenseCodeCount); }" Style="border-radius: 15px; margin-left:3px; background-color:slateblue;color:white" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface">设置授权码上限</MudButton>
+                        <MudButton OnClick="() => {ViewLicenseDetail(UserInfo.UserCode, context.LicensePermissionTemplateInfoId??0); }" Style="border-radius: 15px; margin-left:3px;" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Tertiary">授权码明细</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
 
-            </MudCardContent>
-            <MudCardActions Class="card-actions-right">
-                <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确定</MudButton>
-            </MudCardActions>
-        </MudCard>
-    </MudPaper>
+    </MudCardContent>
+    <MudCardActions Class="card-actions-right">
+        <MudButton Style="margin-right:10px" Variant="Variant.Filled" OnClick="Confirm" Color="Color.Primary">确定</MudButton>
+    </MudCardActions>
+</MudCard>
 
-    <style>
-        .card-actions-right {
-            margin-right: 10px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-end;
-        @*height: 95%; width: 99%;*@
-        }
-    </style>
+<style>
+    .card-actions-right {
+        margin-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    @*height: 95%; width: 99%;*@
+    }
+</style>
 
-    @code {
+@code {
     [Parameter]
     public TenantItemInfoModel UserInfo { get; set; } = new();
     [Parameter]
@@ -169,4 +169,16 @@
             Snackbar.Add(value.ToString(), Severity.Error);
         }
     }
+
+    private void ViewLicenseDetail(string userCode, long licensePermissionTemplateInfoId) {
+        //弹出授权码明细页面
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.False };
+        var parameters = new DialogParameters<LicenseDetailDialog>
+                                                                                                                                                                            {
+            { x => x.UserCode, userCode },
+            { x => x.TemplateName, ConvertTemplateName(licensePermissionTemplateInfoId) },
+        };
+
+        DialogService.ShowAsync<LicenseDetailDialog>("明细", parameters, options);
     }
+}

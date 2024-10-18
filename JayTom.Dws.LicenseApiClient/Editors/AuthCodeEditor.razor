@@ -2,7 +2,7 @@
 @using JayTom.Dws.LicenseApiClient.Api
 @inject ILicenseApiRequest LicenseApiRequest
 <div>
-    <MudCard Style="margin-left:10px;margin-right:10px; width:600px;height:auto; border-radius:5px;">
+    <MudCard Style="margin-left:10px;margin-right:10px; width:680px;height:auto; border-radius:5px;">
         <MudCardContent Class="center">
 
             @*应用模板*@
@@ -42,6 +42,7 @@
                 <MudButton OnClick="() => {SetQuickTime(1,TimeUnit.Month);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">1个月</MudButton>
                 <MudButton OnClick="() => {SetQuickTime(3,TimeUnit.Month);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">3个月</MudButton>
                 <MudButton OnClick="() => {SetQuickTime(1,TimeUnit.Year);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">1年</MudButton>
+                <MudButton OnClick="() => {SetQuickTime(2,TimeUnit.Year);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">2年</MudButton>
 
             </div>
 

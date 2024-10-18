@@ -6,81 +6,85 @@
 
 <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
     <ValidationSummary />
-    <MudPaper Elevation="3" Style="width:600px;height:auto; position: relative; border-radius: 15px; display: flex; flex-direction: column; align-items: center;">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <div style="padding:50px;width: 100%;">
-                <div style="display: flex; justify-content: center;">
+    <MudCard Style="border-radius:5px;">
+        <MudCardContent>
+            <div style="background-color:white;display: flex; justify-content: space-between; align-items: center; ">
+                <div style="border-radius:10;padding:50px;width: 100%;">
                     <div style="display: flex; justify-content: center;">
-                        <MudTextField Variant="Variant.Text" @bind-Value="@_model.UserCode" Style="margin-bottom:30px" T="string" Label="账号" For="@(() => _model.UserCode)" />
-                        <MudIconButton OnClick="() => { _model.UserCode = GenerateRandomUserCode(); }" style="width: 50px;height:50px;display: flex; justify-content: center;" Color="Color.Dark" Size="Size.Small">
-                            <span class="iconfont icon-suiji" style="color:slateblue;font-size: 25px;"></span>
-                        </MudIconButton>
+                        <div style="display: flex; justify-content: center;">
+                            <MudTextField Variant="Variant.Text" @bind-Value="@_model.UserCode" Style="margin-bottom:30px" T="string" Label="账号" For="@(() => _model.UserCode)" />
+                            <MudIconButton OnClick="() => { _model.UserCode = GenerateRandomUserCode(); }" style="width: 50px;height:50px;display: flex; justify-content: center;" Color="Color.Dark" Size="Size.Small">
+                                <span class="iconfont icon-suiji" style="color:slateblue;font-size: 25px;"></span>
+                            </MudIconButton>
 
+                        </div>
+                        <div style="display: flex; justify-content: center;">
+                            <MudTextField Variant="Variant.Text" @bind-Value="@_model.UserName" Style="margin-bottom:30px" T="string" Label="用户名" For="@(() => _model.UserName)" />
+                            <MudIconButton OnClick="() => { _model.UserName = GenerateRandomName(); }" style="width: 50px;height:50px;display: flex; justify-content: center;" Color="Color.Dark" Size="Size.Small">
+                                <span class="iconfont icon-suiji" style="color:slateblue; font-size: 25px;"></span>
+                            </MudIconButton>
+                        </div>
                     </div>
                     <div style="display: flex; justify-content: center;">
-                        <MudTextField Variant="Variant.Text" @bind-Value="@_model.UserName" Style="margin-bottom:30px" T="string" Label="用户名" For="@(() => _model.UserName)" />
-                        <MudIconButton OnClick="() => { _model.UserName = GenerateRandomName(); }" style="width: 50px;height:50px;display: flex; justify-content: center;" Color="Color.Dark" Size="Size.Small">
-                            <span class="iconfont icon-suiji" style="color:slateblue; font-size: 25px;"></span>
-                        </MudIconButton>
+                        <div style="display: flex; justify-content: center;">
+                            <MudTextField @bind-Value="@_model.PassWord" Variant="Variant.Text" Style="margin-bottom:30px" T="string" Label="登录密码" For="@(() => _model.PassWord)" />
+                            <MudIconButton OnClick="() => { _model.PassWord = GenerateRandomPassword(); }" style="width: 50px;height:50px;display: flex; justify-content: center;" Color="Color.Dark" Size="Size.Small">
+                                <span class="iconfont icon-suiji" style="color:slateblue;font-size: 25px;"></span>
+                            </MudIconButton>
+                        </div>
+                        <div style="display: flex; justify-content: center;">
+                            <MudTextField @bind-Value="@_model.Phone" Variant="Variant.Text" Style="margin-bottom:30px;width:230px" T="string" Label="手机号码" For="@(() => _model.Phone)" />
+                        </div>
+
                     </div>
-                </div>
-                <div style="display: flex; justify-content: center;">
+
+                    <MudTextField @bind-Value="@_model.CompanyName" Variant="Variant.Text" Style="margin-bottom:30px" T="string" Label="公司名称" />
+                    @*授权列表*@
+                    <div>
+                        <MudTable @ref="_table" Height="300px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:500px;min-height:360px;max-height:360px;margin-bottom:10px" Items="@TenantItemInfo.AppLicenseInfos"
+                                  Dense="false" Hover="true" CanCancelEdit="true"
+                                  SelectOnRowClick="true"
+                                  RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
+                                  IsEditRowSwitchingBlocked="true"
+                                  ApplyButtonPosition="@applyButtonPosition"
+                                  EditButtonPosition="@editButtonPosition"
+                                  EditTrigger="@editTrigger">
+                            <HeaderContent>
+                                <MudTh>序号</MudTh>
+                                <MudTh>模块名称</MudTh>
+                                <MudTh>授权上限</MudTh>
+                            </HeaderContent>
+                            <RowTemplate Context="RowContext">
+                                <MudTd DataLabel="序号">@RowContext.Num</MudTd>
+                                <MudTd DataLabel="模块名称">@ConvertTemplateName(RowContext.LicensePermissionTemplateInfoId ?? 0)</MudTd>
+                                <MudTd DataLabel="授权上限">@RowContext.MaxLicenseCodeCount</MudTd>
+                            </RowTemplate>
+                            <RowEditingTemplate Context="RowEditContext">
+                                <MudTd DataLabel="序号">
+                                    <MudText>@RowEditContext.Num</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="模块名称">
+                                    <MudText>@ConvertTemplateName(RowEditContext.LicensePermissionTemplateInfoId ?? 0)</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="授权上限">
+                                    <MudTextField @bind-Value="@RowEditContext.MaxLicenseCodeCount" Required />
+                                </MudTd>
+
+                            </RowEditingTemplate>
+                        </MudTable>
+                    </div>
                     <div style="display: flex; justify-content: center;">
-                        <MudTextField @bind-Value="@_model.PassWord" Variant="Variant.Text" Style="margin-bottom:30px" T="string" Label="登录密码" For="@(() => _model.PassWord)" />
-                        <MudIconButton OnClick="() => { _model.PassWord = GenerateRandomPassword(); }" style="width: 50px;height:50px;display: flex; justify-content: center;" Color="Color.Dark" Size="Size.Small">
-                            <span class="iconfont icon-suiji" style="color:slateblue;font-size: 25px;"></span>
-                        </MudIconButton>
+                        <MudButton Style="margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">注册</MudButton>
+                        <MudButton OnClick="Cancel" Style="margin-left:5px;margin-right:5px; width:130px; border-radius: 30px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Error">取消</MudButton>
                     </div>
-                    <div style="display: flex; justify-content: center;">
-                        <MudTextField @bind-Value="@_model.Phone" Variant="Variant.Text" Style="margin-bottom:30px;width:230px" T="string" Label="手机号码" For="@(() => _model.Phone)" />
-                    </div>
-
                 </div>
 
-                <MudTextField @bind-Value="@_model.CompanyName" Variant="Variant.Text" Style="margin-bottom:30px" T="string" Label="公司名称" />
-                @*授权列表*@
-                <div>
-                    <MudTable @ref="_table" Height="300px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:500px;min-height:360px;max-height:360px;margin-bottom:10px" Items="@AppLicenseInfos"
-                              Dense="false" Hover="true" CanCancelEdit="true"
-                              SelectOnRowClick="true"
-                              RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
-                              IsEditRowSwitchingBlocked="true"
-                              ApplyButtonPosition="@applyButtonPosition"
-                              EditButtonPosition="@editButtonPosition"
-                              EditTrigger="@editTrigger">
-                        <HeaderContent>
-                            <MudTh>序号</MudTh>
-                            <MudTh>模块名称</MudTh>
-                            <MudTh>授权上限</MudTh>
-                        </HeaderContent>
-                        <RowTemplate Context="RowContext">
-                            <MudTd DataLabel="序号">@RowContext.Num</MudTd>
-                            <MudTd DataLabel="模块名称">@ConvertTemplateName(RowContext.LicensePermissionTemplateInfoId ?? 0)</MudTd>
-                            <MudTd DataLabel="授权上限">@RowContext.MaxLicenseCodeCount</MudTd>
-                        </RowTemplate>
-                        <RowEditingTemplate Context="RowEditContext">
-                            <MudTd DataLabel="序号">
-                                <MudTextField @bind-Value="@RowEditContext.Num" Required ReadOnly="true" />
-                            </MudTd>
-                            <MudTd DataLabel="模块名称">
-                                <MudText>@ConvertTemplateName(RowEditContext.LicensePermissionTemplateInfoId ?? 0)</MudText>
-                            </MudTd>
-                            <MudTd DataLabel="授权上限">
-                                <MudTextField @bind-Value="@RowEditContext.MaxLicenseCodeCount" Required />
-                            </MudTd>
 
-                        </RowEditingTemplate>
-                    </MudTable>
-                </div>
-                <div style="display: flex; justify-content: center;">
-                    <MudButton Style="margin-left:5px;margin-right:5px;width:130px; border-radius: 30px;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">注册</MudButton>
-                    <MudButton OnClick="Cancel" Style="margin-left:5px;margin-right:5px; width:130px; border-radius: 30px;" ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Error">取消</MudButton>
-                </div>
             </div>
 
+        </MudCardContent>
+    </MudCard>
 
-        </div>
-    </MudPaper>
 </EditForm>
 
 
@@ -108,7 +112,7 @@
 
     protected override async void OnInitialized() {
         await base.OnInitializedAsync();
-        AppLicenseInfos = AppTemplateItems?.Select((s, i) => new LicenseAppLicenseInfoModel {
+        TenantItemInfo.AppLicenseInfos = AppTemplateItems?.Select((s, i) => new LicenseAppLicenseInfoModel {
                 LicensePermissionTemplateInfoId = s.Id,
                 MaxLicenseCodeCount = 1,
                 Num = i + 1
@@ -126,7 +130,6 @@
     private TableApplyButtonPosition applyButtonPosition = TableApplyButtonPosition.End;
     private TableEditButtonPosition editButtonPosition = TableEditButtonPosition.End;
     private MudTable<LicenseAppLicenseInfoModel>? _table;
-    public List<LicenseAppLicenseInfoModel> AppLicenseInfos { get; set; } = new();
 
     RegisterAccountForm _model = new();
     bool success;
@@ -147,6 +150,11 @@
             Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
             Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
             if (key) {
+                //设置授权
+                foreach (var licenseInfo in TenantItemInfo.AppLicenseInfos) {
+                    await LicenseApiRequest.UpdateTenantLicenseMaxCount(_model.UserCode, licenseInfo.LicensePermissionTemplateInfoId ?? 1, licenseInfo.MaxLicenseCodeCount);
+
+                }
 
                 await OnConfirm.InvokeAsync(TenantItemInfo);
             }
