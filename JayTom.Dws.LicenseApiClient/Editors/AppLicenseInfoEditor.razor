@@ -21,10 +21,8 @@
         </div>
         @*列表*@
         <div>
-            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@UserInfo.AppLicenseInfos"
+            <MudTable Height="540px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;min-height:360px;max-height:540px;" Items="@LicenseAppLicenseInfos"
                       Dense="false" Hover="true" CanCancelEdit="true">
-
-
                 <HeaderContent>
                     <MudTh>程序模板名称</MudTh>
                     <MudTh>授权码上限</MudTh>
@@ -72,6 +70,7 @@
     [Parameter]
     public List<LicenseCodeItemInfoModel> LicenseCodeItems { get; set; } = new();
 
+    private List<LicenseAppLicenseInfoModel> LicenseAppLicenseInfos { get; set; } = new();
     private long _selectTemplateInfoId;
     private string _userCode = string.Empty;
     private int _maxLicenseCodeCount;
@@ -174,11 +173,24 @@
         //弹出授权码明细页面
         var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.False };
         var parameters = new DialogParameters<LicenseDetailDialog>
-                                                                                                                                                                                                    {
+                                                                                                                                                                                                                    {
             { x => x.UserCode, userCode },
             { x => x.TemplateName, ConvertTemplateName(licensePermissionTemplateInfoId) },
         };
 
         DialogService.ShowAsync<LicenseDetailDialog>("明细", parameters, options);
     }
+
+    protected override Task OnInitializedAsync() {
+        LicenseAppLicenseInfos = AppTemplateItems.Select((s, i) => new LicenseAppLicenseInfoModel {
+                LicensePermissionTemplateInfoId = s.Id,
+                MaxLicenseCodeCount = UserInfo.AppLicenseInfos.FirstOrDefault(f =>
+                    f.LicensePermissionTemplateInfoId.Equals(s.Id))?.MaxLicenseCodeCount ?? 0,
+                Num = i + 1
+            }).ToList();
+
+        return base.OnInitializedAsync();
+
+    }
+
 }
