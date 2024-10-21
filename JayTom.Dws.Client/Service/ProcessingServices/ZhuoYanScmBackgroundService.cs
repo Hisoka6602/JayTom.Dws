@@ -554,7 +554,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         createInfo.VolumeInfo = new VolumeInfoModel();
                     }
                 }
-                else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null, VolumeInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter or TriggerPositionEnum.VolumeSetValueAfter }) {
+                else if (item is {
+                    PackageInfo: { BarCodeInfo: not null, WeightInfo: not null, VolumeInfo: not null } info,
+                    TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or
+                             TriggerPositionEnum.WeightSetValueAfter or
+                             TriggerPositionEnum.ExternalDataInputAfter or
+                             TriggerPositionEnum.VolumeSetValueAfter
+                }) {
                     PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
                 }
             });

@@ -21,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="47.1.0" />
     <PackageReference Include="HidSharpCore" Version="1.2.1.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="NPOI" Version="2.6.0" />
     <PackageReference Include="RawInput.Sharp" Version="0.1.3" />

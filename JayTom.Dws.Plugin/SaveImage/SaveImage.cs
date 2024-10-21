@@ -2,9 +2,11 @@
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Encoder = System.Drawing.Imaging.Encoder;
 
 namespace JayTom.Dws.Plugin.SaveImage {
