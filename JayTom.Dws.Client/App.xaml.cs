@@ -397,6 +397,9 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ICloudApiClientMessageHub, CloudApiClientMessageHub>();
                 //同步配置
                 services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
+                //Tcp集群
+                services.AddSingleton<IClusterTcpInputManager, ClusterTcpInputManager>();
+
                 //把后台注册服务写在这里
                 services.AddHostedService<KeyboardDeviceBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务

@@ -36,24 +36,14 @@ namespace JayTom.Dws.Domain.Dto {
         public KeyboardDevice KeyboardDevice { get; set; } = new();
 
         /// <summary>
-        /// Tcp设置
-        /// </summary>
-        public TcpSettingsInfo TcpSettingsInfo { get; set; } = new();
-
-        /// <summary>
         /// 控件输入设置
         /// </summary>
         public ControlInputInfo ControlInputInfo { get; set; } = new();
 
         /// <summary>
-        /// 数据模板
+        /// Tcp绑定
         /// </summary>
-        public List<ItemTemplateInfo> DataTemplate { get; set; } = new();
-
-        /// <summary>
-        /// 分隔符
-        /// </summary>
-        public string Separator { get; set; } = string.Empty;
+        public List<TcpInputBindingInfo> TcpInputBindingInfos { get; set; } = new();
     }
 
     public class ControlInputInfo {
@@ -87,5 +77,23 @@ namespace JayTom.Dws.Domain.Dto {
         /// 是否接收体积
         /// </summary>
         public bool IsReceiveVolume { get; set; }
+    }
+
+    public class TcpInputBindingInfo {
+
+        /// <summary>
+        /// Ip
+        /// </summary>
+        public string IpAddress { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 端口
+        /// </summary>
+        public int Port { get; set; } = 2000;
+
+        /// <summary>
+        /// 是否已绑定
+        /// </summary>
+        public bool IsBound { get; set; }
     }
 }

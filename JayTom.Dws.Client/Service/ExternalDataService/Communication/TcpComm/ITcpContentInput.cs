@@ -4,6 +4,7 @@ using System.Text;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
 

@@ -145,34 +145,6 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
                 var infoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ContentInputSettings"), token);
                 if (infoModel is not null) {
                     _contentInputSettingsDto = JsonConvert.DeserializeObject<ContentInputSettingsDto>(infoModel.Value) ?? new ContentInputSettingsDto();
-
-                    if (_contentInputSettingsDto.IsUseTcpInput) {
-                        if (_contentInputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                            //创建服务端
-
-                            if (_tcpContentInput.ConnectionStatus == ConnectionStatus.Connected) {
-                                _tcpContentInput.Close();
-                            }
-                            _tcpContentInput.Communication += TcpContentInputOnCommunication;
-                            var connect = await _tcpContentInput.Connect(_contentInputSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                _contentInputSettingsDto.TcpSettingsInfo.ServerConfig.Port, ConnectionType.Server, token: token);
-                            if (!connect) {
-                                OnExternalDataException(new Exception("TCP server creation failed"));
-                            }
-                        }
-                        else {
-                            //创建客户端
-                            if (_tcpContentInput.ConnectionStatus == ConnectionStatus.Connected) {
-                                _tcpContentInput.Close();
-                            }
-                            _tcpContentInput.Communication += TcpContentInputOnCommunication;
-                            var connect = await _tcpContentInput.Connect(_contentInputSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                _contentInputSettingsDto.TcpSettingsInfo.ClientConfig.Port, ConnectionType.Client, token: token);
-                            if (!connect) {
-                                OnExternalDataException(new Exception("TCP client creation failed"));
-                            }
-                        }
-                    }
                 }
             }
             catch (Exception e) {
@@ -186,50 +158,6 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         //Tcp内容输入
         private void TcpContentInputOnCommunication(object? sender, CommunicationInfo e) {
             if (!string.IsNullOrEmpty(e.Content) && e.Type == CommunicationType.Receive) {
-                //暂时先不管Json格式
-                //默认分隔符= '|'
-                var inputEventArgs = new ExternalContentInputEventArgs {
-                    SourceContent = e.Content
-                };
-                try {
-                    float length = 0, width = 0, height = 0, volume = 0, weight = 0;
-                    var split = e.Content.Split(_contentInputSettingsDto.Separator);
-                    if (split.Length == _contentInputSettingsDto.DataTemplate.Count(c => c.Type != 2)) {
-                        var templateInfos = _contentInputSettingsDto.DataTemplate.Where(w => w.Type != 2).ToList();
-                        for (int i = 0; i < split.Length; i++) {
-                            if (templateInfos[i].Content.ToLower().Contains("length")) {
-                                float.TryParse(split[i], out length);
-                                inputEventArgs.Length = length;
-                            }
-                            else if (templateInfos[i].Content.ToLower().Contains("width")) {
-                                float.TryParse(split[i], out width);
-                                inputEventArgs.Width = width;
-                            }
-                            else if (templateInfos[i].Content.ToLower().Contains("height")) {
-                                float.TryParse(split[i], out height);
-                                inputEventArgs.Height = height;
-                            }
-                            else if (templateInfos[i].Content.ToLower().Contains("volume")) {
-                                float.TryParse(split[i], out volume);
-                                inputEventArgs.Volume = volume;
-                            }
-                            else if (templateInfos[i].Content.ToLower().Contains("weight")) {
-                                float.TryParse(split[i], out weight);
-                                inputEventArgs.Weight = weight;
-                            }
-                            else if (templateInfos[i].Content.ToLower().Contains("barcode")) {
-                                inputEventArgs.Barcode = Regex.Replace(split[i], @"[\u0000-\u001f\b]", "");
-                            }
-                        }
-                    }
-                    else {
-                        OnExternalDataException(new Exception($"split.Length:{split.Length} DataTemplate:{_contentInputSettingsDto.DataTemplate.Count(c => c.Type != 2)},判断不相等"));
-                    }
-                    OnContentInputReceived(inputEventArgs);
-                }
-                catch (Exception exception) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
-                }
             }
         }
 

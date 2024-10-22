@@ -82,7 +82,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     };
                 }
 
-                var tcpClient = await _tcpClient.ConnectAsync(60 * 1000);
+                var tcpClient = await _tcpClient.ConnectAsync(3000);
                 if (tcpClient is not null &&
                     tcpClient.IP.Equals(IpAddress) &&
                     tcpClient.Port.Equals(Port)) {
@@ -153,7 +153,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     }
                     var touchSocketConfig = new TouchSocketConfig().SetRemoteIPHost(new IPHost($"{tcpConnect.Address}:{tcpConnect.Port}"))
                         .UsePlugin().SetBufferLength(tcpConnect.DataLength).ConfigurePlugins(a => {
-                            a.UseReconnection(20, true, 1000);
+                            a.UseReconnection(3, true, 1000);
                         });
 
                     _tcpClient?.Setup(touchSocketConfig);
@@ -227,7 +227,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public void Close() {
             _tcpClient?.Close();
+            _tcpClient?.Dispose();
             _tcpClient = null;
+
             ConnectionStatus = ConnectionStatus.Disconnected;
         }
 

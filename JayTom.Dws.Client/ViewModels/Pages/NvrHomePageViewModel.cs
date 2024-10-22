@@ -41,7 +41,6 @@ using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
-
     public class NvrHomePageViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
@@ -318,6 +317,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     if (count > 1) {
                         SelectPlaybackStream = PlaybackStream.SubStream;
                     }
+                }
+                else {
+                    //Tcp
+                    SelectPlaybackStream = PlaybackStream.SubStream;
                 }
                 _isLoaded = true;
             }

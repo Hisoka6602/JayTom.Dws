@@ -1,5 +1,6 @@
 ﻿using System;
 using Prism.Mvvm;
+using System.Net;
 using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.UsbDevice;
 using System.Windows.Media.Imaging;
@@ -22,12 +24,14 @@ using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
+using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
     public class ContentInputSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
+        private readonly IClusterTcpInputManager _clusterTcpInputManager;
         private bool _isUseTcpInput;
         private bool _isUseControlInput;
         private ControlInputInfoModel _controlInputInfo = new();
@@ -37,10 +41,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private bool _isUseBarcodeScannerInput;
         private bool _isUseRegularFilter;
         private ObservableCollection<KeyboardDeviceItemInfoModel> _keyboardDeviceItemInfo = new();
+        private ObservableCollection<TcpInputBindingInfoModel> _tcpInputBindingInfos = new();
+        private string _startIpAddress = "127.0.0.1";
+        private string _endIpAddress = "127.0.0.2";
+        private bool _isTcpReconnecting;
 
         public ContentInputSettingsPageViewModel(IConfigRepository configRepository,
-            IKeyboardDeviceManager keyboardDeviceManager) : base(configRepository) {
+            IKeyboardDeviceManager keyboardDeviceManager, IClusterTcpInputManager clusterTcpInputManager) : base(configRepository) {
             _keyboardDeviceManager = keyboardDeviceManager;
+            _clusterTcpInputManager = clusterTcpInputManager;
 
             //监控Usb
             UsbManager.Instance.UsbDeviceInserted += (sender, args) => {
@@ -99,6 +108,35 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             }
                         }
                     });
+                });
+            };
+
+            _clusterTcpInputManager.ConnectionSuccessful += async (sender, model) => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    var tcpInputBindingInfoModel = TcpInputBindingInfos.FirstOrDefault(f => f.IpAddress.Equals(model.IpAddress) &&
+                        f.Port.Equals(model.Port));
+                    if (tcpInputBindingInfoModel is not null) {
+                        tcpInputBindingInfoModel.ConnectionStatus = TcpConnectionStatus.Connected;
+                    }
+                });
+            };
+            _clusterTcpInputManager.Disconnected += async (sender, model) => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    var tcpInputBindingInfoModel = TcpInputBindingInfos.FirstOrDefault(f => f.IpAddress.Equals(model.IpAddress) &&
+                        f.Port.Equals(model.Port));
+                    if (tcpInputBindingInfoModel is not null) {
+                        tcpInputBindingInfoModel.ConnectionStatus = TcpConnectionStatus.Disconnected;
+                    }
+                });
+            };
+            _clusterTcpInputManager.ConnectionFailed += async (sender, model) => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    var tcpInputBindingInfoModel = TcpInputBindingInfos.FirstOrDefault(f =>
+                        f.IpAddress.Equals(model.IpAddress) &&
+                        f.Port.Equals(model.Port));
+                    if (tcpInputBindingInfoModel is not null) {
+                        tcpInputBindingInfoModel.ConnectionStatus = TcpConnectionStatus.ConnectionFailed;
+                    }
                 });
             };
         }
@@ -161,9 +199,43 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
 
+        public ObservableCollection<TcpInputBindingInfoModel> TcpInputBindingInfos {
+            get => _tcpInputBindingInfos;
+            set => SetProperty(ref _tcpInputBindingInfos, value);
+        }
+
         public ObservableCollection<KeyboardDeviceItemInfoModel> KeyboardDeviceItemInfo {
             get => _keyboardDeviceItemInfo;
             set => SetProperty(ref _keyboardDeviceItemInfo, value);
+        }
+
+        /// <summary>
+        /// 起始IP地址
+        /// </summary>
+        public string StartIpAddress {
+            get => _startIpAddress;
+            set => SetProperty(ref _startIpAddress, value);
+        }
+
+        /// <summary>
+        /// 结束IP地址
+        /// </summary>
+        public string EndIpAddress {
+            get => _endIpAddress;
+            set => SetProperty(ref _endIpAddress, value);
+        }
+
+        /// <summary>
+        /// 端口号
+        /// </summary>
+        public int Port { get; set; } = 2000;
+
+        /// <summary>
+        /// Tcp是否正在重连中
+        /// </summary>
+        public bool IsTcpReconnecting {
+            get => _isTcpReconnecting;
+            set => SetProperty(ref _isTcpReconnecting, value);
         }
 
         public JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice KeyboardDevice { get; set; } = new();
@@ -258,20 +330,46 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             RefreshBarcodeScanner();
         }
 
-        public ICommand NvrSettingsCommand => new DelegateCommand<KeyboardDeviceItemInfoModel>(NvrSettingsDelegate);
+        public ICommand NvrSettingsCommand => new DelegateCommand<object>(NvrSettingsDelegate);
 
-        private async void NvrSettingsDelegate(KeyboardDeviceItemInfoModel obj) {
+        private async void NvrSettingsDelegate(object obj) {
             var nvrBindingEditor = new NvrBindingEditor();
-            if (nvrBindingEditor.DataContext is NvrBindingEditorViewModel model &&
-               !string.IsNullOrEmpty(obj.DevicePath)) {
-                model.Identifier = Identifier;
-                model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
-                    BindingSource = SourceType.BarcodeScanner,
-                    DisplayIdentifier = $"{obj.DeviceName}-{obj.ManufacturerName}",
-                    SerialNumber = obj.DevicePath
+
+            if (nvrBindingEditor.DataContext is not NvrBindingEditorViewModel model)
+                return;
+
+            // 抽取初始化方法
+            NvrBindingParamInfoModel CreateNvrBindingParamInfo(SourceType sourceType, string displayIdentifier, string serialNumber) {
+                return new NvrBindingParamInfoModel {
+                    BindingSource = sourceType,
+                    DisplayIdentifier = displayIdentifier,
+                    SerialNumber = serialNumber
                 };
-                await DialogHost.Show(nvrBindingEditor, model.Identifier);
             }
+
+            // 处理 KeyboardDeviceItemInfoModel
+            if (obj is KeyboardDeviceItemInfoModel info && !string.IsNullOrEmpty(info.DevicePath)) {
+                model.NvrBindingParamInfoModel = CreateNvrBindingParamInfo(
+                    SourceType.BarcodeScanner,
+                    $"{info.DeviceName}-{info.ManufacturerName}",
+                    info.DevicePath
+                );
+            }
+            // 处理 TcpInputBindingInfoModel
+            else if (obj is TcpInputBindingInfoModel tcpInfo && !string.IsNullOrEmpty(tcpInfo.IpAddress) && tcpInfo.Port > 0) {
+                model.NvrBindingParamInfoModel = CreateNvrBindingParamInfo(
+                    SourceType.Tcp,
+                    $"{tcpInfo.IpAddress}-{tcpInfo.Port}",
+                    $"{tcpInfo.IpAddress}-{tcpInfo.Port}"
+                );
+            }
+            else {
+                return; // 无效的 obj 参数直接返回
+            }
+
+            model.Identifier = Identifier;
+
+            await DialogHost.Show(nvrBindingEditor, model.Identifier);
         }
 
         public ICommand TcpInputNvrSettingsCommand => new DelegateCommand<object>(TcpInputNvrSettingsDelegate);
@@ -320,11 +418,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IsUseTcpInput = IsUseTcpInput,
                     IsUseBarcodeScannerInput = IsUseBarcodeScannerInput,
                     IsUseRegularFilter = IsUseRegularFilter,
-                    DataTemplate = DataTemplate.Select(s => new ItemTemplateInfo() {
-                        ApplicationType = s.ApplicationType,
-                        Content = s.Content,
-                        Type = s.Type
-                    })?.ToList() ?? new List<ItemTemplateInfo>(),
                     ControlInputInfo = new ControlInputInfo() {
                         IsReceiveBarcode = ControlInputInfo.IsReceiveBarcode,
                         IsReceiveHeight = ControlInputInfo.IsReceiveHeight,
@@ -333,19 +426,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IsReceiveWeight = ControlInputInfo.IsReceiveWeight,
                         IsReceiveWidth = ControlInputInfo.IsReceiveWidth,
                     },
-                    TcpSettingsInfo = new TcpSettingsInfo() {
-                        ConnectionMode = TcpSettingsInfo.ConnectionMode,
-                        ClientConfig = new TcpInfo() {
-                            IpAddress = TcpSettingsInfo.ClientConfig.IpAddress,
-                            Port = TcpSettingsInfo.ClientConfig.Port,
-                        },
-                        ServerConfig = new TcpInfo() {
-                            IpAddress = TcpSettingsInfo.ServerConfig.IpAddress,
-                            Port = TcpSettingsInfo.ServerConfig.Port,
-                        }
-                    },
-                    Separator = Separator,
                     KeyboardDevice = KeyboardDevice,
+                    TcpInputBindingInfos = TcpInputBindingInfos.Select(s => new TcpInputBindingInfo {
+                        IpAddress = s.IpAddress,
+                        IsBound = s.IsBound,
+                        Port = s.Port,
+                    }).ToList()
                 })
             });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -368,25 +454,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 IsReceiveWeight = settingsDto.ControlInputInfo.IsReceiveWeight,
                 IsReceiveWidth = settingsDto.ControlInputInfo.IsReceiveWidth
             };
-            TcpSettingsInfo = new TcpSettingsInfoModel {
-                ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
-                ClientConfig = new TcpInfoModel() {
-                    IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                    Port = settingsDto.TcpSettingsInfo.ClientConfig.Port
-                },
-                ServerConfig = new TcpInfoModel() {
-                    IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                    Port = settingsDto.TcpSettingsInfo.ServerConfig.Port
-                }
-            };
-            Separator = settingsDto.Separator;
-            var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
-                ApplicationType = s.ApplicationType,
-                Content = s.Content,
-                Type = s.Type
-            })?.ToList();
-            DataTemplate.Clear();
-            DataTemplate.AddRange(templateModels);
+            TcpInputBindingInfos = new ObservableCollection<TcpInputBindingInfoModel>(settingsDto.TcpInputBindingInfos.Select((s, i) => new TcpInputBindingInfoModel {
+                Num = i + 1,
+                IpAddress = s.IpAddress,
+                IsBound = s.IsBound,
+                Port = s.Port
+            }).ToList());
+
             if (IsUseBarcodeScannerInput) {
                 RefreshBarcodeScanner();
             }
@@ -418,6 +492,170 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     }
                 });
             });
+        }
+
+        /// <summary>
+        /// 添加TCP连接命令
+        /// </summary>
+        public ICommand AddTcpConnectionCommand => new DelegateCommand<object>(AddTcpConnectionDelegate);
+
+        private async void AddTcpConnectionDelegate(object obj) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                if (string.IsNullOrEmpty(StartIpAddress) || Port <= 0) {
+                    base.MessageQueue.Enqueue("起始Ip和端口都不能为空!");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(EndIpAddress)) {
+                    //判断IP+端口是否有重复
+                    //添加一个
+                    var any = TcpInputBindingInfos.Any(a => $"{a.IpAddress}&{a.Port}".Equals($"{StartIpAddress}&{Port}"));
+                    if (any) {
+                        base.MessageQueue.Enqueue("已存在相同项!");
+                        return;
+                    }
+                    TcpInputBindingInfos.Add(new TcpInputBindingInfoModel() {
+                        IpAddress = StartIpAddress,
+                        Port = Port,
+                    });
+                }
+                else {
+                    var newItems = GetIpRange(StartIpAddress, EndIpAddress)
+                        .Where(ip => TcpInputBindingInfos.All(a => $"{a.IpAddress}&{a.Port}" != $"{ip}&{Port}"))
+                        .Select(ip => new TcpInputBindingInfoModel {
+                            IpAddress = ip,
+                            Port = Port,
+                        })
+                        .ToList();
+
+                    TcpInputBindingInfos.AddRange(newItems);
+                }
+
+                for (var i = 0; i < TcpInputBindingInfos.Count; i++) {
+                    TcpInputBindingInfos[i].Num = i + 1;
+                }
+
+                base.MessageQueue.Enqueue("添加成功");
+            });
+        }
+
+        /// <summary>
+        /// TCP全部重连命令
+        /// </summary>
+        public ICommand ReconnectAllTcpCommand => new DelegateCommand<object>(ReconnectAllTcpDelegate);
+
+        private void ReconnectAllTcpDelegate(object obj) {
+            if (!IsTcpReconnecting) {
+                IsTcpReconnecting = true;
+                Task.Run(async () => {
+                    foreach (var tcpInputBindingInfoModel in TcpInputBindingInfos) {
+                        tcpInputBindingInfoModel.ConnectionStatus = TcpConnectionStatus.Connecting;
+                    }
+                    await _clusterTcpInputManager.ConnectBatch(TcpInputBindingInfos.ToList());
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        IsTcpReconnecting = false;
+                        var tcpInputBindingInfoModels = TcpInputBindingInfos.Where(w => w.ConnectionStatus == TcpConnectionStatus.Connecting).ToList();
+                        foreach (var model in tcpInputBindingInfoModels) {
+                            model.ConnectionStatus = TcpConnectionStatus.ConnectionFailed;
+                        }
+                    });
+                });
+            }
+        }
+
+        /// <summary>
+        /// Tcp全部删除
+        /// </summary>
+        public ICommand TcpDeleteAllCommand => new DelegateCommand<object>(TcpDeleteAllDelegate);
+
+        private async void TcpDeleteAllDelegate(object obj) {
+            await _clusterTcpInputManager.DisconnectAll();
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                TcpInputBindingInfos.Clear();
+            });
+        }
+
+        /// <summary>
+        /// TCP解绑命令
+        /// </summary>
+        public ICommand UnbindTcpCommand => new DelegateCommand<object>(UnbindTcpDelegate);
+
+        private void UnbindTcpDelegate(object obj) {
+            if (obj is TcpInputBindingInfoModel info) {
+                info.IsBound = false;
+            }
+        }
+
+        /// <summary>
+        /// TCP删除命令
+        /// </summary>
+        public ICommand DeleteTcpCommand => new DelegateCommand<object>(DeleteTcpDelegate);
+
+        private async void DeleteTcpDelegate(object obj) {
+            if (obj is TcpInputBindingInfoModel info) {
+                _clusterTcpInputManager.Disconnect(info);
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    TcpInputBindingInfos.Remove(info);
+                });
+
+                for (var i = 0; i < TcpInputBindingInfos.Count; i++) {
+                    TcpInputBindingInfos[i].Num = i + 1;
+                }
+                base.MessageQueue.Enqueue("删除成功");
+            }
+        }
+
+        /// <summary>
+        /// TCP绑定命令
+        /// </summary>
+        public ICommand BindTcpCommand => new DelegateCommand<object>(BindTcpDelegate);
+
+        private void BindTcpDelegate(object obj) {
+            if (obj is TcpInputBindingInfoModel info) {
+                info.IsBound = true;
+            }
+        }
+
+        /// <summary>
+        /// TCP重新连接命令
+        /// </summary>
+        public ICommand ReconnectTcpCommand => new DelegateCommand<object>(ReconnectTcpDelegate);
+
+        private void ReconnectTcpDelegate(object obj) {
+            if (obj is TcpInputBindingInfoModel info && info.ConnectionStatus != TcpConnectionStatus.Connecting) {
+                info.ConnectionStatus = TcpConnectionStatus.Connecting;
+                Task.Run(async () => {
+                    var connect = await _clusterTcpInputManager.Connect(info);
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        base.MessageQueue.Enqueue(connect ? "连接成功" : "连接失败");
+                        if (!connect) {
+                            info.ConnectionStatus = TcpConnectionStatus.ConnectionFailed;
+                        }
+                    });
+                });
+            }
+
+            //_clusterTcpInputManager
+        }
+
+        public IEnumerable<string> GetIpRange(string startIp, string endIp) {
+            // 将 IP 地址转换为整数
+            uint start = IpToInt(startIp);
+            uint end = IpToInt(endIp);
+
+            // 使用 LINQ 生成范围内的所有 IP 地址
+            return Enumerable.Range((int)start, (int)(end - start + 1))
+                .Select(IpFromInt);
+        }
+
+        // 将 IP 地址转换为整数
+        public uint IpToInt(string ipAddress) {
+            return (uint)IPAddress.NetworkToHostOrder((int)BitConverter.ToUInt32(IPAddress.Parse(ipAddress).GetAddressBytes(), 0));
+        }
+
+        // 将整数转换为 IP 地址
+        public string IpFromInt(int address) {
+            return new IPAddress(BitConverter.GetBytes((uint)IPAddress.HostToNetworkOrder(address))).ToString();
         }
     }
 }
