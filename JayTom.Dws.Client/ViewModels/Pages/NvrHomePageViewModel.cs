@@ -349,9 +349,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 if (!_keyboardDeviceManager.IsListening && _contentInputSettingsDto.IsUseBarcodeScannerInput) {
                     //启动设备
                     var (key1, value1) = await _deviceService.Start();
-                    EventAggregator.Instance.Publish(new ApplicationStatusChanged {
-                        Status = ApplicationStatus.Start
-                    });
+
                     await Application.Current.Dispatcher.InvokeAsync(() => {
                         AppContext.SetData("IsRunning", true);
                         if (_keyboardDeviceManager.IsListening) {
@@ -372,6 +370,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         HomeMessageQueue.Enqueue($"Tcp连接:{value}");
                     });
                 }
+                EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                    Status = ApplicationStatus.Start
+                });
             });
         }
 
