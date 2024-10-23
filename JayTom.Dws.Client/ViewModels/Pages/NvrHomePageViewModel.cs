@@ -38,9 +38,11 @@ using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
+using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
+
     public class NvrHomePageViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
@@ -48,6 +50,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly IConfigRepository _configRepository;
         private readonly IClientLicenseApi _clientLicenseApi;
         private readonly ICloud _cloud;
+        private readonly IClusterTcpInputManager _clusterTcpInputManager;
         private ObservableCollection<NvrRealTimePreviewItemInfo> _nvrRealTimePreviewItems = new();
 
         private DaHuatechNVR? _daHuatechNvr;
@@ -63,19 +66,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private ObservableCollection<PlaybackStream> _playbackStreamItems = new(Enum.GetValues(typeof(PlaybackStream)).Cast<PlaybackStream>());
         private PlaybackStream _selectPlaybackStream = PlaybackStream.MainStream;
         private bool _isLoaded;
+        private ContentInputSettingsDto _contentInputSettingsDto = new();
 
         public NvrHomePageViewModel(IDeviceService deviceService,
             IKeyboardDeviceManager keyboardDeviceManager,
             INvrCameraBindingRepository nvrCameraBindingRepository,
             IConfigRepository configRepository,
             IClientLicenseApi clientLicenseApi,
-            ICloud cloud) {
+            ICloud cloud, IClusterTcpInputManager clusterTcpInputManager) {
             _deviceService = deviceService;
             _keyboardDeviceManager = keyboardDeviceManager;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _configRepository = configRepository;
             _clientLicenseApi = clientLicenseApi;
             _cloud = cloud;
+            _clusterTcpInputManager = clusterTcpInputManager;
 
             _daHuatechNvr ??= DaHuatechNVR.Instance;
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
@@ -83,10 +88,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     await SetRealTimeVideo(false);
 
                     await _deviceService.Stop();
+                    await _clusterTcpInputManager.DisconnectAll();
                 }
                 else if (item is { Type: WindowsActionType.EnterSettings }) {
                     await SetRealTimeVideo(false);
                     await _deviceService.Stop();
+                    await _clusterTcpInputManager.DisconnectAll();
                     AppContext.SetData("IsRunning", false);
                     EventAggregator.Instance.Publish(new ApplicationStatusChanged {
                         Status = ApplicationStatus.Stop
@@ -170,6 +177,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     if (args.ExceptionMessage is not null) {
                         HomeMessageQueue.Enqueue(args.ExceptionMessage.Message);
                     }
+                });
+            };
+            _clusterTcpInputManager.MessageReceived += async (sender, args) => {
+                //显示条码
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    BarCode = args.Message;
                 });
             };
         }
@@ -329,20 +342,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 await SetRealTimeVideo(true);
             }
 
-            if (!_keyboardDeviceManager.IsListening) {
-                //启动设备
-                var (key1, value1) = await _deviceService.Start();
-                EventAggregator.Instance.Publish(new ApplicationStatusChanged {
-                    Status = ApplicationStatus.Start
-                });
-                AppContext.SetData("IsRunning", true);
-                if (_keyboardDeviceManager.IsListening) {
-                    IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#2E8B57"));
+            Task.Run(async () => {
+                _contentInputSettingsDto =
+                    await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ??
+                    new ContentInputSettingsDto();
+                if (!_keyboardDeviceManager.IsListening && _contentInputSettingsDto.IsUseBarcodeScannerInput) {
+                    //启动设备
+                    var (key1, value1) = await _deviceService.Start();
+                    EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                        Status = ApplicationStatus.Start
+                    });
+                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                        AppContext.SetData("IsRunning", true);
+                        if (_keyboardDeviceManager.IsListening) {
+                            IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#2E8B57"));
+                        }
+                        else {
+                            IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#4FFFFFFF"));
+                        }
+                    });
                 }
-                else {
-                    IconColor = (SolidColorBrush)(new BrushConverter().ConvertFromString("#4FFFFFFF"));
+
+                if (_contentInputSettingsDto.IsUseTcpInput) {
+                    //连接Tcp
+                    var tcpInputBindingInfos = _contentInputSettingsDto.TcpInputBindingInfos.Where(w => w.IsBound)
+                        .ToList();
+                    var (key, value) = await _clusterTcpInputManager.ConnectBatch(tcpInputBindingInfos);
+                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                        HomeMessageQueue.Enqueue($"Tcp连接:{value}");
+                    });
                 }
-            }
+            });
         }
 
         public ICommand SwitchQualityCommand => new DelegateCommand<NvrRealTimePreviewItemInfo>(SwitchQualityDelegate);
@@ -465,12 +495,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private async Task SetRealTimeVideo(bool isEnabled) {
             await Application.Current.Dispatcher.InvokeAsync(async () => {
                 if (isEnabled) {
+                    var previewItemInfos = new List<NvrRealTimePreviewItemInfo>();
                     NvrRealTimePreviewItems.Clear();
                     //获取绑定的相机
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
                     if (settingsDto is { IsUseBarcodeScannerInput: true, KeyboardDevice: { ProductId: > 0, VendorId: > 0 } }) {
                         var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-                        var nvrRealTimePreviewItemInfos = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath))
+                        previewItemInfos = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath))
                             .Select(s => new NvrRealTimePreviewItemInfo {
                                 IpAddress = s.IpAddress,
                                 Password = s.Password,
@@ -481,7 +512,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                 RealtimePreviewOperationCommand = RealtimePreviewOperationCommand,
                                 IsBuffering = true,
                             }).OrderBy(o => o.Channel).ToList();
-                        NvrRealTimePreviewItems.AddRange(nvrRealTimePreviewItemInfos);
+                    }
+                    else if (settingsDto is { IsUseTcpInput: true } tcpInput && tcpInput.TcpInputBindingInfos.Any(a => a.IsBound)) {
+                        var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+
+                        var list = tcpInput.TcpInputBindingInfos.Where(w => w.IsBound).Select(s => $"{s.IpAddress}-{s.Port}").ToList();
+
+                        previewItemInfos = nvrCameraBindingInfoModels.Where(w => list.Contains(w.SerialNumber))
+                            .Select(s => new NvrRealTimePreviewItemInfo {
+                                IpAddress = s.IpAddress,
+                                Password = s.Password,
+                                Port = s.Port,
+                                Username = s.Username,
+                                Channel = s.Channel,
+                                DisplayName = $"通道:{s.Channel + 1}",
+                                RealtimePreviewOperationCommand = RealtimePreviewOperationCommand,
+                                IsBuffering = true,
+                            }).OrderBy(o => o.Channel).ToList();
+                    }
+
+                    if (previewItemInfos.Any()) {
+                        NvrRealTimePreviewItems.AddRange(previewItemInfos);
+
                         if (NvrRealTimePreviewItems.Count is > 1 and < 4) {
                             var itemsToAdd = 4 - NvrRealTimePreviewItems.Count;
 
@@ -490,7 +542,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             }
                         }
 
-                        var nvrRealTimePreviewItemInfo = nvrRealTimePreviewItemInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.IpAddress) &&
+                        var nvrRealTimePreviewItemInfo = previewItemInfos.FirstOrDefault(f => !string.IsNullOrEmpty(f.IpAddress) &&
                             !string.IsNullOrEmpty(f.Username) &&
                             !string.IsNullOrWhiteSpace(f.Password) &&
                             f.Port > 0);

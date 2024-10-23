@@ -551,13 +551,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     foreach (var tcpInputBindingInfoModel in TcpInputBindingInfos) {
                         tcpInputBindingInfoModel.ConnectionStatus = TcpConnectionStatus.Connecting;
                     }
-                    await _clusterTcpInputManager.ConnectBatch(TcpInputBindingInfos.ToList());
+                    var (key, value) = await _clusterTcpInputManager.ConnectBatch(TcpInputBindingInfos.Select(s => new TcpInputBindingInfo() {
+                        IpAddress = s.IpAddress,
+                        Port = s.Port,
+                    }).ToList());
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                         IsTcpReconnecting = false;
                         var tcpInputBindingInfoModels = TcpInputBindingInfos.Where(w => w.ConnectionStatus == TcpConnectionStatus.Connecting).ToList();
                         foreach (var model in tcpInputBindingInfoModels) {
                             model.ConnectionStatus = TcpConnectionStatus.ConnectionFailed;
                         }
+                        base.MessageQueue.Enqueue(value);
                     });
                 });
             }
@@ -593,7 +597,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         private async void DeleteTcpDelegate(object obj) {
             if (obj is TcpInputBindingInfoModel info) {
-                _clusterTcpInputManager.Disconnect(info);
+                _clusterTcpInputManager.Disconnect(new TcpInputBindingInfo() {
+                    IpAddress = info.IpAddress,
+                    Port = info.Port,
+                });
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                     TcpInputBindingInfos.Remove(info);
                 });
@@ -625,7 +632,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             if (obj is TcpInputBindingInfoModel info && info.ConnectionStatus != TcpConnectionStatus.Connecting) {
                 info.ConnectionStatus = TcpConnectionStatus.Connecting;
                 Task.Run(async () => {
-                    var connect = await _clusterTcpInputManager.Connect(info);
+                    var connect = await _clusterTcpInputManager.Connect(new TcpInputBindingInfo() {
+                        IpAddress = info.IpAddress,
+                        Port = info.Port,
+                    });
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                         base.MessageQueue.Enqueue(connect ? "连接成功" : "连接失败");
                         if (!connect) {
