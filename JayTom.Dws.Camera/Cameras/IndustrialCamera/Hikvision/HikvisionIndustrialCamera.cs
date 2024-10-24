@@ -531,7 +531,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public void SetParameters(Dictionary<string, object> parameters) {
             //设置限定读码之类的参数
-            throw new NotImplementedException();
         }
 
         /// <summary>

@@ -241,7 +241,7 @@ namespace JayTom.Dws.Client.ViewModels {
                     await UpdateSlim.WaitAsync();
                     if (System.Windows.Application.Current?.Dispatcher is not null) {
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            foreach (var cameraItemInfoModel in list.Select(camera => CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info.SerialNumber))).OfType<CameraItemInfoModel>()) {
+                            foreach (var cameraItemInfoModel in list.Select(camera => CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))).OfType<CameraItemInfoModel>()) {
                                 cameraItemInfoModel.Status = CameraStatus.Disconnected;
                             }
                         }, DispatcherPriority.Background);

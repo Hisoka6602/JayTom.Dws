@@ -49,6 +49,11 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         public int PackagerId { get; set; }
 
         /// <summary>
+        /// 打包员编号
+        /// </summary>
+        public string PackagerNo { get; set; } = string.Empty;
+
+        /// <summary>
         /// 打包台名称
         /// </summary>
         public string OperateTableName { get; set; } = string.Empty;

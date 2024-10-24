@@ -30,9 +30,23 @@ namespace JayTom.Dws.Interface.Wdt {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
-            var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
+            var objects = ApiParameters.Method switch {
+                "wms.stockout.Sales.weighingExt" => new object[]
+                {
+                    barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force
+                },
+                "wms.stockout.Sales.onceWeighing" => new object[]
+                {
+                    barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName,
+                    ApiParameters.Force
+                },
+                "wms.stockout.Sales.onceWeighingByNo" => new object[]
+                {
+                    barcode, string.Empty, roundedWeight, ApiParameters.PackagerNo, ApiParameters.OperateTableName,
+                    ApiParameters.Force
+                },
+                _ => new object[] { }
+            };
 
             var dictionary = new Dictionary<string, object>()
             {
@@ -66,13 +80,12 @@ namespace JayTom.Dws.Interface.Wdt {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                 HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
-                            .ConfigureAwait(false);
-                    }
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
+                        .ConfigureAwait(false);
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -110,7 +123,7 @@ namespace JayTom.Dws.Interface.Wdt {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = JsonConvert.SerializeObject(ApiParameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(objects),
@@ -130,11 +143,24 @@ namespace JayTom.Dws.Interface.Wdt {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
-
             var roundedWeight = Math.Round(Convert.ToDecimal(weight), 3);
-            var objects = ApiParameters.Method.Equals("wms.stockout.Sales.weighingExt") ?
-                new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force }
-                : new object[] { barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName, ApiParameters.Force };
+            var objects = ApiParameters.Method switch {
+                "wms.stockout.Sales.weighingExt" => new object[]
+                {
+                    barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force
+                },
+                "wms.stockout.Sales.onceWeighing" => new object[]
+                {
+                    barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName,
+                    ApiParameters.Force
+                },
+                "wms.stockout.Sales.onceWeighingByNo" => new object[]
+                {
+                    barcode, string.Empty, roundedWeight, ApiParameters.PackagerNo, ApiParameters.OperateTableName,
+                    ApiParameters.Force
+                },
+                _ => new object[] { }
+            };
 
             var dictionary = new Dictionary<string, object>()
             {
@@ -168,13 +194,12 @@ namespace JayTom.Dws.Interface.Wdt {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
                 httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                 HttpResponseMessage message;
-                using (Stream dataStream =
-                       new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
-                            .ConfigureAwait(false);
-                    }
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(objects)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync($"{ApiParameters.Url}?{param}", content, token)
+                        .ConfigureAwait(false);
                 }
 
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -212,7 +237,7 @@ namespace JayTom.Dws.Interface.Wdt {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this.ApiParameters),
+                    ApiParameters = JsonConvert.SerializeObject(ApiParameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(objects),
@@ -234,6 +259,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     Method = param.Method,
                     OperateTableName = param.OperateTableName,
                     PackagerId = param.PackagerId,
+                    PackagerNo = param.PackagerNo,
                     Salt = param.Salt,
                     Sid = param.Sid,
                     TimeOut = param.TimeOut,
@@ -297,6 +323,11 @@ namespace JayTom.Dws.Interface.Wdt {
             /// 打包员Id
             /// </summary>
             public int PackagerId { get; set; }
+
+            /// <summary>
+            /// 打包员编号
+            /// </summary>
+            public string PackagerNo { get; set; } = string.Empty;
 
             /// <summary>
             /// 打包台名称

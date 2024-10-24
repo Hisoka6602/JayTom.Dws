@@ -14,6 +14,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _operateTableName = string.Empty;
         private bool _force;
         private int _timeOut = 1000;
+        private string _packagerNo = string.Empty;
 
         /// <summary>
         /// Url
@@ -77,6 +78,14 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         public int PackagerId {
             get => _packagerId;
             set => SetProperty(ref _packagerId, value);
+        }
+
+        /// <summary>
+        /// 打包员编号
+        /// </summary>
+        public string PackagerNo {
+            get => _packagerNo;
+            set => SetProperty(ref _packagerNo, value);
         }
 
         /// <summary>

@@ -216,6 +216,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     Key = entity.Key,
                                     OperateTableName = entity.OperateTableName,
                                     PackagerId = entity.PackagerId,
+                                    PackagerNo = entity.PackagerNo,
                                     Salt = entity.Salt,
                                     V = entity.V
                                 };
@@ -891,6 +892,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 Key = wdtFlagshipApiDto.Key,
                 OperateTableName = wdtFlagshipApiDto.OperateTableName,
                 PackagerId = wdtFlagshipApiDto.PackagerId,
+                PackagerNo = wdtFlagshipApiDto.PackagerNo,
                 Salt = wdtFlagshipApiDto.Salt,
                 V = wdtFlagshipApiDto.V
             };
