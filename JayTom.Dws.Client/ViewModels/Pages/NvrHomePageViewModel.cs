@@ -1,4 +1,5 @@
 ﻿using System;
+using DryIoc;
 using NetSDKCS;
 using System.IO;
 using Prism.Mvvm;
@@ -93,7 +94,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 else if (item is { Type: WindowsActionType.EnterSettings }) {
                     await SetRealTimeVideo(false);
                     await _deviceService.Stop();
-                    await _clusterTcpInputManager.DisconnectAll();
+                    //await _clusterTcpInputManager.DisconnectAll();
                     AppContext.SetData("IsRunning", false);
                     EventAggregator.Instance.Publish(new ApplicationStatusChanged {
                         Status = ApplicationStatus.Stop
@@ -185,6 +186,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     BarCode = args.Message;
                 });
             };
+            _clusterTcpInputManager.Disconnected += async (sender, info) => {
+                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                    HomeMessageQueue.Enqueue($"{info.IpAddress}-{info.Port}:断开");
+
+                    var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                    var nvrCameraBindingInfoModel = nvrCameraBindingInfoModels.FirstOrDefault(f =>
+                        f.SerialNumber.Equals($"{info.IpAddress}-{info.Port}"));
+                    if (nvrCameraBindingInfoModel is not null) {
+                        var nvrRealTimePreviewItemInfo = NvrRealTimePreviewItems.FirstOrDefault(f =>
+                            f.IpAddress.Equals(nvrCameraBindingInfoModel.IpAddress) &&
+                            f.Port.Equals(nvrCameraBindingInfoModel.Port) &&
+                            f.Channel.Equals(nvrCameraBindingInfoModel.Channel));
+                        if (nvrRealTimePreviewItemInfo is not null) {
+                            nvrRealTimePreviewItemInfo.PlaybackError = PlaybackError.UnknownError;
+                        }
+                    }
+                });
+            };
         }
 
         /// <summary>
@@ -261,64 +280,64 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                 //授权
 #if !DEBUG
-            if (IsUnauthorized != false) {
-                var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
-                if (!Directory.Exists(licenseDirectory)) {
-                    Directory.CreateDirectory(licenseDirectory);
-                }
-                var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
-                if (firstOrDefault is not null) {
-                    //解密授权
-                    var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
-
-                    if (data is not null) {
-                        //重新下载
-                        Task.Run(async () => {
-                            var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
-                            if (o is ApiResult result &&
-                                !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
-                                if (key1) {
-                                    var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
-                                    var files = Directory.GetFiles(licenseDirectory, "*.key");
-                                    Parallel.ForEach(files, File.Delete);
-
-                                    await _clientLicenseApi.DownloadFileAsync(result.Data?.ToString() ?? string.Empty,
-                                        $"{licenseDirectory}\\License.key");
-                                }
-                            }
-                        });
+                if (IsUnauthorized != false) {
+                    var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
+                    if (!Directory.Exists(licenseDirectory)) {
+                        Directory.CreateDirectory(licenseDirectory);
                     }
-                    if (!b) {
+                    var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                    if (firstOrDefault is not null) {
+                        //解密授权
+                        var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+
+                        if (data is not null) {
+                            //重新下载
+                            Task.Run(async () => {
+                                var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
+                                if (o is ApiResult result &&
+                                    !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
+                                    if (key1) {
+                                        var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
+                                        var files = Directory.GetFiles(licenseDirectory, "*.key");
+                                        Parallel.ForEach(files, File.Delete);
+
+                                        await _clientLicenseApi.DownloadFileAsync(result.Data?.ToString() ?? string.Empty,
+                                            $"{licenseDirectory}\\License.key");
+                                    }
+                                }
+                            });
+                        }
+                        if (!b) {
+                            IsUnauthorized = true;
+                            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = s,
+                                Type = LogType.Exception
+                            });
+                            HomeMessageQueue.Enqueue(s);
+                            return;
+                        }
+                        else {
+                            IsUnauthorized = false;
+                            //提交激活
+                            if (data is not null) {
+                                Task.Run(async () => {
+                                    await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
+                                });
+                            }
+                        }
+                    }
+                    else {
                         IsUnauthorized = true;
                         EventAggregator.Instance.Publish(new AppLogInfoModel {
                             CreateTime = DateTime.Now,
-                            Message = s,
+                            Message = "未检测到授权文件",
                             Type = LogType.Exception
                         });
-                        HomeMessageQueue.Enqueue(s);
+                        HomeMessageQueue.Enqueue("未检测到授权文件");
                         return;
                     }
-                    else {
-                        IsUnauthorized = false;
-                        //提交激活
-                        if (data is not null) {
-                            Task.Run(async () => {
-                                await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
-                            });
-                        }
-                    }
                 }
-                else {
-                    IsUnauthorized = true;
-                    EventAggregator.Instance.Publish(new AppLogInfoModel {
-                        CreateTime = DateTime.Now,
-                        Message = "未检测到授权文件",
-                        Type = LogType.Exception
-                    });
-                    HomeMessageQueue.Enqueue("未检测到授权文件");
-                    return;
-                }
-            }
 
 #endif
                 //判断多个绑定

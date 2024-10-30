@@ -79,15 +79,20 @@ namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
                 await ConnectionSlim.WaitAsync();
                 var lockObj = new object();
                 var successfulCount = 0;
-                await DisconnectAll();
+                //await DisconnectAll();
                 _tcpCommClients.Clear();
 
                 var tasks = tcpInputs.Select(async s => {
                     await Task.Delay(80);
-                    var connect = await Connect(s);
-                    if (connect) {
-                        lock (lockObj) {
-                            successfulCount++;
+                    var tcpCommClient = _tcpCommClients.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) &&
+                                                                             f.Port.Equals(s.Port));
+
+                    if (tcpCommClient is null || tcpCommClient.ConnectionStatus != ConnectionStatus.Connected) {
+                        var connect = await Connect(s);
+                        if (connect) {
+                            lock (lockObj) {
+                                successfulCount++;
+                            }
                         }
                     }
                 }).ToList();
@@ -140,10 +145,15 @@ namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
         }
 
         public async Task DisconnectAll() {
-            await Task.Yield();
             _tcpCommClients.ForEach(f => {
                 f?.Close();
             });
+            await Task.Delay(2000);
+        }
+
+        public ITcpCommClient? GetTcpInputInfo(string ipAddress, int port) {
+            return _tcpCommClients.FirstOrDefault(f => f.IpAddress.Equals(ipAddress) &&
+                                                 f.Port.Equals(port));
         }
 
         protected virtual async void OnConnectionSuccessful(TcpInputBindingInfo e) {

@@ -6,6 +6,7 @@ using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using MaterialDesignThemes.Wpf;
@@ -458,7 +459,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Num = i + 1,
                 IpAddress = s.IpAddress,
                 IsBound = s.IsBound,
-                Port = s.Port
+                Port = s.Port,
+                ConnectionStatus = _clusterTcpInputManager.GetTcpInputInfo(s.IpAddress, s.Port)?.ConnectionStatus ==
+                                   ConnectionStatus.Connected ? TcpConnectionStatus.Connected : TcpConnectionStatus.Disconnected
             }).ToList());
 
             if (IsUseBarcodeScannerInput) {

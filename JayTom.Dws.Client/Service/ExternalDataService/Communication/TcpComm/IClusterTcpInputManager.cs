@@ -4,6 +4,7 @@ using System.Text;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
@@ -63,6 +64,14 @@ namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
         /// 断开所有 TCP 输入绑定的连接。
         /// </summary>
         Task DisconnectAll();
+
+        /// <summary>
+        /// 获取连接信息
+        /// </summary>
+        /// <param name="ipAddress"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        ITcpCommClient? GetTcpInputInfo(string ipAddress, int port);
     }
 
     public class MessageReceivedEventArgs : EventArgs {
