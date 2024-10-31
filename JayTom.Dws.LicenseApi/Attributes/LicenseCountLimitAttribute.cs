@@ -30,24 +30,35 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                     if (result is { Key: true, Value: LicenseUserInfo { Role: UserRole.SuperAdmin } }) {
                         //重新获取
                         isSuperAdminCreated = true;
-                        switch (validationContext.ObjectInstance) {
-                            case BulkCreateLicenseCodeDo model:
-                                code = model.UserCode;
-                                templateInfoId = model.TemplateInfoId;
-                                break;
 
-                            case CreateLicenseCodeDo createModel:
-                                code = createModel.UserCode;
-                                templateInfoId = createModel.TemplateInfoId;
-                                break;
-
-                            case UpdateLicenseCodeDo updateModel:
-                                code = updateModel.UserCode;
-                                templateInfoId = updateModel.TemplateInfoId;
-                                licenseCode = updateModel.LicenseCode;
-                                break;
-                        }
                     }
+                    switch (validationContext.ObjectInstance) {
+                        case BulkCreateLicenseCodeDo model:
+                            if (isSuperAdminCreated) {
+                                code = model.UserCode;
+                            }
+
+                            templateInfoId = model.TemplateInfoId;
+                            break;
+
+                        case CreateLicenseCodeDo createModel:
+                            if (isSuperAdminCreated) {
+                                code = createModel.UserCode;
+                            }
+
+                            templateInfoId = createModel.TemplateInfoId;
+                            break;
+
+                        case UpdateLicenseCodeDo updateModel:
+                            if (isSuperAdminCreated) {
+                                code = updateModel.UserCode;
+                            }
+
+                            templateInfoId = updateModel.TemplateInfoId;
+                            licenseCode = updateModel.LicenseCode;
+                            break;
+                    }
+
                 }
 
                 var licenseUserRepository = validationContext.GetService<ILicenseUserRepository>();
