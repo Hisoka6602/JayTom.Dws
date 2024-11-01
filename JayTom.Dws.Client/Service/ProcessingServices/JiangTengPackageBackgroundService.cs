@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
@@ -10,15 +11,19 @@ using JayTom.Dws.Domain.Model;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Service.ExternalDataService;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
+
     public class JiangTengPackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
@@ -33,12 +38,15 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private static bool _isWindowsClose;
         private List<ICamera> _cameras = new();
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
+        private ConcurrentQueue<CameraImageInfo> _panoramaImageItems = new();
+        private List<PanoramaCameraConfigInfoModel> _panoramaCameras = new();
 
         public JiangTengPackageBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
             IConfigRepository configRepository,
             ISortingService sortingService,
-            IExternalDataService externalDataService) {
+            IExternalDataService externalDataService,
+            IPanoramaCameraConfigRepository panoramaCameraConfigRepository) {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
             _configRepository = configRepository;
@@ -47,6 +55,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             //相机
             _deviceService.CameraInitialized += delegate (object? sender, List<ICamera> list) {
                 _cameras = list;
+                _panoramaCameras = panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id)
+                    ?.ConfigureAwait(false).GetAwaiter().GetResult()?.ToList() ?? new List<PanoramaCameraConfigInfoModel>();
+                NLog.LogManager.GetCurrentClassLogger().Error($"初始化相机:{JsonConvert.SerializeObject(_cameras)}");
+            };
+            //全景相机
+            _deviceService.PanoramaCaptured += async delegate (object? sender, PanoramaCaptureEventArgs args) {
+                await Task.Yield();
+                _panoramaImageItems.Enqueue(new CameraImageInfo() {
+                    CameraSerialNumber = args.CameraSerialNumber,
+                    Image = args.Image,
+                    Barcode = args.Barcode,
+                    BarcodeTimestamp = args.BarcodeTimestamp
+                });
             };
             //条码返回
             _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args) {
@@ -78,6 +99,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
                             PackageInfo = packageInfo
+                        });
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                            PackageInfo = packageInfo,
                         });
                     }
                     else {
@@ -602,6 +628,22 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         !_volumeSettingsInfo.IsUseExternalVolumeInput) {
                         createInfo.VolumeInfo = new VolumeInfoModel();
                     }
+
+                    if (createInfo.VolumeInfo is not null &&
+                        _weightSettingsDto.Mode == WeightMode.None &&
+                        createInfo.BarCodeInfo is not null) {
+                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(createInfo.CreateTime));
+                    }
+                }
+                else if (item is { PackageInfo: { BarCodeInfo: not null } barCodeInfo, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter }) {
+                    //判断触发全景(电梯厂专用)
+
+                    var cameras = _cameras.Where(w => w.SdkType == SdkType.SecurityCamera)?.ToList();
+
+                    NLog.LogManager.GetCurrentClassLogger().Error($"拍照相机{JsonConvert.SerializeObject(cameras)}");
+                    foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
+                        await c.TakePhotoAsync(barCodeInfo.BarCodeInfo.Barcode, barCodeInfo.Timestamp);
+                    }
                 }
                 else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null, VolumeInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter or TriggerPositionEnum.VolumeSetValueAfter }) {
                     PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
@@ -689,6 +731,38 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     PackageTimestamped = codeInfo.Timestamp,
                                 });
                                 codeInfo.IsSavedImage = true;
+                            }
+
+                            if (_panoramaImageItems.Count > 0) {
+                                _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
+                                if (panoramaImageInfo is not null) {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"存在全景图");
+                                    var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
+                                        f.Value.BarCodeInfo?.Barcode.Equals(panoramaImageInfo.Barcode) == true);
+                                    if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null } &&
+                                        info.Timestamp.Equals(panoramaImageInfo.BarcodeTimestamp)) {
+                                        //全景图数量+1
+                                        NLog.LogManager.GetCurrentClassLogger().Error($"匹配完成");
+                                        EventAggregator.Instance.Publish(new ImageMessageInfo {
+                                            BarCode = info.BarCodeInfo.Barcode,
+                                            CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
+                                            Weight = (float)info.WeightInfo.FormattedWeight,
+                                            Height = (float)info.VolumeInfo.FormattedHeight,
+                                            Image = panoramaImageInfo.Image,
+                                            Length = (float)info.VolumeInfo.FormattedLength,
+                                            Width = (float)info.VolumeInfo.FormattedWidth,
+                                            Volume = (float)info.VolumeInfo.FormattedVolume,
+                                            ScanTime = info.BarCodeInfo.ScanTime,
+                                            Type = SaveImageType.PanoramaImage,
+                                            CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
+                                            CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.CustomName ?? string.Empty,
+                                            PackageTimestamped = info.Timestamp,
+                                        });
+                                    }
+                                    else {
+                                        _panoramaImageItems.Enqueue(panoramaImageInfo);
+                                    }
+                                }
                             }
 
                             //移除包裹
