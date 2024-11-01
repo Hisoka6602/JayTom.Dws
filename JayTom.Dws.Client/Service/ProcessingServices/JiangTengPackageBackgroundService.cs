@@ -19,6 +19,7 @@ using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Service.ExternalDataService;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices {
+
     public class JiangTengPackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
@@ -601,6 +602,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     if (_cameras.All(camera => camera.BindingType != CameraBindingType.VolumeCamera) &&
                         !_volumeSettingsInfo.IsUseExternalVolumeInput) {
                         createInfo.VolumeInfo = new VolumeInfoModel();
+                    }
+
+                    if (_weightSettingsDto.Mode == WeightMode.None &&
+                        createInfo.VolumeInfo is not null) {
+                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(createInfo.CreateTime));
                     }
                 }
                 else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null, VolumeInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter or TriggerPositionEnum.VolumeSetValueAfter }) {

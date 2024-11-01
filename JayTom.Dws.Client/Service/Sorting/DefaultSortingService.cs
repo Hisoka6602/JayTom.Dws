@@ -309,7 +309,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
                             IsStackedPackage = model.IsStackedPackage ?? false,
-                            LinkedCarCount = model.LinkedCarCount
+                            LinkedCarCount = model.LinkedCarCount,
+                            Timestamp = model.Timestamp,
                         });
                     }
                 }
@@ -346,6 +347,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             IsCreatedByLowerMachine = false,
                             OcrInfo = model,
                             IsStackedPackage = model.IsStackedPackage,
+                            Timestamp = model.RecognitionTimestamp,
                         });
                     }
                 }
