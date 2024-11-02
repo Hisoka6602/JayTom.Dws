@@ -52,7 +52,6 @@ namespace JayTom.Dws.VideoApiDbTest {
             modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                 c.Id
             });
-
             //设备
             modelBuilder.Entity<PackageInfoModel>()
                 .HasOne(b => b.DeviceInfo)
@@ -62,7 +61,6 @@ namespace JayTom.Dws.VideoApiDbTest {
             modelBuilder.Entity<DeviceInfoModel>().HasKey(c => new {
                 c.Id
             });
-
             //Nvr
             modelBuilder.Entity<PackageInfoModel>()
                 .HasMany(b => b.NvrInfos)
