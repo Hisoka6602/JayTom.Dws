@@ -418,9 +418,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         private async void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
             //全景相机
             await Task.Yield();
-            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && f.BindingType is CameraBindingType.PanoramaCamera);
-            if (model is not null &&
-                model.Image is not null) {
+            var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(args.CameraSerialNumber) && (f.BindingType is CameraBindingType.PanoramaCamera ||
+                    f.Type == CameraType.VideoCamera));
+            if (model?.Image != null) {
                 //图片转换
                 if (args?.ThumbImage is not null) {
                     if (args.Timestamp != model.ImageTimestamp) {
