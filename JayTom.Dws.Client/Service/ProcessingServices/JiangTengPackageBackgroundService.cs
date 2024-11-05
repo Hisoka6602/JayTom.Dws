@@ -94,6 +94,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 BindTime = DateTime.Now
                             },
                             Image = args.Image,
+                            Timestamp = args.Timestamp,
                         };
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
                             IsSuccess = true,
@@ -511,7 +512,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         //如果是动态体积就需要满足条码和重量才能使用
                         packageInfo.VolumeInfo = new VolumeInfoModel() {
                             CreateTime = DateTime.Now,
-
                             FormattedHeight = args.Height - packageInfo.LengthToDeduct,
                             FormattedWidth = args.Width - packageInfo.WidthToDeduct,
                             FormattedLength = args.Length - packageInfo.LengthToDeduct,
@@ -567,7 +567,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         return;
                     }
 
-                    packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
+                    if (packageInfo.Timestamp == 0) {
+                        packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
+                    }
 
                     //添加包裹
                     var packageRemoveTimers = new List<PackageTimer>();
@@ -640,7 +642,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                     var cameras = _cameras.Where(w => w.SdkType == SdkType.SecurityCamera)?.ToList();
 
-                    NLog.LogManager.GetCurrentClassLogger().Error($"拍照相机{JsonConvert.SerializeObject(cameras)}");
                     foreach (var c in (cameras ?? new List<ICamera>()).Where(c => _deviceService.RunningStatus)) {
                         await c.TakePhotoAsync(barCodeInfo.BarCodeInfo.Barcode, barCodeInfo.Timestamp);
                     }
@@ -736,22 +737,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             if (_panoramaImageItems.Count > 0) {
                                 _panoramaImageItems.TryDequeue(out var panoramaImageInfo);
                                 if (panoramaImageInfo is not null) {
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"存在全景图");
-                                    var info = PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: not null } &&
-                                        f.Value.BarCodeInfo?.Barcode.Equals(panoramaImageInfo.Barcode) == true);
-                                    if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null } &&
+                                    var info = PackageInfoManager.GetPackage(f => f.Value.Timestamp.Equals(panoramaImageInfo.BarcodeTimestamp));
+                                    if (info is { BarCodeInfo: not null } &&
                                         info.Timestamp.Equals(panoramaImageInfo.BarcodeTimestamp)) {
                                         //全景图数量+1
-                                        NLog.LogManager.GetCurrentClassLogger().Error($"匹配完成");
                                         EventAggregator.Instance.Publish(new ImageMessageInfo {
                                             BarCode = info.BarCodeInfo.Barcode,
                                             CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
-                                            Weight = (float)info.WeightInfo.FormattedWeight,
-                                            Height = (float)info.VolumeInfo.FormattedHeight,
+                                            Weight = (float)(info.WeightInfo?.FormattedWeight ?? 0),
+                                            Height = (float)(info.VolumeInfo?.FormattedHeight ?? 0),
                                             Image = panoramaImageInfo.Image,
-                                            Length = (float)info.VolumeInfo.FormattedLength,
-                                            Width = (float)info.VolumeInfo.FormattedWidth,
-                                            Volume = (float)info.VolumeInfo.FormattedVolume,
+                                            Length = (float)(info.VolumeInfo?.FormattedLength ?? 0),
+                                            Width = (float)(info.VolumeInfo?.FormattedWidth ?? 0),
+                                            Volume = (float)(info.VolumeInfo?.FormattedVolume ?? 0),
                                             ScanTime = info.BarCodeInfo.ScanTime,
                                             Type = SaveImageType.PanoramaImage,
                                             CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
