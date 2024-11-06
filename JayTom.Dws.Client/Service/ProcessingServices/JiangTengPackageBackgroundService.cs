@@ -12,6 +12,7 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
@@ -630,7 +631,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         !_volumeSettingsInfo.IsUseExternalVolumeInput) {
                         createInfo.VolumeInfo = new VolumeInfoModel();
                     }
-
                     if (createInfo.VolumeInfo is not null &&
                         _weightSettingsDto.Mode == WeightMode.None &&
                         createInfo.BarCodeInfo is not null) {
