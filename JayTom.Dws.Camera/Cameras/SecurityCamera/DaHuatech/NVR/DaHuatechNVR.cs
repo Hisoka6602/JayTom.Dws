@@ -837,6 +837,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     });
                 };
             }
+
             var realPlayId = NETClient.PlayBackByTime(dev.LogInHandle, channelId, stuInfo, ref stuOut);
             if (IntPtr.Zero == realPlayId) {
                 return new KeyValuePair<bool, object>(false, "播放失败");
@@ -1089,7 +1090,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="downLoadProgressCallBack"></param>
         /// <returns></returns>
         public async Task<KeyValuePair<bool, object>> DownloadRecording(string ipAddress, int channelId, DateTime startDateTime,
-            DateTime endDateTime, int videoStreamType, string savePath, Func<DownLoadProgressInfo, Task>? downLoadProgressCallBack = null) {
+            DateTime endDateTime, int videoStreamType, string savePath,
+            Func<DownLoadProgressInfo, Task>? downLoadProgressCallBack = null) {
             await Task.Yield();
             var b = _loginDev.TryGetValue(ipAddress, out var dev);
             if (!b || dev is null) {
