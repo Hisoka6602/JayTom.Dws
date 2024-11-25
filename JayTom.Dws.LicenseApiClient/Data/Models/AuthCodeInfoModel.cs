@@ -41,5 +41,10 @@
         /// 分组名
         /// </summary>
         public string GroupName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码器上限
+        /// </summary>
+        public int MaxBindingScannerCount { get; set; } = 1;
     }
 }

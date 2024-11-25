@@ -32,5 +32,11 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// </summary>
         [UserCodeExists(IsExists = true, ErrorMessage = "租户代码不存在")]
         public string? UserCode { get; set; }
+
+        /// <summary>
+        /// 扫码器上限
+        /// </summary>
+        [Range(1, int.MaxValue, ErrorMessage = "数值不在可设置范围内")]
+        public int MaxBindingScannerCount { get; set; }
     }
 }

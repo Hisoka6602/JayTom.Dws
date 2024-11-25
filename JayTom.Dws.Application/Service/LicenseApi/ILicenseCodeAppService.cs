@@ -16,6 +16,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         /// <param name="maxClientCount"></param>
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="isSuperAdminCreated"></param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -24,6 +25,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            int maxBindingScannerCount,
             bool isSuperAdminCreated = false,
             CancellationToken token = default);
 
@@ -35,6 +37,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
         /// <param name="licenseCodeCount"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="isSuperAdminCreated"></param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -43,15 +46,29 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
             DateTime expirationDate,
             string clientName,
             int licenseCodeCount,
+            int maxBindingScannerCount,
             bool isSuperAdminCreated = false,
             CancellationToken token = default);
 
+        /// <summary>
+        /// 更新授权码
+        /// </summary>
+        /// <param name="templateInfoId"></param>
+        /// <param name="userCode"></param>
+        /// <param name="licenseCode"></param>
+        /// <param name="maxClientCount"></param>
+        /// <param name="expirationDate"></param>
+        /// <param name="clientName"></param>
+        /// <param name="maxBindingScannerCount"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId,
             string userCode,
             string licenseCode,
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            int maxBindingScannerCount,
             CancellationToken token);
 
         /// <summary>

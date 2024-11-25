@@ -57,7 +57,10 @@
         /// 分组名称
         /// </summary>
         public string GroupName { get; set; } = string.Empty;
-
+        /// <summary>
+        /// 扫码器上限数量
+        /// </summary>
+        public int MaxBindingScannerCount { get; set; }
         public List<LicenseClientBindingDto> MachineCodeItem { get; set; } = new();
     }
 

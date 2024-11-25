@@ -1,4 +1,5 @@
 ﻿using JayTom.Dws.LicenseApi.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.LicenseApi.Do {
 
@@ -15,5 +16,11 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// </summary>
 
         public string LicenseCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 扫码器上限
+        /// </summary>
+        [Range(1, int.MaxValue, ErrorMessage = "数值不在可设置范围内")]
+        public int MaxBindingScannerCount { get; set; }
     }
 }

@@ -24,7 +24,7 @@
             }
             @if (!AuthCodeInfo.IsGroupedBatchGeneration) {
                 @*客户端上限数量*@
-                <div style=" display: flex;margin-top:10px;display: flex; align-items: center;">
+                <div style=" display: flex;margin-top:10px; align-items: center;">
                     <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">客户端上限数量:</span>
                     <MudNumericField Style="margin-left:10px; margin-bottom:30px;" @bind-Value="AuthCodeInfo.MaxClientCount" Variant="Variant.Text" Min="1" />
                 </div>
@@ -35,7 +35,7 @@
 
 
             @*到期时间*@
-            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+            <div style="display: flex;margin-top:10px; align-items: center;">
                 <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">到期时间:</span>
                 <DateTimeEditor Style="width: 170px;" @bind-DateTime="AuthCodeInfo.ExpirationDate"></DateTimeEditor>
                 <MudButton OnClick="() => {SetQuickTime(1,TimeUnit.Week);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">1周</MudButton>
@@ -45,9 +45,18 @@
                 <MudButton OnClick="() => {SetQuickTime(2,TimeUnit.Year);}" Style="border-radius: 15px; margin-left:8px;color:white" Variant="Variant.Filled" Color="Color.Primary">2年</MudButton>
 
             </div>
-
+            @if (SelectAppTemplateItems?.Any(a => a.LicenseApplicationInfo.ApplicationName.Equals("视频追溯")) == true) {
+                @*扫码器上限数量*@
+                <div style=" display: flex;margin-top:10px; align-items: center;">
+                    <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">扫码器上限数量:</span>
+                    <MudNumericField Style="margin-left:10px; margin-bottom:30px;" @bind-Value="AuthCodeInfo.MaxBindingScannerCount" Variant="Variant.Text" Min="1" />
+                </div>
+            }
+            else {
+                AuthCodeInfo.MaxClientCount = 1;
+            }
             @*客户*@
-            <div style="display: flex;margin-top:10px;display: flex; align-items: center;">
+            <div style="display: flex;margin-top:10px; align-items: center;">
                 <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">客户:</span>
                 <MudTextField Style="margin-left:10px;margin-bottom:30px;" @bind-Value="AuthCodeInfo.ClientName" Variant="Variant.Text"></MudTextField>
             </div>
@@ -55,7 +64,7 @@
             @if (!IsEdit) {
                 <MudSwitch @bind-Value="AuthCodeInfo.IsGroupedBatchGeneration" Label="分组批量生成" Color="Color.Primary" />
                 <MudCollapse Expanded="AuthCodeInfo.IsGroupedBatchGeneration">
-                    <div style=" display: flex;margin-top:10px;display: flex; align-items: center;">
+                    <div style=" display: flex;margin-top:10px; align-items: center;">
                         <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 13px;">授权码生成数量:</span>
                         <MudNumericField Style="margin-left:10px; margin-bottom:30px;" @bind-Value="AuthCodeInfo.AuthCodeGenerationCount" Variant="Variant.Text" Min="1" />
                     </div>
@@ -79,7 +88,6 @@
         display: flex;
         justify-content: flex-end;
         align-items: flex-end;
-    @*height: 95%; width: 99%;*@
     }
 </style>
 @code {

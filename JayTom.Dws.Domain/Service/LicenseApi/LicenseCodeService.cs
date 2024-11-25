@@ -23,7 +23,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, bool isSuperAdminCreated, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, bool isSuperAdminCreated, CancellationToken token) {
             var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (key && value is LicenseUserInfo licenseUserInfo) {
                 var insert = await _licenseCodeRepository.Insert(new LicenseCodeInfo() {
@@ -34,6 +34,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     LicenseCode = licenseCode,
                     UserId = licenseUserInfo.Id,
                     CreateTime = DateTime.Now,
+                    MaxBindingScannerCount = maxBindingScannerCount,
                     LicenseClientBindingInfo = new List<LicenseClientBindingInfo>()
                 }, token);
 
@@ -56,7 +57,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, string userCode, List<string> licenseCode, DateTime expirationDate,
-            string clientName, bool isSuperAdminCreated = false, CancellationToken token = default) {
+            string clientName, int maxBindingScannerCount, bool isSuperAdminCreated = false, CancellationToken token = default) {
             var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (key && value is LicenseUserInfo licenseUserInfo) {
                 var licenseCodeInfos = licenseCode.Select(s => new LicenseCodeInfo {
@@ -67,6 +68,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     LicenseCode = s,
                     UserId = licenseUserInfo.Id,
                     CreateTime = DateTime.Now,
+                    MaxBindingScannerCount = maxBindingScannerCount,
                     LicenseGroupInfo = new LicenseGroupInfo() {
                         GroupName = clientName,
                         CreateTime = DateTime.Now,
@@ -96,7 +98,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, CancellationToken token) {
             var isSuperAdmin = false;
             var (b, o) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (b && o is LicenseUserInfo userInfo) {
@@ -115,6 +117,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 info.ExpirationDate = expirationDate;
                 info.ClientName = clientName;
                 info.MaxClientCount = maxClientCount;
+                info.MaxBindingScannerCount = maxBindingScannerCount;
                 var update = await _licenseCodeRepository.Update(info, token);
                 return new KeyValuePair<bool, object>(update, update ? "更新成功" : "更新失败");
             }

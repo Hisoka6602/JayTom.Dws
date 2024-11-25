@@ -1,4 +1,7 @@
-﻿using RTools_NTS.Util;
+﻿using Polly;
+using System.Text;
+using RTools_NTS.Util;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using JayTom.Dws.Data.License;
 using JayTom.Dws.LicenseApi.Do;
@@ -21,7 +24,7 @@ namespace JayTom.Dws.LicenseApi.Attributes {
             var isSuperAdminCreated = false;
             var licenseCode = string.Empty;
             long templateInfoId = 0;
-
+            int maxBindingScannerCount = 1;
             if (value is int codeCount) {
                 var httpContextAccessor = validationContext.GetService<IHttpContextAccessor>();
                 if (httpContextAccessor is { HttpContext: not null }) {
@@ -30,7 +33,6 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                     if (result is { Key: true, Value: LicenseUserInfo { Role: UserRole.SuperAdmin } }) {
                         //重新获取
                         isSuperAdminCreated = true;
-
                     }
                     switch (validationContext.ObjectInstance) {
                         case BulkCreateLicenseCodeDo model:
@@ -38,6 +40,9 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                                 code = model.UserCode;
                             }
 
+                            if (model.MaxBindingScannerCount > 1) {
+                                maxBindingScannerCount = model.MaxBindingScannerCount;
+                            }
                             templateInfoId = model.TemplateInfoId;
                             break;
 
@@ -45,7 +50,9 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                             if (isSuperAdminCreated) {
                                 code = createModel.UserCode;
                             }
-
+                            if (createModel.MaxBindingScannerCount > 1) {
+                                maxBindingScannerCount = createModel.MaxBindingScannerCount;
+                            }
                             templateInfoId = createModel.TemplateInfoId;
                             break;
 
@@ -53,12 +60,13 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                             if (isSuperAdminCreated) {
                                 code = updateModel.UserCode;
                             }
-
+                            if (updateModel.MaxBindingScannerCount > 1) {
+                                maxBindingScannerCount = updateModel.MaxBindingScannerCount;
+                            }
                             templateInfoId = updateModel.TemplateInfoId;
                             licenseCode = updateModel.LicenseCode;
                             break;
                     }
-
                 }
 
                 var licenseUserRepository = validationContext.GetService<ILicenseUserRepository>();
@@ -86,7 +94,7 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                                                                                !w.LicenseCode.Equals(licenseCode))
                                 ?.Sum(s => s.MaxClientCount) ?? 0;
                         }
-                        if (sum + codeCount > maxLicenseCodeCount) {
+                        if (sum + codeCount * maxBindingScannerCount > maxLicenseCodeCount) {
                             return new ValidationResult(ErrorMessage);
                         }
                     }

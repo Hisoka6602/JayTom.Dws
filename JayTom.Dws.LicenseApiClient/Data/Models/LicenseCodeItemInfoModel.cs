@@ -61,6 +61,10 @@ namespace JayTom.Dws.LicenseApiClient.Data.Models {
         /// </summary>
         public string GroupName { get; set; } = string.Empty;
         /// <summary>
+        /// 扫码上限数量
+        /// </summary>
+        public int MaxBindingScannerCount { get; set; }
+        /// <summary>
         /// 机器码
         /// </summary>
         public List<MachineCodeItemInfoModel> MachineCodeItem { get; set; } = new();

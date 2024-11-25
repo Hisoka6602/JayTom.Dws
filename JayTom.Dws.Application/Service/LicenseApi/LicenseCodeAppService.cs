@@ -17,6 +17,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         }
 
         public Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, int maxClientCount, DateTime expirationDate, string clientName,
+            int maxBindingScannerCount,
             bool isSuperAdminCreated,
             CancellationToken token) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -25,11 +26,11 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
             return _licenseCodeService.CreateLicenseCode(templateInfoId, userCode, licenseCode, maxClientCount, expirationDate,
-                 clientName, isSuperAdminCreated, token);
+                 clientName, maxBindingScannerCount, isSuperAdminCreated, token);
         }
 
         public Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, string userCode, DateTime expirationDate, string clientName,
-            int licenseCodeCount, bool isSuperAdminCreated = false, CancellationToken token = default) {
+            int licenseCodeCount, int maxBindingScannerCount, bool isSuperAdminCreated = false, CancellationToken token = default) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random((int)DateTime.Now.Ticks);
             var licenseCodes = Enumerable.Range(0, licenseCodeCount)
@@ -37,13 +38,13 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                     .Select(s => s[random.Next(s.Length)]).ToArray()))
                 .ToList();
             return _licenseCodeService.BulkCreateLicenseCode(templateInfoId, userCode,
-                licenseCodes, expirationDate, clientName, isSuperAdminCreated, token);
+                licenseCodes, expirationDate, clientName, maxBindingScannerCount, isSuperAdminCreated, token);
         }
 
         public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, CancellationToken token) {
             return _licenseCodeService.UpdateLicenseCode(templateInfoId, userCode, licenseCode, maxClientCount, expirationDate,
-                clientName, token);
+                clientName, maxBindingScannerCount, token);
         }
 
         public Task<KeyValuePair<bool, object>> LicenseCodeData(string userCode, CancellationToken token) {
@@ -73,17 +74,6 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                         return new KeyValuePair<bool, object>(false, "无可激活数量");
                     }
 
-                    /*if (!licenseCodeInfo.IsAvailable) {
-                        return new KeyValuePair<bool, object>(false, "授权码不可用");
-                    }
-
-                    if (licenseCodeInfo.MaxClientCount <= licenseCodeInfo.ActivatedClientCount) {
-                        return new KeyValuePair<bool, object>(false, "无可激活数量");
-                    }
-
-                    if (DateTime.Now.CompareTo(licenseCodeInfo.ExpirationDate) >= 0) {
-                        return new KeyValuePair<bool, object>(false, "授权码已到期");
-                    }*/
                     var path = $"{Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")}\\LicenseFile";
                     if (!Directory.Exists(path)) {
                         Directory.CreateDirectory(path);
@@ -98,6 +88,8 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                         UserName = licenseCodeInfo.ClientName,
                         CreationTime = DateTime.Now,
                         IsAvailable = licenseCodeInfo.IsAvailable,
+                        MaxBindingScannerCount = licenseCodeInfo.MaxBindingScannerCount,
+                        AppliedTemplateName = licenseCodeInfo.LicensePermissionTemplateInfo?.TemplateName ?? string.Empty,
                         Remarks = remarks
                     }, publicKeyXml, privateKeyXml, $"{path}\\{unixTimeMilliseconds}.key");
 

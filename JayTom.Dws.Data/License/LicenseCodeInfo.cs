@@ -66,6 +66,12 @@ namespace JayTom.Dws.Data.License {
         [Required, Column("IsAvailable"), InsertOrUpdata]
         public bool IsAvailable { get; set; } = true;
 
+        /// <summary>
+        /// 扫码器上限数量
+        /// </summary>
+        [Required, Column("MaxBindingScannerCount"), InsertOrUpdata]
+        public int MaxBindingScannerCount { get; set; } = 1;
+
         public ICollection<LicenseClientBindingInfo>? LicenseClientBindingInfo { get; set; }
     }
 }

@@ -78,7 +78,8 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                     return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
                 }
             }
-            catch (HttpRequestException) {
+            catch (HttpRequestException e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "Http访问异常!");
             }
             catch (AggregateException e) {
@@ -137,7 +138,8 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                     return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
                 }
             }
-            catch (HttpRequestException) {
+            catch (HttpRequestException e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "Http访问异常!");
             }
             catch (AggregateException e) {
@@ -984,6 +986,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         public async Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, int maxClientCount,
             DateTime expirationDate, string clientName,
             string? userCode,
+            int maxBindingScannerCount,
             CancellationToken token) {
             var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
             if (!string.IsNullOrEmpty(invokeAsync)) {
@@ -995,7 +998,8 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                         maxClientCount = maxClientCount,
                         expirationDate = expirationDate,
                         clientName = clientName,
-                        userCode = userCode
+                        userCode = userCode,
+                        maxBindingScannerCount = maxBindingScannerCount,
                     });
 
                     using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
@@ -1053,7 +1057,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         }
 
         public async Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, DateTime expirationDate, string clientName, int licenseCodeCount,
-            string? userCode, CancellationToken token = default) {
+            string? userCode, int maxBindingScannerCount, CancellationToken token = default) {
             var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
             if (!string.IsNullOrEmpty(invokeAsync)) {
                 try {
@@ -1063,7 +1067,8 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                         licenseCodeCount = licenseCodeCount,
                         expirationDate = expirationDate,
                         clientName = clientName,
-                        userCode = userCode
+                        userCode = userCode,
+                        maxBindingScannerCount = maxBindingScannerCount,
                     });
 
                     using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
@@ -1121,7 +1126,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         }
 
         public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, CancellationToken token) {
             var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", token, "token");
             if (!string.IsNullOrEmpty(invokeAsync)) {
                 try {
@@ -1133,7 +1138,8 @@ namespace JayTom.Dws.LicenseApiClient.Api {
                         expirationDate = expirationDate,
                         clientName = clientName,
                         licenseCode = licenseCode,
-                        userCode = userCode
+                        userCode = userCode,
+                        maxBindingScannerCount = maxBindingScannerCount,
                     });
 
                     using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {

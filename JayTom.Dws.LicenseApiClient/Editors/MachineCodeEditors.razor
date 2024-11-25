@@ -2,7 +2,7 @@
 @using JayTom.Dws.LicenseApiClient.Api
 @inject ILicenseApiRequest LicenseApiRequest
 @inject ISnackbar Snackbar
-<MudCard Style="width:1000px;height:730px; border-radius:5px;">
+<MudCard Style="width:1000px;height:auto; border-radius:5px;">
     <MudCardContent Class="center">
 
         <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
@@ -13,6 +13,13 @@
             <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">授权码:</span>
             <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@LicenseCodeItemInfo.LicenseCode</span>
         </div>
+        @if (LicenseCodeItemInfo.TemplateName.Contains("视频追溯")) {
+            <div style="display: flex;margin-top:10px;margin-bottom:20px;display: flex; align-items: center;">
+                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">扫码器上限数量:</span>
+                <span style="font-weight:bold; margin-left:8px; color:#A9A9A9; font-size: 16px;">@LicenseCodeItemInfo.MaxBindingScannerCount</span>
+            </div>
+        }
+
         @*列表*@
         <div>
             <MudTable Height="480px" Breakpoint="Breakpoint.Sm" FixedHeader="true" Style="width:970px;" Items="@LicenseCodeItemInfo.MachineCodeItem"

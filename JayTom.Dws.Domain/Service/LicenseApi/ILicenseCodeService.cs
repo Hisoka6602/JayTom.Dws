@@ -17,6 +17,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         /// <param name="maxClientCount"></param>
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="isSuperAdminCreated"></param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -26,6 +27,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            int maxBindingScannerCount,
             bool isSuperAdminCreated,
             CancellationToken token);
 
@@ -37,6 +39,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         /// <param name="licenseCode"></param>
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="isSuperAdminCreated"></param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -45,6 +48,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             List<string> licenseCode,
             DateTime expirationDate,
             string clientName,
+            int maxBindingScannerCount,
             bool isSuperAdminCreated = false,
             CancellationToken token = default);
 
@@ -57,6 +61,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         /// <param name="maxClientCount"></param>
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId,
@@ -65,6 +70,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
             int maxClientCount,
             DateTime expirationDate,
             string clientName,
+            int maxBindingScannerCount,
             CancellationToken token);
 
         /// <summary>

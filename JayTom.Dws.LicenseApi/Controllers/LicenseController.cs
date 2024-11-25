@@ -49,7 +49,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
             }
             var (key, value) = await _licenseCodeAppService.CreateLicenseCode(param.TemplateInfoId,
                 code, param.MaxClientCount, param.ExpirationDate,
-                param.ClientName, isSuperAdminCreated, cancellationToken);
+                param.ClientName, param.MaxBindingScannerCount, isSuperAdminCreated, cancellationToken);
             return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
@@ -76,7 +76,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
 
             var (key, value) = await _licenseCodeAppService.BulkCreateLicenseCode(param.TemplateInfoId,
                 code, param.ExpirationDate, param.ClientName,
-                param.LicenseCodeCount, isSuperAdminCreated, cancellationToken);
+                param.LicenseCodeCount, param.MaxBindingScannerCount, isSuperAdminCreated, cancellationToken);
             return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
@@ -104,7 +104,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
 
             var (key, value) = await _licenseCodeAppService.UpdateLicenseCode(param.TemplateInfoId,
                 param.UserCode ?? string.Empty, param.LicenseCode, param.MaxClientCount, param.ExpirationDate,
-                param.ClientName, cancellationToken);
+                param.ClientName, param.MaxBindingScannerCount, cancellationToken);
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
@@ -135,6 +135,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                     UserCode = s.UserInfo?.UserCode ?? string.Empty,
                     CreateTime = s.CreateTime,
                     GroupName = s.LicenseGroupInfo?.GroupName ?? string.Empty,
+                    MaxBindingScannerCount = s.MaxBindingScannerCount,
                     MachineCodeItem = s.LicenseClientBindingInfo?.Select(s1 => new LicenseClientBindingDto {
                         FirstActivatedDate = s1.FirstActivatedDate,
                         LastVerifiedDate = s1.LastVerifiedDate,

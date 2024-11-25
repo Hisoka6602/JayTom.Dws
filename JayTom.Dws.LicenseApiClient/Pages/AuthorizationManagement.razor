@@ -232,16 +232,18 @@
                 info.ExpirationDate.Value,
                 info.ClientName,
                 info.AuthCodeGenerationCount,
-                info.UserCode);
+                info.UserCode, info.MaxBindingScannerCount);
         }
         else {
             if (!AuthCodeIsEdit) {
                 keyValuePair = await LicenseApiRequest.CreateLicenseCode(info.TemplateInfoId, info.MaxClientCount,
-                    info.ExpirationDate.Value, info.ClientName, info.UserCode);
+                    info.ExpirationDate.Value, info.ClientName, info.UserCode
+
+                    , info.MaxBindingScannerCount);
             }
             else {
                 keyValuePair = await LicenseApiRequest.UpdateLicenseCode(info.TemplateInfoId, info.UserCode ?? string.Empty, SelectInfoModel.LicenseCode, info.MaxClientCount,
-                    info.ExpirationDate.Value, info.ClientName);
+                    info.ExpirationDate.Value, info.ClientName, info.MaxBindingScannerCount);
             }
         }
 
@@ -366,6 +368,7 @@
                     GroupName = s.GroupName,
                     UserName = s.UserName,
                     UserCode = s.UserCode,
+                    MaxBindingScannerCount = s.MaxBindingScannerCount,
                     Num = i + 1
                 })?.ToList() ?? new List<LicenseCodeItemInfoModel>();
             _items.AddRange(licenseCodeItemInfoModels);

@@ -41,10 +41,18 @@ namespace JayTom.Dws.License {
         public bool IsAvailable { get; set; }
 
         /// <summary>
+        /// 扫码器上限
+        /// </summary>
+        public int MaxBindingScannerCount { get; set; } = 1;
+
+        /// <summary>
+        /// 应用模板名称
+        /// </summary>
+        public string AppliedTemplateName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 备注
         /// </summary>
         public string Remarks { get; set; } = string.Empty;
-
-        //模块列表
     }
 }

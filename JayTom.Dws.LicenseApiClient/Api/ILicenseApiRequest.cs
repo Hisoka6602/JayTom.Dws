@@ -171,6 +171,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// </summary>
         /// <param name="clientName"></param>
         /// <param name="userCode"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="token"></param>
         /// <param name="templateInfoId"></param>
         /// <param name="maxClientCount"></param>
@@ -181,6 +182,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             DateTime expirationDate,
             string clientName,
             string? userCode,
+            int maxBindingScannerCount,
             CancellationToken token = default);
 
         /// <summary>
@@ -191,6 +193,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="clientName"></param>
         /// <param name="licenseCodeCount"></param>
         /// <param name="userCode"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId,
@@ -198,6 +201,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             string clientName,
             int licenseCodeCount,
             string? userCode,
+            int maxBindingScannerCount,
             CancellationToken token = default);
 
         /// <summary>
@@ -209,6 +213,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// <param name="maxClientCount"></param>
         /// <param name="expirationDate"></param>
         /// <param name="clientName"></param>
+        /// <param name="maxBindingScannerCount"></param>
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId,
@@ -217,6 +222,7 @@ namespace JayTom.Dws.LicenseApiClient.Api {
            int maxClientCount,
            DateTime expirationDate,
            string clientName,
+            int maxBindingScannerCount,
            CancellationToken token = default);
 
         /// <summary>
