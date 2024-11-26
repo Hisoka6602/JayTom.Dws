@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "7187088",
+      "name": "未结算",
+      "font_class": "weijiesuan",
+      "unicode": "e6be",
+      "unicode_decimal": 59070
+    },
+    {
+      "icon_id": "9358525",
+      "name": "结算",
+      "font_class": "jiesuan",
+      "unicode": "e654",
+      "unicode_decimal": 58964
+    },
+    {
       "icon_id": "3147947",
       "name": "随机",
       "font_class": "random",

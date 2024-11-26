@@ -24,7 +24,8 @@
     $"{Navigation.BaseUri}authorization-management",
     $"{Navigation.BaseUri}tenant-management",
     $"{Navigation.BaseUri}systemSettings-management",
-    $"{Navigation.BaseUri}userInfo"
+    $"{Navigation.BaseUri}userInfo",
+    $"{Navigation.BaseUri}authorizationLog"
     };
     }
     @if (allowedUrls.Any(url => Navigation.Uri.ToLower().Equals(url.ToLower()))) {
