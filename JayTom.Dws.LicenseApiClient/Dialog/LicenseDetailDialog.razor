@@ -6,7 +6,7 @@
 @inject ILicenseApiRequest LicenseApiRequest
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
-<MudDialog Style="width:1600px;height:750px; border-radius:5px;">
+<MudDialog Style="width:1600px;height:800px; border-radius:5px;">
     <DialogContent>
         <MudOverlay Visible="AuthCodeEditorIsVisible" DarkBackground="true">
 
@@ -32,7 +32,7 @@
             <MudProgressCircular Indeterminate="true"></MudProgressCircular>
         }
         else {
-            <MudDataGrid T="LicenseCodeItemInfoModel" Height="650px" FixedHeader="true"
+            <MudDataGrid T="LicenseCodeItemInfoModel" Height="700px" FixedHeader="true"
                          Elevation="1" Class="custom-datagrid" Filterable="false"
                          SortMode="@SortMode.None" QuickFilter="@Filter" Hover="true"
                          GroupExpanded="false" Groupable="@IsGrouping"
@@ -70,6 +70,7 @@
                     <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
                     <PropertyColumn Style="width:50px" Property="x => x.MaxClientCount" Title="上限数量" />
                     <PropertyColumn Style="width:50px" Property="x => x.ActivatedClientCount" Title="已激活数量" />
+                    <PropertyColumn Style="width:50px" Property="x => (x.MaxBindingScannerCount*x.MaxClientCount)" Title="扫码器上限" />
                     <PropertyColumn Property="x => x.ExpirationDate" Title="到期时间" />
                     <PropertyColumn Property="x => x.ClientName" Title="客户" />
                     @if (@IsGrouping) {
@@ -238,6 +239,7 @@
                         GroupName = s.GroupName,
                         UserName = s.UserName,
                         UserCode = s.UserCode,
+                        MaxBindingScannerCount = s.MaxBindingScannerCount,
                         Num = i + 1
                     })?.ToList() ?? new List<LicenseCodeItemInfoModel>();
             _items.AddRange(licenseCodeItemInfoModels);

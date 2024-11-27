@@ -26,14 +26,16 @@
                 <HeaderContent>
                     <MudTh>程序模板名称</MudTh>
                     <MudTh>授权码上限</MudTh>
-                    <MudTh>创建数量</MudTh>
+                    <MudTh>已创建授权码数量</MudTh>
+                    <MudTh>已创建扫码器数量</MudTh>
                     <MudTh>激活数量</MudTh>
                     <MudTh>管理</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="程序模板名称">@ConvertTemplateName(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
                     <MudTd DataLabel="授权码上限">@context.MaxLicenseCodeCount</MudTd>
-                    <MudTd DataLabel="创建数量">@ConvertLicenseCodeCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
+                    <MudTd DataLabel="已创建授权码数量">@ConvertLicenseCodeCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
+                    <MudTd DataLabel="已创建扫码器数量">@ConvertLicenseBindingScannerCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
                     <MudTd DataLabel="激活数量">@ConvertLicenseCodeUsedCount(context.LicensePermissionTemplateInfoId ?? 0)</MudTd>
                     <MudTd>
                         @*设置授权码上限*@
@@ -94,6 +96,16 @@
         return LicenseCodeItems.Where(w => w.TemplateName.Equals(appTemplateItemInfoModel.TemplateName) && w.UserCode.Equals(UserInfo.UserCode))?
             .Sum(s => s.MaxClientCount) ?? 0;
 
+    }
+
+    private int ConvertLicenseBindingScannerCount(long licensePermissionTemplateInfoId) {
+        var appTemplateItemInfoModel = AppTemplateItems.FirstOrDefault(f => f.Id.Equals(licensePermissionTemplateInfoId));
+        if (appTemplateItemInfoModel is null) {
+            return 0;
+
+        }
+        return LicenseCodeItems.Where(w => w.TemplateName.Equals(appTemplateItemInfoModel.TemplateName) && w.UserCode.Equals(UserInfo.UserCode))?
+            .Sum(s => s.MaxClientCount * s.MaxBindingScannerCount) ?? 0;
     }
     private int ConvertLicenseCodeUsedCount(long licensePermissionTemplateInfoId) {
         var appTemplateItemInfoModel = AppTemplateItems.FirstOrDefault(f => f.Id.Equals(licensePermissionTemplateInfoId));
@@ -173,7 +185,7 @@
         //弹出授权码明细页面
         var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.False };
         var parameters = new DialogParameters<LicenseDetailDialog>
-                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
             { x => x.UserCode, userCode },
             { x => x.TemplateName, ConvertTemplateName(licensePermissionTemplateInfoId) },
         };

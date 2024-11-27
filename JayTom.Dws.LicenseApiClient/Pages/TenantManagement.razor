@@ -46,7 +46,7 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.MaxLicenseCodeCount" Title="授权码上限" />
-        <PropertyColumn Property="x => x.LicenseCodeCount" Title="已创建数量" />
+        <PropertyColumn Property="x => x.LicenseCodeCount" Title="已创建授权码数量" />
         <PropertyColumn Style="text-align:center" Property="x => x.RegisterTime" Title="注册时间" />
         <TemplateColumn>
             <CellTemplate>
@@ -180,6 +180,7 @@
                     LicenseCode = s.LicenseCode,
                     MachineCodeItem = s.MachineCodeItem,
                     MaxClientCount = s.MaxClientCount,
+                    MaxBindingScannerCount = s.MaxBindingScannerCount,
                     IsAvailable = s.IsAvailable,
                     ExpirationDate = s.ExpirationDate,
                     ClientName = s.ClientName,

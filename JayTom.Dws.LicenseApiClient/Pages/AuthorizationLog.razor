@@ -1,7 +1,202 @@
 ﻿@page "/authorizationLog"
+@using JayTom.Dws.LicenseApiClient.Api
+@using JayTom.Dws.LicenseApiClient.Notification
+@using JayTom.Dws.LicenseApiClient.Plugin.Excel
+@using Newtonsoft.Json
+@using JayTom.Dws.LicenseApiClient.Editors
+@using JayTom.Dws.LicenseApiClient.Data.Models
+@inject ILicenseApiRequest LicenseApiRequest
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+<PageTitleTemplate Title="授权日志" Description="授权日志" IconClass="iconfont icon-weijiesuan"></PageTitleTemplate>
+<MudCard Style="padding-left:10px;padding-right:10px; height:50px; margin:20px; border-radius:25px; display: inline-flex; flex-direction: column; align-items: center;">
 
-<h3>AuthorizationLog</h3>
+    <div>
+        <div class="grid-container">
+            @*开始时间-结束时间*@
+            <div class="grid-item">
+                <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">开始时间:</span>
+                <DateTimeEditor @bind-DateTime="StartDateTime"></DateTimeEditor>
+            </div>
 
+            <div class="grid-item">
+                <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">结束时间:</span>
+                <DateTimeEditor @bind-DateTime="EndDateTime"></DateTimeEditor>
+            </div>
+
+            @*授权码*@
+            <div class="grid-item">
+                <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">授权码:</span>
+                <MudInput @bind-Value="LicenseCode" DisableUnderLine="false" Style="border-block-width:0px; border-color:#3D7AEF; width:220px; height: 30px;display: flex; " Variant="Variant.Text" />
+            </div>
+            @*租户(需要判断显示)*@
+            <div class="grid-item">
+                <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">租户:</span>
+
+                <MudSelect T="JayTom.Dws.LicenseApiClient.Data.Models.UserInfo" @bind-Value="Tenant" Margin="Margin.Dense" Clearable="true" ToStringFunc="@ConvertUserName">
+
+                    @foreach (var userInfo in SelectTenantItems ?? new List<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo>()) {
+                        <MudSelectItem Value="@userInfo" />
+                    }
+                </MudSelect>
+
+            </div>
+
+            <MudButton Style="border-radius: 15px; margin-left:3px; background-color:dodgerblue;color:white"
+                       Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Surface"
+                       OnClick="@(e => { GetLogs(); })">查询</MudButton>
+
+        </div>
+
+    </div>
+</MudCard>
+
+
+<MudDataGrid T="AuthorizationLogInfoModel" Height="600px" FixedHeader="true"
+             Elevation="1" Class="custom-datagrid" Filterable="false"
+             SortMode="@SortMode.None" Hover="true"
+             GroupExpanded="false"
+             Items="@AuthorizationLogInfos" ColumnResizeMode="ResizeMode.Column">
+
+    <Columns>
+
+        <PropertyColumn Property="x => x.Num" Title="" />
+        <PropertyColumn Property="x => x.LicenseCode" Title="授权码" />
+        <PropertyColumn Property="x => x.MaxBindingScannerCount" Title="扫码器上限" />
+        <PropertyColumn Property="x => x.OperationTime" Title="操作时间" />
+        <PropertyColumn Property="x => ConvertOperationType(x.OperationType)" Title="类型" />
+        <PropertyColumn Property="x => x.ConsumedLicenseCount" Title="消耗的授权码数量" />
+        <PropertyColumn Property="x => x.OperationIp" Title="操作IP" />
+        <PropertyColumn Property="x => ConvertOperationUser(x.OperationUser)" Title="用户" />
+
+    </Columns>
+
+
+
+</MudDataGrid>
+<div class="grid-item">
+
+    <div class="grid-item">
+        <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">创建的授权码总量:</span>
+        <span style="margin-left:3px;margin-right:5px; color:slateblue; font-weight:bold;  font-size: 20px;">@(LicenseCodeCount)</span>
+    </div>
+    <div class="grid-item">
+        <span style="margin-left:3px;margin-right:5px; color:gray;  font-size: 13px;">消耗的授权码总量:</span>
+        <span style="margin-left:3px;margin-right:5px; color:royalblue; font-weight:bold; font-size: 20px;">@(ConsumedLicenseCount)</span>
+    </div>
+</div>
+<style>
+    .grid-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .grid-item {
+        margin-right: 10px; /* 可以调整间距 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .custom-datagrid .mud-table-row {
+        height: 10px;
+    }
+
+</style>
 @code {
+
+    public DateTime? StartDateTime { get; set; }
+    public DateTime? EndDateTime { get; set; }
+    public string? LicenseCode { get; set; }
+    public JayTom.Dws.LicenseApiClient.Data.Models.UserInfo? Tenant { get; set; }
+    public IEnumerable<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo>? SelectTenantItems { get; set; }
+
+    public List<AuthorizationLogInfoModel> AuthorizationLogInfos = new();
+    public int LicenseCodeCount { get; set; }
+    public int ConsumedLicenseCount { get; set; }
+    private string ConvertUserName(JayTom.Dws.LicenseApiClient.Data.Models.UserInfo userInfo) {
+        return userInfo?.UserName ?? string.Empty;
+    }
+    private string ConvertOperationType(OperationType operationType) {
+        return operationType == OperationType.Created ? "创建" : "修改";
+    }
+    private string ConvertOperationUser(string userCode) {
+        return SelectTenantItems?.FirstOrDefault(f => f.UserCode.Equals(userCode))?.UserName ?? string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+
+        await base.OnAfterRenderAsync(firstRender);
+
+
+        if (!await LicenseApiRequest.IsLoggedIn()) {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        if (firstRender) {
+            StartDateTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            EndDateTime = StartDateTime?.AddMonths(1).AddDays(-1);
+
+            var (key, value) = await LicenseApiRequest.TenantInfos();
+            if (key && value is List<JayTom.Dws.LicenseApiClient.Data.Models.UserInfo> items) {
+                SelectTenantItems = items;
+            }
+            else if (value is ApiResult result) {
+
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+            }
+            else {
+                Snackbar.Clear();
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                Snackbar.Add(value.ToString(), Severity.Error);
+            }
+            StateHasChanged();
+        }
+
+
+    }
+
+    private async void GetLogs() {
+        AuthorizationLogInfos.Clear();
+        var (key, value) = await LicenseApiRequest.LicenseAuthorizationLog(StartDateTime,
+            EndDateTime, LicenseCode, Tenant?.UserCode);
+        if (key && value is List<AuthorizationLogInfoModel> items) {
+            var authorizationLogInfoModels = items.Select((s, i) => new AuthorizationLogInfoModel {
+                    Num = i + 1,
+                    LicenseCode = s.LicenseCode,
+                    MaxBindingScannerCount = s.MaxBindingScannerCount,
+                    OperationTime = s.OperationTime,
+                    OperationType = s.OperationType,
+                    ConsumedLicenseCount = s.ConsumedLicenseCount,
+                    OperationIp = s.OperationIp,
+                    OperationUser = s.OperationUser,
+                    UserCode = s.UserCode
+                }).ToList();
+            AuthorizationLogInfos.AddRange(authorizationLogInfoModels);
+        }
+        else if (value is ApiResult result) {
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(result.Msg, result.Result ? Severity.Success : Severity.Error);
+        }
+        else {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add(value.ToString(), Severity.Error);
+        }
+        //计算汇总
+        LicenseCodeCount = AuthorizationLogInfos.Where(w => w.OperationType == OperationType.Created)
+            .GroupBy(g => g.LicenseCode).Count();
+        ConsumedLicenseCount = AuthorizationLogInfos.Sum(s => s.ConsumedLicenseCount);
+        //创建的授权码总量:消耗的授权码总量
+        StateHasChanged();
+    }
+
 
 }

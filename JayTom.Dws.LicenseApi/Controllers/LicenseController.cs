@@ -47,9 +47,10 @@ namespace JayTom.Dws.LicenseApi.Controllers {
                 code = param.UserCode;
                 isSuperAdminCreated = true;
             }
+
             var (key, value) = await _licenseCodeAppService.CreateLicenseCode(param.TemplateInfoId,
                 code, param.MaxClientCount, param.ExpirationDate,
-                param.ClientName, param.MaxBindingScannerCount, isSuperAdminCreated, cancellationToken);
+                param.ClientName, param.MaxBindingScannerCount, isSuperAdminCreated, HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty, cancellationToken);
             return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
@@ -76,7 +77,7 @@ namespace JayTom.Dws.LicenseApi.Controllers {
 
             var (key, value) = await _licenseCodeAppService.BulkCreateLicenseCode(param.TemplateInfoId,
                 code, param.ExpirationDate, param.ClientName,
-                param.LicenseCodeCount, param.MaxBindingScannerCount, isSuperAdminCreated, cancellationToken);
+                param.LicenseCodeCount, param.MaxBindingScannerCount, isSuperAdminCreated, HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty, cancellationToken);
             return key ? JsonResultVo.Success("创建成功", data: value) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 
@@ -104,7 +105,8 @@ namespace JayTom.Dws.LicenseApi.Controllers {
 
             var (key, value) = await _licenseCodeAppService.UpdateLicenseCode(param.TemplateInfoId,
                 param.UserCode ?? string.Empty, param.LicenseCode, param.MaxClientCount, param.ExpirationDate,
-                param.ClientName, param.MaxBindingScannerCount, cancellationToken);
+                param.ClientName, param.MaxBindingScannerCount, HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                cancellationToken);
             return key ? JsonResultVo.Success(value.ToString() ?? string.Empty) : JsonResultVo.Fail(value.ToString() ?? string.Empty);
         }
 

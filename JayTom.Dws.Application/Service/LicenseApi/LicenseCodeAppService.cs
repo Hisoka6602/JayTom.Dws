@@ -19,6 +19,7 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
         public Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, int maxClientCount, DateTime expirationDate, string clientName,
             int maxBindingScannerCount,
             bool isSuperAdminCreated,
+            string operationIp,
             CancellationToken token) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random((int)DateTime.Now.Ticks);
@@ -26,11 +27,11 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                 .Select(s => s[random.Next(s.Length)]).ToArray());
 
             return _licenseCodeService.CreateLicenseCode(templateInfoId, userCode, licenseCode, maxClientCount, expirationDate,
-                 clientName, maxBindingScannerCount, isSuperAdminCreated, token);
+                 clientName, maxBindingScannerCount, isSuperAdminCreated, operationIp, token);
         }
 
         public Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, string userCode, DateTime expirationDate, string clientName,
-            int licenseCodeCount, int maxBindingScannerCount, bool isSuperAdminCreated = false, CancellationToken token = default) {
+            int licenseCodeCount, int maxBindingScannerCount, bool isSuperAdminCreated, string operationIp, CancellationToken token = default) {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random((int)DateTime.Now.Ticks);
             var licenseCodes = Enumerable.Range(0, licenseCodeCount)
@@ -38,13 +39,13 @@ namespace JayTom.Dws.Application.Service.LicenseApi {
                     .Select(s => s[random.Next(s.Length)]).ToArray()))
                 .ToList();
             return _licenseCodeService.BulkCreateLicenseCode(templateInfoId, userCode,
-                licenseCodes, expirationDate, clientName, maxBindingScannerCount, isSuperAdminCreated, token);
+                licenseCodes, expirationDate, clientName, maxBindingScannerCount, isSuperAdminCreated, operationIp, token);
         }
 
         public Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, int maxBindingScannerCount, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, string operationIp, CancellationToken token) {
             return _licenseCodeService.UpdateLicenseCode(templateInfoId, userCode, licenseCode, maxClientCount, expirationDate,
-                clientName, maxBindingScannerCount, token);
+                clientName, maxBindingScannerCount, operationIp, token);
         }
 
         public Task<KeyValuePair<bool, object>> LicenseCodeData(string userCode, CancellationToken token) {

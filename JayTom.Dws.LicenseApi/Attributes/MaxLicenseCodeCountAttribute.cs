@@ -2,6 +2,7 @@
 using JayTom.Dws.LicenseApi.Do;
 using JayTom.Dws.Domain.Repository.License;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace JayTom.Dws.LicenseApi.Attributes {
 
@@ -10,9 +11,11 @@ namespace JayTom.Dws.LicenseApi.Attributes {
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext) {
             if (value is int maxLicenseCodeCount) {
                 var code = string.Empty;
+                long templateInfoId = 0;
                 //获取租户信息
                 if (validationContext.ObjectInstance is UpdateTenantLicenseMaxCountDo model) {
                     code = model.UserCode;
+                    templateInfoId = model.LicensePermissionTemplateInfoId;
                 }
 
                 //获取已创建数量
@@ -22,7 +25,8 @@ namespace JayTom.Dws.LicenseApi.Attributes {
                         ConfigureAwait(false).GetAwaiter().GetResult();
                     if (key && o is LicenseUserInfo licenseUserInfo) {
                         var sum = licenseUserInfo.LicenseCodeInfos
-                            ?.Sum(s => s.MaxClientCount) ?? 0;
+                                ?.Where(w => w.LicensePermissionTemplateInfoId == templateInfoId)
+                            ?.Sum(s => s.MaxClientCount * s.MaxBindingScannerCount) ?? 0;
 
                         if (sum > maxLicenseCodeCount) {
                             return new ValidationResult(ErrorMessage);

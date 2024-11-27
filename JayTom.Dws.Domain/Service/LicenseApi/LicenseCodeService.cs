@@ -12,18 +12,21 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
     public class LicenseCodeService : ILicenseCodeService {
         private readonly ILicenseCodeRepository _licenseCodeRepository;
         private readonly ILicenseClientBindingRepository _licenseClientBindingRepository;
+        private readonly ILicenseAuthorizationLogRepository _licenseAuthorizationLogRepository;
         private readonly ILicenseUserRepository _licenseUserRepository;
 
         public LicenseCodeService(ILicenseCodeRepository licenseCodeRepository,
             ILicenseClientBindingRepository licenseClientBindingRepository,
+            ILicenseAuthorizationLogRepository licenseAuthorizationLogRepository,
             ILicenseUserRepository licenseUserRepository) {
             _licenseCodeRepository = licenseCodeRepository;
             _licenseClientBindingRepository = licenseClientBindingRepository;
+            _licenseAuthorizationLogRepository = licenseAuthorizationLogRepository;
             _licenseUserRepository = licenseUserRepository;
         }
 
         public async Task<KeyValuePair<bool, object>> CreateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, int maxBindingScannerCount, bool isSuperAdminCreated, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, bool isSuperAdminCreated, string operationIp, CancellationToken token) {
             var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (key && value is LicenseUserInfo licenseUserInfo) {
                 var insert = await _licenseCodeRepository.Insert(new LicenseCodeInfo() {
@@ -49,6 +52,21 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 if (!insert) {
                     return new KeyValuePair<bool, object>(false, "创建失败!");
                 }
+
+                await _licenseAuthorizationLogRepository.Insert(new LicenseAuthorizationLog() {
+                    CreateTime = DateTime.Now,
+                    OperationType = LicenseOperationType.Created,
+                    Customer = clientName,
+                    LicenseCode = licenseCode,
+                    MaxBindingScannerCount = maxBindingScannerCount,
+                    OperationTime = DateTime.Now,
+                    OperationUser = userCode,
+                    OperationIp = operationIp,
+                    UserCode = licenseUserInfo.UserCode,
+                    ConsumedLicenseCount = maxClientCount * maxBindingScannerCount
+                }, token);
+                //增加记录用于结算
+
                 return new KeyValuePair<bool, object>(true, licenseCode);
             }
             else {
@@ -57,7 +75,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> BulkCreateLicenseCode(long templateInfoId, string userCode, List<string> licenseCode, DateTime expirationDate,
-            string clientName, int maxBindingScannerCount, bool isSuperAdminCreated = false, CancellationToken token = default) {
+            string clientName, int maxBindingScannerCount, bool isSuperAdminCreated, string operationIp, CancellationToken token = default) {
             var (key, value) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (key && value is LicenseUserInfo licenseUserInfo) {
                 var licenseCodeInfos = licenseCode.Select(s => new LicenseCodeInfo {
@@ -87,6 +105,21 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                         templateInfoId, licenseCode.Count, token);
                 }
 
+                var licenseAuthorizationLogs = licenseCodeInfos.Select(s => new LicenseAuthorizationLog {
+                    CreateTime = DateTime.Now,
+                    OperationType = LicenseOperationType.Created,
+                    Customer = s.ClientName,
+                    LicenseCode = s.LicenseCode,
+                    MaxBindingScannerCount = s.MaxBindingScannerCount,
+                    OperationTime = DateTime.Now,
+                    OperationUser = userCode,
+                    OperationIp = operationIp,
+                    UserCode = licenseUserInfo.UserCode,
+                    ConsumedLicenseCount = s.MaxClientCount * s.MaxBindingScannerCount
+                }).ToList();
+
+                await _licenseAuthorizationLogRepository.InsertRange(licenseAuthorizationLogs, token);
+
                 if (!insertRange) {
                     return new KeyValuePair<bool, object>(false, "创建失败!");
                 }
@@ -98,15 +131,21 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
         }
 
         public async Task<KeyValuePair<bool, object>> UpdateLicenseCode(long templateInfoId, string userCode, string licenseCode, int maxClientCount,
-            DateTime expirationDate, string clientName, int maxBindingScannerCount, CancellationToken token) {
+            DateTime expirationDate, string clientName, int maxBindingScannerCount, string operationIp, CancellationToken token) {
             var isSuperAdmin = false;
+            var bindingScannerCount = 0;
             var (b, o) = await _licenseUserRepository.DetailsInfo(userCode, token);
             if (b && o is LicenseUserInfo userInfo) {
                 var activatedClientCount = userInfo.LicenseCodeInfos?.Where(w => w.LicenseCode.Equals(licenseCode))
-                    ?.Sum(s => s.ActivatedClientCount);
-                if (activatedClientCount > maxClientCount) {
+                    ?.Sum(s => s.ActivatedClientCount * s.MaxBindingScannerCount);
+                if (activatedClientCount > maxClientCount * maxBindingScannerCount) {
                     return new KeyValuePair<bool, object>(false, "修改数量不能小于已激活数量");
                 }
+
+                var sum = userInfo.LicenseCodeInfos?.Where(w => w.LicenseCode.Equals(licenseCode))
+                    ?.Sum(s => s.MaxClientCount * s.MaxBindingScannerCount) ?? 0;
+
+                bindingScannerCount = maxClientCount * maxBindingScannerCount - sum;
             }
 
             var (key, value) = await _licenseCodeRepository.FirstDetails(f => f.UserInfo != null &&
@@ -119,11 +158,25 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 info.MaxClientCount = maxClientCount;
                 info.MaxBindingScannerCount = maxBindingScannerCount;
                 var update = await _licenseCodeRepository.Update(info, token);
+
+                await _licenseAuthorizationLogRepository.Insert(new LicenseAuthorizationLog() {
+                    CreateTime = DateTime.Now,
+                    OperationType = LicenseOperationType.Modified,
+                    Customer = clientName,
+                    LicenseCode = licenseCode,
+                    MaxBindingScannerCount = maxBindingScannerCount,
+                    OperationTime = DateTime.Now,
+                    OperationUser = userCode,
+                    OperationIp = operationIp,
+                    UserCode = info.UserInfo?.UserCode ?? string.Empty,
+                    ConsumedLicenseCount = bindingScannerCount
+                }, token);
+
                 return new KeyValuePair<bool, object>(update, update ? "更新成功" : "更新失败");
+                //增加记录用于结算
             }
-            else {
-                return new KeyValuePair<bool, object>(false, "没有符合的数据");
-            }
+
+            return new KeyValuePair<bool, object>(false, "没有符合的数据");
         }
 
         public async Task<KeyValuePair<bool, object>> LicenseCodeData(string userCode, CancellationToken token) {

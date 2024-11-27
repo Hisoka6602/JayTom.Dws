@@ -2,14 +2,16 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace JayTom.Dws.LicenseApiDbTest.Migrations
 {
     [DbContext(typeof(Program.LicenseApiContext1))]
-    partial class LicenseApiContext1ModelSnapshot : ModelSnapshot
+    [Migration("20241127101752_LicenseAuthorizationLog3")]
+    partial class LicenseAuthorizationLog3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,10 +172,9 @@ namespace JayTom.Dws.LicenseApiDbTest.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("Remarks");
 
-                    b.Property<string>("UserCode")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("UserCode");
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("UserId");
 
                     b.HasKey("Id");
 

@@ -99,6 +99,9 @@ internal class Program {
             modelBuilder.Entity<LicenseGroupInfo>().HasKey(c => new {
                 c.Id
             });
+            modelBuilder.Entity<LicenseAuthorizationLog>().HasKey(c => new {
+                c.Id
+            });
             //配置关系
             modelBuilder.Entity<LicenseUserInfo>()
                 .HasOne(b => b.UserDetailsInfo)

@@ -8,6 +8,11 @@
         public long Pid { get; set; }
 
         /// <summary>
+        /// pid
+        /// </summary>
+        public long Id { get; set; }
+
+        /// <summary>
         /// 用户代码
         /// </summary>
         public string UserCode { get; set; } = string.Empty;

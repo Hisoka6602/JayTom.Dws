@@ -1,4 +1,5 @@
-﻿using JayTom.Dws.LicenseApiClient.Data.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using JayTom.Dws.LicenseApiClient.Data.Models;
 
 namespace JayTom.Dws.LicenseApiClient.Api {
 
@@ -292,6 +293,18 @@ namespace JayTom.Dws.LicenseApiClient.Api {
         /// </summary>
         /// <returns></returns>
         public Task LogOut(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 获取日志
+        /// </summary>
+        /// <param name="startTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="licenseCode"></param>
+        /// <param name="userCode"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<KeyValuePair<bool, object>> LicenseAuthorizationLog(DateTime? startTime,
+            DateTime? endTime, string? licenseCode, string? userCode, CancellationToken cancellationToken = default);
     }
 
     public class ApiResult {

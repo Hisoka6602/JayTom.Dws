@@ -154,6 +154,10 @@ internal class Program {
 
             builder.Services.AddSingleton<ILicenseCodeAppService, LicenseCodeAppService>();
             builder.Services.AddSingleton<ILicenseCodeService, LicenseCodeService>();
+            builder.Services.AddSingleton<ILicenseLogAppService, LicenseLogAppService>();
+            builder.Services.AddSingleton<ILicenseLogService, LicenseLogService>();
+
+            builder.Services.AddSingleton<ILicenseAuthorizationLogRepository, LicenseAuthorizationLogRepository>();
         }
         //Sign
         {

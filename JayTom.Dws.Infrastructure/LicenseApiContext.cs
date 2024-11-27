@@ -44,6 +44,9 @@ namespace JayTom.Dws.Infrastructure {
             modelBuilder.Entity<LicenseGroupInfo>().HasKey(c => new {
                 c.Id
             });
+            modelBuilder.Entity<LicenseAuthorizationLog>().HasKey(c => new {
+                c.Id
+            });
             //配置关系
             modelBuilder.Entity<LicenseUserInfo>()
                 .HasOne(b => b.UserDetailsInfo)
@@ -108,6 +111,8 @@ namespace JayTom.Dws.Infrastructure {
                 .WithOne(n => n.LicenseGroupInfo)
                 .HasForeignKey(n => new { n.LicenseGroupInfoId })
                 .OnDelete(DeleteBehavior.SetNull);
+
+            //----------------
         }
     }
 }

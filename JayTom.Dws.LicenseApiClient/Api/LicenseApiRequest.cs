@@ -1590,6 +1590,82 @@ namespace JayTom.Dws.LicenseApiClient.Api {
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", cancellationToken, "token");
         }
 
+        public async Task<KeyValuePair<bool, object>> LicenseAuthorizationLog(DateTime? startTime, DateTime? endTime, string? licenseCode, string? userCode,
+            CancellationToken cancellationToken = default) {
+            var invokeAsync = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", cancellationToken, "token");
+            if (!string.IsNullOrEmpty(invokeAsync)) {
+                try {
+                    //组包
+
+                    var requestJson = JsonConvert.SerializeObject(new {
+                        startTime = startTime,
+                        endTime = endTime,
+                        licenseCode = licenseCode,
+                        userCode = userCode,
+                    });
+
+                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    httpClient.Timeout = TimeSpan.FromSeconds(20);
+                    httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {invokeAsync}");
+                    HttpResponseMessage message;
+                    await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
+                        using (HttpContent content = new StreamContent(dataStream)) {
+                            content.Headers.Add("Content-Type", "application/json");
+                            message = await httpClient.PostAsync($"{Domain}{"/api/LicenseLog/LicenseAuthorizationLog"}", content, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+                    }
+                    string httpResult;
+                    switch (message.StatusCode) {
+                        case HttpStatusCode.OK: {
+                                using (message) {
+                                    httpResult = await message.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                                }
+                                break;
+                            }
+                        case HttpStatusCode.NotFound:
+                            return new KeyValuePair<bool, object>(false, $"该地址不存在!");
+
+                        case HttpStatusCode.Unauthorized:
+                            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", cancellationToken, "token");
+                            return new KeyValuePair<bool, object>(false, $"用户未登录!");
+
+                        default:
+                            httpResult = $"{message}";
+                            break;
+                    }
+
+                    //解码
+                    var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
+                    if (result is not null) {
+                        var authorizationLogInfoModels = JsonConvert.DeserializeObject<List<AuthorizationLogInfoModel>>(result?.Data?.ToString() ?? string.Empty);
+                        if (authorizationLogInfoModels?.Any() == true) {
+                            return new KeyValuePair<bool, object>(true, authorizationLogInfoModels);
+                        }
+                    }
+
+                    return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult() {
+                        Msg = result?.Msg ?? string.Empty
+                    });
+                }
+                catch (HttpRequestException) {
+                    return new KeyValuePair<bool, object>(false, "Http访问异常!");
+                }
+                catch (AggregateException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+                catch (TaskCanceledException) {
+                    return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
+                }
+                catch (Exception) {
+                    return new KeyValuePair<bool, object>(false, "接口访问异常!");
+                }
+            }
+            else {
+                return new KeyValuePair<bool, object>(false, "用户未登录");
+            }
+        }
+
         public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {
             try {
                 using var memoryStream = new MemoryStream();
