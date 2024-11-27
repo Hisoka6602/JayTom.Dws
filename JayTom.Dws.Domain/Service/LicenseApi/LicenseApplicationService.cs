@@ -166,7 +166,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 }
 
                 var templateInfo = await _licensePermissionTemplateRepository.FirstOrDefault(f =>
-                    code == null || f.CreateBy.Equals(code), token);
+                   f.Id.Equals(templateId) && (code == null || f.CreateBy.Equals(code)), token);
 
                 if (templateInfo is not null) {
                     var delete = await _licensePermissionTemplateRepository.Delete(templateInfo, token);

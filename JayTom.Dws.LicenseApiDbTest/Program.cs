@@ -29,6 +29,7 @@ internal class Program {
         var dbContextFactory = new DesignTimeDbContextFactory();
         try {
             using var context = dbContextFactory.CreateDbContext(null);
+            var pendingMigrationsAsync = context.Database.GetPendingMigrations();
             context.Database.Migrate();
             return true; // Migration succeeded
         }
