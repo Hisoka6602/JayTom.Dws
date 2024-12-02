@@ -290,6 +290,11 @@ namespace JayTom.Dws.Interface.Wdt {
             /// 表示是否必须包含包装条码。
             /// </summary>
             public bool MustIncludeBoxBarcode { get; set; }
+
+            /*/// <summary>
+            /// 是否重量不能为0
+            /// </summary>
+            public bool IsWeightNonZero { get;  set; }*/
         }
     }
 }
