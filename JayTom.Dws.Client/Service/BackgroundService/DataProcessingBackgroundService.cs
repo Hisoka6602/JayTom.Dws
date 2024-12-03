@@ -44,7 +44,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         private readonly ISortingRepository _sortingRepository;
         private readonly IUploadRepository _uploadRepository;
-        private readonly IImageRepository _imageRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExitInfoRepository _exitInfoRepository;
         private ConcurrentQueue<PackageInfoModel> _insertItems = new();
@@ -59,14 +58,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
             IUploadRepository uploadRepository,
-            IImageRepository imageRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IExitInfoRepository exitInfoRepository) {
             _packageRepository = packageRepository;
             _imageStorageService = imageStorageService;
             _sortingRepository = sortingRepository;
             _uploadRepository = uploadRepository;
-            _imageRepository = imageRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _exitInfoRepository = exitInfoRepository;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
@@ -87,8 +84,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     //添加
                     _insertItems.Enqueue(new PackageInfoModel() {
                         BarCodeInfo = model.BarCodeInfo,
-                        WeightInfo = model.WeightInfo,
-                        VolumeInfo = model.VolumeInfo,
                         PackageCreateTime = model.CreateTime,
                         PackageTimestamped = new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds(),
                     });
@@ -195,7 +190,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                         f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber),
                                                     stoppingToken);
 
-                                            var insert = await _imageRepository.Insert(new ImageInfoModel() {
+                                            /*var insert = await _imageRepository.Insert(new ImageInfoModel() {
                                                 PackageId = packageInfoModel.Id,
                                                 CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
                                                 CameraSerialNumber = savedImageInfo.CameraSerialNumber,
@@ -206,7 +201,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                             if (!insert) {
                                                 _savedImageItems.Enqueue(savedImageInfo);
-                                            }
+                                            }*/
                                         }
                                         else {
                                             _savedImageItems.Enqueue(savedImageInfo);
@@ -226,6 +221,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                         f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber),
                                                     stoppingToken);
 
+                                            /*
                                             var insert = await _imageRepository.Insert(new ImageInfoModel() {
                                                 PackageId = packageInfoModel.Id,
                                                 CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
@@ -237,7 +233,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                             if (!insert) {
                                                 _savedImageItems.Enqueue(savedImageInfo);
-                                            }
+                                            }*/
                                         }
                                         else {
                                             _savedImageItems.Enqueue(savedImageInfo);

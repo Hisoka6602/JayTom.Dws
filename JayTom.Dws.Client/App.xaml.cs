@@ -57,7 +57,6 @@ using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Interface.Cloud.CloudVideo;
-using JayTom.Dws.Client.Service.TestService;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
@@ -81,12 +80,10 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
@@ -97,13 +94,11 @@ using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService;
 using JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel;
 using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
@@ -188,6 +183,8 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<UsbCameraSettingsPage>();
                 containerRegistry.RegisterForNavigation<AlgorithmSettingsPage>();
                 containerRegistry.RegisterForNavigation<NVRIPCDeviceManagementPage>();
+                containerRegistry.RegisterForNavigation<TcpScanSettingsPage>();
+
                 //分拣设置
                 containerRegistry.RegisterForNavigation<LogisticsCodeRecognitionPage>();
                 containerRegistry.RegisterForNavigation<PackageExitDefinitionPage>();
@@ -264,12 +261,8 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<IPackageRepository, PackageRepository>();
                 services.AddSingleton<IBarCodeRepository, BarCodeRepository>();
                 services.AddSingleton<ISoundRepository, SoundRepository>();
-                services.AddSingleton<IVolumeRepository, VolumeRepository>();
-                services.AddSingleton<IWeightRepository, WeightRepository>();
                 services.AddSingleton<IUploadRepository, UploadRepository>();
                 services.AddSingleton<ISortingRepository, SortingRepository>();
-                services.AddSingleton<IOcrRepository, OcrRepository>();
-                services.AddSingleton<IImageRepository, ImageRepository>();
                 services.AddSingleton<ICloudVideoUploadRepository, CloudVideoUploadRepository>();
                 services.AddSingleton<IExitInfoRepository, ExitInfoRepository>();
 
@@ -311,10 +304,6 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ISerialPortConfigRepository, SerialPortConfigRepository>();
                 services.AddSingleton<ITcpConfigRepository, TcpConfigRepository>();
                 services.AddSingleton<ITcpConnectionConfigRepository, TcpConnectionConfigRepository>();
-                services.AddSingleton<INvrCameraBindingRepository, NvrCameraBindingRepository>();
-
-                services.AddSingleton<IIpcNvrConfigRepository, IpcNvrConfigRepository>();
-                services.AddSingleton<INvrWatermarkConfigRepository, NvrWatermarkConfigRepository>();
                 //logs
                 services.AddSingleton<IAppLogRepository, AppLogRepository>();
                 services.AddSingleton<ICameraLogRepository, CameraLogRepository>();
@@ -391,7 +380,7 @@ namespace JayTom.Dws.Client {
                 //同步配置
                 services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
                 //把后台注册服务写在这里
-                services.AddHostedService<JiangTengPackageBackgroundService>(); // 注册后组包服务
+                // services.AddHostedService<JiangTengPackageBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                 services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
@@ -572,6 +561,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<UsbCameraSettingsPage, UsbCameraSettingsViewModel>();
             ViewModelLocationProvider.Register<AlgorithmSettingsPage, AlgorithmSettingsViewModel>();
             ViewModelLocationProvider.Register<NVRIPCDeviceManagementPage, NvrIpcDeviceManagementViewModel>();
+            ViewModelLocationProvider.Register<TcpScanSettingsPage, TcpScanSettingsViewModel>();
 
             ViewModelLocationProvider.Register<APISettingsPage, ApiSettingsPageViewModel>();
             ViewModelLocationProvider.Register<SaveImageSettingsPage, SaveImageSettingsPageViewModel>();

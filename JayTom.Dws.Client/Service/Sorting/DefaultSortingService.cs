@@ -299,12 +299,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         ExecuteSorting(new SortingParam() {
                             Guid = model.Guid,
                             BarCode = model.BarCodeInfo?.Barcode ?? string.Empty,
-                            Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
                             ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
-                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
-                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
-                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,

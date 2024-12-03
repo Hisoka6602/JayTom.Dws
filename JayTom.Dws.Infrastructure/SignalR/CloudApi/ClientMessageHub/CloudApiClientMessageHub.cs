@@ -6,7 +6,6 @@ using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR.Client;
-using JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub;
 using JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub;
 
 namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {

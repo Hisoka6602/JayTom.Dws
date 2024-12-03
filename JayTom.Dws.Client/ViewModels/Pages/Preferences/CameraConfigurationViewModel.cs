@@ -101,6 +101,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new MenuItemInfoModel()
             {
+                Title = "Tcp扫码节点设置",
+                IconFont = new IconInfoModel()
+                {
+                    IconFont = "pack://application:,,,/Fonts/#iconfont",
+                    IconCode = "\xeb6c",
+                    IconSize = 25
+                },
+                Description ="TCP扫码节点配置",
+                PageClassName = "TcpScanSettingsPage",
+                ClickCommand = ClickCommand,
+            },
+            new MenuItemInfoModel()
+            {
                 Title = "算法配置",
                 IconFont = new IconInfoModel()
                 {

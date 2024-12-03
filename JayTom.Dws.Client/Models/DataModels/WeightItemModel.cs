@@ -2,22 +2,13 @@
 using Prism.Mvvm;
 using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.DataModels
-{
+namespace JayTom.Dws.Client.Models.DataModels {
+
     public class WeightItemModel : BindableBase {
-        private SourceType _sourceType;
         private string _serialPortName = string.Empty;
         private string _originalText = string.Empty;
         private double _formattedWeight;
         private DateTime? _createTime;
-
-        /// <summary>
-        /// 来源类型
-        /// </summary>
-        public SourceType SourceType {
-            get => _sourceType;
-            set => SetProperty(ref _sourceType, value);
-        }
 
         /// <summary>
         /// 串口名称

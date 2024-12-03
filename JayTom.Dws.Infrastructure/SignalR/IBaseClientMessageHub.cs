@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub;
 
 namespace JayTom.Dws.Infrastructure.SignalR {
 

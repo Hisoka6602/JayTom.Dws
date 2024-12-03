@@ -24,6 +24,7 @@ using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+
     public class ContentInputSettingsPageViewModel : SettingsPageTemplateViewModel {
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private bool _isUseTcpInput;
@@ -216,7 +217,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                !string.IsNullOrEmpty(obj.DevicePath)) {
                 model.Identifier = Identifier;
                 model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
-                    BindingSource = SourceType.BarcodeScanner,
                     DisplayIdentifier = $"{obj.DeviceName}-{obj.ManufacturerName}",
                     SerialNumber = obj.DevicePath
                 };
@@ -235,7 +235,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 var displayIdentifier = TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server ? $"{TcpSettingsInfo.ServerConfig.IpAddress}:{TcpSettingsInfo.ServerConfig.Port}" : $"{TcpSettingsInfo.ClientConfig.IpAddress}:{TcpSettingsInfo.ClientConfig.Port}";
 
                 model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
-                    BindingSource = SourceType.Tcp,
                     DisplayIdentifier = displayIdentifier,
                     SerialNumber = displayIdentifier
                 };
@@ -254,7 +253,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 model.Identifier = Identifier;
 
                 model.NvrBindingParamInfoModel = new NvrBindingParamInfoModel() {
-                    BindingSource = SourceType.Input,
                     DisplayIdentifier = Environment.MachineName,
                     SerialNumber = Environment.MachineName
                 };

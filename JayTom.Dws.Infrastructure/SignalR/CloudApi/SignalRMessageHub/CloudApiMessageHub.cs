@@ -6,7 +6,6 @@ using System.Configuration;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
-using JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub;
 
 namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
 

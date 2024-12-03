@@ -203,8 +203,6 @@ namespace JayTom.Dws.Domain.Manager {
         public static void CompletedPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             var packageInfo = GetPackage(predicate);
             if (packageInfo == null || packageInfo.IsCompleted) return;
-            packageInfo.VolumeInfo ??= new VolumeInfoModel();
-            packageInfo.WeightInfo ??= new WeightInfoModel();
             packageInfo.BarCodeInfo ??= new BarCodeInfoModel();
             packageInfo.GrayscaleResultInfo ??= new GrayscaleResult();
             if (packageInfo.LinkedCarCount <= 0) {
@@ -238,16 +236,6 @@ namespace JayTom.Dws.Domain.Manager {
         /// 条码信息
         /// </summary>
         public BarCodeInfoModel? BarCodeInfo { get; set; }
-
-        /// <summary>
-        /// 体积信息
-        /// </summary>
-        public VolumeInfoModel? VolumeInfo { get; set; }
-
-        /// <summary>
-        /// 称重信息
-        /// </summary>
-        public WeightInfoModel? WeightInfo { get; set; }
 
         /// <summary>
         /// 格口信息

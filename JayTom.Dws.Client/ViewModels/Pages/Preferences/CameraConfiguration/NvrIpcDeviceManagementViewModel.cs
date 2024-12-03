@@ -17,7 +17,6 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Client.Views.Editors.CloudService;
@@ -25,10 +24,8 @@ using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
@@ -37,9 +34,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
     /// </summary>
     public class NvrIpcDeviceManagementViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
         private List<BarcodeScannerCameraConfigInfoModel>? _scannerCameraConfigInfoModels;
 
         private ObservableCollection<IpcNvrItemInfoModel> _ipcNvrItemInfos = new();
@@ -66,17 +61,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         }
 
         public NvrIpcDeviceManagementViewModel(IConfigRepository configRepository,
-            IIpcNvrConfigRepository ipcNvrConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
             _configRepository = configRepository;
-            _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             _scannerCameraConfigInfoModels = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
             if (!_isLoad) {
                 _isLoad = true;
@@ -154,7 +146,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
                 return;
             }
-            if (obj is IpcNvrItemInfoModel info) {
+            /*if (obj is IpcNvrItemInfoModel info) {
                 var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
                 if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
                     model.Identifier = Identifier;
@@ -186,7 +178,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         RefreshDelegate(obj);
                     }
                 }
-            }
+            }*/
         }
 
         /// <summary>
@@ -195,7 +187,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public ICommand DeleteCommand => new DelegateCommand<object>(DeleteDelegate);
 
         private async void DeleteDelegate(object obj) {
-            if (IsRefreshing) return;
+            /*if (IsRefreshing) return;
             if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再删除");
                 return;
@@ -210,7 +202,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
                     RefreshDelegate(obj);
                 }
-            }
+            }*/
         }
 
         public ICommand RefreshCommand => new DelegateCommand<object>(RefreshDelegate);
@@ -220,7 +212,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// </summary>
         /// <param name="obj"></param>
         private async void RefreshDelegate(object obj) {
-            if (IsRefreshing) return;
+            /*if (IsRefreshing) return;
             IsRefreshing = true;
             await Task.Run(async () => {
                 _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
@@ -336,7 +328,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             }
                         });
                 });
-            });
+            });*/
         }
 
         /// <summary>
@@ -345,7 +337,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public ICommand AddCommand => new DelegateCommand<object>(AddDelegate);
 
         private async void AddDelegate(object obj) {
-            if (IsRefreshing) return;
+            /*if (IsRefreshing) return;
             var nvrIpcDeviceEditor = new NvrIpcDeviceEditor();
             if (nvrIpcDeviceEditor.DataContext is NvrIpcDeviceEditorViewModel model) {
                 model.Identifier = Identifier;
@@ -374,7 +366,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
                     RefreshDelegate(obj);
                 }
-            }
+            }*/
         }
 
         /// <summary>
@@ -383,7 +375,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         public ICommand BatchChangePasswordCommand => new DelegateCommand<object>(BatchChangePasswordDelegate);
 
         private async void BatchChangePasswordDelegate(object obj) {
-            if (IsRefreshing) return;
+            /*if (IsRefreshing) return;
             if (AppContext.GetData("IsRunning") is true) {
                 NvrIpcDeviceManagemenMessageQueue.Enqueue("请先停止运行再设置");
                 return;
@@ -434,7 +426,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         RefreshDelegate(obj);
                     }
                 }
-            }
+            }*/
         }
     }
 }

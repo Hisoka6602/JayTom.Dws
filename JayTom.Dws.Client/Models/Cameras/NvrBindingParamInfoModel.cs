@@ -11,7 +11,6 @@ namespace JayTom.Dws.Client.Models.Cameras {
     public class NvrBindingParamInfoModel : BindableBase {
         private string _serialNumber = string.Empty;
         private string _displayIdentifier = string.Empty;
-        private SourceType _bindingSource = SourceType.None;
         private string _remarks = string.Empty;
 
         /// <summary>
@@ -29,14 +28,6 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public string DisplayIdentifier {
             get => _displayIdentifier;
             set => SetProperty(ref _displayIdentifier, value);
-        }
-
-        /// <summary>
-        /// 绑定源
-        /// </summary>
-        public SourceType BindingSource {
-            get => _bindingSource;
-            set => SetProperty(ref _bindingSource, value);
         }
 
         /// <summary>

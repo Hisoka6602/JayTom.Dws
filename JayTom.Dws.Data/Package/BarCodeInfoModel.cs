@@ -25,12 +25,6 @@ namespace JayTom.Dws.Data.Package {
         public DateTime ScanTime { get; set; } = DateTime.MinValue;
 
         /// <summary>
-        /// 来源
-        /// </summary>
-        [Column("Source")]
-        public SourceType Source { get; set; }
-
-        /// <summary>
         /// 输入序列(来源设备唯一标识)
         /// </summary>
         [Column("SerialNumber")]

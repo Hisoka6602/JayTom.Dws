@@ -2,25 +2,15 @@
 using Prism.Mvvm;
 using JayTom.Dws.Data.Package;
 
-namespace JayTom.Dws.Client.Models.DataModels
-{
+namespace JayTom.Dws.Client.Models.DataModels {
 
     public class VolumeItemModel : BindableBase {
-        private SourceType _sourceType;
         private string _originalText = string.Empty;
         private double _formattedLength;
         private double _formattedWidth;
         private double _formattedHeight;
         private double _formattedVolume;
         private DateTime? _createTime;
-
-        /// <summary>
-        /// 来源类型
-        /// </summary>
-        public SourceType SourceType {
-            get => _sourceType;
-            set => SetProperty(ref _sourceType, value);
-        }
 
         /// <summary>
         /// 源字符

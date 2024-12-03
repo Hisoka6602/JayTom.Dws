@@ -4,16 +4,15 @@ using System.Text;
 using System.Windows.Data;
 using System.Globalization;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using JayTom.Dws.Data.Package;
+using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters
-{
+namespace JayTom.Dws.Client.Converters {
 
     public class SourceTypeConverter : IValueConverter {
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is SourceType sourceType) {
+            /*if (value is SourceType sourceType) {
                 return sourceType switch {
                     SourceType.SerialPort => "串口",
                     SourceType.Tcp => "Tcp",
@@ -21,7 +20,7 @@ namespace JayTom.Dws.Client.Converters
                     SourceType.Camera => "相机",
                     _ => string.Empty
                 };
-            }
+            }*/
             return string.Empty;
         }
 

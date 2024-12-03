@@ -11,16 +11,11 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
     public class NvrWatermarkConfigEditorViewModel : BindableBase {
-        private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
         private string _identifier = string.Empty;
         private string _message = string.Empty;
@@ -33,10 +28,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private SnackbarMessageQueue _nvrWatermarkConfigEditorMessageQueue = new(TimeSpan.FromSeconds(1));
         private bool _isUseWatermark;
 
-        public NvrWatermarkConfigEditorViewModel(INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
-            IIpcNvrConfigRepository ipcNvrConfigRepository) {
-            _nvrWatermarkConfigRepository = nvrWatermarkConfigRepository;
-            _ipcNvrConfigRepository = ipcNvrConfigRepository;
+        public NvrWatermarkConfigEditorViewModel() {
         }
 
         public string Identifier {
@@ -115,7 +107,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            /*await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 ChannelIdItems = new ObservableCollection<int>(
                     Enumerable.Range(1, IpcNvrItemInfo.ChannelCount)
                 );
@@ -138,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                         IsUseWatermark = false;
                     }
                 }
-            });
+            });*/
         }
 
         /// <summary>
@@ -147,7 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
         private async void SaveDelegate() {
-            var isSuccess = false;
+            /*var isSuccess = false;
             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             var model = ipcNvrConfigInfoModels.FirstOrDefault(f => f.SerialNumber.Equals(IpcNvrItemInfo.SerialNumber));
             if (IsUseWatermark) {
@@ -178,7 +170,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 var models = await _nvrWatermarkConfigRepository.MemoryCacheData();
                 isSuccess = await _nvrWatermarkConfigRepository.DeleteRange(models.Where(w => w.IpcNvrConfigId.Equals(model?.Id)).ToList());
                 NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
-            }
+            }*/
         }
 
         /// <summary>

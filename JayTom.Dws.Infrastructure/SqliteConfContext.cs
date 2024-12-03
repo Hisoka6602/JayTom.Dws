@@ -5,12 +5,9 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Infrastructure {
@@ -70,19 +67,6 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<UsbCameraConfigInfoModel>()
                     .HasIndex(b => b.SerialNumber)
                     .IsUnique();
-                //IPC/NVR
-                modelBuilder.Entity<IpcNvrConfigInfoModel>()
-                    .HasIndex(b => b.IpAddress)
-                    .IsUnique();
-                modelBuilder.Entity<NvrWatermarkConfigInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //NVR通道
-                modelBuilder.Entity<IpcNvrConfigInfoModel>()
-                    .HasMany(b => b.NvrWatermarkConfigInfos)
-                    .WithOne(n => n.IpcNvrConfigInfo)
-                    .HasForeignKey(n => new { n.IpcNvrConfigId })
-                    .OnDelete(DeleteBehavior.Cascade);
 
                 //分拣
                 modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>().HasKey(c => new {
@@ -260,9 +244,6 @@ namespace JayTom.Dws.Infrastructure {
                     .HasForeignKey<PackageExitLockBindingInfoModel>(n => n.ExitId)
                     .OnDelete(DeleteBehavior.Cascade);
                 //------------------云端-----------
-                modelBuilder.Entity<NvrCameraBindingInfoModel>().HasKey(c => new {
-                    c.Id
-                });
             }
             base.OnModelCreating(modelBuilder);
         }

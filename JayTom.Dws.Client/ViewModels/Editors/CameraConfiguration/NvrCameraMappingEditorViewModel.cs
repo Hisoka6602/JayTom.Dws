@@ -12,15 +12,11 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
     public class NvrCameraMappingEditorViewModel : BindableBase {
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
 
         private ObservableCollection<NvrCameraMappingItemInfoModel> _nvrCameraMappingItemInfos = new() {
         };
@@ -39,14 +35,13 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             set => SetProperty(ref _nvrCameraMappingItemInfos, value);
         }
 
-        public NvrCameraMappingEditorViewModel(INvrCameraBindingRepository nvrCameraBindingRepository) {
-            _nvrCameraBindingRepository = nvrCameraBindingRepository;
+        public NvrCameraMappingEditorViewModel() {
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
         private async void LoadedDelegate(object obj) {
-            var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+            /*var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
 
             var cameraMappingItemInfoModels = nvrCameraBindingInfoModels.Select((s, i) => new NvrCameraMappingItemInfoModel {
                 Num = i + 1,
@@ -64,7 +59,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 NvrCameraMappingItemInfos.Clear();
                 await Task.Delay(200);
                 NvrCameraMappingItemInfos.AddRange(cameraMappingItemInfoModels);
-            });
+            });*/
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
@@ -78,7 +73,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         public ICommand UnbindCameraCommand => new DelegateCommand<object>(UnbindCameraDelegate);
 
         private async void UnbindCameraDelegate(object obj) {
-            if (obj is NvrCameraMappingItemInfoModel info) {
+            /*if (obj is NvrCameraMappingItemInfoModel info) {
                 var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
                     f.Channel.Equals(info.Channel) &&
                     f.SerialNumber.Equals(info.SerialNumber));
@@ -88,7 +83,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                         LoadedDelegate(obj);
                     }
                 }
-            }
+            }*/
         }
     }
 }

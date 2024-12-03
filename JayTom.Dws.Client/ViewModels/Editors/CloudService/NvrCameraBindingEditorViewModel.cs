@@ -12,9 +12,7 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.CloudSettingModel;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
@@ -23,7 +21,6 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
     public class NvrCameraBindingEditorViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private string _identifier = string.Empty;
         private string _message = string.Empty;
         private int _channel;
@@ -53,11 +50,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         private string _password = string.Empty;
 
         public NvrCameraBindingEditorViewModel(IDeviceService deviceService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
-            _nvrCameraBindingRepository = nvrCameraBindingRepository;
         }
 
         /// <summary>
@@ -143,7 +138,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
 
         private async void LoadedDelegate(object obj) {
             //加载扫码相机
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            /*await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 NvrCameraBindingItems.Clear();
                 if (_deviceService.CameraItems?.Any() != true &&
                     !_deviceService.RunningStatus) {
@@ -173,7 +168,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                         }
                     }
                 }
-            });
+            });*/
         }
 
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
@@ -181,7 +176,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         private async void SaveDelegate() {
             //保存到表
             //先删除
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            /*await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 var list = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => s.CameraSerialNumber)?.ToList() ??
                            new List<string>();
                 var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s =>
@@ -218,7 +213,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                 if (DialogHost.IsDialogOpen(Identifier)) {
                     DialogHost.Close(Identifier);
                 }
-            });
+            });*/
         }
 
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);

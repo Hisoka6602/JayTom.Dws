@@ -331,11 +331,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     AddNewRow(new PackageItemModel() {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
                         ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                        Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
-                        Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
-                        Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
-                        Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
-                        Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
                         TimestampedGuid = model.Timestamp
                     });
                 }

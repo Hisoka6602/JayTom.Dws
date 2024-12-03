@@ -14,12 +14,11 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
+
     public class NvrIpcDeviceEditorViewModel : BindableBase {
         private readonly IDeviceService _deviceService;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private string _identifier = string.Empty;
         private string _message = string.Empty;
         private bool _isOk;
@@ -76,10 +75,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
             set => SetProperty(ref _ipcNvrItemInfo, value);
         }
 
-        public NvrIpcDeviceEditorViewModel(IDeviceService deviceService,
-            IIpcNvrConfigRepository ipcNvrConfigRepository) {
+        public NvrIpcDeviceEditorViewModel(IDeviceService deviceService) {
             _deviceService = deviceService;
-            _ipcNvrConfigRepository = ipcNvrConfigRepository;
         }
 
         /// <summary>
@@ -128,12 +125,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     IpcNvrItemInfo.Port <= 0) {
                     NvrIpcDeviceEditorMessageQueue.Enqueue("账号、密码、IP、端口均不能为空");
                     return;
-
                 }
-
             }
-
-
 
             IsOk = true;
             if (DialogHost.IsDialogOpen(Identifier)) {

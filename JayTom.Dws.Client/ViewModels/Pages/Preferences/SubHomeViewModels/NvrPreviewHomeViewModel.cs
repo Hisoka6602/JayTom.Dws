@@ -16,8 +16,6 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
@@ -26,9 +24,7 @@ using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationSta
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
     public class NvrPreviewHomeViewModel : BindableBase {
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IConfigRepository _configRepository;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private ObservableCollection<NvrPreviewViewItemInfo> _nvrPreviewViewItems = new();
         private BaseDaHuatech? _baseDaHuatech;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
@@ -38,16 +34,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
             set => SetProperty(ref _nvrPreviewViewItems, value);
         }
 
-        public NvrPreviewHomeViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
-            IConfigRepository configRepository,
-            IIpcNvrConfigRepository ipcNvrConfigRepository) {
-            _nvrCameraBindingRepository = nvrCameraBindingRepository;
+        public NvrPreviewHomeViewModel(
+            IConfigRepository configRepository) {
             _configRepository = configRepository;
-            _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
 
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(async item => {
-                if (item is { } info) {
+                /*if (item is { } info) {
                     if (info.Status == EventMediators.ApplicationStatus.Start) {
                         try {
                             await _runningSemaphoreSlim.WaitAsync();
@@ -141,7 +134,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                             _runningSemaphoreSlim.Release();
                         }
                     }
-                }
+                }*/
             });
         }
 

@@ -34,7 +34,6 @@ using JayTom.Dws.Client.Models.VideoSettingModel;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR;
@@ -42,7 +41,6 @@ using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR
 namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
 
     public class NvrRecordingViewModel : BindableBase {
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IPackageRepository _packageRepository;
         private readonly IConfigRepository _configRepository;
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
@@ -90,10 +88,9 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
         private PackageItemModel _packageItemModel = new();
         private VideoPlaybackSettingsInfoModel _videoPlaybackSettingsInfo = new();
 
-        public NvrRecordingViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
+        public NvrRecordingViewModel(
             IPackageRepository packageRepository,
             IConfigRepository configRepository) {
-            _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _packageRepository = packageRepository;
             _configRepository = configRepository;
         }
@@ -262,7 +259,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 SelectionEndTime = SelectionStartTime?.AddSeconds(10);
             }
             //获取Nvr
-            var nvrBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+
+            /*
             var nvrCameraBindingInfoModels = nvrBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
 
             var videoPlayerModels = nvrCameraBindingInfoModels?.Select(s =>
@@ -295,7 +293,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration {
                 if (key) {
                     PlaybackDelegate(obj);
                 }
-            }
+            }*/
         }
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);

@@ -24,30 +24,15 @@ namespace JayTom.Dws.Data.Package {
         public DateTime PackageCreateTime { get; set; } = DateTime.Now;
 
         /// <summary>
-        /// 其他项
+        /// 上传状态
         /// </summary>
-        [Column("Other")]
-        public string? Other { get; set; }
+        [Column("RequestStatus")]
+        public UploadStatus RequestStatus { get; set; } = UploadStatus.NotUploaded;
 
         /// <summary>
         /// 条码信息
         /// </summary>
         public virtual BarCodeInfoModel? BarCodeInfo { get; set; }
-
-        /// <summary>
-        /// 称重信息
-        /// </summary>
-        public virtual WeightInfoModel? WeightInfo { get; set; }
-
-        /// <summary>
-        /// 体积信息
-        /// </summary>
-        public virtual VolumeInfoModel? VolumeInfo { get; set; }
-
-        /// <summary>
-        /// 上传信息
-        /// </summary>
-        public virtual UploadInfoModel? UploadInfo { get; set; }
 
         /// <summary>
         /// 格口信息
@@ -60,34 +45,19 @@ namespace JayTom.Dws.Data.Package {
         public virtual SortingInfoModel? SortingInfo { get; set; }
 
         /// <summary>
-        /// 物流信息
+        /// 节点信息
         /// </summary>
-        public virtual LogisticsInfoModel? LogisticsInfo { get; set; }
+        public virtual ICollection<NodeInfoModel>? NodeInfos { get; set; }
 
         /// <summary>
-        /// Ocr信息
+        /// Api信息
         /// </summary>
-        public virtual OcrInfoModel? OcrInfo { get; set; }
-
-        /// <summary>
-        /// 图片信息
-        /// </summary>
-        public virtual ICollection<ImageInfoModel>? ImageInfos { get; set; }
-
-        /// <summary>
-        /// Nvr信息
-        /// </summary>
-        public virtual ICollection<NvrInfoModel>? NvrInfos { get; set; }
+        public virtual ICollection<ApiInfoModel>? ApiInfos { get; set; }
 
         /// <summary>
         /// 视频云信息
         /// </summary>
         public virtual CloudVideoUploadInfoModel? CloudVideoUploadInfo { get; set; }
-
-        /// <summary>
-        /// 设备信息
-        /// </summary>
-        public virtual DeviceInfoModel? DeviceInfo { get; set; }
 
         /// <summary>
         /// 聚合包裹信息

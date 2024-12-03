@@ -110,13 +110,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         packageItems = value.PackageItems.Select(s => new PackageInfoModel {
                             PackageTimestamped = s.PackageTimestamped,
                             PackageCreateTime = s.PackageCreateTime,
-                            Other = s.Other,
                             AggregatePackagesInfo = s.AggregatePackagesInfo,
                             BarCodeInfo = s.BarCodeInfo,
                             CloudVideoUploadInfo = s.CloudVideoUploadInfo,
-                            WeightInfo = s.WeightInfo,
-                            VolumeInfo = s.VolumeInfo,
-                            UploadInfo = s.UploadInfo,
                             ExitInfo = s.ExitInfo,
                         })?.ToList();
 

@@ -114,12 +114,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 if (item is { BarCodeInfo: not null } model) {
                     _submitItems.Enqueue(new SubmitItemInfo() {
                         Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
-                        Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
                         ScanTime = model?.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                        Weight = (float)(model?.WeightInfo?.FormattedWeight ?? 0),
-                        Length = (float)(model?.VolumeInfo?.FormattedLength ?? 0),
-                        Width = (float)(model?.VolumeInfo?.FormattedWidth ?? 0),
-                        Volume = (float)(model?.VolumeInfo?.FormattedVolume ?? 0),
                         Guid = model?.Guid ?? 0,
                         IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
                         PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
@@ -1002,121 +997,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 //提交
                 if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                     switch (_apiSettingsDto?.Type) {
-                        case ApiType.CaiNiaoApi:
-                            //实时方案
-                            /*if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
-                                //实时-超时删除直接不匹配
-                                _packageSubmissionPushItems?.TryRemove(packageValue);
-                                NLog.LogManager.GetCurrentClassLogger().Error($"待提交的单号:{packageValue.Value.PackageInfo.BarCodeInfo?.Barcode},格口:[{packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f => f.InstructionType == InstructionType.CreatePackage)?.ExitName}],超过等待回调时间");
-                                return;
-                            }
-                            //判断状态有完成再提交
-                            if (packageValue.Value.PackageExitUpdateItems?.Any(a => a.InstructionType == InstructionType.SignalCallback &&
-                                    a.InstructionType == InstructionType.PackageExceptionEx) != true) {
-                                return;
-                            }
-                            NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
-                            var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-                            if (key) {
-                                var caiNiaoStatusConvert = CaiNiaoStatusConvert(
-                                    packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                    packageValue.Value.PackageExitUpdateItems);
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                    packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                        CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                        CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
-                                    }, other: new ReportChuteInfo {
-                                        ChuteCode = packageValue.Value.PackageExitUpdateItems?.LastOrDefault()?.ExitName ?? string.Empty,
-                                        ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
-                                        ErrorReson = caiNiaoStatusConvert.Value,
-                                        Status = caiNiaoStatusConvert.Key,
-                                    }, token: stoppingToken);
-                            }
-                            else {
-                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                            }*/
-                            //延迟方案
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
-                                //超时删除直接不匹配
-                                /*do {
-                                    if (_packageSubmissionPushItems?.ContainsKey(packageValue.Key) == true) {
-                                        isRemove = _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _) ?? false;
-                                    }
-                                    else {
-                                        break;
-                                    }
-                                    await Task.Delay(5, token);
-                                } while (isRemove);*/
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            //创建时间大于23s再提交
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 23 ||
-                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
-                                    a.InstructionType == InstructionType.SendSorting) != true) {
-                                return;
-                            }
-
-                            NLog.LogManager.GetCurrentClassLogger().Error($"准备发送");
-
-                            var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
-
-                            if (key) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    var caiNiaoStatusConvert = CaiNiaoStatusConvert(
-                                        packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                        packageValue.Value.PackageExitUpdateItems);
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
-                                            CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
-                                            CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
-                                            CameraSerialNumber = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
-                                        }, other: new ReportChuteInfo {
-                                            ChuteCode = caiNiaoStatusConvert.Value.ChuteCode,
-                                            ChuteCodePhysical = packageValue.Value.PackageExitUpdateItems?.LastOrDefault(l => l.ExitType == SortingExitType.TheoreticalExit)?.ExitName ?? string.Empty,
-                                            ErrorReson = caiNiaoStatusConvert.Value.ErrorReson,
-                                            Status = caiNiaoStatusConvert.Key,
-                                        }, token: token);
-                                }
-                            }
-                            else {
-                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                            }
-
-                            break;
-
-                        case ApiType.JtExpressApi:
-                            if (_jtExpressDto.IsUploadAfterReturn && packageValue.Value.PackageExitUpdateItems.Any(a => a.Type == ExitType.AbnormalExit)) {
-                                //删除这条
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            if (packageValue.Value.ApiResponse.UploadResponse is null || DateTime.Now.Subtract(packageValue.Value.ApiResponse.UploadResponse.ResponseTime).TotalSeconds < 2) {
-                                return;
-                            }
-
-                            var keyValuePair = await uploader.SetParameters(_jtExpressApiParam);
-                            if (keyValuePair.Key) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
-                                }
-                            }
-                            else {
-                                NLog.LogManager.GetCurrentClassLogger().Error("设置Api参数失败");
-                            }
-
-                            break;
-
                         case ApiType.PostInApi:
                             if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 100) {
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
@@ -1137,35 +1017,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     packageValue.Value.ApiResponse.UploadResponse.RequestContent += $"落格:[{exitName}]";
                                 }
 
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, 0,
                                     packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
                                     packageValue.Value.ApiResponse.UploadResponse, token: token);
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                            }
-                            break;
-
-                        case ApiType.PostApi:
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 60) {
-                                _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
-                                return;
-                            }
-                            if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds < 35 ||
-                                packageValue.Value.PackageExitUpdateItems?.Any(a =>
-                                    a.InstructionType == InstructionType.SendSorting) != true) {
-                                return;
-                            }
-
-                            var valuePair = await uploader.SetParameters(_postApiParam);
-                            if (valuePair.Key) {
-                                if (!_memoryCache.TryGetValue(packageValue.Key, out _)) {
-                                    _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
-                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-                                    });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
-                                        packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                        packageValue.Value.ApiResponse.UploadResponse, token: token);
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交");
-                                }
                             }
                             break;
                     }

@@ -23,7 +23,6 @@ using JayTom.Dws.Domain.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.SyncSettings;
@@ -31,7 +30,6 @@ using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
@@ -52,7 +50,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly ICloud _cloud;
         private readonly IPackageRepository _packageRepository;
         private readonly ICloudVideoUploadRepository _cloudVideoUploadRepository;
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IComputer _computer;
         private readonly ISyncSettingsService _syncSettingsService;
         private readonly IApiSortingRepository _apiSortingRepository;
@@ -71,8 +68,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private SyncSettingsDto _syncSettingsDto = new();
         private DateTime _startTime = DateTime.Now;
         private SemaphoreSlim _cloudVideoUpLoadSlim = new(2);
-
-        private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
         private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
 
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
@@ -81,7 +76,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         public CloudBackgroundService(IConfigRepository configRepository,
             ICloud cloud, IPackageRepository packageRepository,
             ICloudVideoUploadRepository cloudVideoUploadRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository,
             IComputer computer,
             ISyncSettingsService syncSettingsService,
             IApiSortingRepository apiSortingRepository,
@@ -100,7 +94,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _cloud = cloud;
             _packageRepository = packageRepository;
             _cloudVideoUploadRepository = cloudVideoUploadRepository;
-            _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _computer = computer;
             _syncSettingsService = syncSettingsService;
             _apiSortingRepository = apiSortingRepository;
@@ -140,19 +133,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
                             break;
                         }
-                    case { SettingsName: "NvrCameraBindingInfoModel" }:
-                        try {
-                            await _setNvrCameraBindingSlim.WaitAsync();
-                            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-                        }
-                        catch (Exception e) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
-                        finally {
-                            _setNvrCameraBindingSlim.Release();
-                        }
-
-                        break;
 
                     case { SettingsName: "ApiSettings", IsLocallySaved: true } apiSettings: {
                             //同步
@@ -833,19 +813,6 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                         { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
                     });
                     if (key) {
-                        //取出绑定信息
-                        List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
-                        try {
-                            await _setNvrCameraBindingSlim.WaitAsync(token);
-
-                            var serialNumber = packageInfoModel.BarCodeInfo?.SerialNumber;
-                            var nvrBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-                            nvrCameraBindingInfoModels = nvrBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
-                        }
-                        finally {
-                            _setNvrCameraBindingSlim.Release();
-                        }
-
                         var cloudUploadResponse = await _cloud.UploadData(new PackageCloudInfo() {
                             PackageCreateTime = packageInfoModel.PackageCreateTime,
                             PackageTimestamped = packageInfoModel.PackageTimestamped,
@@ -854,36 +821,18 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                 SerialNumber = packageInfoModel.BarCodeInfo?.SerialNumber ?? string.Empty,
                                 DisplayIdentifier = packageInfoModel.BarCodeInfo?.DisplayIdentifier ?? string.Empty,
                                 ScanTime = packageInfoModel.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                                Source = (int)(packageInfoModel.BarCodeInfo?.Source ?? 0),
                             },
-                            WeightInfo = new PackageCloudWeightInfo() {
-                                CreateTime = packageInfoModel.WeightInfo?.CreateTime ?? DateTime.MinValue,
-                                FormattedWeight = packageInfoModel.WeightInfo?.FormattedWeight ?? 0,
-                                OriginalText = packageInfoModel.WeightInfo?.OriginalText ?? string.Empty,
-                                SourceType = (int)(packageInfoModel.WeightInfo?.SourceType ?? 0),
-                                WeighingMode = (int)(packageInfoModel.WeightInfo?.WeighingMode ?? 0),
-                            },
-                            VolumeInfo = new PackageCloudVolumeInfo() {
-                                CreateTime = packageInfoModel.VolumeInfo?.CreateTime ?? DateTime.MinValue,
-                                FormattedHeight = packageInfoModel.VolumeInfo?.FormattedHeight ?? 0,
-                                FormattedWidth = packageInfoModel.VolumeInfo?.FormattedWidth ?? 0,
-                                FormattedVolume = packageInfoModel.VolumeInfo?.FormattedVolume ?? 0,
-                                FormattedLength = packageInfoModel.VolumeInfo?.FormattedLength ?? 0,
-                                OriginalText = packageInfoModel.VolumeInfo?.OriginalText ?? string.Empty,
-                                SourceType = (int)(packageInfoModel.VolumeInfo?.SourceType ?? 0),
-                            },
+
                             UploadInfo = new PackageCloudUploadInfo() {
-                                ApiExceptionType = (ApiExceptionType)(packageInfoModel.UploadInfo?.ApiExceptionType ??
-                                                                      Data.Package.ApiExceptionType.None),
-                                DurationInSeconds = packageInfoModel.UploadInfo?.DurationInSeconds ?? 0,
-                                ExceptionMessage = packageInfoModel.UploadInfo?.ExceptionMessage ?? string.Empty,
-                                InterfaceParameters = packageInfoModel.UploadInfo?.InterfaceParameters ?? string.Empty,
-                                RequestContent = packageInfoModel.UploadInfo?.RequestContent ?? string.Empty,
-                                RequestStatus = (int)(packageInfoModel.UploadInfo?.RequestStatus ?? 0),
-                                RequestTime = packageInfoModel.UploadInfo?.RequestTime ?? DateTime.MinValue,
-                                RequestUrl = packageInfoModel.UploadInfo?.RequestUrl ?? string.Empty,
-                                ResponseContent = packageInfoModel.UploadInfo?.ResponseContent ?? string.Empty,
-                                ResponseTime = packageInfoModel.UploadInfo?.ResponseTime ?? DateTime.MinValue,
+                                DurationInSeconds = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.DurationInSeconds ?? 0,
+                                ExceptionMessage = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.ExceptionMessage ?? string.Empty,
+                                InterfaceParameters = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.InterfaceParameters ?? string.Empty,
+                                RequestContent = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.RequestContent ?? string.Empty,
+                                RequestStatus = (int)(packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.RequestStatus ?? 0),
+                                RequestTime = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.RequestTime ?? DateTime.MinValue,
+                                RequestUrl = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.RequestUrl ?? string.Empty,
+                                ResponseContent = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.ResponseContent ?? string.Empty,
+                                ResponseTime = packageInfoModel.ApiInfos?.FirstOrDefault(f => f.IsExitRequest)?.ResponseTime ?? DateTime.MinValue,
                             },
                             ExitInfo = new PackageCloudExitInfo() {
                                 PhysicalExit = packageInfoModel.ExitInfo?.PhysicalExit ?? string.Empty,
@@ -910,54 +859,25 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     (PackageCloudAbnormalSortingType)
                                     (packageInfoModel.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None)
                             },
-                            LogisticsInfo = new PackageCloudLogisticsInfo() {
-                                LogisticsCode = packageInfoModel.LogisticsInfo?.LogisticsCode ?? string.Empty,
-                                LogisticsName = packageInfoModel.LogisticsInfo?.LogisticsName ?? string.Empty,
-                            },
-                            OcrInfo = new PackageCloudOcrInfo() {
-                                CameraSerialNumber = packageInfoModel.OcrInfo?.CameraSerialNumber ?? string.Empty,
 
-                                ElapsedMilliseconds = packageInfoModel.OcrInfo?.ElapsedMilliseconds ?? 0,
-                                SubmitTimestamp = packageInfoModel.OcrInfo?.SubmitTimestamp ?? 0,
-                                ThreeSegmentCode = packageInfoModel.OcrInfo?.ThreeSegmentCode ?? string.Empty,
-                                RecognizeTime = packageInfoModel.OcrInfo?.RecognizeTime ?? DateTime.MinValue,
-                                VirtualNumberLast4 = packageInfoModel.OcrInfo?.VirtualNumberLast4 ?? string.Empty,
-                                OriginalContent = packageInfoModel.OcrInfo?.OriginalContent ?? string.Empty,
-                                OcrDetailedInfos = packageInfoModel.OcrInfo?.OcrDetailedInfos?.Select(s =>
-                                    new PackageCloudOcrDetailedInfo() {
-                                        Address = s.Address,
-                                        InformationType = (int)s.InformationType,
-                                        Name = s.Name,
-                                        Phone = s.Phone,
-                                    })?.ToList(),
-                            },
-                            ImageInfos = packageInfoModel.ImageInfos?.Select(s =>
+                            ImageInfos = packageInfoModel.NodeInfos?.Select(s =>
                                 new PackageCloudImageInfo {
-                                    CameraSerialNumber = s.CameraSerialNumber,
-                                    CameraName = s.CameraName,
-                                    CustomCameraName = s.CustomCameraName,
-                                    Type = s.Type,
-                                    Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
+                                    CameraSerialNumber = s.SerialNumber,
+                                    CameraName = s.NodeName,
+                                    CustomCameraName = s.NodeName,
+                                    Type = 0,
+                                    Image = File.Exists(s.ImagePath) ? Image.FromFile(s.ImagePath) : null
                                 })?.ToList(),
                             DeviceInfo = new PackageCloudDeviceInfo() {
                                 NodeName = _cloudVideoSettingsDto.NodeName,
                                 MachineCode = await _computer.GenerateMachineCode(),
                             },
-                            CloudNvrCameraBindingInfos = nvrCameraBindingInfoModels?.Select(s =>
-                                new PackageCloudNvrCameraBindingInfo {
-                                    Channel = s.Channel,
-                                    IpAddress = s.IpAddress,
-                                    Password = s.Password,
-                                    Port = s.Port,
-                                    Username = s.Username
-                                })?.ToList()
                         }, token: token);
 
                         EventAggregator.Instance.Publish(new CloudVideoUploadMessage {
                             Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
                             IsSuccessful = cloudUploadResponse.IsSuccessful,
-                            PanoramaImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0,
-                            ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
+                            ScanImageCount = packageInfoModel.NodeInfos?.Count(c => string.IsNullOrEmpty(c.ImagePath)) ?? 0,
                             ScanTime = packageInfoModel.BarCodeInfo?.ScanTime ?? DateTime.Now
                         });
 
@@ -972,9 +892,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                 cloudVideoUploadInfoModel.UploadContent = cloudUploadResponse.UploadContent;
                                 cloudVideoUploadInfoModel.UploadDuration = cloudUploadResponse.UploadDuration;
                                 cloudVideoUploadInfoModel.ScanImageCount =
-                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0;
-                                cloudVideoUploadInfoModel.PanoramaImageCount =
-                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0;
+                                    packageInfoModel.NodeInfos?.Count(c => string.IsNullOrEmpty(c.ImagePath)) ?? 0;
 
                                 return await _cloudVideoUploadRepository.Update(cloudVideoUploadInfoModel, token);
                             }
@@ -986,9 +904,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     UploadTime = cloudUploadResponse.UploadTime,
                                     UploadContent = cloudUploadResponse.UploadContent,
                                     UploadDuration = cloudUploadResponse.UploadDuration,
-                                    ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
-                                    PanoramaImageCount =
-                                        packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0
+                                    ScanImageCount = packageInfoModel.NodeInfos?.Count(c => string.IsNullOrEmpty(c.ImagePath)) ?? 0,
                                 }, token);
                             }
                         }
