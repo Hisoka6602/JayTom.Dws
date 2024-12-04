@@ -48,7 +48,7 @@
             FrozenColumnCount="2"
             GridLinesVisibility="None"
             HorizontalScrollBarVisibility="Auto"
-            ItemsSource="{Binding PackageExitDefinitionItems, UpdateSourceTrigger=PropertyChanged}"
+            ItemsSource="{Binding ScanNodeItems, UpdateSourceTrigger=PropertyChanged}"
             RowBackground="#061E90FF"
             Style="{StaticResource VirtualizingDataGridStyle}">
             <DataGrid.RowStyle>
@@ -57,14 +57,6 @@
                 </Style>
             </DataGrid.RowStyle>
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Binding="{Binding IsSelect, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridCheckBoxColumn.ElementStyle>
-                        <Style BasedOn="{StaticResource CustomCheckBoxStyle}" TargetType="{x:Type CheckBox}" />
-                    </DataGridCheckBoxColumn.ElementStyle>
-                    <DataGridCheckBoxColumn.EditingElementStyle>
-                        <Style BasedOn="{StaticResource CustomCheckBoxStyle}" TargetType="{x:Type CheckBox}" />
-                    </DataGridCheckBoxColumn.EditingElementStyle>
-                </DataGridCheckBoxColumn>
                 <DataGridTextColumn
                     Width="45"
                     MinWidth="45"
@@ -79,7 +71,7 @@
                 <DataGridTextColumn
                     Width="150"
                     MinWidth="150"
-                    Binding="{Binding CommunicationConnectionName, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -90,7 +82,7 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="100"
-                    Binding="{Binding ExitName, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -101,7 +93,7 @@
                 <DataGridTextColumn
                     Width="150"
                     MinWidth="150"
-                    Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ExitTypeConverter}}"
+                    Binding="{Binding NodeName, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -112,18 +104,29 @@
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="80"
-                    Binding="{Binding MainExitName, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding NodeNum, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
                         <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="节点序号" />
                     </DataGridTextColumn.Header>
                 </DataGridTextColumn>
+                <!--  赋值最长等待  -->
+                <DataGridTextColumn
+                    Width="100"
+                    MinWidth="80"
+                    Binding="{Binding Timeout, UpdateSourceTrigger=PropertyChanged}"
+                    CellStyle="{StaticResource CustomDataGridTextCellStyle}"
+                    EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
+                    <DataGridTextColumn.Header>
+                        <TextBlock Style="{StaticResource DataGridTextColumnTitleStyle}" Text="等待赋值超时" />
+                    </DataGridTextColumn.Header>
+                </DataGridTextColumn>
                 <!--  连接状态  -->
                 <DataGridTextColumn
                     Width="100"
                     MinWidth="80"
-                    Binding="{Binding MainExitName, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -134,7 +137,7 @@
                 <DataGridTextColumn
                     Width="220"
                     MinWidth="220"
-                    Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                    Binding="{Binding ImagePath, UpdateSourceTrigger=PropertyChanged}"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                     EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                     <DataGridTextColumn.Header>
@@ -144,8 +147,8 @@
 
                 <!--  操作  -->
                 <DataGridTemplateColumn
-                    Width="320"
-                    MinWidth="320"
+                    Width="200"
+                    MinWidth="200"
                     MaxWidth="600"
                     CellStyle="{StaticResource CustomDataGridTextCellStyle}">
                     <DataGridTemplateColumn.Header>

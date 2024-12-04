@@ -98,6 +98,24 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
                     c.Id
                 });*/
+                //Api信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasMany(b => b.NodeInfos)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey(n => new { n.PackageId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<ApiInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                //节点信息
+                modelBuilder.Entity<PackageInfoModel>()
+                    .HasMany(b => b.ApiInfos)
+                    .WithOne(n => n.PackageInfo)
+                    .HasForeignKey(n => new { n.PackageId })
+                    .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<NodeInfoModel>().HasKey(c => new {
+                    c.Id
+                });
                 //视频云
                 modelBuilder.Entity<PackageInfoModel>()
                     .HasOne(b => b.CloudVideoUploadInfo)

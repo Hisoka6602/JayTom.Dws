@@ -265,11 +265,14 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<ISortingRepository, SortingRepository>();
                 services.AddSingleton<ICloudVideoUploadRepository, CloudVideoUploadRepository>();
                 services.AddSingleton<IExitInfoRepository, ExitInfoRepository>();
+                services.AddSingleton<INodeRepository, NodeRepository>();
+                services.AddSingleton<IApiRepository, ApiRepository>();
 
                 //config
                 services.AddSingleton<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
                 services.AddSingleton<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
                 services.AddSingleton<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
+                services.AddSingleton<IScanNodeConfigRepository, ScanNodeConfigRepository>();
 
                 services.AddSingleton<IUsbCameraConfigRepository, UsbCameraConfigRepository>();
                 services.AddSingleton<IConfigRepository, ConfigRepository>();

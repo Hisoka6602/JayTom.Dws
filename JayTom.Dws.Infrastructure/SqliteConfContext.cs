@@ -67,7 +67,13 @@ namespace JayTom.Dws.Infrastructure {
                 modelBuilder.Entity<UsbCameraConfigInfoModel>()
                     .HasIndex(b => b.SerialNumber)
                     .IsUnique();
-
+                //节点扫码
+                modelBuilder.Entity<ScanNodeConfigInfoModel>().HasKey(c => new {
+                    c.Id
+                });
+                modelBuilder.Entity<ScanNodeConfigInfoModel>()
+                    .HasIndex(b => b.NodeNum)
+                    .IsUnique();
                 //分拣
                 modelBuilder.Entity<LogisticsCodeRecognitionInfoModel>().HasKey(c => new {
                     c.Id
