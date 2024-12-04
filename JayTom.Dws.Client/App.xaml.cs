@@ -542,6 +542,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<NvrCameraMappingEditor, NvrCameraMappingEditorViewModel>();
             ViewModelLocationProvider.Register<NvrBindingEditor, NvrBindingEditorViewModel>();
             ViewModelLocationProvider.Register<NvrWatermarkConfigEditor, NvrWatermarkConfigEditorViewModel>();
+            ViewModelLocationProvider.Register<ScanNodeConfigEditor, ScanNodeConfigEditorViewModel>();
 
             ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
             ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();

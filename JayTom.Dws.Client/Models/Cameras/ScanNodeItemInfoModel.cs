@@ -11,12 +11,13 @@ namespace JayTom.Dws.Client.Models.Cameras {
     public class ScanNodeItemInfoModel : BindableBase {
         private int _num;
         private string _ipAddress = string.Empty;
-        private int _port;
+        private int _port = 2000;
         private string _nodeName = string.Empty;
-        private int _nodeNum;
-        private int _timeout;
+        private int _nodeNum = 1;
+        private int _timeout = 500;
         private string _imagePath = string.Empty;
         private NodeStatus _status = NodeStatus.Disconnected;
+        private long _id;
 
         /// <summary>
         /// 序号
@@ -24,6 +25,11 @@ namespace JayTom.Dws.Client.Models.Cameras {
         public int Num {
             get => _num;
             set => SetProperty(ref _num, value);
+        }
+
+        public long Id {
+            get => _id;
+            set => SetProperty(ref _id, value);
         }
 
         /// <summary>

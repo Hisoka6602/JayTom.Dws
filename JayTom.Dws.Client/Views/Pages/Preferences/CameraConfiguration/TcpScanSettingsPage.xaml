@@ -165,7 +165,7 @@
                                         MinWidth="60"
                                         materialDesign:ButtonAssist.CornerRadius="5"
                                         Background="RoyalBlue"
-                                        Command="{Binding ElementName=PackageExitDefinitionView, Path=DataContext.ModifyCommand}"
+                                        Command="{Binding ElementName=TcpScanSettingsView, Path=DataContext.ModifyCommand}"
                                         CommandParameter="{Binding}"
                                         Focusable="False"
                                         Foreground="RoyalBlue"
@@ -199,7 +199,7 @@
                                         Margin="5,0"
                                         materialDesign:ButtonAssist.CornerRadius="5"
                                         Background="DarkRed"
-                                        Command="{Binding ElementName=PackageExitDefinitionView, Path=DataContext.DeleteCommand}"
+                                        Command="{Binding ElementName=TcpScanSettingsView, Path=DataContext.DeleteCommand}"
                                         CommandParameter="{Binding}"
                                         Focusable="False"
                                         Foreground="Red"
@@ -293,6 +293,6 @@
             Background="BlueViolet"
             FontFamily="LoadFiraCode"
             FontWeight="Bold"
-            MessageQueue="{Binding CommunicationsSettingsMessageQueue}" />
+            MessageQueue="{Binding TcpScanSettingsMessageQueue}" />
     </Grid>
 </Page>
