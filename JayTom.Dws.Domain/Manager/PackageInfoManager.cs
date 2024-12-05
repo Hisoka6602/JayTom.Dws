@@ -215,6 +215,11 @@ namespace JayTom.Dws.Domain.Manager {
         public long Guid { get; set; }
 
         /// <summary>
+        /// 条码信息
+        /// </summary>
+        public BarCodeInfoModel? BarCodeInfo { get; set; }
+
+        /// <summary>
         /// 节点信息
         /// </summary>
         public List<NodeInfoModel> NodeInfos { get; set; } = new();

@@ -303,7 +303,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                            IsStackedPackage = model.IsStackedPackage ?? false,
                             LinkedCarCount = model.LinkedCarCount,
                             Timestamp = model.Timestamp,
                         });

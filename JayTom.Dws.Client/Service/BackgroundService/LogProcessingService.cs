@@ -3,6 +3,7 @@ using DryIoc;
 using System.Linq;
 using System.Text;
 using JayTom.Dws.Ocr;
+using System.Windows;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Domain.Dto;
@@ -12,6 +13,7 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
+using JayTom.Dws.Client.Attributes;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
@@ -466,6 +468,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         $"{args.ReceivedTime:yyyy-MM-dd HH:mm:ss.fff}--[叠包判断]-[判断结果:{(args.IsStacked ? "叠包" : "不叠包")}]-[序号:{args.PackageInfo?.Guid}]-{args.StackedContent}");
             };
 
+            //节点事件
+            EventAggregator.Instance.Subscribe<NodeInfoEvent>(item => {
+                NLog.LogManager.GetCurrentClassLogger().Info($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[节点信息]-[序号:{item.PackageInfo.Guid}]-[接收到读码器信息] [节点:{item.NodeName}] - [内容:{item.Content}] ");
+            });
+            //
+            EventAggregator.Instance.Subscribe<FilteredPackageEvent>(item => {
+                NLog.LogManager.GetCurrentClassLogger().Info($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[过滤的指令] [类型:{item.FilterType.GetDescription()}]-[内容:{item.CreateCommand}]");
+            });
             //写出log字符串的信息
         }
 
