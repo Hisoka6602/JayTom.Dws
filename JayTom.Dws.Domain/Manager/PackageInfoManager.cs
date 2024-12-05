@@ -26,7 +26,6 @@ namespace JayTom.Dws.Domain.Manager {
         public static event EventHandler<PackageCompletedEventArgs>? PackageCompleted;
 
         public static void OnPackageRemoved(PackageRemovedEventArgs e) {
-            e.RemovedPackage?.Image?.Dispose();
             PackageRemoved?.Invoke(null, e);
         }
 
@@ -72,7 +71,6 @@ namespace JayTom.Dws.Domain.Manager {
             if (value is not null) {
                 var tryRemove = _packageInfos.TryRemove(key, out var info);
                 if (tryRemove && info is not null) {
-                    info?.Image?.Dispose();
                     OnPackageRemoved(new PackageRemovedEventArgs(info, description));
                 }
                 return tryRemove;
@@ -138,12 +136,7 @@ namespace JayTom.Dws.Domain.Manager {
 
             try {
                 // 逆向遍历集合，找到第一个符合条件的键值对
-                foreach (var kvp in _packageInfos.OrderByDescending(k => k.Key)) {
-                    if (predicate(kvp)) {
-                        return kvp.Value;
-                    }
-                }
-                return null;
+                return (from kvp in _packageInfos.OrderByDescending(k => k.Key) where predicate(kvp) select kvp.Value).FirstOrDefault();
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
@@ -189,7 +182,6 @@ namespace JayTom.Dws.Domain.Manager {
         public static void ClearAllPackages() {
             foreach (var (key, value) in _packageInfos) {
                 _packageInfos.Remove(key, out var info);
-                info?.Image?.Dispose();
             }
 
             _packageInfos.Clear();
@@ -203,12 +195,7 @@ namespace JayTom.Dws.Domain.Manager {
         public static void CompletedPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             var packageInfo = GetPackage(predicate);
             if (packageInfo == null || packageInfo.IsCompleted) return;
-            packageInfo.BarCodeInfo ??= new BarCodeInfoModel();
-            packageInfo.GrayscaleResultInfo ??= new GrayscaleResult();
-            if (packageInfo.LinkedCarCount <= 0) {
-                packageInfo.LinkedCarCount = 1;
-            }
-            packageInfo.IsStackedPackage ??= false;
+            packageInfo.LinkedCarCount = 1;
             packageInfo.IsCompleted = true;
 
             OnPackageCompleted(new PackageCompletedEventArgs(packageInfo, string.Empty));
@@ -228,14 +215,9 @@ namespace JayTom.Dws.Domain.Manager {
         public long Guid { get; set; }
 
         /// <summary>
-        /// 条码图片
+        /// 节点信息
         /// </summary>
-        public Image? Image { get; set; }
-
-        /// <summary>
-        /// 条码信息
-        /// </summary>
-        public BarCodeInfoModel? BarCodeInfo { get; set; }
+        public List<NodeInfoModel> NodeInfos { get; set; } = new();
 
         /// <summary>
         /// 格口信息
@@ -246,31 +228,6 @@ namespace JayTom.Dws.Domain.Manager {
         /// 是否已完成(完成输出、上传、但未从集合删除)
         /// </summary>
         public bool IsCompleted;
-
-        /// <summary>
-        /// 是否完成存图
-        /// </summary>
-        public bool IsSavedImage;
-
-        /// <summary>
-        /// 需要扣除的长度
-        /// </summary>
-        public float LengthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的宽度
-        /// </summary>
-        public float WidthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的高度
-        /// </summary>
-        public float HeightToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的体积
-        /// </summary>
-        public float VolumeToDeduct { get; set; }
 
         /// <summary>
         /// 创建包裹指令
@@ -288,11 +245,6 @@ namespace JayTom.Dws.Domain.Manager {
         public List<PanoramaCameraImageInfo> PanoramaCameraImageInfo { get; set; } = new();
 
         /// <summary>
-        /// 是否叠包
-        /// </summary>
-        public bool? IsStackedPackage { get; set; }
-
-        /// <summary>
         /// 包裹时间戳
         /// </summary>
         public long Timestamp { get; set; }
@@ -303,19 +255,9 @@ namespace JayTom.Dws.Domain.Manager {
         public List<SortingExceptionReturnType> SortingExceptionReturnTypes { get; set; } = new();
 
         /// <summary>
-        /// 供包台信号类型
-        /// </summary>
-        public List<SupplyCounterPackageSignal> SupplyCounterPackageSignalItem { get; set; } = new();
-
-        /// <summary>
         /// 接口返回内容
         /// </summary>
         public List<UploadResponse> UploadResponses { get; set; } = new();
-
-        /// <summary>
-        /// 灰度仪信息
-        /// </summary>
-        public GrayscaleResult? GrayscaleResultInfo { get; set; }
 
         /// <summary>
         /// 联动车辆
