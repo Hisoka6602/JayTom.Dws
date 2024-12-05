@@ -38,6 +38,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private WeightSettingsDto _weightSettingsDto = new();
         private static bool _isWindowsClose;
         private List<ICamera> _cameras = new();
+        private VolumeSettingsDto _volumeSettingsDto = new();
 
         public ZhuoYanScmBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
@@ -491,6 +492,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                                  new WeightSettingsDto();
 
                             break;
+
+                        case "VolumeSettingsDto":
+                            _volumeSettingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(model.SettingsName) ??
+                                                 new VolumeSettingsDto();
+
+                            break;
                     }
                     //其他设置
                 }
@@ -539,6 +546,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         });
                     }
                     //体积超时
+                    if (_volumeSettingsDto is { IsUseFusionTimeout: true, FusionTimeout: > 0 }) {
+                        packageRemoveTimers.Add(new PackageAssignmentTimer() {
+                            AssignmentTimeSpan = TimeSpan.FromMilliseconds(_volumeSettingsDto.FusionTimeout),
+                            Predicate = w => w.Value.VolumeInfo == null,
+                            AssignmentCallback = a => {
+                                a.VolumeInfo = new VolumeInfoModel();
+                                if (a.BarCodeInfo is not null && a.WeightInfo is not null && a.VolumeInfo is not null) {
+                                    PackageInfoManager.CompletedPackage(f => f.Key.Equals(a.CreateTime));
+                                }
+                                return false;
+                            },
+                        });
+                    }
                     PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
                     //触发创建包裹事件
                     EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -603,6 +623,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                 _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
                 _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
+                _volumeSettingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings", stoppingToken) ?? new VolumeSettingsDto();
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
