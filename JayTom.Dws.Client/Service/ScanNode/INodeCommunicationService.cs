@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.Tcp.TcpClient;
 
 namespace JayTom.Dws.Client.Service.ScanNode {
 
-    public interface INodeCommunicationManager {
+    public interface INodeCommunicationService {
 
         //TouchSocketTcpClient
         /// <summary>
@@ -20,6 +22,11 @@ namespace JayTom.Dws.Client.Service.ScanNode {
         event EventHandler<NodeCommunicationInfo> NodeDisconnected;
 
         /// <summary>
+        /// 接收到数据触发
+        /// </summary>
+        event EventHandler<NodeReceivedEventArgs> DataReceived;
+
+        /// <summary>
         /// 获取全部监听节点
         /// </summary>
         /// <returns></returns>
@@ -30,7 +37,7 @@ namespace JayTom.Dws.Client.Service.ScanNode {
         /// </summary>
         /// <param name="nodes"></param>
         /// <returns></returns>
-        public Task<KeyValuePair<bool, string>> ConnectedListeningNodes(List<NodeCommunicationInfo> nodes);
+        public Task ConnectedListeningNodes(List<NodeCommunicationInfo> nodes);
 
         /// <summary>
         /// 添加监听节点
@@ -50,7 +57,7 @@ namespace JayTom.Dws.Client.Service.ScanNode {
         /// 关闭全部节点
         /// </summary>
         /// <returns></returns>
-        public Task<KeyValuePair<bool, string>> CloseAllListeningNodes();
+        public Task CloseAllListeningNodes();
     }
 
     public class NodeCommunicationInfo {
@@ -69,5 +76,10 @@ namespace JayTom.Dws.Client.Service.ScanNode {
         /// 获取或设置节点的状态，表示节点是否在线。
         /// </summary>
         public bool IsOnline { get; set; }
+    }
+
+    public class NodeReceivedEventArgs : EventArgs {
+        public NodeCommunicationInfo? Info { get; set; }
+        public string Massage { get; set; } = string.Empty;
     }
 }

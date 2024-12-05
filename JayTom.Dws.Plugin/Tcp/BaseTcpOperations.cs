@@ -160,12 +160,6 @@ namespace JayTom.Dws.Plugin.Tcp {
 
         protected virtual async void OnCommunication(CommunicationInfo e) {
             await Task.Yield();
-            if (e.Type == CommunicationType.Receive) {
-                NLog.LogManager.GetCurrentClassLogger().Info($"[Tcp接收],内容:{e.Content}");
-            }
-            else if (e.Type == CommunicationType.Send) {
-                NLog.LogManager.GetCurrentClassLogger().Info($"[Tcp发送],内容:{e.Content}");
-            }
 
             Communication?.Invoke(this, e);
         }

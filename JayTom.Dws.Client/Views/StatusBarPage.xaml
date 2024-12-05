@@ -520,7 +520,7 @@
                                 VerticalOffset="-30">
                                 <!--  在这里定义 Popup 的内容  -->
                                 <Grid
-                                    Width="250"
+                                    Width="280"
                                     Height="300"
                                     Background="#303030"
                                     ClipToBounds="True">
@@ -529,6 +529,7 @@
                                     <ListBox
                                         Name="ConnectionListBox"
                                         Grid.Row="0"
+                                        HorizontalAlignment="Stretch"
                                         Background="Transparent"
                                         BorderThickness="0"
                                         Foreground="White"

@@ -50,6 +50,7 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Client.ViewModels.Pages;
 using Microsoft.Extensions.Configuration;
+using JayTom.Dws.Client.Service.ScanNode;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Plugin.Scale.StaticScale;
@@ -372,6 +373,8 @@ namespace JayTom.Dws.Client {
                 services.AddSingleton<IGrayscaleService, DefaultGrayscaleService>();
                 services.AddSingleton<IGrayscaleDevice>(provider => new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
 
+                //节点扫码器注册
+                services.AddSingleton<INodeCommunicationService, DefaultNodeCommunicationService>();
                 //云视频云端
                 services.AddSingleton<ICloud, CloudVideoUploadApi>();
                 //Nvr

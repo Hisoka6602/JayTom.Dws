@@ -21,12 +21,14 @@ using JayTom.Dws.Client.Service.Device;
 using Microsoft.AspNetCore.Connections;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Client.Service.ScanNode;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.StatusBarModels;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
@@ -48,6 +50,8 @@ namespace JayTom.Dws.Client.ViewModels {
         private readonly ISortingConnectionService _sortingConnectionService;
         private readonly ISoundRepository _soundRepository;
         private readonly IGrayscaleService _grayscaleService;
+        private readonly INodeCommunicationService _nodeCommunicationService;
+        private readonly IScanNodeConfigRepository _scanNodeConfigRepository;
         private static readonly SemaphoreSlim UpdateSlim = new(1, 1);
 
         private ObservableCollection<string> _exceptionItems = new()
@@ -130,7 +134,9 @@ namespace JayTom.Dws.Client.ViewModels {
             IStackedPackageService stackedPackageService,
             ISortingConnectionService sortingConnectionService,
             ISoundRepository soundRepository,
-            IGrayscaleService grayscaleService) {
+            IGrayscaleService grayscaleService,
+            INodeCommunicationService nodeCommunicationService,
+            IScanNodeConfigRepository scanNodeConfigRepository) {
             _computerInfoReporter = computerInfoReporter;
             _deviceService = deviceService;
             _ftp = ftp;
@@ -144,6 +150,8 @@ namespace JayTom.Dws.Client.ViewModels {
             _sortingConnectionService = sortingConnectionService;
             _soundRepository = soundRepository;
             _grayscaleService = grayscaleService;
+            _nodeCommunicationService = nodeCommunicationService;
+            _scanNodeConfigRepository = scanNodeConfigRepository;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
                 await Task.Run(async () => {
                     try {
@@ -301,6 +309,7 @@ namespace JayTom.Dws.Client.ViewModels {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent info) {
                     await Task.Yield();
+                    var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                         var newConnectionItems = new List<ConnectionItemInfoModel>();
                         //判断添加
@@ -440,6 +449,16 @@ namespace JayTom.Dws.Client.ViewModels {
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
                             });
                         }
+
+                        //节点扫码器
+
+                        scanNodeConfigInfoModels.ForEach(f => {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
+                                ConnectionName = $"[节点扫码器]{f.IpAddress}",
+                                ConnectionState = ConnectionState.Disconnected,
+                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                            });
+                        });
 
                         // 比较新旧列表并更新 ConnectionItems
                         var itemsToRemove = ConnectionItems.Except(newConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
@@ -587,6 +606,19 @@ namespace JayTom.Dws.Client.ViewModels {
             };
             _grayscaleService.Disconnected += (sender, service) => {
                 var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("灰度仪"));
+                if (model is not null) {
+                    model.ConnectionState = ConnectionState.ConnectionFailed;
+                }
+            };
+            _nodeCommunicationService.NodeConnected += (sender, info) => {
+                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals($"[节点扫码器]{info.IpAddress}"));
+                if (model is not null) {
+                    model.ConnectionState = ConnectionState.Connected;
+                }
+            };
+
+            _nodeCommunicationService.NodeDisconnected += (sender, info) => {
+                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals($"[节点扫码器]{info.IpAddress}"));
                 if (model is not null) {
                     model.ConnectionState = ConnectionState.ConnectionFailed;
                 }

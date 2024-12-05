@@ -10,8 +10,10 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
+using JayTom.Dws.Client.Service.ScanNode;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
@@ -20,9 +22,11 @@ using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+
     public class TcpScanSettingsViewModel : BindableBase {
         private readonly IScanNodeConfigRepository _scanNodeConfigRepository;
         private readonly IDeviceService _deviceService;
+        private readonly INodeCommunicationService _nodeCommunicationService;
 
         private ObservableCollection<ScanNodeItemInfoModel> _scanNodeItems = new();
 
@@ -39,9 +43,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         }
 
         public TcpScanSettingsViewModel(IScanNodeConfigRepository scanNodeConfigRepository,
-            IDeviceService deviceService) {
+            IDeviceService deviceService,
+            INodeCommunicationService nodeCommunicationService) {
             _scanNodeConfigRepository = scanNodeConfigRepository;
             _deviceService = deviceService;
+            _nodeCommunicationService = nodeCommunicationService;
+
+            _nodeCommunicationService.NodeConnected += async (sender, info) => {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    var nodeItemInfoModel = ScanNodeItems.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
+                        f.Port.Equals(info.Port));
+                    if (nodeItemInfoModel is not null) {
+                        nodeItemInfoModel.Status = NodeStatus.Connected;
+                    }
+                });
+            };
+            _nodeCommunicationService.NodeDisconnected += async (sender, info) => {
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    var nodeItemInfoModel = ScanNodeItems.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
+                                                                              f.Port.Equals(info.Port));
+                    if (nodeItemInfoModel is not null) {
+                        nodeItemInfoModel.Status = NodeStatus.Disconnected;
+                    }
+                });
+            };
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
@@ -105,6 +130,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         }
                         else {
                             LoadData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = "TcpScanSettings",
+                                IsLocallySaved = true
+                            });
                         }
                     }
                 }
@@ -131,6 +160,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         }
                         else {
                             LoadData();
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                SettingsName = "TcpScanSettings",
+                                IsLocallySaved = true
+                            });
                         }
                     }
                 });
@@ -187,6 +220,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     }
                     else {
                         LoadData();
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            SettingsName = "TcpScanSettings",
+                            IsLocallySaved = true
+                        });
                     }
                 }
             }
@@ -194,6 +231,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private void LoadData() {
             Task.Run(async () => {
+                var nodeCommunicationInfos = _nodeCommunicationService.GetAllListeningNodes();
                 var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
                 await Application.Current.Dispatcher.InvokeAsync(() => {
                     ScanNodeItems.Clear();
@@ -206,7 +244,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                             NodeNum = s.NodeNum,
                             Num = i + 1,
                             Port = s.Port,
-                            Timeout = s.Timeout
+                            Timeout = s.Timeout,
+                            Status = nodeCommunicationInfos.FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) &&
+                                                                              f.Port.Equals(s.Port))?.IsOnline == true ? NodeStatus.Connected :
+                                NodeStatus.Disconnected,
                         }).ToList();
                     ScanNodeItems.AddRange(scanNodeItemInfoModels);
                 });

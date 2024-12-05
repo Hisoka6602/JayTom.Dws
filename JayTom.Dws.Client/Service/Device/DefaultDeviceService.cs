@@ -19,6 +19,7 @@ using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.ScanNode;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -54,6 +55,8 @@ namespace JayTom.Dws.Client.Service.Device {
         private readonly IOcr _ocr;
         private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
+        private readonly IScanNodeConfigRepository _scanNodeConfigRepository;
+        private readonly INodeCommunicationService _nodeCommunicationService;
         private SemaphoreSlim _cameraSlim = new(1);
 
         //private List<string> CameraInitializationException { get; set; } = new();
@@ -200,7 +203,9 @@ namespace JayTom.Dws.Client.Service.Device {
             IConfigRepository configRepository, IDynamicScale dynamicScale,
             IStaticScale staticScale, IOcr ocr,
             IUsbCameraConfigRepository usbCameraConfigRepository,
-            IKeyboardDeviceManager keyboardDeviceManager) {
+            IKeyboardDeviceManager keyboardDeviceManager,
+            IScanNodeConfigRepository scanNodeConfigRepository,
+            INodeCommunicationService nodeCommunicationService) {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
@@ -210,6 +215,8 @@ namespace JayTom.Dws.Client.Service.Device {
             _ocr = ocr;
             _usbCameraConfigRepository = usbCameraConfigRepository;
             _keyboardDeviceManager = keyboardDeviceManager;
+            _scanNodeConfigRepository = scanNodeConfigRepository;
+            _nodeCommunicationService = nodeCommunicationService;
             //注册磅秤事件
             _dynamicScale.StabledWeight += delegate (object? sender, float f) {
                 OnStableWeight(new StableWeightEventArgs() {
@@ -554,6 +561,15 @@ namespace JayTom.Dws.Client.Service.Device {
                 }
             }
 
+            //连接节点扫码器
+            var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
+            if (scanNodeConfigInfoModels.Any()) {
+                var nodeCommunicationInfos = scanNodeConfigInfoModels.Select(s => new NodeCommunicationInfo {
+                    IpAddress = s.IpAddress,
+                    Port = s.Port
+                }).ToList();
+                await _nodeCommunicationService.ConnectedListeningNodes(nodeCommunicationInfos);
+            }
             return new KeyValuePair<bool, string>(false, string.Empty);
         }
 
@@ -938,7 +954,7 @@ namespace JayTom.Dws.Client.Service.Device {
             });
         }
 
-        public void Dispose() {
+        public async void Dispose() {
             try {
                 for (var i = _cameras.Count - 1; i >= 0; i--) {
                     var serialNumber = _cameras[i]?.Info?.SerialNumber ?? string.Empty;
@@ -948,6 +964,7 @@ namespace JayTom.Dws.Client.Service.Device {
                 _dynamicScale?.Dispose();
                 _staticScale?.Dispose();
                 _keyboardDeviceManager.Dispose();
+                await _nodeCommunicationService.CloseAllListeningNodes();
             }
             catch (Exception e) {
                 OnDeviceException(new DeviceExceptionEventArgs() {
