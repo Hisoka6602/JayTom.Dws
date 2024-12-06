@@ -576,9 +576,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     //获取条数
                     var total = await _packageRepository.Total(s =>
                             s.BarCodeInfo != null &&
-
-                            (StartTime == null || s.PackageCreateTime >= StartTime) &&
-                            (EndTime == null || s.PackageCreateTime <= EndTime) &&
+                            (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
+                            (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
                             (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
                             (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
                             (SelectedUploadStatus == null || (s.RequestStatus.Equals(SelectedUploadStatus))),
@@ -597,12 +596,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         if (infoModels?.Any() == true) {
                             var itemModels = infoModels?.Select((s, i) => new PackageItemModel {
                                 Num = i + 1,
+                                PackageId = s.Id,
                                 TimestampedGuid = s.PackageTimestamped,
                                 Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
                                 ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
                                 RequestStatus = s?.RequestStatus ?? UploadStatus.NotUploaded,
-                                ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
-                                PanoramaImageItems = s.NodeInfos?.Select(ps =>
+                                ExitName = s?.ExitInfo?.PhysicalExit ?? string.Empty,
+                                PanoramaImageItems = s?.NodeInfos?.Select(ps =>
                                 new PanoramaImageItemModel() {
                                     IsPanoramaImageExists = ps.ImagePath?.IsFileExists() ?? false,
                                     PanoramaImagePath = ps.ImagePath

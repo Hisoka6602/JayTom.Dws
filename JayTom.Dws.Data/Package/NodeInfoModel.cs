@@ -18,10 +18,16 @@ namespace JayTom.Dws.Data.Package {
         public string NodeName { get; set; } = string.Empty;
 
         /// <summary>
+        /// 节点序号
+        /// </summary>
+        [Column("NodeNum"), Required]
+        public int NodeNum { get; set; }
+
+        /*/// <summary>
         /// 条码
         /// </summary>
         [Column("Barcode"), Required]
-        public string Barcode { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;*/
 
         /// <summary>
         /// 扫码时间

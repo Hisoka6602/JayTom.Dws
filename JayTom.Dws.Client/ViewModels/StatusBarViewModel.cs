@@ -459,7 +459,24 @@ namespace JayTom.Dws.Client.ViewModels {
                                 ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
                             });
                         });
-
+                        //模拟报警
+                        for (int i = 0; i < 7; i++) {
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
+                                ConnectionName = $"[格口{i + 1}]原位输出报警",
+                                ConnectionState = ConnectionState.Disconnected,
+                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                            });
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
+                                ConnectionName = $"[格口{i + 1}]到位输出报警",
+                                ConnectionState = ConnectionState.Disconnected,
+                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                            });
+                            newConnectionItems.Add(new ConnectionItemInfoModel() {
+                                ConnectionName = $"[格口{i + 1}]吸真空报警",
+                                ConnectionState = ConnectionState.Disconnected,
+                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                            });
+                        }
                         // 比较新旧列表并更新 ConnectionItems
                         var itemsToRemove = ConnectionItems.Except(newConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
                         var itemsToAdd = newConnectionItems.Except(ConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
@@ -590,12 +607,23 @@ namespace JayTom.Dws.Client.ViewModels {
                 if (model is not null) {
                     model.ConnectionState = ConnectionState.Connected;
                 }
+
+                //临时添加(需要删除)
+                ConnectionItems.Where(w => w.ConnectionName.Contains("格口") &&
+                                           w.ConnectionName.Contains("报警")).ToList().ForEach(f => {
+                                               f.ConnectionState = ConnectionState.Connected;
+                                           });
             };
             _sortingConnectionService.Disconnected += (sender, info) => {
                 var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.EndsWith(info.ConnectionName));
                 if (model is not null) {
                     model.ConnectionState = ConnectionState.ConnectionFailed;
                 }
+                //临时添加(需要删除)
+                ConnectionItems.Where(w => w.ConnectionName.Contains("格口") &&
+                                           w.ConnectionName.Contains("报警")).ToList().ForEach(f => {
+                                               f.ConnectionState = ConnectionState.Disconnected;
+                                           });
             };
             //灰度仪 [连接、断开]事件
             _grayscaleService.Connected += (sender, service) => {

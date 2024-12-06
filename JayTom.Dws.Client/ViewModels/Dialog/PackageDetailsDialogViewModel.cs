@@ -9,17 +9,25 @@ using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.Data.Package;
+using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.DataModels;
+using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog {
 
     public class PackageDetailsDialogViewModel : BindableBase, IDialogAware {
+        private readonly INodeRepository _nodeRepository;
+        private readonly IApiRepository _apiRepository;
+        private readonly ISortingRepository _sortingRepository;
         private PackageItemModel _packageItem = new();
         private string _packageCreationInstruction = string.Empty;
         private string _sentInstruction = string.Empty;
         private string _receivedInstruction = string.Empty;
         private string _exceptionInstruction = string.Empty;
+        private ObservableCollection<NodeInfoItemModel> _nodeInfoItems = new();
+        private SortingItemModel _sortingItem = new();
 
         public string PackageCreationInstruction {
             get => _packageCreationInstruction;
@@ -41,9 +49,26 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             set => SetProperty(ref _exceptionInstruction, value);
         }
 
+        public ObservableCollection<NodeInfoItemModel> NodeInfoItems {
+            get => _nodeInfoItems;
+            set => SetProperty(ref _nodeInfoItems, value);
+        }
+
         public PackageItemModel PackageItem {
             get => _packageItem;
             set => SetProperty(ref _packageItem, value);
+        }
+
+        public SortingItemModel SortingItem {
+            get => _sortingItem;
+            set => SetProperty(ref _sortingItem, value);
+        }
+
+        public PackageDetailsDialogViewModel(INodeRepository nodeRepository,
+            IApiRepository apiRepository, ISortingRepository sortingRepository) {
+            _nodeRepository = nodeRepository;
+            _apiRepository = apiRepository;
+            _sortingRepository = sortingRepository;
         }
 
         public bool CanCloseDialog() {
@@ -60,38 +85,82 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                 }
             }
             PackageItem = parameters.GetValue<PackageItemModel>("PackageItem");
-            var createPackageItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w => w.InstructionType == InstructionType.CreatePackage)
-                ?.Select(s =>
-                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
-                ?.ToList();
-            if (createPackageItems?.Any() == true) {
-                PackageCreationInstruction = string.Join("\n", createPackageItems);
-            }
 
-            var sendSortingItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w => w.InstructionType == InstructionType.SendSorting)
-                ?.Select(s =>
-                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
-                ?.ToList();
-            if (sendSortingItems?.Any() == true) {
-                SentInstruction = string.Join("\n", sendSortingItems);
-            }
+            //查询节点信息
+            Task.Run(async () => {
+                var selectOrderByDescending = await _nodeRepository.SelectOrderByDescending(s => s.PackageId.Equals(PackageItem.PackageId),
+                    o => o.ScanTime);
 
-            var signalCallbackItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w => w.InstructionType == InstructionType.SignalCallback)
-                ?.Select(s =>
-                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
-                ?.ToList();
-            if (signalCallbackItems?.Any() == true) {
-                ReceivedInstruction = string.Join("\n", signalCallbackItems);
-            }
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    NodeInfoItems.Clear();
+                    var nodeInfoItemModels = selectOrderByDescending.OrderBy(o => o.NodeNum)
+                        .Select(s => new NodeInfoItemModel {
+                            ImagePath = s.ImagePath,
+                            NodeNum = s.NodeNum,
+                            NodeName = s.NodeName,
+                            OriginalText = s.OriginalText,
+                            ScanTime = s.ScanTime,
+                            SerialNumber = s.SerialNumber
+                        })
+                        .ToList();
+                    NodeInfoItems.AddRange(nodeInfoItemModels);
+                });
+            });
+            //查询分拣信息
+            Task.Run(async () => {
+                //查询分拣信息
 
-            var exceptionInstructionItems = PackageItem.SortingInfo.InstructionInfoItems?.Where(w =>
-                    w.InstructionType is InstructionType.PackageException or InstructionType.PackageExceptionEx)
-                ?.Select(s =>
-                    $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
-                ?.ToList();
-            if (exceptionInstructionItems?.Any() == true) {
-                ExceptionInstruction = string.Join("\n", exceptionInstructionItems);
-            }
+                var sortingInfoModel = await _sortingRepository.FirstOrDefault(f =>
+                    f.PackageId.Equals(PackageItem.PackageId));
+                if (sortingInfoModel is not null) {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        SortingItem = new SortingItemModel() {
+                            IsAbnormalSorting = sortingInfoModel.IsAbnormalSorting,
+                            SortingCode = sortingInfoModel.SortingCode,
+                            SortingMode = sortingInfoModel.SortingMode,
+                            IsCreatedByLowerMachine = sortingInfoModel.IsCreatedByLowerMachine,
+                            CommunicationMethod = sortingInfoModel.CommunicationMethod,
+                            ChecksumProtocolName = sortingInfoModel.ChecksumProtocolName,
+                            ConnectionName = sortingInfoModel.ConnectionName,
+                            IsSortingUsed = sortingInfoModel.IsSortingUsed,
+                            AbnormalSortingType = sortingInfoModel.AbnormalSortingType
+                        };
+                        var createPackageItems = sortingInfoModel.InstructionInfos?.Where(w => w.InstructionType == InstructionType.CreatePackage)
+                            ?.Select(s =>
+                                $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                            ?.ToList();
+                        if (createPackageItems?.Any() == true) {
+                            PackageCreationInstruction = string.Join("\n", createPackageItems);
+                        }
+
+                        var sendSortingItems = sortingInfoModel.InstructionInfos?.Where(w => w.InstructionType == InstructionType.SendSorting)
+                            ?.Select(s =>
+                                $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                            ?.ToList();
+                        if (sendSortingItems?.Any() == true) {
+                            SentInstruction = string.Join("\n", sendSortingItems);
+                        }
+                        var signalCallbackItems = sortingInfoModel.InstructionInfos?.Where(w => w.InstructionType == InstructionType.SignalCallback)
+                            ?.Select(s =>
+                                $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                            ?.ToList();
+                        if (signalCallbackItems?.Any() == true) {
+                            ReceivedInstruction = string.Join("\n", signalCallbackItems);
+                        }
+                        var exceptionInstructionItems = sortingInfoModel.InstructionInfos?.Where(w =>
+                                w.InstructionType is InstructionType.PackageException or InstructionType.PackageExceptionEx)
+                            ?.Select(s =>
+                                $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
+                            ?.ToList();
+                        if (exceptionInstructionItems?.Any() == true) {
+                            ExceptionInstruction = string.Join("\n", exceptionInstructionItems);
+                        }
+                    });
+                }
+
+                //填充其他分拣信息
+            });
+            //查询Api信息
         }
 
         public string Title => "包裹详情";

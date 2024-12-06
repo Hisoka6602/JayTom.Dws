@@ -7,10 +7,11 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Data.Package {
-
     [Table("Data_ApiInfo", Schema = "dbo")]
     public class ApiInfoModel : BasePackageForeignKeyInfoModel {
-
+        /// <summary>
+        /// 请求方法名称
+        /// </summary>
         [Column("ApiMethodName"), Required]
         public string ApiMethodName { get; set; } = string.Empty;
 

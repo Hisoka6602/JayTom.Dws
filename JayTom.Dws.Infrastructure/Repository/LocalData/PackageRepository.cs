@@ -29,10 +29,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var barCodeInfoModels = await dbSet.AsNoTracking()
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
+                    .Include(b => b.NodeInfos)
                     .Where(where)
                     .OrderByDescending(order)
                     .Skip(pageIndex * pageSize)
@@ -56,10 +53,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var barCodeInfoModels = await dbSet.AsNoTracking()
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
+                    .Include(b => b.NodeInfos)
                     .Where(where)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
@@ -81,11 +75,8 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var barCodeInfoModels = await dbSet.AsNoTracking()
                     .Where(where)
                     .Include(b => b.BarCodeInfo)
+                    .Include(b => b.NodeInfos)
                     .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
                     .FirstOrDefaultAsync(cancellationToken: token);
                 return new KeyValuePair<bool, PackageInfoModel>(true, barCodeInfoModels);
             }
@@ -105,10 +96,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 return await dbSet.AsNoTracking()
                      .Include(b => b.BarCodeInfo)
                      .Include(b => b.ExitInfo)
-                     .Include(b => b.SortingInfo)
-                     .ThenInclude(c => c.InstructionInfos)
-                     .Include(b => b.CloudVideoUploadInfo)
-                     .Include(b => b.AggregatePackagesInfo)
+                     .Include(b => b.NodeInfos)
                      .Where(where)
                      .CountAsync(cancellationToken: token);
             }
@@ -121,7 +109,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         public async Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default) {
             return await _cache.GetOrCreateAsync(packageTimestamped, async cacheEntry => {
                 // 设置缓存项的过期时间为2分钟
-                cacheEntry.SetSlidingExpiration(TimeSpan.FromMinutes(2));
+                cacheEntry.SetSlidingExpiration(TimeSpan.FromMinutes(5));
 
                 // 如果缓存中没有该键，则调用 FirstOrDefaultInfo 方法从数据库获取数据
                 var result = await FirstOrDefaultInfo(x => x.PackageTimestamped == packageTimestamped, token);
@@ -135,7 +123,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             try {
                 await _updateSlim.WaitAsync(token);
                 _cache.Set(info.PackageTimestamped, info, new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -154,7 +142,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             if (insert) {
                 //加入缓存
                 base._cache.Set(entity.PackageTimestamped, entity, new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
             }
             return insert;
         }

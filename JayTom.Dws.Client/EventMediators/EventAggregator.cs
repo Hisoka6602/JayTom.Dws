@@ -508,4 +508,101 @@ namespace JayTom.Dws.Client.EventMediators {
         /// </summary>
         public DateTime LockTime { get; set; }
     }
+
+    public class FilteredPackageEvent {
+
+        /// <summary>
+        /// 过滤类型（间隔时间、规则过滤、排除）
+        /// </summary>
+        public FilterType FilterType { get; set; }
+
+        /// <summary>
+        /// 包裹条码
+        /// </summary>
+        public string Barcode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 创建指令
+        /// </summary>
+        public string CreateCommand { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 时间戳
+        /// </summary>
+        public DateTime Timestamp { get; set; }
+    }
+
+    public enum FilterType {
+
+        /// <summary>
+        /// 间隔时间过滤
+        /// </summary>
+        [Description("间隔时间过滤")]
+        Interval,
+
+        /// <summary>
+        /// 规则过滤
+        /// </summary>
+        [Description("规则过滤")]
+        Rule,
+
+        /// <summary>
+        /// 排除
+        /// </summary>
+        [Description("排除")]
+        Exclusion
+    }
+
+    public class NodeInfoEvent {
+
+        /// <summary>
+        /// 节点IP地址
+        /// </summary>
+        public string NodeIp { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 节点序号
+        /// </summary>
+        public int NodeIndex { get; set; }
+
+        /// <summary>
+        /// 节点名称
+        /// </summary>
+        public string NodeName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 内容
+        /// </summary>
+        public string Content { get; set; } = string.Empty;
+
+        public DateTime ScanTime { get; set; }
+
+        /// <summary>
+        /// 包裹
+        /// </summary>
+        public PackageInfo PackageInfo { get; set; } = new();
+    }
+
+    public class NodeImageInfoEvent {
+
+        /// <summary>
+        /// 节点序号
+        /// </summary>
+        public int NodeIndex { get; set; }
+
+        /// <summary>
+        /// 节点名称
+        /// </summary>
+        public string NodeName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 图片路径
+        /// </summary>
+        public string ImagePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 包裹
+        /// </summary>
+        public PackageInfo PackageInfo { get; set; } = new();
+    }
 }

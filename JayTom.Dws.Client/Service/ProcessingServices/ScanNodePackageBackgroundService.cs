@@ -1,5 +1,6 @@
 ﻿using NLog;
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
@@ -31,6 +34,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
         private SemaphoreSlim _createPackageSlim = new(1);
         private SemaphoreSlim _receivedSlim = new(1);
+        private SemaphoreSlim _imagePathSlim = new(1);
+        private ConcurrentDictionary<string, FileSystemWatcher> _fileSystemWatcherItems = new();
 
         public ScanNodePackageBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
@@ -175,11 +180,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 < model.NodeNum);
                             if (packageInfo is not null) {
                                 packageInfo.NodeInfos.Add(new NodeInfoModel() {
-                                    Barcode = ConvertBarcode(args.Massage),
                                     NodeName = model.NodeName,
                                     OriginalText = args.Massage,
                                     ScanTime = ConvertScanTime(args.Massage),
-                                    SerialNumber = $"{model.IpAddress}-{model.Port}"
+                                    SerialNumber = $"{model.IpAddress}-{model.Port}",
+                                    NodeNum = model.NodeNum,
+                                    PackageId = packageInfo.Timestamp
                                 });
                                 //触发事件
                                 EventAggregator.Instance.Publish(new NodeInfoEvent() {
@@ -187,6 +193,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     NodeName = model.NodeName,
                                     NodeIndex = model.NodeNum,
                                     NodeIp = model.IpAddress,
+                                    ScanTime = ConvertScanTime(args.Massage),
                                     PackageInfo = packageInfo
                                 });
 
@@ -213,6 +220,32 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
                                                         new CreatePackageSettingsDto();
 
+                            break;
+
+                        case "TcpScanSettings":
+                            var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
+                            if (scanNodeConfigInfoModels.Any()) {
+                                foreach (var (key, value) in _fileSystemWatcherItems) {
+                                    value.Dispose();
+                                }
+                                _fileSystemWatcherItems.Clear();
+                                scanNodeConfigInfoModels.ForEach(f => {
+                                    var fileSystemWatcher = new FileSystemWatcher(f.ImagePath) {
+                                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName |
+                                                       NotifyFilters.LastWrite,
+                                        Filter = "*.*",
+                                        EnableRaisingEvents = true
+                                    };
+                                    fileSystemWatcher.Created += (sender, args) => {
+                                        ImageCreated(new ScanNodeImageCreatedInfo() {
+                                            NodeIndex = f.NodeNum,
+                                            NodeName = f.NodeName,
+                                            ImageName = args.FullPath
+                                        });
+                                    };
+                                    _fileSystemWatcherItems.TryAdd(f.NodeName, fileSystemWatcher);
+                                });
+                            }
                             break;
                     }
                     //其他设置
@@ -242,43 +275,43 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                             Predicate = w => w.Value.BarCodeInfo == null,
                             RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.EmptyPackageExpiryTime)
                         });
-                        if (_createPackageSettingsDto is { IsUsePackageExpiry: true, PackageExpiryTime: > 0 }) {
-                            packageRemoveTimers.Add(new PackageRemoveTimer() {
-                                Description = "包裹超过生存周期",
-                                RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
-                            });
-                        }
-
-                        var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
-                        packageRemoveTimers.AddRange(scanNodeConfigInfoModels.OrderBy(o => o.NodeNum)
-                            .Select(model => new PackageAssignmentTimer() {
-                                AssignmentTimeSpan = TimeSpan.FromMilliseconds(model.Timeout),
-                                Predicate = w => w.Value.NodeInfos.Count < model.NodeNum,
-                                AssignmentCallback = a => {
-                                    a.NodeInfos.Add(new NodeInfoModel() {
-                                        Barcode = "NoRead",
-                                        NodeName = model.NodeName,
-                                        OriginalText = "未接收到扫码器数据",
-                                        SerialNumber = string.Empty,
-                                        ScanTime = DateTime.Now,
-                                    });
-
-                                    if (a.NodeInfos.Count == scanNodeConfigInfoModels.Count) {
-                                        PackageInfoManager.CompletedPackage(f => f.Key.Equals(a.CreateTime));
-                                    }
-
-                                    return false;
-                                },
-                            }));
-
-                        PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
-                        //触发创建包裹事件
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
-                            IsSuccess = true,
-                            TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
-                            PackageInfo = packageInfo
+                    }
+                    if (_createPackageSettingsDto is { IsUsePackageExpiry: true, PackageExpiryTime: > 0 }) {
+                        packageRemoveTimers.Add(new PackageRemoveTimer() {
+                            Description = "包裹超过生存周期",
+                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
                         });
                     }
+                    var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
+                    packageRemoveTimers.AddRange(scanNodeConfigInfoModels.OrderBy(o => o.NodeNum)
+                        .Select(model => new PackageAssignmentTimer() {
+                            AssignmentTimeSpan = TimeSpan.FromMilliseconds(model.Timeout),
+                            Predicate = w => w.Value.NodeInfos.Count < model.NodeNum,
+                            AssignmentCallback = a => {
+                                a.NodeInfos.Add(new NodeInfoModel() {
+                                    NodeName = model.NodeName,
+                                    OriginalText = "未接收到扫码器数据",
+                                    SerialNumber = string.Empty,
+                                    ScanTime = DateTime.Now,
+                                    NodeNum = model.NodeNum,
+                                    PackageId = packageInfo.Timestamp
+                                });
+
+                                if (a.NodeInfos.Count == scanNodeConfigInfoModels.Count) {
+                                    PackageInfoManager.CompletedPackage(f => f.Key.Equals(a.CreateTime));
+                                }
+
+                                return false;
+                            },
+                        }));
+
+                    PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
+                    //触发创建包裹事件
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
+                        PackageInfo = packageInfo
+                    });
                 }
             });
             //程序停止
@@ -304,9 +337,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         f.NodeName.Equals(f.NodeName));
                     if (model is null) {
                         args.CompletedPackage.NodeInfos.Add(new NodeInfoModel() {
-                            Barcode = "NoRead",
                             NodeName = f.NodeName,
-                            OriginalText = "未接收到扫码器数据",
+                            OriginalText = "未接收到扫码器数据NoRead",
                             SerialNumber = string.Empty,
                             ScanTime = DateTime.Now,
                         });
@@ -314,11 +346,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 });
                 if (args.CompletedPackage.BarCodeInfo is null) {
                     var infoModel = args.CompletedPackage.NodeInfos.LastOrDefault(l =>
-                        !l.Barcode.Equals("NoRead", StringComparison.CurrentCultureIgnoreCase));
+                        !l.OriginalText.Equals("NoRead", StringComparison.CurrentCultureIgnoreCase));
                     args.CompletedPackage.BarCodeInfo = new BarCodeInfoModel() {
-                        Barcode = infoModel?.Barcode ?? "NoRead",
+                        Barcode = ConvertBarcode(infoModel?.OriginalText ?? "NoRead"),
                         BindTime = DateTime.Now,
-                        ScanTime = infoModel?.ScanTime ?? DateTime.Now
+                        ScanTime = infoModel?.ScanTime ?? DateTime.Now,
                     };
                 }
                 EventAggregator.Instance.Publish(args.CompletedPackage);
@@ -334,16 +366,63 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             //读配置
             try {
                 //读配置
-
                 _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+
+                var scanNodeConfigInfoModels = await _scanNodeConfigRepository.MemoryCacheData();
+                if (scanNodeConfigInfoModels.Any()) {
+                    foreach (var (key, value) in _fileSystemWatcherItems) {
+                        value.Dispose();
+                    }
+                    _fileSystemWatcherItems.Clear();
+                    scanNodeConfigInfoModels.ForEach(f => {
+                        var fileSystemWatcher = new FileSystemWatcher(f.ImagePath) {
+                            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName |
+                                           NotifyFilters.LastWrite,
+                            Filter = "*.*",
+                            EnableRaisingEvents = true
+                        };
+                        fileSystemWatcher.Created += (sender, args) => {
+                            ImageCreated(new ScanNodeImageCreatedInfo() {
+                                NodeIndex = f.NodeNum,
+                                NodeName = f.NodeName,
+                                ImageName = args.FullPath
+                            });
+                        };
+                        _fileSystemWatcherItems.TryAdd(f.NodeName, fileSystemWatcher);
+                    });
+                }
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
                 await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ContinueWith(a => {
-                    //匹配图片
+                    //获取未匹配到图片的数据
+                    // PackageInfoManager.GetPackage(s=>s.Value.)
                 }, stoppingToken);
+            }
+        }
+
+        public static DateTime? ExtractDateTime(string input) {
+            try {
+                var pattern = @"(\d{4})_(\d{2})_(\d{2})_(\d{2})(\d{2})(\d{2})";
+                var match = Regex.Match(input, pattern);
+                if (match.Success) {
+                    var year = int.Parse(match.Groups[1].Value);
+                    var month = int.Parse(match.Groups[2].Value);
+                    var day = int.Parse(match.Groups[3].Value);
+                    var hour = int.Parse(match.Groups[4].Value);
+                    var minute = int.Parse(match.Groups[5].Value);
+                    var second = int.Parse(match.Groups[6].Value);
+
+                    return new DateTime(year, month, day, hour, minute, second);
+                }
+
+                return null;
+            }
+            catch (Exception ex) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{ex}");
+                return null;
             }
         }
 
@@ -358,6 +437,45 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 return DateTimeOffset.FromUnixTimeMilliseconds(result).LocalDateTime;
             }
             return DateTime.Now;
+        }
+
+        private async void ImageCreated(ScanNodeImageCreatedInfo info) {
+            try {
+                await _imagePathSlim.WaitAsync();
+
+                var packageInfo = PackageInfoManager.GetPackage(s =>
+                    s.Value.NodeInfos.Any(a => a.NodeNum.Equals(info.NodeIndex) &&
+                                               string.IsNullOrEmpty(a.ImagePath)));
+                if (packageInfo is not null) {
+                    var nodeInfoModel = packageInfo.NodeInfos.FirstOrDefault(f => f.NodeNum.Equals(info.NodeIndex) &&
+                        string.IsNullOrEmpty(f.ImagePath));
+                    if (nodeInfoModel is not null) {
+                        nodeInfoModel.ImagePath = info.ImageName;
+                        //推送图片匹配
+                        EventAggregator.Instance.Publish(new NodeImageInfoEvent {
+                            NodeName = info.NodeName,
+                            NodeIndex = info.NodeIndex,
+                            PackageInfo = packageInfo,
+                            ImagePath = info.ImageName
+                        });
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"图片:{info.ImageName},未匹配到对应的节点");
+                    }
+                }
+                else {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"图片:{info.ImageName},未匹配到数据");
+                }
+            }
+            finally {
+                _imagePathSlim.Release();
+            }
+        }
+
+        public class ScanNodeImageCreatedInfo {
+            public int NodeIndex { get; set; }
+            public string ImageName { get; set; } = string.Empty;
+            public string NodeName { get; set; } = string.Empty;
         }
     }
 }

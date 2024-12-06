@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
+using System.Linq.Expressions;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -26,6 +27,25 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 }
             }
             return insert;
+        }
+
+        public new async Task<SortingInfoModel?> FirstOrDefault([NotNull] Expression<Func<SortingInfoModel, bool>> @where,
+            CancellationToken token = default) {
+            try {
+                //联表
+                await using var concardContext = _contextFactory.CreateDbContext();
+                var dbSet = concardContext?.Set<SortingInfoModel>();
+                if (dbSet is null) return null;
+                var sortingInfoModel = await dbSet.AsNoTracking()
+                    .Where(where)
+                    .Include(b => b.InstructionInfos)
+                    .FirstOrDefaultAsync(cancellationToken: token);
+                return sortingInfoModel;
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                return null;
+            }
         }
     }
 }

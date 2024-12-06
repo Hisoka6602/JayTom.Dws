@@ -32,11 +32,18 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private bool _isUploadedToCloudVideo;
         private ExitInfoItemModel _exitInfo = new();
         private PackageExitStatus _packageExitStatus = PackageExitStatus.None;
+        private List<NodeInfoItemModel> _nodeInfoItems = new();
+        private long _packageId;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
         public int Num {
             get => _num;
             set => SetProperty(ref _num, value);
+        }
+
+        public long PackageId {
+            get => _packageId;
+            set => SetProperty(ref _packageId, value);
         }
 
         /// <summary>
@@ -199,6 +206,15 @@ namespace JayTom.Dws.Client.Models.DataModels {
         public ExitInfoItemModel ExitInfo {
             get => _exitInfo;
             set => SetProperty(ref _exitInfo, value);
+        }
+
+        /// <summary>
+        /// 节点信息
+        /// </summary>
+
+        public List<NodeInfoItemModel> NodeInfoItems {
+            get => _nodeInfoItems;
+            set => SetProperty(ref _nodeInfoItems, value);
         }
 
         /// <summary>

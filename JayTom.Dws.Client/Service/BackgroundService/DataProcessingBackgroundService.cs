@@ -46,26 +46,30 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IUploadRepository _uploadRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExitInfoRepository _exitInfoRepository;
+        private readonly INodeRepository _nodeRepository;
         private ConcurrentQueue<PackageInfoModel> _insertItems = new();
         private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         private ConcurrentQueue<InstructionReceived> _instructionItems = new();
         private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
         private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
-
+        private ConcurrentQueue<NodeInfoModel> _nodeInfoItems = new();
+        private ConcurrentQueue<NodeInfoModel> _nodeImageInfoItems = new();
         private static bool _isWindowsClose;
 
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
             IUploadRepository uploadRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            IExitInfoRepository exitInfoRepository) {
+            IExitInfoRepository exitInfoRepository,
+            INodeRepository nodeRepository) {
             _packageRepository = packageRepository;
             _imageStorageService = imageStorageService;
             _sortingRepository = sortingRepository;
             _uploadRepository = uploadRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _exitInfoRepository = exitInfoRepository;
+            _nodeRepository = nodeRepository;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
                 //保存后触发
 
@@ -112,12 +116,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     _isWindowsClose = true;
                 }
             });
-
             EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
                 await Task.Yield();
                 if (item is { } info) {
                     _packageExitUpdateItems.Enqueue(info);
                 }
+            });
+
+            EventAggregator.Instance.Subscribe<NodeInfoEvent>(async item => {
+                _nodeInfoItems.Enqueue(new NodeInfoModel() {
+                    NodeName = item.NodeName,
+                    NodeNum = item.NodeIndex,
+                    ScanTime = item.ScanTime,
+                    OriginalText = item.Content,
+                    PackageId = item.PackageInfo.Timestamp
+                });
+            });
+            EventAggregator.Instance.Subscribe<NodeImageInfoEvent>(async item => {
+                _nodeImageInfoItems.Enqueue(new NodeInfoModel() {
+                    NodeName = item.NodeName,
+                    NodeNum = item.NodeIndex,
+                    ImagePath = item.ImagePath,
+                    PackageId = item.PackageInfo.Timestamp
+                });
             });
         }
 
@@ -425,6 +446,36 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     }
                                     else {
                                         _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                    }
+                                }
+                                //节点更新
+                                var isNode = _nodeInfoItems.TryDequeue(out var nodeInfoModel);
+                                if (isNode && nodeInfoModel is not null) {
+                                    var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(nodeInfoModel.PackageId, stoppingToken);
+                                    if (packageInfo is not null) {
+                                        nodeInfoModel.PackageId = packageInfo.Id;
+                                        var insert = await _nodeRepository.Insert(nodeInfoModel, stoppingToken);
+                                        if (!insert) {
+                                            _nodeInfoItems.Enqueue(nodeInfoModel);
+                                        }
+                                    }
+                                    else {
+                                        _nodeInfoItems.Enqueue(nodeInfoModel);
+                                    }
+                                }
+                                //节点图片更新
+                                var isNodeImage = _nodeImageInfoItems.TryDequeue(out var nodeImage);
+                                if (isNodeImage && nodeImage is not null) {
+                                    var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(nodeImage.PackageId, stoppingToken);
+                                    if (packageInfo is not null) {
+                                        nodeInfoModel.PackageId = packageInfo.Id;
+                                        var insert = await _nodeRepository.Insert(nodeInfoModel, stoppingToken);
+                                        if (!insert) {
+                                            _nodeInfoItems.Enqueue(nodeInfoModel);
+                                        }
+                                    }
+                                    else {
+                                        _nodeInfoItems.Enqueue(nodeInfoModel);
                                     }
                                 }
                             }
