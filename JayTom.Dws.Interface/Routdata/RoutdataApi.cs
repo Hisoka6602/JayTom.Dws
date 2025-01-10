@@ -28,12 +28,13 @@ namespace JayTom.Dws.Interface.Routdata {
                 Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
+            var orgCode = string.Empty;
             var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
             try {
                 if (callApiMethod.IsSuccess) {
                     //解析
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
+                    orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
                     phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
                     theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
                 }
@@ -49,13 +50,16 @@ namespace JayTom.Dws.Interface.Routdata {
                 mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
             }
 
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+            PolicyPush(ApiMethod.ScanInfoPush, barcode,
+                string.IsNullOrEmpty(orgCode) ? Parameters.OrgCode : orgCode,
+                !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
                 Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
             PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
-                Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
+                string.IsNullOrEmpty(orgCode) ? Parameters.OrgCode : orgCode,
+                !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , callApiMethod.IsSuccess ? string.Empty : mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
@@ -69,12 +73,13 @@ namespace JayTom.Dws.Interface.Routdata {
                 Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
             var phyBoxCode = string.Empty;
             var theoryBoxCode = string.Empty;
+            var orgCode = string.Empty;
             var mailInfoQueryResponseContent = callApiMethod.ExceptionMsg;
             try {
                 if (callApiMethod.IsSuccess) {
                     //解析
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
-                    //orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
+                    orgCode = jObject?["BODY"]?["201"]?.First?["JGDM"]?.ToString();
                     phyBoxCode = jObject?["BODY"]?["201"]?.First?["WLGK"]?.ToString();
                     theoryBoxCode = jObject?["BODY"]?["201"]?.First?["YLZDONE"]?.ToString();
                 }
@@ -89,12 +94,16 @@ namespace JayTom.Dws.Interface.Routdata {
             catch (Exception e) {
                 mailInfoQueryResponseContent += $"报文解析异常:{e.Message}";
             }
-            PolicyPush(ApiMethod.ScanInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+            PolicyPush(ApiMethod.ScanInfoPush, barcode,
+               string.IsNullOrEmpty(orgCode) ? Parameters.OrgCode : orgCode,
+                !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
                 Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime
                 , mailInfoQueryResponseContent, token).ConfigureAwait(false).GetAwaiter();
-            PolicyPush(ApiMethod.PickingInfoPush, barcode, Parameters.OrgCode, !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
+            PolicyPush(ApiMethod.PickingInfoPush, barcode,
+               string.IsNullOrEmpty(orgCode) ? Parameters.OrgCode : orgCode,
+                !string.IsNullOrEmpty(phyBoxCode) ? phyBoxCode : "99",
                 Parameters.DeviceCode, !string.IsNullOrEmpty(theoryBoxCode) ? theoryBoxCode : "99",
                 callApiMethod.IsSuccess,
                 callApiMethod.ResponseTime

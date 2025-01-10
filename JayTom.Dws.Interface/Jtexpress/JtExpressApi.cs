@@ -203,8 +203,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
             string appKey, string appSecret,
             CancellationToken token = default) {
             try {
-                //密码加密
-                //转MD5
                 string sign;
                 using (var md5 = MD5.Create()) {
                     var result = md5.ComputeHash(Encoding.UTF8.GetBytes(passWord));
