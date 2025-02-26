@@ -14,6 +14,7 @@ namespace JayTom.Dws.Infrastructure.Sign {
                 var strResult = BitConverter.ToString(result);
                 sign = strResult.Replace("-", "");
             }
+
             return sign.ToUpper().Equals(md5Content.ToUpper());
         }
 

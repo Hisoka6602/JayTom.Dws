@@ -175,7 +175,6 @@ namespace JayTom.Dws.Interface.Wdt {
             var pairs = dictionary.OrderBy(o => o.Key);
             var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + ApiParameters.Appsecret;
 
-            //转MD5
             string sign;
             using (var md5 = MD5.Create()) {
                 var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));

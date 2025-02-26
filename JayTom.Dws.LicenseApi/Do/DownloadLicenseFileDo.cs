@@ -8,7 +8,8 @@ namespace JayTom.Dws.LicenseApi.Do {
         /// <summary>
         /// 授权码
         /// </summary>
-        [Required(ErrorMessage = "授权码不能为空"), LicenseCodeExists(IsExists = true, ErrorMessage = "授权码不存在!")]
+        [Required(ErrorMessage = "授权码不能为空"),
+         LicenseCodeExists(IsExists = true, ErrorMessage = "授权码不存在!")]
         public string LicenseCode { get; set; } = string.Empty;
 
         /// <summary>
