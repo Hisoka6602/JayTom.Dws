@@ -1,60 +1,41 @@
 ﻿using NLog;
 using System;
-using ImTools;
-using System.Net;
 using System.Linq;
 using System.Drawing;
-using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading;
 using TouchSocket.Core;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
-using System.ComponentModel;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Interface.ttx;
-using JayTom.Dws.Data.LocalConf;
-using NPOI.SS.Formula.Functions;
-using JayTom.Dws.Interface.Post;
+using JayTom.Dws.Interface.Wdt;
 using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.PluginInterface;
+using JayTom.Dws.Interface.Post;
 using JayTom.Dws.Interface.geek_;
 using System.Collections.Generic;
-using NPOI.XSSF.Streaming.Values;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
+using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Interface.Szjy188;
 using JayTom.Dws.Interface.CaiNiao;
-using System.Collections.Concurrent;
+using JayTom.Dws.Interface.Szjy188;
 using JayTom.Dws.Interface.Routdata;
+using System.Collections.Concurrent;
 using JayTom.Dws.Interface.Jtexpress;
+using JayTom.Dws.Interface.Jushuitan;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Interface.Eshippingit;
-using JayTom.Dws.PluginInterface.Utils;
-using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Interface.zhuoyan_scm;
-using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.PluginInterface.Utils;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.ImageService;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
-using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using PluginType = JayTom.Dws.Client.EventMediators.PluginType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using PushPackageInfo = JayTom.Dws.Client.EventMediators.PushPackageInfo;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
 using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
@@ -87,6 +68,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static PostApi.ApiParameters _postApiParam = new();
         private static PostInApi.ApiParameters _postInApiParam = new();
         private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
+        private static JushuitanErpApi.ApiParameters _jushuitanErpParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
@@ -275,6 +257,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     RetryInterval = entity.RetryInterval,
                                     TimeOut = entity.TimeOut,
                                     Machine = entity.Machine
+                                };
+                                break;
+                            }
+                        case "JushuitanErpApiParameters": {
+                                var entity = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>(model.SettingsName) ?? new JushuitanErpApiDto();
+                                _jushuitanErpParam = new JushuitanErpApi.ApiParameters() {
+                                    AppKey = entity.AppKey,
+                                    AccessToken = entity.AccessToken,
+                                    AppSecret = entity.AppSecret,
+                                    IsUnLid = entity.IsUnLid,
+                                    IsUploadWeight = entity.IsUploadWeight,
+                                    Type = entity.Type,
+                                    Channel = entity.Channel,
+                                    TimeOut = entity.TimeOut,
+                                    Url = entity.Url,
+                                    Version = entity.Version,
+                                    TokenExpireTime = entity.TokenExpireTime,
+                                    LastTokenUpdateTime = entity.LastTokenUpdateTime,
                                 };
                                 break;
                             }
@@ -704,6 +704,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                             }
                                             break;
+
+                                        case ApiType.Jushuitan: {
+                                                uploader = new JushuitanErpApi(_httpClientFactory);
+                                                var (key, value) = await uploader.SetParameters(_jushuitanErpParam);
+                                                if (key) {
+                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                        info.Weight, info.ScanTime,
+                                                        info.Length, info.Width,
+                                                        info.Height, info.Volume,
+                                                        null, null,
+                                                        null, stoppingToken);
+                                                }
+                                                else {
+                                                    uploadResponse = new UploadResponse() {
+                                                        ExceptionMsg = value
+                                                    };
+                                                    Console.WriteLine("设置参数失败!");
+                                                }
+                                            }
+
+                                            break;
                                     }
                                     if (_apiSettingsDto?.Type is not null &&
                                         _apiSettingsDto.Type != ApiType.None) {
@@ -944,7 +965,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 TimeOut = eshippingitApiDto.TimeOut,
                 Machine = eshippingitApiDto.Machine
             };
-
+            var jushuitanErpApiDto = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>("JushuitanErpApiParameters") ?? new JushuitanErpApiDto();
+            _jushuitanErpParam = new JushuitanErpApi.ApiParameters() {
+                AppKey = jushuitanErpApiDto.AppKey,
+                AccessToken = jushuitanErpApiDto.AccessToken,
+                AppSecret = jushuitanErpApiDto.AppSecret,
+                IsUnLid = jushuitanErpApiDto.IsUnLid,
+                IsUploadWeight = jushuitanErpApiDto.IsUploadWeight,
+                Type = jushuitanErpApiDto.Type,
+                Channel = jushuitanErpApiDto.Channel,
+                TimeOut = jushuitanErpApiDto.TimeOut,
+                Url = jushuitanErpApiDto.Url,
+                Version = jushuitanErpApiDto.Version,
+                TokenExpireTime = jushuitanErpApiDto.TokenExpireTime,
+                LastTokenUpdateTime = jushuitanErpApiDto.LastTokenUpdateTime,
+            };
             _submissionUploader = _apiSettingsDto?.Type switch {
                 ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
                 ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),

@@ -100,6 +100,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 旺店通Wms+通天晓
         /// </summary>
-        WdtWmsApiAndTtxApi = 17
+        WdtWmsApiAndTtxApi = 17,
+
+        /// <summary>
+        /// 聚水潭
+        /// </summary>
+        Jushuitan
     }
 }
