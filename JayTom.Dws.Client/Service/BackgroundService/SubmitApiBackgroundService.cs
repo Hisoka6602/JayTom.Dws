@@ -1,11 +1,8 @@
-﻿using NLog;
-using System;
+﻿using System;
 using System.Linq;
 using System.Drawing;
 using System.Net.Http;
 using System.Threading;
-using TouchSocket.Core;
-using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Domain.Model;
@@ -46,7 +43,6 @@ using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationSta
 using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
-
     /// <summary>
     /// Api提交处理器
     /// </summary>
@@ -54,8 +50,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfigRepository _configRepository;
         private readonly IImageStorageService _imageStorageService;
-        private readonly IMemoryCache _memoryCache;
-        private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
         private static SzjyApi.ApiParameter _szjyApiParam = new();
@@ -86,12 +80,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         #endregion 非通用版本变量(临时)
 
         public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory,
-            IConfigRepository configRepository, IImageStorageService imageStorageService,
-            IMemoryCache memoryCache) {
+            IConfigRepository configRepository, IImageStorageService imageStorageService) {
             _httpClientFactory = httpClientFactory;
             _configRepository = configRepository;
             _imageStorageService = imageStorageService;
-            _memoryCache = memoryCache;
+
             //包裹信息完成
             EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
                 if (item is { BarCodeInfo: not null } model) {
@@ -125,18 +118,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 await Task.Yield();
                 if (item is { } model) {
-                    switch (model.SettingsName) {
-                        case "ApiSettings":
-                            _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
-                            _submissionUploader = _apiSettingsDto?.Type switch {
-                                ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
-                                ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
-                                ApiType.PostInApi => new PostInApi(_httpClientFactory),
-                                ApiType.PostApi => new PostApi(_httpClientFactory),
-                                _ => null
-                            };
-
-                            break;
+                    if (model.SettingsName.Equals("ApiSettings", StringComparison.CurrentCultureIgnoreCase)
+                        || SubmitApiInfoManager.GetConfigParameterNames()?.Any(f => f.Equals(model.SettingsName, StringComparison.CurrentCultureIgnoreCase)) == true) {
+                        var settingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName);
 
                         case "DefaultApiParameters": {
                                 //默认上传接口改参数
@@ -288,18 +272,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });
-            _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
-                //保存后触发
-                _savedImageItems.Enqueue(new SavedImageInfo() {
-                    BarCode = args.BarCode,
-                    FilePath = args.FilePath,
-                    ImageType = args.ImageType,
-                    CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
-                    ScanTime = args.ScanTime,
-                });
+            _imageStorageService.ImageSaved += async delegate (object? sender, ImageSavedEventArgs args) {
+                //上传图片
+                await Task.Delay(300);
+                if (args.ImageType == SaveImageType.BarcodeImage && !string.IsNullOrEmpty(args.BarCode)) {
+                    SubmitApiInfoManager.SendImage(args.BarCode,
+                        new List<UploadImageInfo>()
+                        {
+                            new()
+                            {
+                                CameraSerialNumber = args.CameraSerialNumber??string.Empty,
+                                CameraName = args.CameraSerialNumber??string.Empty,
+                                ScanTime = args.ScanTime,
+                                Image = Image.FromFile(args.FilePath ?? string.Empty)
+                            }
+                        });
+                }
             };
             EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                if (item is WindowsAction { Type: WindowsActionType.Close }) {
+                if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });
@@ -307,7 +298,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             EventAggregator.Instance.Subscribe<PackageAggregationInfo>(async item => {
                 //加入队列
                 if (item is { } info) {
-                    _packageAggregationInfoItems.Enqueue(info);
+                    //提交集包
+                    SubmitApiInfoManager.SendConsolidationReport(info.PackageExitDefinitionInfo.ExitName,
+                        info.AggregatePackageCode, info.PackagingTime, info.PackageItems.Select(s => s.BarCodeInfo?.Barcode ?? string.Empty).ToList());
                 }
             });
             //更新上传状态
@@ -361,42 +354,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //读参数
             await ReadDefaultConfig();
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(30, stoppingToken).ContinueWith(_task => {
-                    //取出
-                    if (_task.IsCompletedSuccessfully) {
-                        try {
-                            //需要判断用户选择的接口和参数设置
-                            var tryDequeue = _submitItems.TryDequeue(out var info);
-
-                            if (tryDequeue && info is not null) {
-                                //上传
-                                //判断上传接口
-                                Task.Factory.StartNew(async () => {
-                                    IDataUploader uploader;
-                                    UploadResponse? uploadResponse = null;
-                                    switch (_apiSettingsDto?.Type) {
-                                        case ApiType.None:
-                                            return;
-
-                                        case ApiType.DefaultApi: {
-                                                //基础接口
-                                                uploader = new DefaultApi(_httpClientFactory);
-                                                //设置参数
-                                                var (key, value) = await uploader.SetParameters(_defaultApiParameters);
-                                                if (key) {
-                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
-                                                        info.Weight, info.ScanTime,
-                                                        info.Length, info.Width,
-                                                        info.Height, info.Volume,
-                                                        null, null,
-                                                        null, stoppingToken);
-                                                }
-                                                else {
-                                                    uploadResponse = new UploadResponse() {
-                                                        ExceptionMsg = value
-                                                    };
-                                                    Console.WriteLine("设置参数失败!");
-                                                }
+                await Task.Delay(3000, stoppingToken);
+            }
+        }
 
                                                 break;
                                             }
@@ -1225,7 +1185,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         /// 包裹推送
         /// </summary>
         public class PackageSubmissionPushInfo {
-
             /// <summary>
             /// 包裹信息
             /// </summary>

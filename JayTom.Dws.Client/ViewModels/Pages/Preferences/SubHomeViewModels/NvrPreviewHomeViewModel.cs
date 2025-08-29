@@ -13,16 +13,14 @@ using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
-
     public class NvrPreviewHomeViewModel : BindableBase {
         private readonly IConfigRepository _configRepository;
         private ObservableCollection<NvrPreviewViewItemInfo> _nvrPreviewViewItems = new();
@@ -40,8 +38,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
             _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
 
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(async item => {
-                /*if (item is { } info) {
-                    if (info.Status == EventMediators.ApplicationStatus.Start) {
+                if (item is { } info) {
+                    if (info.Status == ApplicationStatus.Start) {
                         try {
                             await _runningSemaphoreSlim.WaitAsync();
                             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
@@ -115,7 +113,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                             _runningSemaphoreSlim.Release();
                         }
                     }
-                    else if (info.Status == EventMediators.ApplicationStatus.Stop) {
+                    else if (info.Status == ApplicationStatus.Stop) {
                         //停止
                         try {
                             await _runningSemaphoreSlim.WaitAsync();

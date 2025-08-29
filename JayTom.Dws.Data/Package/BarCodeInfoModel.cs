@@ -37,6 +37,18 @@ namespace JayTom.Dws.Data.Package {
         public string DisplayIdentifier { get; set; } = string.Empty;
 
         /// <summary>
+        /// 自定义名称
+        /// </summary>
+        [Column("CameraCustomName")]
+        public string CameraCustomName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 相机名称
+        /// </summary>
+        [Column("CameraName")]
+        public string CameraName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 源字符
         /// </summary>
         [Column("OriginalText"), NotMapped]

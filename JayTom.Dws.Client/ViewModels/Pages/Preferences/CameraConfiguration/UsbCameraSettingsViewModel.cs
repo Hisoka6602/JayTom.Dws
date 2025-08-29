@@ -1,25 +1,18 @@
 ﻿using System;
 using Dynamsoft;
-using Prism.Mvvm;
 using System.Linq;
-using System.Text;
 using Prism.Commands;
-using System.Windows;
 using System.Drawing;
+using System.Windows;
 using Newtonsoft.Json;
 using System.Threading;
-using TouchSocket.Core;
 using JayTom.Dws.Camera;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
-using Org.BouncyCastle.Tsp;
-using MaterialDesignColors;
-using System.Threading.Tasks;
 using System.Drawing.Imaging;
-using MaterialDesignThemes.Wpf;
+using System.Threading.Tasks;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using Size = System.Drawing.Size;
 using System.Windows.Media.Imaging;
@@ -27,9 +20,7 @@ using Color = System.Drawing.Color;
 using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using MathNet.Numerics.Distributions;
 using JayTom.Dws.Camera.BarCodeReader;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
@@ -37,10 +28,8 @@ using FontStyle = System.Drawing.FontStyle;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using FontFamily = System.Drawing.FontFamily;
-using Matrix = System.Drawing.Drawing2D.Matrix;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 

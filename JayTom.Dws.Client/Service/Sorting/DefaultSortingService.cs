@@ -1,42 +1,31 @@
 ﻿using System;
-using DryIoc;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Text.Json;
 using System.Threading;
-using System.Diagnostics;
-using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
-using System.Linq.Expressions;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
+using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
-using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
-using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Interface.Cloud;
-using MathNet.Numerics.RootFinding;
-using System.Collections.Concurrent;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Domain.Interface.Cloud;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Domain.Interface.Attributes;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
-using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PushAlternateExitSorterEvent = JayTom.Dws.Client.EventMediators.PushAlternateExitSorterEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting {
 
@@ -310,24 +299,27 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             });
             //Api触发
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                if (item is { } model) {
+            SubmitApiInfoManager.ApiResponseEvent += (sender, info) => {
+                var model = info.PackageInfo;
+                var response = info.UploadResponse;
+                if (model is not null && response is not null
+                    && response.ExecutionType == ExecutionType.UploadInformation) {
                     if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting) {
                         ExecuteSorting(new SortingParam {
                             Timestamp = model.Timestamp,
                             Guid = model.Guid,
-                            BarCode = model.Barcode ?? string.Empty,
-                            ScanTime = model.ScanTime,
-                            PackageCreationTime = model.PackageCreationTime,
+                            BarCode = model.BarCodeInfo?.Barcode ?? string.Empty,
+                            ScanTime = model.BarCodeInfo?.ScanTime,
+                            PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                            ApiResponse = model.UploadResponse ?? new UploadResponse(),
-                            IsStackedPackage = model.IsStackedPackage,
+                            ApiResponse = response,
+                            IsStackedPackage = model.IsStackedPackage ?? false,
                             LinkedCarCount = model.LinkedCarCount
                         });
                     }
                 }
-            });
+            };
             //Ocr触发
             EventAggregator.Instance.Subscribe<PackageOcrInfo>(async item => {
                 if (item is { } model) {
@@ -770,21 +762,6 @@ namespace JayTom.Dws.Client.Service.Sorting {
             if (param.ApiResponse.ResponseContent.Contains("返回超时")) {
                 ExceptionSorting(param, PackageCloudAbnormalSortingType.NetworkTimeout, token);
                 return;
-            }
-            if (_apiSettingsDto.Type == ApiType.RoutDataApi) {
-
-                #region 邮政额外定制
-
-                if (param.ApiResponse.ResponseContent.Contains("段道")) {
-                    ExceptionSorting(param, PackageCloudAbnormalSortingType.PostSegmentNotFound, token);
-                    return;
-                }
-                else if (param.ApiResponse.ResponseContent.Contains("非本机构")) {
-                    ExceptionSorting(param, PackageCloudAbnormalSortingType.PostNonLocalBarcode, token);
-                    return;
-                }
-
-                #endregion 邮政额外定制
             }
             var apiRuleInfoModel = _apiRuleInfoModels
                 ?.Select(o => {

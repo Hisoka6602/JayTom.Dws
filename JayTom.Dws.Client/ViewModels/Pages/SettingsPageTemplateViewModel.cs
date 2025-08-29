@@ -12,13 +12,11 @@ using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages {
 

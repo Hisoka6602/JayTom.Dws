@@ -1,5 +1,4 @@
 ﻿using System;
-using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
 using System.Windows;
@@ -8,19 +7,15 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
-using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
 

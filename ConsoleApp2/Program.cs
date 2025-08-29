@@ -16,21 +16,20 @@ using System.Threading.Tasks;
 using System.Linq.Expressions;
 using JayTom.Dws.Plugin.Excel;
 using System.Linq.Dynamic.Core;
-using JayTom.Dws.Interface.Wdt;
 using System.Collections.Generic;
 using Org.BouncyCastle.Utilities;
 using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Interface.Sunnen;
-using JayTom.Dws.Interface.Szjy188;
-using JayTom.Dws.Interface.Jtexpress;
 using System.Text.RegularExpressions;
 using static System.Text.Json.JsonElement;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Domain.DownstreamProtocols;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple;
-using static JayTom.Dws.Interface.Jtexpress.JtExpressApi;
+using JayTom.Dws.Interface.ApiImplementations.Szjy188;
+using JayTom.Dws.Interface.ApiImplementations.Jtexpress;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
+using static JayTom.Dws.Interface.ApiImplementations.Szjy188.SzjyApi;
+using static JayTom.Dws.Interface.ApiImplementations.Jtexpress.JtExpressApi;
 
 internal class Program {
 

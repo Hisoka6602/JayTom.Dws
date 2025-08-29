@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Interface.Szjy188;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Interface.ApiImplementations.Szjy188;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
@@ -168,9 +168,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             }
         }
 
-        public ICommand LogInCommand {
-            get => new DelegateCommand<object>(LogInDelegate);
-        }
+        public ICommand LogInCommand => new DelegateCommand<object>(LogInDelegate);
 
         private async void LogInDelegate(object obj) {
             if (!IsLoggingIn) {
@@ -179,7 +177,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     IsLoginSuccessful = false;
                     //设置参数
                     var szjyApi = new SzjyApi(_httpClientFactory);
-                    await szjyApi.SetParameters(new SzjyApi.ApiParameter() {
+                    szjyApi.SetParameters(new SzjyApi.ApiParameter() {
                         Machine = SzjyApiInfo.Machine,
                         Password = SzjyApiInfo.Password,
                         Url = SzjyApiInfo.Url,
@@ -219,14 +217,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     //上传
                     var szjyApi = new SzjyApi(_httpClientFactory);
-                    await szjyApi.SetParameters(new SzjyApi.ApiParameter() {
+                    szjyApi.SetParameters(new SzjyApi.ApiParameter() {
                         Machine = SzjyApiInfo.Machine,
                         Password = SzjyApiInfo.Password,
                         Url = SzjyApiInfo.Url,
                         UserName = SzjyApiInfo.UserName,
                         TimeOut = SzjyApiInfo.TimeOut,
                     });
-                    var uploadResponse = await szjyApi.UploadData(Barcode, Weight, Length, Width, Height);
+                    var uploadResponse = await szjyApi.UploadInformation(Barcode, Weight, DateTime.Now, Length, Width, Height);
                     IsUploading = false;
                     //弹窗
                     _dialogService.ShowDialog("ApiTestDialog", new DialogParameters { { "UploadResponse", uploadResponse } }, null);

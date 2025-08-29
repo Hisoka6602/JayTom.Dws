@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Net.NetworkInformation;
 
 namespace JayTom.Dws.Client.Service {

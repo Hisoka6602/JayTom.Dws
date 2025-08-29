@@ -66,6 +66,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="EventMediators\" />
     <Folder Include="Service\ExternalDataService\Communication\SerialComm\" />
     <Folder Include="Service\Manager\" />
     <Folder Include="Service\ResultOutput\Communication\SerialComm\" />

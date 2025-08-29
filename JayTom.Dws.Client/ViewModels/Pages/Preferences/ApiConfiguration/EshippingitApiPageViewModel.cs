@@ -20,11 +20,11 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Interface.ApiImplementations.Eshippingit;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
@@ -204,10 +204,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public async Task<List<string>> UploadImageProcess(List<string> imagesPath) {
             var uploadedList = new ConcurrentBag<string>();
             var eshippingitApi = new EshippingitApi(_httpClientFactory);
-            var (key, value) = await eshippingitApi.SetParameters(new EshippingitApi.ApiParameters() {
+            var key = eshippingitApi.SetParameters(new EshippingitApi.ApiParameters() {
                 Authorization = EshippingitApiInfo.Authorization,
                 BucketName = EshippingitApiInfo.BucketName,
-                Domain = EshippingitApiInfo.Domain,
+                Url = EshippingitApiInfo.Domain,
                 Endpoint = EshippingitApiInfo.Endpoint,
                 Machine = EshippingitApiInfo.Machine,
                 RetryCount = EshippingitApiInfo.RetryCount,

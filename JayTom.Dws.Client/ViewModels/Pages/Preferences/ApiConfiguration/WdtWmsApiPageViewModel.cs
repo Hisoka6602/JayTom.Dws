@@ -6,11 +6,11 @@ using System.Net.Http;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
-using JayTom.Dws.Interface.Wdt;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Interface.ApiImplementations.Wdt;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
@@ -118,7 +118,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     //上传
                     var wdtWmsApi = new WdtWmsApi(_httpClientFactory);
-                    await wdtWmsApi.SetParameters(new WdtWmsApi.ApiParameter {
+                    wdtWmsApi.SetParameters(new WdtWmsApi.ApiParameter {
                         AppKey = WdtWmsApiInfo.AppKey,
                         AppSecret = WdtWmsApiInfo.AppSecret,
                         Sid = WdtWmsApiInfo.Sid,
@@ -127,7 +127,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         TimeOut = WdtWmsApiInfo.TimeOut,
                         MustIncludeBoxBarcode = WdtWmsApiInfo.MustIncludeBoxBarcode
                     });
-                    var uploadResponse = await wdtWmsApi.UploadData(Barcode, Weight, other: BoxBarcode);
+                    var uploadResponse = await wdtWmsApi.UploadInformation(Barcode, Weight, other: BoxBarcode);
                     IsUploading = false;
                     //弹窗
                     _dialogService.ShowDialog("ApiTestDialog", new DialogParameters { { "UploadResponse", uploadResponse } }, null);

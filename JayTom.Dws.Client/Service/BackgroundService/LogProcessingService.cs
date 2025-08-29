@@ -12,20 +12,16 @@ using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Attributes;
 using System.Collections.Concurrent;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
@@ -444,23 +440,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
 
             //http
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                if (item is { } model) {
+            SubmitApiInfoManager.ApiResponseEvent += async (sender, info) => {
+                if (info.UploadResponse is not null) {
                     await Task.Yield();
                     EventAggregator.Instance.Publish(new ApiLogInfoModel() {
-                        Type = model.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
-                        ApiParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
-                        CreateTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
-                        Duration = model.UploadResponse?.Duration ?? 0,
-                        ExceptionMsg = model.UploadResponse?.ExceptionMsg ?? string.Empty,
-                        RequestContent = model.UploadResponse?.RequestContent ?? string.Empty,
-                        RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
-                        ResponseContent = model.UploadResponse?.ResponseContent ?? string.Empty,
-                        ResponseTime = model.UploadResponse?.ResponseTime ?? DateTime.Now,
-                        Url = model.UploadResponse?.RequestUrl ?? string.Empty,
+                        Type = info.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
+                        ApiParameters = info.UploadResponse?.ApiParameters ?? string.Empty,
+                        CreateTime = info.UploadResponse?.RequestTime ?? DateTime.Now,
+                        Duration = info.UploadResponse?.Duration ?? 0,
+                        ExceptionMsg = info.UploadResponse?.ExceptionMsg ?? string.Empty,
+                        RequestContent = info.UploadResponse?.RequestContent ?? string.Empty,
+                        RequestTime = info.UploadResponse?.RequestTime ?? DateTime.Now,
+                        ResponseContent = info.UploadResponse?.ResponseContent ?? string.Empty,
+                        ResponseTime = info.UploadResponse?.ResponseTime ?? DateTime.Now,
+                        Url = info.UploadResponse?.RequestUrl ?? string.Empty,
                     });
                 }
-            });
+            };
             _stackedPackageService.StackedPackageReturned += async (sender, args) => {
                 await Task.Yield();
                 NLog.LogManager.GetCurrentClassLogger()

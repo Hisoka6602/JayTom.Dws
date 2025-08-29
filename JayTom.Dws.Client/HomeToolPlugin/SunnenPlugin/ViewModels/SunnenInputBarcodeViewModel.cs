@@ -7,11 +7,8 @@ using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
-using PluginType = JayTom.Dws.Client.EventMediators.PluginType;
-using PluginParamChangedEvent = JayTom.Dws.Client.EventMediators.PluginParamChangedEvent;
-using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
+using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels {
 

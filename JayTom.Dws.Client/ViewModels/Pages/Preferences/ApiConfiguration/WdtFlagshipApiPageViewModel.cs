@@ -6,11 +6,11 @@ using System.Net.Http;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
-using JayTom.Dws.Interface.Wdt;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Interface.ApiImplementations.Wdt;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
@@ -122,7 +122,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                     //上传
                     var wdtFlagshipApi = new WdtFlagshipApi(_httpClientFactory);
-                    await wdtFlagshipApi.SetParameters(new WdtFlagshipApi.ApiParameter {
+                    wdtFlagshipApi.SetParameters(new WdtFlagshipApi.ApiParameter {
                         Key = WdtFlagshipApiInfo.Key,
                         Appsecret = WdtFlagshipApiInfo.Appsecret,
                         Sid = WdtFlagshipApiInfo.Sid,

@@ -43,6 +43,41 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         new Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
 
         /// <summary>
+        /// 查询缓存数据
+        /// </summary>
+        /// <param name="packageTimestamped"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<PackageInfoModel?> GetCachedPackage(long packageTimestamped, CancellationToken token = default);
+
+        /// <summary>
+        /// 查询前后N条数据
+        /// </summary>
+        /// <param name="packageTimestamped"></param>
+        /// <param name="amount"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<KeyValuePair<bool, List<PackageInfoModel>>> GetPackagesAround(
+            long packageTimestamped,
+            int amount,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 查询详细信息
+        /// </summary>
+        /// <param name="packageTimestamped"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<PackageInfoModel?> GetPackageDetails(long packageTimestamped, CancellationToken token = default);
+
+        /// <summary>
+        /// 设置缓存时间
+        /// </summary>
+        /// <param name="duration"></param>
+        /// <returns></returns>
+        bool SetCacheDuration(TimeSpan duration);
+
+        /// <summary>
         /// 获取缓存包裹数据
         /// </summary>
         /// <param name="packageTimestamped"></param>
@@ -51,11 +86,14 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default);
 
         /// <summary>
-        /// 更新缓存
+        /// 填充信息
         /// </summary>
-        /// <param name="info"></param>
-        /// <param name="token"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="packageTimestamped"></param>
+        /// <param name="property"></param>
+        /// <param name="retryCount"></param>
         /// <returns></returns>
-        void UpDateMemoryCachePackageInfo(PackageInfoModel info, CancellationToken token = default);
+        Task<bool> FillNavigationPropertyAsync<T>(long packageTimestamped, T property, int retryCount = 5)
+            where T : class;
     }
 }

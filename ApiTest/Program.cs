@@ -1,14 +1,8 @@
 ﻿using System.Drawing;
 using JayTom.Dws.Interface;
-using JayTom.Dws.Interface.ttx;
-using JayTom.Dws.Interface.geek_;
-using JayTom.Dws.Interface.JdyWms;
-using Microsoft.Extensions.Hosting;
-using System.Net.NetworkInformation;
-using Microsoft.Extensions.DependencyInjection;
+using JayTom.Dws.Interface.ApiImplementations.geek_;
 
 internal class Program {
-
     private static async Task Main(string[] args) {
         Console.WriteLine("Hello, World!");
 

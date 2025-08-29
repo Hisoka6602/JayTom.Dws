@@ -1,0 +1,340 @@
+﻿using Polly;
+using System;
+using Aliyun.OSS;
+using System.Net;
+using System.Linq;
+using System.Text;
+using System.Drawing;
+using System.Net.Http;
+using Newtonsoft.Json;
+using System.Diagnostics;
+using SixLabors.ImageSharp;
+using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
+using Image = System.Drawing.Image;
+using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
+using JayTom.Dws.Domain.Interface.Attributes;
+
+namespace JayTom.Dws.Interface.ApiImplementations.Eshippingit {
+
+    [ApiClass("海通智运Api", "EshippingitApi", "EshippingitApiParameters", "1.0", ExecutionType.UploadInformation | ExecutionType.SendSortingReport)]
+    public class EshippingitApi : IApiUploader<EshippingitApi.ApiParameters> {
+        private readonly IHttpClientFactory _httpClientFactory;
+        public ApiParameters Parameters { get; private set; } = new();
+
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
+            Parameters = param;
+            return true;
+        }
+
+        public void OpenJsonConfigFile() {
+        }
+
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            UploadResponse response;
+            var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            var requestTime = DateTime.Now;
+            var data = new {
+                orderNo = Regex.Replace(barcode, @"[\u0000-\u001f\b]", ""),
+                inboundWeight = Math.Round(Convert.ToDecimal(weight), 3),
+                inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
+                inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
+                inboundHeight = Math.Round(Convert.ToDecimal(height / 10), 3),
+                machine = Parameters.Machine,
+            };
+
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json; charset=UTF-8");
+                    message = await httpClient.PostAsync($"{Parameters.Url}/api/ilw-service/ilw/parcel/asyncInbound", content, token)
+                        .ConfigureAwait(false);
+                }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+
+                    if (jObject["ok"] is not null) {
+                        isSuccess = Convert.ToBoolean(jObject["ok"]?.ToString() ?? "false");
+                    }
+                }
+                //判断是否成功条件
+            }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                resultContent += exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "接口访问返回超时!";
+            }
+            catch (Exception e) {
+                isSuccess = false;
+                resultContent += exceptionMsg = e.Message;
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = JsonConvert.SerializeObject(data),
+                    RequestTime = requestTime,
+                    RequestUrl = $"{Parameters.Url}/api/ilw-service/ilw/parcel/asyncInbound",
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now
+                };
+            }
+            return response;
+        }
+
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+        }
+
+        public Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendSortingReport
+            });
+        }
+
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public async Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            var uploadImageInfo = uploadImagesInfos?.FirstOrDefault(f => f.Image != null);
+
+            if (uploadImageInfo?.Image != null) {
+                await PolicyPush(barcode, uploadImageInfo.ScanTime, uploadImageInfo.Image, token);
+                uploadImageInfo?.Image?.Dispose();
+            }
+            return new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            };
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
+        }
+
+        public static OssParameters? OssParam { get; private set; }
+        private static OssClient? _ossClient;
+        private SemaphoreSlim _semaphore = new(1);
+        private SemaphoreSlim _uploadSemaphore = new(10);
+
+        public EshippingitApi(IHttpClientFactory httpClientFactory) {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public async Task<bool> PolicyPush(string barcode, DateTime scanTime, Image image, CancellationToken token = default) {
+            barcode = Regex.Replace(barcode, @"[\u0000-\u001f\b]", "");
+            var waitAndRetryAsync = Policy.HandleResult<bool>(result => !result)
+                .Or<Exception>().WaitAndRetryAsync(Parameters.RetryCount, retryCount => TimeSpan.FromSeconds(Parameters.RetryInterval), // 重试间隔时间
+                    (ex, timespan, retryCount, context) => {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"Oss接口重试次数:{retryCount}");
+                    });
+            return await waitAndRetryAsync.ExecuteAsync(async () => {
+                try {
+                    await _semaphore.WaitAsync(token);
+                    if (OssParam is null || DateTime.Now.CompareTo(OssParam.Expiration.ToLocalTime()) >= 0) {
+                        //重新申请
+                        OssParam = await GetOssParameters();
+                        if (OssParam is null) {
+                            return false;
+                        }
+                        _ossClient = new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
+                            OssParam.SecurityToken);
+                    }
+                }
+                finally {
+                    _semaphore.Release();
+                }
+
+                try {
+                    await _uploadSemaphore.WaitAsync(token);
+                    using MemoryStream memoryStream = new MemoryStream();
+                    image.Save(memoryStream, image.RawFormat);
+
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+
+                    var putObjectResult = _ossClient.PutObject(Parameters.BucketName,
+                        $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png",
+                        memoryStream);
+                    if (putObjectResult.HttpStatusCode == HttpStatusCode.OK) {
+                        return await UploadWeightImage(barcode, $"ilwParcelImages/{scanTime:yyyy-MM-dd}/{barcode}.png",
+                            token);
+                    }
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"Oss上传失败");
+                    }
+                }
+                catch (Aliyun.OSS.Common.OssException ossException) {
+                    if (ossException.Message.Contains(
+                            "The OSS Access Key Id you provided does not exist in our records")) {
+                        OssParam = await GetOssParameters();
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(OssParam)}");
+                        NLog.LogManager.GetCurrentClassLogger().Error($"{ossException}");
+                        return false;
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
+                finally {
+                    _uploadSemaphore.Release();
+                }
+                return false;
+            });
+        }
+
+        public async Task<OssParameters?> GetOssParameters() {
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 3);
+                httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
+
+                var stringAsync = await httpClient.GetStringAsync($"{Parameters.Url}/api/mdm-service/oss/openSts");
+
+                var resultContent = Regex.Unescape(stringAsync);
+
+                var jObject = JObject.Parse(resultContent);
+                if (jObject["content"] is not null) {
+                    return JsonConvert.DeserializeObject<OssParameters>(jObject["content"]?.ToString() ?? string.Empty);
+                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"获取Oss参数错误:{e}");
+            }
+
+            return null;
+        }
+
+        public async Task<bool> UploadWeightImage(string barcode, string cloudFileName, CancellationToken token = default) {
+            var isSuccess = false;
+            var data = new {
+                orderNo = barcode,
+                cloudFileName
+            };
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
+                HttpResponseMessage message;
+                await using (Stream dataStream =
+                             new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json; charset=UTF-8");
+                    message = await httpClient.PostAsync($"{Parameters.Url}/api/ilw-service/ilw/parcel/weightImage", content, token)
+                        .ConfigureAwait(false);
+                }
+
+                var resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //判断
+                    var jObject = JObject.Parse(resultContent);
+
+                    if (jObject["ok"] is not null) {
+                        isSuccess = Convert.ToBoolean(jObject["ok"]?.ToString() ?? "false");
+                    }
+
+                    if (!isSuccess) {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"OssParam申请失败:{resultContent}");
+                    }
+                }
+                //判断是否成功条件
+            }
+            catch (Exception e) {
+                isSuccess = false;
+            }
+            return isSuccess;
+        }
+
+        public class ApiParameters : BaseApiParameters {
+            /*/// <summary>
+            /// 域名
+            /// </summary>
+            public string Domain { get; set; } = "https://qa.gateway.eshippingit.com";
+
+            /// <summary>
+            /// 超时时间
+            /// </summary>
+            public int TimeOut { get; set; } = 1500;*/
+
+            public string Authorization { get; set; } = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjoie1wiaWRcIjpcIjE0MTM2ODQwMzE0NTQ4NDI5MTlcIixcIm5hbWVcIjpcIuiUoeWuuOabplwiLFwidElkXCI6MSxcIm1JZFwiOjEsXCJtTmFtZVwiOlwi5rex5Zyz5LiA5rW36YCa5YWo55CD5L6b5bqU6ZO-566h55CG5pyJ6ZmQ5YWs5Y-4XCIsXCJhSWRcIjoxfSIsImlzcyI6IlNFUlZJQ0UiLCJleHAiOjE3MTM2MDIwMzQsImlhdCI6MTcxMjczODAzNH0.Zee9jgBJdouBAR3R3G1utcFLOt98UZAeaWbMy0VeViw";
+            public string Endpoint { get; set; } = "oss-cn-shanghai.aliyuncs.com";
+            public string BucketName { get; set; } = "esit-open-qa";
+            public int RetryCount { get; set; } = 2;
+            public int RetryInterval { get; set; } = 1;
+            public string Machine { get; set; } = string.Empty;
+        }
+
+        public class OssParameters {
+            public string SecurityToken { get; set; } = string.Empty;
+            public string AccessKeySecret { get; set; } = string.Empty;
+            public string AccessKeyId { get; set; } = string.Empty;
+            public DateTime Expiration { get; set; }
+        }
+    }
+}

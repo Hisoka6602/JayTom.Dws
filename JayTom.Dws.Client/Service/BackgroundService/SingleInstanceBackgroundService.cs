@@ -4,10 +4,7 @@ using System.Windows;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService {
 

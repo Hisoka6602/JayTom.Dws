@@ -12,158 +12,20 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Collections.Generic;
+using JayTom.Dws.Domain.Interface;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection.PortableExecutable;
+using JayTom.Dws.Domain.Interface.Attributes;
 
 namespace JayTom.Dws.Interface {
 
-    public class DefaultApi : IDataUploader {
+    [ApiClass("默认Api", "DefaultApi", "DefaultApiParameter", "1.0")]
+    public class DefaultApi : IApiUploader<DefaultApi.ApiParameters> {
         private readonly IHttpClientFactory _httpClientFactory;
-        private DefaultApiParameters _parameters = new();
 
         public DefaultApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
-        }
-
-        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            return new UploadResponse();
-        }
-
-        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
-            CancellationToken token = default) {
-            var resultContent = string.Empty;
-            var exceptionMsg = string.Empty;
-            var isSuccess = false;
-            UploadResponse response;
-            //创建数据
-            string data;
-            if (!_parameters.IsUploadScanImage) {
-                if (_parameters.IsUseJsonUpload) {
-                    data = ParseJsonTemplate(_parameters.JsonTemplate, barcode, (float)weight, scanTime,
-                        (float)length, (float)width, (float)height,
-                        (float)volume, "");
-                }
-                else {
-                    var list = _parameters.StringTemplate.Split(",").Select(s =>
-                        ParseTemplate(s, barcode, (float)weight, scanTime,
-                            (float)length, (float)width, (float)height,
-                            (float)volume, "")).ToList();
-                    data = string.Join(",", list);
-                }
-            }
-            else {
-                data = ParseJsonTemplate(_parameters.JsonTemplate, barcode, (float)weight, scanTime,
-                    (float)length, (float)width, (float)height,
-                    (float)volume, "");
-            }
-
-            var requestTime = DateTime.Now;
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                httpClient.Timeout = _parameters.Timeout;
-                HttpResponseMessage message;
-                if (!_parameters.IsUseUploadImage) {
-                    await using Stream dataStream =
-                        new MemoryStream(Encoding.UTF8.GetBytes(data));
-                    using HttpContent content = new StreamContent(dataStream);
-                    content.Headers.Add("Content-Type", "application/json");
-                    message = await httpClient.PostAsync(_parameters.Url, content, token)
-                        .ConfigureAwait(false);
-                }
-                else {
-                    //上传图片
-                    var formData = new MultipartFormDataContent();
-                    if (imageInfo?.Image is not null) {
-                        var imageToStreamContent = ImageToStreamContent(imageInfo.Image, "barcodeImage",
-                            $"{imageInfo.CameraSerialNumber}_{imageInfo.CameraCustomName}.jpg");
-                        formData.Add(imageToStreamContent);
-                    }
-
-                    foreach (var imageToStreamContent in from info in panoramaImageInfos ?? new List<UploadImageInfo>()
-                                                         where info?.Image is not null
-                                                         select ImageToStreamContent(info.Image, "panoramaImages",
-                                 $"{info.CameraSerialNumber}_{info.CameraCustomName}.jpg")) {
-                        formData.Add(imageToStreamContent);
-                    }
-                    var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
-                    formData.Add(jsonContent, "jsonData");
-                    message = await httpClient.PostAsync(_parameters.Url, formData, token);
-                }
-
-                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //临时判断
-                    try {
-                        isSuccess = _parameters.ValidationMode switch {
-                            0 => resultContent.Equals(_parameters.CompleteMatch),
-                            1 => resultContent.Contains(_parameters.StringContains),
-                            2 => Regex.IsMatch(resultContent, _parameters.RegularExpression),
-                            _ => false
-                        };
-                    }
-                    catch (Exception e) {
-                        Console.WriteLine(e);
-                    }
-                }
-                //判断是否成功条件
-            }
-            catch (HttpRequestException e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            catch (AggregateException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问异常!";
-            }
-            catch (JsonException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "报文解析异常!";
-            }
-            catch (TaskCanceledException) {
-                isSuccess = false;
-                resultContent += exceptionMsg = "接口访问返回超时!";
-            }
-            catch (Exception e) {
-                isSuccess = false;
-                resultContent += exceptionMsg = e.Message;
-            }
-            finally {
-                stopwatch.Stop();
-                response = new UploadResponse() {
-                    ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
-                    IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
-                    RequestContent = JsonConvert.SerializeObject(data),
-                    RequestTime = requestTime,
-                    RequestUrl = _parameters.Url,
-                    ResponseContent = resultContent,
-                    ResponseTime = DateTime.Now
-                };
-            }
-            return response;
-        }
-
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
-            if (parameters is not DefaultApiParameters param)
-                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型错误!"));
-            _parameters = param;
-            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
-        }
-
-        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
-            List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-        }
-
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
-            object? other = null, CancellationToken token = default) {
         }
 
         public string ParseTemplate(string source, string barCode, float weight, DateTime scanTime, float length,
@@ -216,22 +78,12 @@ namespace JayTom.Dws.Interface {
             return streamContent;
         }
 
-        public class DefaultApiParameters {
+        public class ApiParameters : BaseApiParameters {
 
             /// <summary>
             /// 是否使用Json上传
             /// </summary>
             public bool IsUseJsonUpload { get; set; }
-
-            /// <summary>
-            /// Url
-            /// </summary>
-            public string Url { get; set; } = string.Empty;
-
-            /// <summary>
-            /// 请求超时时间
-            /// </summary>
-            public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
 
             /// <summary>
             /// 字符串模板
@@ -277,6 +129,193 @@ namespace JayTom.Dws.Interface {
             /// 是否上传全景图
             /// </summary>
             public bool IsUploadPanoramaImage { get; set; }
+        }
+
+        public ApiParameters Parameters { get; private set; } = new();
+
+        public bool SetParameters(object parameters) {
+            if (parameters is not ApiParameters param) return false;
+            Parameters = param;
+            return true;
+        }
+
+        public void OpenJsonConfigFile() {
+        }
+
+        public async Task<UploadResponse> UploadInformation([NotNull] string barcode, [NotNull] double weight, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            var resultContent = string.Empty;
+            var exceptionMsg = string.Empty;
+            var isSuccess = false;
+            UploadResponse response;
+            string data;
+            //创建数据
+            if (!Parameters.IsUploadScanImage) {
+                if (Parameters.IsUseJsonUpload) {
+                    data = ParseJsonTemplate(Parameters.JsonTemplate, barcode, (float)weight, scanTime,
+                        (float)length, (float)width, (float)height,
+                        (float)volume, "");
+                }
+                else {
+                    var list = Parameters.StringTemplate.Split(",").Select(s =>
+                        ParseTemplate(s, barcode, (float)weight, scanTime,
+                            (float)length, (float)width, (float)height,
+                            (float)volume, "")).ToList();
+                    data = string.Join(",", list);
+                }
+            }
+            else {
+                data = ParseJsonTemplate(Parameters.JsonTemplate, barcode, (float)weight, scanTime,
+                    (float)length, (float)width, (float)height,
+                    (float)volume, "");
+            }
+            var requestTime = DateTime.Now;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try {
+                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
+                HttpResponseMessage message;
+                if (!Parameters.IsUseUploadImage) {
+                    await using Stream dataStream =
+                        new MemoryStream(Encoding.UTF8.GetBytes(data));
+                    using HttpContent content = new StreamContent(dataStream);
+                    content.Headers.Add("Content-Type", "application/json");
+                    message = await httpClient.PostAsync(Parameters.Url, content, token)
+                        .ConfigureAwait(false);
+                }
+                else {
+                    //上传图片
+                    var formData = new MultipartFormDataContent();
+                    if (imageInfo?.Image is not null) {
+                        var imageToStreamContent = ImageToStreamContent(imageInfo.Image, "barcodeImage",
+                            $"{imageInfo.CameraSerialNumber}_{imageInfo.CameraCustomName}.jpg");
+                        formData.Add(imageToStreamContent);
+                    }
+
+                    foreach (var imageToStreamContent in from info in panoramaImageInfos ?? new List<UploadImageInfo>()
+                                                         where info?.Image is not null
+                                                         select ImageToStreamContent(info.Image, "panoramaImages",
+                                 $"{info.CameraSerialNumber}_{info.CameraCustomName}.jpg")) {
+                        formData.Add(imageToStreamContent);
+                    }
+                    var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
+                    formData.Add(jsonContent, "jsonData");
+                    message = await httpClient.PostAsync(Parameters.Url, formData, token);
+                }
+
+                resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                resultContent = Regex.Unescape(resultContent);
+                if (!string.IsNullOrWhiteSpace(resultContent)) {
+                    //临时判断
+                    try {
+                        isSuccess = Parameters.ValidationMode switch {
+                            0 => resultContent.Equals(Parameters.CompleteMatch),
+                            1 => resultContent.Contains(Parameters.StringContains),
+                            2 => Regex.IsMatch(resultContent, Parameters.RegularExpression),
+                            _ => false
+                        };
+                    }
+                    catch (Exception e) {
+                        Console.WriteLine(e);
+                    }
+                }
+                //判断是否成功条件
+            }
+            catch (HttpRequestException e) {
+                isSuccess = false;
+                resultContent += exceptionMsg = e.Message;
+            }
+            catch (AggregateException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "接口访问异常!";
+            }
+            catch (JsonException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "报文解析异常!";
+            }
+            catch (TaskCanceledException) {
+                isSuccess = false;
+                resultContent += exceptionMsg = "接口访问返回超时!";
+            }
+            catch (Exception e) {
+                isSuccess = false;
+                resultContent += exceptionMsg = e.Message;
+            }
+            finally {
+                stopwatch.Stop();
+                response = new UploadResponse() {
+                    ExceptionMsg = exceptionMsg,
+                    ApiParameters = JsonConvert.SerializeObject(this),
+                    IsSuccess = isSuccess,
+                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    RequestContent = JsonConvert.SerializeObject(data),
+                    RequestTime = requestTime,
+                    RequestUrl = Parameters.Url,
+                    ResponseContent = resultContent,
+                    ResponseTime = DateTime.Now,
+                    ExecutionType = ExecutionType.UploadInformation
+                };
+            }
+            return response;
+        }
+
+        public void ScanPackage([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+        }
+
+        public Task<UploadResponse> SendSortingReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendSortingReport
+            });
+        }
+
+        public Task<UploadResponse> SendPickupReport([NotNull] string barcode, [NotNull] double weight = default, DateTime scanTime = default, double length = default,
+            double width = default, double height = default, double volume = default, long packageId = default,
+            UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendPickupReport
+            });
+        }
+
+        public Task<UploadResponse> SendConsolidationReport(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+            object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendConsolidationReport
+            });
+        }
+
+        public Task<UploadResponse> SendImage(string barcode, List<UploadImageInfo> uploadImagesInfos, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendImage
+            });
+        }
+
+        public Task<UploadResponse> SendLockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendLockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendUnlockCommand(string lockIdentifier, object? other = null, CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendUnlockCommand
+            });
+        }
+
+        public Task<UploadResponse> SendDeviceReport(string deviceIdentifier, string deviceStatus, object? other = null,
+            CancellationToken token = default) {
+            return Task.FromResult(new UploadResponse() {
+                ExecutionType = ExecutionType.SendDeviceReport
+            });
         }
     }
 }

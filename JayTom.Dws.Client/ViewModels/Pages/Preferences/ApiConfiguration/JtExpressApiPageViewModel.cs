@@ -13,9 +13,9 @@ using JayTom.Dws.Data.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Interface.Jtexpress;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using JayTom.Dws.Interface.ApiImplementations.Jtexpress;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
@@ -203,7 +203,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     IsLoggingIn = true;
                     IsLoginSuccessful = false;
                     //ApiParameter
-                    await new JtExpressApi(_httpClientFactory).SetParameters(new JtExpressApi.ApiParameter() {
+                    new JtExpressApi(_httpClientFactory).SetParameters(new JtExpressApi.ApiParameter() {
                         AppKey = JtExpressApiInfo.AppKey,
                         AppSecret = JtExpressApiInfo.AppSecret,
                         BusinessType = (JtExpressApi.BusinessType)JtExpressApiInfo.BusinessType.Value,

@@ -13,19 +13,18 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
         public ConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
-        public async Task<T?> FirstOrDefaultEntity<T>(string keyName, CancellationToken token) where T : class {
+        public async Task<T> FirstOrDefaultEntity<T>(string keyName, CancellationToken token) where T : class, new() {
             try {
                 var configInfoModels = await base.MemoryCacheData();
                 var configInfoModel = configInfoModels.FirstOrDefault(f => f.ConfigName.Equals(keyName));
                 if (configInfoModel is not null) {
-                    return JsonConvert.DeserializeObject<T>(configInfoModel.Value);
+                    return JsonConvert.DeserializeObject<T>(configInfoModel.Value) ?? new T();
                 }
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"配置项Json反序列化错误:{e}");
             }
-
-            return null;
+            return new T();
         }
 
         public async Task<string> FirstOrDefaultJsonEntity(string keyName, CancellationToken token = default) {
