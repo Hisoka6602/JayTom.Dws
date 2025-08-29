@@ -46,6 +46,7 @@ using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Domain.Interface.Cloud;
@@ -81,6 +82,7 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
+using EventAggregator = Prism.Events.EventAggregator;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
@@ -388,7 +390,7 @@ namespace JayTom.Dws.Client {
                 //同步配置
                 services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
                 //把后台注册服务写在这里
-                services.AddHostedService<ScanNodePackageBackgroundService>(); // 注册后组包服务
+                services.AddHostedService<ZhuoYanScmBackgroundService>(); // 注册后组包服务
                 services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
                 services.AddHostedService<SubmitApiBackgroundService>();//提交Api
                 services.AddHostedService<DataProcessingBackgroundService>();//数据处理
