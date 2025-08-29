@@ -18,4 +18,11 @@
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Repository\LocalConf\CloudConfig\" />
+    <Folder Include="Repository\LocalConf\IpcNvrConfig\" />
+    <Folder Include="Repository\VideoApi\" />
+    <Folder Include="Service\VideoApi\" />
+  </ItemGroup>
+
 </Project>
