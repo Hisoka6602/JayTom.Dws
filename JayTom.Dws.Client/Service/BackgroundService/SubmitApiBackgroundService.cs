@@ -32,6 +32,7 @@ using JayTom.Dws.Interface.CaiNiao;
 using System.Collections.Concurrent;
 using JayTom.Dws.Interface.Routdata;
 using JayTom.Dws.Interface.Jtexpress;
+using JayTom.Dws.Interface.Jushuitan;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Interface.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
@@ -86,6 +87,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static PostApi.ApiParameters _postApiParam = new();
         private static PostInApi.ApiParameters _postInApiParam = new();
         private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
+        private static JushuitanErpApi.ApiParameters _jushuitanErpParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
@@ -280,6 +282,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     RetryInterval = entity.RetryInterval,
                                     TimeOut = entity.TimeOut,
                                     Machine = entity.Machine
+                                };
+                                break;
+                            }
+                        case "JushuitanErpApiParameters": {
+                                var entity = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>(model.SettingsName) ?? new JushuitanErpApiDto();
+                                _jushuitanErpParam = new JushuitanErpApi.ApiParameters() {
+                                    AppKey = entity.AppKey,
+                                    AccessToken = entity.AccessToken,
+                                    AppSecret = entity.AppSecret,
+                                    IsUnLid = entity.IsUnLid,
+                                    IsUploadWeight = entity.IsUploadWeight,
+                                    Type = entity.Type,
+                                    Channel = entity.Channel,
+                                    TimeOut = entity.TimeOut,
+                                    Url = entity.Url,
+                                    Version = entity.Version,
+                                    TokenExpireTime = entity.TokenExpireTime,
+                                    LastTokenUpdateTime = entity.LastTokenUpdateTime,
                                 };
                                 break;
                             }
@@ -711,6 +731,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             break;
 
                                         case ApiType.Jushuitan: {
+                                                uploader = new JushuitanErpApi(_httpClientFactory);
+                                                var (key, value) = await uploader.SetParameters(_jushuitanErpParam);
+                                                if (key) {
+                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                        info.Weight, info.ScanTime,
+                                                        info.Length, info.Width,
+                                                        info.Height, info.Volume,
+                                                        null, null,
+                                                        null, stoppingToken);
+                                                }
+                                                else {
+                                                    uploadResponse = new UploadResponse() {
+                                                        ExceptionMsg = value
+                                                    };
+                                                    Console.WriteLine("设置参数失败!");
+                                                }
                                             }
                                             break;
                                     }
@@ -953,7 +989,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 TimeOut = eshippingitApiDto.TimeOut,
                 Machine = eshippingitApiDto.Machine
             };
-
+            var jushuitanErpApiDto = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>("JushuitanErpApiParameters") ?? new JushuitanErpApiDto();
+            _jushuitanErpParam = new JushuitanErpApi.ApiParameters() {
+                AppKey = jushuitanErpApiDto.AppKey,
+                AccessToken = jushuitanErpApiDto.AccessToken,
+                AppSecret = jushuitanErpApiDto.AppSecret,
+                IsUnLid = jushuitanErpApiDto.IsUnLid,
+                IsUploadWeight = jushuitanErpApiDto.IsUploadWeight,
+                Type = jushuitanErpApiDto.Type,
+                Channel = jushuitanErpApiDto.Channel,
+                TimeOut = jushuitanErpApiDto.TimeOut,
+                Url = jushuitanErpApiDto.Url,
+                Version = jushuitanErpApiDto.Version,
+                TokenExpireTime = jushuitanErpApiDto.TokenExpireTime,
+                LastTokenUpdateTime = jushuitanErpApiDto.LastTokenUpdateTime,
+            };
             _submissionUploader = _apiSettingsDto?.Type switch {
                 ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
                 ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),

@@ -67,13 +67,16 @@ namespace JayTom.Dws.Interface.Jushuitan {
 
                 var message = await httpClient.PostAsync(_parameters.Url, content, token).ConfigureAwait(false);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
                     var jObject = JObject.Parse(resultContent);
-                    if (jObject["data"] is not null) {
-                        var jArray = JArray.Parse(jObject["datas"]?.ToString() ?? string.Empty);
-                        isSuccess = Convert.ToBoolean(jArray.FirstOrDefault()?["is_success"]);
+
+                    // 确保 data 存在，并且 data.datas 是一个非空数组
+                    if (jObject["data"]?["datas"] is JArray { Count: > 0 } jArray) {
+                        isSuccess = jArray[0]["is_success"]?.Value<bool>() == true;
+                        // 或者：isSuccess = Convert.ToBoolean(jArray[0]["is_success"]);
+                    }
+                    else {
+                        isSuccess = false;
                     }
                 }
             }
@@ -159,13 +162,16 @@ namespace JayTom.Dws.Interface.Jushuitan {
 
                 var message = await httpClient.PostAsync(_parameters.Url, content, token).ConfigureAwait(false);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //判断
                     var jObject = JObject.Parse(resultContent);
-                    if (jObject["data"] is not null) {
-                        var jArray = JArray.Parse(jObject["datas"]?.ToString() ?? string.Empty);
-                        isSuccess = Convert.ToBoolean(jArray.FirstOrDefault()?["is_success"]);
+
+                    // 确保 data 存在，并且 data.datas 是一个非空数组
+                    if (jObject["data"]?["datas"] is JArray { Count: > 0 } jArray) {
+                        isSuccess = jArray[0]["is_success"]?.Value<bool>() == true;
+                        // 或者：isSuccess = Convert.ToBoolean(jArray[0]["is_success"]);
+                    }
+                    else {
+                        isSuccess = false;
                     }
                 }
             }

@@ -126,7 +126,60 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     _createPackageSlim.Release();
                 }
             };
+            _deviceService.NotBarcodeHitEvent += async (sender, args) => {
+                //验证多条码
+                try {
+                    await _createPackageSlim.WaitAsync();
+                    _lastReadTime = DateTime.Now;
+                    var packageInfo =
+                        _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
+                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });
 
+                    if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
+                        == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null) {
+                        //支持扫码创建
+                        packageInfo = new PackageInfo() {
+                            Guid = args.Timestamp,
+                            BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera,
+                                BindTime = DateTime.Now
+                            },
+                            Image = args.Image,
+                        };
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                            IsSuccess = true,
+                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
+                            PackageInfo = packageInfo
+                        });
+                    }
+                    else {
+                        if (packageInfo is not null) {
+                            packageInfo.BarCodeInfo = new BarCodeInfoModel() {
+                                Barcode = args.Barcode,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera,
+                                BindTime = DateTime.Now
+                            };
+                            packageInfo.Image = args.Image;
+                            EventAggregator.Instance.Publish(new TriggerPositionEvent() {
+                                IsSuccess = true,
+                                TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
+                                PackageInfo = packageInfo,
+                            });
+                        }
+                    }
+                }
+                finally {
+                    _createPackageSlim.Release();
+                }
+            };
             //配置更改
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is { } model) {

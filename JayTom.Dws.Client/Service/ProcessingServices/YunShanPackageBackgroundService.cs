@@ -555,7 +555,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     }
 
                     packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
-
+                    //判断是否称重
+                    if (_weightSettingsDto.Mode == WeightMode.None) {
+                        packageInfo.WeightInfo = new WeightInfoModel();
+                    }
+                    //判断是否需要体积(直接不使用)
+                    packageInfo.VolumeInfo = new VolumeInfoModel();
                     //添加包裹
                     var packageRemoveTimers = new List<PackageTimer>();
                     if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }) {

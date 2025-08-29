@@ -107,6 +107,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "旺店通+通天晓Api",
                 Value = ApiType.WdtWmsApiAndTtxApi
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "聚水潭",
+                Value = ApiType.Jushuitan
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();
