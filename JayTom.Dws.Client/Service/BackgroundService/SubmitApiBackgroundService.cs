@@ -709,6 +709,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                             }
                                             break;
+
+                                        case ApiType.Jushuitan: {
+                                            }
+                                            break;
                                     }
                                     if (_apiSettingsDto?.Type is not null &&
                                         _apiSettingsDto.Type != ApiType.None) {
