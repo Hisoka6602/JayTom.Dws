@@ -26,6 +26,7 @@ using NPOI.XSSF.Streaming.Values;
 using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Interface.Sunnen;
 using JayTom.Dws.Interface.JdyWms;
+using JayTom.Dws.Interface.ZhouYi;
 using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Interface.Szjy188;
 using JayTom.Dws.Interface.CaiNiao;
@@ -88,6 +89,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static PostInApi.ApiParameters _postInApiParam = new();
         private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
         private static JushuitanErpApi.ApiParameters _jushuitanErpParam = new();
+        private static ZhouYiApi.ApiParameters _zhouYiApiParam = new();
         private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
@@ -300,6 +302,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     Version = entity.Version,
                                     TokenExpireTime = entity.TokenExpireTime,
                                     LastTokenUpdateTime = entity.LastTokenUpdateTime,
+                                };
+                                break;
+                            }
+                        case "ZhouYiApiParameters": {
+                                var entity = await _configRepository.FirstOrDefaultEntity<ZhouYiApiDto>(model.SettingsName) ?? new ZhouYiApiDto();
+                                _zhouYiApiParam = new ZhouYiApi.ApiParameters() {
+                                    AppKey = entity.AppKey,
+                                    AppId = entity.AppId,
+                                    NeedUpload = entity.NeedUpload,
+                                    IsFstCode = entity.IsFstCode,
+
+                                    TimeOut = entity.TimeOut,
+                                    Url = entity.Url,
                                 };
                                 break;
                             }
@@ -749,6 +764,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                 }
                                             }
                                             break;
+
+                                        case ApiType.ZhouYi: {
+                                                uploader = new ZhouYiApi(_httpClientFactory);
+                                                var (key, value) = await uploader.SetParameters(_zhouYiApiParam);
+                                                if (key) {
+                                                    uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
+                                                        info.Weight, info.ScanTime,
+                                                        info.Length, info.Width,
+                                                        info.Height, info.Volume,
+                                                        null, null,
+                                                        null, stoppingToken);
+                                                }
+                                                else {
+                                                    uploadResponse = new UploadResponse() {
+                                                        ExceptionMsg = value
+                                                    };
+                                                    Console.WriteLine("设置参数失败!");
+                                                }
+                                            }
+                                            break;
                                     }
                                     if (_apiSettingsDto?.Type is not null &&
                                         _apiSettingsDto.Type != ApiType.None) {
@@ -1003,6 +1038,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 Version = jushuitanErpApiDto.Version,
                 TokenExpireTime = jushuitanErpApiDto.TokenExpireTime,
                 LastTokenUpdateTime = jushuitanErpApiDto.LastTokenUpdateTime,
+            };
+            var zhouYiApiDto = await _configRepository.FirstOrDefaultEntity<ZhouYiApiDto>("ZhouYiApiParameters") ?? new ZhouYiApiDto();
+            _zhouYiApiParam = new ZhouYiApi.ApiParameters() {
+                AppKey = zhouYiApiDto.AppKey,
+                AppId = zhouYiApiDto.AppId,
+                NeedUpload = zhouYiApiDto.NeedUpload,
+                IsFstCode = zhouYiApiDto.IsFstCode,
+
+                TimeOut = zhouYiApiDto.TimeOut,
+                Url = zhouYiApiDto.Url,
             };
             _submissionUploader = _apiSettingsDto?.Type switch {
                 ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),

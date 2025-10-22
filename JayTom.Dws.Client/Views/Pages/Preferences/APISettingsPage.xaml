@@ -182,6 +182,14 @@
                         NavigationUIVisibility="Hidden"
                         Source="ApiConfiguration/JushuitanApiPage.xaml" />
                 </TabItem>
+                <TabItem Header="周艺Api">
+                    <Frame
+                        Margin="0"
+                        Padding="0"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden"
+                        Source="ApiConfiguration/ZhouYiApiPage.xaml" />
+                </TabItem>
             </TabControl>
             <!--  提示框  -->
             <materialDesign:Snackbar

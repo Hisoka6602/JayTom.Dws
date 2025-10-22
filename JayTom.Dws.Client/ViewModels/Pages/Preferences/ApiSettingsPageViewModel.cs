@@ -112,6 +112,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 Name = "聚水潭",
                 Value = ApiType.Jushuitan
             },
+            new ApiTypeInfoModel()
+            {
+                Name = "周艺Api",
+                Value = ApiType.ZhouYi
+            },
         };
 
         private ApiTypeInfoModel? _selectApiType = new();

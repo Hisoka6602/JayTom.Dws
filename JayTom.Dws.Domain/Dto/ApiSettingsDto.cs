@@ -105,6 +105,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 聚水潭
         /// </summary>
-        Jushuitan
+        Jushuitan,
+
+        /// <summary>
+        /// 周艺
+        /// </summary>
+        ZhouYi
     }
 }
