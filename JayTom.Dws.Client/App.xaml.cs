@@ -67,6 +67,7 @@ using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Client.Service.ImageService;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
@@ -122,6 +123,7 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Connec
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
+using JayTom.Dws.Infrastructure.Services;
 
 namespace JayTom.Dws.Client {
 
@@ -254,6 +256,13 @@ namespace JayTom.Dws.Client {
 
                 //配置内存缓存
                 services.AddMemoryCache();
+                //注册日志服务
+                services.AddLogging(builder => {
+                    builder.AddConsole();
+                    builder.SetMinimumLevel(LogLevel.Information);
+                });
+                //注册ServiceStartupHelper
+                services.AddSingleton<ServiceStartupHelper>();
                 //本地数据表注册
                 //data
                 // 注册 IConfiguration
@@ -663,20 +672,33 @@ namespace JayTom.Dws.Client {
             // 获取 IServiceProvider
             var serviceProvider = Container.Resolve<IServiceProvider>();
 
-            // 启动 PackageAggregationService
+            // 获取 ServiceStartupHelper
+            var startupHelper = serviceProvider.GetService<ServiceStartupHelper>();
+
+            // 启动所有托管服务
             var hostedServices = serviceProvider.GetServices<IHostedService>();
 
-            /*
-            Parallel.ForEach(hostedServices, async service => {
-                await service.StartAsync(default);
-            });*/
-
-            foreach (var service in hostedServices) {
-                var serviceName = service.GetType().Name;
-                NLog.LogManager.GetCurrentClassLogger().Error($"服务名: {serviceName}");
-                await service.StartAsync(default);
+            if (startupHelper != null) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"使用ServiceStartupHelper启动 {hostedServices.Count()} 个服务");
+                try {
+                    await startupHelper.StartServicesAsync(hostedServices);
+                    NLog.LogManager.GetCurrentClassLogger().Error($"全部服务启动完成");
+                }
+                catch (Exception ex) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"服务启动失败: {ex.Message}");
+                    throw;
+                }
             }
-            NLog.LogManager.GetCurrentClassLogger().Error($"全部服务启动完成");
+            else {
+                // 回退到旧的启动方式（如果ServiceStartupHelper不可用）
+                NLog.LogManager.GetCurrentClassLogger().Error($"ServiceStartupHelper不可用，使用传统方式启动服务");
+                foreach (var service in hostedServices) {
+                    var serviceName = service.GetType().Name;
+                    NLog.LogManager.GetCurrentClassLogger().Error($"服务名: {serviceName}");
+                    await service.StartAsync(default);
+                }
+                NLog.LogManager.GetCurrentClassLogger().Error($"全部服务启动完成");
+            }
         }
     }
 }
