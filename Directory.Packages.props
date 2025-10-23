@@ -31,14 +31,23 @@
     
     <!-- Entity Framework -->
     <PackageVersion Include="EFCore.BulkExtensions" Version="8.1.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.7" />
+    <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql.Json.Microsoft" Version="8.0.0" />
+    
+    <!-- Code Analysis -->
+    <PackageVersion Include="Microsoft.CodeAnalysis" Version="4.11.0" />
+    <PackageVersion Include="System.Reflection.Emit" Version="4.7.0" />
     
     <!-- Logging -->
     <PackageVersion Include="NLog" Version="5.3.2" />
     <PackageVersion Include="NLog.Web.AspNetCore" Version="5.3.2" />
+    <PackageVersion Include="NLog.Extensions.Logging" Version="5.3.11" />
+    
+    <!-- ASP.NET Core -->
+    <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Common" Version="8.0.0" />
     
     <!-- SignalR -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
@@ -56,6 +65,7 @@
     <PackageVersion Include="System.Management" Version="8.0.0" />
     <PackageVersion Include="System.IO.Ports" Version="8.0.0" />
     <PackageVersion Include="System.Speech" Version="8.0.0" />
+    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <PackageVersion Include="LibreHardwareMonitorLib" Version="0.9.2" />
     
     <!-- Camera and Video -->
