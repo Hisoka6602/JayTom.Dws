@@ -715,13 +715,16 @@ builder.Services.AddHealthChecks()
         }
         return HealthCheckResult.Healthy();
     })
+    // 内存健康阈值（单位：MB）
+    const int MEMORY_UNHEALTHY_THRESHOLD_MB = 1024;
+    const int MEMORY_DEGRADED_THRESHOLD_MB = 512;
     .AddCheck("memory", () => {
         var memoryInfo = GC.GetGCMemoryInfo();
         var allocatedMB = GC.GetTotalMemory(false) / 1024 / 1024;
-        if (allocatedMB > 1024) {
+        if (allocatedMB > MEMORY_UNHEALTHY_THRESHOLD_MB) {
             return HealthCheckResult.Unhealthy($"High memory usage: {allocatedMB} MB");
         }
-        if (allocatedMB > 512) {
+        if (allocatedMB > MEMORY_DEGRADED_THRESHOLD_MB) {
             return HealthCheckResult.Degraded($"Memory usage warning: {allocatedMB} MB");
         }
         return HealthCheckResult.Healthy();
