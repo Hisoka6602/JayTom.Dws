@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Utils", "JayTom.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Tests", "JayTom.Dws.Tests\JayTom.Dws.Tests.csproj", "{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Benchmarks", "JayTom.Dws.Benchmarks\JayTom.Dws.Benchmarks.csproj", "{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -265,6 +267,18 @@ Global
 		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x64.Build.0 = Release|Any CPU
 		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x86.ActiveCfg = Release|Any CPU
 		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x86.Build.0 = Release|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Debug|x64.Build.0 = Debug|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Debug|x86.Build.0 = Debug|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Release|x64.ActiveCfg = Release|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Release|x64.Build.0 = Release|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Release|x86.ActiveCfg = Release|Any CPU
+		{D2C250DE-29E7-413D-B05E-6FDE4DAB584E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
