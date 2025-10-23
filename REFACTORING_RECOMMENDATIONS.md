@@ -582,12 +582,14 @@ public class PackageWeightMeasuredEventHandler {
 
 // 创建新文件：JayTom.Dws.Client/Service/ReactiveServices/PackageProcessingService.cs
 public class PackageProcessingService {
+    private const int ImageBatchBufferMilliseconds = 100;
+    private const int ImageBatchSize = 10;
     private readonly Subject<CameraImageInfo> _imageSubject = new();
     private readonly IDisposable _subscription;
 
     public PackageProcessingService() {
         _subscription = _imageSubject
-            .Buffer(TimeSpan.FromMilliseconds(100), 10) // 批处理：100ms 或 10 个图像
+            .Buffer(TimeSpan.FromMilliseconds(ImageBatchBufferMilliseconds), ImageBatchSize) // 批处理：100ms 或 10 个图像
             .Where(batch => batch.Any())
             .Select(batch => Observable.FromAsync(ct => ProcessImageBatchAsync(batch, ct)))
             .Concat() // 按顺序处理批次
