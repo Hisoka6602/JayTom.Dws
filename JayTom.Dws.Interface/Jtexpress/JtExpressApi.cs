@@ -142,7 +142,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
         }
 
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             NLog.LogManager.GetCurrentClassLogger().Error($"进入提交方法");
