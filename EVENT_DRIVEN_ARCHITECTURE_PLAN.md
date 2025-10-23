@@ -1,102 +1,102 @@
-# Event-Driven Architecture Migration Plan
+# 事件驱动架构迁移计划
 
-## Overview
-This document outlines the plan to refactor JayTom.Dws.Client to adopt an event-driven architecture (EDA) pattern. The goal is to improve modularity, scalability, and maintainability of the application.
+## 概述
+本文档概述了将 JayTom.Dws.Client 重构为采用事件驱动架构（EDA）模式的计划。目标是提高应用程序的模块化、可扩展性和可维护性。
 
-## Current Architecture
-The current architecture follows a traditional layered approach:
-- **Presentation Layer**: JayTom.Dws.Client (WPF UI)
-- **Domain Layer**: JayTom.Dws.Domain, JayTom.Dws.Data
-- **Infrastructure Layer**: JayTom.Dws.Infrastructure, JayTom.Dws.Interface, JayTom.Dws.Utils
-- **Device Layer**: JayTom.Dws.Camera, JayTom.Dws.Nvr, JayTom.Dws.Ocr
-- **Plugin Layer**: JayTom.Dws.Plugin, JayTom.Dws.PluginInterface
-- **License Layer**: JayTom.Dws.License
+## 当前架构
+当前架构遵循传统的分层方法：
+- **表现层**: JayTom.Dws.Client (WPF UI)
+- **领域层**: JayTom.Dws.Domain, JayTom.Dws.Data
+- **基础设施层**: JayTom.Dws.Infrastructure, JayTom.Dws.Interface, JayTom.Dws.Utils
+- **设备层**: JayTom.Dws.Camera, JayTom.Dws.Nvr, JayTom.Dws.Ocr
+- **插件层**: JayTom.Dws.Plugin, JayTom.Dws.PluginInterface
+- **许可证层**: JayTom.Dws.License
 
-## Target Event-Driven Architecture
+## 目标事件驱动架构
 
-### Core Principles
-1. **Loose Coupling**: Components communicate through events, not direct method calls
-2. **Asynchronous Processing**: Events are processed asynchronously
-3. **Scalability**: New features can be added by subscribing to existing events
-4. **Testability**: Components can be tested in isolation
+### 核心原则
+1. **松耦合**: 组件通过事件通信，而不是直接方法调用
+2. **异步处理**: 事件异步处理
+3. **可扩展性**: 可以通过订阅现有事件添加新功能
+4. **可测试性**: 组件可以独立测试
 
-### Proposed Architecture Components
+### 建议的架构组件
 
-#### 1. Event Bus (Central Message Broker)
-- **Technology**: MediatR or custom implementation
-- **Purpose**: Central hub for all domain events
-- **Location**: JayTom.Dws.Infrastructure
+#### 1. 事件总线（中央消息代理）
+- **技术**: MediatR 或自定义实现
+- **用途**: 所有领域事件的中央枢纽
+- **位置**: JayTom.Dws.Infrastructure
 
-#### 2. Domain Events
-Define events for key domain operations:
-- **Device Events**
-  - `DeviceConnectedEvent`
-  - `DeviceDisconnectedEvent`
-  - `MeasurementCompletedEvent`
-  - `CameraImageCapturedEvent`
+#### 2. 领域事件
+为关键领域操作定义事件：
+- **设备事件**
+  - `DeviceConnectedEvent` - 设备已连接事件
+  - `DeviceDisconnectedEvent` - 设备已断开事件
+  - `MeasurementCompletedEvent` - 测量完成事件
+  - `CameraImageCapturedEvent` - 相机图像已捕获事件
   
-- **Workflow Events**
-  - `WorkflowStartedEvent`
-  - `WorkflowStepCompletedEvent`
-  - `WorkflowCompletedEvent`
-  - `WorkflowFailedEvent`
+- **工作流事件**
+  - `WorkflowStartedEvent` - 工作流已启动事件
+  - `WorkflowStepCompletedEvent` - 工作流步骤完成事件
+  - `WorkflowCompletedEvent` - 工作流完成事件
+  - `WorkflowFailedEvent` - 工作流失败事件
 
-- **Data Events**
-  - `DataValidatedEvent`
-  - `DataSavedEvent`
-  - `DataSyncedEvent`
+- **数据事件**
+  - `DataValidatedEvent` - 数据已验证事件
+  - `DataSavedEvent` - 数据已保存事件
+  - `DataSyncedEvent` - 数据已同步事件
 
-- **UI Events**
-  - `NotificationRequiredEvent`
-  - `ViewNavigationRequestedEvent`
+- **UI 事件**
+  - `NotificationRequiredEvent` - 需要通知事件
+  - `ViewNavigationRequestedEvent` - 视图导航请求事件
 
-#### 3. Event Handlers
-Create dedicated handlers for each event type:
-- Located in appropriate layers (Domain, Infrastructure, or Presentation)
-- Implement single responsibility principle
-- Support async/await patterns
+#### 3. 事件处理程序
+为每种事件类型创建专用处理程序：
+- 位于适当的层（领域层、基础设施层或表现层）
+- 实现单一职责原则
+- 支持 async/await 模式
 
-#### 4. Event Store (Optional)
-- Store event history for auditing and replay
-- Implement Event Sourcing pattern if needed
+#### 4. 事件存储（可选）
+- 存储事件历史记录用于审计和重放
+- 如需要，实现事件溯源模式
 
-### Migration Phases
+### 迁移阶段
 
-#### Phase 1: Foundation (Weeks 1-2)
-- [ ] Set up central event bus using MediatR
-- [ ] Define core domain event interfaces and base classes
-- [ ] Create event handler infrastructure
-- [ ] Update dependency injection configuration
+#### 阶段 1：基础设施（第 1-2 周）
+- [ ] 使用 MediatR 设置中央事件总线
+- [ ] 定义核心领域事件接口和基类
+- [ ] 创建事件处理程序基础设施
+- [ ] 更新依赖注入配置
 
-#### Phase 2: Device Integration (Weeks 3-4)
-- [ ] Migrate camera operations to event-driven model
-- [ ] Migrate weight measurement to event-driven model
-- [ ] Migrate barcode scanner to event-driven model
-- [ ] Implement device connection/disconnection events
+#### 阶段 2：设备集成（第 3-4 周）
+- [ ] 将相机操作迁移到事件驱动模型
+- [ ] 将重量测量迁移到事件驱动模型
+- [ ] 将条码扫描器迁移到事件驱动模型
+- [ ] 实现设备连接/断开连接事件
 
-#### Phase 3: Business Logic (Weeks 5-6)
-- [ ] Convert workflow engine to event-driven
-- [ ] Implement data validation events
-- [ ] Convert data persistence operations
-- [ ] Add event-based logging and monitoring
+#### 阶段 3：业务逻辑（第 5-6 周）
+- [ ] 将工作流引擎转换为事件驱动
+- [ ] 实现数据验证事件
+- [ ] 转换数据持久化操作
+- [ ] 添加基于事件的日志记录和监控
 
-#### Phase 4: UI Integration (Weeks 7-8)
-- [ ] Update UI to subscribe to domain events
-- [ ] Implement UI notification system via events
-- [ ] Convert view navigation to event-driven
-- [ ] Update plugin system to use events
+#### 阶段 4：UI 集成（第 7-8 周）
+- [ ] 更新 UI 以订阅领域事件
+- [ ] 通过事件实现 UI 通知系统
+- [ ] 将视图导航转换为事件驱动
+- [ ] 更新插件系统以使用事件
 
-#### Phase 5: Testing & Optimization (Weeks 9-10)
-- [ ] Add unit tests for all event handlers
-- [ ] Add integration tests for event flows
-- [ ] Performance testing and optimization
-- [ ] Documentation and training
+#### 阶段 5：测试与优化（第 9-10 周）
+- [ ] 为所有事件处理程序添加单元测试
+- [ ] 为事件流添加集成测试
+- [ ] 性能测试和优化
+- [ ] 文档编写和培训
 
-### Technical Implementation Details
+### 技术实现细节
 
-#### Event Bus Configuration
+#### 事件总线配置
 ```csharp
-// In Startup or App.xaml.cs
+// 在 Startup 或 App.xaml.cs 中
 services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssemblies(
         typeof(Client).Assembly,
@@ -106,18 +106,18 @@ services.AddMediatR(cfg => {
 });
 ```
 
-#### Event Definition Example
+#### 事件定义示例
 ```csharp
 public class MeasurementCompletedEvent : INotification
 {
-    public string DeviceId { get; set; }
-    public double Weight { get; set; }
-    public DateTime Timestamp { get; set; }
-    public byte[] Image { get; set; }
+    public string DeviceId { get; set; }       // 设备 ID
+    public double Weight { get; set; }         // 重量
+    public DateTime Timestamp { get; set; }    // 时间戳
+    public byte[] Image { get; set; }          // 图像
 }
 ```
 
-#### Event Handler Example
+#### 事件处理程序示例
 ```csharp
 public class MeasurementCompletedEventHandler : INotificationHandler<MeasurementCompletedEvent>
 {
@@ -126,45 +126,45 @@ public class MeasurementCompletedEventHandler : INotificationHandler<Measurement
     
     public async Task Handle(MeasurementCompletedEvent notification, CancellationToken cancellationToken)
     {
-        // Save measurement data
+        // 保存测量数据
         await _repository.SaveMeasurementAsync(notification);
         
-        // Notify UI
-        await _notificationService.NotifyAsync("Measurement completed");
+        // 通知 UI
+        await _notificationService.NotifyAsync("测量完成");
     }
 }
 ```
 
-### Benefits
+### 优势
 
-1. **Improved Maintainability**: Clear separation of concerns
-2. **Enhanced Testability**: Components can be tested independently
-3. **Better Scalability**: New features can be added without modifying existing code
-4. **Increased Flexibility**: Easy to add/remove event handlers
-5. **Audit Trail**: All events can be logged for debugging and compliance
+1. **提高可维护性**: 清晰的关注点分离
+2. **增强可测试性**: 组件可以独立测试
+3. **更好的可扩展性**: 可以在不修改现有代码的情况下添加新功能
+4. **增加灵活性**: 易于添加/删除事件处理程序
+5. **审计跟踪**: 所有事件都可以记录，用于调试和合规性
 
-### Risks and Mitigation
+### 风险和缓解措施
 
-1. **Learning Curve**
-   - Mitigation: Provide training sessions and documentation
+1. **学习曲线**
+   - 缓解措施：提供培训课程和文档
    
-2. **Performance Overhead**
-   - Mitigation: Use async processing, optimize critical paths
+2. **性能开销**
+   - 缓解措施：使用异步处理，优化关键路径
    
-3. **Debugging Complexity**
-   - Mitigation: Implement comprehensive logging and event tracing
+3. **调试复杂性**
+   - 缓解措施：实现全面的日志记录和事件跟踪
 
-4. **Event Versioning**
-   - Mitigation: Design events with backward compatibility in mind
+4. **事件版本控制**
+   - 缓解措施：设计考虑向后兼容性的事件
 
-### Next Steps
+### 后续步骤
 
-1. Review and approve this plan
-2. Set up MediatR in the infrastructure layer
-3. Begin Phase 1 implementation
-4. Schedule regular review meetings
+1. 审查并批准此计划
+2. 在基础设施层中设置 MediatR
+3. 开始阶段 1 实施
+4. 安排定期审查会议
 
-## References
-- [MediatR Documentation](https://github.com/jbogard/MediatR)
-- [Event-Driven Architecture Pattern](https://martinfowler.com/articles/201701-event-driven.html)
-- [Domain Events Pattern](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation)
+## 参考资料
+- [MediatR 文档](https://github.com/jbogard/MediatR)
+- [事件驱动架构模式](https://martinfowler.com/articles/201701-event-driven.html)
+- [领域事件模式](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation)
