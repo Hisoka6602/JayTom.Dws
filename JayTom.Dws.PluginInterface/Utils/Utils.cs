@@ -65,7 +65,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
                 return Convert.ToBase64String(cipherWithTag);
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return plainText;
             }
         }
@@ -82,7 +82,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
                 return Encoding.UTF8.GetString(decryptedBytes);
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return cipherText;
             }
         }
@@ -162,7 +162,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
                 return memoryStream.ToArray();
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return null;
             }
         }
@@ -179,7 +179,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
                 bitmapImage.Freeze(); // 冻结图像以提高性能
                 return bitmapImage;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return null;
             }
         }
@@ -211,7 +211,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
                 return attribute == null ? value.ToString() : attribute.Description;
             }
-            catch (Exception e) {
+            catch (Exception) {
             }
             return string.Empty;
         }

@@ -176,7 +176,7 @@ namespace JayTom.Dws.License {
                     }
                 }
             }
-            catch (Exception e) {
+            catch (Exception) {
                 data = null;
             }
             return new KeyValuePair<bool, string>(false, "授权文件异常!");
