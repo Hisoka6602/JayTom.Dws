@@ -16,7 +16,7 @@ This document summarizes the code quality improvements made to the JayTom.Dws so
 - **Current State**: 323 warnings, 62 errors
 - **Improvement**: 31 warnings fixed (8.8% reduction)
 
-**Note**: The 62 errors are primarily due to missing third-party dependencies (Dynamsoft, DaHua, Prism for SunnenPlugin) and are not addressed as they require proprietary SDKs.
+**Note**: The 62 errors are primarily due to missing third-party dependencies (Dynamsoft, Dahua, Prism for SunnenPlugin) and are not addressed as they require proprietary SDKs.
 
 ## 1. Compilation Warnings Fixed ✅
 
@@ -99,12 +99,19 @@ Created comprehensive xUnit test project with:
 3. `Events_CanBeSubscribedTo` - Verifies event subscription
 
 ### Coverage Analysis
-Current coverage is minimal (3.81%) as tests focus on basic functionality. To reach 70% target:
-- Need ~310 additional lines covered
-- Recommend adding tests for:
-  - Domain business logic (PackageInfoManager, services)
-  - Event handlers in CrossCutting
-  - Utility methods in Utils project
+Current coverage is minimal (3.81%) as tests focus on basic functionality. 
+
+**Coverage Calculation**:
+- Total lines in tested projects: 446
+- Lines covered: 17
+- Current coverage: 3.81%
+- Target coverage: 70% (312 lines)
+- Lines needed: 295 additional lines
+
+To reach 70% target, recommend adding tests for:
+- Domain business logic (PackageInfoManager, services)
+- Event handlers in CrossCutting
+- Utility methods in Utils project
 
 ## 3. Performance Benchmarking ✅
 
@@ -214,9 +221,12 @@ Benefits:
 
 ### High Priority
 1. **Fix Nullability Warnings (CS8767)**: 218 occurrences
+   - **Estimated Effort**: 2-3 days (medium complexity)
+   - **Approach**: Systematic review by project/namespace
    - Review interface contracts (IDataUploader)
    - Add nullable annotations where appropriate
    - Enable nullable reference types across solution
+   - Benefits: Improved type safety, fewer null reference exceptions
 
 2. **Expand Test Coverage**: Target 70%
    - Add tests for Domain business logic
