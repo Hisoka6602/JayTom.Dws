@@ -30,8 +30,13 @@ namespace JayTom.Dws.Application.EventHandlers {
                 _logger.Info($"Handling PackageCreatedEvent: PackageId={@event.PackageId}, Barcode={@event.Barcode}");
 
                 // 创建包裹基本信息
+                if (!int.TryParse(@event.PackageId, out int packageId))
+                {
+                    _logger.Warn($"Invalid PackageId format: {@event.PackageId}");
+                    return;
+                }
                 var package = new PackageInfoModel {
-                    Id = int.Parse(@event.PackageId),
+                    Id = packageId,
                     PackageCreateTime = @event.CreateTime,
                     PackageTimestamped = new DateTimeOffset(@event.CreateTime).ToUnixTimeMilliseconds(),
                     BarCodeInfo = new BarCodeInfoModel {
