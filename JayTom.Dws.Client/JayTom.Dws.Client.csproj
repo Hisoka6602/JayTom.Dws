@@ -76,16 +76,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" Version="1.0.0.2" />
-    <PackageReference Include="gong-wpf-dragdrop" Version="3.2.1" />
-    <PackageReference Include="LottieSharp" Version="2.2.0" />
-    <PackageReference Include="MaterialDesignThemes" Version="4.8.0" />
-    <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="Prism.DryIoc" Version="8.1.97" />
-    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.7" />
-    <PackageReference Include="Vlc.DotNet.Wpf" Version="3.1.0" />
+    <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" />
+    <PackageReference Include="gong-wpf-dragdrop" />
+    <PackageReference Include="LottieSharp" />
+    <PackageReference Include="MaterialDesignThemes" />
+    <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Prism.DryIoc" />
+    <PackageReference Include="System.Linq.Dynamic.Core" />
+    <PackageReference Include="Vlc.DotNet.Wpf" />
   </ItemGroup>
 
   <ItemGroup>

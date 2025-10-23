@@ -50,26 +50,42 @@ dotnet build JayTom.Dws.sln
 - **JayTom.Dws.License**: 许可证管理和验证
 
 ## 包管理
-本项目通过 `Directory.Packages.props` 使用集中式包管理。所有包版本都在此文件中定义，以确保项目间的一致性。
 
-添加新包的步骤：
-1. 在 `Directory.Packages.props` 中添加版本号
-2. 在项目文件中引用包（无需指定版本）
+### 集中式包版本管理
+本项目通过 `Directory.Packages.props` 使用集中式包管理。所有包版本都在此文件中**统一定义**，确保：
+- ✅ 项目间版本一致性
+- ✅ 避免版本冲突
+- ✅ 简化依赖管理
+- ✅ 便于升级维护
 
-示例：
+### 正确使用方法
+**✅ 正确做法**：
 ```xml
-<!-- 在 Directory.Packages.props 中 -->
+<!-- 1. 在 Directory.Packages.props 中定义版本 -->
 <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
 
-<!-- 在你的 .csproj 中 -->
+<!-- 2. 在项目 .csproj 中引用（不指定版本） -->
 <PackageReference Include="Newtonsoft.Json" />
 ```
 
+**❌ 错误做法**：
+```xml
+<!-- 不要在 .csproj 中指定版本，这会违反集中式管理原则 -->
+<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+```
+
+### 添加新包的步骤
+1. 在 `Directory.Packages.props` 中添加 `<PackageVersion>` 条目并指定版本
+2. 在需要的项目 `.csproj` 文件中添加 `<PackageReference>`（无需 Version 属性）
+3. 运行 `dotnet restore` 恢复包
+
 ## 文档
 
-### 最新变更
-- **[项目清理文档](PROJECT_CLEANUP.md)**: 解决方案清理和重构的详细信息
+### 核心文档
+- **[架构文档](ARCHITECTURE.md)**: 完整的系统架构设计、分层说明和技术栈（必读）
+- **[包管理修复总结](PACKAGE_MANAGEMENT_FIX.md)**: 集中式包管理修复详情和最佳实践
 - **[事件驱动架构计划](EVENT_DRIVEN_ARCHITECTURE_PLAN.md)**: 迁移到事件驱动架构的计划
+- **[项目清理文档](PROJECT_CLEANUP.md)**: 解决方案清理和重构的详细信息
 
 ### 历史文档
 - **[重构建议](REFACTORING_RECOMMENDATIONS.md)**: 通用重构建议
@@ -90,21 +106,30 @@ dotnet build JayTom.Dws.sln
 - 多语言支持
 
 ## 架构
-项目遵循分层架构模式：
-- **表现层**: WPF 客户端应用程序
-- **领域层**: 业务逻辑和领域模型
-- **基础设施层**: 数据访问、外部服务
-- **设备层**: 硬件集成
-- **插件层**: 可扩展性支持
+项目采用清晰的分层架构设计，遵循依赖倒置原则和关注点分离：
+
+### 核心分层
+- **表现层** (`JayTom.Dws.Client`): WPF 客户端应用程序
+- **应用层** (`JayTom.Dws.Application`): 应用服务和业务用例编排
+- **领域层** (`JayTom.Dws.Domain`): 核心业务逻辑和领域模型
+- **基础设施层** (`JayTom.Dws.Infrastructure`): 数据访问、外部服务集成
+- **数据层** (`JayTom.Dws.Data`): 数据模型和实体定义
+
+### 专用层
+- **设备集成层**: 硬件设备集成（相机、NVR、OCR、通用设备）
+- **插件系统层**: 可扩展的插件架构
+- **横切关注点层**: 日志、工具、许可证、接口服务
+
+### 架构特点
+✅ **零边界入侵**: 核心层完全独立，无基础设施依赖  
+✅ **清晰命名**: 统一命名规范，职责明确  
+✅ **依赖倒置**: 高层不依赖低层具体实现  
+✅ **关注点分离**: 每个项目职责单一清晰  
+
+**详细架构文档**: 查看 [ARCHITECTURE.md](ARCHITECTURE.md) 了解完整的架构设计、依赖关系和技术栈。
 
 ### 未来：事件驱动架构
-项目计划迁移到事件驱动架构以改善：
-- 可扩展性
-- 可维护性
-- 可测试性
-- 松耦合
-
-详见 [事件驱动架构计划](EVENT_DRIVEN_ARCHITECTURE_PLAN.md)。
+项目计划迁移到事件驱动架构以进一步改善可扩展性、可维护性和松耦合特性。详见 [事件驱动架构计划](EVENT_DRIVEN_ARCHITECTURE_PLAN.md)。
 
 ## 开发工作流
 
@@ -268,8 +293,11 @@ dotnet test /p:CollectCoverage=true
 
 ## 版本历史
 - **2025-10-23**: 
+  - ✅ **修复集中式包管理违规**: 移除所有 `.csproj` 文件中的 PackageReference Version 属性（16个项目，80+包引用），确保版本由 `Directory.Packages.props` 统一管理。详见 [PACKAGE_MANAGEMENT_FIX.md](PACKAGE_MANAGEMENT_FIX.md)
+  - ✅ **完善架构文档**: 新增 `ARCHITECTURE.md`，详细说明分层架构、依赖关系和设计原则
+  - ✅ **架构优化**: 验证零边界入侵原则，确保核心层独立性
+  - ✅ **编译验证**: 验证包管理修复不影响项目构建
   - 项目清理：移除所有测试项目和 API 项目
   - 解决方案精简：从 100+ 个项目减少到 17 个核心项目
-  - 集中式包管理实施
   - 添加项目状态和优化计划文档
 - 以前的版本：参见 git 历史记录
