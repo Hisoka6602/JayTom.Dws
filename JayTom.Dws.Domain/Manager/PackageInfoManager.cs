@@ -72,8 +72,8 @@ namespace JayTom.Dws.Domain.Manager {
             if (value is not null) {
                 var tryRemove = _packageInfos.TryRemove(key, out var info);
                 if (tryRemove && info is not null) {
-                    info?.Image?.Dispose();
-                    OnPackageRemoved(new PackageRemovedEventArgs(info, description));
+                    info.Image?.Dispose();
+                    OnPackageRemoved(new PackageRemovedEventArgs(info!, description));
                 }
                 return tryRemove;
             }

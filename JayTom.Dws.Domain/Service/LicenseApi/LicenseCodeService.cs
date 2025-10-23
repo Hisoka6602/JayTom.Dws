@@ -340,7 +340,7 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                         f.LicenseCodeId.Equals(info.Id), token);
                     if (licenseClientBindingInfo is not null) {
                         licenseClientBindingInfo.LastVerifiedDate = DateTime.Now;
-                        _licenseClientBindingRepository.Update(licenseClientBindingInfo);
+                        await _licenseClientBindingRepository.Update(licenseClientBindingInfo);
                     }
 
                     return new KeyValuePair<bool, object>(true, "该机器码已激活过");

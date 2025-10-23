@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using Image = System.Drawing.Image;
 using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Camera.FilterContainer;
@@ -562,7 +563,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,

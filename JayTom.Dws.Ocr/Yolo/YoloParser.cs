@@ -236,13 +236,13 @@ namespace JayTom.Dws.Ocr.Yolo {
                 var yoloDatas = RestoreCoordinates(finalResultData, _scale);
                 yoloDatas = RestoreCenterCoordinates(yoloDatas);
                 stopwatch.Stop();
-                return yoloDatas.Select(s => new YoloInfo() {
-                    Label = _lables?[(int)s.BasicData[5]] ?? string.Empty,
-                    Confidence = s.BasicData[4],
-                    Rectangle = ExpandRegion(new Rectangle((int)s.BasicData[0],
-                         (int)s.BasicData[1],
-                         (int)s.BasicData[2],
-                         (int)s.BasicData[3]), rectangleScale),
+                return yoloDatas.Where(s => s.BasicData != null).Select(s => new YoloInfo() {
+                    Label = _lables?[(int)s.BasicData![5]] ?? string.Empty,
+                    Confidence = s.BasicData![4],
+                    Rectangle = ExpandRegion(new Rectangle((int)s.BasicData![0],
+                         (int)s.BasicData![1],
+                         (int)s.BasicData![2],
+                         (int)s.BasicData![3]), rectangleScale),
                     InferenceTimeInMilliseconds = (int)stopwatch.Elapsed.TotalMilliseconds
                 })?.ToList();
             }
@@ -452,10 +452,10 @@ namespace JayTom.Dws.Ocr.Yolo {
                 // Check if it is not data returned from a classification model before processing
                 if (dataList[0]?.BasicData?.Length > 2) {
                     foreach (var t in dataList.Where(t => t?.BasicData is not null && t.BasicData.Length > 3)) {
-                        t.BasicData[0] = t.BasicData[0] / scaleFactor;
-                        t.BasicData[1] = t.BasicData[1] / scaleFactor;
-                        t.BasicData[2] = t.BasicData[2] / scaleFactor;
-                        t.BasicData[3] = t.BasicData[3] / scaleFactor;
+                        t.BasicData![0] = t.BasicData![0] / scaleFactor;
+                        t.BasicData![1] = t.BasicData![1] / scaleFactor;
+                        t.BasicData![2] = t.BasicData![2] / scaleFactor;
+                        t.BasicData![3] = t.BasicData![3] / scaleFactor;
                     }
                 }
 

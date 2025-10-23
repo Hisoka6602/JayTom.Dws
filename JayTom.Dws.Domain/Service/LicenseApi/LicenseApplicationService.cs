@@ -235,13 +235,13 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                             })?.ToList();
 
                         var featureInfos = await _licenseFeatureRepository.Select(s =>
-                            s.LicenseApplicationInfoId.Equals(info.LicenseApplicationInfo.Id), o => o.Id, token);
+                            s.LicenseApplicationInfoId.Equals(info.LicenseApplicationInfo!.Id), o => o.Id, token);
 
                         var deleteRange = await _licenseFeatureRepository.DeleteRange(
                             featureInfos,
                             token);
 
-                        info.LicenseApplicationInfo.LicenseFeatureInfos = licenseFeatureInfos;
+                        info.LicenseApplicationInfo!.LicenseFeatureInfos = licenseFeatureInfos;
 
                         var update = await _licensePermissionTemplateRepository.Update(info, token);
                         return new KeyValuePair<bool, object>(update, $"修改{(update && deleteRange ? "成功" : "失败")}");
