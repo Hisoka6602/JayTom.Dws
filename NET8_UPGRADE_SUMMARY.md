@@ -368,5 +368,5 @@ _messageBus.Subscribe<PackageCreatedEvent>(async (@event, ct) => {
 ---
 
 **文档版本：** 1.0  
-**最后更新：** 2024-10-23  
+**最后更新：** 2025-10-23  
 **维护者：** 开发团队
