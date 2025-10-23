@@ -83,7 +83,11 @@ namespace JayTom.Dws.Application.EventHandlers {
                 _logger.Info($"Handling PackageWeightMeasuredEvent: PackageId={@event.PackageId}, Weight={@event.Weight}");
 
                 // 获取现有包裹
-                var package = await _packageRepository.GetByIdAsync(int.Parse(@event.PackageId), cancellationToken);
+                if (!int.TryParse(@event.PackageId, out int packageId)) {
+                    _logger.Warn($"Invalid PackageId format: PackageId={@event.PackageId}");
+                    return;
+                }
+                var package = await _packageRepository.GetByIdAsync(packageId, cancellationToken);
                 if (package == null) {
                     _logger.Warn($"Package not found: PackageId={@event.PackageId}");
                     return;
