@@ -128,7 +128,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
         /// </summary>
         public async Task<bool> DeleteAsync(int id, CancellationToken token = default) {
             // 先获取包裹信息以便清除条码缓存
-            var package = await GetByIdAsync(id, token);
+            var package = await _inner.GetByIdAsync(id, token);
             var result = await _inner.DeleteAsync(id, token);
             
             if (result && package != null) {
