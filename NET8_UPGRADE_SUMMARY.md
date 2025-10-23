@@ -1,7 +1,7 @@
 # .NET 8 升级和事件驱动架构完成总结
 
 ## 完成日期
-2025-10-23
+2024-10-23
 
 ## 任务概述
 根据问题要求完成了以下两项主要任务：
@@ -241,7 +241,7 @@ _messageBus.Subscribe<PackageCreatedEvent>(async (@event, ct) => {
 
 ### 4.2 安全性增强
 - .NET 8 是 LTS（长期支持）版本，支持到 2026 年 11 月
-- .NET 7 已于 2024 年 5 月停止支持
+- .NET 7 已于 2024 年 5 月 14 日停止支持
 - 持续的安全更新和补丁
 
 ### 4.3 新特性支持
@@ -326,7 +326,7 @@ _messageBus.Subscribe<PackageCreatedEvent>(async (@event, ct) => {
 
 ### 开发环境
 - .NET 8.0 SDK（最低版本 8.0.0）
-- Visual Studio 2022 17.8 或更高版本
+- Visual Studio 2022 17.9 或更高版本（推荐）
 - 或 Visual Studio Code + C# Dev Kit
 
 ### 运行时环境
@@ -368,5 +368,5 @@ _messageBus.Subscribe<PackageCreatedEvent>(async (@event, ct) => {
 ---
 
 **文档版本：** 1.0  
-**最后更新：** 2025-10-23  
+**最后更新：** 2024-10-23  
 **维护者：** 开发团队
