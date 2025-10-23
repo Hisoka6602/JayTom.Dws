@@ -50,7 +50,7 @@ var barCodeInfoModels = await dbSet.AsNoTracking()
 foreach (var service in hostedServices) {
     var serviceName = service.GetType().Name;
     NLog.LogManager.GetCurrentClassLogger().Error($"服务名: {serviceName}");
-    await service.StartAsync(default);  // 同步等待每个服务启动
+    await service.StartAsync(default);  // 依次异步等待每个服务启动（顺序启动，异步等待）
 }
 ```
 
