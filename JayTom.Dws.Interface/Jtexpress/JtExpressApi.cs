@@ -66,13 +66,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
+        public async Task<UploadResponse> UploadData([NotNull] string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             return await GenerateSegmentCode(barcode);
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
+        public async Task<UploadResponse> UploadData([NotNull] string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             var deliveryCode = string.Empty;
@@ -142,7 +142,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
         }
 
-        public async void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default,
+        public async void UploadInBackground([NotNull] string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             NLog.LogManager.GetCurrentClassLogger().Error($"进入提交方法");

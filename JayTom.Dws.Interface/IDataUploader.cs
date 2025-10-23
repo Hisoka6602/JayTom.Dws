@@ -25,7 +25,7 @@ namespace JayTom.Dws.Interface {
         /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight,
+        Task<UploadResponse> UploadData([NotNull] string barcode, double weight,
             double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
@@ -46,7 +46,7 @@ namespace JayTom.Dws.Interface {
         /// <param name="token"></param>
         /// <param name="imageInfo"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
+        Task<UploadResponse> UploadData([NotNull] string barcode, double weight, DateTime scanTime, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace JayTom.Dws.Interface {
         /// <summary>
         /// 包裹结束后上传(无返回接收)
         /// </summary>
-        void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
+        void UploadInBackground([NotNull] string barcode, double weight, DateTime scanTime, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default);
 

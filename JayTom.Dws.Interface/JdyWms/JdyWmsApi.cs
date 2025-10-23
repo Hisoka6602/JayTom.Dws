@@ -52,7 +52,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             }
         }
 
-        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
+        public async Task<UploadResponse> UploadData([NotNull] string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             UploadResponse response;
@@ -133,7 +133,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default,
+        public async Task<UploadResponse> UploadData([NotNull] string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             UploadResponse response;
@@ -218,7 +218,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
         }
 
-        public void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default,
+        public void UploadInBackground([NotNull] string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
         }
