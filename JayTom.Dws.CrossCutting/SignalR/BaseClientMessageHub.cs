@@ -21,7 +21,9 @@ namespace JayTom.Dws.CrossCutting.SignalR {
 
         public event Func<Exception, Task>? Reconnecting;
 
+#pragma warning disable CS0067 // Event is never used - This is part of the public API
         public event Func<object, Task>? ReceiveMessage;
+#pragma warning restore CS0067
 
         public async Task StartAsync(string url, Action<HubConnection> registerMethod, string computerName, string programName = "", string module = "", string remarks = "", CancellationToken token = default) {
             try {
@@ -238,7 +240,7 @@ namespace JayTom.Dws.CrossCutting.SignalR {
 
         protected virtual async Task OnReconnected(string? arg) {
             await Task.Yield();
-            NLog.LogManager.GetCurrentClassLogger().Error($"重连成功:id={_hubConnection.ConnectionId}");
+            NLog.LogManager.GetCurrentClassLogger().Error($"重连成功:id={_hubConnection?.ConnectionId}");
             IsConnected = true;
             ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
             await SetClientInfo(_computerName, _programName, _module, _remarks);

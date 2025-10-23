@@ -42,7 +42,7 @@ namespace JayTom.Dws.Interface.geek_ {
                         };
                     }
                 }
-                catch (Exception e) {
+                catch (Exception) {
                 }
                 _httpClientFactory = httpClientFactory;
             }
@@ -361,7 +361,7 @@ namespace JayTom.Dws.Interface.geek_ {
 
                 return streamContent;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return null;
             }
             finally {

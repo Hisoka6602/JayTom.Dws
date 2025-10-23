@@ -343,7 +343,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 }
                 //判断是否成功条件
             }
-            catch (Exception e) {
+            catch (Exception) {
                 isSuccess = false;
             }
             return isSuccess;

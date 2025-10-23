@@ -235,7 +235,7 @@ namespace JayTom.Dws.Plugin.SerialPort {
 
                 return byteArray;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return Array.Empty<byte>();
             }
         }

@@ -6,6 +6,7 @@ using Microsoft.Win32;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Runtime.Versioning;
 
 namespace JayTom.Dws.Utils {
 
@@ -18,6 +19,7 @@ namespace JayTom.Dws.Utils {
         private static extern IntPtr SendMessageTimeout(IntPtr hWnd, int Msg, int wParam, string lParam, int fuFlags,
             int uTimeout, IntPtr lpdwResult);
 
+        [SupportedOSPlatform("windows6.1")]
         public static string ConvertImageToBase64(this Image image) {
             try {
                 using (MemoryStream memoryStream = new MemoryStream()) {
@@ -35,7 +37,8 @@ namespace JayTom.Dws.Utils {
             }
         }
 
-        public static Image ConvertBase64ToImage(this string base64String) {
+        [SupportedOSPlatform("windows6.1")]
+        public static Image? ConvertBase64ToImage(this string base64String) {
             try {
                 var imageBytes = Convert.FromBase64String($"{base64String}");
 
@@ -49,6 +52,7 @@ namespace JayTom.Dws.Utils {
             }
         }
 
+        [SupportedOSPlatform("windows6.1")]
         public static Image AddTextWatermark(this Image image, string watermarkText, Color brushColor,
             int fontSize = 70, string familyName = "Arial") {
             try {
@@ -64,6 +68,7 @@ namespace JayTom.Dws.Utils {
             return image;
         }
 
+        [SupportedOSPlatform("windows")]
         public static KeyValuePair<bool, string> AddSystemEnvironmentVariable(string path, string variableName = "Path") {
             try {
                 using (RegistryKey? environmentKey = Registry.CurrentUser.OpenSubKey(@"Environment", true)) {
