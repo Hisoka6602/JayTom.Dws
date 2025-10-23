@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.SunnenPlugin", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Utils", "JayTom.Dws.Utils\JayTom.Dws.Utils.csproj", "{0B969C80-0E67-4D3C-821B-743D92EAD781}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JayTom.Dws.Tests", "JayTom.Dws.Tests\JayTom.Dws.Tests.csproj", "{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -251,6 +253,18 @@ Global
 		{0B969C80-0E67-4D3C-821B-743D92EAD781}.Release|x64.Build.0 = Release|x64
 		{0B969C80-0E67-4D3C-821B-743D92EAD781}.Release|x86.ActiveCfg = Release|x86
 		{0B969C80-0E67-4D3C-821B-743D92EAD781}.Release|x86.Build.0 = Release|x86
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Debug|x64.Build.0 = Debug|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Debug|x86.Build.0 = Debug|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x64.ActiveCfg = Release|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x64.Build.0 = Release|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x86.ActiveCfg = Release|Any CPU
+		{2E6F4CF7-ADF5-4741-9A0D-9D4A95718DE8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
