@@ -83,6 +83,7 @@ dotnet build JayTom.Dws.sln
 
 ### 核心文档
 - **[架构文档](ARCHITECTURE.md)**: 完整的系统架构设计、分层说明和技术栈（必读）
+- **[包管理修复总结](PACKAGE_MANAGEMENT_FIX.md)**: 集中式包管理修复详情和最佳实践
 - **[事件驱动架构计划](EVENT_DRIVEN_ARCHITECTURE_PLAN.md)**: 迁移到事件驱动架构的计划
 - **[项目清理文档](PROJECT_CLEANUP.md)**: 解决方案清理和重构的详细信息
 
@@ -292,9 +293,10 @@ dotnet test /p:CollectCoverage=true
 
 ## 版本历史
 - **2025-10-23**: 
-  - ✅ **修复集中式包管理违规**: 移除所有 `.csproj` 文件中的 PackageReference Version 属性，确保版本由 `Directory.Packages.props` 统一管理
+  - ✅ **修复集中式包管理违规**: 移除所有 `.csproj` 文件中的 PackageReference Version 属性（16个项目，80+包引用），确保版本由 `Directory.Packages.props` 统一管理。详见 [PACKAGE_MANAGEMENT_FIX.md](PACKAGE_MANAGEMENT_FIX.md)
   - ✅ **完善架构文档**: 新增 `ARCHITECTURE.md`，详细说明分层架构、依赖关系和设计原则
   - ✅ **架构优化**: 验证零边界入侵原则，确保核心层独立性
+  - ✅ **编译验证**: 验证包管理修复不影响项目构建
   - 项目清理：移除所有测试项目和 API 项目
   - 解决方案精简：从 100+ 个项目减少到 17 个核心项目
   - 添加项目状态和优化计划文档
