@@ -1,114 +1,114 @@
-# JayTom.Dws Project Cleanup Documentation
+# JayTom.Dws 项目清理文档
 
-## Overview
-This document describes the cleanup and restructuring of the JayTom.Dws solution to focus on the core client application.
+## 概述
+本文档描述了 JayTom.Dws 解决方案的清理和重构，以专注于核心客户端应用程序。
 
-## Changes Made
+## 已完成的变更
 
-### 1. Created Central Package Management
-A `Directory.Packages.props` file has been created at the solution root to centrally manage all NuGet package versions. This ensures consistency across all projects.
+### 1. 创建集中式包管理
+在解决方案根目录创建了 `Directory.Packages.props` 文件，用于集中管理所有 NuGet 包版本。这确保了所有项目之间的一致性。
 
-**Benefits:**
-- Single source of truth for package versions
-- Easier to update packages across all projects
-- Prevents version conflicts
-- Reduces maintenance overhead
+**优点：**
+- 包版本的单一事实来源
+- 更容易跨所有项目更新包
+- 防止版本冲突
+- 减少维护开销
 
-**Location:** `/Directory.Packages.props`
+**位置：** `/Directory.Packages.props`
 
-### 2. Created Focused Solution
-A new solution file `JayTom.Dws.Client.sln` has been created that includes only the core projects needed for the client application.
+### 2. 创建精简解决方案
+创建了新的解决方案文件 `JayTom.Dws.Client.sln`，仅包含客户端应用程序所需的核心项目。
 
-**Included Projects:**
-- **Core**: JayTom.Dws.Client (Main WPF Application)
-- **Domain**: JayTom.Dws.Data, JayTom.Dws.Domain
-- **Infrastructure**: JayTom.Dws.Infrastructure, JayTom.Dws.Interface, JayTom.Dws.Utils
-- **Device**: JayTom.Dws.Camera, JayTom.Dws.Nvr, JayTom.Dws.Ocr
-- **Plugin**: JayTom.Dws.Plugin, JayTom.Dws.PluginInterface
-- **License**: JayTom.Dws.License
+**包含的项目：**
+- **核心**: JayTom.Dws.Client（主 WPF 应用程序）
+- **领域**: JayTom.Dws.Data, JayTom.Dws.Domain
+- **基础设施**: JayTom.Dws.Infrastructure, JayTom.Dws.Interface, JayTom.Dws.Utils
+- **设备**: JayTom.Dws.Camera, JayTom.Dws.Nvr, JayTom.Dws.Ocr
+- **插件**: JayTom.Dws.Plugin, JayTom.Dws.PluginInterface
+- **许可证**: JayTom.Dws.License
 
-**Excluded Projects:**
-The following projects have been removed from the focused solution as they are:
-- Test/demo applications
-- API services not required by the client
-- Temporary/experimental projects
-- Management/administration tools
+**排除的项目：**
+以下项目已从精简解决方案中移除，因为它们是：
+- 测试/演示应用程序
+- 客户端不需要的 API 服务
+- 临时/实验性项目
+- 管理/管理工具
 
-Categories of excluded projects:
-- Test Projects (WpfApp1, WinFormsApp1, ConsoleApp1-7, etc.)
-- API Projects (ManagementApi, VideoApi, CloudApi, LicenseApi, PostSoapApi)
-- Management Tools (ManagementStudio, UpdaterClient)
-- Service Projects (Service, DataInteractionService, SystemStatusMonitorService, UploadCloudService)
-- Test/Demo Projects (All camera tests, HID tests, OCR tests, etc.)
-- Database Test Projects (LicenseDBTest, VideoApiDbTest, CloudApiDbTest, LicenseApiDbTest)
-- Temporary Projects (TemporaryClient, ForTestPr)
+排除项目的类别：
+- 测试项目（WpfApp1, WinFormsApp1, ConsoleApp1-7 等）
+- API 项目（ManagementApi, VideoApi, CloudApi, LicenseApi, PostSoapApi）
+- 管理工具（ManagementStudio, UpdaterClient）
+- 服务项目（Service, DataInteractionService, SystemStatusMonitorService, UploadCloudService）
+- 测试/演示项目（所有相机测试、HID 测试、OCR 测试等）
+- 数据库测试项目（LicenseDBTest, VideoApiDbTest, CloudApiDbTest, LicenseApiDbTest）
+- 临时项目（TemporaryClient, ForTestPr）
 
-### 3. Project Structure
+### 3. 项目结构
 
 ```
 JayTom.Dws/
-├── Directory.Packages.props          # Central package management
-├── JayTom.Dws.sln                    # Original full solution (preserved)
-├── JayTom.Dws.Client.sln             # New focused solution
-├── EVENT_DRIVEN_ARCHITECTURE_PLAN.md # Migration plan
-├── PROJECT_CLEANUP.md                # This file
+├── Directory.Packages.props          # 集中式包管理
+├── JayTom.Dws.sln                    # 原始完整解决方案（已保留）
+├── JayTom.Dws.Client.sln             # 新的精简解决方案
+├── EVENT_DRIVEN_ARCHITECTURE_PLAN.md # 迁移计划
+├── PROJECT_CLEANUP.md                # 本文件
 │
 ├── Core/
-│   └── JayTom.Dws.Client/           # Main WPF application
+│   └── JayTom.Dws.Client/           # 主 WPF 应用程序
 │
 ├── Domain/
-│   ├── JayTom.Dws.Data/             # Data models
-│   └── JayTom.Dws.Domain/           # Domain logic
+│   ├── JayTom.Dws.Data/             # 数据模型
+│   └── JayTom.Dws.Domain/           # 领域逻辑
 │
 ├── Infrastructure/
-│   ├── JayTom.Dws.Infrastructure/   # Core infrastructure
-│   ├── JayTom.Dws.Interface/        # Service interfaces
-│   └── JayTom.Dws.Utils/            # Utility classes
+│   ├── JayTom.Dws.Infrastructure/   # 核心基础设施
+│   ├── JayTom.Dws.Interface/        # 服务接口
+│   └── JayTom.Dws.Utils/            # 实用工具类
 │
 ├── Device/
-│   ├── JayTom.Dws.Camera/           # Camera integration
-│   ├── JayTom.Dws.Nvr/              # NVR integration
-│   └── JayTom.Dws.Ocr/              # OCR functionality
+│   ├── JayTom.Dws.Camera/           # 相机集成
+│   ├── JayTom.Dws.Nvr/              # NVR 集成
+│   └── JayTom.Dws.Ocr/              # OCR 功能
 │
 ├── Plugin/
-│   ├── JayTom.Dws.Plugin/           # Plugin implementations
-│   └── JayTom.Dws.PluginInterface/  # Plugin interfaces
+│   ├── JayTom.Dws.Plugin/           # 插件实现
+│   └── JayTom.Dws.PluginInterface/  # 插件接口
 │
 └── License/
-    └── JayTom.Dws.License/          # License management
+    └── JayTom.Dws.License/          # 许可证管理
 ```
 
-## Using the Focused Solution
+## 使用精简解决方案
 
-### Building the Project
+### 构建项目
 ```bash
-# Build the focused solution
+# 构建精简解决方案
 dotnet build JayTom.Dws.Client.sln
 
-# Build in Release mode
+# 在 Release 模式下构建
 dotnet build JayTom.Dws.Client.sln -c Release
 ```
 
-### Running the Application
+### 运行应用程序
 ```bash
-# Run the client application
+# 运行客户端应用程序
 dotnet run --project JayTom.Dws.Client/JayTom.Dws.Client.csproj
 ```
 
-### Adding/Updating Packages
-To add or update a package:
+### 添加/更新包
+要添加或更新包：
 
-1. Update the version in `Directory.Packages.props`
-2. Add the package reference without version to the project file:
+1. 在 `Directory.Packages.props` 中更新版本
+2. 在项目文件中添加不带版本的包引用：
    ```xml
    <PackageReference Include="PackageName" />
    ```
 
-## Migration to Event-Driven Architecture
+## 迁移到事件驱动架构
 
-See `EVENT_DRIVEN_ARCHITECTURE_PLAN.md` for detailed information about the planned migration to an event-driven architecture.
+有关计划迁移到事件驱动架构的详细信息，请参见 `EVENT_DRIVEN_ARCHITECTURE_PLAN.md`。
 
-## Dependency Graph
+## 依赖关系图
 
 ```
 JayTom.Dws.Client
@@ -132,42 +132,42 @@ JayTom.Dws.Client
 └── JayTom.Dws.Plugin
 ```
 
-## Benefits of Cleanup
+## 清理的好处
 
-1. **Simplified Solution**: Easier to navigate and understand
-2. **Faster Build Times**: Only building necessary projects
-3. **Better Focus**: Development team can focus on core functionality
-4. **Easier Onboarding**: New developers can understand the project structure quickly
-5. **Reduced Complexity**: Less cognitive overhead
-6. **Consistent Packages**: Central package management prevents version conflicts
+1. **简化的解决方案**：更易于导航和理解
+2. **更快的构建时间**：仅构建必要的项目
+3. **更好的专注**：开发团队可以专注于核心功能
+4. **更容易入门**：新开发人员可以快速理解项目结构
+5. **降低复杂性**：减少认知负担
+6. **一致的包**：集中式包管理可防止版本冲突
 
-## Original Solution
+## 原始解决方案
 
-The original `JayTom.Dws.sln` file has been preserved and remains available for:
-- Building API services
-- Running tests
-- Working with management tools
-- Backward compatibility
+原始的 `JayTom.Dws.sln` 文件已被保留，仍可用于：
+- 构建 API 服务
+- 运行测试
+- 使用管理工具
+- 向后兼容
 
-## Next Steps
+## 后续步骤
 
-1. Review the focused solution and ensure all required functionality is present
-2. Begin implementing the event-driven architecture (see EVENT_DRIVEN_ARCHITECTURE_PLAN.md)
-3. Update CI/CD pipelines to use the new focused solution
-4. Update developer documentation
-5. Consider archiving or removing unused test projects
+1. 审查精简解决方案并确保所有必需的功能都存在
+2. 开始实施事件驱动架构（参见 EVENT_DRIVEN_ARCHITECTURE_PLAN.md）
+3. 更新 CI/CD 管道以使用新的精简解决方案
+4. 更新开发者文档
+5. 考虑归档或删除未使用的测试项目
 
-## Questions or Issues
+## 问题或疑问
 
-If you have questions about this cleanup or need access to excluded projects, please:
-1. Check if the functionality exists in the core projects
-2. Review the original `JayTom.Dws.sln` for the full project list
-3. Contact the development team
+如果您对此清理有疑问或需要访问排除的项目，请：
+1. 检查核心项目中是否存在该功能
+2. 查看原始 `JayTom.Dws.sln` 以获取完整项目列表
+3. 联系开发团队
 
-## Changelog
+## 更新日志
 
 ### 2025-10-23
-- Created `Directory.Packages.props` for central package management
-- Created `JayTom.Dws.Client.sln` focused solution
-- Documented cleanup process
-- Created event-driven architecture migration plan
+- 创建了用于集中式包管理的 `Directory.Packages.props`
+- 创建了 `JayTom.Dws.Client.sln` 精简解决方案
+- 记录了清理过程
+- 创建了事件驱动架构迁移计划
