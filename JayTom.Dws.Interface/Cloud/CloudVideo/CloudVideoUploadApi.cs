@@ -257,7 +257,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
 
                 return streamContent;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return null;
             }
             finally {

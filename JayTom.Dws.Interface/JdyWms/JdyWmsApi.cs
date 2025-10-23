@@ -42,7 +42,7 @@ namespace JayTom.Dws.Interface.JdyWms {
                         Url = configuration["Url"];
                         TimeOut = Convert.ToInt32(configuration["TimeOut"]);
                     }
-                    catch (Exception e) {
+                    catch (Exception) {
                         Url = string.Empty;
                         TimeOut = 3000;
                     }

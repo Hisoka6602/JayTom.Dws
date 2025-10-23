@@ -273,7 +273,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
                 return bytes;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return new byte[] { 0x00 };
             }
         }

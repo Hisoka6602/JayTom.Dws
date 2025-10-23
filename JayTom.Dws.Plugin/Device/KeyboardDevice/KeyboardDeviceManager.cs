@@ -160,7 +160,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
                 return result > 0 ? buffer.ToString() : string.Empty;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return string.Empty;
             }
         }

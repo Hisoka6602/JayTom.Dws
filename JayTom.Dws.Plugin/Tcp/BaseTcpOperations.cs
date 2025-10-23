@@ -194,7 +194,7 @@ namespace JayTom.Dws.Plugin.Tcp {
 
                 return byteArray;
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return Array.Empty<byte>();
             }
         }

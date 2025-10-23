@@ -209,7 +209,6 @@ namespace JayTom.Dws.Ocr.Yolo {
                 var denseTensorInfo = GetDenseTensorInfo(bitmap, _inputDimensions ?? Array.Empty<int>(), _tensorWidth, _tensorHeight);
                 IReadOnlyCollection<NamedOnnxValue> container = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor(_inputName, denseTensorInfo) };
                 Tensor<float> output0;
-                Tensor<float>? output1;
                 var filteredDataArray = new List<YoloData>();
                 var finalResultData = new List<YoloData>();
                 if (_taskType == TaskType.Classify) {
