@@ -275,9 +275,10 @@ protected override async void OnInitialized() {
     }
     
     // 并行启动非关键服务
+    const int NonCriticalServiceTimeoutSeconds = 10;
     var startTasks = nonCriticalServices.Select(async service => {
         try {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(NonCriticalServiceTimeoutSeconds));
             await service.StartAsync(cts.Token);
             _logger.Info($"Service started: {service.GetType().Name}");
         } catch (Exception ex) {
