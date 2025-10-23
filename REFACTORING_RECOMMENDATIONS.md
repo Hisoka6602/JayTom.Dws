@@ -235,7 +235,7 @@ builder.Services.AddPooledDbContextFactory<CloudApiContext>(options => {
 }, poolSize: 512); // 增加连接池大小
 
 // 连接字符串优化
-"Server=127.0.0.1;Port=3306;Password=***;Database=CloudApi;User=root;Pooling=true;MinPoolSize=5;MaxPoolSize=100;ConnectionLifeTime=300;ConnectionTimeout=30;"
+"Server=127.0.0.1;Port=3306;Password=app_password;Database=CloudApi;User=cloudapi_app;Pooling=true;MinPoolSize=5;MaxPoolSize=100;ConnectionLifeTime=300;ConnectionTimeout=30;"
 ```
 
 ## 阶段 2：异步和并发优化（高优先级）
