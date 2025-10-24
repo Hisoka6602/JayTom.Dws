@@ -13,7 +13,7 @@ namespace JayTom.Dws.Domain.Specifications.PackageSpecifications {
 
         public PackageBasicInfoSpecification(string barcode) 
             : base(p => p.BarCodeInfo != null && p.BarCodeInfo.Barcode == barcode) {
-            AddInclude(p => p.BarCodeInfo);
+            AddInclude(p => p.BarCodeInfo!);
         }
     }
 
@@ -23,11 +23,11 @@ namespace JayTom.Dws.Domain.Specifications.PackageSpecifications {
     public class PackageDetailSpecification : BaseSpecification<PackageInfoModel> {
         public PackageDetailSpecification(int packageId) 
             : base(p => p.Id == packageId) {
-            AddInclude(p => p.BarCodeInfo);
-            AddInclude(p => p.WeightInfo);
-            AddInclude(p => p.VolumeInfo);
-            AddInclude(p => p.SortingInfo);
-            AddInclude(p => p.ExitInfo);
+            AddInclude(p => p.BarCodeInfo!);
+            AddInclude(p => p.WeightInfo!);
+            AddInclude(p => p.VolumeInfo!);
+            AddInclude(p => p.SortingInfo!);
+            AddInclude(p => p.ExitInfo!);
         }
     }
 
@@ -37,17 +37,17 @@ namespace JayTom.Dws.Domain.Specifications.PackageSpecifications {
     public class PackageFullInfoSpecification : BaseSpecification<PackageInfoModel> {
         public PackageFullInfoSpecification(int packageId) 
             : base(p => p.Id == packageId) {
-            AddInclude(p => p.BarCodeInfo);
-            AddInclude(p => p.WeightInfo);
-            AddInclude(p => p.VolumeInfo);
-            AddInclude(p => p.UploadInfo);
-            AddInclude(p => p.ExitInfo);
-            AddInclude(p => p.SortingInfo);
-            AddInclude(p => p.LogisticsInfo);
+            AddInclude(p => p.BarCodeInfo!);
+            AddInclude(p => p.WeightInfo!);
+            AddInclude(p => p.VolumeInfo!);
+            AddInclude(p => p.UploadInfo!);
+            AddInclude(p => p.ExitInfo!);
+            AddInclude(p => p.SortingInfo!);
+            AddInclude(p => p.LogisticsInfo!);
             AddInclude("OcrInfo.OcrDetailedInfos"); // 使用字符串 Include 处理嵌套
-            AddInclude(p => p.ImageInfos);
-            AddInclude(p => p.NvrInfos);
-            AddInclude(p => p.DeviceInfo);
+            AddInclude(p => p.ImageInfos!);
+            AddInclude(p => p.NvrInfos!);
+            AddInclude(p => p.DeviceInfo!);
         }
     }
 
@@ -71,10 +71,10 @@ namespace JayTom.Dws.Domain.Specifications.PackageSpecifications {
             }
 
             // 只加载列表必需的关联
-            AddInclude(p => p.BarCodeInfo);
-            AddInclude(p => p.WeightInfo);
-            AddInclude(p => p.VolumeInfo);
-            AddInclude(p => p.ExitInfo);
+            AddInclude(p => p.BarCodeInfo!);
+            AddInclude(p => p.WeightInfo!);
+            AddInclude(p => p.VolumeInfo!);
+            AddInclude(p => p.ExitInfo!);
 
             // 排序和分页
             ApplyOrderByDescending(p => p.PackageCreateTime);
@@ -103,11 +103,11 @@ namespace JayTom.Dws.Domain.Specifications.PackageSpecifications {
             }
 
             // 添加必要的关联
-            AddInclude(p => p.BarCodeInfo);
-            AddInclude(p => p.WeightInfo);
-            AddInclude(p => p.VolumeInfo);
-            AddInclude(p => p.ExitInfo);
-            AddInclude(p => p.DeviceInfo);
+            AddInclude(p => p.BarCodeInfo!);
+            AddInclude(p => p.WeightInfo!);
+            AddInclude(p => p.VolumeInfo!);
+            AddInclude(p => p.ExitInfo!);
+            AddInclude(p => p.DeviceInfo!);
 
             // 排序和分页
             ApplyOrderByDescending(p => p.PackageCreateTime);

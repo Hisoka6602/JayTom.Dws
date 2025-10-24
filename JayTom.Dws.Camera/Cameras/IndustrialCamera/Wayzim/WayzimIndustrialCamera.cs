@@ -12,6 +12,7 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
@@ -356,7 +357,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
@@ -368,7 +369,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
         public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,

@@ -17,6 +17,7 @@ using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
@@ -613,7 +614,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,

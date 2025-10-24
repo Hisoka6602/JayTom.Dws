@@ -18,6 +18,7 @@ using System.Drawing.Drawing2D;
 using Pen = System.Drawing.Pen;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
+using System.Diagnostics.CodeAnalysis;
 using Point = System.Drawing.Point;
 using Image = System.Drawing.Image;
 using Color = System.Drawing.Color;
@@ -611,7 +612,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             return Task.CompletedTask;
         }
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,

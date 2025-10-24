@@ -236,13 +236,13 @@ namespace JayTom.Dws.Ocr.Yolo {
                 var yoloDatas = RestoreCoordinates(finalResultData, _scale);
                 yoloDatas = RestoreCenterCoordinates(yoloDatas);
                 stopwatch.Stop();
-                return yoloDatas.Select(s => new YoloInfo() {
-                    Label = _lables?[(int)s.BasicData[5]] ?? string.Empty,
-                    Confidence = s.BasicData[4],
-                    Rectangle = ExpandRegion(new Rectangle((int)s.BasicData[0],
-                         (int)s.BasicData[1],
-                         (int)s.BasicData[2],
-                         (int)s.BasicData[3]), rectangleScale),
+                return yoloDatas.Where(s => s.BasicData != null).Select(s => new YoloInfo() {
+                    Label = _lables?[(int)s.BasicData![5]] ?? string.Empty,
+                    Confidence = s.BasicData![4],
+                    Rectangle = ExpandRegion(new Rectangle((int)s.BasicData![0],
+                         (int)s.BasicData![1],
+                         (int)s.BasicData![2],
+                         (int)s.BasicData![3]), rectangleScale),
                     InferenceTimeInMilliseconds = (int)stopwatch.Elapsed.TotalMilliseconds
                 })?.ToList();
             }
@@ -265,13 +265,13 @@ namespace JayTom.Dws.Ocr.Yolo {
         }
 
         private List<YoloData> NMSFilter(List<YoloData> initialFilterArray, float iouThreshold, bool globalIoU) {
-            // Sort the initial filter array in descending order based on confidence
+            // 根据置信度降序排序初始过滤数组
             var bubbleSortConfidence = BubbleSortConfidence(initialFilterArray);
 
-            // Initialize the result array
+            // 初始化结果数组
             var nmsFilterArray = new List<YoloData>();
 
-            // Use LinQ to filter elements based on IoU condition
+            // 使用 LINQ 根据 IoU 条件过滤元素
             nmsFilterArray.AddRange(bubbleSortConfidence.Where(element =>
                 nmsFilterArray.All(existingElement =>
                     (globalIoU || element?.BasicData?[5] == existingElement?.BasicData?[5]) &&
@@ -310,7 +310,7 @@ namespace JayTom.Dws.Ocr.Yolo {
         }
 
         private List<YoloData> ConfidenceFilter_Classification(Tensor<float> data, float confidenceThreshold) {
-            // Classification model returns output data like {1, 80} representing 80 categories, and the data is the confidence of each category.
+            // 分类模型返回的输出数据如 {1, 80} 代表 80 个类别，数据是每个类别的置信度
             var resultList = new List<YoloData>();
 
             for (var i = 0; i < data.Dimensions[1]; i++) {
@@ -449,17 +449,17 @@ namespace JayTom.Dws.Ocr.Yolo {
 
         private List<YoloData> RestoreCoordinates(List<YoloData> dataList, float scaleFactor) {
             if (dataList.Count > 0) {
-                // Check if it is not data returned from a classification model before processing
+                // 检查是否不是分类模型返回的数据再进行处理
                 if (dataList[0]?.BasicData?.Length > 2) {
                     foreach (var t in dataList.Where(t => t?.BasicData is not null && t.BasicData.Length > 3)) {
-                        t.BasicData[0] = t.BasicData[0] / scaleFactor;
-                        t.BasicData[1] = t.BasicData[1] / scaleFactor;
-                        t.BasicData[2] = t.BasicData[2] / scaleFactor;
-                        t.BasicData[3] = t.BasicData[3] / scaleFactor;
+                        t.BasicData![0] = t.BasicData![0] / scaleFactor;
+                        t.BasicData![1] = t.BasicData![1] / scaleFactor;
+                        t.BasicData![2] = t.BasicData![2] / scaleFactor;
+                        t.BasicData![3] = t.BasicData![3] / scaleFactor;
                     }
                 }
 
-                // If there are poses, restore the scale for them as well
+                // 如果有姿态点，也恢复其缩放比例
                 if (dataList[0].Poses != null) {
                     foreach (var t1 in dataList.SelectMany(t => t.Poses ?? Array.Empty<Pose>())) {
                         t1.X /= scaleFactor;
@@ -486,12 +486,12 @@ namespace JayTom.Dws.Ocr.Yolo {
         public class YoloData {
 
             /// <summary>
-            /// Used to store basic data: x, y, w, h, confidence, label.
+            /// 用于存储基本数据：x, y, w, h, 置信度, 标签
             /// </summary>
             public float[]? BasicData { get; set; }
 
             /// <summary>
-            /// Default to use a pose model with 17 keypoints.
+            /// 默认使用 17 个关键点的姿态模型
             /// </summary>
             public Pose[]? Poses { get; set; }
 
@@ -524,18 +524,18 @@ namespace JayTom.Dws.Ocr.Yolo {
         public class Pose {
 
             /// <summary>
-            /// x-coordinate of the pose point.
+            /// 姿态点的 x 坐标
             /// </summary>
             public float X { get; set; }
 
             /// <summary>
-            /// y-coordinate of the pose point.
+            /// 姿态点的 y 坐标
             /// </summary>
             public float Y { get; set; }
 
             /// <summary>
-            /// Confidence of the pose point.
-            /// When this value is low, it is likely to be outside the bounding box, generally using 0.5 as the threshold.
+            /// 姿态点的置信度
+            /// 当此值较低时，可能在边界框外，通常使用 0.5 作为阈值
             /// </summary>
             public float V { get; set; }
         }

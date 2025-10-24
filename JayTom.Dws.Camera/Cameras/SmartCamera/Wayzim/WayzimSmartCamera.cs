@@ -12,6 +12,7 @@ using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Camera.FilterContainer;
 using static JayTom.Dws.Camera.Cameras.SmartCamera.Irayple.DaHuaSmartCamera;
 
@@ -348,7 +349,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public bool IsHideNoRead { get; set; }
@@ -372,7 +373,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
 
         public event EventHandler<OcrResult>? OcrContentRecognized;
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,

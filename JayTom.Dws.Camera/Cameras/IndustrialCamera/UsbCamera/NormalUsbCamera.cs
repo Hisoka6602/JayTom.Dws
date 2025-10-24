@@ -15,6 +15,7 @@ using System.Collections.Concurrent;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
+using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
@@ -351,7 +352,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
         public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             _barCodeFilterContainer = new BarCodeFilterContainer {
                 Pattern = @params.RegularExpression,
                 MaxSize = @params.DuplicateBarcodeFilterCount,

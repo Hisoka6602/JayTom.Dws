@@ -5,6 +5,7 @@ using System.Drawing;
 using JayTom.Dws.Ocr;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
@@ -94,7 +95,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
         public event EventHandler<BarcodeReadEventArgs>? FilteredBarcodeReturned;
 
-        public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
+        public void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params) {
             throw new NotImplementedException();
         }
     }
