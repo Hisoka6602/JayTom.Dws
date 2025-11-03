@@ -10,6 +10,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
+    /// <summary>
+    /// 基于TouchSocket的TCP客户端实现
+    /// 支持自动重连和手动重连功能
+    /// 自动重连：通过TouchSocket的UseReconnection插件配置，设置为-1实现无限自动重连
+    /// 手动重连：通过Reconnect方法，传入count<=0实现无限手动重连
+    /// </summary>
     public class TouchSocketTcpClient : ITcpCommClient {
         private TouchSocket.Sockets.TcpClient? _tcpClient;
         public string IpAddress { get; private set; } = string.Empty;
@@ -99,7 +105,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
             if (count > 0) {
                 for (var i = 0; i < count; i++) {
-                    await Task.Delay(500, token);
+                    try {
+                        await Task.Delay(500, token);
+                    }
+                    catch (TaskCanceledException) {
+                        return false;
+                    }
                     NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
                     await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
@@ -108,14 +119,20 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 }
             }
             else {
-                do {
-                    await Task.Delay(500, token);
+                // Unlimited reconnection when count <= 0
+                while (!token.IsCancellationRequested) {
+                    try {
+                        await Task.Delay(500, token);
+                    }
+                    catch (TaskCanceledException) {
+                        return false;
+                    }
                     NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
                     await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
                         return true;
                     }
-                } while (true);
+                }
             }
             return false;
         }
@@ -153,7 +170,8 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     }
                     var touchSocketConfig = new TouchSocketConfig().SetRemoteIPHost(new IPHost($"{tcpConnect.Address}:{tcpConnect.Port}"))
                         .UsePlugin().SetBufferLength(tcpConnect.DataLength).ConfigurePlugins(a => {
-                            a.UseReconnection(20, true, 1000);
+                            // Use -1 for unlimited reconnection attempts
+                            a.UseReconnection(-1, true, 1000);
                         });
 
                     _tcpClient?.Setup(touchSocketConfig);

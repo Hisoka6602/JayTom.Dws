@@ -54,7 +54,9 @@ namespace JayTom.Dws.Plugin.Tcp {
         /// <summary>
         /// 重新连接
         /// </summary>
-        /// <returns></returns>
+        /// <param name="count">重连次数。当值大于0时，执行指定次数的重连；当值小于或等于0时，执行无限次重连直到成功或取消</param>
+        /// <param name="token">取消令牌，用于取消重连操作</param>
+        /// <returns>重连成功返回true，失败或取消返回false</returns>
         Task<bool> Reconnect(int count, CancellationToken token = default);
 
         /// <summary>
