@@ -105,10 +105,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public async Task<bool> Reconnect(int count, CancellationToken token = default) {
             if (count > 0) {
                 for (var i = 0; i < count; i++) {
-                    if (token.IsCancellationRequested) {
+                    try {
+                        await Task.Delay(500, token);
+                    }
+                    catch (TaskCanceledException) {
                         return false;
                     }
-                    await Task.Delay(500, token);
                     NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
                     await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
@@ -121,14 +123,14 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 while (!token.IsCancellationRequested) {
                     try {
                         await Task.Delay(500, token);
+                        NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
+                        await Connect(token: token);
+                        if (ConnectionStatus == ConnectionStatus.Connected) {
+                            return true;
+                        }
                     }
                     catch (TaskCanceledException) {
                         return false;
-                    }
-                    NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
-                    await Connect(token: token);
-                    if (ConnectionStatus == ConnectionStatus.Connected) {
-                        return true;
                     }
                 }
             }
