@@ -95,7 +95,7 @@ client.SetParameter(new TcpConnectParam {
 
 // 尝试连接
 var cts = new CancellationTokenSource();
-await client.Connect("127.0.0.1", 9999, token: cts.Token);
+await client.Connect(token: cts.Token);
 ```
 
 ### 示例2：带取消功能的手动无限重连
