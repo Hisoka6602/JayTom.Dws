@@ -10,6 +10,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
+    /// <summary>
+    /// 基于TouchSocket的TCP客户端实现
+    /// 支持自动重连和手动重连功能
+    /// 自动重连：通过TouchSocket的UseReconnection插件配置，设置为-1实现无限自动重连
+    /// 手动重连：通过Reconnect方法，传入count<=0实现无限手动重连
+    /// </summary>
     public class TouchSocketTcpClient : ITcpCommClient {
         private TouchSocket.Sockets.TcpClient? _tcpClient;
         public string IpAddress { get; private set; } = string.Empty;
