@@ -107,20 +107,16 @@ var cts = new CancellationTokenSource();
 // 5分钟后自动取消重连
 cts.CancelAfter(TimeSpan.FromMinutes(5));
 
-try {
-    // 无限重连直到成功或超时
-    bool result = await client.Reconnect(-1, cts.Token);
-    
-    if (result) {
-        Console.WriteLine("重连成功！");
-    }
-}
-catch (OperationCanceledException) {
+// 无限重连直到成功或超时
+bool result = await client.Reconnect(-1, cts.Token);
+
+if (result) {
+    Console.WriteLine("重连成功！");
+} else {
     Console.WriteLine("重连已取消");
 }
-finally {
-    client.Close();
-}
+
+client.Close();
 ```
 
 ### 示例3：有限次数重连
