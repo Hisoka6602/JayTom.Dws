@@ -180,7 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="DynamsoftCommon">
-      <HintPath>..\..\..\dynamsoft-barcode-reader-dotnet-9.6.30\dynamsoft-barcode-reader-dotnet-9.6.30\Samples\BarcodeReaderDemo\BarcodeReaderDemo\bin\Debug_VS2010\DynamsoftCommon.dll</HintPath>
+      <HintPath>..\..\..\Dll\DynamsoftCommon.dll</HintPath>
     </Reference>
     <Reference Include="NetSDKCS">
       <HintPath>..\JayTom.Dws.Camera\Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll</HintPath>
