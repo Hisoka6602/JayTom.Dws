@@ -33,8 +33,20 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         private static fCBDecode? _recordingfCbDecode;
         private static fTimeDownLoadPosCallBack? _timeDownLoadPosCallBack;
         private static bool isloaded;
-        private static Channel<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)> _fcbChannel = Channel.CreateUnbounded<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)>();
-        private static Channel<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)> _recordingChannel = Channel.CreateUnbounded<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)>();
+        private static readonly Channel<(Func<RealtimePreviewInfo, Task> Callback, RealtimePreviewInfo Preview)> _fcbChannel =
+            Channel.CreateBounded<(Func<RealtimePreviewInfo, Task>, RealtimePreviewInfo)>(
+                new BoundedChannelOptions(8) {
+                    SingleReader = true,
+                    FullMode = BoundedChannelFullMode.Wait
+                });
+        private static readonly Channel<(Func<RealtimePreviewInfo, Task> Callback, RealtimePreviewInfo Preview)> _recordingChannel =
+            Channel.CreateBounded<(Func<RealtimePreviewInfo, Task>, RealtimePreviewInfo)>(
+                new BoundedChannelOptions(8) {
+                    SingleReader = true,
+                    FullMode = BoundedChannelFullMode.Wait
+                });
+        private static Task? _visibleDecodeProcessor;
+        private static Task? _recordingDecodeProcessor;
         private readonly SemaphoreSlim _ptzOperationSlim = new(1);
         public static DaHuatechNVR Instance => _nvrInstance.Value;
         private static bool _isChangingViewSize;
@@ -42,50 +54,63 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         private DaHuatechNVR() {
             _instance ??= BaseDaHuatech.CreateInstance();
             _fCbDecode += (long port, ref FRAME_DECODE_INFO info, ref FRAME_INFO_EX frameInfo, IntPtr user) => {
-                if (!_fcbChannel.Writer.TryWrite((port, info, frameInfo, user))) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"-回调实时流异常");
+                var playInfo = _loginDev.Values
+                    .SelectMany(device => device.DevPlayInfos)
+                    .FirstOrDefault(item =>
+                        item.PlayChannelId.Equals((int)user) &&
+                        item.PlayPort == port &&
+                        item.PlaybackMode == PlaybackMode.RealTime);
+                if (playInfo?.RealtimePreviewCallBack is { } callback) {
+                    playInfo.CaptureSize = new Size(frameInfo.nWidth, frameInfo.nHeight);
+                    _fcbChannel.Writer.TryWrite((callback, new RealtimePreviewInfo {
+                        ChannelId = (int)user,
+                        RgbData = DhPlaySdk.ConvertFrameInfoToRgbByteArray(
+                            info,
+                            playInfo.NvrPreviewSize.Width,
+                            playInfo.NvrPreviewSize.Height),
+                        Width = playInfo.NvrPreviewSize.Width,
+                        Height = playInfo.NvrPreviewSize.Height
+                    }));
                 }
             };
             _recordingfCbDecode +=
                 (long port, ref FRAME_DECODE_INFO info, ref FRAME_INFO_EX frameInfo, IntPtr user) => {
-                    if (!_recordingChannel.Writer.TryWrite((port, info, frameInfo, user))) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"-回调录像流异常");
+                    if (_isChangingViewSize) {
+                        return;
+                    }
+                    var playInfo = _loginDev.Values
+                        .SelectMany(device => device.DevPlayInfos)
+                        .FirstOrDefault(item =>
+                            item.PlayChannelId.Equals((int)user) &&
+                            item.PlayPort == port &&
+                            item.PlaybackMode == PlaybackMode.Recording);
+                    if (playInfo?.PlayBackCallBack is { } callback) {
+                        playInfo.CaptureSize ??= new Size(frameInfo.nWidth, frameInfo.nHeight);
+                        _recordingChannel.Writer.TryWrite((callback, new RealtimePreviewInfo {
+                            ChannelId = (int)user,
+                            RgbData = ConvertFrameInfoToRgbByteArray(
+                                info,
+                                playInfo.NvrPreviewSize.Width,
+                                playInfo.NvrPreviewSize.Height),
+                            Width = playInfo.NvrPreviewSize.Width,
+                            Height = playInfo.NvrPreviewSize.Height
+                        }));
                     }
                 };
 
             _timeDownLoadPosCallBack += (handle, size, loadSize, index, recordfileinfo, user) => {
             };
-            ProcessVisibleDecodeChannel();
-            RecordingDecodeChannel();
+            _visibleDecodeProcessor = ProcessVisibleDecodeChannel();
+            _recordingDecodeProcessor = RecordingDecodeChannel();
         }
 
         /// <summary>
         /// 实时预览回调
         /// </summary>
-        private static async void ProcessVisibleDecodeChannel() {
+        private static async Task ProcessVisibleDecodeChannel() {
             await foreach (var item in _fcbChannel.Reader.ReadAllAsync()) {
-                var (port, pFrameDecodeInfo, pFrameInfo, pUser) = item;
                 try {
-                    var playInfo = _loginDev.Values
-                        .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos) // 扁平化 DevPlayInfos 列表
-                        .FirstOrDefault(devPlayInfo =>
-                            devPlayInfo.PlayChannelId.Equals((int)pUser) &&
-                            devPlayInfo.PlayPort == port &&
-                            devPlayInfo.PlaybackMode == PlaybackMode.RealTime);
-                    var callBack = playInfo?.RealtimePreviewCallBack;
-                    if (callBack != null && playInfo is not null) {
-                        var bytes = DhPlaySdk.ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
-
-                        _ = callBack(new RealtimePreviewInfo() {
-                            ChannelId = (int)pUser,
-                            RgbData = bytes,
-                            Width = playInfo.NvrPreviewSize.Width,
-                            Height = playInfo.NvrPreviewSize.Height,
-                        }).ConfigureAwait(false);
-                        if (playInfo.CaptureSize is not null) {
-                            playInfo.CaptureSize = new Size(pFrameInfo.nWidth, pFrameInfo.nHeight);
-                        }
-                    }
+                    await item.Callback(item.Preview).ConfigureAwait(false);
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"处理实时回调异常:{e}");
@@ -96,30 +121,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <summary>
         /// 录像回调
         /// </summary>
-        private static async void RecordingDecodeChannel() {
+        private static async Task RecordingDecodeChannel() {
             await foreach (var item in _recordingChannel.Reader.ReadAllAsync()) {
-                var (port, pFrameDecodeInfo, pFrameInfo, pUser) = item;
                 try {
-                    var playInfo = _loginDev.Values
-                        .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos) // 扁平化 DevPlayInfos 列表
-                        .FirstOrDefault(devPlayInfo =>
-                            devPlayInfo.PlayChannelId.Equals((int)pUser) &&
-                            devPlayInfo.PlayPort == port &&
-                            devPlayInfo.PlaybackMode == PlaybackMode.Recording);
-                    var callBack = playInfo?.PlayBackCallBack;
-                    /*var playInfo = _loginDev.FirstOrDefault().Value?.DevPlayInfos?.FirstOrDefault();
-                    var callBack = playInfo?.PlayBackCallBack;*/
-                    if (callBack != null && playInfo is not null && !_isChangingViewSize) {
-                        var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, playInfo.NvrPreviewSize.Width, playInfo.NvrPreviewSize.Height);
-
-                        _ = callBack(new RealtimePreviewInfo() {
-                            ChannelId = (int)pUser,
-                            RgbData = bytes,
-                            Width = playInfo.NvrPreviewSize.Width,
-                            Height = playInfo.NvrPreviewSize.Height,
-                        }).ConfigureAwait(false);
-                        playInfo.CaptureSize ??= new Size(pFrameInfo.nWidth, pFrameInfo.nHeight);
-                    }
+                    await item.Callback(item.Preview).ConfigureAwait(false);
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"处理实时回调异常:{e}");
@@ -409,11 +414,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public async void AddRealTimeWatermark(string ipAddress, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
+        public Task AddRealTimeWatermark(string ipAddress, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
             //每行间隔是70
             //获取位置坐标
-            await Task.Delay(10);
-
             if (_loginDev.TryGetValue(ipAddress, out var dev)) {
                 //添加
                 _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{ipAddress}-{channelId}",
@@ -425,7 +428,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                                 _historicalWatermarkInfos.Remove(key, out var info);
                                 if (info is not null && !_historicalWatermarkInfos.Any(a =>
                                         a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
-                                    DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                    _ = DeleteAllWatermarks(info.SerialNo, info.ChannelId);
                                 }
                                 UpDateRealTimeWatermark(_historicalWatermarkInfos);
                             }
@@ -442,6 +445,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             //判断是否超过上限
             //获取位置偏移
             //如果成功则添加到列表里面(填写过期移除)
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -452,10 +456,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public void AddSingleRealTimeWatermark(string ipAddress, int channelId, long packAgeTimestamp,
+        public Task AddSingleRealTimeWatermark(string ipAddress, int channelId, long packAgeTimestamp,
             string content, SecurityCameraWatermarkConfig config) {
             _historicalWatermarkInfos.Clear();
-            AddRealTimeWatermark(ipAddress, channelId, packAgeTimestamp, content, config);
+            return AddRealTimeWatermark(ipAddress, channelId, packAgeTimestamp, content, config);
         }
 
         /// <summary>
@@ -465,11 +469,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public async void AddRealTimeWatermark(List<(string IpAddress, int Channel)> devices, long packAgeTimestamp, string content,
+        public Task AddRealTimeWatermark(List<(string IpAddress, int Channel)> devices, long packAgeTimestamp, string content,
           SecurityCameraWatermarkConfig config) {
             //每行间隔是70
             //获取位置坐标
-            await Task.Delay(10);
             if (devices.Any()) {
                 foreach (var device in devices) {
                     if (_loginDev.TryGetValue(device.IpAddress, out var dev)) {
@@ -483,7 +486,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                                         _historicalWatermarkInfos.Remove(key, out var info);
                                         if (info is not null && !_historicalWatermarkInfos.Any(a =>
                                                 a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
-                                            DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                            _ = DeleteAllWatermarks(info.SerialNo, info.ChannelId);
                                         }
                                         UpDateRealTimeWatermark(_historicalWatermarkInfos);
                                     }
@@ -498,6 +501,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                 }
                 UpDateRealTimeWatermark(_historicalWatermarkInfos);
             }
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -507,10 +511,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public void AddSingleRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp,
+        public Task AddSingleRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp,
             string content, SecurityCameraWatermarkConfig config) {
             _historicalWatermarkInfos.Clear();
-            AddRealTimeWatermark(devices, packAgeTimestamp, content, config);
+            return AddRealTimeWatermark(devices, packAgeTimestamp, content, config);
         }
 
         private void UpDateRealTimeWatermark(ConcurrentDictionary<string, HistoricalWatermark> historicalWatermarkInfos) {
@@ -581,7 +585,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// </summary>
         /// <param name="ipAddress"></param>
         /// <param name="channelId"></param>
-        public async void DeleteAllWatermarks(string ipAddress, int channelId) {
+        public async Task DeleteAllWatermarks(string ipAddress, int channelId) {
             await Task.Delay(200);
             var waitTime = 3300;
             if (_loginDev.TryGetValue(ipAddress, out var dev)) {
@@ -904,7 +908,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         /// <param name="channelId"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        public async void SetResolution(string ipAddress, int channelId, int width, int height) {
+        public async Task SetResolution(string ipAddress, int channelId, int width, int height) {
             try {
                 await _changingViewSizeSlim.WaitAsync();
                 _isChangingViewSize = true;

@@ -18,7 +18,7 @@ namespace JayTom.Dws.Domain.Repository.VideoApiData {
         /// <param name="entity"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public new Task<bool> Insert([NotNull] VideoBarCodeInfoModel entity, CancellationToken token = default);
+        public new Task<bool> Insert(VideoBarCodeInfoModel entity, CancellationToken token = default);
 
         /// <summary>
         /// 获取条数

@@ -11,7 +11,6 @@ using JayTom.Dws.Data.CloudApiData;
 using Microsoft.EntityFrameworkCore;
 using MathNet.Numerics.Distributions;
 using System.Text.RegularExpressions;
-using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.Repository.CloudApi;
@@ -115,28 +114,14 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
             }
         }
 
-        public new async Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where,
+        public new async Task<int> Total(Expression<Func<PackageInfoModel, bool>> @where,
             CancellationToken token = default) {
             try {
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return 0;
-                return await dbSet.AsNoTracking()
-                    .OrderByDescending(o => o.PackageCreateTime)
-                    .Include(b => b.BarCodeInfo)
-                    .Include(b => b.WeightInfo)
-                    .Include(b => b.VolumeInfo)
-                    .Include(b => b.UploadInfo)
-                    .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
-                    .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Where(where)
-                    .CountAsync(cancellationToken: token);
+                return await dbSet.CountAsync(where, cancellationToken: token);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

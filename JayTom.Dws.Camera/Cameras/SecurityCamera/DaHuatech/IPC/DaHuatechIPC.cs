@@ -24,43 +24,40 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
         private static SemaphoreSlim _captureSlim = new(1);
         private static DecCBFun? _decCbFun;
-        private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel = Channel.CreateUnbounded<(int, IntPtr, int, DhPlaySdk.FRAME_INFO)>();
+        private static readonly Channel<(Func<Bitmap, Task> Callback, Bitmap Image)> _channel =
+            Channel.CreateBounded<(Func<Bitmap, Task>, Bitmap)>(
+                new BoundedChannelOptions(8) {
+                    SingleReader = true,
+                    FullMode = BoundedChannelFullMode.Wait
+                });
+        private static Task? _channelProcessor;
         public static DaHuatechIPC Instance => _ipcInstance.Value;
 
         private DaHuatechIPC() {
             _instance ??= BaseDaHuatech.CreateInstance();
             _decCbFun += delegate (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) {
-                // 解析图片
-                var frameInfo = info;
-
-                if (!_channel.Writer.TryWrite((port, buf, size, frameInfo))) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                var item = _loginDev.FirstOrDefault(entry => entry.Value.DevPlayInfo.PlayPort == port);
+                if (item.Value?.DevPlayInfo.RealtimeFrameBitmapCallBack is { } callback) {
+                    item.Value.DevPlayInfo.CaptureSize = new Size(info.nWidth, info.nHeight);
+                    var bitmap = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
+                    if (!_channel.Writer.TryWrite((callback, bitmap))) {
+                        bitmap.Dispose();
+                    }
                 }
             };
-            ProcessChannel();
+            _channelProcessor = ProcessChannel();
         }
 
         /// <summary>
         /// 处理回调
         /// </summary>
-        private static async void ProcessChannel() {
+        private static async Task ProcessChannel() {
             await foreach (var item in _channel.Reader.ReadAllAsync()) {
-                var (port, buf, size, info) = item;
                 try {
-                    var key = (from kvp in _loginDev where kvp.Value.DevPlayInfo.PlayPort == port select kvp)?.FirstOrDefault() ?? new KeyValuePair<string, IpcDevInfo>(string.Empty, new IpcDevInfo());
-                    var callBack = key.Value.DevPlayInfo.RealtimeFrameBitmapCallBack;
-                    if (callBack is not null) {
-                        var convertToBmp = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
-                        await callBack(convertToBmp).ConfigureAwait(false);
-                    }
-
-                    if (key.Value.DevPlayInfo.CaptureSize is null ||
-                        key.Value.DevPlayInfo.CaptureSize.Value.Height.Equals(info.nHeight) ||
-                        key.Value.DevPlayInfo.CaptureSize.Value.Width.Equals(info.nWidth)) {
-                        key.Value.DevPlayInfo.CaptureSize = new Size(info.nWidth, info.nHeight);
-                    }
+                    await item.Callback(item.Image).ConfigureAwait(false);
                 }
                 catch (Exception ex) {
+                    item.Image.Dispose();
                     NLog.LogManager.GetCurrentClassLogger().Error($"处理回调异常:{ex}");
                 }
             }
@@ -361,7 +358,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="callback"></param>
-        public void RegisterCaptureCallback(string serialNo, [NotNull] Func<CaptureInfo, Task> callback) {
+        public void RegisterCaptureCallback(string serialNo, Func<CaptureInfo, Task> callback) {
             var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
             if (tryGetValue && dev is not null) {
                 dev.DevPlayInfo.CaptureCallBack = callback;
@@ -373,7 +370,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="callback"></param>
-        public void RegisterRealtimeFrameCallback(string serialNo, [NotNull] Func<Bitmap, Task> callback) {
+        public void RegisterRealtimeFrameCallback(string serialNo, Func<Bitmap, Task> callback) {
             var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
             if (tryGetValue && dev is not null) {
                 dev.DevPlayInfo.RealtimeFrameBitmapCallBack = callback;

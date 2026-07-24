@@ -11,13 +11,12 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Windows.Media.Imaging;
 using System.Collections.Concurrent;
-using System.Collections.Specialized;
 using Image = System.Windows.Controls.Image;
 using JayTom.Dws.Data.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Models {
 
-    public class CameraItemInfoModel : BindableBase {
+    public class CameraItemInfoModel : BindableBase, IDisposable {
         private string _cameraName = string.Empty;
         private CameraType _type;
         private CameraStatus _status = CameraStatus.Disconnected;
@@ -29,80 +28,139 @@ namespace JayTom.Dws.Client.Models {
         private ICamera? _camera;
         private bool _isRealtimeImageEnabled;
         private Image? _imageControl;
+        /// <summary>
+        /// 图像处理取消源。
+        /// </summary>
         private readonly CancellationTokenSource _tokenSource = new();
+        /// <summary>
+        /// 有界图像队列。
+        /// </summary>
+        private readonly ConcurrentQueue<Bitmap> _bitmapQueue = new();
+        /// <summary>
+        /// 图像队列同步锁。
+        /// </summary>
+        private readonly object _bitmapQueueLock = new();
+        /// <summary>
+        /// 新图像到达信号。
+        /// </summary>
+        private readonly SemaphoreSlim _bitmapSignal = new(0, 1);
+        /// <summary>
+        /// 图像处理任务。
+        /// </summary>
+        private readonly Task _imageWorker;
         private CameraDisplayStatus _cameraDisplayStatus;
 
         public CameraItemInfoModel() {
-            if (this is INotifyCollectionChanged notifyCollectionChanged) {
-                notifyCollectionChanged.CollectionChanged +=
-                    delegate (object? sender, NotifyCollectionChangedEventArgs args) {
-                        if (args.Action == NotifyCollectionChangedAction.Remove && args.OldItems?.Contains(this) == true) {
-                            //移除
-                            BitmapQueue.Clear();
-                            _tokenSource.Cancel();
-                        }
-                    };
-            }
-            Task.Factory.StartNew(async () => {
+            _imageWorker = Task.Run(async () => {
                 while (!_tokenSource.IsCancellationRequested) {
                     try {
-                        await Task.Delay(5).ConfigureAwait(false);
-
-                        if (BitmapQueue.TryDequeue(out var bitmap) && this.Image != null) {
-                            var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-                            var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-
-                            // 使用 Dispatcher.InvokeAsync 进行 UI 线程操作
-                            await this.Image.Dispatcher.InvokeAsync(() => {
-                                try {
-                                    this.Image.WritePixels(
-                                        new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
-                                        bitmapData.Scan0,
-                                        bitmapData.Stride * bitmapData.Height,
-                                        bitmapData.Stride
-                                    );
-                                }
-                                finally {
-                                    // 确保位图在操作完成后解锁
-                                    bitmap.UnlockBits(bitmapData);
-                                }
-                            }, DispatcherPriority.Render).Task.ConfigureAwait(false);
-
-                            //NLog.LogManager.GetCurrentClassLogger().Error($"Image显示");
+                        await _bitmapSignal.WaitAsync(_tokenSource.Token).ConfigureAwait(false);
+                        Bitmap? bitmap = null;
+                        lock (_bitmapQueueLock) {
+                            while (_bitmapQueue.TryDequeue(out var queuedBitmap)) {
+                                bitmap?.Dispose();
+                                bitmap = queuedBitmap;
+                            }
                         }
+                        var image = Image;
+                        if (bitmap is not null && image is not null) {
+                            using (bitmap) {
+                                var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                                var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly,
+                                    System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                                await image.Dispatcher.InvokeAsync(() => {
+                                    try {
+                                        image.WritePixels(
+                                            new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
+                                            bitmapData.Scan0,
+                                            bitmapData.Stride * bitmapData.Height,
+                                            bitmapData.Stride
+                                        );
+                                    }
+                                    finally {
+                                        bitmap.UnlockBits(bitmapData);
+                                    }
+                                }, DispatcherPriority.Background).Task.ConfigureAwait(false);
+                            }
+                        }
+                        else {
+                            bitmap?.Dispose();
+                        }
+                    }
+                    catch (OperationCanceledException) when (_tokenSource.IsCancellationRequested) {
+                        break;
                     }
                     catch (Exception ex) {
                         NLog.LogManager.GetCurrentClassLogger().Error(ex, "Error processing image");
                     }
                 }
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
-            /*Task.Factory.StartNew(async () => {
-                while (!_tokenSource.IsCancellationRequested) {
-                    var tryDequeue = BitmapQueue.TryDequeue(out var bitmap);
-                    if (tryDequeue && bitmap is not null && this.Image is not null) {
-                        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-                        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                        /*await this.Image.Dispatcher.InvokeAsync(() => {
-                            this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
-                            bitmap.UnlockBits(bitmapData);
-                        }, DispatcherPriority.Render);#1#
-                        await Task.Run(() => {
-                            this.Image.Dispatcher.Invoke(() => {
-                                this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
-                                bitmap.UnlockBits(bitmapData);
-                            }, DispatcherPriority.Render);
-                        });
-                    }
-                    await Task.Delay(3);
-                }
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);*/
+                ClearImages();
+            });
         }
 
         /// <summary>
-        /// 图片队列
+        /// 将图像加入有界显示队列，只保留最新两帧。
         /// </summary>
-        public ConcurrentQueue<Bitmap> BitmapQueue { get; init; } = new();
+        /// <param name="bitmap">待显示图像。</param>
+        public void EnqueueImage(Bitmap bitmap) {
+            lock (_bitmapQueueLock) {
+                while (_bitmapQueue.Count >= 2 && _bitmapQueue.TryDequeue(out var staleBitmap)) {
+                    staleBitmap.Dispose();
+                }
+                _bitmapQueue.Enqueue(bitmap);
+                if (_bitmapSignal.CurrentCount == 0) {
+                    _bitmapSignal.Release();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 仅在时间戳更新时将图像加入显示队列，避免并发事件重复刷新。
+        /// </summary>
+        /// <param name="bitmap">待显示图像。</param>
+        /// <param name="timestamp">图像时间戳。</param>
+        /// <returns>成功接收新图像时返回 <see langword="true"/>。</returns>
+        public bool TryEnqueueImage(Bitmap bitmap, long timestamp) {
+            while (true) {
+                var currentTimestamp = Volatile.Read(ref _imageTimestamp);
+                if (timestamp <= currentTimestamp) {
+                    return false;
+                }
+
+                if (Interlocked.CompareExchange(ref _imageTimestamp, timestamp, currentTimestamp) ==
+                    currentTimestamp) {
+                    EnqueueImage(bitmap);
+                    return true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 清空并释放待显示图像。
+        /// </summary>
+        public void ClearImages() {
+            lock (_bitmapQueueLock) {
+                while (_bitmapQueue.TryDequeue(out var bitmap)) {
+                    bitmap.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 停止图像处理并释放排队图像。
+        /// </summary>
+        public void Dispose() {
+            if (_tokenSource.IsCancellationRequested) {
+                return;
+            }
+            _tokenSource.Cancel();
+            lock (_bitmapQueueLock) {
+                if (_bitmapSignal.CurrentCount == 0) {
+                    _bitmapSignal.Release();
+                }
+            }
+            ClearImages();
+        }
 
         public string CameraId {
             get => _cameraId;
@@ -118,8 +176,12 @@ namespace JayTom.Dws.Client.Models {
         /// 图片时间戳
         /// </summary>
         public long ImageTimestamp {
-            get => _imageTimestamp;
-            set => SetProperty(ref _imageTimestamp, value);
+            get => Volatile.Read(ref _imageTimestamp);
+            set {
+                if (Interlocked.Exchange(ref _imageTimestamp, value) != value) {
+                    RaisePropertyChanged();
+                }
+            }
         }
 
         /// <summary>

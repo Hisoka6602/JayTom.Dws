@@ -33,12 +33,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly ISortingInstructionRepository _sortingInstructionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
-        private List<SortingInstructionInfoModel> _sortingInstructionInfoModels = new();
-        private List<SortingInstructionBindingInfoModel> _sortingInstructionBindingInfoModels = new();
-        private List<PackageExitDefinitionInfoModel> _packageExitDefinitionInfoModels = new();
-        private List<CommunicationConnectionConfigInfoModel> _communicationConnectionConfigInfoModels = new();
-
-        private IDeviceCommunicationProtocol? _protocol;
+        private InstructionMapSnapshot _instructionMap = InstructionMapSnapshot.Empty;
+        private PackageExitDefinitionInfoModel[] _packageExitDefinitions =
+            Array.Empty<PackageExitDefinitionInfoModel>();
+        private CommunicationConnectionConfigInfoModel[] _connectionConfigurations =
+            Array.Empty<CommunicationConnectionConfigInfoModel>();
+        private readonly SemaphoreSlim _configurationUpdateGate = new(1, 1);
 
         public PackageExitUpdateBackgroundService(ISortingInstructionBindingRepository sortingInstructionBindingRepository,
             ISortingInstructionRepository sortingInstructionRepository,
@@ -51,74 +51,80 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is { } model) {
-                    switch (model.SettingsName) {
-                        case "SortingInstructionBindingItemSettings":
-                            //更新绑定信息
-                            //读指令
-                            _sortingInstructionInfoModels = await _sortingInstructionRepository.Select(s => s.Id > 0,
-                                o => o.Id);
-                            //读绑定
-                            _sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
-                                o => o.Id);
-                            break;
-
-                        case "PackageExitDefinitionItemSettings":
-                            //更新格口信息
-                            //读格口
-                            _packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                                o => o.Id > 0);
-                            break;
-
-                        case "CommunicationsItemsSettings":
-                            //更新协议信息
-                            //读格口
-                            _communicationConnectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(s => s.Id > 0);
-                            break;
+                    await _configurationUpdateGate.WaitAsync();
+                    try {
+                        switch (model.SettingsName) {
+                            case "SortingInstructionBindingItemSettings": {
+                                var instructions = await _sortingInstructionRepository.Select(
+                                    entity => entity.Id > 0,
+                                    entity => entity.Id);
+                                var bindings = await _sortingInstructionBindingRepository.Select(
+                                    entity => entity.Id > 0,
+                                    entity => entity.Id);
+                                Volatile.Write(
+                                    ref _instructionMap,
+                                    new InstructionMapSnapshot(
+                                        instructions.ToArray(),
+                                        bindings.ToArray()));
+                                break;
+                            }
+                            case "PackageExitDefinitionItemSettings":
+                                Volatile.Write(
+                                    ref _packageExitDefinitions,
+                                    (await _packageExitDefinitionRepository.Select(
+                                        entity => entity.Id > 0,
+                                        entity => entity.Id > 0)).ToArray());
+                                break;
+                            case "CommunicationsItemsSettings":
+                                Volatile.Write(
+                                    ref _connectionConfigurations,
+                                    (await _communicationConnectionConfigRepository
+                                        .CommunicationConnectionConfigItems(
+                                            entity => entity.Id > 0)).ToArray());
+                                break;
+                        }
+                    }
+                    finally {
+                        _configurationUpdateGate.Release();
                     }
                 }
             });
 
             //分拣指令
-            EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<InstructionReceived>(item => {
                 if (item is { } model && model.InstructionInfos?.Any() == true
                       ) {
+                    var instructionMap = Volatile.Read(ref _instructionMap);
+                    var packageExitDefinitions = Volatile.Read(ref _packageExitDefinitions);
+                    var connectionConfigurations = Volatile.Read(ref _connectionConfigurations);
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault() ?? new InstructionInfoModel();
                     switch (instructionInfoModel.InstructionType) {
                         //异常
                         case InstructionType.PackageException: {
-                                await Task.Delay(500);
                                 //返回异常
                                 //判断协议选择(如果无协议则直接使用字符串)
-                                var connectionConfigInfoModel = _communicationConnectionConfigInfoModels.FirstOrDefault(f =>
+                                var connectionConfigInfoModel = connectionConfigurations.FirstOrDefault(f =>
                                     f.ConnectionName.Equals(model.ConnectionName));
-                                var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
-                                    connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol ??= communicationProtocol switch {
-                                    CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                    CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                    CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
-                                    _ => null
-                                };
-                                var type = _protocol?.SortingExceptionReturnTypeConvert(instructionInfoModel.InstructionContent) ?? SortingExceptionReturnType.None;
+                                var protocol = CreateProtocol(connectionConfigInfoModel?.CommunicationProtocol);
+                                var type = protocol?.SortingExceptionReturnTypeConvert(instructionInfoModel.InstructionContent) ?? SortingExceptionReturnType.None;
 
                                 //匹配实际定义格口
-                                var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
+                                var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
                                 if (type == SortingExceptionReturnType.VehicleNumberMismatch) {
                                     exitContentConvert = "00 00";
                                 }
-                                var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
+                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
                                 //异常口
 
-                                var abnormalExit = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                var abnormalExit = packageExitDefinitions.FirstOrDefault(f =>
                                     f is { IsActive: true, Type: ExitType.AbnormalExit });
 
-                                var exitId = _sortingInstructionBindingInfoModels
+                                var exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
-                                var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
                                 EventAggregator.Instance.Publish(new PackageExitUpdateEvent {
                                     ExitType = SortingExitType.PhysicalExit,
@@ -140,30 +146,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         case InstructionType.PackageExceptionEx: {
                                 //返回异常
                                 //判断协议选择(如果无协议则直接使用字符串)
-                                var connectionConfigInfoModel = _communicationConnectionConfigInfoModels.FirstOrDefault(f =>
+                                var connectionConfigInfoModel = connectionConfigurations.FirstOrDefault(f =>
                                     f.ConnectionName.Equals(model.ConnectionName));
-                                var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
-                                    connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol ??= communicationProtocol switch {
-                                    CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                    CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                    CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
-                                    _ => null
-                                };
+                                var protocol = CreateProtocol(connectionConfigInfoModel?.CommunicationProtocol);
                                 //异常口
 
-                                var abnormalExit = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                var abnormalExit = packageExitDefinitions.FirstOrDefault(f =>
                                     f is { IsActive: true, Type: ExitType.AbnormalExit });
                                 //匹配实际定义格口
-                                var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
+                                var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
-                                var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
+                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
-                                var exitId = _sortingInstructionBindingInfoModels
+                                var exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
-                                var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
                                 EventAggregator.Instance.Publish(new PackageExitUpdateEvent {
                                     ExitType = SortingExitType.PhysicalExit,
@@ -183,25 +182,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         //发送
                         case InstructionType.SendSorting: {
                                 //找到包裹->更新到理论格口
-                                var connectionConfigInfoModel = _communicationConnectionConfigInfoModels.FirstOrDefault(f =>
+                                var connectionConfigInfoModel = connectionConfigurations.FirstOrDefault(f =>
                                     f.ConnectionName.Equals(model.ConnectionName));
-                                var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
-                                    connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol ??= communicationProtocol switch {
-                                    CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                    CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                    CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
-                                    _ => null
-                                };
-                                var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
+                                var protocol = CreateProtocol(connectionConfigInfoModel?.CommunicationProtocol);
+                                var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
-                                var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
+                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
-                                var exitId = _sortingInstructionBindingInfoModels
+                                var exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
-                                var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
                                 EventAggregator.Instance.Publish(new PackageExitUpdateEvent {
                                     ExitType = SortingExitType.TheoreticalExit,
@@ -222,26 +214,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         case InstructionType.SignalCallback: {
                                 //找到包裹->更新到物理格口
                                 //判断协议选择(如果无协议则直接使用字符串)
-                                var connectionConfigInfoModel = _communicationConnectionConfigInfoModels.FirstOrDefault(f =>
+                                var connectionConfigInfoModel = connectionConfigurations.FirstOrDefault(f =>
                                     f.ConnectionName.Equals(model.ConnectionName));
-                                var communicationProtocol = (CommunicationProtocol)Enum.Parse(typeof(CommunicationProtocol),
-                                    connectionConfigInfoModel?.CommunicationProtocol ?? "None");
-                                _protocol ??= communicationProtocol switch {
-                                    CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
-                                    CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
-                                    CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
-                                    _ => null
-                                };
+                                var protocol = CreateProtocol(connectionConfigInfoModel?.CommunicationProtocol);
 
-                                var exitContentConvert = _protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
+                                var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
-                                var instructionBindingId = _sortingInstructionInfoModels.FirstOrDefault(f =>
+                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
-                                var exitId = _sortingInstructionBindingInfoModels
+                                var exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
-                                var packageExitDefinitionInfoModel = _packageExitDefinitionInfoModels.FirstOrDefault(f =>
+                                var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f =>
                                     f.Id.Equals(exitId ?? 0));
                                 //更新理论格口
                                 EventAggregator.Instance.Publish(new PackageExitUpdateEvent {
@@ -272,17 +257,46 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         private async Task ReadDefaultConfig() {
             //读指令
-            _sortingInstructionInfoModels = await _sortingInstructionRepository.Select(s => s.Id > 0,
+            var instructions = await _sortingInstructionRepository.Select(s => s.Id > 0,
                 o => o.Id);
             //读绑定
-            _sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
+            var bindings = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
                 o => o.Id);
+            Volatile.Write(
+                ref _instructionMap,
+                new InstructionMapSnapshot(instructions.ToArray(), bindings.ToArray()));
 
             //读格口
-            _packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.Id > 0);
+            Volatile.Write(
+                ref _packageExitDefinitions,
+                (await _packageExitDefinitionRepository.Select(s => s.Id > 0,
+                    o => o.Id > 0)).ToArray());
             //通讯协议
-            _communicationConnectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(s => s.Id > 0);
+            Volatile.Write(
+                ref _connectionConfigurations,
+                (await _communicationConnectionConfigRepository
+                    .CommunicationConnectionConfigItems(s => s.Id > 0)).ToArray());
+        }
+
+        private static IDeviceCommunicationProtocol? CreateProtocol(string? protocolName) {
+            if (!Enum.TryParse<CommunicationProtocol>(protocolName, true, out var communicationProtocol)) {
+                return null;
+            }
+
+            return communicationProtocol switch {
+                CommunicationProtocol.Wxkc => new WxkcCommunicationProtocol(),
+                CommunicationProtocol.JT_ST => new JtstCommunicationProtocol(),
+                CommunicationProtocol.CaiNiao => new CaiNiaoCommunicationProtocol(),
+                _ => null
+            };
+        }
+
+        private sealed record InstructionMapSnapshot(
+            SortingInstructionInfoModel[] Instructions,
+            SortingInstructionBindingInfoModel[] Bindings) {
+            public static readonly InstructionMapSnapshot Empty = new(
+                Array.Empty<SortingInstructionInfoModel>(),
+                Array.Empty<SortingInstructionBindingInfoModel>());
         }
     }
 }

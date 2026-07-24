@@ -39,7 +39,7 @@ namespace JayTom.Dws.Plugin.Ftp {
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        List<string>? GetFileList(CancellationToken cancellationToken = default);
+        Task<List<string>?> GetFileList(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 上传文件

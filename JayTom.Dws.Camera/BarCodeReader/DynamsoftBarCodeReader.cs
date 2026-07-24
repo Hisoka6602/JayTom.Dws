@@ -29,20 +29,32 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         private int _framenum = 0;
         private CancellationTokenSource _stopCancellationTokenSource = new();
         private readonly ConcurrentQueue<Bitmap> _bitmapQueue = new();
+        private readonly SemaphoreSlim _frameSignal = new(0, 1);
         private Task? _readerThread;
 
         //图片缩放百分比
         private int _scalePercentage = 50;
 
-        public async void Dispose() {
+        public void Dispose() {
             _stopCancellationTokenSource.Cancel();
+            try {
+                _frameSignal.Release();
+            }
+            catch (SemaphoreFullException) {
+            }
             if (_readerThread != null) {
-                await _readerThread;
+                try {
+                    _readerThread.GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException) {
+                }
                 _readerThread?.Dispose();
             }
 
             _readerThread = null;
-
+            while (_bitmapQueue.TryDequeue(out var bitmap)) {
+                bitmap.Dispose();
+            }
             _mBarcodeReader?.Dispose();
         }
 
@@ -51,12 +63,18 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             TextResult[]? bars = null;
 
             if (_scalePercentage >= 0) {
-                bitmap = GenerateThumbnail(bitmap, (int)(bitmap.Width * ((float)_scalePercentage / 100)),
-                    (int)(bitmap.Height * ((float)_scalePercentage / 100))) ?? bitmap;
+                var scaledBitmap = GenerateThumbnail(bitmap, (int)(bitmap.Width * ((float)_scalePercentage / 100)),
+                    (int)(bitmap.Height * ((float)_scalePercentage / 100)));
+                if (scaledBitmap is not null) {
+                    bitmap.Dispose();
+                    bitmap = scaledBitmap;
+                }
             }
             var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
+            var lockTaken = false;
             try {
                 await _semaphoreSlim.WaitAsync(token);
+                lockTaken = true;
                 if (_mBarcodeReader is not null) {
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
@@ -70,7 +88,9 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
-                _semaphoreSlim.Release();
+                if (lockTaken) {
+                    _semaphoreSlim.Release();
+                }
             }
 
             //解析条码
@@ -88,7 +108,6 @@ namespace JayTom.Dws.Camera.BarCodeReader {
 
                 barcodeResult.RecognitionTime = elapsedMilliseconds;
 
-                NLog.LogManager.GetCurrentClassLogger().Info($"识别耗时:{elapsedMilliseconds}");
             }
             return barcodeResult;
         }
@@ -96,7 +115,15 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         public event EventHandler<BarcodeResult>? BarcodeRead;
 
         public void EnqueueFrame(Bitmap bitmap) {
+            while (_bitmapQueue.Count >= 3 && _bitmapQueue.TryDequeue(out var staleBitmap)) {
+                staleBitmap.Dispose();
+            }
             _bitmapQueue.Enqueue(bitmap);
+            try {
+                _frameSignal.Release();
+            }
+            catch (SemaphoreFullException) {
+            }
         }
 
         public async Task<KeyValuePair<bool, string>> SetBarcodeReaderParameter(Dictionary<BarcodeReaderParameter, object> parameters) {
@@ -376,13 +403,17 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             if (_readerThread is null) {
                 _stopCancellationTokenSource = new CancellationTokenSource();
                 _readerThread = Task.Run(async () => {
-                    while (!_stopCancellationTokenSource.IsCancellationRequested) {
-                        await Task.Delay(1).ConfigureAwait(false);
+                    var token = _stopCancellationTokenSource.Token;
+                    while (!token.IsCancellationRequested) {
                         try {
-                            if (_bitmapQueue.Count > 3) {
-                                _bitmapQueue.Clear();
+                            await _frameSignal.WaitAsync(token).ConfigureAwait(false);
+                            Bitmap? image = null;
+                            while (_bitmapQueue.TryDequeue(out var queuedImage)) {
+                                image?.Dispose();
+                                image = queuedImage;
                             }
-                            if (_bitmapQueue.TryDequeue(out var image)) {
+
+                            if (image is not null) {
                                 var barcodeResult = new BarcodeResult() {
                                     Image = image,
                                     ScanTime = DateTime.Now
@@ -400,8 +431,6 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                         catch (Exception e) {
                             OnExceptionOccurred(e);
                         }
-
-                        await Task.Delay(1);
                     }
                 });
             }
@@ -410,8 +439,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
 
         public bool IsInitialized { get; private set; }
 
-        protected virtual async void OnExceptionOccurred(Exception e) {
-            await Task.Yield();
+        protected virtual void OnExceptionOccurred(Exception e) {
             ExceptionOccurred?.Invoke(this, e);
         }
 
@@ -589,9 +617,13 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             };
         }
 
-        protected virtual async void OnBarcodeRead(BarcodeResult e) {
-            await Task.Yield();
-            BarcodeRead?.Invoke(this, e);
+        protected virtual void OnBarcodeRead(BarcodeResult e) {
+            var handler = BarcodeRead;
+            if (handler is null) {
+                e.Image?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
     }
 }

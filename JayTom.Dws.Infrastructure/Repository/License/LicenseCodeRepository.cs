@@ -64,7 +64,7 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
             }
         }
 
-        public async Task<bool> UpdateRange(List<LicenseCodeInfo> entities, CancellationToken token) {
+        public new async Task<bool> UpdateRange(List<LicenseCodeInfo> entities, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();

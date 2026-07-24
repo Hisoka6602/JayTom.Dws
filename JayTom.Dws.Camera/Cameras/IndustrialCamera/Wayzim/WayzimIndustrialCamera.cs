@@ -18,8 +18,8 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
     public class WayzimIndustrialCamera : IIndustrialCamera {
-        private SemaphoreSlim _semaphoreSlim = new(1, 1);
-        private SemaphoreSlim _takeSlim = new(1, 1);
+        private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private readonly SemaphoreSlim _takeSlim = new(1, 1);
         private long _frameNo = 0;
 
         //过滤器
@@ -28,7 +28,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         /// <summary>
         /// 设备列表
         /// </summary>
-        private static ConcurrentDictionary<string, CameraInfo> _devInfo = new();
+        private static readonly ConcurrentDictionary<string, CameraInfo> _devInfo = new();
 
         /// <summary>
         /// 图像回调线程
@@ -50,24 +50,27 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         public WayzimIndustrialCamera() {
         }
 
-        public async void Dispose() {
+        public void Dispose() {
+            var cameraInfo = Info;
             if (Status != CameraStatus.Uninitialized &&
                 Status != CameraStatus.Disconnected) {
-                await Stop();
+                Stop().GetAwaiter().GetResult();
                 _cancellationTokenSource?.Cancel();
-                await Task.Delay(200);
                 if (_imageCallbackThread != null) {
-                    await _imageCallbackThread;
-                    _imageCallbackThread?.Dispose();
+                    try {
+                        _imageCallbackThread.GetAwaiter().GetResult();
+                    }
+                    catch (OperationCanceledException) {
+                    }
+                    _imageCallbackThread.Dispose();
                     _imageCallbackThread = null;
                 }
-                this.Info = null;
             }
 
             OnCameraUnregistered(new CameraUnregisteredEventArgs() {
-                CameraInfo = this.Info
+                CameraInfo = cameraInfo
             });
-            System.GC.Collect();
+            Info = null;
         }
 
         public CameraInfo? Info { get; private set; }
@@ -274,7 +277,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             if (Status == CameraStatus.Running &&
                 this.Info is not null) {
                 var icamStopCamera = ICAMAPI.ICAM_StopCamera(this.Info.Id);
-                return Task.FromResult(icamStopCamera == 0 ? new KeyValuePair<bool, string>(true, "停止成功") : new KeyValuePair<bool, string>(true, $"停止失败,状态码:{icamStopCamera}"));
+                if (icamStopCamera == 0) {
+                    OnCameraStopped(new CameraStoppedEventArgs {
+                        CameraInfo = Info
+                    });
+                    return Task.FromResult(new KeyValuePair<bool, string>(true, "停止成功"));
+                }
+                return Task.FromResult(new KeyValuePair<bool, string>(false, $"停止失败,状态码:{icamStopCamera}"));
             }
             OnCameraStopped(new CameraStoppedEventArgs() {
                 CameraInfo = this.Info
@@ -299,56 +308,61 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            Task.Run(async () => {
-                await Task.Delay(TakePhotoDelay, cancellation);
-                if (Status == CameraStatus.Running &&
-                    this.Info is not null) {
-                    try {
-                        Bitmap? bitmap = null;
-                        Bitmap? thumbnailImage = null;
-                        var img = new ImageModelCpp();
-                        await _takeSlim.WaitAsync(cancellation);
-                        int status = ICAMAPI.ICAM_FetchFrame(this.Info.Id, ref img, 300);
-                        if (status == 0) {
-                            bitmap = await GetBitmapAsync(img);
-                            thumbnailImage = GenerateThumbnail(bitmap);
-                        }
-                        else {
-                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                Exception = new Exception($"截图失败,状态码:{status}")
-                            });
-                        }
-
-                        OnPhotoTaken(new PhotoTakenEventArgs {
-                            Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            Image = bitmap,
-                            PhotoTime = DateTime.Now,
-                            ThumbImage = thumbnailImage,
-                            Barcode = barcode,
-                            BarcodeTimestamp = barcodeTimestamp
-                        });
-                    }
-                    catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
-                        });
-                    }
-                    finally {
-                        _takeSlim.Release();
-                    }
-                }
-            }, cancellation);
-            return Task.CompletedTask;
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+            await Task.Delay(TakePhotoDelay, cancellation);
+            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
-            Task.Run(async () => {
-                await Task.Delay(delay, cancellation);
-                await TakePhotoAsync(barcode, barcodeTimestamp, cancellation);
-            }, cancellation);
-            return Task.CompletedTask;
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            await Task.Delay(delay, cancellation);
+            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
+        }
+
+        private async Task CapturePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation) {
+            if (Status != CameraStatus.Running || Info is null) {
+                return;
+            }
+
+            var lockTaken = false;
+            try {
+                Bitmap? bitmap = null;
+                Bitmap? thumbnailImage = null;
+                var image = new ImageModelCpp();
+                await _takeSlim.WaitAsync(cancellation);
+                lockTaken = true;
+                var status = ICAMAPI.ICAM_FetchFrame(Info.Id, ref image, 300);
+                if (status == 0) {
+                    bitmap = await GetBitmapAsync(image);
+                    thumbnailImage = GenerateThumbnail(bitmap);
+                }
+                else {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new Exception($"截图失败,状态码:{status}")
+                    });
+                }
+
+                OnPhotoTaken(new PhotoTakenEventArgs {
+                    Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                    CameraSerialNumber = Info.SerialNumber,
+                    Image = bitmap,
+                    PhotoTime = DateTime.Now,
+                    ThumbImage = thumbnailImage,
+                    Barcode = barcode,
+                    BarcodeTimestamp = barcodeTimestamp
+                });
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) {
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
+                });
+            }
+            finally {
+                if (lockTaken) {
+                    _takeSlim.Release();
+                }
+            }
         }
 
         public int TakePhotoDelay { get; set; }
@@ -356,7 +370,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public System.Drawing.Color BarcodeBorderColor { get; set; } = System.Drawing.Color.LawnGreen;
@@ -383,13 +397,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             BarCodeFilterContainer.ResetFilter();
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
@@ -526,35 +538,29 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             }
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
         }
 
-        protected virtual async void OnBarcodeRead(BarcodeReadEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnBarcodeRead(BarcodeReadEventArgs e) {
             BarcodeRead?.Invoke(this, e);
         }
 
-        protected virtual async void OnPhotoTaken(PhotoTakenEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnPhotoTaken(PhotoTakenEventArgs e) {
             PhotoTaken?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraUnregistered?.Invoke(this, e);
         }

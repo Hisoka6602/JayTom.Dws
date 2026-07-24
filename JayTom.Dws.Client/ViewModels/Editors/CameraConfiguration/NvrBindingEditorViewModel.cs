@@ -23,8 +23,10 @@ using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
-    public class NvrBindingEditorViewModel : BindableBase {
+namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
+{
+    public class NvrBindingEditorViewModel : BindableBase
+    {
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
@@ -36,19 +38,22 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private NvrBindingParamInfoModel _nvrBindingParamInfoModel = new();
         private SnackbarMessageQueue _nvrBindingEditorViewMessageQueue = new(TimeSpan.FromSeconds(1));
 
-        public SnackbarMessageQueue NvrBindingEditorViewMessageQueue {
+        public SnackbarMessageQueue NvrBindingEditorViewMessageQueue
+        {
             get => _nvrBindingEditorViewMessageQueue;
             set => SetProperty(ref _nvrBindingEditorViewMessageQueue, value);
         }
 
         public string Identifier { get; set; } = string.Empty;
 
-        public ObservableCollection<NvrBindingItemModel> NvrBindingItems {
+        public ObservableCollection<NvrBindingItemModel> NvrBindingItems
+        {
             get => _nvrBindingItems;
             set => SetProperty(ref _nvrBindingItems, value);
         }
 
-        public NvrBindingParamInfoModel NvrBindingParamInfoModel {
+        public NvrBindingParamInfoModel NvrBindingParamInfoModel
+        {
             get => _nvrBindingParamInfoModel;
             set => SetProperty(ref _nvrBindingParamInfoModel, value);
         }
@@ -56,7 +61,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         public NvrBindingEditorViewModel(IIpcNvrConfigRepository ipcNvrConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             INvrCameraBindingRepository nvrCameraBindingRepository,
-            IDialogService dialogService) {
+            IDialogService dialogService)
+        {
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
@@ -65,13 +71,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object? obj) {
+        private async void LoadedDelegate(object? obj)
+        {
             _ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             var bindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-            if (obj is not null || NvrBindingItems.Any(a => a.Status != NvrStatus.Online && a.Status != NvrStatus.LoginFailed)) {
+            if (obj is not null || NvrBindingItems.Any(a => a.Status != NvrStatus.Online && a.Status != NvrStatus.LoginFailed))
+            {
                 var nvrBindingItemModels = _ipcNvrConfigInfoModels
                     .Where(w => w.Type == (int)DeviceType.NVR)
-                    .SelectMany((s, i) => Enumerable.Range(1, s.ChannelCount).Select(channelIndex => new NvrBindingItemModel {
+                    .SelectMany((s, i) => Enumerable.Range(1, s.ChannelCount).Select(channelIndex => new NvrBindingItemModel
+                    {
                         Num = i + 1,
                         Brand = s.Brand,
                         IpAddress = s.IpAddress,
@@ -93,17 +102,19 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     }))
                     ?.ToList();
 
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     NvrBindingItems.Clear();
                     await Task.Delay(200);
                     NvrBindingItems.AddRange(nvrBindingItemModels);
                     foreach (var model in NvrBindingItems.Where(w =>
                                  !w.Username.Equals(string.Empty) &&
                                  !w.Password.Equals(string.Empty) &&
-                                 !w.Brand.Equals(string.Empty))) {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                                 !w.Brand.Equals(string.Empty)))
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
                             model.Status = NvrStatus.LoggingIn;
-                            return Task.CompletedTask;
                         });
                     }
                     //后面以下的针对性代码都需要替换
@@ -117,27 +128,35 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                         !w.Username.Equals(string.Empty) &&
                         !w.Password.Equals(string.Empty) &&
                         !w.Brand.Equals(string.Empty)).GroupBy(g => new { g.SerialNumber, g.Username, g.Password, g.Brand }).ToList();
-                    Parallel.ForEach(devices, async device => {
-                        if (device.Key.Brand.Equals("DaHua", StringComparison.InvariantCultureIgnoreCase)) {
+                    await Task.WhenAll(devices.Select(async device =>
+                    {
+                        if (device.Key.Brand.Equals("DaHua", StringComparison.InvariantCultureIgnoreCase))
+                        {
                             //大华登录
                             var (key, value) = await baseDaHuatech.LogIn(device.Key.SerialNumber, device.Key.Username, device.Key.Password);
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 foreach (var model in NvrBindingItems.Where(w =>
-                                             w.SerialNumber.Equals(device.Key.SerialNumber))) {
+                                             w.SerialNumber.Equals(device.Key.SerialNumber)))
+                                {
                                     model.Status = key ? NvrStatus.Online : NvrStatus.LoginFailed;
                                 }
                             });
                         }
-                    });
+                    }));
 
-                    foreach (var model in NvrBindingItems.Where(w => w.Status == NvrStatus.LoggingIn)) {
+                    foreach (var model in NvrBindingItems.Where(w => w.Status == NvrStatus.LoggingIn))
+                    {
                         model.Status = NvrStatus.LoginFailed;
                     }
-                });
+                }).Task.Unwrap();
             }
-            else {
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    foreach (var model in NvrBindingItems) {
+            else
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    foreach (var model in NvrBindingItems)
+                    {
                         model.IsNvrBound = bindingInfoModels.Any(a =>
                             a.SerialNumber.Equals(NvrBindingParamInfoModel.SerialNumber) &&
                             a.Channel == model.Channel &&
@@ -151,22 +170,28 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
 
-        private void CloseDialogDelegate(object obj) {
-            if (DialogHost.IsDialogOpen(Identifier)) {
+        private void CloseDialogDelegate(object obj)
+        {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand UnbindNvrCommand => new DelegateCommand<object>(UnbindNvrDelegate);
 
-        private async void UnbindNvrDelegate(object obj) {
-            if (obj is NvrBindingItemModel info) {
+        private async void UnbindNvrDelegate(object obj)
+        {
+            if (obj is NvrBindingItemModel info)
+            {
                 var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
                     f.Channel.Equals(info.Channel) &&
                     f.SerialNumber.Equals(NvrBindingParamInfoModel.SerialNumber));
-                if (infoModel is not null) {
+                if (infoModel is not null)
+                {
                     var delete = await _nvrCameraBindingRepository.Delete(infoModel);
-                    if (delete) {
+                    if (delete)
+                    {
                         _barcodeScannerCameraConfigRepository.UpdateMemoryCache();
                         LoadedDelegate(null);
                     }
@@ -176,9 +201,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public ICommand BindNvrCommand => new DelegateCommand<object>(BindNvrDelegate);
 
-        private async void BindNvrDelegate(object obj) {
-            if (obj is NvrBindingItemModel info) {
-                var insert = await _nvrCameraBindingRepository.Insert(new NvrCameraBindingInfoModel() {
+        private async void BindNvrDelegate(object obj)
+        {
+            if (obj is NvrBindingItemModel info)
+            {
+                var insert = await _nvrCameraBindingRepository.Insert(new NvrCameraBindingInfoModel()
+                {
                     SerialNumber = NvrBindingParamInfoModel.SerialNumber,
                     Channel = info.Channel,
                     IpAddress = info.IpAddress,
@@ -188,7 +216,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     BindingSource = NvrBindingParamInfoModel.BindingSource,
                     DisplayIdentifier = NvrBindingParamInfoModel.DisplayIdentifier
                 });
-                if (insert) {
+                if (insert)
+                {
                     _barcodeScannerCameraConfigRepository.UpdateMemoryCache();
                     LoadedDelegate(null);
                 }
@@ -197,13 +226,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public ICommand PreviewViewCommand => new DelegateCommand<object>(PreviewViewDelegate);
 
-        private void PreviewViewDelegate(object obj) {
-            if (AppContext.GetData("IsRunning") is true) {
+        private void PreviewViewDelegate(object obj)
+        {
+            if (AppContext.GetData("IsRunning") is true)
+            {
 
                 NvrBindingEditorViewMessageQueue.Enqueue("请先停止运行再预览");
                 return;
             }
-            if (obj is NvrBindingItemModel { Status: NvrStatus.Online } info) {
+            if (obj is NvrBindingItemModel { Status: NvrStatus.Online } info)
+            {
                 _dialogService.ShowDialog("NvrBindingPreviewViewDialog", new DialogParameters { { "NvrBindingItem", info } }, null);
             }
         }

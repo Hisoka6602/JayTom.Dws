@@ -70,9 +70,9 @@ namespace JayTom.Dws.Plugin {
         /// <param name="exception"></param>
         /// <param name="cancelToken"></param>
         /// <returns></returns>
-        Task<bool> Export<T>([NotNull] string path,
+        Task<bool> Export<T>(string path,
             string title, string sheetName,
-            [NotNull] List<T> list,
+            List<T> list,
             List<string> excludedHeaders,
             Action<int> progress,
             Action<Exception> exception,

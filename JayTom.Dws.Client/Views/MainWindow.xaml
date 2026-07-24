@@ -19,6 +19,9 @@
     Background="Transparent"
     FontFamily="{StaticResource CustomFontFamily}"
     ResizeMode="CanMinimize"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    UseLayoutRounding="True"
     WindowStartupLocation="CenterScreen"
     WindowStyle="None"
     mc:Ignorable="d">
@@ -250,6 +253,9 @@
                                 Command="{x:Static materialDesign:Transitioner.MoveNextCommand}"
                                 Cursor="Hand"
                                 WindowChrome.IsHitTestVisibleInChrome="True">
+                                <Button.CacheMode>
+                                    <BitmapCache />
+                                </Button.CacheMode>
                                 <Button.RenderTransform>
                                     <TransformGroup>
                                         <TranslateTransform X="{Binding ButtonTranslateTransform.X, UpdateSourceTrigger=PropertyChanged}" Y="{Binding ButtonTranslateTransform.Y, UpdateSourceTrigger=PropertyChanged}" />
@@ -277,19 +283,35 @@
                                                             <DoubleAnimation
                                                                 Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.X)"
                                                                 To="10"
-                                                                Duration="0:0:0.5" />
+                                                                Duration="0:0:0.8">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
                                                             <DoubleAnimation
                                                                 Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[0].(TranslateTransform.Y)"
                                                                 To="10"
-                                                                Duration="0:0:0.5" />
+                                                                Duration="0:0:0.8">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
                                                             <DoubleAnimation
                                                                 Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)"
                                                                 To="0.16"
-                                                                Duration="0:0:0.5" />
+                                                                Duration="0:0:0.8">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
                                                             <DoubleAnimation
                                                                 Storyboard.TargetProperty="(Button.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleY)"
                                                                 To="0.16"
-                                                                Duration="0:0:0.5" />
+                                                                Duration="0:0:0.8">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </DataTrigger.EnterActions>

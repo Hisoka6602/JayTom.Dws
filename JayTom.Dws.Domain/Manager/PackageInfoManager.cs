@@ -13,7 +13,7 @@ using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 namespace JayTom.Dws.Domain.Manager {
 
     public static class PackageInfoManager {
-        private static ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
+        private static readonly ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
 
         /// <summary>
         /// 包裹移除
@@ -26,7 +26,8 @@ namespace JayTom.Dws.Domain.Manager {
         public static event EventHandler<PackageCompletedEventArgs>? PackageCompleted;
 
         public static void OnPackageRemoved(PackageRemovedEventArgs e) {
-            e.RemovedPackage?.Image?.Dispose();
+            e.RemovedPackage?.TakeImage()?.Dispose();
+            e.RemovedPackage?.DisposeTimers();
             PackageRemoved?.Invoke(null, e);
         }
 
@@ -42,8 +43,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="package"></param>
         /// <param name="removeTimers"></param>
         public static void AddPackage(PackageInfo package, List<PackageTimer> removeTimers) {
-            _packageInfos.TryAdd(package.CreateTime, package);
-            package.StartTimers(_packageInfos, removeTimers);
+            lock (package.SyncRoot) {
+                if (_packageInfos.TryAdd(package.CreateTime, package)) {
+                    package.StartTimers(_packageInfos, removeTimers);
+                }
+            }
         }
 
         /// <summary>
@@ -53,7 +57,17 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="description"></param>
         /// <returns></returns>
         public static bool RemovePackage(DateTime createTime, string description = "手动移除") {
-            var tryRemove = _packageInfos.TryRemove(createTime, out var info);
+            if (!_packageInfos.TryGetValue(createTime, out var current)) {
+                return false;
+            }
+
+            PackageInfo? info;
+            bool tryRemove;
+            lock (current.SyncRoot) {
+                tryRemove = ((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos)
+                    .Remove(new KeyValuePair<DateTime, PackageInfo>(createTime, current));
+                info = tryRemove ? current : null;
+            }
             if (tryRemove && info is not null) {
                 OnPackageRemoved(new PackageRemovedEventArgs(info, description));
             }
@@ -68,14 +82,22 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="description"></param>
         /// <returns></returns>
         public static bool RemovePackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate, string description = "手动移除") {
-            var (key, value) = _packageInfos.FirstOrDefault(predicate);
-            if (value is not null) {
-                var tryRemove = _packageInfos.TryRemove(key, out var info);
-                if (tryRemove && info is not null) {
-                    info?.Image?.Dispose();
-                    OnPackageRemoved(new PackageRemovedEventArgs(info, description));
+            foreach (var pair in _packageInfos.OrderBy(item => item.Key)) {
+                PackageInfo? removedPackage = null;
+                lock (pair.Value.SyncRoot) {
+                    if (!predicate(pair)) {
+                        continue;
+                    }
+                    if (((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos)
+                        .Remove(pair)) {
+                        removedPackage = pair.Value;
+                    }
                 }
-                return tryRemove;
+
+                if (removedPackage is not null) {
+                    OnPackageRemoved(new PackageRemovedEventArgs(removedPackage, description));
+                    return true;
+                }
             }
 
             return false;
@@ -87,7 +109,15 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="predicate"></param>
         /// <returns></returns>
         public static bool PackageExists(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
-            return _packageInfos.Any(predicate);
+            foreach (var pair in _packageInfos) {
+                lock (pair.Value.SyncRoot) {
+                    if (predicate(pair)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -102,22 +132,15 @@ namespace JayTom.Dws.Domain.Manager {
             }
 
             try {
-                // 尝试找到第一个符合条件的键值对
-                var result = _packageInfos.OrderBy(o => o.Key).FirstOrDefault(predicate);
-
-                // 检查 result 是否为默认值
-                if (EqualityComparer<KeyValuePair<DateTime, PackageInfo>>.Default.Equals(result, default)) {
-                    return null;
+                foreach (var pair in _packageInfos.OrderBy(item => item.Key)) {
+                    lock (pair.Value.SyncRoot) {
+                        if (predicate(pair)) {
+                            return pair.Value;
+                        }
+                    }
                 }
 
-                var (key, value) = result;
-
-                if (value == null) {
-                    return null;
-                }
-
-                // 尝试获取包信息
-                return _packageInfos.GetValueOrDefault(key);
+                return null;
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
@@ -139,8 +162,10 @@ namespace JayTom.Dws.Domain.Manager {
             try {
                 // 逆向遍历集合，找到第一个符合条件的键值对
                 foreach (var kvp in _packageInfos.OrderByDescending(k => k.Key)) {
-                    if (predicate(kvp)) {
-                        return kvp.Value;
+                    lock (kvp.Value.SyncRoot) {
+                        if (predicate(kvp)) {
+                            return kvp.Value;
+                        }
                     }
                 }
                 return null;
@@ -167,12 +192,16 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="predicate"></param>
         /// <returns></returns>
         public static List<PackageInfo>? GetPackages(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
-            return _packageInfos?.Any(predicate) == true ?
-                _packageInfos.Where(predicate)?.
-                    OrderBy(o => o.Key)?.
-                    Select(s => s.Value)
-                    ?.ToList()
-                : new List<PackageInfo>();
+            var packages = new List<PackageInfo>();
+            foreach (var pair in _packageInfos.OrderBy(item => item.Key)) {
+                lock (pair.Value.SyncRoot) {
+                    if (predicate(pair)) {
+                        packages.Add(pair.Value);
+                    }
+                }
+            }
+
+            return packages;
         }
 
         /// <summary>
@@ -187,12 +216,24 @@ namespace JayTom.Dws.Domain.Manager {
         /// 清空包裹
         /// </summary>
         public static void ClearAllPackages() {
-            foreach (var (key, value) in _packageInfos) {
-                _packageInfos.Remove(key, out var info);
-                info?.Image?.Dispose();
-            }
+            foreach (var key in _packageInfos.Keys) {
+                if (!_packageInfos.TryGetValue(key, out var current)) {
+                    continue;
+                }
 
-            _packageInfos.Clear();
+                PackageInfo? info = null;
+                lock (current.SyncRoot) {
+                    if (((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos)
+                        .Remove(new KeyValuePair<DateTime, PackageInfo>(key, current))) {
+                        info = current;
+                    }
+                }
+
+                if (info is not null) {
+                    info.TakeImage()?.Dispose();
+                    info.DisposeTimers();
+                }
+            }
         }
 
         /// <summary>
@@ -202,22 +243,35 @@ namespace JayTom.Dws.Domain.Manager {
 
         public static void CompletedPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             var packageInfo = GetPackage(predicate);
-            if (packageInfo == null || packageInfo.IsCompleted) return;
-            packageInfo.VolumeInfo ??= new VolumeInfoModel();
-            packageInfo.WeightInfo ??= new WeightInfoModel();
-            packageInfo.BarCodeInfo ??= new BarCodeInfoModel();
-            packageInfo.GrayscaleResultInfo ??= new GrayscaleResult();
-            if (packageInfo.LinkedCarCount <= 0) {
-                packageInfo.LinkedCarCount = 1;
+            if (packageInfo == null) return;
+
+            lock (packageInfo.SyncRoot) {
+                if (!_packageInfos.TryGetValue(packageInfo.CreateTime, out var current) ||
+                    !ReferenceEquals(current, packageInfo)) {
+                    return;
+                }
+                if (packageInfo.IsCompleted) return;
+                packageInfo.VolumeInfo ??= new VolumeInfoModel();
+                packageInfo.WeightInfo ??= new WeightInfoModel();
+                packageInfo.BarCodeInfo ??= new BarCodeInfoModel();
+                packageInfo.GrayscaleResultInfo ??= new GrayscaleResult();
+                if (packageInfo.LinkedCarCount <= 0) {
+                    packageInfo.LinkedCarCount = 1;
+                }
+                packageInfo.IsStackedPackage ??= false;
+                packageInfo.IsCompleted = true;
             }
-            packageInfo.IsStackedPackage ??= false;
-            packageInfo.IsCompleted = true;
 
             OnPackageCompleted(new PackageCompletedEventArgs(packageInfo, string.Empty));
         }
     }
 
     public class PackageInfo {
+        /// <summary>
+        /// 保护包裹内部的可变字段和集合。ConcurrentDictionary 只能保护容器，
+        /// 不能保护存放在其中的 PackageInfo 实例。
+        /// </summary>
+        public object SyncRoot { get; } = new();
 
         /// <summary>
         /// 包裹创建时间
@@ -363,39 +417,66 @@ namespace JayTom.Dws.Domain.Manager {
         private readonly object _removalLock = new();
 
         public void StartTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageTimer> removeTimers) {
-            foreach (var timer in removeTimers) {
-                switch (timer) {
-                    case PackageRemoveTimer packageRemoveTimer:
-                        packageRemoveTimer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer), packageRemoveTimer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
-                        PackageRemoveTimers?.Add(packageRemoveTimer);
-                        break;
+            lock (SyncRoot) {
+                foreach (var timer in removeTimers) {
+                    switch (timer) {
+                        case PackageRemoveTimer packageRemoveTimer:
+                            packageRemoveTimer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer), packageRemoveTimer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
+                            PackageRemoveTimers?.Add(packageRemoveTimer);
+                            break;
 
-                    case PackCompletedTimer packCompletedTimer:
-                        packCompletedTimer.CompletTimer = new Timer(CompletedCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer), packCompletedTimer.CompletTimeSpan, Timeout.InfiniteTimeSpan);
-                        PackCompletedTimers?.Add(packCompletedTimer);
-                        break;
+                        case PackCompletedTimer packCompletedTimer:
+                            packCompletedTimer.CompletTimer = new Timer(CompletedCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer), packCompletedTimer.CompletTimeSpan, Timeout.InfiniteTimeSpan);
+                            PackCompletedTimers?.Add(packCompletedTimer);
+                            break;
 
-                    case PackageAssignmentTimer packageAssignmentTimer:
-                        packageAssignmentTimer.AssignmentTimer = new Timer(AssignmentCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>(packageInfos, packageAssignmentTimer), packageAssignmentTimer.AssignmentTimeSpan, Timeout.InfiniteTimeSpan);
-                        PackageAssignmentTimers?.Add(packageAssignmentTimer);
-                        break;
+                        case PackageAssignmentTimer packageAssignmentTimer:
+                            packageAssignmentTimer.AssignmentTimer = new Timer(AssignmentCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>(packageInfos, packageAssignmentTimer), packageAssignmentTimer.AssignmentTimeSpan, Timeout.InfiniteTimeSpan);
+                            PackageAssignmentTimers?.Add(packageAssignmentTimer);
+                            break;
+                    }
                 }
+            }
+        }
+
+        public Image? TakeImage() {
+            lock (SyncRoot) {
+                var image = Image;
+                Image = null;
+                return image;
+            }
+        }
+
+        public void DisposeTimers() {
+            lock (SyncRoot) {
+                PackageRemoveTimers?.ForEach(timer => timer.PackageRemovalTimer?.Dispose());
+                PackCompletedTimers?.ForEach(timer => timer.CompletTimer?.Dispose());
+                PackageAssignmentTimers?.ForEach(timer => timer.AssignmentTimer?.Dispose());
+                PackageRemoveTimers?.Clear();
+                PackCompletedTimers?.Clear();
+                PackageAssignmentTimers?.Clear();
             }
         }
 
         private void RemoveFromCollection(object? state) {
             if (state is not null) {
                 var (packageInfos, removeTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>)state;
-                if (removeTimer.Predicate is not null) {
-                    var any = packageInfos.Where(removeTimer.Predicate)?.All(a => !a.Key.Equals(CreateTime));
-                    if (any == true) {
+                if (!packageInfos.TryGetValue(CreateTime, out var current)) {
+                    removeTimer.PackageRemovalTimer?.Dispose();
+                    return;
+                }
+
+                lock (current.SyncRoot) {
+                    if (removeTimer.Predicate is not null &&
+                        !removeTimer.Predicate(
+                            new KeyValuePair<DateTime, PackageInfo>(CreateTime, current))) {
                         removeTimer.PackageRemovalTimer?.Dispose();
                         return;
                     }
                 }
-                if (packageInfos.TryRemove(CreateTime, out var removedPackage)) {
+
+                if (PackageInfoManager.RemovePackage(CreateTime, removeTimer.Description)) {
                     removeTimer.PackageRemovalTimer?.Dispose();
-                    PackageInfoManager.OnPackageRemoved(new PackageRemovedEventArgs(removedPackage, removeTimer.Description));
                 }
             }
         }
@@ -403,13 +484,17 @@ namespace JayTom.Dws.Domain.Manager {
         private void CompletedCollection(object? state) {
             if (state is not null) {
                 var (packageInfos, removeTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>)state;
-                if (removeTimer.Predicate is not null) {
-                    var valuePair = packageInfos.Where(removeTimer.Predicate)
-                        ?.FirstOrDefault(f => f.Value != null && f.Value.CreateTime.Equals(CreateTime));
-                    if (valuePair is { Value: not null }) {
-                        PackageInfoManager.CompletedPackage(f => f.Value != null && f.Value.CreateTime.Equals(CreateTime));
-                        removeTimer.CompletTimer?.Dispose();
+                if (packageInfos.TryGetValue(CreateTime, out var current)) {
+                    lock (current.SyncRoot) {
+                        if (removeTimer.Predicate is not null &&
+                            !removeTimer.Predicate(
+                                new KeyValuePair<DateTime, PackageInfo>(CreateTime, current))) {
+                            return;
+                        }
                     }
+
+                    PackageInfoManager.CompletedPackage(pair => pair.Key.Equals(CreateTime));
+                    removeTimer.CompletTimer?.Dispose();
                 }
             }
         }
@@ -420,14 +505,17 @@ namespace JayTom.Dws.Domain.Manager {
                 var (packageInfos, assignmentTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>)state;
 
                 if (assignmentTimer.Predicate is not null) {
-                    // 根据Predicate找到匹配的包信息
-                    var valuePair = packageInfos.Where(assignmentTimer.Predicate)
-                        ?.FirstOrDefault(f => f.Value != null && f.Value.CreateTime.Equals(CreateTime));
-
-                    if (valuePair is { Value: not null } &&
+                    if (packageInfos.TryGetValue(CreateTime, out var current) &&
                         assignmentTimer.AssignmentCallback is not null) {
-                        // 执行赋值逻辑
-                        assignmentTimer.AssignmentCallback(valuePair.Value.Value);
+                        lock (current.SyncRoot) {
+                            var pair = new KeyValuePair<DateTime, PackageInfo>(
+                                CreateTime,
+                                current);
+                            if (!assignmentTimer.Predicate(pair)) {
+                                return;
+                            }
+                            assignmentTimer.AssignmentCallback(current);
+                        }
                         // 停止并释放计时器
                         assignmentTimer.AssignmentTimer?.Dispose();
                     }

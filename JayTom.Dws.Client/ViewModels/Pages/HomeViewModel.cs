@@ -86,18 +86,36 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private VolumeUnit _volumeUnit;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
 
-        private static SemaphoreSlim _updateSlim = new(1, 1);
         private OcrSettingsInfoModel _ocrSettingsInfo = new();
 
         private OcrInfoItemModel _ocrItemInfo = new();
-        private bool _isLoaded;
-        private CancellationTokenSource _cancellationTokenSource = new();
-        private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
+        /// <summary>
+        /// UI 更新任务取消源。
+        /// </summary>
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        /// <summary>
+        /// 待显示的包裹行。
+        /// </summary>
+        private readonly ConcurrentQueue<PackageItemModel> _pendingPackageItems = new();
+        /// <summary>
+        /// 待处理的接口响应。
+        /// </summary>
+        private readonly ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
 
         //private ConcurrentQueue<SortingExitReceived> _sortingExitItems = new();
-        private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
+        /// <summary>
+        /// 待处理的格口更新。
+        /// </summary>
+        private readonly ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
 
-        private ConcurrentQueue<CloudVideoUploadMessage> _cloudVideoUploadItems = new();
+        /// <summary>
+        /// 待处理的云视频上传状态。
+        /// </summary>
+        private readonly ConcurrentQueue<CloudVideoUploadMessage> _cloudVideoUploadItems = new();
+        /// <summary>
+        /// 合并 UI 更新的后台任务。
+        /// </summary>
+        private readonly Task _uiUpdateWorker;
         private BindableBase? _currentViewModel;
 
         public SnackbarMessageQueue HomeMessageQueue {
@@ -254,9 +272,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _container = container;
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
-                await Application.Current.Dispatcher.BeginInvoke(async () => {
+                await Application.Current.Dispatcher.BeginInvoke(() => {
                     BarCode = args?.Barcode ?? "未识别到条码";
-                });
+                }, DispatcherPriority.Background);
             };
             _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
                 //更新现有列表,例如删除相机成员
@@ -265,48 +283,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _deviceService.DeviceException += async delegate (object? sender, DeviceExceptionEventArgs args) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     HomeMessageQueue.Enqueue(args?.ExceptionMessage?.Message ?? string.Empty);
-                });
+                }, DispatcherPriority.Background);
 
                 //弹出提示框
             };
             _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     Weight = args.Weight;
-                });
+                }, DispatcherPriority.Background);
             };
             _deviceService.OcrContentRecognized += DeviceServiceOnOcrContentRecognized;
             _deviceService.BarCodeKeyReceived += async (sender, s) => {
-                await Application.Current.Dispatcher.BeginInvoke(async () => {
+                await Application.Current.Dispatcher.BeginInvoke(() => {
                     BarCode = s.Barcode;
-                });
+                }, DispatcherPriority.Background);
             };
 
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");
-                });
+                }, DispatcherPriority.Background);
             };
             _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("结果输出异常") ?? string.Empty}:{exception.Message}");
-                });
+                }, DispatcherPriority.Background);
             };
             //外部数据
             _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("外部输入异常") ?? string.Empty}:{exception.Message}");
-                });
+                }, DispatcherPriority.Background);
             };
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) => {
-                await Application.Current.Dispatcher.BeginInvoke(async () => {
+                await Application.Current.Dispatcher.BeginInvoke(() => {
                     BarCode = args?.Barcode ?? "未解析到条码";
                     Weight = args?.Weight ?? 0;
                     Length = args?.Length ?? 0;
                     Width = args?.Width ?? 0;
                     Height = args?.Height ?? 0;
                     Volume = args?.Volume ?? 0;
-                });
+                }, DispatcherPriority.Background);
             };
             _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args) {
                 await Application.Current.Dispatcher.BeginInvoke(() => {
@@ -314,7 +332,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Width = (float)args.Width;
                     Height = (float)args.Height;
                     Volume = (float)args.Volume;
-                });
+                }, DispatcherPriority.Background);
             };
             //分拣
             _sortingService.HeartbeatError += delegate (object? sender, Exception exception) {
@@ -323,12 +341,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(async info => {
-                //填充数据到列表
-
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<PackageInfo>(info => {
                 if (info is { } model) {
-                    AddNewRow(new PackageItemModel() {
+                    _pendingPackageItems.Enqueue(new PackageItemModel() {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
                         ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
                         Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
@@ -352,24 +367,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 try {
                     if (info is { } model) {
                         if (model.SettingsName.Equals("VolumeSettings")) {
-                            await Application.Current.Dispatcher.BeginInvoke(async () => {
-                                //临时写在这里加载配置，后续修改通过事件通知
-                                var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
-                                if (configInfoModel is not null) {
-                                    var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                                    if (volumeSettingsDto is not null) {
+                            var configInfoModel = await _configRepository
+                                .FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"))
+                                .ConfigureAwait(false);
+                            if (configInfoModel is not null) {
+                                var volumeSettingsDto =
+                                    JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
+                                if (volumeSettingsDto is not null) {
+                                    await Application.Current.Dispatcher.InvokeAsync(() => {
                                         VolumeUnit = volumeSettingsDto.Unit;
-                                    }
+                                    }, DispatcherPriority.Background);
                                 }
-                            });
+                            }
                         }
                         else if (model.SettingsName.Equals("OcrSettings")) {
-                            await Application.Current.Dispatcher.BeginInvoke(async () => {
-                                //临时写在这里加载配置，后续修改通过事件通知
-                                var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("OcrSettings"));
-                                if (configInfoModel is not null) {
-                                    var ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
-                                    if (ocrSettingsDto is not null) {
+                            var configInfoModel = await _configRepository
+                                .FirstOrDefault(s => s.ConfigName.Equals("OcrSettings"))
+                                .ConfigureAwait(false);
+                            if (configInfoModel is not null) {
+                                var ocrSettingsDto =
+                                    JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
+                                if (ocrSettingsDto is not null) {
+                                    await Application.Current.Dispatcher.InvokeAsync(() => {
                                         OcrSettingsInfo = new OcrSettingsInfoModel() {
                                             IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
                                             IsUseOcr = ocrSettingsDto.IsUseOcr,
@@ -378,9 +397,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                                             IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
                                             RecognitionTimeout = ocrSettingsDto.RecognitionTimeout
                                         };
-                                    }
+                                    }, DispatcherPriority.Background);
                                 }
-                            });
+                            }
                         }
                     }
                 }
@@ -389,19 +408,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is { } model) {
-                    await Task.Yield();
                     _updateResponseItems.Enqueue(model);
                 }
             });
             //更新云视频上传状态
-            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
+            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(item => {
                 if (item is { } model) {
                     _cloudVideoUploadItems.Enqueue(model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
                     _cancellationTokenSource.Cancel();
                 }
@@ -422,109 +440,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     _packageExitUpdateItems.Enqueue(model);
                 }
             });
-            if (!_isLoaded) {
-                _isLoaded = true;
-
-                new TaskFactory().StartNew(async () => {
-                    while (!_cancellationTokenSource.IsCancellationRequested) {
-                        await Task.Delay(50).ContinueWith(async a => {
-                            var tryDequeue = _updateResponseItems.TryDequeue(out var updateResponse);
-                            if (tryDequeue && updateResponse is not null) {
-                                try {
-                                    await _updateSlim.WaitAsync();
-                                    var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(updateResponse.Barcode) &&
-                                        f.ScanTime.Equals(updateResponse.ScanTime));
-                                    if (barCodeItemModel is not null) {
-                                        Application.Current.Dispatcher.InvokeAsync(() => {
-                                            //更新数据
-                                            barCodeItemModel.RequestStatus = updateResponse.UploadResponse?.IsSuccess == true ? UploadStatus.Succeeded : UploadStatus.Failed;
-                                            barCodeItemModel.UploadInfo = new UploadItemModel() {
-                                                DurationInSeconds = updateResponse.UploadResponse?.Duration ?? 0,
-                                                ExceptionMessage = updateResponse.UploadResponse?.ExceptionMsg ?? string.Empty,
-                                                InterfaceParameters = updateResponse.UploadResponse?.ApiParameters ?? string.Empty,
-                                                IsSuccess = updateResponse.UploadResponse?.IsSuccess ?? false,
-                                                RequestContent = updateResponse.UploadResponse?.RequestContent ?? string.Empty,
-                                                RequestTime = updateResponse.UploadResponse?.RequestTime,
-                                                RequestUrl = updateResponse.UploadResponse?.RequestUrl ?? string.Empty,
-                                                ResponseContent = updateResponse.UploadResponse?.ResponseContent ?? string.Empty,
-                                                ResponseTime = updateResponse.UploadResponse?.ResponseTime
-                                            };
-                                            if (barCodeItemModel.RequestStatus == UploadStatus.Succeeded) {
-                                                UploadedDataCount += 1;
-                                            }
-                                            if (barCodeItemModel.RequestStatus == UploadStatus.Failed) {
-                                                AbnormalDataCount += 1;
-                                            }
-                                        }, DispatcherPriority.Render);
-                                    }
-                                    else {
-                                        if (DateTime.Now.Subtract(updateResponse.ScanTime).TotalSeconds < 10) {
-                                            _updateResponseItems.Enqueue(updateResponse);
-                                        }
-                                    }
-                                }
-                                finally {
-                                    _updateSlim.Release();
-                                }
-                            }
-
-                            var dequeue = _packageExitUpdateItems.TryDequeue(out var exitInfo);
-                            if (dequeue && exitInfo is not null) {
-                                try {
-                                    await _updateSlim.WaitAsync();
-
-                                    var packageItemModel = PackageItems.FirstOrDefault(f => f.TimestampedGuid.Equals(exitInfo.Timestamp));
-
-                                    if (packageItemModel is not null) {
-                                        Application.Current.Dispatcher.InvokeAsync(() => {
-                                            //更新数据
-                                            if (packageItemModel.PackageExitStatus is PackageExitStatus.None or PackageExitStatus.Normal) {
-                                                packageItemModel.ExitName = exitInfo.ExitName;
-                                                packageItemModel.PackageExitStatus =
-                                                    exitInfo.InstructionType switch {
-                                                        InstructionType.SignalCallback => PackageExitStatus.Normal,
-                                                        InstructionType.PackageException => PackageExitStatus.Abnormal,
-                                                        InstructionType.PackageExceptionEx => PackageExitStatus.Abnormal,
-                                                        _ => PackageExitStatus.None
-                                                    };
-                                            }
-                                        }, DispatcherPriority.Render);
-                                    }
-                                    else {
-                                        if (DateTime.Now.Subtract(exitInfo.CreateTime).TotalSeconds < 20) {
-                                            _packageExitUpdateItems.Enqueue(exitInfo);
-                                        }
-                                    }
-                                }
-                                finally {
-                                    _updateSlim.Release();
-                                }
-                            }
-                            var b = _cloudVideoUploadItems.TryDequeue(out var cloudVideoUpload);
-                            if (b && cloudVideoUpload is not null) {
-                                try {
-                                    await _updateSlim.WaitAsync();
-                                    System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                                        var barCodeItemModel = PackageItems.FirstOrDefault(f => f.Barcode.Equals(cloudVideoUpload.Barcode) &&
-                                            f.ScanTime.Equals(cloudVideoUpload.ScanTime));
-                                        if (barCodeItemModel is not null) {
-                                            barCodeItemModel.IsUploadedToCloudVideo = cloudVideoUpload.IsSuccessful;
-                                        }
-                                        else {
-                                            if (DateTime.Now.Subtract(cloudVideoUpload.ScanTime).TotalSeconds < 10) {
-                                                _cloudVideoUploadItems.Enqueue(cloudVideoUpload);
-                                            }
-                                        }
-                                    }, DispatcherPriority.Render);
-                                }
-                                finally {
-                                    _updateSlim.Release();
-                                }
-                            }
-                        });
-                    }
-                }, TaskCreationOptions.LongRunning);
-            }
+            _uiUpdateWorker = Task.Run(ProcessUiUpdates);
             //远程指令
             EventAggregator.Instance.Subscribe<RemoteAction>(async item => {
                 if (item is { } remoteAction) {
@@ -558,7 +474,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 OcrItemInfo.SenderPhone = args?.SenderPhone ?? string.Empty;
                 OcrItemInfo.SenderAddress = args?.SenderAddress ?? string.Empty;
                 OcrItemInfo.ThreeSegmentCode = args?.ThreeSegmentCode ?? string.Empty;
-            });
+            }, DispatcherPriority.Background);
         }
 
         private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args) {
@@ -567,13 +483,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 Width = (float)args.Width;
                 Height = (float)args.Height;
                 Volume = (float)args.Volume;
-            });
+            }, DispatcherPriority.Background);
         }
 
         private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args) {
             await Application.Current.Dispatcher.BeginInvoke(() => {
                 BarCode = args?.Barcode ?? "未识别到条码";
-            });
+            }, DispatcherPriority.Background);
         }
 
         public ICommand UploadStatusCommand => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
@@ -581,34 +497,33 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ICommand LoadedCommand => new DelegateCommand<Page>(LoadedDelegate);
 
         private async void LoadedDelegate(Page obj) {
-            await Application.Current.Dispatcher.BeginInvoke(async () => {
-                //临时写在这里加载配置，后续修改通过事件通知
-                EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                    SettingsName = "VolumeSettings"
-                });
-                EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                    SettingsName = "OcrSettings"
-                });
+            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                SettingsName = "VolumeSettings"
+            });
+            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                SettingsName = "OcrSettings"
+            });
 
-                var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                    f.ConfigName.Equals("OtherSettings"));
-                //自动启动
-                if (configInfoModel is not null) {
-                    try {
-                        var settingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                        if (settingsDto is not null && settingsDto.IsAutoStart) {
+            var configInfoModel = await _configRepository
+                .FirstOrDefault(f => f.ConfigName.Equals("OtherSettings"))
+                .ConfigureAwait(false);
+            if (configInfoModel is not null) {
+                try {
+                    var settingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
+                    if (settingsDto is not null && settingsDto.IsAutoStart) {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
                             StartDelegate(null);
-                        }
-                    }
-                    catch (Exception e) {
-                        EventAggregator.Instance.Publish(new AppLogInfoModel {
-                            CreateTime = DateTime.Now,
-                            Message = e.Message,
-                            Type = LogType.Exception
-                        });
+                        }, DispatcherPriority.Background);
                     }
                 }
-            });
+                catch (Exception e) {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                        CreateTime = DateTime.Now,
+                        Message = e.Message,
+                        Type = LogType.Exception
+                    });
+                }
+            }
         }
 
         private void UploadStatusDelegate(PackageItemModel obj) {
@@ -730,7 +645,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                         await Application.Current.Dispatcher.BeginInvoke(() => {
                             RunningStatus = _deviceService.RunningStatus;
-                        });
+                        }, DispatcherPriority.Background);
                     }
                     finally {
                         _runningSemaphoreSlim.Release();
@@ -741,44 +656,134 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         /// <summary>
-        /// 添加一行
+        /// 批量处理主页 UI 更新，避免高频事件持续抢占输入线程。
         /// </summary>
-        private async void AddNewRow(PackageItemModel item) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                item.Num = TotalDataCount += 1;
-
-                PackageItems.Insert(0, item);
-                if (PackageItems.Count > 50) {
-                    PackageItems.RemoveAt(PackageItems.Count - 1);
-                }
-                //item.IsInserting = true;
-            }, DispatcherPriority.Background);
-            /*await Task.Run(() => {
-                item.Num = TotalDataCount += 1;
-                Application.Current.Dispatcher.Invoke(() => {
-                    PackageItems.Insert(0, item);
-                    if (PackageItems.Count > 50) {
-                        PackageItems.RemoveAt(PackageItems.Count - 1);
+        private async Task ProcessUiUpdates() {
+            try {
+                using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(33));
+                while (await timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
+                    if (_pendingPackageItems.IsEmpty &&
+                        _updateResponseItems.IsEmpty &&
+                        _packageExitUpdateItems.IsEmpty &&
+                        _cloudVideoUploadItems.IsEmpty) {
+                        continue;
                     }
-                    //item.IsInserting = true;
-                });
-            });*/
-            /*try {
-                await _updateSlim.WaitAsync();
-                await Task.Run(() => {
-                    item.Num = TotalDataCount += 1;
-                    Application.Current.Dispatcher.Invoke(() => {
-                        PackageItems.Insert(0, item);
-                        if (PackageItems.Count > 500) {
-                            PackageItems.RemoveAt(PackageItems.Count - 1);
+                    var dispatcher = Application.Current?.Dispatcher;
+                    if (dispatcher is null) {
+                        break;
+                    }
+                    await dispatcher.InvokeAsync(() => {
+                        var deferredResponses = new List<ApiResponseReceived>();
+                        var deferredExits = new List<PackageExitUpdateEvent>();
+                        var deferredUploads = new List<CloudVideoUploadMessage>();
+                        for (var index = 0;
+                             index < 16 && _pendingPackageItems.TryDequeue(out var packageItem);
+                             index++) {
+                            TotalDataCount++;
+                            packageItem.Num = TotalDataCount;
+                            PackageItems.Insert(0, packageItem);
+                            if (PackageItems.Count > 50) {
+                                PackageItems.RemoveAt(PackageItems.Count - 1);
+                            }
                         }
-                        //item.IsInserting = true;
-                    });
-                });
+
+                        for (var index = 0;
+                             index < 32 && _updateResponseItems.TryDequeue(out var updateResponse);
+                             index++) {
+                            var packageItem = PackageItems.FirstOrDefault(item =>
+                                item.Barcode.Equals(updateResponse.Barcode) &&
+                                item.ScanTime.Equals(updateResponse.ScanTime));
+                            if (packageItem is null) {
+                                if (DateTime.Now - updateResponse.ScanTime < TimeSpan.FromSeconds(10)) {
+                                    deferredResponses.Add(updateResponse);
+                                }
+                                continue;
+                            }
+                            var nextStatus = updateResponse.UploadResponse?.IsSuccess == true
+                                ? UploadStatus.Succeeded
+                                : UploadStatus.Failed;
+                            if (packageItem.RequestStatus != nextStatus) {
+                                if (packageItem.RequestStatus == UploadStatus.Succeeded) {
+                                    UploadedDataCount = Math.Max(0, UploadedDataCount - 1);
+                                }
+                                else if (packageItem.RequestStatus == UploadStatus.Failed) {
+                                    AbnormalDataCount = Math.Max(0, AbnormalDataCount - 1);
+                                }
+                                packageItem.RequestStatus = nextStatus;
+                                if (nextStatus == UploadStatus.Succeeded) {
+                                    UploadedDataCount++;
+                                }
+                                else {
+                                    AbnormalDataCount++;
+                                }
+                            }
+                            packageItem.UploadInfo = new UploadItemModel {
+                                DurationInSeconds = updateResponse.UploadResponse?.Duration ?? 0,
+                                ExceptionMessage = updateResponse.UploadResponse?.ExceptionMsg ?? string.Empty,
+                                InterfaceParameters = updateResponse.UploadResponse?.ApiParameters ?? string.Empty,
+                                IsSuccess = updateResponse.UploadResponse?.IsSuccess ?? false,
+                                RequestContent = updateResponse.UploadResponse?.RequestContent ?? string.Empty,
+                                RequestTime = updateResponse.UploadResponse?.RequestTime,
+                                RequestUrl = updateResponse.UploadResponse?.RequestUrl ?? string.Empty,
+                                ResponseContent = updateResponse.UploadResponse?.ResponseContent ?? string.Empty,
+                                ResponseTime = updateResponse.UploadResponse?.ResponseTime
+                            };
+                        }
+
+                        for (var index = 0;
+                             index < 32 && _packageExitUpdateItems.TryDequeue(out var exitInfo);
+                             index++) {
+                            var packageItem =
+                                PackageItems.FirstOrDefault(item => item.TimestampedGuid.Equals(exitInfo.Timestamp));
+                            if (packageItem is null) {
+                                if (DateTime.Now - exitInfo.CreateTime < TimeSpan.FromSeconds(20)) {
+                                    deferredExits.Add(exitInfo);
+                                }
+                                continue;
+                            }
+                            if (packageItem.PackageExitStatus is PackageExitStatus.None or PackageExitStatus.Normal) {
+                                packageItem.ExitName = exitInfo.ExitName;
+                                packageItem.PackageExitStatus = exitInfo.InstructionType switch {
+                                    InstructionType.SignalCallback => PackageExitStatus.Normal,
+                                    InstructionType.PackageException => PackageExitStatus.Abnormal,
+                                    InstructionType.PackageExceptionEx => PackageExitStatus.Abnormal,
+                                    _ => PackageExitStatus.None
+                                };
+                            }
+                        }
+
+                        for (var index = 0;
+                             index < 32 && _cloudVideoUploadItems.TryDequeue(out var uploadInfo);
+                             index++) {
+                            var packageItem = PackageItems.FirstOrDefault(item =>
+                                item.Barcode.Equals(uploadInfo.Barcode) &&
+                                item.ScanTime.Equals(uploadInfo.ScanTime));
+                            if (packageItem is null) {
+                                if (DateTime.Now - uploadInfo.ScanTime < TimeSpan.FromSeconds(10)) {
+                                    deferredUploads.Add(uploadInfo);
+                                }
+                                continue;
+                            }
+                            packageItem.IsUploadedToCloudVideo = uploadInfo.IsSuccessful;
+                        }
+                        foreach (var response in deferredResponses) {
+                            _updateResponseItems.Enqueue(response);
+                        }
+                        foreach (var exit in deferredExits) {
+                            _packageExitUpdateItems.Enqueue(exit);
+                        }
+                        foreach (var upload in deferredUploads) {
+                            _cloudVideoUploadItems.Enqueue(upload);
+                        }
+                    }, DispatcherPriority.Background);
+                }
             }
-            finally {
-                _updateSlim.Release();
-            }*/
+            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested) {
+                //应用关闭时正常退出。
+            }
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "主页 UI 更新任务异常");
+            }
         }
 
         /// <summary>
@@ -787,7 +792,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ICommand ClearCountCommand => new DelegateCommand<object>(ClearCountDelegate);
 
         private async void ClearCountDelegate(object obj) {
-            await Application.Current.Dispatcher.BeginInvoke(async () => {
+            await Application.Current.Dispatcher.BeginInvoke(() => {
                 if (_deviceService.RunningStatus) {
                     HomeMessageQueue.Enqueue("请先停止运行再清空");
                     return;
@@ -796,6 +801,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 TotalDataCount =
                     UploadedDataCount =
                         AbnormalDataCount = 0;
+                _pendingPackageItems.Clear();
                 _updateResponseItems.Clear();
                 _packageExitUpdateItems.Clear();
                 _cloudVideoUploadItems.Clear();

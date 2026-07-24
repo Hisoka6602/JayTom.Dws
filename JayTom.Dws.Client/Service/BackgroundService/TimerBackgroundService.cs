@@ -15,26 +15,26 @@ using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
     public class TimerBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
-        private DateTime _startTime = DateTime.Now;
-        private static bool _isWindowsClose;
+        private readonly DateTime _startTime = DateTime.Now;
+        private int _isWindowsClose;
 
         public TimerBackgroundService() {
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
-                    _isWindowsClose = true;
+                    Interlocked.Exchange(ref _isWindowsClose, 1);
                 }
             });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(1000, stoppingToken).ContinueWith(a => {
-                    var timeSpan = DateTime.Now.Subtract(_startTime);
-                    EventAggregator.Instance.Publish(new TimerDto {
-                        ElapsedMilliseconds = (long)timeSpan.TotalMilliseconds,
-                        FormattedElapsed = $"{timeSpan.Days}->{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}",
-                    });
-                }, stoppingToken);
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (Volatile.Read(ref _isWindowsClose) == 0 &&
+                   await timer.WaitForNextTickAsync(stoppingToken)) {
+                var timeSpan = DateTime.Now.Subtract(_startTime);
+                EventAggregator.Instance.Publish(new TimerDto {
+                    ElapsedMilliseconds = (long)timeSpan.TotalMilliseconds,
+                    FormattedElapsed = $"{timeSpan.Days}->{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}",
+                });
             }
         }
     }

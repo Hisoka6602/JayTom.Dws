@@ -39,6 +39,7 @@ namespace JayTom.Dws.Client.Service.SyncSettings {
         /// <summary>
         /// 断开
         /// </summary>
-        void Disconnect();
+        /// <returns>断开任务。</returns>
+        Task Disconnect();
     }
 }

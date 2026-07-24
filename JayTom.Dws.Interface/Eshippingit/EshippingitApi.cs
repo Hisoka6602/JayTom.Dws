@@ -212,7 +212,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
         }
 
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (imageInfo?.Image is not null) {
@@ -221,8 +221,9 @@ namespace JayTom.Dws.Interface.Eshippingit {
             }
         }
 
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.CompletedTask;
         }
 
         public async Task<bool> PolicyPush(string barcode, DateTime scanTime, Image image, CancellationToken token = default) {

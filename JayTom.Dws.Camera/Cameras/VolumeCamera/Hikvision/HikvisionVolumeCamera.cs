@@ -21,11 +21,11 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
     public class HikvisionVolumeCamera : IVolumeCamera {
         private static MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO_LIST _mStDeviceList = new();
         private MvVolmeasure.NET.MvVolmeasure? _mCsVolMeasure;
-        private static Task? _volumeThread;
-        private static CancellationTokenSource? _cancellationTokenSource;
-        private byte[] _bufForDriver = new byte[1024 * 1024 * 10];
-        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
-        public MvVolmeasure.NET.MvVolmeasure.ResultCallback GetResultHandler;
+        private Task? _volumeThread;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private readonly byte[] _bufForDriver = new byte[1024 * 1024 * 10];
+        private MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
+        public MvVolmeasure.NET.MvVolmeasure.ResultCallback GetResultHandler = null!;
 
         /// <summary>
         /// 设备列表
@@ -40,9 +40,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         public HikvisionVolumeCamera() {
         }
 
-        public async void Dispose() {
-            //释放
-            await Stop();
+        public void Dispose() {
+            Stop().GetAwaiter().GetResult();
             _mCsVolMeasure?.DeInit();
             _mCsVolMeasure = null;
             OnCameraDisconnected(new CameraConnectionEventArgs() {
@@ -298,10 +297,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         public async Task<KeyValuePair<bool, string>> Stop() {
             if (Status != CameraStatus.Uninitialized) {
                 _cancellationTokenSource?.Cancel();
-                await Task.Delay(200);
                 if (_volumeThread != null) {
                     await _volumeThread;
-                    _volumeThread?.Dispose();
+                    _volumeThread.Dispose();
                 }
 
                 _volumeThread = null;
@@ -311,7 +309,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 OnCameraStopped(new CameraStoppedEventArgs() {
                     CameraInfo = this.Info
                 });
-                System.GC.Collect();
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
             return new KeyValuePair<bool, string>(false, "设备未初始化!");
@@ -488,13 +485,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         /// 处理回调
         /// </summary>
         /// <param name="stResultInfo"></param>
-        private async void ProcessCallbackVolumeInfo(VOLM_RESULT_INFO stResultInfo) {
+        private void ProcessCallbackVolumeInfo(VOLM_RESULT_INFO stResultInfo) {
             Bitmap? bitmap = null;
             Bitmap? thumbnailImage = null;
             var dateTime = DateTime.Now;
             if (1 == stResultInfo.nImgFlag) {
-                var imageBuffer = new byte[(int)stResultInfo.stExtendImage.nDataLen];
-                bitmap = await GetBitmapAsync(stResultInfo.stExtendImage.pData, imageBuffer, stResultInfo.stExtendImage.nWidth,
+                bitmap = GetBitmap(stResultInfo.stExtendImage.pData, stResultInfo.stExtendImage.nWidth,
                     stResultInfo.stExtendImage.nHeight);
                 thumbnailImage = GenerateThumbnail(bitmap);
             }
@@ -516,7 +512,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                                       (float)(thumbnailImage.Size.Height) /
                                       stResultInfo.stExtendImage.nHeight);
                         }
-                        g.DrawPolygon(new System.Drawing.Pen(Color.Yellow, 7), stPointList);
+                        using var pen = new System.Drawing.Pen(Color.Yellow, 7);
+                        g.DrawPolygon(pen, stPointList);
                     }
                 }
 
@@ -539,8 +536,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             if (thumbnailImage is not null) {
                 using var g = Graphics.FromImage(thumbnailImage);
                 var text = $"Length: {Math.Round(stResultInfo.stVolumeInfo.length, 2)}\nWidth: {Math.Round(stResultInfo.stVolumeInfo.width, 2)}\nHeight: {Math.Round(stResultInfo.stVolumeInfo.height, 2)}";
-                var font = new System.Drawing.Font("Arial", 20);
-                var brush = new System.Drawing.SolidBrush(Color.LawnGreen);
+                using var font = new System.Drawing.Font("Arial", 20);
+                using var brush = new System.Drawing.SolidBrush(Color.LawnGreen);
                 var point = new Point(10, 20); // 左上角位置
                 g.DrawString(text, font, brush, point);
             }
@@ -559,29 +556,41 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             return new IPAddress(addressBytes);
         }
 
-        private async Task<Bitmap?> GetBitmapAsync(nint pData, byte[] imageBuffBytes, int width, int height) {
-            await Task.Yield();
-            Bitmap? bmp = null;
-            // 绘制图像
-            GCHandle? handle = null;
+        private Bitmap? GetBitmap(nint pData, int width, int height) {
+            Bitmap? bitmap = null;
             try {
-                handle = GCHandle.Alloc(imageBuffBytes, GCHandleType.Pinned);
-                Marshal.Copy(pData, imageBuffBytes, 0, imageBuffBytes.Length);
-                IntPtr pImage = handle?.AddrOfPinnedObject() ?? IntPtr.Zero;
-                bmp = new Bitmap(width, height, width, PixelFormat.Format8bppIndexed, pImage);
-                //bmp = new Bitmap(stImageInfo.stExtendImage.nWidth, stImageInfo.stExtendImage.nHeight, stImageInfo.stExtendImage.nWidth, PixelFormat.Format24bppRgb, pImage);
-                var cp = bmp.Palette;
+                bitmap = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+                var palette = bitmap.Palette;
                 for (var i = 0; i < 256; i++) {
-                    cp.Entries[i] = Color.FromArgb(i, i, i);
+                    palette.Entries[i] = Color.FromArgb(i, i, i);
                 }
+                bitmap.Palette = palette;
 
-                bmp.Palette = cp;
+                var bitmapData = bitmap.LockBits(
+                    new Rectangle(0, 0, width, height),
+                    ImageLockMode.WriteOnly,
+                    PixelFormat.Format8bppIndexed);
+                try {
+                    for (var row = 0; row < height; row++) {
+                        var source = IntPtr.Add(pData, row * width);
+                        var destination = IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride);
+                        unsafe {
+                            Buffer.MemoryCopy(
+                                source.ToPointer(),
+                                destination.ToPointer(),
+                                bitmapData.Stride,
+                                width);
+                        }
+                    }
+                }
+                finally {
+                    bitmap.UnlockBits(bitmapData);
+                }
             }
             catch (Exception e) {
+                bitmap?.Dispose();
                 NLog.LogManager.GetCurrentClassLogger().Error($"回调图像异常:{e}");
-            }
-            finally {
-                handle?.Free();
+                return null;
             }
 
             /*
@@ -606,105 +615,59 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     }
             }*/
             if (!IsOriginalImageOut) {
-                bmp = (Bitmap?)GenerateThumbnail(bmp);
+                var thumbnail = GenerateThumbnail(bitmap);
+                bitmap.Dispose();
+                bitmap = thumbnail;
             }
 
-            return bmp;
+            return bitmap;
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
             if (sourceImage is null) {
                 return null;
             }
 
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppPArgb);
+            using var graphics = Graphics.FromImage(thumbnail);
+            graphics.DrawImage(sourceImage, 0, 0, thumbnailWidth, thumbnailHeight);
+            return thumbnail;
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             Status = CameraStatus.Disconnected;
-            await Task.Yield();
-
             CameraDisconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
-            await Task.Yield();
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
-            await Task.Yield();
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Paused;
-            await Task.Yield();
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             Status = CameraStatus.Uninitialized;
-            await Task.Yield();
             CameraUnregistered?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
         }
 
-        protected virtual async void OnVolumeCaptured(VolumeCapturedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnVolumeCaptured(VolumeCapturedEventArgs e) {
             VolumeCaptured?.Invoke(this, e);
         }
     }

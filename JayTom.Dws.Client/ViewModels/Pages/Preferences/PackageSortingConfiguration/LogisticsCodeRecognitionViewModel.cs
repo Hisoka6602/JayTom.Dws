@@ -236,11 +236,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// </summary>
         public ICommand PlaySoundCommand => new DelegateCommand<LogisticsCodeRecognitionItemInfoModel>(PlaySoundDelegate);
 
-        private void PlaySoundDelegate(LogisticsCodeRecognitionItemInfoModel obj) {
+        private async void PlaySoundDelegate(LogisticsCodeRecognitionItemInfoModel obj) {
             if (obj.SoundBytes?.Length > 0) {
-                Task.Factory.StartNew(() => {
-                    _speech.PlayByteFile(obj.SoundBytes);
-                });
+                await _speech.PlayByteFile(obj.SoundBytes);
             }
         }
 

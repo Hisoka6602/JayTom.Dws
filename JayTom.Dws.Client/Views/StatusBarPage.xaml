@@ -97,7 +97,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource ExceptionItemTemplate}"
-                                        ItemsSource="{Binding ExceptionItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                                        ItemsSource="{Binding ExceptionItems, Mode=OneWay}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  清除按钮  -->
                                     <Button
@@ -208,7 +208,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource CameraStatusBarTemplate}"
-                                        ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                                        ItemsSource="{Binding CameraItems, Mode=OneWay}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  空数据底图  -->
                                     <Border
@@ -298,7 +298,7 @@
                                         BorderThickness="0"
                                         Foreground="White"
                                         ItemTemplate="{StaticResource SerialPortTemplate}"
-                                        ItemsSource="{Binding SerialPortItems, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"
+                                        ItemsSource="{Binding SerialPortItems, Mode=OneWay}"
                                         Style="{StaticResource CustomListBoxStyle}" />
                                     <!--  空数据底图  -->
                                     <Border

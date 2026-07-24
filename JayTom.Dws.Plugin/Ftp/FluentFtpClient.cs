@@ -11,12 +11,12 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Plugin.Ftp {
 
     public class FluentFtpClient : IFtp {
-        private readonly FtpClient _ftpClient;
-        private SemaphoreSlim _semaphore = new(1);
-        private SemaphoreSlim _connectSlim = new(1);
+        private readonly AsyncFtpClient _ftpClient;
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly SemaphoreSlim _connectSlim = new(1, 1);
 
         public FluentFtpClient() {
-            _ftpClient = new FtpClient() {
+            _ftpClient = new AsyncFtpClient() {
                 Encoding = Encoding.UTF8
             };
         }
@@ -28,8 +28,10 @@ namespace JayTom.Dws.Plugin.Ftp {
         public event EventHandler<EventArgs>? Disconnected;
 
         public async Task<KeyValuePair<bool, string>> Connect(string server, int port, string username, string password, CancellationToken cancellationToken = default) {
+            var lockTaken = false;
             try {
                 await _connectSlim.WaitAsync(cancellationToken);
+                lockTaken = true;
                 if (_ftpClient.IsConnected) {
                     OnConnected();
                     return new KeyValuePair<bool, string>(true, "连接成功!");
@@ -42,7 +44,7 @@ namespace JayTom.Dws.Plugin.Ftp {
                 _ftpClient.Config.EncryptionMode = FtpEncryptionMode.None;
                 _ftpClient.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
                 _ftpClient.Credentials = new NetworkCredential(username, password);
-                _ftpClient.Connect();
+                await _ftpClient.Connect(cancellationToken);
                 OnConnected();
                 return new KeyValuePair<bool, string>(true, "连接成功!");
             }
@@ -52,13 +54,16 @@ namespace JayTom.Dws.Plugin.Ftp {
                 return new KeyValuePair<bool, string>(false, ex.Message);
             }
             finally {
-                _connectSlim.Release();
+                if (lockTaken) {
+                    _connectSlim.Release();
+                }
             }
         }
 
-        public List<string>? GetFileList(CancellationToken cancellationToken = default) {
+        public async Task<List<string>?> GetFileList(CancellationToken cancellationToken = default) {
             try {
-                return EnumerateDirectory(_ftpClient, _ftpClient.GetWorkingDirectory());
+                var workingDirectory = await _ftpClient.GetWorkingDirectory(cancellationToken);
+                return await EnumerateDirectory(workingDirectory, cancellationToken);
             }
             catch {
                 return null;
@@ -66,15 +71,21 @@ namespace JayTom.Dws.Plugin.Ftp {
         }
 
         public async Task<KeyValuePair<bool, string>> UploadFile(string localFilePath, string remoteFilePath, CancellationToken cancellationToken = default) {
-            await Task.Yield();
+            var lockTaken = false;
             try {
                 await _semaphore.WaitAsync(cancellationToken);
+                lockTaken = true;
                 if (!_ftpClient.IsConnected) {
                     OnDisconnected();
                     return new KeyValuePair<bool, string>(false, "Ftp未连接!");
                 }
 
-                var status = _ftpClient.UploadFile(localFilePath, remoteFilePath, FtpRemoteExists.Overwrite, true);
+                var status = await _ftpClient.UploadFile(
+                    localFilePath,
+                    remoteFilePath,
+                    FtpRemoteExists.Overwrite,
+                    createRemoteDir: true,
+                    token: cancellationToken);
                 return status is FtpStatus.Success or FtpStatus.Skipped
                     ? new KeyValuePair<bool, string>(true, "上传成功")
                     : new KeyValuePair<bool, string>(false, "上传失败");
@@ -84,18 +95,19 @@ namespace JayTom.Dws.Plugin.Ftp {
                 return new KeyValuePair<bool, string>(false, e.Message);
             }
             finally {
-                _semaphore.Release();
+                if (lockTaken) {
+                    _semaphore.Release();
+                }
             }
         }
 
         public async Task<KeyValuePair<bool, string>> DeleteFile(string filePath, CancellationToken cancellationToken = default) {
-            await Task.Yield();
             try {
                 if (!_ftpClient.IsConnected) {
                     return new KeyValuePair<bool, string>(false, "Ftp未连接!");
                 }
                 //判断文件是否存在,不存在则返回
-                _ftpClient.DeleteFile(filePath);
+                await _ftpClient.DeleteFile(filePath, cancellationToken);
                 return new KeyValuePair<bool, string>(true, "删除成功");
             }
             catch (Exception e) {
@@ -105,9 +117,8 @@ namespace JayTom.Dws.Plugin.Ftp {
         }
 
         public async Task<long> GetDirectorySize(string directoryPath) {
-            Task.Yield();
             long totalSize = 0;
-            foreach (var item in _ftpClient.GetListing(directoryPath)) {
+            foreach (var item in await _ftpClient.GetListing(directoryPath)) {
                 switch (item.Type) {
                     case FtpObjectType.File:
                         totalSize += item.Size;
@@ -123,14 +134,15 @@ namespace JayTom.Dws.Plugin.Ftp {
         }
 
         public async Task<bool> DirectoryExists(string directoryPath) {
-            await Task.Yield();
-            return _ftpClient.DirectoryExists(directoryPath);
+            return await _ftpClient.DirectoryExists(directoryPath);
         }
 
         public async Task<List<FtpFileInfo>?> GetFileInfoList(string directoryPath, CancellationToken cancellationToken = default) {
-            await Task.Yield();
             try {
-                return EnumerateDirectoryFileInfo(_ftpClient, string.IsNullOrEmpty(directoryPath) ? _ftpClient.GetWorkingDirectory() : directoryPath);
+                var targetDirectory = string.IsNullOrEmpty(directoryPath)
+                    ? await _ftpClient.GetWorkingDirectory(cancellationToken)
+                    : directoryPath;
+                return await EnumerateDirectoryFileInfo(targetDirectory, cancellationToken);
             }
             catch (Exception) {
             }
@@ -139,13 +151,12 @@ namespace JayTom.Dws.Plugin.Ftp {
         }
 
         public async Task<FtpDiskInfo?> GetDiskUsage() {
-            await Task.Yield();
             try {
                 if (IsConnected) {
                     var ftpDiskInfo = new FtpDiskInfo();
 
                     // 发送STAT命令以获取当前工作目录的磁盘使用情况
-                    var response = _ftpClient.Execute("STAT");
+                    var response = await _ftpClient.Execute("STAT", CancellationToken.None);
 
                     if (response.Success && response.Message.StartsWith("211- Disk information:", StringComparison.OrdinalIgnoreCase)) {
                         var diskInfoLine = response.Message;
@@ -170,15 +181,14 @@ namespace JayTom.Dws.Plugin.Ftp {
             return null;
         }
 
-        private List<string> EnumerateDirectory(IFtpClient client, string directory) {
-            // 获取目录中的文件和文件夹列表
+        private async Task<List<string>> EnumerateDirectory(
+            string directory,
+            CancellationToken cancellationToken) {
             var fileNames = new List<string>();
-            var items = client.GetListing(directory);
-            // 遍历列表并处理每个项
+            var items = await _ftpClient.GetListing(directory, cancellationToken);
             foreach (var item in items) {
                 if (item.Type == FtpObjectType.Directory) {
-                    // 递归遍历子文件夹
-                    var list = EnumerateDirectory(client, item.FullName);
+                    var list = await EnumerateDirectory(item.FullName, cancellationToken);
                     fileNames.AddRange(list);
                 }
                 else if (item.Type == FtpObjectType.File) {
@@ -188,15 +198,14 @@ namespace JayTom.Dws.Plugin.Ftp {
             return fileNames;
         }
 
-        private List<FtpFileInfo> EnumerateDirectoryFileInfo(IFtpClient client, string directory) {
-            // 获取目录中的文件和文件夹列表
+        private async Task<List<FtpFileInfo>> EnumerateDirectoryFileInfo(
+            string directory,
+            CancellationToken cancellationToken) {
             var fileNames = new List<FtpFileInfo>();
-            var items = client.GetListing(directory);
-            // 遍历列表并处理每个项
+            var items = await _ftpClient.GetListing(directory, cancellationToken);
             foreach (var item in items) {
                 if (item.Type == FtpObjectType.Directory) {
-                    // 递归遍历子文件夹
-                    var list = EnumerateDirectoryFileInfo(client, item.FullName);
+                    var list = await EnumerateDirectoryFileInfo(item.FullName, cancellationToken);
                     fileNames.AddRange(list);
                 }
                 else if (item.Type == FtpObjectType.File) {
@@ -212,13 +221,11 @@ namespace JayTom.Dws.Plugin.Ftp {
             return fileNames;
         }
 
-        protected virtual async void OnConnected() {
-            await Task.Yield();
+        protected virtual void OnConnected() {
             Connected?.Invoke(this, EventArgs.Empty);
         }
 
-        protected virtual async void OnDisconnected() {
-            await Task.Yield();
+        protected virtual void OnDisconnected() {
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
     }

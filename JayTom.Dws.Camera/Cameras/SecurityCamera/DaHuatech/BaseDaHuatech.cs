@@ -48,11 +48,14 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static byte[] _imageBytes = Array.Empty<byte>();
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
-        private static Channel<(int port, IntPtr buf, int size, FRAME_INFO info)> _channel;
-        private static Channel<(long port, FRAME_DECODE_INFO pFrameDecodeInfo, FRAME_INFO_EX pFrameInfo, IntPtr pUser)> _fcbChannel;
+        private static Channel<(Func<Bitmap, Task> Callback, Bitmap Image)> _channel;
+        private static Channel<(Func<RealtimePreviewInfo, Task> Callback, RealtimePreviewInfo Preview)> _fcbChannel;
+        private static Task? _channelProcessor;
+        private static Task? _visibleDecodeProcessor;
         private static DecCBFun? _decCbFun;
         private static fCBDecode? _fCbDecode;
         private static ConcurrentDictionary<string, HistoricalWatermark> _historicalWatermarkInfos = new();
+        private static readonly object _watermarkUpdateLock = new();
 
         private static List<DevLogInInfo> _realTimePreviewInfos = new();
 
@@ -65,10 +68,18 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             lock (_initLock) {
                 if (_instance is null) {
                     _instance ??= new BaseDaHuatech();
-                    _channel = Channel.CreateUnbounded<(int, IntPtr, int, DhPlaySdk.FRAME_INFO)>();
-                    _fcbChannel = Channel.CreateUnbounded<(long, DhPlaySdk.FRAME_DECODE_INFO, DhPlaySdk.FRAME_INFO_EX, IntPtr)>();
-                    ProcessChannel();
-                    ProcessVisibleDecodeChannel();
+                    _channel = Channel.CreateBounded<(Func<Bitmap, Task>, Bitmap)>(
+                        new BoundedChannelOptions(8) {
+                            SingleReader = true,
+                            FullMode = BoundedChannelFullMode.Wait
+                        });
+                    _fcbChannel = Channel.CreateBounded<(Func<RealtimePreviewInfo, Task>, RealtimePreviewInfo)>(
+                        new BoundedChannelOptions(8) {
+                            SingleReader = true,
+                            FullMode = BoundedChannelFullMode.Wait
+                        });
+                    _channelProcessor = ProcessChannel();
+                    _visibleDecodeProcessor = ProcessVisibleDecodeChannel();
                     _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
                         var info = (NET_DEVICE_NET_INFO_EX2)(Marshal.PtrToStructure(intPtr, typeof(NET_DEVICE_NET_INFO_EX2)) ?? IntPtr.Zero);
                         if (info.stuDevInfo is { iIPVersion: 4, }) {
@@ -103,17 +114,29 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             }
                         };
                     _decCbFun += (int port, IntPtr buf, int size, ref DhPlaySdk.FRAME_INFO info, IntPtr data, int reserved2) => {
-                        //解析图片
-
-                        var frameInfo = info;
-
-                        if (!_channel.Writer.TryWrite((port, buf, size, frameInfo))) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"-回调图片异常");
+                        var key = _loginDev.FirstOrDefault(item => item.Value.PlayPort == port).Key ?? string.Empty;
+                        if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
+                            var bitmap = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
+                            if (!_channel.Writer.TryWrite((callback, bitmap))) {
+                                bitmap.Dispose();
+                            }
                         }
                     };
                     _fCbDecode += (long port, ref FRAME_DECODE_INFO info, ref FRAME_INFO_EX frameInfo, IntPtr user) => {
-                        if (!_fcbChannel.Writer.TryWrite((port, info, frameInfo, user))) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"-回调实时流异常");
+                        var preview = _realTimePreviewInfos.FirstOrDefault(item =>
+                            item.PlayPort == port &&
+                            item.PlayChannelId.Equals((int)user) &&
+                            item.IsRealTimePlay);
+                        if (preview is not null &&
+                            _realtimePreviewEvent.TryGetValue(
+                                $"{preview.SerialNo}|{preview.PlayChannelId}",
+                                out var callback)) {
+                            _fcbChannel.Writer.TryWrite((callback, new RealtimePreviewInfo {
+                                ChannelId = (int)user,
+                                RgbData = ConvertFrameInfoToRgbByteArray(info, 768, 432),
+                                Width = 768,
+                                Height = 432
+                            }));
                         }
                     };
                     _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
@@ -165,18 +188,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>
         /// 处理回调
         /// </summary>
-        private static async void ProcessChannel() {
+        private static async Task ProcessChannel() {
             await foreach (var item in _channel.Reader.ReadAllAsync()) {
-                var (port, buf, size, info) = item;
                 try {
-                    var key = (from kvp in _loginDev where kvp.Value.PlayPort == port select kvp.Key).FirstOrDefault() ?? string.Empty;
-
-                    if (_realtimeFrameEvent.TryGetValue(key, out var callback)) {
-                        var convertToBmp = DhPlaySdk.ConvertToGrayscaleBmp(buf, size, info);
-                        await callback(convertToBmp).ConfigureAwait(false);
-                    }
+                    await item.Callback(item.Image).ConfigureAwait(false);
                 }
                 catch (Exception ex) {
+                    item.Image.Dispose();
                     NLog.LogManager.GetCurrentClassLogger().Error($"处理回调异常:{ex}");
                 }
             }
@@ -185,26 +203,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>
         /// 实时预览回调
         /// </summary>
-        private static async void ProcessVisibleDecodeChannel() {
+        private static async Task ProcessVisibleDecodeChannel() {
             await foreach (var item in _fcbChannel.Reader.ReadAllAsync()) {
-                var (port, pFrameDecodeInfo, pFrameInfo, pUser) = item;
                 try {
-                    var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.PlayPort == port &&
-                        f.PlayChannelId.Equals((int)pUser) &&
-                        f.IsRealTimePlay);
-                    if (devLogInInfo is not null) {
-                        var tryGetValue = _realtimePreviewEvent.TryGetValue($"{devLogInInfo.SerialNo}|{devLogInInfo.PlayChannelId}", out var callback);
-                        if (tryGetValue && callback is not null) {
-                            var bytes = ConvertFrameInfoToRgbByteArray(pFrameDecodeInfo, 768, 432);
-
-                            _ = callback(new RealtimePreviewInfo() {
-                                ChannelId = (int)pUser,
-                                RgbData = bytes,
-                                Width = 768,
-                                Height = 432
-                            }).ConfigureAwait(false);
-                        }
-                    }
+                    await item.Callback(item.Preview).ConfigureAwait(false);
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"处理实时回调异常:{e}");
@@ -399,7 +401,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="callback"></param>
-        public void RegisterImageCallback(string serialNo, [NotNull] Action<Bitmap> callback) {
+        public void RegisterImageCallback(string serialNo, Action<Bitmap> callback) {
             _imageEvent.AddOrUpdate(serialNo, callback, (k, v) => callback);
         }
 
@@ -408,7 +410,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="callback"></param>
-        public void RegisterRealtimeFrameCallback(string serialNo, [NotNull] Func<Bitmap, Task> callback) {
+        public void RegisterRealtimeFrameCallback(string serialNo, Func<Bitmap, Task> callback) {
             _realtimeFrameEvent.AddOrUpdate(serialNo, callback, (k, v) => callback);
         }
 
@@ -418,7 +420,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="serialNo"></param>
         /// <param name="channelId"></param>
         /// <param name="callback"></param>
-        public void RegisterRealtimePreviewCallback(string serialNo, int channelId, [NotNull] Func<RealtimePreviewInfo, Task> callback) {
+        public void RegisterRealtimePreviewCallback(string serialNo, int channelId, Func<RealtimePreviewInfo, Task> callback) {
             _realtimePreviewEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
         }
 
@@ -429,7 +431,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="channelId"></param>
         /// <param name="callback"></param>
         public void RegisterPlaybackCallback(string serialNo, int channelId,
-            [NotNull] Func<RealtimePreviewInfo, Task> callback) {
+            Func<RealtimePreviewInfo, Task> callback) {
             _playBackEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
         }
 
@@ -440,7 +442,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="channelId"></param>
         /// <param name="callback"></param>
         public void RegisterPlayBackProgressCallback(string serialNo, int channelId,
-            [NotNull] Func<PlayBackProgressInfo, Task> callback) {
+            Func<PlayBackProgressInfo, Task> callback) {
             _playBackProgresEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
         }
 
@@ -817,10 +819,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public async void AddRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
+        public Task AddRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
             //每行间隔是70
             //获取位置坐标
-            await Task.Delay(10);
             if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
                 //添加
                 _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{serialNo}-{channelId}",
@@ -832,7 +833,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                 _historicalWatermarkInfos.Remove(key, out var info);
                                 if (info is not null && !_historicalWatermarkInfos.Any(a =>
                                         a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
-                                    DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                    _ = DeleteAllWatermarks(info.SerialNo, info.ChannelId);
                                 }
                                 UpDateRealTimeWatermark(_historicalWatermarkInfos);
                             }
@@ -849,13 +850,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             //判断是否超过上限
             //获取位置偏移
             //如果成功则添加到列表里面(填写过期移除)
+            return Task.CompletedTask;
         }
 
-        public async void AddRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp, string content,
+        public Task AddRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp, string content,
             SecurityCameraWatermarkConfig config) {
             //每行间隔是70
             //获取位置坐标
-            await Task.Delay(10);
             if (devices.Any()) {
                 foreach (var device in devices) {
                     if (_loginDev.TryGetValue(device.SerialNumber, out var mLoginId)) {
@@ -869,7 +870,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                         _historicalWatermarkInfos.Remove(key, out var info);
                                         if (info is not null && !_historicalWatermarkInfos.Any(a =>
                                                 a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
-                                            DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                            _ = DeleteAllWatermarks(info.SerialNo, info.ChannelId);
                                         }
                                         UpDateRealTimeWatermark(_historicalWatermarkInfos);
                                     }
@@ -884,35 +885,34 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 }
                 UpDateRealTimeWatermark(_historicalWatermarkInfos);
             }
+            return Task.CompletedTask;
         }
 
-        public void AddSingleRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp,
+        public Task AddSingleRealTimeWatermark(List<(string SerialNumber, int Channel)> devices, long packAgeTimestamp,
             string content, SecurityCameraWatermarkConfig config) {
             _historicalWatermarkInfos.Clear();
-            AddRealTimeWatermark(devices, packAgeTimestamp, content, config);
+            return AddRealTimeWatermark(devices, packAgeTimestamp, content, config);
         }
 
         private void UpDateRealTimeWatermark(ConcurrentDictionary<string, HistoricalWatermark> historicalWatermarkInfos) {
-            //最小写入间隔是700
-            var waitTime = 2300;
-            historicalWatermarkInfos.GroupBy(g => new {
-                g.Value.LoginId,
-                g.Value.ChannelId
-            }).Select(s => new RealTimeWatermarkInfo() {
-                LoginId = s.Key.LoginId,
-                ChannelId = s.Key.ChannelId,
-                CustomInfo = GetNET_OSD_CUSTOM_TITLE(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
-                CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
-            }).Select(ac => new Action(() => {
-                var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
-                if (!osdConfig) {
-                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
-                }
-                /*osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLETEXTALIGN, ac.ChannelId, ac.CustomAlign, waitTime);
-                if (!osdConfig) {
-                    NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
-                }*/
-            })).ToList().ForEach(action => action.Invoke());
+            lock (_watermarkUpdateLock) {
+                //最小写入间隔是700
+                var waitTime = 2300;
+                historicalWatermarkInfos.GroupBy(g => new {
+                    g.Value.LoginId,
+                    g.Value.ChannelId
+                }).Select(s => new RealTimeWatermarkInfo() {
+                    LoginId = s.Key.LoginId,
+                    ChannelId = s.Key.ChannelId,
+                    CustomInfo = GetNET_OSD_CUSTOM_TITLE(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+                    CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+                }).Select(ac => new Action(() => {
+                    var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
+                    if (!osdConfig) {
+                        NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
+                    }
+                })).ToList().ForEach(action => action.Invoke());
+            }
         }
 
         private NET_OSD_CUSTOM_TITLE GetNET_OSD_CUSTOM_TITLE(List<HistoricalWatermark> historicalWatermarkInfos, int maxWatermarks) {
@@ -960,7 +960,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="channelId"></param>
-        public async void DeleteAllWatermarks(string serialNo, int channelId) {
+        public async Task DeleteAllWatermarks(string serialNo, int channelId) {
             await Task.Delay(200);
             var waitTime = 3300;
             if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {

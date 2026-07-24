@@ -37,11 +37,12 @@ namespace JayTom.Dws.Camera {
         private PublicRuntimeSettings mCustomRuntimeSettings;
         private PublicRuntimeSettings? mNormalRuntimeSettings;
         private bool _isOpend = false;
-        private SemaphoreSlim _semaphoreSlim = new(1, 1);
         private int _recognitionSkipFrames = 4;
         private bool _isLicense = false;
 
         private CancellationTokenSource _stopCancellationTokenSource = new();
+        private Task? _frameProcessingTask;
+        private int _isFrameProcessing;
 
         //图片缩放百分比
         private int _scalePercentage = 0;
@@ -638,27 +639,23 @@ namespace JayTom.Dws.Camera {
         /// <param name="bitmap"></param>
         /// <exception cref="NotImplementedException"></exception>
         private void SelectCameraOnOnFrameCaptrue(Bitmap bitmap) {
-            //读码
-            var fastClone = FastClone(bitmap);
-            /*var tempBitmap = bitmap.Clone(new Rectangle(0, 0, bitmap.Width, bitmap.Height), bitmap.PixelFormat);
+            if (Interlocked.CompareExchange(ref _isFrameProcessing, 1, 0) != 0) {
+                return;
+            }
 
-            tempBitmap.Dispose();*/
-            /*Debug.WriteLine($"纯图片返回间隔{DateTime.Now.Subtract(reTime).TotalMilliseconds}");
-            reTime = DateTime.Now;*/
-            /*Task.Factory.StartNew(() => {
-                ReadFromFrame(fastClone);
-            });*/
-            //缩放图片
+            var fastClone = FastClone(bitmap);
+            Bitmap frame = fastClone;
             if (_scalePercentage > 0) {
                 var generateThumbnail = GenerateThumbnail(fastClone, (int)(fastClone.Width * ((float)_scalePercentage / 100)),
                     (int)(fastClone.Height * ((float)_scalePercentage / 100)));
                 if (generateThumbnail is not null) {
-                    ReadFromFrame(generateThumbnail, _stopCancellationTokenSource.Token);
+                    frame = generateThumbnail;
+                    fastClone.Dispose();
                 }
             }
-            else {
-                ReadFromFrame(fastClone, _stopCancellationTokenSource.Token);
-            }
+
+            var token = _stopCancellationTokenSource.Token;
+            _frameProcessingTask = Task.Run(() => ReadFromFrame(frame, token));
         }
 
         /// <summary>
@@ -666,14 +663,14 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="bitmap"></param>
         /// <param name="token"></param>
-        private async void ReadFromFrame(Bitmap bitmap, CancellationToken token) {
-            if (_framenum >= _recognitionSkipFrames) {
-                _framenum = 0;
-                long elapsedMilliseconds = 0;
-                TextResult[]? bars = null;
-                var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
-                try {
-                    await _semaphoreSlim.WaitAsync(token);
+        private void ReadFromFrame(Bitmap bitmap, CancellationToken token) {
+            try {
+                token.ThrowIfCancellationRequested();
+                if (_framenum >= _recognitionSkipFrames) {
+                    _framenum = 0;
+                    long elapsedMilliseconds = 0;
+                    TextResult[]? bars = null;
+                    var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
                     if (mBarcodeReader is not null) {
                         var stopwatch = new Stopwatch();
                         stopwatch.Start();
@@ -682,43 +679,42 @@ namespace JayTom.Dws.Camera {
                         stopwatch.Stop();
                         elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                     }
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                }
-                finally {
-                    _semaphoreSlim.Release();
-                }
-                //解析条码
-                var barcodeScannedEventArgs = new BarcodeScannedEventArgs() {
-                    ScanTime = DateTime.Now,
-                    CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber,
-                    Image = bitmap
-                };
-                if (bars is not null && bars.Length > 0) {
-                    //识别到条码
-                    barcodeScannedEventArgs.BarCodes = bars.Select(s => new BarcodeInfo {
-                        Barcode = s.BarcodeText,
-                        BarcodeRegion = s.LocalizationResult.ResultPoints?.ToList(),
-                        BarcodeType = s.LocalizationResult.BarcodeFormatString,
-                    })?.ToList();
-                    barcodeScannedEventArgs.Image = bitmap;
-                    barcodeScannedEventArgs.RecognitionTime = elapsedMilliseconds;
+
+                    var barcodeScannedEventArgs = new BarcodeScannedEventArgs {
+                        ScanTime = DateTime.Now,
+                        CameraSerialNumber = UsbCameraInfo.CameraSerialNumber,
+                        Image = bitmap
+                    };
+                    if (bars is { Length: > 0 }) {
+                        barcodeScannedEventArgs.BarCodes = bars.Select(s => new BarcodeInfo {
+                            Barcode = s.BarcodeText,
+                            BarcodeRegion = s.LocalizationResult.ResultPoints?.ToList(),
+                            BarcodeType = s.LocalizationResult.BarcodeFormatString
+                        }).ToList();
+                        barcodeScannedEventArgs.RecognitionTime = elapsedMilliseconds;
+                    }
                     OnBarcodeScanned(barcodeScannedEventArgs);
                 }
                 else {
-                    OnBarcodeScanned(barcodeScannedEventArgs);
+                    OnBarcodeScanned(new BarcodeScannedEventArgs {
+                        ScanTime = DateTime.Now,
+                        CameraSerialNumber = UsbCameraInfo.CameraSerialNumber,
+                        Image = bitmap
+                    });
                 }
-            }
-            else {
-                OnBarcodeScanned(new BarcodeScannedEventArgs() {
-                    ScanTime = DateTime.Now,
-                    CameraSerialNumber = this.UsbCameraInfo.CameraSerialNumber,
-                    Image = bitmap
-                });
-            }
 
-            _framenum++;
+                _framenum++;
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) {
+                bitmap.Dispose();
+            }
+            catch (Exception exception) {
+                bitmap.Dispose();
+                NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
+            }
+            finally {
+                Volatile.Write(ref _isFrameProcessing, 0);
+            }
         }
 
         /// <summary>
@@ -730,11 +726,15 @@ namespace JayTom.Dws.Camera {
             try {
                 if (_selectCamera is not null && _isOpend) {
                     _selectCamera.OnFrameCaptrue -= SelectCameraOnOnFrameCaptrue;
-                    await Task.Delay(100);
-                    NLog.LogManager.GetCurrentClassLogger().Error($"注销事件");
                     _stopCancellationTokenSource.Cancel();
-                    //注册事件
-                    await Task.Delay(500);
+                    if (_frameProcessingTask is not null) {
+                        try {
+                            await _frameProcessingTask;
+                        }
+                        catch (OperationCanceledException) {
+                        }
+                        _frameProcessingTask = null;
+                    }
                     _selectCamera?.Close();
                     _selectCamera?.Dispose();
                     _selectCamera = null;
@@ -758,20 +758,22 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 释放资源
         /// </summary>
-        public async void Dispose() {
-            NLog.LogManager.GetCurrentClassLogger().Error($"调用释放");
-            await Stop();
+        public void Dispose() {
+            Stop().GetAwaiter().GetResult();
             //mBarcodeReader?.Recycle();
             mBarcodeReader?.Dispose();
             mBarcodeReader = null;
             _cameraManager?.Dispose();
             _cameraManager = null;
-            NLog.LogManager.GetCurrentClassLogger().Error($"释放结束");
         }
 
-        protected virtual async void OnBarcodeScanned(BarcodeScannedEventArgs e) {
-            await Task.Yield();
-            BarcodeScanned?.Invoke(this, e);
+        protected virtual void OnBarcodeScanned(BarcodeScannedEventArgs e) {
+            var handler = BarcodeScanned;
+            if (handler is null) {
+                e.Image?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         private Region? CreateRegionFromPoints(Point[] points) {

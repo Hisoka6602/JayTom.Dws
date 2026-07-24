@@ -377,7 +377,8 @@
                         MinHeight="100"
                         Margin="0,5"
                         ItemTemplate="{StaticResource ApiLogItemTemplate}"
-                        ItemsSource="{Binding ApiLogItems, UpdateSourceTrigger=PropertyChanged}">
+                        ItemsSource="{Binding ApiLogItems, Mode=OneWay}"
+                        Style="{StaticResource CustomListBoxStyle}">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Height" Value="Auto" />

@@ -61,6 +61,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private CameraResolutionInfo _cameraResolution = new();
         private ObservableCollection<CameraResolutionInfo> _cameraResolutions = new();
+        /// <summary>
+        /// 有界预览图像队列。
+        /// </summary>
+        private readonly ConcurrentQueue<Bitmap> _bitmapQueue = new();
+        /// <summary>
+        /// 预览图像队列同步锁。
+        /// </summary>
+        private readonly object _bitmapQueueLock = new();
+        /// <summary>
+        /// 新预览图像到达信号。
+        /// </summary>
+        private readonly SemaphoreSlim _bitmapSignal = new(0, 1);
+        /// <summary>
+        /// 预览图像处理任务。
+        /// </summary>
+        private Task? _imageWorker;
 
         public UsbCameraSettingsViewModel(IDeviceService deviceService,
             IUsbCameraConfigRepository usbCameraConfigRepository,
@@ -122,11 +138,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             get => _image;
             set => SetProperty(ref _image, value);
         }
-
-        /// <summary>
-        /// 图片队列
-        /// </summary>
-        public ConcurrentQueue<Bitmap> BitmapQueue { get; init; } = new();
 
         public UsbCameraSettingsInfoModel UsbCameraSettingsInfo {
             get => _usbCameraSettingsInfo;
@@ -212,28 +223,77 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
+        public override void LoadedDelegate(object obj) {
             if (!_isLoaded) {
                 _isLoaded = true;
-                await Task.Factory.StartNew(async () => {
-                    try {
-                        while (true) {
-                            var tryDequeue = BitmapQueue.TryDequeue(out var bitmap);
-                            if (tryDequeue && bitmap is not null && this.Image is not null) {
-                                var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-                                var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                                await this.Image.Dispatcher.InvokeAsync(() => {
-                                    this.Image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height), bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
-                                    bitmap.UnlockBits(bitmapData);
-                                }, DispatcherPriority.Render);
-                            }
-                            await Task.Delay(1);
+                _imageWorker = Task.Run(ProcessImageQueue);
+            }
+        }
+
+        /// <summary>
+        /// 处理预览图像队列。
+        /// </summary>
+        private async Task ProcessImageQueue() {
+            while (true) {
+                try {
+                    await _bitmapSignal.WaitAsync().ConfigureAwait(false);
+                    Bitmap? bitmap = null;
+                    lock (_bitmapQueueLock) {
+                        while (_bitmapQueue.TryDequeue(out var queuedBitmap)) {
+                            bitmap?.Dispose();
+                            bitmap = queuedBitmap;
                         }
                     }
-                    catch (Exception e) {
-                        Debug.WriteLine($"{e}");
+                    var image = Image;
+                    if (bitmap is null || image is null) {
+                        bitmap?.Dispose();
+                        continue;
                     }
-                }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    using (bitmap) {
+                        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                        var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly,
+                            System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                        try {
+                            await image.Dispatcher.InvokeAsync(() => {
+                                image.WritePixels(new Int32Rect(0, 0, bitmap.Width, bitmap.Height),
+                                    bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
+                            }, DispatcherPriority.Background);
+                        }
+                        finally {
+                            bitmap.UnlockBits(bitmapData);
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    Debug.WriteLine($"{e}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 将图像加入有界预览队列。
+        /// </summary>
+        /// <param name="bitmap">待显示图像。</param>
+        private void EnqueueImage(Bitmap bitmap) {
+            lock (_bitmapQueueLock) {
+                while (_bitmapQueue.Count >= 2 && _bitmapQueue.TryDequeue(out var staleBitmap)) {
+                    staleBitmap.Dispose();
+                }
+                _bitmapQueue.Enqueue(bitmap);
+                if (_bitmapSignal.CurrentCount == 0) {
+                    _bitmapSignal.Release();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 清空并释放预览图像。
+        /// </summary>
+        private void ClearImages() {
+            lock (_bitmapQueueLock) {
+                while (_bitmapQueue.TryDequeue(out var bitmap)) {
+                    bitmap.Dispose();
+                }
             }
         }
 
@@ -252,7 +312,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         _usbBarCodeReader?.Dispose();
                         await Task.Delay(500);
                         _usbBarCodeReader = null;
-                        BitmapQueue.Clear();
+                        ClearImages();
                         var usbCameraInfos = UsbBarCodeReader.EnumerateCameras();
                         await Application.Current.Dispatcher.InvokeAsync(() => {
                             CameraItems.Clear();
@@ -376,7 +436,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             _usbBarCodeReader?.Dispose();
             await Task.Delay(500);
             _usbBarCodeReader = null;
-            BitmapQueue.Clear();
+            ClearImages();
 
             if (CameraResolution?.Size is { Width: > 0, Height: > 0 }) {
                 _usbBarCodeReader = new UsbBarCodeReader();
@@ -387,6 +447,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                         if (thumbnail is not null) {
                             List<Point>? points = null;
                             using var g = Graphics.FromImage(thumbnail);
+                            using var borderPen = new System.Drawing.Pen(Color.Red, 5);
 
                             foreach (var barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()) {
                                 points = barcodeInfo.BarcodeRegion;
@@ -394,17 +455,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                                     args?.Image is { Width: > 0, Height: > 0 }) {
                                     var stPointList = new Point[4];
                                     for (var i = 0; i < 4; i++) {
-                                        stPointList[i].X = (int)(points[i].X *
-                                                                 ((float)thumbnail.Width / args.Image.Width));
-                                        stPointList[i].Y = (int)(points[i].Y *
-                                                                 ((float)thumbnail.Height / args.Image.Height));
+                                        stPointList[i].X = points[i].X * thumbnail.Width / args.Image.Width;
+                                        stPointList[i].Y = points[i].Y * thumbnail.Height / args.Image.Height;
                                     }
-                                    g.DrawPolygon(new System.Drawing.Pen(Color.Red, 5), stPointList);
+                                    g.DrawPolygon(borderPen, stPointList);
                                 }
                             }
-                            g.DrawString($"{args?.RecognitionTime}ms", new Font(FontFamily.GenericSerif, 15, FontStyle.Bold),
-                                new SolidBrush(Color.Red), 10, 10);
-                            BitmapQueue.Enqueue(thumbnail);
+                            using var font = new Font(FontFamily.GenericSerif, 15, FontStyle.Bold);
+                            using var brush = new SolidBrush(Color.Red);
+                            g.DrawString($"{args?.RecognitionTime}ms", font, brush, 10, 10);
+                            EnqueueImage(thumbnail);
                             Debug.WriteLine($"{JsonConvert.SerializeObject(args?.BarCodes)}");
                         }
                     }

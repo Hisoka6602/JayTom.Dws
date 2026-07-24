@@ -13,18 +13,8 @@ namespace JayTom.Dws.Infrastructure {
     public sealed class SqliteContext : DbContext {
 
         public SqliteContext(DbContextOptions<SqliteContext> options) : base(options) {
-            lock (System.AppDomain.CurrentDomain.BaseDirectory) {
-                var s = $"{System.AppDomain.CurrentDomain.BaseDirectory}Data.db";
-                if (!File.Exists(s)) {
-                    Database.EnsureCreated();
-                    Database.Migrate();
-                }
-                else {
-                    if (Database.GetPendingMigrations().Any()) {
-                        Database.Migrate(); //执行迁移
-                    }
-                }
-            }
+            SqliteDatabaseInitializer.EnsureInitialized(
+                this, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db"));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {

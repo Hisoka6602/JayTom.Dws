@@ -19,25 +19,18 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
     public class ExpressBillPool {
         private readonly DefaultObjectPool<ExpressBill> _objectPool;
-        private object _lockObj = new();
 
         public ExpressBillPool(int maxObjects) {
-            lock (_lockObj) {
-                _objectPool = new DefaultObjectPool<ExpressBill>(
-                    new ExpressBillPooledObjectPolicy(this), maxObjects);
-            }
+            _objectPool = new DefaultObjectPool<ExpressBill>(
+                new ExpressBillPooledObjectPolicy(this), maxObjects);
         }
 
         public ExpressBill GetObject() {
-            lock (_lockObj) {
-                return _objectPool.Get();
-            }
+            return _objectPool.Get();
         }
 
         public void ReturnObject(ExpressBill expressBill) {
-            lock (_lockObj) {
-                _objectPool.Return(expressBill);
-            }
+            _objectPool.Return(expressBill);
         }
     }
 
@@ -49,9 +42,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         }
 
         public ExpressBill Create() {
-            lock (_pool) {
-                return new ExpressBill(_pool);
-            }
+            return new ExpressBill(_pool);
         }
 
         public bool Return(ExpressBill obj) {

@@ -14,35 +14,50 @@ using static JayTom.Dws.Plugin.WeighingScale.WeighingScale;
 namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
     public class DefaultStaticScale : IStaticScale {
-        private static System.IO.Ports.SerialPort? _serialPort { get; set; }
-        private readonly ConcurrentQueue<float> _weightQueue = new();
+        private System.IO.Ports.SerialPort? _serialPort { get; set; }
+        private readonly Queue<float> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
         private DateTime StabledTime { get; set; } = DateTime.Now;
         private CancellationTokenSource _tokenSource = new();
         private DefaultStaticScaleValueParameters _defaultStaticScaleValueParameters = new();
         private BaseScaleConnectParam _baseScaleConnectParam = new();
-        private SemaphoreSlim _semaphore = new(1);
+        private readonly object _receiveLock = new();
+        private Task? _receiveTask;
+        private Task? _sendTask;
 
         //增加一个稳定重量推送间隔
-        private static bool _isZeroed = true;
+        private bool _isZeroed = true;
 
-        private static DateTime _lasTime = DateTime.Now;
+        private DateTime _lasTime = DateTime.Now;
 
         /// <summary>
         /// 稳定重量累计次数
         /// </summary>
-        private ConcurrentQueue<float> _oldStableWeight = new();
+        private readonly Queue<float> _oldStableWeight = new();
 
-        private static float _lastweight = 0;
+        private float _lastweight;
 
         //private static int _stableWeightCount = 0;
 
         public void Dispose() {
-            _tokenSource?.Cancel();
-            if (_serialPort?.IsOpen == true) {
-                _serialPort?.Close();
+            _tokenSource.Cancel();
+            try {
+                var tasks = new List<Task>(2);
+                if (_receiveTask is not null) {
+                    tasks.Add(_receiveTask);
+                }
+                if (_sendTask is not null) {
+                    tasks.Add(_sendTask);
+                }
+                Task.WhenAll(tasks).GetAwaiter().GetResult();
             }
-            //_serialPort?.Dispose();
+            catch (OperationCanceledException) {
+            }
+
+            if (_serialPort?.IsOpen == true) {
+                _serialPort.Close();
+            }
+            _serialPort?.Dispose();
             _serialPort = null;
         }
 
@@ -88,42 +103,31 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             PortName = _baseScaleConnectParam.SerialPortInfo.PortName,
                         };
                         //注册事件
-                        _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
+                        _serialPort.DataReceived += delegate (object sender, SerialDataReceivedEventArgs args) {
                             try {
-                                await Task.Delay(_defaultStaticScaleValueParameters.DataInterval);
-                                await _semaphore.WaitAsync();
-                                if (_serialPort?.IsOpen == true) {
-                                    if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port && !_tokenSource.IsCancellationRequested) {
-                                        string receivedData;
+                                string? receivedData = null;
+                                lock (_receiveLock) {
+                                    if (_serialPort?.IsOpen == true &&
+                                        sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port &&
+                                        !_tokenSource.IsCancellationRequested) {
                                         if (WeightFormat == ScaleWeightFormat.Ascii) {
-                                            // 读取接收到的数据
-                                            receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
+                                            receivedData = port.ReadExisting();
                                         }
                                         else {
-                                            //接收十六进制内容
-                                            // 接收数据存储的字节数组
                                             var buffer = new byte[port.BytesToRead];
-
-                                            // 读取数据到字节数组
-                                            port.Read(buffer, 0, buffer.Length);
-
-                                            // 将字节数组转换为十六进制表示
-                                            receivedData = BitConverter.ToString(buffer).Replace("-", "");
+                                            var bytesRead = port.Read(buffer, 0, buffer.Length);
+                                            receivedData = Convert.ToHexString(buffer.AsSpan(0, bytesRead));
                                         }
-                                        _character.Enqueue(receivedData);
-                                        // 添加到接收数据缓冲区
-                                        //receivedDataBuffer += receivedData;
-
-                                        OnReceived(receivedData);
                                     }
                                 }
+
+                                if (!string.IsNullOrEmpty(receivedData)) {
+                                    _character.Enqueue(receivedData);
+                                    OnReceived(receivedData);
+                                }
                             }
-                            catch (TaskCanceledException) { }
                             catch (Exception e) {
                                 OnExcepted(e);
-                            }
-                            finally {
-                                _semaphore.Release();
                             }
                         };
                         _serialPort.Disposed += delegate {
@@ -142,15 +146,12 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                     }
 
                     _serialPort.Open();
-                    NLog.LogManager.GetCurrentClassLogger().Error("静态称连接");
                     if (_serialPort.IsOpen) {
-                        //注册转换事件
-                        _tokenSource?.Cancel();
+                        _tokenSource.Cancel();
                         _tokenSource = new();
-                        Task.Factory.StartNew(ProcessReceivedData, TaskCreationOptions.LongRunning);
+                        _receiveTask = Task.Run(() => ProcessReceivedData(_tokenSource.Token));
                         if (_defaultStaticScaleValueParameters.AccessMode == WeightAccessMode.QuestionAnswer) {
-                            //问答式
-                            Task.Factory.StartNew(ProcessSending, TaskCreationOptions.LongRunning);
+                            _sendTask = Task.Run(() => ProcessSending(_tokenSource.Token));
                         }
                         OnConnected(this);
                         _isZeroed = true;
@@ -167,9 +168,9 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             return false;
         }
 
-        private async void ProcessReceivedData() {
+        private async Task ProcessReceivedData(CancellationToken token) {
             var dataBuffer = string.Empty;
-            while (!_tokenSource.Token.IsCancellationRequested) {
+            while (!token.IsCancellationRequested) {
                 //根据标识符取出指定长度的字符
                 var dequeue = _character.TryDequeue(out var buffResult);
                 if (dequeue) {
@@ -201,7 +202,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         }
                     }
                 }
-                await Task.Delay(1);
+                await Task.Delay(1, token);
             }
         }
 
@@ -211,7 +212,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                     _weightQueue.Enqueue(result);
                     if (_weightQueue.Count > 0 && _weightQueue.Count > _defaultStaticScaleValueParameters.BalanceCount) {
                         //删除一个
-                        _weightQueue.TryDequeue(out _);
+                        _weightQueue.Dequeue();
                     }
 
                     if (_weightQueue.Count >= _defaultStaticScaleValueParameters.BalanceCount) {
@@ -250,7 +251,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                 _isZeroed = true;
                             }
                             else if (_oldStableWeight.Count > 2) {
-                                _oldStableWeight.TryDequeue(out _);
+                                _oldStableWeight.Dequeue();
                             }
                             else {
                                 _oldStableWeight.Enqueue(weight);
@@ -306,9 +307,9 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             }
         }
 
-        private async void ProcessSending() {
-            while (!_tokenSource.Token.IsCancellationRequested) {
-                await Task.Delay(20);
+        private async Task ProcessSending(CancellationToken token) {
+            while (!token.IsCancellationRequested) {
+                await Task.Delay(20, token);
                 if (_serialPort?.IsOpen == true) {
                     if (_defaultStaticScaleValueParameters.SendingFormat == ScaleWeightFormat.Ascii) {
                         _serialPort?.WriteLine(_defaultStaticScaleValueParameters.SendingContent);
@@ -325,25 +326,21 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         public event EventHandler<WeightChangedEventArgs>? WeightCleared;
 
-        protected virtual async void OnCurrentWeight(float e) {
-            await Task.Yield();
+        protected virtual void OnCurrentWeight(float e) {
             CurrentWeight?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected(IScale e) {
+        protected virtual void OnConnected(IScale e) {
             Status = ScaleStatus.Running;
-            await Task.Yield();
             Connected?.Invoke(this, e);
         }
 
-        protected virtual async void OnDisconnected(IScale e) {
+        protected virtual void OnDisconnected(IScale e) {
             Status = ScaleStatus.Disconnected;
-            await Task.Yield();
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnStabledWeight(float e) {
-            await Task.Yield();
+        protected virtual void OnStabledWeight(float e) {
             //使用附加属性
             if (WeightAdditionalProperties.IsUseActualWeightConversionRate) {
                 //使用重量转换率
@@ -367,13 +364,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             StabledWeight?.Invoke(this, e);
         }
 
-        protected virtual async void OnExcepted(Exception e) {
-            await Task.Yield();
+        protected virtual void OnExcepted(Exception e) {
             Excepted?.Invoke(this, e);
         }
 
-        protected virtual async void OnReceived(string e) {
-            await Task.Yield();
+        protected virtual void OnReceived(string e) {
             Received?.Invoke(this, e);
         }
 
@@ -388,13 +383,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             return bytes;
         }
 
-        protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnWeightStabilized(WeightChangedEventArgs e) {
             WeightStabilized?.Invoke(this, e);
         }
 
-        protected virtual async void OnWeightCleared(WeightChangedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnWeightCleared(WeightChangedEventArgs e) {
             WeightCleared?.Invoke(this, e);
         }
     }

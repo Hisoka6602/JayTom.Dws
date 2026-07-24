@@ -29,7 +29,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
 
         public event EventHandler<Exception>? SendError;
 
-        private SemaphoreSlim _sendSlim = new(1);
+        private readonly SemaphoreSlim _sendSlim = new(1, 1);
 
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
             DataLen = dataLen;
@@ -48,7 +48,6 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         }
 
         public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
-            await Task.Yield();
             try {
                 DataLen = dataLen;
                 FormatType = dataType;
@@ -56,9 +55,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                     _tcpService = new TcpService();
                     _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                         try {
-                            var msg = Encoding.Default.GetString(block.Buffer, 0, DataLen > 0 ? DataLen : block.Len);
+                            var length = DataLen > 0 ? Math.Min(DataLen, block.Len) : block.Len;
+                            var msg = Encoding.Default.GetString(block.Buffer, 0, length);
                             OnCommunication(new CommunicationInfo() {
-                                Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(block.Buffer.Take(DataLen > 0 ? DataLen : block.Len).ToArray()).Replace("-", " "),
+                                Content = FormatType == FormatType.Ascii
+                                    ? msg
+                                    : Convert.ToHexString(block.Buffer.AsSpan(0, length)),
                                 Time = DateTime.Now,
                                 Type = CommunicationType.Receive
                             });
@@ -112,9 +114,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         _tcpService = new TcpService();
                         _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                             try {
-                                var msg = Encoding.Default.GetString(block.Buffer, 0, DataLen > 0 ? DataLen : block.Len);
+                                var length = DataLen > 0 ? Math.Min(DataLen, block.Len) : block.Len;
+                                var msg = Encoding.Default.GetString(block.Buffer, 0, length);
                                 OnCommunication(new CommunicationInfo() {
-                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(block.Buffer.Take(DataLen > 0 ? DataLen : block.Len).ToArray()).Replace("-", " "),
+                                    Content = FormatType == FormatType.Ascii
+                                        ? msg
+                                        : Convert.ToHexString(block.Buffer.AsSpan(0, length)),
                                     Time = DateTime.Now,
                                     Type = CommunicationType.Receive
                                 });
@@ -149,22 +154,23 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         }
 
         public async Task<bool> SendMessage(string message, CancellationToken token = default) {
+            var lockTaken = false;
             try {
                 await _sendSlim.WaitAsync(token);
+                lockTaken = true;
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     //var bytes = Encoding.UTF8.GetBytes(message);
                     var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
                     if (clients?.Any() == true) {
                         foreach (var socketClient in clients) {
                             await _tcpService.SendAsync(socketClient.ID, message);
-                            OnCommunication(new CommunicationInfo() {
-                                Content = message,
-                                Time = DateTime.Now,
-                                Type = CommunicationType.Send
-                            });
                         }
+                        OnCommunication(new CommunicationInfo {
+                            Content = message,
+                            Time = DateTime.Now,
+                            Type = CommunicationType.Send
+                        });
                     }
-                    await Task.Delay(5, token);
                     return true;
                 }
             }
@@ -173,29 +179,32 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 return false;
             }
             finally {
-                _sendSlim.Release();
+                if (lockTaken) {
+                    _sendSlim.Release();
+                }
             }
             return false;
         }
 
         public async Task<bool> SendMessage(byte[] message, CancellationToken token = default) {
+            var lockTaken = false;
             try {
                 await _sendSlim.WaitAsync(token);
+                lockTaken = true;
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     //var bytes = Encoding.UTF8.GetBytes(message);
                     var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
                     if (clients?.Any() == true) {
                         foreach (var socketClient in clients) {
                             await _tcpService.SendAsync(socketClient.ID, message);
-                            OnCommunication(new CommunicationInfo() {
-                                Content = BitConverter.ToString(message).Replace("-", ", "),
-                                Time = DateTime.Now,
-                                Type = CommunicationType.Send
-                            });
                         }
+                        OnCommunication(new CommunicationInfo {
+                            Content = Convert.ToHexString(message),
+                            Time = DateTime.Now,
+                            Type = CommunicationType.Send
+                        });
                     }
 
-                    await Task.Delay(5, token);
                     return true;
                 }
             }
@@ -204,7 +213,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 return false;
             }
             finally {
-                _sendSlim.Release();
+                if (lockTaken) {
+                    _sendSlim.Release();
+                }
             }
             return false;
         }
@@ -236,7 +247,10 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         public event EventHandler<string>? ClientDisconnected;
 
         public async Task<bool> SendMessage(string ip, string message, CancellationToken token = default) {
+            var lockTaken = false;
             try {
+                await _sendSlim.WaitAsync(token);
+                lockTaken = true;
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     //var bytes = Encoding.UTF8.GetBytes(message);
                     var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
@@ -258,11 +272,19 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 OnException(e);
                 return false;
             }
+            finally {
+                if (lockTaken) {
+                    _sendSlim.Release();
+                }
+            }
             return false;
         }
 
         public async Task<bool> SendMessage(string ip, byte[] message, CancellationToken token = default) {
+            var lockTaken = false;
             try {
+                await _sendSlim.WaitAsync(token);
+                lockTaken = true;
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     //var bytes = Encoding.UTF8.GetBytes(message);
                     var clients = _tcpService?.SocketClients?.GetClients()?.ToList();
@@ -284,41 +306,39 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 OnException(e);
                 return false;
             }
+            finally {
+                if (lockTaken) {
+                    _sendSlim.Release();
+                }
+            }
             return false;
         }
 
-        public async Task<List<string>?> GetClientsIp() {
-            await Task.Yield();
-            return _tcpService?.SocketClients?.GetClients()?.Select(s => s.IP)?.ToList();
+        public Task<List<string>?> GetClientsIp() {
+            return Task.FromResult(_tcpService?.SocketClients?.GetClients()?.Select(s => s.IP)?.ToList());
         }
 
-        protected virtual async void OnConnectionException(string e) {
-            await Task.Yield();
+        protected virtual void OnConnectionException(string e) {
             ConnectionException?.Invoke(this, e);
         }
 
-        protected virtual async void OnException(Exception e) {
-            await Task.Yield();
+        protected virtual void OnException(Exception e) {
             Exception?.Invoke(this, e);
         }
 
-        protected virtual async void OnCommunication(CommunicationInfo e) {
-            await Task.Yield();
+        protected virtual void OnCommunication(CommunicationInfo e) {
             Communication?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected(string e) {
-            await Task.Yield();
+        protected virtual void OnConnected(string e) {
             Connected?.Invoke(this, e);
         }
 
-        protected virtual async void OnDisconnected(string e) {
-            await Task.Yield();
+        protected virtual void OnDisconnected(string e) {
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnSendError(Exception e) {
-            await Task.Yield();
+        protected virtual void OnSendError(Exception e) {
             SendError?.Invoke(this, e);
         }
 

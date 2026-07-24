@@ -234,7 +234,7 @@ namespace JayTom.Dws.Interface.geek_ {
             return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
         }
 
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             var resultContent = string.Empty;
@@ -339,8 +339,9 @@ namespace JayTom.Dws.Interface.geek_ {
             }
         }
 
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.CompletedTask;
         }
 
         public StreamContent? ImageToStreamContent(Image image, string paramName, string fileName) {

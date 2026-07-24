@@ -38,7 +38,7 @@
             HorizontalContentAlignment="Center"
             VerticalContentAlignment="Center"
             Focusable="False"
-            ItemsSource="{Binding HiddenCameraItems, UpdateSourceTrigger=PropertyChanged}"
+            ItemsSource="{Binding HiddenCameraItems, Mode=OneWay}"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
             ScrollViewer.VerticalScrollBarVisibility="Disabled"
             Style="{StaticResource CustomListBoxStyle}">
@@ -69,11 +69,11 @@
                             FontSize="25"
                             Foreground="White"
                             Opacity="0.8"
-                            Text="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter}, ConverterParameter=Font}">
+                            Text="{Binding Type, Mode=OneWay, Converter={StaticResource CameraTypeConverter}, ConverterParameter=Font}">
                             <TextBlock.ToolTip>
                                 <TextBlock>
-                                    <Run Text="{Binding Type, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CameraTypeConverter}, ConverterParameter=ToolTip}" />
-                                    <Run Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Run Text="{Binding Type, Mode=OneWay, Converter={StaticResource CameraTypeConverter}, ConverterParameter=ToolTip}" />
+                                    <Run Text="{Binding SerialNumber, Mode=OneWay}" />
                                 </TextBlock>
                             </TextBlock.ToolTip>
                         </TextBlock>
@@ -94,7 +94,7 @@
             VerticalContentAlignment="Center"
             Focusable="False"
             ItemTemplate="{StaticResource CameraTemplate}"
-            ItemsSource="{Binding CameraItems, UpdateSourceTrigger=PropertyChanged}"
+            ItemsSource="{Binding CameraItems, Mode=OneWay}"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
             ScrollViewer.VerticalScrollBarVisibility="Disabled"
             Style="{StaticResource CustomListBoxStyle}">

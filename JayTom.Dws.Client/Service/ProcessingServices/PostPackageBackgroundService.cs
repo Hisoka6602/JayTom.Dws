@@ -650,7 +650,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             }
 
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ContinueWith(a => {
+                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ConfigureAwait(false);
                     try {
                         if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
                             /*var value = PackageInfoManager.GetPackage(f => f.Value is { IsCompleted: false, BarCodeInfo: not null });
@@ -718,7 +718,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     catch (Exception e) {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
-                }, stoppingToken);
             }
         }
     }

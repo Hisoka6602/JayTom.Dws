@@ -211,53 +211,57 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         private async void LoadData(int pageIndex) {
             const int pageSize = 500;
-            //这里的查询要分开锁，不然显示有卡顿
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
-                    model.Identifier = "AppLogDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-                    await Task.Delay(500);
-                    AppLogItems.Clear();
-                    Details = string.Empty;
-
-                    var total = await _appLogRepository.Total(s =>
+            var loadingDialog = new LoadingDialog();
+            if (loadingDialog.DataContext is not LoadingDialogViewModel model) {
+                return;
+            }
+            model.Identifier = "AppLogDialog";
+            _ = DialogHost.Show(loadingDialog, model.Identifier);
+            try {
+                var total = await _appLogRepository.Total(s =>
                         (StartTime == null || s.CreateTime >= StartTime.Value) &&
                         (EndTime == null || s.CreateTime <= EndTime.Value) &&
                         (SelectLogType == null || s.Type == SelectLogType) &&
-                        (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
-                    if (total > 0) {
-                        PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
-                        var selectOrderByDescending = await _appLogRepository.SelectOrderByDescending(s =>
-                                (StartTime == null || s.CreateTime >= StartTime.Value) &&
-                                (EndTime == null || s.CreateTime <= EndTime.Value) &&
-                                (SelectLogType == null || s.Type == SelectLogType) &&
-                                (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
-                            pageIndex - 1, pageSize);
-
-                        if (selectOrderByDescending?.Any() == true) {
-                            var appLogItemModels = selectOrderByDescending.Select(s => new AppLogItemModel() {
-                                ClickCommand = ClickCommand,
-                                CreateTime = s.CreateTime,
-                                Message = s.Message,
-                                Type = s.Type
-                            })?.ToList();
-                            await Task.Delay(100);
-                            AppLogItems.AddRange(appLogItemModels);
-                        }
-                        else {
-                            AppLogMessageQueue?.Enqueue("Error loading data. Please try again.");
-                        }
-                    }
-                    else {
+                        (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)))
+                    .ConfigureAwait(false);
+                var pageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
+                var entities = total > 0
+                    ? await _appLogRepository.SelectOrderByDescending(s =>
+                            (StartTime == null || s.CreateTime >= StartTime.Value) &&
+                            (EndTime == null || s.CreateTime <= EndTime.Value) &&
+                            (SelectLogType == null || s.Type == SelectLogType) &&
+                            (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
+                        pageIndex - 1, pageSize).ConfigureAwait(false)
+                    : [];
+                var items = entities.Select(entity => new AppLogItemModel {
+                    ClickCommand = ClickCommand,
+                    CreateTime = entity.CreateTime,
+                    Message = entity.Message,
+                    Type = entity.Type
+                }).ToList();
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    Details = string.Empty;
+                    PageCount = pageCount;
+                    AppLogItems = new ObservableCollection<AppLogItemModel>(items);
+                    if (total == 0) {
                         AppLogMessageQueue?.Enqueue("No data matching the criteria found.");
                     }
-
+                    else if (items.Count == 0) {
+                        AppLogMessageQueue?.Enqueue("Error loading data. Please try again.");
+                    }
+                }, DispatcherPriority.Background);
+            }
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "加载程序日志失败");
+                AppLogMessageQueue?.Enqueue("Error loading data. Please try again.");
+            }
+            finally {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                     if (DialogHost.IsDialogOpen(model.Identifier)) {
                         DialogHost.Close(model.Identifier);
                     }
-                }
-            }, DispatcherPriority.Background);
+                }, DispatcherPriority.Background);
+            }
         }
 
         public ICommand ClearSearchCriteriaCommand {

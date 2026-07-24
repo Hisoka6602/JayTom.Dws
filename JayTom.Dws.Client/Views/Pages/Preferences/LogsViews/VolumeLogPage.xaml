@@ -375,7 +375,8 @@
                         MinHeight="100"
                         Margin="0,5"
                         ItemTemplate="{StaticResource VolumeLogItemTemplate}"
-                        ItemsSource="{Binding VolumeLogItems, UpdateSourceTrigger=PropertyChanged}">
+                        ItemsSource="{Binding VolumeLogItems, Mode=OneWay}"
+                        Style="{StaticResource CustomListBoxStyle}">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Height" Value="Auto" />

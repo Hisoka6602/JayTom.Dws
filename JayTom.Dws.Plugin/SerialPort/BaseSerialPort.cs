@@ -10,10 +10,11 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Plugin.SerialPort {
 
     public class BaseSerialPort : ISerialPort {
-        private System.IO.Ports.SerialPort _serialPort;
+        private readonly System.IO.Ports.SerialPort _serialPort;
         private SerialPortFormat _formatType;
-        private SemaphoreSlim _semaphore = new(1);
-        private SemaphoreSlim _sendSlim = new(1);
+        private readonly object _receiveLock = new();
+        private readonly object _sendLock = new();
+        private bool _eventHandlersRegistered;
 
         public BaseSerialPort(System.IO.Ports.SerialPort serialPort) {
             _serialPort = serialPort;
@@ -41,8 +42,7 @@ namespace JayTom.Dws.Plugin.SerialPort {
         public bool Connect(string portName, int baudRate, int dataBits, Parity parity, StopBits stopBits,
             SerialPortFormat dataFormat) {
             FormatType = dataFormat;
-            _serialPort ??= new System.IO.Ports.SerialPort();
-            if (_serialPort.IsOpen == true) {
+            if (_serialPort.IsOpen) {
                 return true;
             }
 
@@ -53,51 +53,52 @@ namespace JayTom.Dws.Plugin.SerialPort {
                 _serialPort.StopBits = stopBits;
                 _serialPort.PortName = portName;
 
-                //注册事件
-                _serialPort.Disposed += delegate {
-                    OnDisconnected(this);
-                };
-                _serialPort.ErrorReceived += delegate (object sender, SerialErrorReceivedEventArgs args) {
-                    OnErrorOccurred(new ExceptionEventArgs(new Exception(args.ToString())));
-                };
-                _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
-                    await Task.Delay(150);
-                    try {
-                        await _semaphore.WaitAsync();
-                        if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port &&
-                            _serialPort.IsOpen) {
-                            string receivedData;
-                            if (FormatType == SerialPortFormat.Ascii) {
-                                // 读取接收到的数据
-                                receivedData = port.ReadExisting().Trim().Replace(" ", string.Empty);
-                                OnDataReceived(new MessageEventArgs() {
-                                    AsciiMessage = receivedData,
-                                });
+                if (!_eventHandlersRegistered) {
+                    _serialPort.Disposed += delegate {
+                        OnDisconnected(this);
+                    };
+                    _serialPort.ErrorReceived += delegate (object sender, SerialErrorReceivedEventArgs args) {
+                        OnErrorOccurred(new ExceptionEventArgs(new Exception(args.ToString())));
+                    };
+                    _serialPort.DataReceived += delegate (object sender, SerialDataReceivedEventArgs args) {
+                        try {
+                            MessageEventArgs? message = null;
+                            lock (_receiveLock) {
+                                if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port &&
+                                    _serialPort.IsOpen) {
+                                    if (FormatType == SerialPortFormat.Ascii) {
+                                        var receivedData = port.ReadExisting().Trim().Replace(" ", string.Empty);
+                                        message = new MessageEventArgs {
+                                            AsciiMessage = receivedData
+                                        };
+                                    }
+                                    else {
+                                        var buffer = new byte[port.BytesToRead];
+                                        var bytesRead = port.Read(buffer, 0, buffer.Length);
+                                        if (bytesRead != buffer.Length) {
+                                            Array.Resize(ref buffer, bytesRead);
+                                        }
+
+                                        message = new MessageEventArgs {
+                                            AsciiMessage = Convert.ToHexString(buffer),
+                                            HexMessage = buffer
+                                        };
+                                    }
+                                }
                             }
-                            else {
-                                //接收十六进制内容
-                                // 接收数据存储的字节数组
-                                var buffer = new byte[port.BytesToRead];
 
-                                // 读取数据到字节数组
-                                port.Read(buffer, 0, buffer.Length);
-
-                                // 将字节数组转换为十六进制表示
-                                receivedData = BitConverter.ToString(buffer).Replace("-", "");
-                                OnDataReceived(new MessageEventArgs() {
-                                    AsciiMessage = receivedData,
-                                    HexMessage = buffer
-                                });
+                            if (message is not null) {
+                                OnDataReceived(message);
                             }
                         }
-                    }
-                    finally {
-                        _semaphore.Release();
-                    }
-                };
+                        catch (Exception exception) {
+                            OnErrorOccurred(new ExceptionEventArgs(exception));
+                        }
+                    };
+                    _eventHandlersRegistered = true;
+                }
 
                 _serialPort.Open();
-                NLog.LogManager.GetCurrentClassLogger().Error($"BaseSerialPort连接");
                 if (_serialPort.IsOpen) {
                     OnConnectionChanged(this);
                     return true;
@@ -111,88 +112,82 @@ namespace JayTom.Dws.Plugin.SerialPort {
             return false;
         }
 
-        public async void Send(string message) {
+        public void Send(string message) {
             try {
-                await _sendSlim.WaitAsync();
-                if (_serialPort?.IsOpen == true) {
+                lock (_sendLock) {
+                    if (!_serialPort.IsOpen) {
+                        return;
+                    }
+
                     if (FormatType == SerialPortFormat.Ascii) {
-                        _serialPort?.WriteLine(message);
+                        _serialPort.WriteLine(message);
                     }
                     else {
                         var toByteArray = HexStringToByteArray(message);
-                        _serialPort?.Write(toByteArray, 0, toByteArray.Length);
+                        _serialPort.Write(toByteArray, 0, toByteArray.Length);
                     }
-
-                    OnCommunication(new CommunicationInfo() {
-                        Content = message,
-                        FormatType = (FormatType)FormatType,
-                        Type = CommunicationType.Send,
-                        Time = DateTime.Now
-                    });
                 }
+
+                OnCommunication(new CommunicationInfo {
+                    Content = message,
+                    FormatType = (FormatType)FormatType,
+                    Type = CommunicationType.Send,
+                    Time = DateTime.Now
+                });
             }
             catch (Exception e) {
                 OnSendError(new ExceptionEventArgs(e));
-            }
-            finally {
-                await Task.Delay(10);
-                _sendSlim.Release();
             }
         }
 
-        public async void Send(byte[] message) {
+        public void Send(byte[] message) {
             try {
-                await _sendSlim.WaitAsync();
-                if (_serialPort?.IsOpen == true) {
-                    var replace = BitConverter.ToString(message).Replace("-", " ");
-                    if (FormatType == SerialPortFormat.Ascii) {
-                        _serialPort?.WriteLine(replace);
-                    }
-                    else {
-                        _serialPort?.Write(message, 0, message.Length);
+                string formattedMessage;
+                lock (_sendLock) {
+                    if (!_serialPort.IsOpen) {
+                        return;
                     }
 
-                    OnCommunication(new CommunicationInfo() {
-                        Content = replace,
-                        FormatType = (FormatType)FormatType,
-                        Type = CommunicationType.Send,
-                        Time = DateTime.Now
-                    });
+                    formattedMessage = BitConverter.ToString(message).Replace("-", " ");
+                    if (FormatType == SerialPortFormat.Ascii) {
+                        _serialPort.WriteLine(formattedMessage);
+                    }
+                    else {
+                        _serialPort.Write(message, 0, message.Length);
+                    }
                 }
+
+                OnCommunication(new CommunicationInfo {
+                    Content = formattedMessage,
+                    FormatType = (FormatType)FormatType,
+                    Type = CommunicationType.Send,
+                    Time = DateTime.Now
+                });
             }
             catch (Exception e) {
                 OnSendError(new ExceptionEventArgs(e));
-            }
-            finally {
-                await Task.Delay(10);
-                _sendSlim.Release();
             }
         }
 
         public void Dispose() {
-            _serialPort?.Close();
+            if (_serialPort.IsOpen) {
+                _serialPort.Close();
+            }
+            Status = SerialPortStatus.Disconnected;
+            _serialPort.Dispose();
         }
 
         private static byte[] HexStringToByteArray(string hexString) {
-            hexString = hexString.Replace(" ", ""); // 移除空格
-
-            var bytes = new byte[hexString.Length / 2];
-            for (var i = 0; i < hexString.Length; i += 2) {
-                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
-            }
-
-            return bytes;
+            return Convert.FromHexString(hexString.Replace(" ", string.Empty));
         }
 
-        protected virtual async void OnConnectionChanged(ISerialPort e) {
+        protected virtual void OnConnectionChanged(ISerialPort e) {
             Status = SerialPortStatus.Running;
-            await Task.Yield();
             ConnectionChanged?.Invoke(this, e);
         }
 
-        protected virtual async void OnDataReceived(MessageEventArgs e) {
-            await Task.Yield();
-            OnCommunication(new CommunicationInfo() {
+        protected virtual void OnDataReceived(MessageEventArgs e) {
+            OnCommunication(new CommunicationInfo {
                 Content = e.AsciiMessage,
                 FormatType = (FormatType)FormatType,
                 Type = CommunicationType.Receive,
@@ -201,41 +196,28 @@ namespace JayTom.Dws.Plugin.SerialPort {
             DataReceived?.Invoke(this, e);
         }
 
-        protected virtual async void OnDisconnected(ISerialPort e) {
+        protected virtual void OnDisconnected(ISerialPort e) {
             Status = SerialPortStatus.Disconnected;
-            await Task.Yield();
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnErrorOccurred(ExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnErrorOccurred(ExceptionEventArgs e) {
             ErrorOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnSendError(ExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnSendError(ExceptionEventArgs e) {
             SendError?.Invoke(this, e);
         }
 
-        protected virtual async void OnCommunication(CommunicationInfo e) {
-            await Task.Yield();
+        protected virtual void OnCommunication(CommunicationInfo e) {
             Communication?.Invoke(this, e);
         }
 
         public byte[] ConvertHexStringToByteArray(string hexString) {
             try {
-                hexString = hexString.Replace(" ", ""); // 移除空格
-
-                var length = hexString.Length;
-                var byteArray = new byte[length / 2];
-
-                for (var i = 0; i < length; i += 2) {
-                    byteArray[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
-                }
-
-                return byteArray;
+                return HexStringToByteArray(hexString);
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return Array.Empty<byte>();
             }
         }

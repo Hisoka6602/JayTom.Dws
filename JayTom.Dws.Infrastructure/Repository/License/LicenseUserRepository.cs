@@ -25,8 +25,8 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<LicenseUserInfo>();
                 if (dbSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
-                dbSet.AsNoTracking();
-                var licenseUserInfo = await dbSet.Where(w => w.UserCode.Equals(userCode))
+                IQueryable<LicenseUserInfo> query = dbSet.AsNoTracking();
+                var licenseUserInfo = await query.Where(w => w.UserCode.Equals(userCode))
                     .Include(b => b.UserDetailsInfo)
                     .Include(b => b.AppLicenseInfos)
                     .Include(b => b.LicenseCodeInfos)
@@ -45,8 +45,8 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<LicenseUserInfo>();
                 if (dbSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
-                dbSet.AsNoTracking();
-                var licenseUserInfos = await dbSet.Where(where)
+                IQueryable<LicenseUserInfo> query = dbSet.AsNoTracking();
+                var licenseUserInfos = await query.Where(where)
                     .Include(b => b.UserDetailsInfo)
                     .Include(b => b.AppLicenseInfos)
                     .Include(b => b.LicenseCodeInfos)
@@ -67,10 +67,11 @@ namespace JayTom.Dws.Infrastructure.Repository.License {
                 var dbSet = concardContext?.Set<LicenseAppLicenseInfo>();
                 var licenseUserInfos = concardContext?.Set<LicenseUserInfo>();
                 if (dbSet is null || licenseUserInfos is null) return new KeyValuePair<bool, object>(false, "操作失败");
-                dbSet.AsNoTracking();
-                var licenseUserInfo = await licenseUserInfos.FirstOrDefaultAsync(f => f.UserCode.Equals(userCode), cancellationToken: cancellationToken);
+                var licenseUserInfo = await ((IQueryable<LicenseUserInfo>)licenseUserInfos)
+                    .FirstOrDefaultAsync(f => f.UserCode.Equals(userCode), cancellationToken: cancellationToken);
                 if (licenseUserInfo is not null) {
-                    var info = await dbSet.Where(w => w.UserId.Equals(licenseUserInfo.Id) &&
+                    IQueryable<LicenseAppLicenseInfo> query = dbSet;
+                    var info = await query.Where(w => w.UserId.Equals(licenseUserInfo.Id) &&
                                                       w.LicensePermissionTemplateInfoId.Equals(licensePermissionTemplateInfoId))
                         .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 

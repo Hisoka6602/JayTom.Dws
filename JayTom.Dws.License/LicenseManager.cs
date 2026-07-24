@@ -18,7 +18,7 @@ namespace JayTom.Dws.License {
             try {
                 var licenseData = new LicenseData {
                     UserName = "userName",
-                    ExpirationDate = DateTime.UtcNow.AddDays(expirationDate.TotalDays)
+                    ExpirationDate = DateTime.Now.AddDays(expirationDate.TotalDays)
                 };
 
                 var serializerSettings = new JsonSerializerSettings {

@@ -44,8 +44,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         public WayzimSmartCamera() {
         }
 
-        public async void Dispose() {
-            await Stop();
+        public void Dispose() {
+            Stop().GetAwaiter().GetResult();
         }
 
         public CameraInfo? Info { get; private set; }
@@ -157,7 +157,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         /// </summary>
         /// <param name="infostruct"></param>
         /// <param name="tag"></param>
-        private async void ReaultCallBack(ResultInfoStruct infostruct, object tag) {
+        private void ReaultCallBack(ResultInfoStruct infostruct, object tag) {
             Bitmap? bitmap = null;
             Image? thumbnailImage = null;
             var scanTime = DateTime.Now;
@@ -165,7 +165,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             var timestamp = localTime.ToUnixTimeMilliseconds();
             //解析图片
             if (infostruct.ImageInfo is { Size: > 0, ImageType: ImageTypes.JPEG }) {
-                bitmap = await ConvertByteArrayToBitmapAsync(infostruct.ImageInfo.ImageBytes);
+                bitmap = ConvertByteArrayToBitmap(infostruct.ImageInfo.ImageBytes);
                 thumbnailImage = this.GenerateThumbnail(bitmap);
                 //画边框
                 if (IsShowBarcodeBorder && thumbnailImage is not null && bitmap is not null &&
@@ -182,7 +182,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                             points[j].Y = (int)(convertPoint[j].Y *
                                                 ((float)(thumbnailImage.Size.Height) / (imageHeight > 0 ? imageHeight : 1)));
                         }
-                        g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
+                        using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                        g.DrawPolygon(pen, points);
                     }
                 }
             }
@@ -230,42 +231,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 });
             }
 
-            _frameNo += 1;
-            await Task.Delay(5);
+            Interlocked.Increment(ref _frameNo);
             infostruct.CodeInfo = default;
         }
 
         private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {
-            Image img;
-            using (var ms = new MemoryStream()) {
-                ms.Write(imageData, 0, imageData.Length);
-                ms.Seek(0, SeekOrigin.Begin);
-                try {
-                    img = Image.FromStream(ms, true);
-                }
-                catch (Exception ex) { img = null; }
-            }
-            return (Bitmap?)img;
-        }
-
-        private async Task<Bitmap?> ConvertByteArrayToBitmapAsync(byte[] imageData) {
-            Bitmap? bitmap = null;
-            using var ms = new MemoryStream();
-            await ms.WriteAsync(imageData, 0, imageData.Length);
-            ms.Seek(0, SeekOrigin.Begin);
-
             try {
-                var image = await Task.FromResult(Image.FromStream(ms, true));
-                bitmap = (Bitmap?)image;
+                using var stream = new MemoryStream(imageData, false);
+                using var image = Image.FromStream(stream, true);
+                return new Bitmap(image);
             }
-            catch (Exception ex) {
-                bitmap = null;
+            catch (Exception) {
+                return null;
             }
-            finally {
-                Array.Clear(imageData, 0, imageData.Length);
-            }
-
-            return bitmap;
         }
 
         /*private async Task<Bitmap?> ConvertByteArrayToBitmap(byte[] imageData) {
@@ -348,7 +326,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public bool IsHideNoRead { get; set; }
@@ -388,52 +366,43 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             BarCodeFilterContainer.ResetFilter();
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             CameraUnregistered?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
         }
 
-        protected virtual async void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
             BarcodeReadTriggered?.Invoke(this, e);
         }
 
-        protected virtual async void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
             NotBarcodeHitEvent?.Invoke(this, e);
         }
 

@@ -49,7 +49,7 @@ namespace JayTom.Dws.Interface.Post {
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             //请求格口
-            SubmitScanInfo(barcode, token);
+            await SubmitScanInfo(barcode, token);
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -172,7 +172,7 @@ namespace JayTom.Dws.Interface.Post {
             double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             //请求格口
-            SubmitScanInfo(barcode, token);
+            await SubmitScanInfo(barcode, token);
             UploadResponse response;
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -296,7 +296,7 @@ namespace JayTom.Dws.Interface.Post {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (other is UploadResponse { IsSuccess: true } uploadResponse) {
@@ -411,8 +411,9 @@ namespace JayTom.Dws.Interface.Post {
             }
         }
 
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -420,7 +421,7 @@ namespace JayTom.Dws.Interface.Post {
         /// </summary>
         /// <param name="barcode"></param>
         /// <param name="token"></param>
-        public async void SubmitScanInfo(string barcode, CancellationToken token = default) {
+        public async Task SubmitScanInfo(string barcode, CancellationToken token = default) {
             //提交扫描信息
             if (barcode.Equals("NoRead", StringComparison.CurrentCultureIgnoreCase)) {
                 return;

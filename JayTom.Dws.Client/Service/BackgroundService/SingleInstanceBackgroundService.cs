@@ -12,11 +12,11 @@ using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 namespace JayTom.Dws.Client.Service.BackgroundService {
 
     public class SingleInstanceBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
-        private static bool _isWindowsClose;
+        private static volatile bool _isWindowsClose;
         private const string PipeName = "DwsPipe";
 
         public SingleInstanceBackgroundService() {
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
@@ -25,38 +25,33 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(100, stoppingToken).ContinueWith(async a => {
-                    try {
-                        var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1,
-                            PipeTransmissionMode.Byte);
+                try {
+                    await using var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1,
+                        PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                    await pipeServer.WaitForConnectionAsync(stoppingToken).ConfigureAwait(false);
 
-                        await pipeServer.WaitForConnectionAsync(stoppingToken);
-
-                        using (var sr = new StreamReader(pipeServer)) {
-                            string message = await sr.ReadToEndAsync(stoppingToken);
-                            if (message == "ActivateWindow") {
-                                Application.Current.Dispatcher.Invoke(() => {
-                                    if (Application.Current.MainWindow is { } mainWindow) {
-                                        if (mainWindow.WindowState == WindowState.Minimized) {
-                                            mainWindow.WindowState = WindowState.Normal;
-                                        }
-
-                                        mainWindow.Activate();
-                                    }
-                                });
+                    using var reader = new StreamReader(pipeServer);
+                    var message = await reader.ReadToEndAsync(stoppingToken).ConfigureAwait(false);
+                    if (message == "ActivateWindow") {
+                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                            if (Application.Current.MainWindow is { } mainWindow) {
+                                if (mainWindow.WindowState == WindowState.Minimized) {
+                                    mainWindow.WindowState = WindowState.Normal;
+                                }
+                                mainWindow.Activate();
                             }
-                        }
-
-                        // 关闭命名管道
-                        pipeServer.Close();
-                        await pipeServer.DisposeAsync();
+                        });
                     }
-                    catch (IOException) {
-                    }
-                    catch (Exception e) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    }
-                }, stoppingToken).Unwrap();
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                    break;
+                }
+                catch (IOException) {
+                    //客户端提前断开时继续等待下一次激活请求。
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
             }
         }
     }

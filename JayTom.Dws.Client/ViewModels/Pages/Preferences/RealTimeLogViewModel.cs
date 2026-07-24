@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
@@ -19,7 +20,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
     public class RealTimeLogViewModel : BindableBase {
         private ObservableCollection<BaseLogItemModel> _logItems = new();
-        private SemaphoreSlim _addSlim = new(1);
+        /// <summary>
+        /// 待显示日志的有界缓冲队列。
+        /// </summary>
+        private readonly ConcurrentQueue<BaseLogItemModel> _pendingLogs = new();
+        /// <summary>
+        /// 日志刷新任务取消源。
+        /// </summary>
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        /// <summary>
+        /// 合并日志刷新的后台任务。
+        /// </summary>
+        private readonly Task _logUpdateWorker;
 
         public RealTimeLogViewModel() {
             //相机日志
@@ -81,6 +93,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     OnAddLog(model.CreateTime, $"[输入]-{model.Message}");
                 }
             });
+            EventAggregator.Instance.Subscribe<JayTom.Dws.Client.EventMediators.WindowsAction>(item => {
+                if (item is { Type: JayTom.Dws.Client.EventMediators.WindowsActionType.Close }) {
+                    _cancellationTokenSource.Cancel();
+                }
+            });
+            _logUpdateWorker = Task.Run(ProcessPendingLogs);
 
             /*//输出日志队列
             EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item => {
@@ -103,35 +121,49 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             set => SetProperty(ref _logItems, value);
         }
 
-        public async void OnAddLog(DateTime createTime, string message) {
-            try {
-                await _addSlim.WaitAsync();
-                /*await Task.Run(() => {
-                    var newLogItem = new BaseLogItemModel() {
-                        CreateTime = createTime,
-                        Message = message
-                    };
+        public void OnAddLog(DateTime createTime, string message) {
+            _pendingLogs.Enqueue(new BaseLogItemModel {
+                CreateTime = createTime,
+                Message = message
+            });
+            while (_pendingLogs.Count > 500 && _pendingLogs.TryDequeue(out _)) {
+                //日志突发时丢弃最旧的待显示项，避免阻塞主界面。
+            }
+        }
 
-                    System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                        LogItems.Insert(0, newLogItem);
-                        if (LogItems.Count > 100) {
+        /// <summary>
+        /// 批量刷新实时日志，限制每帧对 UI 集合的修改数量。
+        /// </summary>
+        private async Task ProcessPendingLogs() {
+            try {
+                using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+                while (await timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
+                    if (_pendingLogs.IsEmpty) {
+                        continue;
+                    }
+                    var batch = new List<BaseLogItemModel>(32);
+                    while (batch.Count < 32 && _pendingLogs.TryDequeue(out var logItem)) {
+                        batch.Add(logItem);
+                    }
+                    var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                    if (dispatcher is null) {
+                        break;
+                    }
+                    await dispatcher.InvokeAsync(() => {
+                        foreach (var logItem in batch) {
+                            LogItems.Insert(0, logItem);
+                        }
+                        while (LogItems.Count > 100) {
                             LogItems.RemoveAt(LogItems.Count - 1);
                         }
-                    });
-                });*/
-                var newLogItem = new BaseLogItemModel() {
-                    CreateTime = createTime,
-                    Message = message
-                };
-                System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                    LogItems.Insert(0, newLogItem);
-                    if (LogItems.Count > 100) {
-                        LogItems.RemoveAt(LogItems.Count - 1);
-                    }
-                });
+                    }, DispatcherPriority.Background);
+                }
             }
-            finally {
-                _addSlim.Release();
+            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested) {
+                //应用关闭时正常退出。
+            }
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "实时日志 UI 更新任务异常");
             }
         }
 
@@ -139,10 +171,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             get => new DelegateCommand<object>(ClearLogDelegate);
         }
 
-        private async void ClearLogDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                LogItems.Clear();
-            });
+        private void ClearLogDelegate(object obj) {
+            LogItems.Clear();
+            _pendingLogs.Clear();
         }
     }
 }

@@ -18,15 +18,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
     public class LocalRepositoryBase<T> : IRepository<T> where T : class {
         protected IDbContextFactory<DbContext> _contextFactory;
         protected IMemoryCache _cache;
-        private static SemaphoreSlim _changeSlim = new(5);
-        private static SemaphoreSlim _transactionSlim = new(1);
+        private static readonly SemaphoreSlim _changeSlim = new(5);
+        private static readonly SemaphoreSlim _transactionSlim = new(1);
+        private static readonly PropertyInfo[] EntityProperties =
+            typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
         public LocalRepositoryBase(IDbContextFactory<DbContext> contextFactory, IMemoryCache cache) {
-            if (contextFactory == null || cache == null) {
-                return;
-            }
-            _contextFactory = contextFactory;
-            _cache = cache;
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
 
         public async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
@@ -43,41 +42,24 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<List<T>> FromSqlRaw(string sql, CancellationToken token) {
-            if (sql.Equals(string.Empty)) return null;
+            if (string.IsNullOrWhiteSpace(sql)) return new List<T>();
 
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var dbSet = concardContext?.Set<T>();
-                    if (dbSet is null) return null;
-                    return await dbSet.FromSqlRaw(sql).ToListAsync(cancellationToken: token);
-                }
+                return await concardContext.Set<T>().FromSqlRaw(sql).AsNoTracking()
+                    .ToListAsync(cancellationToken: token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            return null;
+            return new List<T>();
         }
 
         public async Task<bool> Insert(T entity, CancellationToken token) {
-            IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var strategy = concardContext.Database.CreateExecutionStrategy();
-                return await strategy.ExecuteAsync(async () => {
-                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
-                        if (contextTransaction is not null) {
-                            var dbSet = concardContext?.Set<T>();
-                            await dbSet.AddAsync(entity, token);
-                            await concardContext?.SaveChangesAsync(token);
-                            await contextTransaction.CommitAsync(token);
-
-                            return true;
-                        }
-                    }
-
-                    return false;
-                });
+                concardContext.Set<T>().Add(entity);
+                return await concardContext.SaveChangesAsync(token) > 0;
             }
             catch (Win32Exception) {
             }
@@ -89,127 +71,31 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public async void InsertAsync(T entity, CancellationToken token) {
-            /*try {
-                await _changeSlim.WaitAsync(token);
-                await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    if (string.IsNullOrEmpty(name)) return;
-                    var columns = new List<string>();
-                    var values = new List<string>();
-                    var sqlParameters = new List<SqliteParameter>();
-                    var propertyInfos = typeof(T).GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
-
-                    var list = propertyInfos?.Where(w => w.GetCustomAttribute<ColumnAttribute>() != null &&
-                                                         w.GetCustomAttribute<DatabaseGeneratedAttribute>() == null)?.ToList();
-                    if (list?.Any() == true) {
-                        columns.AddRange(list.Select(s => s.Name));
-                        values.AddRange(list.Select(s => $"@{s.Name}vaule"));
-                        sqlParameters.AddRange(list.Select(s => new SqliteParameter($"@{s.Name}vaule", s.GetValue(entity, null) ?? DBNull.Value)));
-                        var sql = @$" INSERT INTO {name}
-                                     ({string.Join(",", columns)})
-                                     VALUES ({string.Join(",", values)})";
-                        await concardContext.Database.ExecuteSqlRawAsync(sql, sqlParameters.ToArray(), token);
-                    }
-                }
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            finally {
-                _changeSlim.Release();
-            }*/
-
-            IDbContextTransaction? contextTransaction = null;
-            try {
-                await _changeSlim.WaitAsync(token);
-                await using var concardContext = _contextFactory.CreateDbContext();
-                var strategy = concardContext.Database.CreateExecutionStrategy();
-                await strategy.ExecuteAsync(async () => {
-                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
-                        if (contextTransaction is not null) {
-                            var dbSet = concardContext?.Set<T>();
-                            await dbSet.AddAsync(entity, token);
-                            await concardContext?.SaveChangesAsync(token);
-                            await contextTransaction.CommitAsync(token);
-
-                            return true;
-                        }
-                    }
-
-                    return false;
-                });
-            }
-            catch (Win32Exception) {
-                await contextTransaction?.RollbackAsync(token)!;
-            }
-            catch (TaskCanceledException) {
-                await contextTransaction?.RollbackAsync(token)!;
-            }
-            catch (Exception e) {
-                await contextTransaction?.RollbackAsync(token)!;
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            finally {
-                _changeSlim.Release();
-            }
+        public async Task InsertAsync(T entity, CancellationToken token) {
+            await Insert(entity, token);
         }
 
         public async Task<bool> InsertRange(List<T> entitylist, CancellationToken token) {
-            IDbContextTransaction? contextTransaction = null;
-            try {
-                await _transactionSlim.WaitAsync(token);
-                var propertyInfos = typeof(T).GetProperties(
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
-                await using var concardContext = _contextFactory.CreateDbContext();
-                var strategy = concardContext.Database.CreateExecutionStrategy();
-                await strategy.ExecuteAsync(async () => {
-                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
-                        var dbSet = concardContext?.Set<T>();
-                        if (dbSet is not null && concardContext is not null) {
-                            await concardContext.BulkInsertAsync(entitylist, new BulkConfig() {
-                                UseTempDB = true,
-                                UniqueTableNameTempDb = false,
-                                PropertiesToIncludeOnUpdate = propertyInfos?.Where(
-                                    w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null)?.Select(s => s.Name)?.ToList(),
-                                UpdateByProperties = propertyInfos
-                                    ?.Where(w => w.GetCustomAttribute<UpdateByAttribute>() != null)
-                                    ?.Select(s => s.Name)?.ToList(),
-                                PropertiesToExclude = propertyInfos
-                                    ?.Where(w => w.GetCustomAttribute<DatabaseGeneratedAttribute>() != null)
-                                    ?.Select(s => s.Name)?.ToList(),
-                                PreserveInsertOrder = true,
-                                SetOutputIdentity = false,
-                            }, cancellationToken: token);
-                            await contextTransaction.CommitAsync(token);
-                        }
-                    }
-                });
+            if (entitylist.Count == 0) {
                 return true;
             }
+
+            try {
+                await using var concardContext = _contextFactory.CreateDbContext();
+                concardContext.Set<T>().AddRange(entitylist);
+                return await concardContext.SaveChangesAsync(token) > 0;
+            }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
-            }
-            finally {
-                _transactionSlim.Release();
             }
 
             return false;
@@ -218,9 +104,9 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public async Task<bool> InsertOrUpdate(T entity, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
-                await _transactionSlim.WaitAsync(token);
-                var propertyInfos = typeof(T).GetProperties(
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
+                var propertyInfos = EntityProperties;
 
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
@@ -255,10 +141,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _transactionSlim.Release();
-            }
-
             return false;
         }
 
@@ -266,9 +148,9 @@ namespace JayTom.Dws.Infrastructure.Repository {
             CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
-                await _transactionSlim.WaitAsync(token);
-                var propertyInfos = typeof(T).GetProperties(
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
+                var propertyInfos = EntityProperties;
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () => {
@@ -299,10 +181,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _transactionSlim.Release();
-            }
-
             return false;
         }
 
@@ -315,8 +193,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     exclude = memberInfos.Select(p => p.Name).ToList();
                 }
 
-                var propertyInfos = typeof(T).GetProperties(
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                var propertyInfos = EntityProperties;
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () => {
@@ -366,9 +243,9 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 if (memberInfos is not null) {
                     exclude = memberInfos.Select(p => p.Name).ToList();
                 }
-                await _transactionSlim.WaitAsync(token);
-                var propertyInfos = typeof(T).GetProperties(
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
+                var propertyInfos = EntityProperties;
 
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
@@ -406,57 +283,10 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _transactionSlim.Release();
-            }
             return false;
         }
 
         public async Task<bool> Update(T entity, CancellationToken token) {
-            /*try {
-                await _changeSlim.WaitAsync(token);
-                await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    if (!string.IsNullOrEmpty(name)) {
-                        var sqlParameters = new List<SqliteParameter>();
-                        var propertyInfos = typeof(T).GetProperties(System.Reflection.BindingFlags.Instance |
-                                                                    System.Reflection.BindingFlags.Public);
-
-                        var list = propertyInfos?.Where(w => w.GetCustomAttribute<ColumnAttribute>() != null &&
-                                                             w.GetCustomAttribute<DatabaseGeneratedAttribute>() ==
-                                                             null)?.ToList();
-                        var info = propertyInfos?.FirstOrDefault(f =>
-                            f.GetCustomAttribute<DatabaseGeneratedAttribute>() != null);
-
-                        if (list?.Any() == true && info is not null) {
-                            var pairs = list
-                                .Select(s => new KeyValuePair<string, string>(s.Name, $"@{s.Name}vaule"))
-                                ?.ToArray();
-                            sqlParameters.AddRange(list.Select(s =>
-                                new SqliteParameter($"@{s.Name}vaule", s.GetValue(entity, null) ?? DBNull.Value)));
-                            var sql =
-                                @$" UPDATE {name} SET {string.Join(",", pairs.Select(s => new string($"{s.Key}={s.Value}")))}
-                                     WHERE {info.Name}={info.GetValue(entity, null)}";
-                            var executeSqlRawAsync =
-                                await concardContext.Database.ExecuteSqlRawAsync(sql, sqlParameters.ToArray(),
-                                    token);
-
-                            return executeSqlRawAsync > 0;
-                        }
-                    }
-                }
-            }
-            catch (Win32Exception) { }
-            catch (TaskCanceledException) { }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            finally {
-                _changeSlim.Release();
-            }
-
-            return false;*/
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -492,7 +322,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public async Task<bool> UpdateRange(List<T> entities, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
-                await _transactionSlim.WaitAsync(token);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () => {
@@ -523,10 +354,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
-            finally {
-                _transactionSlim.Release();
-            }
-
             return false;
         }
 
@@ -575,12 +402,12 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public async Task<bool> Delete(T entity, CancellationToken token) {
             try {
-                await _changeSlim.WaitAsync(token);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_changeSlim, token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
                     var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    var propertyInfos = typeof(T).GetProperties(System.Reflection.BindingFlags.Instance |
-                                                                System.Reflection.BindingFlags.Public);
+                    var propertyInfos = EntityProperties;
                     var info = propertyInfos?.FirstOrDefault(f =>
                         f.GetCustomAttribute<DatabaseGeneratedAttribute>() != null);
                     if (string.IsNullOrEmpty(name) ||
@@ -596,17 +423,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _changeSlim.Release();
-            }
-
             return false;
         }
 
         public async Task<bool> DeleteRange(List<T> entities, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
-                await _transactionSlim.WaitAsync(token);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 var dbSet = concardContext?.Set<T>();
@@ -628,16 +452,13 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _transactionSlim.Release();
-            }
-
             return false;
         }
 
         public async Task<int> DeleteCount(int count, CancellationToken token) {
             try {
-                await _changeSlim.WaitAsync(token);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_changeSlim, token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
                     var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
@@ -651,16 +472,13 @@ namespace JayTom.Dws.Infrastructure.Repository {
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _changeSlim.Release();
-            }
-
             return 0;
         }
 
         public async Task<int> DeleteCount(int count, Expression<Func<T, bool>> @where, CancellationToken token) {
             try {
-                await _changeSlim.WaitAsync(token);
+                using var semaphoreLease =
+                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_changeSlim, token);
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
                     var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
@@ -678,28 +496,22 @@ namespace JayTom.Dws.Infrastructure.Repository {
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            finally {
-                _changeSlim.Release();
-            }
-
             return 0;
         }
 
-        public async Task<List<T>?> Select(Expression<Func<T, bool>> @where, int pageIndex, int pageSize, CancellationToken token) {
+        public async Task<List<T>> Select(Expression<Func<T, bool>> @where, int pageIndex, int pageSize, CancellationToken token) {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
             pageSize = pageSize > 1000 ? 1000 : pageSize;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return null;
-                return await dbSet.AsNoTracking()?.Where(where)
-                    ?.Skip(pageIndex * pageSize)?.Take(pageSize)?.ToListAsync(token);
+                return await concardContext.Set<T>().AsNoTracking().Where(where)
+                    .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
-            return null;
+            return new List<T>();
         }
 
         public async Task<List<T>> Select<TOrder>(Expression<Func<T, bool>> @where, Expression<Func<T, TOrder>> order, int pageIndex, int pageSize, CancellationToken token) {
@@ -707,30 +519,27 @@ namespace JayTom.Dws.Infrastructure.Repository {
             pageSize = pageSize > 1000 ? 1000 : pageSize;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return null;
-                return await dbSet.AsNoTracking()?.Where(where)?.OrderBy(order)
-                    ?.Skip(pageIndex * pageSize)?.Take(pageSize)?.ToListAsync(token);
+                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
+                    .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
-            return null;
+            return new List<T>();
         }
 
         public async Task<List<T>> Select<TOrder>(Expression<Func<T, bool>> where, Expression<Func<T, TOrder>> order, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return null;
-                return await dbSet.AsNoTracking()?.Where(where)?.OrderBy(order)?.ToListAsync(token);
+                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
+                    .ToListAsync(token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
-            return null;
+            return new List<T>();
         }
 
         public async Task<List<T>> SelectOrderByDescending<TOrder>(Expression<Func<T, bool>> @where, Expression<Func<T, TOrder>> order, int pageIndex, int pageSize,
@@ -739,39 +548,33 @@ namespace JayTom.Dws.Infrastructure.Repository {
             pageSize = pageSize > 1000 ? 1000 : pageSize;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return null;
-                return await dbSet.AsNoTracking()?.Where(where)?.OrderByDescending(order)
-                    ?.Skip(pageIndex * pageSize)?.Take(pageSize)?.ToListAsync(token);
+                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
+                    .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
-            return null;
+            return new List<T>();
         }
 
         public async Task<List<T>> SelectOrderByDescending<TOrder>(Expression<Func<T, bool>> where, Expression<Func<T, TOrder>> order, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return null;
-                return await dbSet.AsNoTracking()?.Where(where)?.OrderByDescending(order)
-                    ?.ToListAsync(token);
+                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
+                    .ToListAsync(token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
-            return null;
+            return new List<T>();
         }
 
         public async Task<T?> FirstOrDefault(Expression<Func<T, bool>> @where, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null || @where is null) return null;
-                return await dbSet.AsNoTracking().Where(where).FirstOrDefaultAsync(token);
+                return await concardContext.Set<T>().AsNoTracking().FirstOrDefaultAsync(where, token);
             }
             catch (NullReferenceException ex) {
                 // 记录详细的错误信息
@@ -788,9 +591,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public async Task<int> Total(Expression<Func<T, bool>> @where, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<T>();
-                if (dbSet is null) return 0;
-                return await dbSet.AsNoTracking().Where(where).CountAsync(token);
+                return await concardContext.Set<T>().CountAsync(where, token);
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
@@ -802,8 +603,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public async Task<bool> SyncEntities(List<T> entities, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
-                var propertyInfos = typeof(T).GetProperties(System.Reflection.BindingFlags.Instance |
-                                                            System.Reflection.BindingFlags.Public);
+                var propertyInfos = EntityProperties;
                 var excludeOnUpdateColumns = propertyInfos.Where(w => w.GetCustomAttribute<ExcludeOnUpdateAttribute>() != null)
                     .Select(s => s.Name)?.ToList();
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -817,7 +617,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
                         await contextTransaction.CommitAsync(token);
                         return true;*/
                         // 1. 获取数据库中的所有实体
-                        var existingEntities = await concardContext.Set<T>().ToListAsync(token);
+                        var existingEntities = await EntityFrameworkQueryableExtensions.ToListAsync(
+                            concardContext.Set<T>(), token);
                         // 4. 找到需要删除的实体
                         var entitiesToDelete = existingEntities.Except(entities).ToList();
                         concardContext.RemoveRange(entitiesToDelete);

@@ -142,42 +142,27 @@ namespace JayTom.Dws.Plugin.Tcp {
             }
         }
 
-        protected virtual async void OnConnectionException(string e) {
-            await Task.Yield();
+        protected virtual void OnConnectionException(string e) {
             ConnectionException?.Invoke(this, e);
         }
 
-        protected virtual async void OnException(Exception e) {
-            await Task.Yield();
+        protected virtual void OnException(Exception e) {
             Exception?.Invoke(this, e);
         }
 
-        protected virtual async void OnDisconnected(string e) {
-            await Task.Yield();
+        protected virtual void OnDisconnected(string e) {
             Disconnected?.Invoke(this, e);
-            //await Reconnect(0);
         }
 
-        protected virtual async void OnCommunication(CommunicationInfo e) {
-            await Task.Yield();
-            if (e.Type == CommunicationType.Receive) {
-                NLog.LogManager.GetCurrentClassLogger().Info($"[Tcp接收],内容:{e.Content}");
-            }
-            else if (e.Type == CommunicationType.Send) {
-                NLog.LogManager.GetCurrentClassLogger().Info($"[Tcp发送],内容:{e.Content}");
-            }
-
+        protected virtual void OnCommunication(CommunicationInfo e) {
             Communication?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected(string e) {
-            await Task.Yield();
-
+        protected virtual void OnConnected(string e) {
             Connected?.Invoke(this, e);
         }
 
-        protected virtual async void OnSendError(Exception e) {
-            await Task.Yield();
+        protected virtual void OnSendError(Exception e) {
             SendError?.Invoke(this, e);
         }
 

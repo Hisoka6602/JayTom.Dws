@@ -48,7 +48,7 @@
         <Setter Property="IsSelected" Value="False" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="True" />
-        <Setter Property="VirtualizingPanel.CacheLength" Value="20,20" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="2,2" />
         <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Item" />
         <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
         <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />

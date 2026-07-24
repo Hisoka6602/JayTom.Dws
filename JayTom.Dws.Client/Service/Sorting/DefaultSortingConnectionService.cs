@@ -39,13 +39,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
         private readonly ISortingInstructionRepository _sortingInstructionRepository;
         private readonly ITcpConfigRepository _tcpConfigRepository;
-        private ConcurrentDictionary<string, ConnectionInfo> _connectionInfos = new();
+        private readonly ConcurrentDictionary<string, ConnectionInfo> _connectionInfos = new();
         private List<CommunicationConnectionConfigInfoModel> _connectionConfigInfoModels = new();
         private List<PackageExitDefinitionInfoModel> _packageExitDefinitionInfoModels = new();
         private List<SortingInstructionBindingInfoModel> _sortingInstructionBindingInfoModels = new();
         private List<SortingInstructionInfoModel> _sortingInstructionInfoModels = new();
         private List<TcpConfigInfoModel> _tcpConfigInfoModels = new();
-        private ConcurrentQueue<KeyValuePair<string, string>> _replyContentQueue = new();
+        private readonly ConcurrentQueue<KeyValuePair<string, string>> _replyContentQueue = new();
+        private readonly SemaphoreSlim _connectionLifecycleGate = new(1, 1);
 
         public DefaultSortingConnectionService(ICommunicationConnectionConfigRepository
             communicationConnectionConfigRepository,
@@ -81,7 +82,29 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 o => o.Id);
         }
 
-        public async Task<KeyValuePair<bool, string>> AddConnection(CommunicationsType type, CommunicationProtocol communicationProtocol, string connectionName, object? connectionParam) {
+        public async Task<KeyValuePair<bool, string>> AddConnection(
+            CommunicationsType type,
+            CommunicationProtocol communicationProtocol,
+            string connectionName,
+            object? connectionParam) {
+            await _connectionLifecycleGate.WaitAsync();
+            try {
+                return await AddConnectionCoreAsync(
+                    type,
+                    communicationProtocol,
+                    connectionName,
+                    connectionParam);
+            }
+            finally {
+                _connectionLifecycleGate.Release();
+            }
+        }
+
+        private async Task<KeyValuePair<bool, string>> AddConnectionCoreAsync(
+            CommunicationsType type,
+            CommunicationProtocol communicationProtocol,
+            string connectionName,
+            object? connectionParam) {
             if (connectionParam is null) {
                 return new KeyValuePair<bool, string>(false, "连接参数不匹配");
             }
@@ -343,7 +366,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public async Task<KeyValuePair<bool, string>> ReleaseConnection(string connectionName) {
-            await Task.Yield();
+            await _connectionLifecycleGate.WaitAsync();
+            try {
+                return ReleaseConnectionCore(connectionName);
+            }
+            finally {
+                _connectionLifecycleGate.Release();
+            }
+        }
+
+        private KeyValuePair<bool, string> ReleaseConnectionCore(string connectionName) {
             var tryGetValue = _connectionInfos.TryGetValue(connectionName, out var connection);
             if (tryGetValue && connection is not null) {
                 switch (connection) {
@@ -367,25 +399,30 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         }
                 }
             }
-            return new KeyValuePair<bool, string>(true, "连接释放失败");
+            return new KeyValuePair<bool, string>(false, "连接释放失败");
         }
 
         public async Task<KeyValuePair<bool, string>> DisconnectAll() {
-            await Task.Yield();
-            foreach (var connectionInfo in _connectionInfos) {
-                switch (connectionInfo.Value) {
-                    case { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }: {
-                            connectionInfo.Value.SortingSerialPort.Dispose();
-                            break;
-                        }
-                    case { Type: CommunicationsType.TCP, SortingTcp: not null }: {
-                            connectionInfo.Value.SortingTcp.Dispose();
-                            break;
-                        }
+            await _connectionLifecycleGate.WaitAsync();
+            try {
+                foreach (var connectionInfo in _connectionInfos) {
+                    switch (connectionInfo.Value) {
+                        case { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }: {
+                                connectionInfo.Value.SortingSerialPort.Dispose();
+                                break;
+                            }
+                        case { Type: CommunicationsType.TCP, SortingTcp: not null }: {
+                                connectionInfo.Value.SortingTcp.Dispose();
+                                break;
+                            }
+                    }
                 }
+                _connectionInfos.Clear();
+                return new KeyValuePair<bool, string>(true, "连接释放成功");
             }
-            _connectionInfos.Clear();
-            return new KeyValuePair<bool, string>(true, "连接释放成功");
+            finally {
+                _connectionLifecycleGate.Release();
+            }
         }
 
         public event EventHandler<ConnectionCommunicationMessageInfo>? CommunicationInfoEvent;
@@ -400,7 +437,26 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<ConnectionInfo>? Disconnected;
 
-        public async void SendInstructions(object tag, long exitId, List<string> instructions, TimeSpan interval, InstructionsAttach attach) {
+        public void SendInstructions(
+            object tag,
+            long exitId,
+            List<string> instructions,
+            TimeSpan interval,
+            InstructionsAttach attach) {
+            QueueConnectionWork(() => SendInstructionsAsync(
+                tag,
+                exitId,
+                instructions,
+                interval,
+                attach));
+        }
+
+        private async Task SendInstructionsAsync(
+            object tag,
+            long exitId,
+            List<string> instructions,
+            TimeSpan interval,
+            InstructionsAttach attach) {
             if (exitId > 0) {
                 var connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
                     ?.CommunicationConnectionId;
@@ -518,7 +574,26 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void SendInstructions(object tag, long exitId, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach) {
+        public void SendInstructions(
+            object tag,
+            long exitId,
+            List<SortingInstructionInfoModel> instructions,
+            TimeSpan interval,
+            InstructionsAttach attach) {
+            QueueConnectionWork(() => SendInstructionsAsync(
+                tag,
+                exitId,
+                instructions,
+                interval,
+                attach));
+        }
+
+        private async Task SendInstructionsAsync(
+            object tag,
+            long exitId,
+            List<SortingInstructionInfoModel> instructions,
+            TimeSpan interval,
+            InstructionsAttach attach) {
             if (exitId > 0) {
                 var connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
                     ?.CommunicationConnectionId;
@@ -709,7 +784,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void SendPreSignal(int num, InstructionsAttach attach, CancellationToken token = default) {
+        public void SendPreSignal(
+            int num,
+            InstructionsAttach attach,
+            CancellationToken token = default) {
+            QueueConnectionWork(() => SendPreSignalAsync(num, attach, token));
+        }
+
+        private async Task SendPreSignalAsync(
+            int num,
+            InstructionsAttach attach,
+            CancellationToken token) {
             //获取第一个连接
             var (key, value) = _connectionInfos.FirstOrDefault();
             if (key is not null && value is not null) {
@@ -803,7 +888,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void SendPackageInfoCompletedSignal(int num, InstructionsAttach attach, CancellationToken token = default) {
+        public void SendPackageInfoCompletedSignal(
+            int num,
+            InstructionsAttach attach,
+            CancellationToken token = default) {
+            QueueConnectionWork(() =>
+                SendPackageInfoCompletedSignalAsync(num, attach, token));
+        }
+
+        private async Task SendPackageInfoCompletedSignalAsync(
+            int num,
+            InstructionsAttach attach,
+            CancellationToken token) {
             //获取第一个连接
             var (key, value) = _connectionInfos.FirstOrDefault();
             if (key is not null && value is not null) {
@@ -897,7 +993,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        public async void SendPackageCenter(int num, InstructionsAttach info, CancellationToken token = default) {
+        public void SendPackageCenter(
+            int num,
+            InstructionsAttach info,
+            CancellationToken token = default) {
+            QueueConnectionWork(() => SendPackageCenterAsync(num, info, token));
+        }
+
+        private async Task SendPackageCenterAsync(
+            int num,
+            InstructionsAttach info,
+            CancellationToken token) {
             //获取第一个连接
             var (key, value) = _connectionInfos.FirstOrDefault();
             if (key is not null && value is not null) {
@@ -991,8 +1097,29 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        protected virtual async void OnCommunicationInfoEvent(ConnectionCommunicationMessageInfo e) {
-            await Task.Yield();
+        private void QueueConnectionWork(Func<Task> work) {
+            _ = RunConnectionWorkAsync(work);
+        }
+
+        private async Task RunConnectionWorkAsync(Func<Task> work) {
+            await _connectionLifecycleGate.WaitAsync();
+            try {
+                await work();
+            }
+            catch (OperationCanceledException) {
+                // 调用方取消时停止当前发送，后续发送仍可继续。
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(e, "分拣连接任务执行失败");
+                OnCommunicationExceptionEvent(e);
+            }
+            finally {
+                _connectionLifecycleGate.Release();
+            }
+        }
+
+        protected virtual void OnCommunicationInfoEvent(ConnectionCommunicationMessageInfo e) {
             CommunicationInfoEvent?.Invoke(this, e);
             if (e is { Type: CommunicationType.Send, ExitName: null }) {
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
@@ -1032,18 +1159,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
         }
 
-        protected virtual async void OnCommunicationExceptionEvent(Exception e) {
-            await Task.Yield();
+        protected virtual void OnCommunicationExceptionEvent(Exception e) {
             CommunicationExceptionEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnReceivedInstructionsEvent(DeviceDecodeResult e) {
-            await Task.Yield();
+        protected virtual void OnReceivedInstructionsEvent(DeviceDecodeResult e) {
             ReceivedInstructionsEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnHeartbeatError(Exception e) {
-            await Task.Yield();
+        protected virtual void OnHeartbeatError(Exception e) {
             HeartbeatError?.Invoke(this, e);
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
@@ -1052,8 +1176,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
         }
 
-        protected virtual async void OnSendError(ExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnSendError(ExceptionEventArgs e) {
             SendError?.Invoke(this, e);
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
@@ -1062,8 +1185,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
         }
 
-        protected virtual async void OnDisconnected(ConnectionInfo e) {
-            await Task.Yield();
+        protected virtual void OnDisconnected(ConnectionInfo e) {
             Disconnected?.Invoke(this, e);
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
@@ -1107,8 +1229,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return false;
         }
 
-        protected virtual async void OnConnected(ConnectionInfo e) {
-            await Task.Yield();
+        protected virtual void OnConnected(ConnectionInfo e) {
             Connected?.Invoke(this, e);
         }
     }

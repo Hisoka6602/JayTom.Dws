@@ -110,6 +110,11 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 周艺
         /// </summary>
-        ZhouYi
+        ZhouYi,
+
+        /// <summary>
+        /// 极兔极昼小件分拣设备接口
+        /// </summary>
+        JtPolarDayApi = 20
     }
 }

@@ -30,6 +30,8 @@
         <Setter Property="CanUserAddRows" Value="False" />
         <Setter Property="CanUserResizeColumns" Value="True" />
         <Setter Property="CanUserSortColumns" Value="False" />
+        <Setter Property="EnableColumnVirtualization" Value="True" />
+        <Setter Property="EnableRowVirtualization" Value="True" />
         <!--<Setter Property="CellStyle" Value="{StaticResource CustomDataGridTextCellStyle}" />
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource CustomDataGridTextColumnStyle}" />
         <Setter Property="FontFamily" Value="{StaticResource CustomFontFamily}" />-->
@@ -41,7 +43,5 @@
         <Setter Property="RowBackground" Value="#061E90FF" />
         <Setter Property="SelectionUnit" Value="Cell" />
 
-        <!--<Setter Property="EnableColumnVirtualization" Value="True" />
-        <Setter Property="EnableRowVirtualization" Value="True" />-->
     </Style>
 </ResourceDictionary>

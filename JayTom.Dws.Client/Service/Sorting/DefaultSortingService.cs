@@ -66,7 +66,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly IStackedPackageService _stackedPackageService;
         private readonly IGrayscaleService _grayscaleService;
 
-        private SemaphoreSlim _semaphore = new(1);
+        private readonly SemaphoreSlim _sortingExecutionGate = new(1, 1);
 
         //private ConcurrentDictionary<DateTime, long> _stackedPackageGuidItems = new();
         private SortingMethodDto _sortingMethodDto = new();
@@ -80,9 +80,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
         #region 配置
 
         private ApiSettingsDto _apiSettingsDto = new();
-        private List<LogisticsRegexInfoModel> _logisticsRegexInfos = new();
-        private List<LogisticsCodeRecognitionInfoModel> _logisticsCodeRecognitionInfos = new();
-        private List<PackageExitDefinitionInfoModel> _packageExitDefinitionInfos = new();
+        private LogisticsRegexInfoModel[] _logisticsRegexInfos = Array.Empty<LogisticsRegexInfoModel>();
+        private LogisticsCodeRecognitionInfoModel[] _logisticsCodeRecognitionInfos =
+            Array.Empty<LogisticsCodeRecognitionInfoModel>();
+        private PackageExitDefinitionInfoModel[] _packageExitDefinitionInfos =
+            Array.Empty<PackageExitDefinitionInfoModel>();
         private List<BarCodeSortingInfoModel> _barCodeSortingInfoModels = new();
         private List<BarCodeRegexInfoModel> _barCodeRegexInfos = new();
         private List<LogisticsSortingInfoModel> _logisticsSortingInfoModels = new();
@@ -274,23 +276,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             };
             //格口更改
-            EventAggregator.Instance.Subscribe<LogisticsCodeRecognitionInfoModel>(async models => {
-                _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                    o => o.Id);
+            EventAggregator.Instance.Subscribe<LogisticsCodeRecognitionInfoModel>(models => {
+                _ = ReloadLogisticsCodeRecognitionAsync();
             });
-            EventAggregator.Instance.Subscribe<LogisticsRegexInfoModel>(async models => {
-                _logisticsRegexInfos = await _logisticsRegexRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+            EventAggregator.Instance.Subscribe<LogisticsRegexInfoModel>(models => {
+                _ = ReloadLogisticsRegexAsync();
             });
-            EventAggregator.Instance.Subscribe<PackageExitDefinitionInfoModel>(async models => {
-                _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                    o => o.Id);
+            EventAggregator.Instance.Subscribe<PackageExitDefinitionInfoModel>(models => {
+                _ = ReloadPackageExitDefinitionsAsync();
             });
             //触发方式
-            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is { } model) {
-                    await Task.Yield();
-
                     //不包含Api
                     if (_sortingMethodDto.SortMode != SortMode.None &&
                         _sortingMethodDto.SortMode != SortMode.ApiResponseSorting &&
@@ -316,7 +313,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             });
             //Api触发
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is { } model) {
                     if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting) {
                         ExecuteSorting(new SortingParam {
@@ -335,7 +332,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
             });
             //Ocr触发
-            EventAggregator.Instance.Subscribe<PackageOcrInfo>(async item => {
+            EventAggregator.Instance.Subscribe<PackageOcrInfo>(item => {
                 if (item is { } model) {
                     if (_sortingMethodDto.SortMode == SortMode.OcrSorting) {
                         ExecuteSorting(new SortingParam {
@@ -354,7 +351,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
 
             //备用格口分拣
-            EventAggregator.Instance.Subscribe<PushAlternateExitSorterEvent>(async item => {
+            EventAggregator.Instance.Subscribe<PushAlternateExitSorterEvent>(item => {
                 if (item is { } model) {
                     SubSorting(new SortingParam {
                         Timestamp = model.PackageInfo.Timestamp,
@@ -371,17 +368,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
             });
             //锁格
             _exitMonitor.LockExitEvent += (sender, model) => {
-                var infoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(model.Id));
-                if (infoModel is not null) {
-                    infoModel.IsLockExit = model.IsLockExit;
-                }
+                ReplaceExitLockStatus(model);
             };
             //解锁
             _exitMonitor.UnLockExitEvent += (sender, model) => {
-                var infoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(model.Id));
-                if (infoModel is not null) {
-                    infoModel.IsLockExit = model.IsLockExit;
-                }
+                ReplaceExitLockStatus(model);
             };
         }
 
@@ -420,19 +411,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public bool IsConnected => true;
 
         public async Task<LogisticsCodeRecognitionInfoModel?> GetLogisticsInfo(string barCode) {
-            if (_logisticsCodeRecognitionInfos?.Any() != true) {
-                _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.
-                     Select(s => s.Id > 0,
-                         o => o.Id);
+            var codeRecognitionInfos = Volatile.Read(ref _logisticsCodeRecognitionInfos);
+            if (codeRecognitionInfos.Length == 0) {
+                await ReloadLogisticsCodeRecognitionAsync();
+                codeRecognitionInfos = Volatile.Read(ref _logisticsCodeRecognitionInfos);
             }
 
-            if (_logisticsRegexInfos?.Any() != true) {
-                _logisticsRegexInfos = await _logisticsRegexRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+            var regexInfos = Volatile.Read(ref _logisticsRegexInfos);
+            if (regexInfos.Length == 0) {
+                await ReloadLogisticsRegexAsync();
+                regexInfos = Volatile.Read(ref _logisticsRegexInfos);
             }
 
-            if (_logisticsRegexInfos?.Any() == true) {
-                var logisticsRegexInfoModel = _logisticsRegexInfos.FirstOrDefault(f => {
+            if (regexInfos.Length > 0) {
+                var logisticsRegexInfoModel = regexInfos.FirstOrDefault(f => {
                     try {
                         var isMatch = Regex.IsMatch(barCode, f.RegexPattern);
                         if (isMatch) {
@@ -446,7 +438,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     return false;
                 });
                 if (logisticsRegexInfoModel is not null) {
-                    return _logisticsCodeRecognitionInfos?.FirstOrDefault(f =>
+                    return codeRecognitionInfos.FirstOrDefault(f =>
                         f.Id.Equals(logisticsRegexInfoModel.LogisticsId));
                 }
             }
@@ -470,13 +462,19 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                     _packageExitLockSettingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings", token) ?? new PackageExitLockSettingsDto();
 
-                    _packageExitDefinitionInfos = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                        o => o.Id, token);
+                    Volatile.Write(
+                        ref _packageExitDefinitionInfos,
+                        (await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.Id, token))
+                        .ToArray());
 
-                    _logisticsCodeRecognitionInfos = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                    o => o.Id, token);
-                    _logisticsRegexInfos = await _logisticsRegexRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
+                    Volatile.Write(
+                        ref _logisticsCodeRecognitionInfos,
+                        (await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0, o => o.Id, token))
+                        .ToArray());
+                    Volatile.Write(
+                        ref _logisticsRegexInfos,
+                        (await _logisticsRegexRepository.Select(s => s.Id > 0, o => o.CreateTime, token))
+                        .ToArray());
                     _barCodeSortingInfoModels = await _barCodeSortingRepository.Select(s => s.Id > 0,
                         o => o.CreateTime, token);
                     _barCodeRegexInfos = await _barCodeRegexRepository.Select(s => s.Id > 0,
@@ -565,14 +563,25 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return new KeyValuePair<bool, string>(true, "已停止");
         }
 
-        public async void ExceptionSorting(SortingParam param, PackageCloudAbnormalSortingType abnormalSortingType, CancellationToken token = default) {
+        public void ExceptionSorting(
+            SortingParam param,
+            PackageCloudAbnormalSortingType abnormalSortingType,
+            CancellationToken token = default) {
+            QueueSortingWork(() => ExceptionSortingAsync(param, abnormalSortingType, token));
+        }
+
+        private async Task ExceptionSortingAsync(
+            SortingParam param,
+            PackageCloudAbnormalSortingType abnormalSortingType,
+            CancellationToken token) {
             EventAggregator.Instance.Publish(new ExceptionSortingReceived {
                 ScanTime = param.ScanTime,
                 BarCode = param.BarCode,
                 Timestamp = param.Timestamp,
                 PackageCloudAbnormalSortingType = abnormalSortingType
             });
-            var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f =>
+            var packageExitDefinitions = Volatile.Read(ref _packageExitDefinitionInfos);
+            var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f =>
                 f is { Type: ExitType.AbnormalExit, IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {
                 //执行分拣
@@ -708,7 +717,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public void LogisticsSorting(SortingParam param, CancellationToken token = default) {
             try {
-                var logisticsRegexInfoModel = _logisticsRegexInfos.FirstOrDefault(f => Regex.IsMatch(param.BarCode, f.RegexPattern));
+                var logisticsRegexInfos = Volatile.Read(ref _logisticsRegexInfos);
+                var logisticsRegexInfoModel = logisticsRegexInfos.FirstOrDefault(
+                    f => Regex.IsMatch(param.BarCode, f.RegexPattern));
                 if (logisticsRegexInfoModel is not null) {
                     //取出物流
                     var logisticsRuleInfoModel = _logisticsRuleInfoModels.FirstOrDefault(f => f.LogisticsId.Equals(logisticsRegexInfoModel.LogisticsId));
@@ -842,18 +853,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _sortingConnectionService.SendPackageCenter(num, attach, token);
         }
 
-        protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnExceptionOccurred(ExceptionEventArgs e) {
             ExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnHeartbeatError(Exception e) {
-            await Task.Yield();
+        protected virtual void OnHeartbeatError(Exception e) {
             HeartbeatError?.Invoke(this, e);
         }
 
-        protected virtual async void OnSendError(ExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnSendError(ExceptionEventArgs e) {
             SendError?.Invoke(this, e);
         }
 
@@ -862,7 +870,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
         /// </summary>
         /// <param name="param"></param>
         /// <param name="token"></param>
-        private async void SubSorting(SortingParam param, CancellationToken token = default) {
+        private void SubSorting(SortingParam param, CancellationToken token = default) {
+            QueueSortingWork(() => SubSortingAsync(param, token));
+        }
+
+        private async Task SubSortingAsync(
+            SortingParam param,
+            CancellationToken token) {
             //取出格口指令
             //判断格口是否生效
             PackageExitDefinitionInfoModel? exitDefinitionInfoModel = null;
@@ -871,13 +885,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 ExceptionSorting(param, PackageCloudAbnormalSortingType.StackedPackage, token);
                 return;
             }
-            var packageExitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
+            var packageExitDefinitions = Volatile.Read(ref _packageExitDefinitionInfos);
+            var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
                 f is { IsActive: true });
             if (packageExitDefinitionInfoModel is not null) {
                 if (packageExitDefinitionInfoModel.IsLockExit || param.IsAlternateExitInstruction) {
                     //判断备用格口
 
-                    exitDefinitionInfoModel = _packageExitDefinitionInfos.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
+                    exitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
                         f.Pid == packageExitDefinitionInfoModel.Id);
                     /*if (exitDefinitionInfoModel is null || _packageExitLockSettingsDto.IsAutoExceptionSorting) {
                         ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
@@ -1133,53 +1148,143 @@ namespace JayTom.Dws.Client.Service.Sorting {
             return null;
         }
 
-        protected virtual async void OnCreatePackageEvent(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        private async Task ReloadLogisticsCodeRecognitionAsync() {
+            try {
+                var items = await _logisticsCodeRecognitionRepository.Select(
+                    item => item.Id > 0,
+                    item => item.Id);
+                Volatile.Write(ref _logisticsCodeRecognitionInfos, items.ToArray());
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(e, "刷新物流识别配置失败");
+            }
+        }
+
+        private async Task ReloadLogisticsRegexAsync() {
+            try {
+                var items = await _logisticsRegexRepository.Select(
+                    item => item.Id > 0,
+                    item => item.CreateTime);
+                Volatile.Write(ref _logisticsRegexInfos, items.ToArray());
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(e, "刷新物流正则配置失败");
+            }
+        }
+
+        private async Task ReloadPackageExitDefinitionsAsync() {
+            try {
+                var items = await _packageExitDefinitionRepository.Select(
+                    item => item.Id > 0,
+                    item => item.Id);
+                Volatile.Write(ref _packageExitDefinitionInfos, items.ToArray());
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(e, "刷新格口配置失败");
+            }
+        }
+
+        private void ReplaceExitLockStatus(PackageExitDefinitionInfoModel changedStatus) {
+            PackageExitDefinitionInfoModel[] current;
+            PackageExitDefinitionInfoModel[] updated;
+            do {
+                current = Volatile.Read(ref _packageExitDefinitionInfos);
+                updated = current
+                    .Select(item => item.Id == changedStatus.Id
+                        ? CloneExitDefinition(item, changedStatus.IsLockExit)
+                        : item)
+                    .ToArray();
+            } while (!ReferenceEquals(
+                         Interlocked.CompareExchange(
+                             ref _packageExitDefinitionInfos,
+                             updated,
+                             current),
+                         current));
+        }
+
+        private static PackageExitDefinitionInfoModel CloneExitDefinition(
+            PackageExitDefinitionInfoModel source,
+            bool isLockExit) {
+            return new PackageExitDefinitionInfoModel {
+                Id = source.Id,
+                CommunicationConnectionId = source.CommunicationConnectionId,
+                CommunicationConnectionConfigInfo = source.CommunicationConnectionConfigInfo,
+                Pid = source.Pid,
+                ExitName = source.ExitName,
+                Type = source.Type,
+                IsActive = source.IsActive,
+                IsLockExit = isLockExit,
+                PackageExitLockBindingInfo = source.PackageExitLockBindingInfo,
+                Remarks = source.Remarks,
+                CreateTime = source.CreateTime,
+                ModifyTime = source.ModifyTime
+            };
+        }
+
+        private void QueueSortingWork(Func<Task> work) {
+            _ = RunSortingWorkAsync(work);
+        }
+
+        private async Task RunSortingWorkAsync(Func<Task> work) {
+            await _sortingExecutionGate.WaitAsync();
+            try {
+                await work();
+            }
+            catch (OperationCanceledException) {
+                // 调用方取消时停止当前发送，不污染后续分拣任务。
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(e, "分拣任务执行失败");
+                OnExceptionOccurred(new ExceptionEventArgs {
+                    ExceptionMessage = e.Message
+                });
+            }
+            finally {
+                _sortingExecutionGate.Release();
+            }
+        }
+
+        protected virtual void OnCreatePackageEvent(PackageInstructionEventArgs e) {
             CreatePackageEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnRemovePackageEvent(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRemovePackageEvent(PackageInstructionEventArgs e) {
             RemovePackageEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnClearExceptionEvent(string e) {
-            await Task.Yield();
+        protected virtual void OnClearExceptionEvent(string e) {
             ClearExceptionEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnSendInstruction(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnSendInstruction(PackageInstructionEventArgs e) {
             SendInstruction?.Invoke(this, e);
         }
 
-        protected virtual async void OnPackageException(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnPackageException(PackageInstructionEventArgs e) {
             PackageException?.Invoke(this, e);
         }
 
-        protected virtual async void OnPreSignalReplyReceived(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnPreSignalReplyReceived(PackageInstructionEventArgs e) {
             PreSignalReplyReceived?.Invoke(this, e);
         }
 
-        protected virtual async void OnSequenceBinding(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnSequenceBinding(PackageInstructionEventArgs e) {
             SequenceBinding?.Invoke(this, e);
         }
 
-        protected virtual async void OnResetButtonTrigger(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnResetButtonTrigger(PackageInstructionEventArgs e) {
             ResetButtonTrigger?.Invoke(this, e);
         }
 
-        protected virtual async void OnFlowToEndOrException(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnFlowToEndOrException(PackageInstructionEventArgs e) {
             FlowToEndOrException?.Invoke(this, e);
         }
 
-        protected virtual async void OnPackageExceptionEx(PackageInstructionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnPackageExceptionEx(PackageInstructionEventArgs e) {
             PackageExceptionEx?.Invoke(this, e);
         }
     }

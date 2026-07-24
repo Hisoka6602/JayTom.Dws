@@ -17,9 +17,10 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
     public class DaHuaBarCodeReader : IDisposable {
-        private DynamsoftBarCodeReader _dynamsoftBarCodeReader = new();
-        private static ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
-        private static ConcurrentDictionary<string, IntPtr> _loginDev = new();
+        private readonly DynamsoftBarCodeReader _dynamsoftBarCodeReader = new();
+        private static readonly ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
+        private static readonly ConcurrentDictionary<string, IntPtr> _loginDev = new();
+        private static readonly ConcurrentDictionary<IntPtr, string> _serialByLoginHandle = new();
 
         /// <summary>
         /// 设备枚举回调
@@ -46,29 +47,25 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
         /// </summary>
         private static fSnapRevCallBack? _mSnapRevCallBack;
 
-        private static SemaphoreSlim _enumerateSlim = new(1);
-        private static SemaphoreSlim _realtimeFrameSlim = new(1);
-        private static SemaphoreSlim _snapRevPhotoSlim = new(1);
-        private static SemaphoreSlim _takePhotoSlim = new(1);
-        private static object _initLock = new();
+        private static readonly SemaphoreSlim _enumerateSlim = new(1, 1);
+        private static readonly SemaphoreSlim _takePhotoSlim = new(1, 1);
+        private static readonly object _initLock = new();
         private static DaHuaBarCodeReader? _instance;
-        private static byte[] _realtimeFrameBytes = Array.Empty<byte>();
-        private static byte[] _imageBytes = Array.Empty<byte>();
 
         /// <summary>
         /// 实时预览句柄
         /// </summary>
-        private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
+        private static readonly ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
 
         /// <summary>
         /// 实时预览事件
         /// </summary>
-        private static ConcurrentDictionary<string, Action<Bitmap?>> _realtimeFrameEvent = new();
+        private static readonly ConcurrentDictionary<string, Action<Bitmap?>> _realtimeFrameEvent = new();
 
         /// <summary>
         /// 远程抓图
         /// </summary>
-        private static ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
+        private static readonly ConcurrentDictionary<string, Action<Bitmap?>> _imageEvent = new();
 
         public void Dispose() {
             _dynamsoftBarCodeReader.Dispose();
@@ -83,10 +80,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                     _instance ??= new DaHuaBarCodeReader();
 
                     //设备枚举回调
-                    _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
+                    _mSearchDevicesCbEx = delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
                         var info = (NET_DEVICE_NET_INFO_EX2)(Marshal.PtrToStructure(intPtr, typeof(NET_DEVICE_NET_INFO_EX2)) ?? IntPtr.Zero);
                         if (info.stuDevInfo.iIPVersion == 4) {
-                            await _enumerateSlim.WaitAsync();
                             _devInfo.AddOrUpdate(info.stuDevInfo.szSerialNo, key => info.stuDevInfo,
                                 (key, oldValue) => {
                                     oldValue.verifyData = info.stuDevInfo.verifyData;
@@ -95,7 +91,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                                     oldValue.wVideoInputCh = info.stuDevInfo.wVideoInputCh;
                                     return oldValue;
                                 });
-                            _enumerateSlim.Release();
                         }
                     };
                     //设备断连回调
@@ -108,66 +103,51 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                     //设备登录
 
                     //设备数据回调
-                    _mRealDataCallBackEx2 += async delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
+                    _mRealDataCallBackEx2 = delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
                         IntPtr user) {
+                            if (size == 0 || buffer == IntPtr.Zero) {
+                                return;
+                            }
+
                             try {
-                                await _realtimeFrameSlim.WaitAsync();
-                                //取出登录id
-                                var (key, value) = _realPlayInfo.FirstOrDefault(f => f.Value == handle);
-                                if (key != null) {
-                                    var tryGetValue = _realtimeFrameEvent.TryGetValue(key, out var callback);
-                                    if (tryGetValue) {
-                                        Image? imageBitmap = null;
-                                        _realtimeFrameBytes = new byte[size];
-                                        Marshal.Copy(buffer, _realtimeFrameBytes, 0, (int)size);
-                                        using var stream = new MemoryStream(_realtimeFrameBytes);
-                                        imageBitmap = Image.FromStream(stream);
-
-                                        var image = imageBitmap?.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height,
-                                            () => false, IntPtr.Zero);
-
-                                        if (image != null) callback?.Invoke((Bitmap)image);
-
-                                        imageBitmap?.Dispose();
-                                    }
+                                var key = _realPlayInfo.FirstOrDefault(pair => pair.Value == handle).Key;
+                                if (key is null || !_realtimeFrameEvent.TryGetValue(key, out var callback)) {
+                                    return;
                                 }
+
+                                var frameBytes = GC.AllocateUninitializedArray<byte>(checked((int)size));
+                                Marshal.Copy(buffer, frameBytes, 0, frameBytes.Length);
+                                using var stream = new MemoryStream(frameBytes, writable: false);
+                                using var decoded = Image.FromStream(stream);
+                                callback(new Bitmap(decoded));
                             }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                            }
-                            finally {
-                                _realtimeFrameSlim.Release();
+                            catch (Exception exception) {
+                                NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
                             }
                         };
                     //设备远程抓图回调
-                    _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
-                        if (len > 0) {
-                            try {
-                                await _snapRevPhotoSlim.WaitAsync();
-                                await Task.Delay(50);
-                                var (key, value) = _loginDev.FirstOrDefault(f => f.Value == id);
-                                if (key != null && _imageEvent.TryGetValue(key, out var callback)) {
-                                    if (type == 10) //.jpg
-                                    {
-                                        _imageBytes = new byte[len];
-                                        Marshal.Copy(buf, _imageBytes, 0, (int)len);
+                    _mSnapRevCallBack = delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
+                        if (len == 0 || type != 10 || buf == IntPtr.Zero) {
+                            return;
+                        }
 
-                                        using var stream = new MemoryStream(_imageBytes);
-                                        var valid = IsImageDataValid(stream);
-                                        if (valid) {
-                                            using var imageBitmap = Image.FromStream(stream);
-                                            using var thumbnail = imageBitmap.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height, () => false, IntPtr.Zero);
-                                            callback?.Invoke(new Bitmap(thumbnail));
-                                        }
-                                    }
-                                }
+                        try {
+                            if (!_serialByLoginHandle.TryGetValue(id, out var key) ||
+                                !_imageEvent.TryGetValue(key, out var callback)) {
+                                return;
                             }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+
+                            var imageBytes = GC.AllocateUninitializedArray<byte>(checked((int)len));
+                            Marshal.Copy(buf, imageBytes, 0, imageBytes.Length);
+                            using var stream = new MemoryStream(imageBytes, writable: false);
+                            if (IsImageDataValid(stream)) {
+                                stream.Position = 0;
+                                using var imageBitmap = Image.FromStream(stream);
+                                callback(new Bitmap(imageBitmap));
                             }
-                            finally {
-                                _snapRevPhotoSlim.Release();
-                            }
+                        }
+                        catch (Exception exception) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
                         }
                     };
                     //实时抓图
@@ -203,11 +183,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                     NETClient.StartSearchDevicesEx(ref stuIn, ref stuOut);
                 }
                 await Task.Delay(1000);
-                await _enumerateSlim.WaitAsync();
-
-                devices.AddRange(_devInfo.Select(s => s.Value));
-
-                _enumerateSlim.Release();
+                devices.AddRange(_devInfo.Values);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -249,7 +225,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
                         //添加到字典
-                        _loginDev.TryAdd(serialNo, mLoginId);
+                        _loginDev[serialNo] = mLoginId;
+                        _serialByLoginHandle[mLoginId] = serialNo;
 
                         return new KeyValuePair<bool, string>(true, mLoginId.ToString());
                     }
@@ -287,6 +264,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                 }
 
                 _loginDev.TryRemove(serialNo, out mLoginId);
+                _serialByLoginHandle.TryRemove(mLoginId, out _);
                 return new KeyValuePair<bool, string>(true, mLoginId.ToString());
             }
             catch (Exception e) {
@@ -302,7 +280,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="callback"></param>
-        public void RegisterImageCallback(string serialNo, [NotNull] Action<Bitmap> callback) {
+        public void RegisterImageCallback(string serialNo, Action<Bitmap> callback) {
             _imageEvent.AddOrUpdate(serialNo, callback!, (k, v) => callback);
         }
 
@@ -313,7 +291,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="callback"></param>
-        public void RegisterRealtimeFrameCallback(string serialNo, [NotNull] Action<Bitmap> callback) {
+        public void RegisterRealtimeFrameCallback(string serialNo, Action<Bitmap> callback) {
             _realtimeFrameEvent.AddOrUpdate(serialNo, callback!, (k, v) => callback);
         }
 
@@ -327,16 +305,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
             try {
                 await _takePhotoSlim.WaitAsync();
-                await Task.Delay(400);
                 var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
                 if (tryGetValue) {
-                    var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     var asyncSnap = new NET_SNAP_PARAMS {
-                        Channel = (uint)indexOf,
+                        Channel = 0,
                         Quality = 6,
                         ImageSize = 2,
                         mode = 0,
-                        CmdSerial = (uint)new Random().Next(0, 65536),
+                        CmdSerial = (uint)Random.Shared.Next(0, 65536),
                     };
                     var ret = NETClient.SnapPictureEx(mLoginId, asyncSnap, IntPtr.Zero);
                     if (!ret) {

@@ -2,10 +2,12 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <Platforms>AnyCPU;x86;x64</Platforms>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SignAssembly>False</SignAssembly>
     <DelaySign>False</DelaySign>
@@ -84,12 +86,15 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Prism.DryIoc" Version="8.1.97" />
+    <PackageReference Include="SkiaSharp" Version="2.88.6" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.7" />
     <PackageReference Include="Vlc.DotNet.Wpf" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
+    <ProjectReference Include="..\eng\JayTom.Dws.CodeQualityGuard\JayTom.Dws.CodeQualityGuard.csproj"
+                      ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
@@ -194,6 +199,13 @@
 
     <!-- 使用 Condition 属性检查文件夹是否存在 -->
     <MakeDir Directories="$(LicenseFolder)" Condition="!Exists('$(LicenseFolder)')" />
+  </Target>
+
+  <Target Name="RunCodeQualityGuard"
+          BeforeTargets="CoreCompile"
+          DependsOnTargets="ResolveProjectReferences"
+          Condition="'$(MSBuildProjectName)' == 'JayTom.Dws.Client' and '$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)\..\eng\JayTom.Dws.CodeQualityGuard\bin\$(Configuration)\net10.0\JayTom.Dws.CodeQualityGuard.dll&quot; &quot;$(MSBuildProjectDirectory)\..&quot; &quot;$(MSBuildProjectDirectory)\..\eng\CodeQualityBaseline.json&quot;" />
   </Target>
 
 

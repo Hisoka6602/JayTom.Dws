@@ -203,23 +203,19 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             }
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnVolumeCaptured(VolumeCapturedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnVolumeCaptured(VolumeCapturedEventArgs e) {
             VolumeCaptured?.Invoke(this, e);
         }
 

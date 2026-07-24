@@ -11,7 +11,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
     public class MessageHub : Hub, IMessageHub {
         private readonly IHubContext<MessageHub> _hubContext;
         private readonly IVideoBarCodeService _videoBarCodeService;
-        private static SemaphoreSlim _semaphoreSlim = new(1);
+        private static readonly SemaphoreSlim DataStatisticsLock = new(1, 1);
 
         public MessageHub(IHubContext<MessageHub> hubContext,
             IVideoBarCodeService videoBarCodeService) {
@@ -19,26 +19,15 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
             _videoBarCodeService = videoBarCodeService;
         }
 
-        public async void DataStatistics() {
-            return;
+        public async Task DataStatistics() {
+            var lockTaken = false;
             try {
-                var dataStatistics = new DataStatistics();
-                await _semaphoreSlim.WaitAsync();
-                //获取计数
-                /*var (key, value) = await _videoBarCodeService.BarcodeTotalForDateBetween(
-                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
-                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
-                        .AddMonths(1).AddSeconds(-1));
-                if (key && value is int thisMonthBarcodeTotal) {
-                    dataStatistics.ThisMonthBarcodeTotal = thisMonthBarcodeTotal;
+                lockTaken = await DataStatisticsLock.WaitAsync(0);
+                if (!lockTaken) {
+                    return;
                 }
-                (key, value) = await _videoBarCodeService.BarcodeTotalForDateBetween(
-                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1),
-                    new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddSeconds(-1));
-                if (key && value is int lastMonthBarcodeTotal) {
-                    dataStatistics.LastMonthBarcodeTotal = lastMonthBarcodeTotal;
-                }*/
 
+                var dataStatistics = new DataStatistics();
                 var (key, value) = await _videoBarCodeService.BarcodeTotalForDate(DateTime.Today);
                 if (key && value is int todayBarcodeTotal) {
                     dataStatistics.TodayBarcodeTotal = todayBarcodeTotal;
@@ -57,14 +46,14 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
-                _semaphoreSlim.Release();
+                if (lockTaken) {
+                    DataStatisticsLock.Release();
+                }
             }
         }
 
-        public async void MessageItem(MessageBarCodeItemInfo info) {
+        public async Task MessageItem(MessageBarCodeItemInfo info) {
             try {
-                await _semaphoreSlim.WaitAsync();
-                //获取计数
                 await _hubContext.Clients.All.SendCoreAsync("MessageItem", new object?[]
                 {
                     info
@@ -73,15 +62,13 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-            finally {
-                _semaphoreSlim.Release();
-            }
         }
 
-        public async void UpDateItem(MessageBarCodeItemInfo info) {
+        /// <summary>
+        /// 向所有客户端广播条码更新。
+        /// </summary>
+        public async Task UpDateItem(MessageBarCodeItemInfo info) {
             try {
-                await _semaphoreSlim.WaitAsync();
-                //获取计数
                 await _hubContext.Clients.All.SendCoreAsync("UpDateItem", new object?[]
                 {
                     info
@@ -90,18 +77,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-            finally {
-                _semaphoreSlim.Release();
-            }
         }
 
-        public async void UpDateNodes() {
-            return;
+        public async Task UpDateNodes() {
             try {
-                await _semaphoreSlim.WaitAsync();
                 var (key, value) = await _videoBarCodeService.GroupedNodeNames();
                 if (key && value is List<string> nodeNames) {
-                    //获取计数
                     await _hubContext.Clients.All.SendCoreAsync("NodeNames", new object?[]
                     {
                         nodeNames
@@ -110,9 +91,6 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-            }
-            finally {
-                _semaphoreSlim.Release();
             }
         }
     }

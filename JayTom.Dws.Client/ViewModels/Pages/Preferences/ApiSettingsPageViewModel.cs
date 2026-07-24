@@ -64,6 +64,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
             new ApiTypeInfoModel()
             {
+                Name = "极兔极昼Api接口",
+                Value = ApiType.JtPolarDayApi
+            },
+            new ApiTypeInfoModel()
+            {
                 Name = "络道科技Api",
                 Value = ApiType.RoutDataApi
             },

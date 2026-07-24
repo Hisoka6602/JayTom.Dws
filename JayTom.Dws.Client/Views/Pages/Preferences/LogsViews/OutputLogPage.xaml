@@ -375,7 +375,8 @@
                         MinHeight="100"
                         Margin="0,5"
                         ItemTemplate="{StaticResource OutputLogItemTemplate}"
-                        ItemsSource="{Binding OutputLogItems, UpdateSourceTrigger=PropertyChanged}">
+                        ItemsSource="{Binding OutputLogItems, Mode=OneWay}"
+                        Style="{StaticResource CustomListBoxStyle}">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Height" Value="Auto" />

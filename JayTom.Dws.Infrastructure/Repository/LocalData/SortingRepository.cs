@@ -17,7 +17,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             contextFactory, cache) {
         }
 
-        public new async Task<bool> Insert([NotNull] SortingInfoModel entity, CancellationToken token) {
+        public new async Task<bool> Insert(SortingInfoModel entity, CancellationToken token) {
             var insert = await base.Insert(entity, token);
             if (insert) {
                 var infoModel = base._cache.Get<PackageInfoModel>(entity.PackageId);

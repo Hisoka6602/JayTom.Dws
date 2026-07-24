@@ -400,16 +400,18 @@ namespace JayTom.Dws.Plugin.Excel {
                                                 }
                                             }
                                         }
-                                        var startNew = await Task.Factory.StartNew(async () => {
-                                            //保存文件
-                                            await using var ms = new MemoryStream();
-                                            wk?.Write(ms, true);
-                                            await using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-                                            var d = ms.ToArray();
-                                            await fs.WriteAsync(d, 0, d.Length, token);
-                                            await fs.FlushAsync(token);
-                                        }, token);
-                                        Task.WaitAll(new[] { startNew }, token);
+                                        token.ThrowIfCancellationRequested();
+                                        await using var ms = new MemoryStream();
+                                        wk?.Write(ms, true);
+                                        ms.Position = 0;
+                                        await using var fs = new FileStream(filePath, new FileStreamOptions {
+                                            Mode = FileMode.Create,
+                                            Access = FileAccess.Write,
+                                            Share = FileShare.None,
+                                            Options = FileOptions.Asynchronous | FileOptions.SequentialScan
+                                        });
+                                        await ms.CopyToAsync(fs, token);
+                                        await fs.FlushAsync(token);
                                     }
                                 }
                                 else {
@@ -581,37 +583,37 @@ namespace JayTom.Dws.Plugin.Excel {
                             }
                         }
 
-                        //写出进度
-                        await Task.Factory.StartNew(() => {
-                            //进度+1(只在10%、20%、30%、50%、60%、80%、100%时写出)
-                            var listCount = ((decimal)i + 1) / list.Count * 100;
-                            if ((int)listCount == 100) {
-                                listCount = 99;
-                            }
-                            progress.Invoke((int)listCount);
-                        }, cancelToken);
+                        cancelToken.ThrowIfCancellationRequested();
+                        var listCount = ((decimal)i + 1) / list.Count * 100;
+                        if ((int)listCount == 100) {
+                            listCount = 99;
+                        }
+                        progress.Invoke((int)listCount);
                     }
                     // 写入到客户端操作
-                    var startNew = await Task.Factory.StartNew(async () => {
-                        await using var ms = new MemoryStream();
-                        book?.Write(ms, false);
-                        if (path != null) {
-                            var fileInfo = new FileInfo(path);
-                            var fileName = path;
-                            if (pageIndex > 0) {
-                                fileName = $"{fileInfo.FullName.Replace(fileInfo.Extension, $"(part{pageIndex + 1})")}{fileInfo.Extension}";
-                            }
-                            await using var fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
-                            var d = ms.ToArray();
-                            await fs.WriteAsync(d, cancelToken);
-                            await fs.FlushAsync(cancelToken);
+                    cancelToken.ThrowIfCancellationRequested();
+                    await using var ms = new MemoryStream();
+                    book?.Write(ms, false);
+                    if (path != null) {
+                        var fileInfo = new FileInfo(path);
+                        var fileName = path;
+                        if (pageIndex > 0) {
+                            fileName = $"{fileInfo.FullName.Replace(fileInfo.Extension, $"(part{pageIndex + 1})")}{fileInfo.Extension}";
                         }
+                        ms.Position = 0;
+                        await using var fs = new FileStream(fileName, new FileStreamOptions {
+                            Mode = FileMode.Create,
+                            Access = FileAccess.Write,
+                            Share = FileShare.None,
+                            Options = FileOptions.Asynchronous | FileOptions.SequentialScan
+                        });
+                        await ms.CopyToAsync(fs, cancelToken);
+                        await fs.FlushAsync(cancelToken);
+                    }
 
-                        if (pageIndex == pageSize - 1) {
-                            progress.Invoke(100);
-                        }
-                    }, cancelToken);
-                    Task.WaitAll(new[] { startNew }, cancelToken);
+                    if (pageIndex == pageSize - 1) {
+                        progress.Invoke(100);
+                    }
                 }
 
                 return true;
@@ -719,15 +721,12 @@ namespace JayTom.Dws.Plugin.Excel {
                         }
                     }
 
-                    //写出进度
-                    await Task.Factory.StartNew(() => {
-                        //进度+1(只在10%、20%、30%、50%、60%、80%、100%时写出)
-                        var listCount = ((decimal)i + 1) / list.Count * 100;
-                        if ((int)listCount == 100) {
-                            listCount = 99;
-                        }
-                        progress.Invoke((int)listCount);
-                    }, cancelToken);
+                    cancelToken.ThrowIfCancellationRequested();
+                    var listCount = ((decimal)i + 1) / list.Count * 100;
+                    if ((int)listCount == 100) {
+                        listCount = 99;
+                    }
+                    progress.Invoke((int)listCount);
                 }
                 // 写出
                 await using var ms = new MemoryStream();

@@ -69,14 +69,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
         private SyncSettingsDto _syncSettingsDto = new();
-        private DateTime _startTime = DateTime.Now;
+        private long _startTimeTicks = DateTime.Now.Ticks;
         private SemaphoreSlim _cloudVideoUpLoadSlim = new(2);
-
-        private List<NvrCameraBindingInfoModel> _nvrCameraBindingInfoModels = new();
-        private SemaphoreSlim _setNvrCameraBindingSlim = new(1);
-
-        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
-        private static bool _isWindowsClose;
+        private NvrCameraBindingInfoModel[] _nvrCameraBindingInfoModels =
+            Array.Empty<NvrCameraBindingInfoModel>();
+        private readonly SemaphoreSlim _settingsUpdateGate = new(1, 1);
+        private int _isWindowsClose;
 
         public CloudBackgroundService(IConfigRepository configRepository,
             ICloud cloud, IPackageRepository packageRepository,
@@ -117,18 +115,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
 
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                switch (item) {
+                await _settingsUpdateGate.WaitAsync();
+                try {
+                    switch (item) {
                     case { SettingsName: "CloudVideoSettings" } model: {
-                            _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(model.SettingsName) ?? new CloudVideoSettingsDto();
-                            _cloudVideoUpLoadSlim = new SemaphoreSlim(_cloudVideoSettingsDto.Concurrency);
-                            if (_cloudVideoSettingsDto.IsAutoUploadUnsyncedData) {
-                                _startTime = new DateTime(1970, 1, 1);
+                            var settings = await _configRepository
+                                .FirstOrDefaultEntity<CloudVideoSettingsDto>(model.SettingsName) ??
+                                new CloudVideoSettingsDto();
+                            Volatile.Write(ref _cloudVideoSettingsDto, settings);
+                            Interlocked.Exchange(
+                                ref _cloudVideoUpLoadSlim,
+                                new SemaphoreSlim(Math.Max(1, settings.Concurrency)));
+                            if (settings.IsAutoUploadUnsyncedData) {
+                                Interlocked.Exchange(
+                                    ref _startTimeTicks,
+                                    new DateTime(1970, 1, 1).Ticks);
                             }
                             //同步
                             if (_syncSettingsService.IsConnected &&
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseCloudSync: true } &&
                                 model.IsLocallySaved) {
-                                var (key, value) = await _syncSettingsService.SubmitSyncContent(model.SettingsName, _cloudVideoSettingsDto);
+                                var (key, value) = await _syncSettingsService.SubmitSyncContent(model.SettingsName, settings);
                                 if (!key) {
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
                                 }
@@ -137,19 +144,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             break;
                         }
                     case { SettingsName: "SyncSettingsSettings" } syncSettingsSettings: {
-                            _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
+                            Volatile.Write(
+                                ref _syncSettingsDto,
+                                await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(
+                                    syncSettingsSettings.SettingsName) ?? new SyncSettingsDto());
                             break;
                         }
                     case { SettingsName: "NvrCameraBindingInfoModel" }:
                         try {
-                            await _setNvrCameraBindingSlim.WaitAsync();
-                            _nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
+                            Volatile.Write(
+                                ref _nvrCameraBindingInfoModels,
+                                (await _nvrCameraBindingRepository.MemoryCacheData()).ToArray());
                         }
                         catch (Exception e) {
                             NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
-                        finally {
-                            _setNvrCameraBindingSlim.Release();
                         }
 
                         break;
@@ -199,6 +207,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
                                 var settingsDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(jtExpressApiParameters.SettingsName) ?? new JtExpressDto();
                                 var (key, value) = await _syncSettingsService.SubmitSyncContent(jtExpressApiParameters.SettingsName, settingsDto);
+                                if (!key) {
+                                    NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
+                                }
+                            }
+
+                            break;
+                        }
+                    case { SettingsName: "JtPolarDayApiParameters", IsLocallySaved: true } jtPolarDayApiParameters: {
+                            //同步
+                            if (_syncSettingsService.IsConnected &&
+                                _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }) {
+                                var settingsDto = await _configRepository.FirstOrDefaultEntity<JtPolarDayDto>(jtPolarDayApiParameters.SettingsName) ?? new JtPolarDayDto();
+                                var (key, value) = await _syncSettingsService.SubmitSyncContent(jtPolarDayApiParameters.SettingsName, settingsDto);
                                 if (!key) {
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交同步失败!");
                                 }
@@ -573,11 +594,19 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
 
                             break;
                         }
+                    }
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(e, $"更新云端同步配置失败:{item.SettingsName}");
+                }
+                finally {
+                    _settingsUpdateGate.Release();
                 }
             });
             EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
-                    _isWindowsClose = true;
+                    Interlocked.Exchange(ref _isWindowsClose, 1);
                 }
             });
             _syncSettingsService.SyncContentReceived += async (sender, info) => {
@@ -592,6 +621,7 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                         case "CaiNiaoApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "EshippingitApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "JtExpressApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
+                        case "JtPolarDayApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "RoutDataApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "SzjyApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
                         case "WdtFlagshipApiParameters" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true }:
@@ -769,58 +799,89 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            _cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>("CloudVideoSettings", stoppingToken) ??
-                                     new CloudVideoSettingsDto();
-            _cloudVideoUpLoadSlim = new SemaphoreSlim(_cloudVideoSettingsDto.Concurrency);
-            if (_cloudVideoSettingsDto.IsAutoUploadUnsyncedData) {
-                _startTime = new DateTime(1970, 1, 1);
+            var initialSettings =
+                await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(
+                    "CloudVideoSettings", stoppingToken) ??
+                new CloudVideoSettingsDto();
+            Volatile.Write(ref _cloudVideoSettingsDto, initialSettings);
+            Interlocked.Exchange(
+                ref _cloudVideoUpLoadSlim,
+                new SemaphoreSlim(Math.Max(1, initialSettings.Concurrency)));
+            if (initialSettings.IsAutoUploadUnsyncedData) {
+                Interlocked.Exchange(ref _startTimeTicks, new DateTime(1970, 1, 1).Ticks);
             }
 
-            _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings", stoppingToken) ??
-                 new SyncSettingsDto();
+            Volatile.Write(
+                ref _syncSettingsDto,
+                await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(
+                    "SyncSettingsSettings", stoppingToken) ?? new SyncSettingsDto());
+            Volatile.Write(
+                ref _nvrCameraBindingInfoModels,
+                (await _nvrCameraBindingRepository.MemoryCacheData()).ToArray());
 
-            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                //设置参数
-                //提交到云端
-                await Task.Delay(100, stoppingToken).ContinueWith(async a => {
-                    try {
-                        if (_cloudVideoSettingsDto.IsUseCloudVideoUpload && a.IsCompletedSuccessfully) {
-                            if (_cloudVideoUpLoadSlim.CurrentCount > 0) {
+            // 这是低频对账工作器，不属于设备/分拣热路径。业务热回调不访问数据库和文件。
+            using var reconciliationTimer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+            while (Volatile.Read(ref _isWindowsClose) == 0 &&
+                   await reconciliationTimer.WaitForNextTickAsync(stoppingToken)) {
+                try {
+                    var settings = Volatile.Read(ref _cloudVideoSettingsDto);
+                    if (settings.IsUseCloudVideoUpload) {
+                        var uploadGate = Volatile.Read(ref _cloudVideoUpLoadSlim);
+                        if (uploadGate.CurrentCount > 0) {
+                            var startTime = new DateTime(
+                                Interlocked.Read(ref _startTimeTicks),
+                                DateTimeKind.Local);
                                 var (key, value) = await _packageRepository.SelectPackage(s =>
                                         s.BarCodeInfo != null &&
-                                        s.BarCodeInfo.ScanTime.CompareTo(_startTime) > 0 &&
+                                        s.BarCodeInfo.ScanTime.CompareTo(startTime) > 0 &&
                                         s.BarCodeInfo.ScanTime.CompareTo(
-                                            DateTime.Now.AddSeconds(0 - _cloudVideoSettingsDto
+                                            DateTime.Now.AddSeconds(0 - settings
                                                 .UploadIntervalInSeconds)) <= 0 &&
                                         (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
                                     o => o.PackageCreateTime, 0,
-                                    _cloudVideoSettingsDto.Concurrency, stoppingToken);
+                                    Math.Max(1, settings.Concurrency), stoppingToken);
 
                                 if (key && value is { } packageInfoModels) {
-                                    if (packageInfoModels?.Where(w => w.BarCodeInfo != null)?.Any() == true) {
-                                        foreach (var packageInfoModel in packageInfoModels
-                                                     ?.Where(w => w.BarCodeInfo != null)?.ToList()!) {
-                                            PolicyVideoUpLoad(packageInfoModel, stoppingToken);
-                                        }
+                                    var pendingPackages = packageInfoModels
+                                        .Where(package => package.BarCodeInfo != null)
+                                        .ToArray();
+                                    if (pendingPackages.Length > 0) {
+                                        await Task.WhenAll(pendingPackages.Select(package =>
+                                            PolicyVideoUploadAsync(
+                                                package,
+                                                settings,
+                                                uploadGate,
+                                                stoppingToken)));
 
-                                        _startTime = packageInfoModels.Max(m => m.BarCodeInfo.ScanTime);
+                                        Interlocked.Exchange(
+                                            ref _startTimeTicks,
+                                            pendingPackages.Max(package =>
+                                                package.BarCodeInfo!.ScanTime).Ticks);
                                     }
                                 }
                             }
                         }
-                    }
-                    catch (Exception e) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    }
-                }, stoppingToken).Unwrap();
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                    break;
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
             }
         }
 
-        private async void PolicyVideoUpLoad(PackageInfoModel packageInfoModel, CancellationToken token) {
+        private async Task PolicyVideoUploadAsync(
+            PackageInfoModel packageInfoModel,
+            CloudVideoSettingsDto settings,
+            SemaphoreSlim uploadGate,
+            CancellationToken token) {
+            var gateEntered = false;
             try {
-                await _cloudVideoUpLoadSlim.WaitAsync(token);
+                await uploadGate.WaitAsync(token);
+                gateEntered = true;
                 var retryPolicy = Policy.HandleResult<bool>(result => !result)
-                    .Or<Exception>().RetryAsync(_cloudVideoSettingsDto.RetryAttempts, (a, b) => {
+                    .Or<Exception>().RetryAsync(settings.RetryAttempts, (a, b) => {
                         EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage {
                             Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
                             RetryCount = b
@@ -829,24 +890,20 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                 await retryPolicy.ExecuteAsync(async () => {
                     var (key, value) = await _cloud.SetParameters(new Dictionary<string, object>()
                     {
-                        { "WebDoMain", _cloudVideoSettingsDto.WebDoMain },
-                        { "Timeout", _cloudVideoSettingsDto.RequestTimeout },
+                        { "WebDoMain", settings.WebDoMain },
+                        { "Timeout", settings.RequestTimeout },
                     });
                     if (key) {
                         //取出绑定信息
-                        List<NvrCameraBindingInfoModel> nvrCameraBindingInfoModels;
-                        try {
-                            await _setNvrCameraBindingSlim.WaitAsync(token);
+                        var serialNumber = packageInfoModel.BarCodeInfo?.SerialNumber;
+                        var nvrCameraBindingInfoModels = Volatile
+                            .Read(ref _nvrCameraBindingInfoModels)
+                            .Where(binding => binding.SerialNumber.Equals(
+                                serialNumber,
+                                StringComparison.Ordinal))
+                            .ToArray();
 
-                            var serialNumber = packageInfoModel.BarCodeInfo?.SerialNumber;
-                            var nvrBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
-                            nvrCameraBindingInfoModels = nvrBindingInfoModels.Where(f => f.SerialNumber.Equals(serialNumber)).ToList();
-                        }
-                        finally {
-                            _setNvrCameraBindingSlim.Release();
-                        }
-
-                        var cloudUploadResponse = await _cloud.UploadData(new PackageCloudInfo() {
+                        var cloudUploadResponse = await UploadCloudDataAsync(new PackageCloudInfo() {
                             PackageCreateTime = packageInfoModel.PackageCreateTime,
                             PackageTimestamped = packageInfoModel.PackageTimestamped,
                             BarCodeInfo = new PackageCloudBarCodeInfo() {
@@ -937,10 +994,10 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     CameraName = s.CameraName,
                                     CustomCameraName = s.CustomCameraName,
                                     Type = s.Type,
-                                    Image = File.Exists(s.LocalPath) ? Image.FromFile(s.LocalPath) : null
+                                    Image = LoadImageSnapshot(s.LocalPath)
                                 })?.ToList(),
                             DeviceInfo = new PackageCloudDeviceInfo() {
-                                NodeName = _cloudVideoSettingsDto.NodeName,
+                                NodeName = settings.NodeName,
                                 MachineCode = await _computer.GenerateMachineCode(),
                             },
                             CloudNvrCameraBindingInfos = nvrCameraBindingInfoModels?.Select(s =>
@@ -1002,10 +1059,47 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             finally {
-                _cloudVideoUpLoadSlim.Release();
+                if (gateEntered) {
+                    uploadGate.Release();
+                }
             }
         }
 
-        //重试方法
+        private async Task<CloudUploadResponse> UploadCloudDataAsync(
+            PackageCloudInfo package,
+            CancellationToken token) {
+            try {
+                return await _cloud.UploadData(package, token: token);
+            }
+            finally {
+                if (package.ImageInfos is not null) {
+                    foreach (var imageInfo in package.ImageInfos) {
+                        imageInfo.Image?.Dispose();
+                        imageInfo.Image = null;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 在云上传工作器中创建图片快照，立即解除源文件锁。
+        /// 返回的图片由上传请求负责在请求结束后释放。
+        /// </summary>
+        private static Image? LoadImageSnapshot(string? path) {
+            if (string.IsNullOrWhiteSpace(path)) {
+                return null;
+            }
+
+            try {
+                using var source = Image.FromFile(path);
+                return new Bitmap(source);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException
+                                      or ArgumentException) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Warn(e, $"读取待上传图片失败:{path}");
+                return null;
+            }
+        }
     }
 }

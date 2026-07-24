@@ -11,14 +11,15 @@ using System.Collections.Generic;
 namespace JayTom.Dws.Ocr.ExpressBill {
 
     public class ExpressBillOcr : IOcr {
-        private ExpressBillPool _expressBillPool = new(10);
-        private SemaphoreSlim _semaphoreSlim = new(2);
+        private readonly ExpressBillPool _expressBillPool = new(10);
+        private readonly SemaphoreSlim _semaphoreSlim = new(2);
+        private readonly object _confirmationLock = new();
         private static string _onnxModel = string.Empty;
 
         private static float _confidenceThreshold = 0.5F;
         private static float _rectangleScale = 1;
         private static bool _isSecondConfirmationEnabled;
-        private static string _lastBarCode = string.Empty;
+        private string _lastBarCode = string.Empty;
 
         public ExpressBillOcr() {
             //释放文件
@@ -38,10 +39,11 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public OcrStatus OcrStatus { get; private set; } = OcrStatus.Initialized;
 
-        public async void SubmitImage(Bitmap imageBytes, string cameraSerialNumber) {
+        public async Task SubmitImage(Bitmap imageBytes, string cameraSerialNumber) {
+            var lockTaken = false;
             try {
                 await _semaphoreSlim.WaitAsync();
-                NLog.LogManager.GetCurrentClassLogger().Error($"进入提交");
+                lockTaken = true;
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill.OcrStatus == OcrStatus.Initialized) {
                         //识别
@@ -51,11 +53,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
                         var ocrResult = await expressBill.ParseOcrResult(imageBytes, cameraSerialNumber);
                         if (ocrResult is not null) {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"返回结果:{ocrResult.BarCode}");
                             OnOcrContentRecognized(ocrResult);
-                        }
-                        else {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"返回结果为空");
                         }
                     }
                     else if (expressBill?.OcrStatus is OcrStatus.Uninitialized) {
@@ -75,10 +73,11 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                     Exception = e,
                     ExceptionTime = DateTime.Now
                 });
-                NLog.LogManager.GetCurrentClassLogger().Error($"SubmitImage方法异常");
             }
             finally {
-                _semaphoreSlim.Release();
+                if (lockTaken) {
+                    _semaphoreSlim.Release();
+                }
             }
         }
 
@@ -109,10 +108,13 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         }
 
                         var ocrResultAsync = await expressBill.ParseOcrResultAsync(imageBytes);
-                        if (_isSecondConfirmationEnabled &&
-                            ocrResultAsync?.BarCode.Equals(_lastBarCode) != true) {
-                            _lastBarCode = ocrResultAsync?.BarCode ?? string.Empty;
-                            return null;
+                        if (_isSecondConfirmationEnabled) {
+                            lock (_confirmationLock) {
+                                if (ocrResultAsync?.BarCode.Equals(_lastBarCode) != true) {
+                                    _lastBarCode = ocrResultAsync?.BarCode ?? string.Empty;
+                                    return null;
+                                }
+                            }
                         }
                         return ocrResultAsync;
                     }
@@ -134,10 +136,13 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                         }
 
                         var ocrResult = expressBill.ParseOcrResult(imageBytes, _confidenceThreshold, _rectangleScale);
-                        if (_isSecondConfirmationEnabled &&
-                            ocrResult?.BarCode.Equals(_lastBarCode) != true) {
-                            _lastBarCode = ocrResult?.BarCode ?? string.Empty;
-                            return null;
+                        if (_isSecondConfirmationEnabled) {
+                            lock (_confirmationLock) {
+                                if (ocrResult?.BarCode.Equals(_lastBarCode) != true) {
+                                    _lastBarCode = ocrResult?.BarCode ?? string.Empty;
+                                    return null;
+                                }
+                            }
                         }
 
                         return ocrResult;
@@ -216,8 +221,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
         }
 
-        public async Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout) {
-            return new KeyValuePair<bool, string>(false, "暂不支持设置超时");
+        public Task<KeyValuePair<bool, string>> SetRecognitionTimeout(TimeSpan timeout) {
+            return Task.FromResult(new KeyValuePair<bool, string>(false, "暂不支持设置超时"));
         }
 
         public Task<KeyValuePair<bool, string>> SetIsSecondConfirmationEnabled(bool isUse) {
@@ -225,8 +230,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
-        public async Task<KeyValuePair<bool, string>> Initialize() {
-            return new KeyValuePair<bool, string>(true, "已在对象池执行初始化,不需要调用");
+        public Task<KeyValuePair<bool, string>> Initialize() {
+            return Task.FromResult(new KeyValuePair<bool, string>(true, "已在对象池执行初始化,不需要调用"));
         }
 
         private void CopyFiles(string sourceDirectory, string targetDirectory) {
@@ -250,23 +255,19 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
         }
 
-        protected virtual async void OnOcrExceptionOccurred(OcrExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnOcrExceptionOccurred(OcrExceptionEventArgs e) {
             OcrExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnOcrInitializationExceptionOccurred(OcrInitializationExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnOcrInitializationExceptionOccurred(OcrInitializationExceptionEventArgs e) {
             OcrInitializationExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnOcrContentRecognized(OcrResult e) {
-            await Task.Yield();
+        protected virtual void OnOcrContentRecognized(OcrResult e) {
             OcrContentRecognized?.Invoke(this, e);
         }
 
-        protected virtual async void OnAuthenticationExceptionOccurred(AuthenticationExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnAuthenticationExceptionOccurred(AuthenticationExceptionEventArgs e) {
             AuthenticationExceptionOccurred?.Invoke(this, e);
         }
     }

@@ -94,7 +94,7 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="params"></param>
         /// <returns></returns>
-        void SetScanCodeFilterParams([NotNull] ScanCodeFilterParams @params);
+        void SetScanCodeFilterParams(ScanCodeFilterParams @params);
     }
 
     public enum TriggerMode {

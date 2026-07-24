@@ -15,11 +15,14 @@ using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 namespace JayTom.Dws.Plugin.Scale.DynamicScale {
 
     public class DefaultDynamicScale : IDynamicScale {
-        private static System.IO.Ports.SerialPort? _serialPort { get; set; }
-        private static BaseTcpOperations? TcpOperations { get; set; }
+        private static readonly Regex WeightPattern = new(
+            @"-?\b\d+(?:\.\d+)?\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private System.IO.Ports.SerialPort? _serialPort { get; set; }
+        private BaseTcpOperations? TcpOperations { get; set; }
         private DefaultDynamicScaleValueParameters _defaultDynamicScaleValueParameters = new();
         private BaseScaleConnectParam _baseScaleConnectParam = new();
-        private SemaphoreSlim _semaphore = new(1);
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
 
         public void Dispose() {
             if (_serialPort?.IsOpen == true) {
@@ -86,13 +89,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                             // 读取接收到的数据
                                             receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
 
-                                            NLog.LogManager.GetCurrentClassLogger().Error($"接收到的重量内容:{receivedData}");
-
-                                            // 定义匹配重量的正则表达式模式(不考虑负数)
-                                            const string pattern = @"\b\d+\.\d+\b";
-                                            var regex = new Regex(pattern);
-                                            // 在输入字符串中查找匹配项
-                                            var match = regex.Match(receivedData);
+                                            var match = WeightPattern.Match(receivedData);
                                             // 提取重量值
                                             if (match.Success) {
                                                 var weight = match.Value;
@@ -180,15 +177,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                     // 读取接收到的数据
                                     receivedData = info.Content /*.Trim().Replace(" ", string.Empty)*/;
 
-                                    NLog.LogManager.GetCurrentClassLogger().Error($"接收到的重量内容:{receivedData}");
-
-                                    // 定义匹配重量的正则表达式模式(不考虑负数)
-                                    //const string pattern = @"\b\d+\.\d+\b";
-                                    const string pattern = @"-?\b\d+(\.\d+)?\b";
-
-                                    var regex = new Regex(pattern);
-                                    // 在输入字符串中查找匹配项
-                                    var match = regex.Match(receivedData);
+                                    var match = WeightPattern.Match(receivedData);
                                     // 提取重量值
                                     if (match.Success) {
                                         var weight = match.Value;
@@ -286,9 +275,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             return 0;
         }
 
-        protected virtual async void OnStabledWeight(float e) {
-            await Task.Yield();
-
+        protected virtual void OnStabledWeight(float e) {
             //使用附加属性
             if (WeightAdditionalProperties.IsUseActualWeightConversionRate) {
                 //使用重量转换率
@@ -307,30 +294,25 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             StabledWeight?.Invoke(this, e);
         }
 
-        protected virtual async void OnReceived(string e) {
-            await Task.Yield();
+        protected virtual void OnReceived(string e) {
             Received?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected(IScale e) {
-            await Task.Yield();
+        protected virtual void OnConnected(IScale e) {
             Status = ScaleStatus.Running;
             Connected?.Invoke(this, e);
         }
 
-        protected virtual async void OnDisconnected(IScale e) {
-            await Task.Yield();
+        protected virtual void OnDisconnected(IScale e) {
             Status = ScaleStatus.Disconnected;
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnExcepted(Exception e) {
-            await Task.Yield();
+        protected virtual void OnExcepted(Exception e) {
             Excepted?.Invoke(this, e);
         }
 
-        protected virtual async void OnWeightStabilized(WeightChangedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnWeightStabilized(WeightChangedEventArgs e) {
             WeightStabilized?.Invoke(this, e);
         }
     }

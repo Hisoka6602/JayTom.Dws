@@ -119,7 +119,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             return response;
         }*/
 
-        public async Task<CloudUploadResponse> UploadData([NotNull] PackageCloudInfo packageCloudInfo, object? other = null, CancellationToken token = default) {
+        public async Task<CloudUploadResponse> UploadData(PackageCloudInfo packageCloudInfo, object? other = null, CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;

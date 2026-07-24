@@ -5,6 +5,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
     internal sealed class RawInputReceiverWindow : IDisposable {
         private const int WM_INPUT = 0x00FF;
+        private const int WM_CLOSE = 0x0010;
         public IntPtr Handle;
         private WndProcDelegate _wndProcDelegate;
 
@@ -68,18 +69,13 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             CancellationToken = new();
             try {
                 while (!CancellationToken.Token.IsCancellationRequested) {
-                    if (PeekMessage(out var msg, IntPtr.Zero, 0, 0, 0)) {
-                        var result = GetMessage(out msg, IntPtr.Zero, 0, 0);
-                        if (result) {
-                            TranslateMessage(ref msg);
-                            DispatchMessage(ref msg);
-                        }
-                        else {
-                            NLog.LogManager.GetCurrentClassLogger().Error("GetMessage failed with error: " + Marshal.GetLastWin32Error());
-                        }
+                    var result = GetMessage(out var msg, IntPtr.Zero, 0, 0);
+                    if (!result) {
+                        break;
                     }
 
-                    Thread.Sleep(5);
+                    TranslateMessage(ref msg);
+                    DispatchMessage(ref msg);
                 }
             }
             catch (Exception e) {
@@ -101,6 +97,11 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             if (msg == WM_INPUT) {
                 var data = RawInputData.FromHandle(lParam);
                 Input?.Invoke(this, new RawInputEventArgs(data));
+            }
+            else if (msg == WM_CLOSE) {
+                DestroyWindow(hwnd);
+                Handle = IntPtr.Zero;
+                return IntPtr.Zero;
             }
 
             return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -160,11 +161,13 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         [DllImport("user32.dll")]
         private static extern IntPtr DispatchMessage(ref MSG lpMsg);
 
-        public async void Dispose() {
+        public void Dispose() {
             if (_instance == null) return;
 
             CancellationToken.Cancel();
-            await Task.Delay(100);
+            if (Handle != IntPtr.Zero) {
+                PostMessage(Handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            }
 
             _instance = null;
             GC.SuppressFinalize(this);
@@ -177,7 +180,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         private static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
 
         [DllImport("user32.dll")]
-        private static extern bool PeekMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, uint wRemoveMsg);
+        private static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
     }
 
     public class RawInputEventArgs : EventArgs {

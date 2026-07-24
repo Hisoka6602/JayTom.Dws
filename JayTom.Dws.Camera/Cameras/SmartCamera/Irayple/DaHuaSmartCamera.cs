@@ -54,8 +54,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public DaHuaSmartCamera() {
         }
 
-        public async void Dispose() {
-            await Stop();
+        public void Dispose() {
+            Stop().GetAwaiter().GetResult();
             OnCameraUnregistered(new CameraUnregisteredEventArgs() {
                 CameraInfo = this.Info
             });
@@ -255,18 +255,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
         public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            Task.Run(() => {
-                _device?.TriggerSet?.ExecuteSoftwareTrigger();
-            }, cancellation);
+            cancellation.ThrowIfCancellationRequested();
+            _device?.TriggerSet?.ExecuteSoftwareTrigger();
             return Task.CompletedTask;
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
-            Task.Run(async () => {
-                await Task.Delay(delay, cancellation);
-                await TakePhotoAsync(barcode, barcodeTimestamp, cancellation);
-            }, cancellation);
-            return Task.CompletedTask;
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            await Task.Delay(delay, cancellation).ConfigureAwait(false);
+            await TakePhotoAsync(barcode, barcodeTimestamp, cancellation).ConfigureAwait(false);
         }
 
         public int TakePhotoDelay { get; set; }
@@ -274,7 +270,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// <summary>
         /// Ocr
         /// </summary>
-        public IOcr Ocr { get; set; }
+        public IOcr? Ocr { get; set; }
 
         public int BarcodeBorderSize { get; set; } = 5;
         public bool IsHideNoRead { get; set; }
@@ -286,8 +282,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         public bool IsMergeBarCodes { get; set; }
         public string MultiBarcodeDelimiter { get; set; }
 
-        public async void SoftwareTriggerOnce() {
-            await Task.Yield();
+        public void SoftwareTriggerOnce() {
             _device?.TriggerSet?.ExecuteSoftwareTrigger();
         }
 
@@ -319,8 +314,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// 解码
         /// </summary>
         /// <param name="grabbedRawData"></param>
-        private async void GrabResultDecode(IGrabbedRawData grabbedRawData) {
-            await Task.Yield();
+        private void GrabResultDecode(IGrabbedRawData grabbedRawData) {
             try {
                 var scanTime = DateTime.Now;
                 var localTime = new DateTimeOffset(scanTime).ToLocalTime();
@@ -414,7 +408,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                                      (_originalHeight <= 0 ? 1 : _originalHeight)));
                             }
 
-                            g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
+                            using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                            g.DrawPolygon(pen, points);
                         }
                     }
                 }
@@ -448,8 +443,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                                 FrameNo = _frameNo
                             });
                         }
-
-                        await Task.Delay(1);
                     }
                 }
 
@@ -466,41 +459,35 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 });
             }
             finally {
-                _frameNo += 1;
+                Interlocked.Increment(ref _frameNo);
             }
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             CameraUnregistered?.Invoke(this, e);
         }
 
@@ -535,18 +522,15 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             QrCode,
         }
 
-        protected virtual async void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
             NotBarcodeHitEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
             BarcodeReadTriggered?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
         }
 

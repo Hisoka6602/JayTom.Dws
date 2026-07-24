@@ -198,12 +198,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public ICommand LogInCommand => new DelegateCommand<object>(LogInDelegate);
 
         private async void LogInDelegate(object obj) {
-            if (!IsLoggingIn) {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    IsLoggingIn = true;
-                    IsLoginSuccessful = false;
-                    //ApiParameter
-                    await new JtExpressApi(_httpClientFactory).SetParameters(new JtExpressApi.ApiParameter() {
+            if (IsLoggingIn) {
+                return;
+            }
+
+            IsLoggingIn = true;
+            IsLoginSuccessful = false;
+            try {
+                var api = new JtExpressApi(_httpClientFactory);
+                var parameterResult = await api.SetParameters(
+                    new JtExpressApi.ApiParameter {
                         AppKey = JtExpressApiInfo.AppKey,
                         AppSecret = JtExpressApiInfo.AppSecret,
                         BusinessType = (JtExpressApi.BusinessType)JtExpressApiInfo.BusinessType.Value,
@@ -213,28 +217,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         ScanType = JtExpressApiInfo.ScanType.Value,
                         ScanTypeCode = JtExpressApiInfo.ScanTypeCode.Value,
                         SegmentCodeUrl = JtExpressApiInfo.SegmentCodeUrl,
-                        TimeOut = JtExpressApiInfo.SegmentCodeTimeOut,
+                        TimeOut = JtExpressApiInfo.TimeOut,
                         TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
                         UserName = JtExpressApiInfo.UserName,
                         Url = JtExpressApiInfo.Url,
+                        WeightFlag = JtExpressApiInfo.WeightFlag.Value,
+                        InterceptorEnabled =
+                            JtExpressApiInfo.InterceptorEnabled
                     });
-                    var (key, value) = await new JtExpressApi(_httpClientFactory).LogIn(JtExpressApiInfo.UserName,
-                        JtExpressApiInfo.Password, JtExpressApiInfo.AppKey,
-                        JtExpressApiInfo.AppSecret);
+                if (!parameterResult.Key) {
+                    MessageQueue.Enqueue(parameterResult.Value);
+                    return;
+                }
 
-                    if (key) {
-                        Name = value.Name;
-                        NetworkId = value.NetworkId;
-                        NetworkCode = value.NetworkCode;
-                        NetworkName = value.NetworkName;
-                        base.MessageQueue.Enqueue("登录成功");
-                    }
-                    else {
-                        base.MessageQueue.Enqueue($"登录失败,{value.ExceptionMsg}");
-                    }
-                    IsLoginSuccessful = key;
-                    IsLoggingIn = false;
-                });
+                var (key, value) = await api.LogIn(
+                    JtExpressApiInfo.UserName,
+                    JtExpressApiInfo.Password,
+                    JtExpressApiInfo.AppKey,
+                    JtExpressApiInfo.AppSecret);
+                if (key) {
+                    Name = value.Name;
+                    NetworkId = value.NetworkId;
+                    NetworkCode = value.NetworkCode;
+                    NetworkName = value.NetworkName;
+                    MessageQueue.Enqueue("登录成功");
+                }
+                else {
+                    MessageQueue.Enqueue($"登录失败,{value.ExceptionMsg}");
+                }
+
+                IsLoginSuccessful = key;
+            }
+            finally {
+                IsLoggingIn = false;
             }
         }
 

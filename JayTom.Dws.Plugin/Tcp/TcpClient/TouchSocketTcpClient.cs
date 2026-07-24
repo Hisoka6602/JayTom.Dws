@@ -21,7 +21,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public string IpAddress { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
         private int _dataLen = 0;
-        private SemaphoreSlim _sendSlim = new(1);
+        private readonly SemaphoreSlim _sendSlim = new(1, 1);
 
         public int DataLen {
             get => _dataLen;
@@ -29,7 +29,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         public FormatType FormatType { get; set; }
-        public ConnectionStatus ConnectionStatus { get; private set; } = ConnectionStatus.Connected;
+        public ConnectionStatus ConnectionStatus { get; private set; } = ConnectionStatus.Disconnected;
 
         public event EventHandler<string>? ConnectionException;
 
@@ -67,9 +67,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     _tcpClient = new TouchSocket.Sockets.TcpClient();
                     _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
                         try {
-                            var msg = Encoding.Default.GetString(block.Buffer, 0, DataLen > 0 ? DataLen : block.Len);
+                            var length = DataLen > 0 ? Math.Min(DataLen, block.Len) : block.Len;
+                            var msg = Encoding.Default.GetString(block.Buffer, 0, length);
                             OnCommunication(new CommunicationInfo() {
-                                Content = dataType == FormatType.Ascii ? msg : BitConverter.ToString(block.Buffer.Take(DataLen > 0 ? DataLen : block.Len).ToArray()).Replace("-", " "),
+                                Content = FormatType == FormatType.Ascii
+                                    ? msg
+                                    : Convert.ToHexString(block.Buffer.AsSpan(0, length)),
                                 Time = DateTime.Now,
                                 Type = CommunicationType.Receive
                             });
@@ -111,7 +114,6 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     catch (TaskCanceledException) {
                         return false;
                     }
-                    NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
                     await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
                         return true;
@@ -127,7 +129,6 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     catch (TaskCanceledException) {
                         return false;
                     }
-                    NLog.LogManager.GetCurrentClassLogger().Error($"正在重连...");
                     await Connect(token: token);
                     if (ConnectionStatus == ConnectionStatus.Connected) {
                         return true;
@@ -148,9 +149,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         _tcpClient = new TouchSocket.Sockets.TcpClient();
                         _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
                             try {
-                                var msg = Encoding.Default.GetString(block.Buffer, 0, DataLen > 0 ? DataLen : block.Len);
+                                var length = DataLen > 0 ? Math.Min(DataLen, block.Len) : block.Len;
+                                var msg = Encoding.Default.GetString(block.Buffer, 0, length);
                                 OnCommunication(new CommunicationInfo() {
-                                    Content = tcpConnect.DataFormatType == FormatType.Ascii ? msg : BitConverter.ToString(block.Buffer.Take(DataLen > 0 ? DataLen : block.Len).ToArray()).Replace("-", " "),
+                                    Content = FormatType == FormatType.Ascii
+                                        ? msg
+                                        : Convert.ToHexString(block.Buffer.AsSpan(0, length)),
                                     Time = DateTime.Now,
                                     Type = CommunicationType.Receive
                                 });
@@ -187,16 +191,20 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         public async Task<bool> SendMessage(string message, CancellationToken token = default) {
+            var lockTaken = false;
             try {
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     await _sendSlim.WaitAsync(token);
+                    lockTaken = true;
+                    if (_tcpClient is null) {
+                        return false;
+                    }
                     await _tcpClient.SendAsync(message);
                     OnCommunication(new CommunicationInfo() {
                         Content = message,
                         Time = DateTime.Now,
                         Type = CommunicationType.Send
                     });
-                    await Task.Delay(5, token);
                     return true;
                 }
                 else {
@@ -209,22 +217,28 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 return false;
             }
             finally {
-                _sendSlim.Release();
+                if (lockTaken) {
+                    _sendSlim.Release();
+                }
             }
             return false;
         }
 
         public async Task<bool> SendMessage(byte[] message, CancellationToken token = default) {
+            var lockTaken = false;
             try {
                 if (ConnectionStatus == ConnectionStatus.Connected) {
                     await _sendSlim.WaitAsync(token);
+                    lockTaken = true;
+                    if (_tcpClient is null) {
+                        return false;
+                    }
                     await _tcpClient.SendAsync(message);
                     OnCommunication(new CommunicationInfo() {
                         Content = BitConverter.ToString(message).Replace("-", ", "),
                         Time = DateTime.Now,
                         Type = CommunicationType.Send
                     });
-                    await Task.Delay(5, token);
                     return true;
                 }
                 else {
@@ -238,7 +252,9 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                 return false;
             }
             finally {
-                _sendSlim.Release();
+                if (lockTaken) {
+                    _sendSlim.Release();
+                }
             }
             return false;
         }
@@ -249,35 +265,29 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
             ConnectionStatus = ConnectionStatus.Disconnected;
         }
 
-        protected virtual async void OnConnectionException(string e) {
-            await Task.Yield();
+        protected virtual void OnConnectionException(string e) {
             ConnectionException?.Invoke(this, e);
         }
 
-        protected virtual async void OnException(Exception e) {
-            await Task.Yield();
+        protected virtual void OnException(Exception e) {
             Exception?.Invoke(this, e);
         }
 
-        protected virtual async void OnDisconnected(string e) {
-            await Task.Yield();
+        protected virtual void OnDisconnected(string e) {
             ConnectionStatus = ConnectionStatus.Disconnected;
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnCommunication(CommunicationInfo e) {
-            await Task.Yield();
+        protected virtual void OnCommunication(CommunicationInfo e) {
             Communication?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected(string e) {
-            await Task.Yield();
+        protected virtual void OnConnected(string e) {
             ConnectionStatus = ConnectionStatus.Connected;
             Connected?.Invoke(this, e);
         }
 
-        protected virtual async void OnSendError(Exception e) {
-            await Task.Yield();
+        protected virtual void OnSendError(Exception e) {
             SendError?.Invoke(this, e);
         }
 

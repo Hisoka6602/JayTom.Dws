@@ -10,13 +10,13 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
     public class DaHuaVolumeCamera : IVolumeCamera {
-        private static IntPtr? _handle;
+        private IntPtr? _handle;
 
-        private static Volume3DSdk.VslbVolumeResultCB _resultCb;
-        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
+        private readonly Volume3DSdk.VslbVolumeResultCB _resultCb;
+        private MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
 
-        public async void Dispose() {
-            await Stop();
+        public void Dispose() {
+            Stop().GetAwaiter().GetResult();
             if (_handle is null || _handle == IntPtr.Zero) {
                 return;
             }
@@ -159,9 +159,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
                 if (runEx != 0) {
                     return new KeyValuePair<bool, string>(false, "启动失败!");
                 }
-                OnCameraStarted(new CameraStartedEventArgs() {
-                    CameraInfo = this.Info,
-                    Camera = this
+                OnCameraStopped(new CameraStoppedEventArgs() {
+                    CameraInfo = this.Info
                 });
                 return new KeyValuePair<bool, string>(true, "启动成功!");
             }
@@ -225,36 +224,30 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             return Task.CompletedTask;
         }
 
-        protected async void OnVolumeCaptured(VolumeCapturedEventArgs e) {
-            await Task.Yield();
+        protected void OnVolumeCaptured(VolumeCapturedEventArgs e) {
             VolumeCaptured?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }

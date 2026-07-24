@@ -124,14 +124,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 var scannerCameraConfigInfoModels = barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id)
                     ?.ConfigureAwait(false).GetAwaiter().GetResult()?.ToList() ?? new List<BarcodeScannerCameraConfigInfoModel>();
                 _cameras.ForEach(f => {
+                    var cameraInfo = f.Info;
+                    if (cameraInfo is null) {
+                        return;
+                    }
+
                     if (f.BindingType == CameraBindingType.PanoramaCamera) {
-                        f.Info.CustomName =
-                            _panoramaCameras.FirstOrDefault(f1 => f1.SerialNumber.Equals(f.Info.SerialNumber))
+                        cameraInfo.CustomName =
+                            _panoramaCameras.FirstOrDefault(f1 => f1.SerialNumber.Equals(cameraInfo.SerialNumber))
                                 ?.CustomName ?? string.Empty;
                     }
                     else if (f.BindingType == CameraBindingType.ScannerCamera || f.BindingType == CameraBindingType.OcrCamera) {
-                        f.Info.CustomName =
-                            scannerCameraConfigInfoModels.FirstOrDefault(f1 => f1.SerialNumber.Equals(f.Info.SerialNumber))
+                        cameraInfo.CustomName =
+                            scannerCameraConfigInfoModels.FirstOrDefault(f1 => f1.SerialNumber.Equals(cameraInfo.SerialNumber))
                                 ?.CustomName ?? string.Empty;
                     }
                 });
@@ -1446,37 +1451,42 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 Console.WriteLine(e);
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(80, stoppingToken).ContinueWith(async _task => {
-                    if (_task.IsCompletedSuccessfully) {
-                        try {
+                await Task.Delay(80, stoppingToken).ConfigureAwait(false);
+                try {
                             //多相机组码
                             if (_cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1 && _deviceService.RunningStatus &&
                                 _barCodeFrameInfoItem.Count > 0) {
-                                if (_barCodeFrameInfoItem.Count == _cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) ||
-                                    DateTime.Now.Subtract(_barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
-                                        .OrderBy(o => o.Value?.BarCodeInfo?.ScanTime)
-                                        .FirstOrDefault().Value.BarCodeInfo.ScanTime).TotalMilliseconds > _barcodeFilterSettingsDto.MergeTimeout ||
-                                    _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
-                                        .GroupBy(g => g.Value?.BarCodeInfo?.Barcode).Count() > 1
+                                var barCodeFrameInfos = _barCodeFrameInfoItem.Values
+                                    .Where(frame => frame.BarCodeInfo is not null)
+                                    .ToList();
+                                if (barCodeFrameInfos.Count == 0) {
+                                    _barCodeFrameInfoItem.Clear();
+                                }
+                                else if (_barCodeFrameInfoItem.Count == _cameras.Count(c => c.BindingType == CameraBindingType.ScannerCamera) ||
+                                    DateTime.Now.Subtract(barCodeFrameInfos.Min(frame => frame.BarCodeInfo!.ScanTime))
+                                        .TotalMilliseconds > _barcodeFilterSettingsDto.MergeTimeout ||
+                                    barCodeFrameInfos.GroupBy(frame => frame.BarCodeInfo!.Barcode).Count() > 1
                                    ) {
                                     //组数据并清除队列
-                                    var groupBy = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
-                                        .GroupBy(g => g.Value?.BarCodeInfo?.Barcode)
+                                    var groupBy = barCodeFrameInfos
+                                        .GroupBy(frame => frame.BarCodeInfo!.Barcode)
                                         .Select(s => new {
                                             BarCode = s.Key,
                                             Count = s.Count()
                                         }).ToList();
                                     BarCodeFrameInfo barCodeFrameInfo;
                                     if (groupBy.Count == 1) {
-                                        barCodeFrameInfo = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
-                                            .LastOrDefault(keyValuePair =>
-                                                keyValuePair.Value.BarCodeInfo.Barcode.Equals(groupBy.FirstOrDefault()?.BarCode)).Value;
+                                        barCodeFrameInfo = barCodeFrameInfos.Last(frame =>
+                                            string.Equals(frame.BarCodeInfo!.Barcode, groupBy[0].BarCode,
+                                                StringComparison.Ordinal));
                                     }
                                     else {
-                                        barCodeFrameInfo = _barCodeFrameInfoItem.Where(w => w.Value.BarCodeInfo != null)
-                                            .LastOrDefault(keyValuePair =>
-                                                !keyValuePair.Value.BarCodeInfo.Barcode.ToLower().Equals("noread") &&
-                                                !keyValuePair.Value.BarCodeInfo.Barcode.ToLower().Equals("filtered")).Value;
+                                        barCodeFrameInfo = barCodeFrameInfos.LastOrDefault(frame =>
+                                            !string.Equals(frame.BarCodeInfo!.Barcode, "noread",
+                                                StringComparison.OrdinalIgnoreCase) &&
+                                            !string.Equals(frame.BarCodeInfo.Barcode, "filtered",
+                                                StringComparison.OrdinalIgnoreCase))
+                                            ?? barCodeFrameInfos[^1];
                                     }
                                     var packageInfo =
                                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
@@ -1725,6 +1735,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                                 f.CameraSerialNumber.Equals(panoramaImageInfo.CameraSerialNumber));
                                             if (panoramaCameraImageInfo is not null) {
                                                 panoramaCameraImageInfo.IsExists = true;
+                                                var cameraInfo = _cameras.Select(camera => camera.Info)
+                                                    .FirstOrDefault(item => string.Equals(item?.SerialNumber,
+                                                        panoramaImageInfo.CameraSerialNumber,
+                                                        StringComparison.Ordinal));
                                                 EventAggregator.Instance.Publish(new ImageMessageInfo {
                                                     BarCode = info.BarCodeInfo.Barcode,
                                                     CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
@@ -1736,8 +1750,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                                     Volume = (float)info.VolumeInfo.FormattedVolume,
                                                     ScanTime = info.BarCodeInfo.ScanTime,
                                                     Type = SaveImageType.PanoramaImage,
-                                                    CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
-                                                    CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(panoramaImageInfo.CameraSerialNumber))?.Info?.CustomName ?? string.Empty,
+                                                    CameraName = cameraInfo?.Name ?? string.Empty,
+                                                    CameraCustomName = cameraInfo?.CustomName ?? string.Empty,
                                                 });
                                             }
                                             else {
@@ -1758,6 +1772,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                                         if (info is { WeightInfo: not null, VolumeInfo: not null, BarCodeInfo: not null }
                                            ) {
+                                            var cameraInfo = _cameras.Select(camera => camera.Info)
+                                                .FirstOrDefault(item => string.Equals(item?.SerialNumber,
+                                                    volumeCameraImageInfo.CameraSerialNumber,
+                                                    StringComparison.Ordinal));
                                             EventAggregator.Instance.Publish(new ImageMessageInfo {
                                                 BarCode = info.BarCodeInfo.Barcode,
                                                 CameraSerialNumber = volumeCameraImageInfo.CameraSerialNumber,
@@ -1769,7 +1787,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                                 Volume = (float)info.VolumeInfo.FormattedVolume,
                                                 ScanTime = info.BarCodeInfo.ScanTime,
                                                 Type = SaveImageType.VolumeImage,
-                                                CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(volumeCameraImageInfo.CameraSerialNumber))?.Info?.Name ?? string.Empty,
+                                                CameraName = cameraInfo?.Name ?? string.Empty,
                                             });
                                         }
                                         else {
@@ -1785,6 +1803,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                         BarCodeInfo: not null, IsCompleted: true
                                     });
                                     if (codeInfo is not null) {
+                                        var cameraInfo = _cameras.Select(camera => camera.Info)
+                                            .FirstOrDefault(item => string.Equals(item?.SerialNumber,
+                                                codeInfo.BarCodeInfo?.SerialNumber,
+                                                StringComparison.Ordinal));
                                         EventAggregator.Instance.Publish(new ImageMessageInfo {
                                             BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                             CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
@@ -1796,8 +1818,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                             Volume = (float)(codeInfo.VolumeInfo?.FormattedVolume ?? 0),
                                             ScanTime = codeInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
                                             Type = SaveImageType.BarcodeImage,
-                                            CameraName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info?.Name ?? string.Empty,
-                                            CameraCustomName = _cameras.FirstOrDefault(f => (bool)f.Info?.SerialNumber.Equals(codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty))?.Info?.CustomName ?? string.Empty,
+                                            CameraName = cameraInfo?.Name ?? string.Empty,
+                                            CameraCustomName = cameraInfo?.CustomName ?? string.Empty,
                                         });
                                         codeInfo.IsSavedImage = true;
                                     }
@@ -1815,12 +1837,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                     }
                                 }
                             }
-                        }
-                        catch (Exception e) {
-                            LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
-                    }
-                }, stoppingToken);
+                }
+                catch (Exception e) {
+                    LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
             }
         }
     }

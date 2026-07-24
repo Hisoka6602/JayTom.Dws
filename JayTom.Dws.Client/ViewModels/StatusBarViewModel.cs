@@ -117,8 +117,8 @@ namespace JayTom.Dws.Client.ViewModels {
         private string _formattedElapsed = string.Empty;
 
         private ObservableCollection<ConnectionItemInfoModel> _connectionItems = new();
-        private SolidColorBrush _connectionSolidColorBrush = new(Colors.DarkGray);
-        private SolidColorBrush _cameraSolidColorBrush = new(Colors.DarkGray);
+        private SolidColorBrush _connectionSolidColorBrush = Brushes.DarkGray;
+        private SolidColorBrush _cameraSolidColorBrush = Brushes.DarkGray;
 
         public StatusBarViewModel(IComputerInfoReporter computerInfoReporter,
             IDeviceService deviceService, IConfigRepository configRepository,
@@ -145,40 +145,49 @@ namespace JayTom.Dws.Client.ViewModels {
             _soundRepository = soundRepository;
             _grayscaleService = grayscaleService;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
-                await Task.Run(async () => {
-                    try {
-                        if (System.Windows.Application.Current?.Dispatcher is not null) {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                //加载到界面内容
-                                ComputerInfo = model;
-                                if (ConnectionItems.Any(a => a.ConnectionState is ConnectionState.ConnectionFailed)) {
-                                    ConnectionSolidColorBrush = new SolidColorBrush(Colors.Red);
-                                }
-                                else if (ConnectionItems.Any(a => a.ConnectionState == ConnectionState.Disconnected)) {
-                                    ConnectionSolidColorBrush = new SolidColorBrush(Colors.DarkGray);
-                                }
-                                else if (ConnectionItems.All(a => a.ConnectionState == ConnectionState.Connected)) {
-                                    ConnectionSolidColorBrush = new SolidColorBrush(Colors.LimeGreen);
-                                }
+                try {
+                    var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                    if (dispatcher is not null) {
+                        await dispatcher.InvokeAsync(() => {
+                            //加载到界面内容
+                            ComputerInfo = model;
+                            if (ConnectionItems.Any(a => a.ConnectionState is ConnectionState.ConnectionFailed)) {
+                                ConnectionSolidColorBrush = Brushes.Red;
+                            }
+                            else if (ConnectionItems.Any(a => a.ConnectionState == ConnectionState.Disconnected)) {
+                                ConnectionSolidColorBrush = Brushes.DarkGray;
+                            }
+                            else if (ConnectionItems.Any() &&
+                                     ConnectionItems.All(a => a.ConnectionState == ConnectionState.Connected)) {
+                                ConnectionSolidColorBrush = Brushes.LimeGreen;
+                            }
+                            else {
+                                ConnectionSolidColorBrush = Brushes.DarkGray;
+                            }
 
-                                if (CameraItems.Any(a => a.Status == CameraStatus.Failure)) {
-                                    CameraSolidColorBrush = new SolidColorBrush(Colors.Red);
-                                }
-                                else if (CameraItems.Any(a => a.Status == CameraStatus.Disconnected)) {
-                                    CameraSolidColorBrush = new SolidColorBrush(Colors.DarkGray);
-                                }
-                                else if (CameraItems.All(a => a.Status == CameraStatus.Running)) {
-                                    CameraSolidColorBrush = new SolidColorBrush(Colors.LimeGreen);
-                                }
-                            }, DispatcherPriority.Background);
-                        }
+                            if (CameraItems.Any(a => a.Status == CameraStatus.Failure)) {
+                                CameraSolidColorBrush = Brushes.Red;
+                            }
+                            else if (CameraItems.Any(a => a.Status == CameraStatus.Disconnected)) {
+                                CameraSolidColorBrush = Brushes.DarkGray;
+                            }
+                            else if (CameraItems.Any() &&
+                                     CameraItems.All(a => a.Status == CameraStatus.Running)) {
+                                CameraSolidColorBrush = Brushes.LimeGreen;
+                            }
+                            else {
+                                CameraSolidColorBrush = Brushes.DarkGray;
+                            }
+                        }, DispatcherPriority.Background);
                     }
-                    catch (TaskCanceledException) {
-                        //
-                    }
-                    catch (Exception e) {
-                    }
-                });
+                }
+                catch (TaskCanceledException) {
+                    // 应用退出时调度任务可能被取消。
+                }
+                catch (Exception exception) {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(exception, "更新状态栏电脑信息失败");
+                }
             };
             EventAggregator.Instance.Subscribe<TimerDto>(async item => {
                 if (item is TimerDto model) {
@@ -227,6 +236,7 @@ namespace JayTom.Dws.Client.ViewModels {
                             var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
                             if (cameraItemInfoModel is not null) {
                                 CameraItems?.Remove(cameraItemInfoModel);
+                                cameraItemInfoModel.Dispose();
                             }
                         }, DispatcherPriority.Background);
                     }
@@ -300,12 +310,12 @@ namespace JayTom.Dws.Client.ViewModels {
             };
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
                 if (item is SettingsChangedEvent info) {
-                    await Task.Yield();
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                        var newConnectionItems = new List<ConnectionItemInfoModel>();
+                    var newConnectionItems = new List<ConnectionItemInfoModel>();
                         //判断添加
                         //FTP图片上传
-                        var imageSettingsDto = await configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
+                        var imageSettingsDto = await configRepository
+                            .FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings")
+                            .ConfigureAwait(false) ?? new ImageSettingsDto();
                         if (imageSettingsDto.IsFtpUploadEnabled) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "FTP图片上传",
@@ -314,7 +324,9 @@ namespace JayTom.Dws.Client.ViewModels {
                             });
                         }
                         //称重
-                        var weightSettingsDto = await configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings") ?? new WeightSettingsDto();
+                        var weightSettingsDto = await configRepository
+                            .FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings")
+                            .ConfigureAwait(false) ?? new WeightSettingsDto();
                         if (weightSettingsDto.Mode == WeightMode.Dynamic) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "动态称重",
@@ -330,7 +342,9 @@ namespace JayTom.Dws.Client.ViewModels {
                             });
                         }
                         //体积
-                        var volumeSettingsDto = await configRepository.FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings") ?? new VolumeSettingsDto();
+                        var volumeSettingsDto = await configRepository
+                            .FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings")
+                            .ConfigureAwait(false) ?? new VolumeSettingsDto();
                         if (volumeSettingsDto.IsUseExternalVolumeInput) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "外部体积",
@@ -340,7 +354,8 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //TCP输出结果
                         var resultOutputSettingsDto = await configRepository
-                                                          .FirstOrDefaultEntity<ResultOutputSettingsDto>("ResultOutputSettings") ??
+                                                          .FirstOrDefaultEntity<ResultOutputSettingsDto>("ResultOutputSettings")
+                                                          .ConfigureAwait(false) ??
                                                       new ResultOutputSettingsDto();
                         if (resultOutputSettingsDto.IsUseTcpOutput) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
@@ -360,7 +375,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         //音频输出
                         if (resultOutputSettingsDto.IsUseAudioOutput) {
                             //检测文件是否存在
-                            var total = await _soundRepository.Total(t => t.Id > 0);
+                            var total = await _soundRepository.Total(t => t.Id > 0).ConfigureAwait(false);
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = "音频输出",
                                 ConnectionState = total > 0 ? ConnectionState.Connected : ConnectionState.ConnectionFailed,
@@ -377,7 +392,8 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //控件输入
                         var contentInputSettingsDto = await configRepository
-                                                          .FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ??
+                                                          .FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings")
+                                                          .ConfigureAwait(false) ??
                                                       new ContentInputSettingsDto();
                         if (contentInputSettingsDto.IsUseControlInput) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
@@ -396,7 +412,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                         //获取下位机连接
                         var models = await communicationConnectionConfigRepository.
-                            CommunicationConnectionConfigItems(s => s.Id > 0);
+                            CommunicationConnectionConfigItems(s => s.Id > 0).ConfigureAwait(false);
                         models.ForEach(f => {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
                                 ConnectionName = $"[下位机]{f.ConnectionName}",
@@ -406,7 +422,8 @@ namespace JayTom.Dws.Client.ViewModels {
                         });
                         //锁格
                         var packageExitLockSettingsDto = await configRepository
-                                                             .FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings") ??
+                                                             .FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings")
+                                                             .ConfigureAwait(false) ??
                                                          new PackageExitLockSettingsDto();
                         if (packageExitLockSettingsDto.IsUsePackageExitLock) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
@@ -419,7 +436,8 @@ namespace JayTom.Dws.Client.ViewModels {
                         //叠包
 
                         var stackedPackageDetectionSettingsDto = await configRepository
-                                                                     .FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings") ??
+                                                                     .FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings")
+                                                                     .ConfigureAwait(false) ??
                                                                  new StackedPackageDetectionSettingsDto();
                         if (stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
@@ -431,7 +449,8 @@ namespace JayTom.Dws.Client.ViewModels {
 
                         //灰度仪
                         var grayscaleDeviceSettingsDto = await configRepository
-                                                             .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
+                                                             .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings")
+                                                             .ConfigureAwait(false) ??
                                                          new GrayscaleDeviceSettingsDto();
                         if (grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
                             newConnectionItems.Add(new ConnectionItemInfoModel() {
@@ -441,7 +460,7 @@ namespace JayTom.Dws.Client.ViewModels {
                             });
                         }
 
-                        // 比较新旧列表并更新 ConnectionItems
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                         var itemsToRemove = ConnectionItems.Except(newConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
                         var itemsToAdd = newConnectionItems.Except(ConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
 
@@ -451,146 +470,94 @@ namespace JayTom.Dws.Client.ViewModels {
                         foreach (var model in itemsToAdd) {
                             ConnectionItems.Add(model);
                         }
-                    });
+                    }, DispatcherPriority.Background);
                 }
             });
 
             //FTP事件
-            _ftp.Connected += (sender, args) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("FTP图片上传"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _ftp.Disconnected += (sender, args) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("FTP图片上传"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _ftp.Connected += (sender, args) =>
+                SetConnectionState("FTP图片上传", ConnectionState.Connected);
+            _ftp.Disconnected += (sender, args) =>
+                SetConnectionState("FTP图片上传", ConnectionState.ConnectionFailed);
 
             //静态、动态称重[连接、断开]事件
-            _dynamicScale.Connected += (sender, scale) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("动态称重"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _dynamicScale.Disconnected += (sender, scale) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("动态称重"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _dynamicScale.Connected += (sender, scale) =>
+                SetConnectionState("动态称重", ConnectionState.Connected);
+            _dynamicScale.Disconnected += (sender, scale) =>
+                SetConnectionState("动态称重", ConnectionState.ConnectionFailed);
 
-            _staticScale.Connected += (sender, scale) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("静态称重"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _staticScale.Disconnected += (sender, scale) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("静态称重"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _staticScale.Connected += (sender, scale) =>
+                SetConnectionState("静态称重", ConnectionState.Connected);
+            _staticScale.Disconnected += (sender, scale) =>
+                SetConnectionState("静态称重", ConnectionState.ConnectionFailed);
 
             //外部体积输入[连接、断开]事件
-            _tcpVolumeInput.Connected += (sender, volumeInput) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("外部体积"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _tcpVolumeInput.Disconnected += (sender, volumeInput) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("外部体积"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _tcpVolumeInput.Connected += (sender, volumeInput) =>
+                SetConnectionState("外部体积", ConnectionState.Connected);
+            _tcpVolumeInput.Disconnected += (sender, volumeInput) =>
+                SetConnectionState("外部体积", ConnectionState.ConnectionFailed);
             //内容输入 [连接、断开]事件
-            _tcpContentInput.Connected += (sender, contentInput) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("Tcp输入"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _tcpContentInput.Disconnected += (sender, contentInput) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("Tcp输入"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _tcpContentInput.Connected += (sender, contentInput) =>
+                SetConnectionState("Tcp输入", ConnectionState.Connected);
+            _tcpContentInput.Disconnected += (sender, contentInput) =>
+                SetConnectionState("Tcp输入", ConnectionState.ConnectionFailed);
             //Tcp输出[连接、断开]事件
-            _tcpContentOutput.Connected += (sender, contentInput) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("TCP输出结果"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _tcpContentOutput.Disconnected += (sender, contentInput) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("TCP输出结果"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _tcpContentOutput.Connected += (sender, contentInput) =>
+                SetConnectionState("TCP输出结果", ConnectionState.Connected);
+            _tcpContentOutput.Disconnected += (sender, contentInput) =>
+                SetConnectionState("TCP输出结果", ConnectionState.ConnectionFailed);
 
             //锁格[连接、断开]事件
 
-            _exitMonitor.Connected += (sender, args) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("锁格检测"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _exitMonitor.Disconnected += (sender, args) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("锁格检测"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _exitMonitor.Connected += (sender, args) =>
+                SetConnectionState("锁格检测", ConnectionState.Connected);
+            _exitMonitor.Disconnected += (sender, args) =>
+                SetConnectionState("锁格检测", ConnectionState.ConnectionFailed);
             //叠包[连接、断开]事件
 
-            _stackedPackageService.Connected += (sender, args) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("叠包检测"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _stackedPackageService.Disconnected += (sender, args) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("叠包检测"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _stackedPackageService.Connected += (sender, args) =>
+                SetConnectionState("叠包检测", ConnectionState.Connected);
+            _stackedPackageService.Disconnected += (sender, args) =>
+                SetConnectionState("叠包检测", ConnectionState.ConnectionFailed);
 
             //下位机 [连接、断开]事件
-            _sortingConnectionService.Connected += (sender, info) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.EndsWith(info.ConnectionName));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
-                }
-            };
-            _sortingConnectionService.Disconnected += (sender, info) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.EndsWith(info.ConnectionName));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            _sortingConnectionService.Connected += (sender, info) =>
+                SetConnectionState(info.ConnectionName, ConnectionState.Connected, true);
+            _sortingConnectionService.Disconnected += (sender, info) =>
+                SetConnectionState(info.ConnectionName, ConnectionState.ConnectionFailed, true);
             //灰度仪 [连接、断开]事件
-            _grayscaleService.Connected += (sender, service) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("灰度仪"));
+            _grayscaleService.Connected += (sender, service) =>
+                SetConnectionState("灰度仪", ConnectionState.Connected);
+            _grayscaleService.Disconnected += (sender, service) =>
+                SetConnectionState("灰度仪", ConnectionState.ConnectionFailed);
+        }
+
+        /// <summary>
+        /// 在 UI 线程更新连接状态，避免设备回调跨线程访问绑定集合。
+        /// </summary>
+        /// <param name="connectionName">连接名称。</param>
+        /// <param name="state">目标状态。</param>
+        /// <param name="matchSuffix">是否按名称后缀匹配。</param>
+        private void SetConnectionState(string connectionName, ConnectionState state, bool matchSuffix = false) {
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null) {
+                return;
+            }
+            Action updateState = () => {
+                var model = ConnectionItems.FirstOrDefault(item =>
+                    matchSuffix
+                        ? item.ConnectionName.EndsWith(connectionName, StringComparison.Ordinal)
+                        : item.ConnectionName.Equals(connectionName, StringComparison.Ordinal));
                 if (model is not null) {
-                    model.ConnectionState = ConnectionState.Connected;
+                    model.ConnectionState = state;
                 }
             };
-            _grayscaleService.Disconnected += (sender, service) => {
-                var model = ConnectionItems.FirstOrDefault(f => f.ConnectionName.Equals("灰度仪"));
-                if (model is not null) {
-                    model.ConnectionState = ConnectionState.ConnectionFailed;
-                }
-            };
+            if (dispatcher.CheckAccess()) {
+                updateState();
+            }
+            else {
+                _ = dispatcher.InvokeAsync(updateState, DispatcherPriority.Background);
+            }
         }
 
         public string FormattedElapsed {

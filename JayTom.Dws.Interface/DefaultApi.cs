@@ -26,12 +26,12 @@ namespace JayTom.Dws.Interface {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
+        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return new UploadResponse();
         }
 
-        public async Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default,
+        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
@@ -157,13 +157,15 @@ namespace JayTom.Dws.Interface {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
-        public void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+            return Task.CompletedTask;
         }
 
-        public void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
+            return Task.CompletedTask;
         }
 
         public string ParseTemplate(string source, string barCode, float weight, DateTime scanTime, float length,

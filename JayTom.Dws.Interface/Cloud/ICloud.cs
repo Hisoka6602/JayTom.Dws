@@ -18,7 +18,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <param name="other">其他</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<CloudUploadResponse> UploadData([NotNull] PackageCloudInfo packageCloudInfo,
+        Task<CloudUploadResponse> UploadData(PackageCloudInfo packageCloudInfo,
             object? other = null, CancellationToken token = default);
 
         /// <summary>

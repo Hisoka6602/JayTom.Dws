@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:controls="clr-namespace:JayTom.Dws.Client.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
@@ -82,7 +83,7 @@
                         Style="{StaticResource MaterialDesignComboBox}">
                         <b:Interaction.Triggers>
                             <b:EventTrigger EventName="SelectionChanged">
-                                <mvvm:InvokeCommandAction Command="{Binding OptionSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ComboBox}}, Path=SelectionChangedEventArgs}" />
+                                <mvvm:InvokeCommandAction Command="{Binding OptionSelectionChangedCommand}" />
                             </b:EventTrigger>
                         </b:Interaction.Triggers>
                     </ComboBox>
@@ -96,25 +97,31 @@
                 materialDesign:ColorZoneAssist.Mode="Custom"
                 materialDesign:TabAssist.HasFilledTab="True"
                 materialDesign:TabAssist.HasUniformTabWidth="True"
-                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 Style="{StaticResource MaterialDesignUniformTabControl}"
                 TabStripPlacement="Top">
+                <!--  接口数量超出可用宽度时自动换行，避免右侧接口页签被裁切。  -->
+                <TabControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </TabControl.ItemsPanel>
                 <TabItem Foreground="White" Header="{x:Static languages:Language.DefaultApi}">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/DefaultApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/DefaultApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="旺店通WMS">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/WdtWmsApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/WdtWmsApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="旺店通ERP">
                     <TextBlock
@@ -127,68 +134,76 @@
                         Text="内容开发中..." />
                 </TabItem>
                 <TabItem Header="旺店通ERP旗舰版">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/WdtFlagshipApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/WdtFlagshipApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="神州集运后台">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/SzjyApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/SzjyApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="极兔Api">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/JtExpressApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/JtExpressApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
+                </TabItem>
+                <TabItem Header="极兔极昼Api">
+                    <controls:DeferredFrame
+                        Margin="0"
+                        Padding="0"
+                        DeferredSource="ApiConfiguration/JtPolarDayApiPage.xaml"
+                        Focusable="False"
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="络道科技Api">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/RoutDataApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/RoutDataApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="菜鸟Api">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/CaiNiaoApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/CaiNiaoApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="海通智运Api">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/EshippingitApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/EshippingitApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="聚水潭Erp">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/JushuitanApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/JushuitanApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
                 <TabItem Header="周艺Api">
-                    <Frame
+                    <controls:DeferredFrame
                         Margin="0"
                         Padding="0"
+                        DeferredSource="ApiConfiguration/ZhouYiApiPage.xaml"
                         Focusable="False"
-                        NavigationUIVisibility="Hidden"
-                        Source="ApiConfiguration/ZhouYiApiPage.xaml" />
+                        NavigationUIVisibility="Hidden" />
                 </TabItem>
             </TabControl>
             <!--  提示框  -->

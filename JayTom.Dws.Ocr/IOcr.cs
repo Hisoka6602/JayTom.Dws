@@ -40,7 +40,7 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="imageBytes"></param>
         /// <param name="cameraSerialNumber"></param>
-        void SubmitImage(Bitmap imageBytes, string cameraSerialNumber);
+        Task SubmitImage(Bitmap imageBytes, string cameraSerialNumber);
 
         /// <summary>
         /// 解析Ocr

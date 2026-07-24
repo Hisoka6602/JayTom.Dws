@@ -1,0 +1,422 @@
+<Page
+    x:Class="JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration.JtPolarDayApiPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mvvm="http://prismlibrary.com/"
+    Name="JtPolarDayApiView"
+    Title="JtPolarDayApiPage"
+    d:DesignHeight="600"
+    d:DesignWidth="900"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
+    FontFamily="{StaticResource CustomFontFamily}"
+    Template="{StaticResource SettingsPageTemplate}"
+    mc:Ignorable="d">
+    <Page.Resources>
+        <!--  与其他接口配置页保持一致的参数标签样式。  -->
+        <Style x:Key="ParameterLabelStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="5,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="DarkGray" />
+        </Style>
+
+        <!--  与其他接口配置页保持一致的输入框容器样式。  -->
+        <Style x:Key="ParameterContainerStyle" TargetType="{x:Type Border}">
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="#1A696969" />
+            <Setter Property="CornerRadius" Value="5" />
+        </Style>
+
+        <!--  与其他接口配置页保持一致的输入框字体、颜色与交互样式。  -->
+        <Style
+            x:Key="ParameterTextBoxStyle"
+            BasedOn="{StaticResource {x:Type TextBox}}"
+            TargetType="{x:Type TextBox}">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="MaxWidth" Value="500" />
+            <Setter Property="Margin" Value="5,0" />
+            <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="False" />
+            <Setter Property="materialDesign:TextFieldAssist.HasFilledTextField" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="InputMethod.IsInputMethodEnabled" Value="False" />
+        </Style>
+    </Page.Resources>
+
+    <b:Interaction.Triggers>
+        <b:EventTrigger
+            EventName="Loaded"
+            SourceName="{Binding Name, RelativeSource={RelativeSource AncestorType={x:Type Page}}}">
+            <b:InvokeCommandAction
+                Command="{Binding LoadedCommand}"
+                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+
+    <Grid Margin="0,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer
+            Grid.Row="0"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Vertical">
+                <!--  标题。  -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,0,1"
+                        VerticalAlignment="Center"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="20"
+                        Foreground="DarkGray"
+                        Text="&#xe645;" />
+                    <TextBlock
+                        Margin="5,0"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="接口参数:" />
+                </StackPanel>
+
+                <!--  服务地址、查询超时和上报超时。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="服务地址:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="350"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.BaseUrl, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="查询超时:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="70"
+                            materialDesign:HintAssist.Hint="ms"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.QueryTimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="上报超时:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="70"
+                            materialDesign:HintAssist.Hint="ms"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.TimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  AppKey、AppSecret。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="AppKey:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="220"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.AppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="AppSecret:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="220"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.AppSecret, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  设备编号、分拣计划。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="设备编号:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="210"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.EquipmentCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="分拣计划:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="210"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SortingPlanCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  操作员、可选主线编码。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="操作员:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="220"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.Operator, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="主线编码:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="210"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.MainLineCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  供件台编号、供件台序号。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件台编号:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="190"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SupplyDeskCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件台序号:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="190"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SupplyDeskSerialNo, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  供件台所属供件区。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="所属供件区:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="190"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SupplyDeskArea, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  设备层数、供件区数、最大圈数和供件台层数。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="设备层数:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="55"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.EquipmentLayer, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件区数:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="55"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.AreaNum, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="最大圈数:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="55"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.MaxCircleNum, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件台层数:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="55"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.LayerNum, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  小件协议枚举参数。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="操作类型(1-3):" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="60"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.OperateType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件方式(1-5):" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="60"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SupplyDeskMethod, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="重量来源(0/1):" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="60"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.WeightSource, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  小件落格参数。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="落格模式(1-4):" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="70"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ChuteModel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="默认落格供件区:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="70"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.FallArea, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  上传失败重试参数。  -->
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="上传失败重试次数:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="100"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.RetryCount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="上传失败重试间隔:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="100"
+                            materialDesign:HintAssist.Hint="ms"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.RetryIntervalMilliseconds, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <!--  地址填写说明。  -->
+                <TextBlock
+                    Margin="55,8,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="云端地址需包含 /sdsOnlineApi，本地地址不需要。" />
+                <TextBlock
+                    Margin="55,3,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="供件方式：1供包台、2补码台、3自动供包、4人工供包、5快手供件。" />
+
+                <!--  测试上传。  -->
+                <StackPanel Margin="0,15,0,0" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,0,1"
+                            VerticalAlignment="Center"
+                            FontFamily="{StaticResource IconFontFamily}"
+                            FontSize="20"
+                            Foreground="DarkGray"
+                            Text="&#xe812;" />
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="目标格口查询测试:" />
+                    </StackPanel>
+
+                    <!--  测试条码、重量。  -->
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="条码:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="250"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                        <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="重量(kg):" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="100"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding Weight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!--  上传测试按钮。  -->
+                    <Button
+                        MinHeight="30"
+                        Margin="50,10"
+                        HorizontalAlignment="Left"
+                        materialDesign:ButtonAssist.CornerRadius="5"
+                        Background="#2E2E2E"
+                        BorderThickness="0"
+                        Command="{Binding UploadCommand}"
+                        FocusVisualStyle="{x:Null}"
+                        Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource IconFontFamily}"
+                                    FontSize="18"
+                                    Foreground="DarkGray"
+                                    Text="&#xe6d4;" />
+                                <TextBlock
+                                    Margin="2,1,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource CustomFontFamily}"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="DarkGray"
+                                    Text="查询目标格口" />
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsUploading}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsUploading}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ProgressBar
+                                Width="25"
+                                Height="25"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsIndeterminate="True"
+                                Value="0">
+                                <ProgressBar.Style>
+                                    <Style
+                                        BasedOn="{StaticResource MaterialDesignCircularProgressBar}"
+                                        TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsUploading}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsUploading}" Value="False">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

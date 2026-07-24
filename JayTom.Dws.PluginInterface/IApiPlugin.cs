@@ -19,7 +19,7 @@ namespace JayTom.Dws.PluginInterface {
         /// <summary>
         /// 数据上传
         /// </summary>
-        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
+        Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, Image? image = default, Image? panoramaImage = default, CancellationToken token = default);
 
         /// <summary>

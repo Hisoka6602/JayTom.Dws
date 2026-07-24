@@ -13,7 +13,7 @@ namespace JayTom.Dws.Camera.Nvr {
 
     public class DaHuatechSecurityNvrDevice : INvrDeviceService {
         private BaseDaHuatech? _baseDaHuatech;
-        private static ConcurrentDictionary<string, NvrDeviceInfo> _devInfo = new();
+        private readonly ConcurrentDictionary<string, NvrDeviceInfo> _devInfo = new();
 
         public DaHuatechSecurityNvrDevice() {
         }
@@ -103,20 +103,19 @@ namespace JayTom.Dws.Camera.Nvr {
             //throw new NotImplementedException();
         }
 
-        public async void Dispose() {
+        public void Dispose() {
             foreach (var info in _devInfo) {
                 if (info.Value is not null && _baseDaHuatech is not null) {
                     //停止实时预览
                     //停止下载
                     //停止回放
                     //登出
-                    await _baseDaHuatech.LogOut(info.Key);
+                    _baseDaHuatech.LogOut(info.Key).GetAwaiter().GetResult();
                 }
             }
         }
 
-        protected virtual async void OnDeviceExcepted(Exception e) {
-            await Task.Yield();
+        protected virtual void OnDeviceExcepted(Exception e) {
             DeviceExcepted?.Invoke(this, e);
         }
     }

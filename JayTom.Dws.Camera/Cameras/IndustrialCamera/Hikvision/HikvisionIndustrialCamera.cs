@@ -24,6 +24,7 @@ using Color = System.Drawing.Color;
 using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Buffers;
 using JayTom.Dws.Camera.FilterContainer;
 using Rectangle = System.Drawing.Rectangle;
 using static System.Net.Mime.MediaTypeNames;
@@ -42,32 +43,27 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// </summary>
         private static MVIDCodeReader.MVID_CAMERA_INFO_LIST _sdkDevList = new();
 
-        private SemaphoreSlim _semaphoreSlim = new(1, 1);
-        private SemaphoreSlim _drawSlim = new(1);
+        private readonly SemaphoreSlim _drawSlim = new(1, 1);
 
         //private MVIDCodeReader.MVID_CAM_OUTPUT_INFO _stOutput = new();
         private MVIDCodeReader? _myCodeReader;
 
-        private SemaphoreSlim _takePhotoSlim = new(1);
-        private SemaphoreSlim _barCodeSlim = new(1);
-        private SemaphoreSlim _readImageSlim = new(1);
-        private byte[] _imageBuffer = null;
+        private readonly SemaphoreSlim _takePhotoSlim = new(1, 1);
         private MVIDCodeReader.cbOutputdelegate? _imageCallback = null;
 
         private MVIDCodeReader.cbImageBufferdelegate? _readImageCallback = null;
         private double FrameRate { get; set; }
-        private GCHandle? _imageBufferHandle;
         private int _ocrMissCount = 0;
         private long _frameNo = 0;
 
         /// <summary>
         /// Ocr图像队列
         /// </summary>
-        private ConcurrentQueue<Bitmap> _ocrBitmapQueue = new();
+        private readonly ConcurrentQueue<Bitmap> _ocrBitmapQueue = new();
 
         private Task? _ocrThread;
         private CancellationTokenSource? _ocrCancellationTokenSource;
-        private SemaphoreSlim _ocrSemaphoreSlim = new(5);
+        private readonly SemaphoreSlim _ocrSignal = new(0, 1);
 
         //过滤器
         private BarCodeFilterContainer _barCodeFilterContainer = new();
@@ -209,7 +205,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         });
                         return new KeyValuePair<bool, string>(false, $"获取相机属性值[Width]失败,{_nRet:X}!");
                     }
-                    var nWidth = (int)nIntValue.nCurValue;
                     _nRet = _myCodeReader?.MVID_CR_CAM_GetIntValue_NET("Height", ref nIntValue) ?? 0;
                     if (_nRet != MVIDCodeReader.MVID_CR_OK) {
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -217,8 +212,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         });
                         return new KeyValuePair<bool, string>(false, $"获取相机属性值[Height]失败,{_nRet:X}!");
                     }
-                    var nHeight = (int)nIntValue.nCurValue;
-                    _imageBuffer = new byte[nWidth * nHeight * 3 + 4096];
                     //设置缓存节点
                     _nRet = _myCodeReader?.MVID_CR_CAM_SetImageNodeNum_NET(10) ?? 0;
                     if (_nRet != MVIDCodeReader.MVID_CR_OK) {
@@ -265,9 +258,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             var (key, value) = await Ocr.Initialize();
                             if (key) {
                                 _ocrCancellationTokenSource = new CancellationTokenSource();
-                                _ocrThread = new TaskFactory(TaskCreationOptions.LongRunning,
-                                        TaskContinuationOptions.LongRunning)
-                                    .StartNew(async () => await OcrCallbackThread(_ocrCancellationTokenSource.Token));
+                                _ocrThread = Task.Run(
+                                    () => OcrCallbackThread(_ocrCancellationTokenSource.Token),
+                                    _ocrCancellationTokenSource.Token);
                             }
                             else {
                                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -310,102 +303,123 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// <param name="token"></param>
         /// <returns></returns>
         public async Task OcrCallbackThread(CancellationToken token) {
-            await Task.Yield();
-            while (!token.IsCancellationRequested) {
-                //判断信号
-                if (_ocrSemaphoreSlim.CurrentCount > 0) {
-                    try {
-                        await Task.Factory.StartNew(async () => {
-                            //这里换成多线程
-                            await _ocrSemaphoreSlim.WaitAsync(token);
-                            var tryDequeue = _ocrBitmapQueue.TryDequeue(out var bitmap);
-                            if (tryDequeue && bitmap is not null) {
-                                //调用Ocr算法
-                                var thumbnail = GenerateThumbnail(bitmap);
-                                var result = Ocr?.ParseOcrResult(bitmap);
-                                if (result is not null &&
-                                    !string.IsNullOrEmpty(result.BarCode)) {
-                                    _ocrMissCount = 0;
-                                    _ocrBitmapQueue.Clear();
-                                    //过滤
-                                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                        BarCode = result.BarCode,
-                                        ScanTime = DateTime.Now
-                                    });
-                                    if (validateData.IsValidationPassed) {
-                                        result.CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty;
-                                        //画框
-                                        if (IsShowBarcodeBorder && thumbnail is not null && thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
-                                            //暂时屏蔽画框
-                                            thumbnail = await DrawIndicator(thumbnail, new Size(bitmap.Width, bitmap.Height), result);
-                                        }
-                                        result.Thumbnail = thumbnail;
-                                        result.BarCode = _barCodeFilterContainer.RegexReplace(result.BarCode);
-                                        OnOcrContentRecognized(result);
-                                    }
-                                    else {
-                                        result?.Image?.Dispose();
-                                        if (!IsRealtimeImageEnabled) {
-                                            thumbnail?.Dispose();
-                                        }
-                                    }
-                                }
-                                else {
-                                    result?.Image?.Dispose();
-                                    if (!IsRealtimeImageEnabled) {
-                                        thumbnail?.Dispose();
-                                    }
+            while (true) {
+                await _ocrSignal.WaitAsync(token);
+                Bitmap? bitmap = null;
+                while (_ocrBitmapQueue.TryDequeue(out var queuedBitmap)) {
+                    bitmap?.Dispose();
+                    bitmap = queuedBitmap;
+                }
 
-                                    _ocrMissCount += 1;
-                                    if (_ocrMissCount > 3) {
-                                        //保持清空
-                                        _ocrBitmapQueue.Clear();
-                                    }
-                                }
+                if (bitmap is null) {
+                    continue;
+                }
 
-                                if (IsRealtimeImageEnabled) {
-                                    OnRealtimeImage(new RealtimeImageEventArgs() {
-                                        ThumbImage = thumbnail,
-                                        Timestamp = result?.SubmitTimestamp ?? 0
-                                    });
-                                }
-                            }
-                        }, token);
+                var thumbnail = GenerateThumbnail(bitmap);
+                var result = Ocr?.ParseOcrResult(bitmap);
+                if (result is not null && !string.IsNullOrEmpty(result.BarCode)) {
+                    _ocrMissCount = 0;
+                    ClearOcrQueue();
+                    var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
+                        BarCode = result.BarCode,
+                        ScanTime = DateTime.Now
+                    });
+                    if (validateData.IsValidationPassed) {
+                        result.CameraSerialNumber = Info?.SerialNumber ?? string.Empty;
+                        if (IsShowBarcodeBorder && thumbnail is not null &&
+                            thumbnail.PixelFormat != PixelFormat.Format8bppIndexed) {
+                            thumbnail = await DrawIndicator(
+                                thumbnail,
+                                new Size(bitmap.Width, bitmap.Height),
+                                result);
+                        }
+                        result.Thumbnail = thumbnail;
+                        result.BarCode = _barCodeFilterContainer.RegexReplace(result.BarCode);
+                        OnOcrContentRecognized(result);
                     }
-                    finally {
-                        _ocrSemaphoreSlim.Release();
+                    else {
+                        result.Image?.Dispose();
+                        if (!IsRealtimeImageEnabled) {
+                            thumbnail?.Dispose();
+                        }
+                    }
+                }
+                else {
+                    result?.Image?.Dispose();
+                    if (result?.Image is null) {
+                        bitmap.Dispose();
+                    }
+                    if (!IsRealtimeImageEnabled) {
+                        thumbnail?.Dispose();
+                    }
+
+                    _ocrMissCount++;
+                    if (_ocrMissCount > 3) {
+                        ClearOcrQueue();
                     }
                 }
 
-                await Task.Delay(50, token);
+                if (IsRealtimeImageEnabled) {
+                    OnRealtimeImage(new RealtimeImageEventArgs {
+                        ThumbImage = thumbnail,
+                        Timestamp = result?.SubmitTimestamp ?? 0
+                    });
+                }
             }
         }
 
         //条码回调事件
-        public async void ImageCallbackFunc(IntPtr pstOutput, IntPtr puser) {
+        public void ImageCallbackFunc(IntPtr pstOutput, IntPtr puser) {
             if (Status == CameraStatus.Running && IntPtr.Zero != pstOutput) {
                 var stOutput = (MVIDCodeReader.MVID_CAM_OUTPUT_INFO)(Marshal.PtrToStructure(pstOutput,
                     typeof(MVIDCodeReader.MVID_CAM_OUTPUT_INFO)) ?? new MVIDCodeReader.MVID_CAM_OUTPUT_INFO());
-                await ProcessImageAsync(stOutput, pstOutput);
+                ProcessImage(stOutput);
             }
         }
 
         /// <summary>
         /// 无解码信息回调
         /// </summary>
-        public async void ReadImageCallback(MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {
-            //解析图片
+        public void ReadImageCallback(MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {
             try {
-                await _readImageSlim.WaitAsync();
-                var image = await ConvertPointerToImage(output);
-                if (this.BindingType is CameraBindingType.OcrCamera &&
-                    image is not null) {
-                    //添加图片到识别队列
-                    _ocrBitmapQueue.Enqueue(image);
+                var image = ConvertPointerToImage(output);
+                if (BindingType is CameraBindingType.OcrCamera && image is not null) {
+                    EnqueueOcrFrame(image);
+                }
+                else {
+                    image?.Dispose();
                 }
             }
-            finally {
-                _readImageSlim.Release();
+            catch (Exception exception) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = exception
+                });
+            }
+        }
+
+        /// <summary>
+        /// 将最新 OCR 帧放入有界内存队列，主动释放过期帧。
+        /// </summary>
+        private void EnqueueOcrFrame(Bitmap image) {
+            while (_ocrBitmapQueue.Count >= 4 && _ocrBitmapQueue.TryDequeue(out var staleImage)) {
+                staleImage.Dispose();
+            }
+
+            _ocrBitmapQueue.Enqueue(image);
+            try {
+                _ocrSignal.Release();
+            }
+            catch (SemaphoreFullException) {
+                // 已有工作信号时无需重复唤醒。
+            }
+        }
+
+        /// <summary>
+        /// 清空并释放尚未处理的 OCR 图像。
+        /// </summary>
+        private void ClearOcrQueue() {
+            while (_ocrBitmapQueue.TryDequeue(out var image)) {
+                image.Dispose();
             }
         }
 
@@ -484,16 +498,22 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                     return new KeyValuePair<bool, string>(false, $"停止识别失败:{_nRet:X}");
                 }
-                _ocrBitmapQueue.Clear();
+                ClearOcrQueue();
                 Status = CameraStatus.Paused;
             }
-            System.GC.Collect();
             return new KeyValuePair<bool, string>(true, string.Empty);
         }
 
-        public async void Dispose() {
+        public void Dispose() {
             if (Status != CameraStatus.Uninitialized) {
                 Status = CameraStatus.Paused;
+                _ocrCancellationTokenSource?.Cancel();
+                try {
+                    _ocrThread?.GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException) {
+                }
+
                 var nRet = _myCodeReader?.MVID_CR_CAM_StopGrabbing_NET() ?? 0;
                 if (MVIDCodeReader.MVID_CR_OK != nRet) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -501,7 +521,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                 }
 
-                await Task.Delay(500);
                 nRet = _myCodeReader?.MVID_CR_DestroyHandle_NET() ?? 0;
                 if (MVIDCodeReader.MVID_CR_OK != nRet) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -514,19 +533,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 OnCameraUnregistered(new CameraUnregisteredEventArgs() {
                     CameraInfo = this.Info
                 });
-                _ocrCancellationTokenSource?.Cancel();
-                if (_ocrThread is not null) {
-                    await _ocrThread;
-                    _ocrThread.Dispose();
-                    _ocrThread = null;
-                }
+                _ocrThread?.Dispose();
+                _ocrThread = null;
+                _ocrCancellationTokenSource?.Dispose();
+                _ocrCancellationTokenSource = null;
                 _imageCallback = null;
                 _readImageCallback = null;
                 _myCodeReader = null;
-                _ocrBitmapQueue.Clear();
+                ClearOcrQueue();
                 this.Info = null;
             }
-            System.GC.Collect();
         }
 
         public void SetParameters(Dictionary<string, object> parameters) {
@@ -562,53 +578,55 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            //提交拍照请求
-            Task.Run(async () => {
-                await Task.Delay(TakePhotoDelay, cancellation);
-                if (Status == CameraStatus.Running) {
-                    try {
-                        await _takePhotoSlim.WaitAsync(cancellation);
-                        var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
-                        _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 10) ?? -1;
-                        if (_nRet != MVIDCodeReader.MVID_CR_OK) {
-                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
-                            });
-                            return;
-                        }
-                        var image = await ConvertPointerToImage(pFrameInfo);
-                        var thumbnailImage = GenerateThumbnail(image);
-                        await Task.Delay(10, cancellation);
-                        OnPhotoTaken(new PhotoTakenEventArgs {
-                            Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            Image = image,
-                            PhotoTime = DateTime.Now,
-                            ThumbImage = (Bitmap?)thumbnailImage,
-                            Barcode = barcode,
-                            BarcodeTimestamp = barcodeTimestamp
-                        });
-                    }
-                    catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
-                        });
-                    }
-                    finally {
-                        _takePhotoSlim.Release();
-                    }
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+            await Task.Delay(TakePhotoDelay, cancellation);
+            if (Status != CameraStatus.Running) {
+                return;
+            }
+
+            var lockTaken = false;
+            try {
+                await _takePhotoSlim.WaitAsync(cancellation);
+                lockTaken = true;
+                var pFrameInfo = new MVIDCodeReader.MVID_IMAGE_INFO();
+                _nRet = _myCodeReader?.MVID_CR_CAM_GetImageBuffer_NET(ref pFrameInfo, 10) ?? -1;
+                if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new Exception($"截图失败:截取一帧图片失败,{_nRet:X}")
+                    });
+                    return;
                 }
-            }, cancellation);
-            return Task.CompletedTask;
+
+                var image = ConvertPointerToImage(pFrameInfo);
+                var thumbnailImage = GenerateThumbnail(image);
+                OnPhotoTaken(new PhotoTakenEventArgs {
+                    Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+                    CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
+                    Image = image,
+                    PhotoTime = DateTime.Now,
+                    ThumbImage = (Bitmap?)thumbnailImage,
+                    Barcode = barcode,
+                    BarcodeTimestamp = barcodeTimestamp
+                });
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) {
+                throw;
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception($"截图失败:截取一帧图片异常,{e}")
+                });
+            }
+            finally {
+                if (lockTaken) {
+                    _takePhotoSlim.Release();
+                }
+            }
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
-            Task.Run(async () => {
-                await Task.Delay(delay, cancellation);
-                await TakePhotoAsync(barcode, barcodeTimestamp, cancellation);
-            }, cancellation);
-            return Task.CompletedTask;
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            await Task.Delay(delay, cancellation);
+            await TakePhotoAsync(barcode, barcodeTimestamp, cancellation);
         }
 
         public void SetScanCodeFilterParams(ScanCodeFilterParams @params) {
@@ -701,10 +719,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     points[i].Y = (int)(convertPoints[i].Y * ((float)thumbnail.Size.Height / imageHeight));
                 }
 
-                g.DrawPolygon(new Pen(color, BarcodeBorderSize - 4), points);
+                using var indicatorPen = new Pen(color, Math.Max(1, BarcodeBorderSize - 4));
+                g.DrawPolygon(indicatorPen, points);
 
-                var font = new Font("Arial", 12);
-                var brush = new SolidBrush(color);
+                using var font = new System.Drawing.Font("Arial", 12);
+                using var brush = new SolidBrush(color);
+                using var linePen = new Pen(color);
 
                 // 截断文本
                 if (text.Length >= 20) {
@@ -725,14 +745,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 {
                     var rightMargin = 210;
                     g.DrawString(text, font, brush, thumbnail.Width - textWidth - rightMargin, yOffset);
-                    g.DrawLine(new Pen(color), thumbnail.Width - rightMargin, lineY, thumbnail.Width - textWidth - rightMargin, lineY);
-                    g.DrawLine(new Pen(color), thumbnail.Width - textWidth - rightMargin, lineY, points[0].X, points[0].Y);
+                    g.DrawLine(linePen, thumbnail.Width - rightMargin, lineY, thumbnail.Width - textWidth - rightMargin, lineY);
+                    g.DrawLine(linePen, thumbnail.Width - textWidth - rightMargin, lineY, points[0].X, points[0].Y);
                 }
                 else // 如果在右边，靠左绘制
                 {
                     g.DrawString(text, font, brush, 3, yOffset);
-                    g.DrawLine(new Pen(color), 3, lineY, textWidth + 3, lineY);
-                    g.DrawLine(new Pen(color), textWidth + 3, lineY, points[0].X, points[0].Y);
+                    g.DrawLine(linePen, 3, lineY, textWidth + 3, lineY);
+                    g.DrawLine(linePen, textWidth + 3, lineY, points[0].X, points[0].Y);
                 }
             }
             catch (Exception e) {
@@ -742,12 +762,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
-        private async Task ProcessImageAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
+        private void ProcessImage(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput) {
             //帧时间戳
             var scanTime = DateTime.Now;
             var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
             if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP != stOutput.stImage.enImageType) {
-                var bitmap = await GetBitmapAsync(stOutput, ptr);
+                var bitmap = GetBitmap(stOutput);
 
                 var thumbnailImage = GenerateThumbnail(bitmap);
                 List<ValidationResult> validationResults = new();
@@ -789,7 +809,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                           (float)(thumbnailImage.Size.Height) /
                                           stOutput.stImage.nHeight);
                             }
-                            g.DrawPolygon(new System.Drawing.Pen(borderColor, BarcodeBorderSize), stPointList);
+                            using var borderPen = new Pen(borderColor, BarcodeBorderSize);
+                            g.DrawPolygon(borderPen, stPointList);
                         }
                     }
 
@@ -798,28 +819,28 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
                             var validateData = validationResults.Any(a => a.IsValidationPassed && a.BarCode.Equals(mvidCodeInfo.strCode));
                             if (validateData || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                                //发处理条形码，提高处理速度
-                                await Task.Factory.StartNew(() => {
-                                    OnBarcodeRead(new BarcodeReadEventArgs() {
-                                        Barcode = _barCodeFilterContainer.RegexReplace(validateData ? mvidCodeInfo.strCode : _barCodeFilterContainer.FilterOutContent),
-                                        Timestamp = timestamp,
-                                        CameraSerialNumber = this.Structure.chSerialNumber,
-                                        ScanTime = scanTime,
-                                        ThumbImage = (Bitmap?)thumbnailImage,
-                                        Image = bitmap,
-                                        AreaCoords = Enumerable.Range(0, 4).Select(s => {
-                                            if (bitmap != null)
-                                                return new System.Drawing.Point {
-                                                    X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
-                                                        (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
-                                                    Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
-                                                              (float)(bitmap.Size.Height) /
-                                                              stOutput.stImage.nHeight)
-                                                };
-                                            return default;
-                                        })?.ToList(),
-                                        FrameNo = _frameNo,
-                                    });
+                                OnBarcodeRead(new BarcodeReadEventArgs {
+                                    Barcode = _barCodeFilterContainer.RegexReplace(
+                                        validateData
+                                            ? mvidCodeInfo.strCode
+                                            : _barCodeFilterContainer.FilterOutContent),
+                                    Timestamp = timestamp,
+                                    CameraSerialNumber = Structure.chSerialNumber,
+                                    ScanTime = scanTime,
+                                    ThumbImage = (Bitmap?)thumbnailImage,
+                                    Image = bitmap,
+                                    AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                        if (bitmap != null)
+                                            return new System.Drawing.Point {
+                                                X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
+                                                    (float)(bitmap.Size.Width) / stOutput.stImage.nWidth),
+                                                Y = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nY *
+                                                          (float)(bitmap.Size.Height) /
+                                                          stOutput.stImage.nHeight)
+                                            };
+                                        return default;
+                                    }).ToList(),
+                                    FrameNo = Interlocked.Read(ref _frameNo)
                                 });
                             }
                             /*if (!validateData) {
@@ -847,10 +868,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             }*/
                         }
 
-                        await Task.Delay(1);
                     }
 
-                    _frameNo += 1;
+                    Interlocked.Increment(ref _frameNo);
                 }
                 else {
                     bitmap?.Dispose();
@@ -869,104 +889,66 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
-        private async Task<Bitmap?> GetBitmapWaybillAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput) {
-            Bitmap? bitmap = null;
-            try {
-                await _semaphoreSlim.WaitAsync();
-                if (_imageBufferHandle is null) {
-                    _imageBufferHandle?.Free();
-                    _imageBufferHandle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
-                }
-
-                Marshal.Copy(stOutput.pImageWaybill, _imageBuffer, 0, (int)stOutput.nImageWaybillLen);
-                var pImage = _imageBufferHandle.Value.AddrOfPinnedObject();
-                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == stOutput.enWaybillImageType) {
-                    bitmap = new Bitmap(1920, 1080, 1920,
-                        PixelFormat.Format8bppIndexed, pImage);
-
-                    var cp = bitmap.Palette;
-                    for (var i = 0; i < 256; i++) {
-                        cp.Entries[i] = System.Drawing.Color.FromArgb(i, i, i);
-                    }
-
-                    bitmap.Palette = cp;
-                }
-                else {
-                    bitmap = new Bitmap(1920, 1080, 1920 * 3,
-                        PixelFormat.Format24bppRgb, pImage);
-                }
-            }
-            catch (Exception e) {
-                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = e
-                });
-            }
-            finally {
-                _semaphoreSlim.Release();
-            }
-            return bitmap;
-        }
-
-        private async Task<Bitmap?> GetBitmapAsync(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput, IntPtr ptr) {
-            /*Bitmap? bitmap = null;
-            try {
-                bitmap = await ConvertPointerToImage(stOutput.stImage);
-
-                if (IsOriginalImageOut) {
-                    return (Bitmap?)bitmap?.GenerateThumbnail(bitmap?.Width ?? 1280, bitmap?.Height ?? 960,
-                        () => false, IntPtr.Zero);
-                }
-
-                return (Bitmap?)bitmap?.GenerateThumbnail(800, 600, () => false, IntPtr.Zero);
-            }
-            finally {
-                bitmap?.Dispose();
-            }*/
-            var bitmap = await ConvertPointerToImage(stOutput.stImage);
+        private Bitmap? GetBitmap(MVIDCodeReader.MVID_CAM_OUTPUT_INFO stOutput) {
+            var bitmap = ConvertPointerToImage(stOutput.stImage);
             if (IsOriginalImageOut) {
                 return bitmap;
             }
 
-            return (Bitmap?)GenerateThumbnail(bitmap);
+            var thumbnail = (Bitmap?)GenerateThumbnail(bitmap);
+            bitmap?.Dispose();
+            return thumbnail;
         }
 
-        private async Task<Bitmap?> ConvertPointerToImage(MVIDCodeReader.MVID_IMAGE_INFO pFrameInfo) {
-            Bitmap? bitmap = null;
+        private Bitmap? ConvertPointerToImage(MVIDCodeReader.MVID_IMAGE_INFO pFrameInfo) {
+            if (pFrameInfo.pImageBuf == IntPtr.Zero || pFrameInfo.nImageLen == 0 ||
+                pFrameInfo.nWidth <= 0 || pFrameInfo.nHeight <= 0) {
+                return null;
+            }
+
+            var sourceLength = checked((int)pFrameInfo.nImageLen);
+            var isMonochrome =
+                MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType;
+            var stride = checked(pFrameInfo.nWidth * (isMonochrome ? 1 : 3));
+            var requiredLength = checked(stride * pFrameInfo.nHeight);
+            var bufferLength = Math.Max(sourceLength, requiredLength);
+            var imageBuffer = ArrayPool<byte>.Shared.Rent(bufferLength);
+            GCHandle imageBufferHandle = default;
             try {
-                await _semaphoreSlim.WaitAsync();
-
-                if (_imageBufferHandle is null || _imageBuffer.Length != pFrameInfo.nImageLen) {
-                    _imageBufferHandle?.Free();
-                    _imageBufferHandle = GCHandle.Alloc(_imageBuffer, GCHandleType.Pinned);
+                Marshal.Copy(pFrameInfo.pImageBuf, imageBuffer, 0, sourceLength);
+                if (sourceLength < requiredLength) {
+                    Array.Clear(imageBuffer, sourceLength, requiredLength - sourceLength);
                 }
 
-                Marshal.Copy(pFrameInfo.pImageBuf, _imageBuffer, 0, (int)pFrameInfo.nImageLen);
-                var pImage = _imageBufferHandle.Value.AddrOfPinnedObject();
-                if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType) {
-                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth,
-                        PixelFormat.Format8bppIndexed, pImage);
-
-                    var cp = bitmap.Palette;
+                imageBufferHandle = GCHandle.Alloc(imageBuffer, GCHandleType.Pinned);
+                using var bitmapView = new Bitmap(
+                    pFrameInfo.nWidth,
+                    pFrameInfo.nHeight,
+                    stride,
+                    isMonochrome ? PixelFormat.Format8bppIndexed : PixelFormat.Format24bppRgb,
+                    imageBufferHandle.AddrOfPinnedObject());
+                if (isMonochrome) {
+                    var cp = bitmapView.Palette;
                     for (var i = 0; i < 256; i++) {
-                        cp.Entries[i] = System.Drawing.Color.FromArgb(i, i, i);
+                        cp.Entries[i] = Color.FromArgb(i, i, i);
                     }
+                    bitmapView.Palette = cp;
+                }
 
-                    bitmap.Palette = cp;
-                }
-                else {
-                    bitmap = new Bitmap(pFrameInfo.nWidth, pFrameInfo.nHeight, pFrameInfo.nWidth * 3,
-                        PixelFormat.Format24bppRgb, pImage);
-                }
+                return new Bitmap(bitmapView);
             }
             catch (Exception e) {
-                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
                     Exception = e
                 });
+                return null;
             }
             finally {
-                _semaphoreSlim.Release();
+                if (imageBufferHandle.IsAllocated) {
+                    imageBufferHandle.Free();
+                }
+                ArrayPool<byte>.Shared.Return(imageBuffer);
             }
-            return bitmap;
         }
 
         private static IPAddress ConvertUintToIpAddress(uint ipAddressValue) {
@@ -1003,59 +985,44 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             return points;
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnBarcodeRead(BarcodeReadEventArgs e) {
-            try {
-                await _barCodeSlim.WaitAsync();
-                await Task.Delay(50);
-                BarcodeRead?.Invoke(this, e);
-            }
-            finally {
-                _barCodeSlim.Release();
-            }
+        protected virtual void OnBarcodeRead(BarcodeReadEventArgs e) {
+            BarcodeRead?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             Status = CameraStatus.Uninitialized;
             CameraUnregistered?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnPhotoTaken(PhotoTakenEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnPhotoTaken(PhotoTakenEventArgs e) {
             PhotoTaken?.Invoke(this, e);
         }
 
@@ -1188,13 +1155,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
-        protected virtual async void OnOcrContentRecognized(OcrResult e) {
-            await Task.Yield();
+        protected virtual void OnOcrContentRecognized(OcrResult e) {
             OcrContentRecognized?.Invoke(this, e);
         }
 
-        protected virtual async void OnFilteredBarcodeReturned(BarcodeReadEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnFilteredBarcodeReturned(BarcodeReadEventArgs e) {
             FilteredBarcodeReturned?.Invoke(this, e);
         }
     }

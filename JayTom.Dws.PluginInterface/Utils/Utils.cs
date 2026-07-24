@@ -15,12 +15,14 @@ using System.Security.Policy;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Security.Cryptography;
+using System.Collections.Concurrent;
 
 namespace JayTom.Dws.PluginInterface.Utils {
 
     public static class Utils {
-        private static byte[] _dwsKey = PadKey("Hisoka"u8.ToArray(), 16);
-        private static byte[] _dwsNonce = Encoding.UTF8.GetBytes("15876396602".PadRight(12, '\0'));
+        private static readonly byte[] _dwsKey = PadKey("Hisoka"u8.ToArray(), 16);
+        private static readonly byte[] _dwsNonce = Encoding.UTF8.GetBytes("15876396602".PadRight(12, '\0'));
+        private static readonly ConcurrentDictionary<(Type Type, string Name), string> DescriptionCache = new();
         /*public static T? GetVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : Visual {
             var numVisuals = VisualTreeHelper.GetChildrenCount(parent);
             for (var i = 0; i < numVisuals; i++) {
@@ -51,10 +53,11 @@ namespace JayTom.Dws.PluginInterface.Utils {
         //加密
         public static string EncryptString(string plainText) {
             try {
-                using var aesGcm = new AesGcm(_dwsKey);
+                const int tagSize = 16;
+                using var aesGcm = new AesGcm(_dwsKey, tagSize);
                 var plainBytes = Encoding.UTF8.GetBytes(plainText);
                 var cipherBytes = new byte[plainBytes.Length];
-                var tag = new byte[16]; // 用于存储验证标签
+                var tag = new byte[tagSize]; // 用于存储验证标签
 
                 aesGcm.Encrypt(_dwsNonce, plainBytes, cipherBytes, tag); // 提供 tag 参数
 
@@ -65,7 +68,7 @@ namespace JayTom.Dws.PluginInterface.Utils {
 
                 return Convert.ToBase64String(cipherWithTag);
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return plainText;
             }
         }
@@ -73,16 +76,23 @@ namespace JayTom.Dws.PluginInterface.Utils {
         //解密
         public static string DecryptString(string cipherText) {
             try {
-                var cipherBytes = Convert.FromBase64String(cipherText);
-                var decryptedBytes = new byte[cipherBytes.Length];
-                var tag = new byte[16]; // 用于存储验证标签
+                const int tagSize = 16;
+                var payload = Convert.FromBase64String(cipherText);
+                if (payload.Length < tagSize) {
+                    return cipherText;
+                }
 
-                using var aesGcm = new AesGcm(_dwsKey);
-                aesGcm.Decrypt(_dwsNonce, cipherBytes, tag, decryptedBytes); // 提供 tag 参数
+                var cipherLength = payload.Length - tagSize;
+                var decryptedBytes = new byte[cipherLength];
+                var cipherBytes = payload.AsSpan(0, cipherLength);
+                var tag = payload.AsSpan(cipherLength, tagSize);
+
+                using var aesGcm = new AesGcm(_dwsKey, tagSize);
+                aesGcm.Decrypt(_dwsNonce, cipherBytes, tag, decryptedBytes);
 
                 return Encoding.UTF8.GetString(decryptedBytes);
             }
-            catch (Exception e) {
+            catch (Exception) {
                 return cipherText;
             }
         }
@@ -125,8 +135,8 @@ namespace JayTom.Dws.PluginInterface.Utils {
             return null;
         }
 
-        public static async Task<bool> IsFileExistsAsync(this string filePath) {
-            return await Task.Run(() => !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath));
+        public static Task<bool> IsFileExistsAsync(this string filePath) {
+            return Task.FromResult(!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath));
         }
 
         public static bool IsFileExists(this string filePath) {
@@ -148,7 +158,8 @@ namespace JayTom.Dws.PluginInterface.Utils {
             BitmapEncoder encoder = new BmpBitmapEncoder(); // 选择合适的编码器（这里使用 BMP 编码器）
             encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
             encoder.Save(memoryStream);
-            return Image.FromStream(memoryStream);
+            using var decodedImage = Image.FromStream(memoryStream);
+            return new Bitmap(decodedImage);
         }
 
         public static byte[]? ImageSourceToByteArray(this ImageSource imageSource) {
@@ -203,17 +214,13 @@ namespace JayTom.Dws.PluginInterface.Utils {
         }
 
         public static string GetDescription(this Enum value) {
-            try {
-                var field = value.GetType().GetField(value.ToString());
-
-                var attribute =
-                    (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
-
-                return attribute == null ? value.ToString() : attribute.Description;
-            }
-            catch (Exception e) {
-            }
-            return string.Empty;
+            var type = value.GetType();
+            var name = value.ToString();
+            return DescriptionCache.GetOrAdd((type, name), static key => {
+                var field = key.Type.GetField(key.Name);
+                var attribute = field?.GetCustomAttribute<DescriptionAttribute>();
+                return attribute?.Description ?? key.Name;
+            });
         }
 
         public static TTargetEnum ConvertTo<TTargetEnum>(this Enum sourceEnum) where TTargetEnum : struct, Enum {

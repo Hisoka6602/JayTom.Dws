@@ -1,53 +1,77 @@
 ﻿using NLog;
-using System.Reflection;
 using System.Linq.Expressions;
-using NPOI.SS.Formula.Functions;
 using JayTom.Dws.Domain.Repository;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Infrastructure.Repository {
     public class MemoryCacheRepositoryBase<T> : RepositoryBase<T>, IMemoryCacheRepository<T> where T : class {
-        private readonly IDbContextFactory<DbContext> _contextFactory;
         private readonly IMemoryCache _cache;
 
+        /// <summary>
+        /// 合并同一实体类型的并发首次加载，防止缓存击穿。
+        /// </summary>
+        private static readonly SemaphoreSlim LoadLock = new(1, 1);
+
+        /// <summary>
+        /// 保存稳定且不会与其他实体类型冲突的缓存键。
+        /// </summary>
+        private static readonly string CacheKey = typeof(T).FullName ?? typeof(T).Name;
+
+        /// <summary>
+        /// 缓存 EF 模型中的导航属性名称，避免每次缓存刷新后重复解析模型。
+        /// </summary>
+        private static string[]? _navigationPropertyNames;
+
+        /// <summary>
+        /// 标记缓存失效代次，避免并发加载在写入完成后回填旧快照。
+        /// </summary>
+        private static long _cacheGeneration;
+
         public MemoryCacheRepositoryBase(IDbContextFactory<DbContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
-            _contextFactory = contextFactory;
             _cache = cache;
         }
 
         public async Task<List<T>> MemoryCacheData() {
-            try {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                return await _cache.GetOrCreateAsync(name, async entry => {
-                    entry.SlidingExpiration = TimeSpan.FromMinutes(5);
-                    await using (var concardContext = _contextFactory.CreateDbContext()) {
-                        var dbSet = concardContext?.Set<T>();
-                        if (dbSet is null || concardContext is null) return null;
-                        // return await dbSet.AsNoTracking().ToListAsync();
-                        // 获取所有导航属性并使用Include加载
-                        var query = dbSet.AsQueryable();
-                        var navigationProperties = concardContext.Model.FindEntityType(typeof(T))
-                            .GetNavigations()
-                            .Select(n => n.Name);
-                        query = navigationProperties.Aggregate(query, (current, navProp) => current.Include(navProp));
+            if (_cache.TryGetValue(CacheKey, out List<T>? cachedItems) &&
+                cachedItems is not null) {
+                return cachedItems;
+            }
 
-                        return await query.AsNoTracking().ToListAsync();
-                    }
-                });
+            using var loadLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(
+                    LoadLock, CancellationToken.None);
+            if (_cache.TryGetValue(CacheKey, out cachedItems) &&
+                cachedItems is not null) {
+                return cachedItems;
+            }
+
+            try {
+                await using var context = _contextFactory.CreateDbContext();
+                IQueryable<T> query = context.Set<T>();
+                foreach (var navigationPropertyName in GetNavigationPropertyNames(context)) {
+                    query = query.Include(navigationPropertyName);
+                }
+
+                List<T> items;
+                long observedGeneration;
+                do {
+                    observedGeneration = Volatile.Read(ref _cacheGeneration);
+                    items = await query.AsNoTracking().ToListAsync();
+                } while (observedGeneration != Volatile.Read(ref _cacheGeneration));
+
+                _cache.Set(CacheKey, items, TimeSpan.FromMinutes(5));
+                return items;
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
-            return null;
+            return new List<T>();
         }
 
         public void UpdateMemoryCache() {
             try {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
@@ -55,72 +79,80 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public new async Task<bool> Insert(T entity, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var insert = await base.Insert(entity, token);
             if (insert) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
             return insert;
         }
 
-        public new void InsertAsync(T entity, CancellationToken token) {
-            base.InsertAsync(entity, token);
-            var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-            _cache.Remove(name ?? string.Empty);
+        public new async Task InsertAsync(T entity, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+            await base.InsertAsync(entity, token);
+            InvalidateCache();
         }
 
         public new async Task<bool> Update(T entity, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var update = await base.Update(entity, token);
             if (update) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
             return update;
         }
 
         public new async Task<bool> Delete(T entity, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var delete = await base.Delete(entity, token);
             if (delete) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
             return delete;
         }
 
         public new async Task<int> DeleteCount(int count, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var deleteCount = await base.DeleteCount(count, token);
             if (deleteCount > 0) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
 
             return deleteCount;
         }
 
         public new async Task<int> DeleteCount(int count, Expression<Func<T, bool>> @where, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var deleteCount = await base.DeleteCount(count, @where, token);
             if (deleteCount > 0) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
 
             return deleteCount;
         }
 
-        public new async Task<bool> DeleteRange([NotNull] List<T> entities, CancellationToken token = default) {
+        public new async Task<bool> DeleteRange(List<T> entities, CancellationToken token = default) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var deleteRange = await base.DeleteRange(entities, token);
             if (deleteRange) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
 
             return deleteRange;
         }
         public new async Task<bool> InsertOrUpdate(T entity, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var insertOrUpdate = await base.InsertOrUpdate(entity, token);
             if (insertOrUpdate) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
 
             return insertOrUpdate;
@@ -128,22 +160,52 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public new async Task<bool> InsertOrUpdateRange(List<T> entities,
             CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var insertOrUpdateRange = await base.InsertOrUpdateRange(entities, token);
             if (insertOrUpdateRange) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
 
             return insertOrUpdateRange;
         }
 
-        public new async Task<bool> SyncEntities([NotNull] List<T> entities, CancellationToken token) {
+        public new async Task<bool> SyncEntities(List<T> entities, CancellationToken token) {
+            using var cacheLease =
+                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
             var syncEntities = await base.SyncEntities(entities, token);
             if (syncEntities) {
-                var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                _cache.Remove(name ?? string.Empty);
+                InvalidateCache();
             }
             return syncEntities;
+        }
+
+        /// <summary>
+        /// 推进缓存代次并移除当前实体快照。
+        /// </summary>
+        private void InvalidateCache() {
+            Interlocked.Increment(ref _cacheGeneration);
+            _cache.Remove(CacheKey);
+        }
+
+        /// <summary>
+        /// 获取并缓存当前实体的导航属性名称。
+        /// </summary>
+        /// <param name="context">包含实体模型元数据的数据库上下文。</param>
+        /// <returns>导航属性名称快照。</returns>
+        private static string[] GetNavigationPropertyNames(DbContext context) {
+            var cachedNames = Volatile.Read(ref _navigationPropertyNames);
+            if (cachedNames is not null) {
+                return cachedNames;
+            }
+
+            var discoveredNames = context.Model.FindEntityType(typeof(T))?
+                .GetNavigations()
+                .Select(navigation => navigation.Name)
+                .ToArray() ?? Array.Empty<string>();
+            Interlocked.CompareExchange(
+                ref _navigationPropertyNames, discoveredNames, null);
+            return Volatile.Read(ref _navigationPropertyNames) ?? discoveredNames;
         }
     }
 }

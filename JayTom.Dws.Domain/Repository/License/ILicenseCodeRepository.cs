@@ -12,9 +12,9 @@ namespace JayTom.Dws.Domain.Repository.License {
 
     public interface ILicenseCodeRepository : IMemoryCacheRepository<LicenseCodeInfo> {
 
-        public Task<KeyValuePair<bool, object>> Details([NotNull] Expression<Func<LicenseCodeInfo, bool>> @where, CancellationToken token = default);
+        public Task<KeyValuePair<bool, object>> Details(Expression<Func<LicenseCodeInfo, bool>> @where, CancellationToken token = default);
 
-        public Task<KeyValuePair<bool, object>> FirstDetails([NotNull] Expression<Func<LicenseCodeInfo, bool>> @where, CancellationToken token = default);
+        public Task<KeyValuePair<bool, object>> FirstDetails(Expression<Func<LicenseCodeInfo, bool>> @where, CancellationToken token = default);
 
         public new Task<bool> UpdateRange(List<LicenseCodeInfo> entities, CancellationToken token);
 

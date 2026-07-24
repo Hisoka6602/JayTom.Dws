@@ -115,7 +115,7 @@ namespace JayTom.Dws.Client.ViewModels {
                         }
                     }
                     else {
-                        _syncSettingsService.Disconnect();
+                        await _syncSettingsService.Disconnect();
                     }
                 }
             });
@@ -264,27 +264,23 @@ namespace JayTom.Dws.Client.ViewModels {
             }
             //加载语言选择
 
-            var language = (await _configRepository.
-                FirstOrDefault(f => f.ConfigName.Equals("SelectedLanguage")))
+            var language = (await _configRepository
+                    .FirstOrDefault(f => f.ConfigName.Equals("SelectedLanguage"))
+                    .ConfigureAwait(false))
                 ?.Value;
-            //加载程序设置
-            var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                f.ConfigName.Equals("OtherSettings"));
+            var configInfoModel = await _configRepository
+                .FirstOrDefault(f => f.ConfigName.Equals("OtherSettings"))
+                .ConfigureAwait(false);
+            OtherSettingsDto? otherSettings = null;
+            ImageSource? logoSource = null;
             if (configInfoModel is not null) {
                 try {
-                    var otherSettingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                    if (otherSettingsDto is not null) {
-                        //加载图片
-                        if (File.Exists(otherSettingsDto.ProgramLogoPath)) {
-                            LogoSource = JayTom.Dws.PluginInterface.Utils.Utils.CreateBitmapImage(new Uri(otherSettingsDto.ProgramLogoPath), 148, 148);
+                    otherSettings = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
+                    if (otherSettings is not null) {
+                        if (File.Exists(otherSettings.ProgramLogoPath)) {
+                            logoSource = JayTom.Dws.PluginInterface.Utils.Utils.CreateBitmapImage(
+                                new Uri(otherSettings.ProgramLogoPath), 148, 148);
                         }
-                        ProgramTitle = otherSettingsDto.ProgramTitle;
-                        //最大化
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (obj is Window windows && otherSettingsDto.IsAutoMaximize) {
-                                windows.WindowState = WindowState.Maximized;
-                            }
-                        });
                     }
                 }
                 catch (Exception e) {
@@ -296,9 +292,15 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
             }
 
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+            await Application.Current.Dispatcher.InvokeAsync(() => {
                 NLog.LogManager.GetCurrentClassLogger().Error($"进入主页加载");
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                if (otherSettings is not null) {
+                    LogoSource = logoSource;
+                    ProgramTitle = otherSettings.ProgramTitle;
+                    if (obj is Window windows && otherSettings.IsAutoMaximize) {
+                        windows.WindowState = WindowState.Maximized;
+                    }
+                }
                 //加载配置需要有一个事件通知各个模块
                 //加载体积配置
                 //加载重量配置
@@ -315,11 +317,16 @@ namespace JayTom.Dws.Client.ViewModels {
 
                     // 获取当前屏幕DPI
                     var hdc = GetDC(IntPtr.Zero);
-                    var dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
-                    var dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
+                    var dpiX = 96;
+                    var dpiY = 96;
+                    if (hdc != IntPtr.Zero) {
+                        dpiX = Math.Max(1, GetDeviceCaps(hdc, LOGPIXELSX));
+                        dpiY = Math.Max(1, GetDeviceCaps(hdc, LOGPIXELSY));
+                        ReleaseDC(IntPtr.Zero, hdc);
+                    }
                     // 计算DPI调整后的分辨率
-                    var adjustedScreenWidth = (int)(screenWidth * 96f / dpiX);
-                    var adjustedScreenHeight = (int)(screenHeight * 96f / dpiY);
+                    var adjustedScreenWidth = screenWidth * 96 / dpiX;
+                    var adjustedScreenHeight = screenHeight * 96 / dpiY;
                     if (adjustedScreenWidth < 1820 ||
                         adjustedScreenHeight < 900) {
                         var resolutionConstraintDialog = new ResolutionConstraintDialog();
@@ -339,21 +346,29 @@ namespace JayTom.Dws.Client.ViewModels {
                     }
                 }
 
-                IsLoaded = true;
-
-                //连接同步配置
-
-                _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings") ??
-                                   new SyncSettingsDto();
-                if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url)) {
-                    //连接
-                    if (!_syncSettingsService.IsConnected) {
-                        var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url);
-                        MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
-                    }
-                }
-                NLog.LogManager.GetCurrentClassLogger().Error($"完成主页加载");
             });
+
+            // 等待启动页完成首帧渲染，避免菜单动画在窗口真正显示前就已经结束。
+            await Application.Current.Dispatcher.InvokeAsync(
+                () => { },
+                System.Windows.Threading.DispatcherPriority.ContextIdle);
+            await Task.Delay(300).ConfigureAwait(false);
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                IsLoaded = true;
+            });
+
+            _syncSettingsDto = await _configRepository
+                .FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings")
+                .ConfigureAwait(false) ?? new SyncSettingsDto();
+            if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url)) {
+                if (!_syncSettingsService.IsConnected) {
+                    var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url).ConfigureAwait(false);
+                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                        MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
+                    }, System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+            NLog.LogManager.GetCurrentClassLogger().Error($"完成主页加载");
 
             //连接同步配置
         }

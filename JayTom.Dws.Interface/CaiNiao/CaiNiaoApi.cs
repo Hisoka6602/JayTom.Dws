@@ -234,7 +234,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             }
         }
 
-        public async void UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
 
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
@@ -291,7 +291,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             }
         }
 
-        public async void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
+        public async Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
             object? other = null, CancellationToken token = default) {
             var resultContent = string.Empty;
             var requestTime = DateTime.Now;

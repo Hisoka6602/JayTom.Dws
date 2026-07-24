@@ -49,8 +49,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         public DaHuatechSecurityCamera() {
         }
 
-        public async void Dispose() {
-            await Stop();
+        public void Dispose() {
+            Stop().GetAwaiter().GetResult();
             OnCameraDisconnected(new CameraConnectionEventArgs() {
                 CameraInfo = this.Info
             });
@@ -299,14 +299,14 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             return new KeyValuePair<bool, string>(false, "设备未连接");
         }
 
-        public async void SetParameters(Dictionary<string, object> parameters) {
+        public void SetParameters(Dictionary<string, object> parameters) {
             if (_barCodeReader is not null) {
                 foreach (var parameter in parameters) {
                     switch (parameter.Key) {
                         case "BarcodeReaderParameter": {
                                 //读码器参数
-                                var (key, value) = await _barCodeReader.SetBarcodeReaderParameter(
-                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value);
+                                var (key, value) = _barCodeReader.SetBarcodeReaderParameter(
+                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value).GetAwaiter().GetResult();
                                 if (!key) {
                                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                         Exception = new Exception(value)
@@ -327,9 +327,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public bool IsRealtimeImageEnabled { get; private set; }
 
-        public async void StartRealTimeImage() {
+        public void StartRealTimeImage() {
             if (Info is not null) {
-                var (key, value) = await _baseDaHuatech.StartRealtimePlay(Info.SerialNumber);
+                var (key, value) = _baseDaHuatech.StartRealtimePlay(Info.SerialNumber).GetAwaiter().GetResult();
                 if (key) {
                     IsRealtimeImageEnabled = true;
                 }
@@ -341,9 +341,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
         }
 
-        public async void StopRealTimeImage() {
+        public void StopRealTimeImage() {
             if (Info is not null) {
-                var (key, value) = await _baseDaHuatech.StopRealtimePlay(Info.SerialNumber);
+                var (key, value) = _baseDaHuatech.StopRealtimePlay(Info.SerialNumber).GetAwaiter().GetResult();
                 if (key) {
                     IsRealtimeImageEnabled = false;
                 }
@@ -355,8 +355,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraExceptionOccurred?.Invoke(this, e);
         }
@@ -401,98 +400,70 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            Task.Run(async () => {
-                await Task.Delay(TakePhotoDelay, cancellation);
-                if (Status == CameraStatus.Running) {
-                    try {
-                        await Task.Delay(TakePhotoDelay, cancellation);
-                        await _takePhotoSlim.WaitAsync(cancellation);
-                        await Task.Delay(600, cancellation);
-                        if (!string.IsNullOrEmpty(Info?.SerialNumber)) {
-                            var (key, value) = await _baseDaHuatech.GetRealtimeImage(Info.SerialNumber);
-                            if (!key) {
-                                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                    Exception = new Exception(value)
-                                });
-                            }
-                            _imageMessageQueue.Enqueue(new CameraImageMessageInfo() {
-                                Barcode = barcode,
-                                BarcodeTimestamp = barcodeTimestamp,
-                            });
-                        }
-                    }
-                    catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = e
-                        });
-                    }
-                    finally {
-                        _takePhotoSlim.Release();
-                    }
-                }
-            }, cancellation);
-            return Task.CompletedTask;
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+            await Task.Delay(TakePhotoDelay, cancellation);
+            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
-            Task.Run(async () => {
-                await Task.Delay(delay, cancellation);
-                if (Status == CameraStatus.Running) {
-                    try {
-                        await Task.Delay(TakePhotoDelay, cancellation);
-                        await _takePhotoSlim.WaitAsync(cancellation);
-                        await Task.Delay(200, cancellation);
-                        if (!string.IsNullOrEmpty(Info?.SerialNumber)) {
-                            var (key, value) = await _baseDaHuatech.GetRealtimeImage(Info.SerialNumber);
-                            if (!key) {
-                                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                    Exception = new Exception(value)
-                                });
-                            }
-                            _imageMessageQueue.Enqueue(new CameraImageMessageInfo() {
-                                Barcode = barcode,
-                                BarcodeTimestamp = barcodeTimestamp,
-                            });
-                        }
-                    }
-                    catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = e
-                        });
-                    }
-                    finally {
-                        _takePhotoSlim.Release();
-                    }
-                }
-            }, cancellation);
-            return Task.CompletedTask;
+        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+            await Task.Delay(delay, cancellation);
+            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        private async Task CapturePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation) {
+            if (Status != CameraStatus.Running || string.IsNullOrEmpty(Info?.SerialNumber)) {
+                return;
+            }
+
+            var lockTaken = false;
+            try {
+                await _takePhotoSlim.WaitAsync(cancellation);
+                lockTaken = true;
+                _imageMessageQueue.Enqueue(new CameraImageMessageInfo {
+                    Barcode = barcode,
+                    BarcodeTimestamp = barcodeTimestamp
+                });
+                var (success, message) = await _baseDaHuatech.GetRealtimeImage(Info.SerialNumber);
+                if (!success) {
+                    _imageMessageQueue.TryDequeue(out _);
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new Exception(message)
+                    });
+                }
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) {
+            }
+            catch (Exception e) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = e
+                });
+            }
+            finally {
+                if (lockTaken) {
+                    _takePhotoSlim.Release();
+                }
+            }
+        }
+
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnPhotoTaken(PhotoTakenEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnPhotoTaken(PhotoTakenEventArgs e) {
             PhotoTaken?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             CameraDisconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             CameraUnregistered?.Invoke(this, e);
         }
 

@@ -417,7 +417,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ContinueWith(a => {
+                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ConfigureAwait(false);
                     try {
                         if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
                             //判断存图路径等于空
@@ -469,7 +469,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     catch (Exception e) {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
-                }, stoppingToken);
             }
         }
     }

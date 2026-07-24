@@ -6,15 +6,19 @@ using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
     public class PackageRepository : LocalRepositoryBase<PackageInfoModel>, IPackageRepository {
-        private static SemaphoreSlim _updateSlim = new(1);
+
+        /// <summary>
+        /// 合并同一包裹时间戳的并发缓存加载，防止缓存未命中时重复查询数据库。
+        /// </summary>
+        private readonly ConcurrentDictionary<long, Lazy<Task<PackageInfoModel?>>> _packageLoads = new();
 
         public PackageRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
@@ -34,13 +38,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .Include(b => b.ExitInfo)
                     .Include(b => b.SortingInfo)
                     .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
-                    .Include(b => b.NvrInfos)
                     .Where(where)
                     .OrderByDescending(order)
                     .Skip(pageIndex * pageSize)
@@ -69,13 +67,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .Include(b => b.ExitInfo)
                     .Include(b => b.SortingInfo)
                     .ThenInclude(c => c.InstructionInfos)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
-                    .Include(b => b.AggregatePackagesInfo)
-                    .Include(b => b.NvrInfos)
                     .Where(where)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
@@ -118,29 +110,14 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             }
         }
 
-        public new async Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where,
+        public new async Task<int> Total(Expression<Func<PackageInfoModel, bool>> @where,
             CancellationToken token = default) {
             try {
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return 0;
-                return await dbSet.AsNoTracking()
-                     .Include(b => b.BarCodeInfo)
-                     .Include(b => b.WeightInfo)
-                     .Include(b => b.VolumeInfo)
-                     .Include(b => b.UploadInfo)
-                     .Include(b => b.ExitInfo)
-                     .Include(b => b.SortingInfo)
-                     .ThenInclude(c => c.InstructionInfos)
-                     .Include(b => b.LogisticsInfo)
-                     .Include(b => b.OcrInfo)
-                     .ThenInclude(c => c.OcrDetailedInfos)
-                     .Include(b => b.ImageInfos)
-                     .Include(b => b.CloudVideoUploadInfo)
-                     .Include(b => b.AggregatePackagesInfo)
-                     .Where(where)
-                     .CountAsync(cancellationToken: token);
+                return await dbSet.CountAsync(where, cancellationToken: token);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -149,28 +126,28 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         }
 
         public async Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default) {
-            return await _cache.GetOrCreateAsync(packageTimestamped, async cacheEntry => {
-                // 设置缓存项的过期时间为2分钟
-                cacheEntry.SetSlidingExpiration(TimeSpan.FromMinutes(2));
+            if (_cache.TryGetValue(packageTimestamped, out PackageInfoModel? cachedPackage)) {
+                return cachedPackage;
+            }
 
-                // 如果缓存中没有该键，则调用 FirstOrDefaultInfo 方法从数据库获取数据
-                var result = await FirstOrDefaultInfo(x => x.PackageTimestamped == packageTimestamped, token);
-
-                return result.Key ? result.Value : // 查询成功，返回数据
-                    null; // 查询失败，返回 null
-            });
+            var lazyLoad = _packageLoads.GetOrAdd(packageTimestamped,
+                timestamp => new Lazy<Task<PackageInfoModel?>>(
+                    () => LoadPackageAsync(timestamp, token),
+                    LazyThreadSafetyMode.ExecutionAndPublication));
+            var loadTask = lazyLoad.Value;
+            try {
+                return await loadTask;
+            }
+            finally {
+                _packageLoads.TryRemove(
+                    new KeyValuePair<long, Lazy<Task<PackageInfoModel?>>>(packageTimestamped, lazyLoad));
+            }
         }
 
-        public async void UpDateMemoryCachePackageInfo(PackageInfoModel info, CancellationToken token = default) {
-            try {
-                await _updateSlim.WaitAsync(token);
-                _cache.Set(info.PackageTimestamped, info, new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                _updateSlim.Release();
-            }
+        public void UpDateMemoryCachePackageInfo(PackageInfoModel info, CancellationToken token = default) {
+            token.ThrowIfCancellationRequested();
+            _cache.Set(info.PackageTimestamped, info, new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
         }
 
         /// <summary>
@@ -179,7 +156,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         /// <param name="entity"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public new async Task<bool> Insert([NotNull] PackageInfoModel entity, CancellationToken token) {
+        public new async Task<bool> Insert(PackageInfoModel entity, CancellationToken token) {
             var insert = await base.Insert(entity, token);
             if (insert) {
                 //加入缓存
@@ -187,6 +164,26 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
             }
             return insert;
+        }
+
+        /// <summary>
+        /// 从数据库读取包裹并写入短期内存缓存。
+        /// </summary>
+        /// <param name="packageTimestamped">包裹时间戳。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>读取到的包裹；未找到或查询失败时返回空。</returns>
+        private async Task<PackageInfoModel?> LoadPackageAsync(
+            long packageTimestamped,
+            CancellationToken token) {
+            var result = await FirstOrDefaultInfo(
+                package => package.PackageTimestamped == packageTimestamped, token);
+            if (!result.Key || result.Value is null) {
+                return null;
+            }
+
+            _cache.Set(packageTimestamped, result.Value, new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
+            return result.Value;
         }
     }
 }

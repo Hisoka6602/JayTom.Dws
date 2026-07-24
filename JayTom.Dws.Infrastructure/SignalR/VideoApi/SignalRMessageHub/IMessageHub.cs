@@ -5,17 +5,17 @@
         /// <summary>
         /// 数据汇总
         /// </summary>
-        void DataStatistics();
+        Task DataStatistics();
 
         /// <summary>
         /// 添加或更新一行
         /// </summary>
-        void MessageItem(MessageBarCodeItemInfo info);
+        Task MessageItem(MessageBarCodeItemInfo info);
 
         /// <summary>
         /// 更新节点
         /// </summary>
-        void UpDateNodes();
+        Task UpDateNodes();
     }
 
     public class DataStatistics {

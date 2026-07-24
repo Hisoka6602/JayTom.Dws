@@ -22,13 +22,13 @@ namespace JayTom.Dws.Domain.Repository.VideoApi {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackageOrderByDescending<TOrder>(
-            [NotNull] Expression<Func<PackageInfoModel, bool>> @where,
-            [NotNull] Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
+            Expression<Func<PackageInfoModel, bool>> @where,
+            Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token = default);
 
         Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackage<TOrder>(
-            [NotNull] Expression<Func<PackageInfoModel, bool>> @where,
-            [NotNull] Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
+            Expression<Func<PackageInfoModel, bool>> @where,
+            Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token = default);
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace JayTom.Dws.Domain.Repository.VideoApi {
         /// <param name="where"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, PackageInfoModel>> FirstOrDefaultInfo([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
+        Task<KeyValuePair<bool, PackageInfoModel>> FirstOrDefaultInfo(Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
 
         /// <summary>
         /// 统计符合条件的数据总数
@@ -45,7 +45,7 @@ namespace JayTom.Dws.Domain.Repository.VideoApi {
         /// <param name="where">筛选条件</param>
         /// <param name="token">取消标记</param>
         /// <returns>符合条件的数据总数</returns>
-        new Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
+        new Task<int> Total(Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
 
         /// <summary>
         /// 查询设备信息列表

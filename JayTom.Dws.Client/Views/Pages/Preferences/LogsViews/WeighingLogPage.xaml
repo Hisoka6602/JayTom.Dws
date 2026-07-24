@@ -459,7 +459,8 @@
                         MinHeight="100"
                         Margin="0,5"
                         ItemTemplate="{StaticResource WeighingLogItemTemplate}"
-                        ItemsSource="{Binding WeighingLogItems, UpdateSourceTrigger=PropertyChanged}">
+                        ItemsSource="{Binding WeighingLogItems, Mode=OneWay}"
+                        Style="{StaticResource CustomListBoxStyle}">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Height" Value="Auto" />

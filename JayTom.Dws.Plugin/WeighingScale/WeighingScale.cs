@@ -9,9 +9,11 @@ namespace JayTom.Dws.Plugin.WeighingScale {
     public class WeighingScale : IWeighingScale {
         private ConnectInfo? _connectInfo { get; set; } = new();
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
-        private readonly ConcurrentQueue<float> _weightQueue = new();
+        private readonly Queue<float> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
         private CancellationTokenSource _tokenSource = new();
+        private readonly object _receiveLock = new();
+        private Task? _receiveTask;
         //private string receivedDataBuffer = string.Empty;
 
         //private const string DataEndMarker = "=";
@@ -62,18 +64,14 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                             PortName = info.PortName,
                         };
                         //注册事件
-                        _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
-                            //读数据
-                            await Task.Delay(WeightCalculationParameters.DataInterval);
+                        _serialPort.DataReceived += delegate (object sender, SerialDataReceivedEventArgs args) {
                             try {
-                                var port = (System.IO.Ports.SerialPort)sender;
-
-                                // 读取接收到的数据
-                                var receivedData = port.ReadExisting()/*.Trim().Replace(" ", string.Empty)*/;
+                                string receivedData;
+                                lock (_receiveLock) {
+                                    var port = (System.IO.Ports.SerialPort)sender;
+                                    receivedData = port.ReadExisting();
+                                }
                                 _character.Enqueue(receivedData);
-                                // 添加到接收数据缓冲区
-                                //receivedDataBuffer += receivedData;
-
                                 OnReceived(receivedData);
                             }
                             catch (Exception e) {
@@ -98,9 +96,9 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                     _serialPort.Open();
                     if (_serialPort.IsOpen) {
                         _connectInfo = info;
-                        //注册转换事件
+                        _tokenSource.Cancel();
                         _tokenSource = new();
-                        Task.Factory.StartNew(ProcessReceivedData, TaskCreationOptions.LongRunning);
+                        _receiveTask = Task.Run(() => ProcessReceivedData(_tokenSource.Token));
                         OnConnected(this);
                         return true;
                     }
@@ -116,17 +114,23 @@ namespace JayTom.Dws.Plugin.WeighingScale {
 
         public void Dispose() {
             _tokenSource.Cancel();
+            try {
+                _receiveTask?.GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException) {
+            }
             _serialPort?.Close();
             _serialPort?.Dispose();
         }
 
         public bool Initialization() {
-            throw new NotImplementedException();
+            Initialized?.Invoke(this, this);
+            return true;
         }
 
-        private async void ProcessReceivedData() {
+        private async Task ProcessReceivedData(CancellationToken token) {
             var dataBuffer = string.Empty;
-            while (!_tokenSource.Token.IsCancellationRequested) {
+            while (!token.IsCancellationRequested) {
                 //根据标识符取出指定长度的字符
                 var dequeue = _character.TryDequeue(out var buffResult);
                 if (dequeue) {
@@ -159,7 +163,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                     }
                 }
 
-                await Task.Delay(1);
+                await Task.Delay(1, token);
                 /*var indexOf = receivedDataBuffer.IndexOf(Identifier, StringComparison.Ordinal);
                 if (IsReversed) {
                     //如果反转
@@ -206,7 +210,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                     _weightQueue.Enqueue(result);
                     if (_weightQueue.Count > 0 && _weightQueue.Count > WeightCalculationParameters.BalanceCount) {
                         //删除一个
-                        _weightQueue.TryDequeue(out _);
+                        _weightQueue.Dequeue();
                     }
 
                     if (_weightQueue.Max() - _weightQueue.Min() <= WeightCalculationParameters.BalanceQty &&

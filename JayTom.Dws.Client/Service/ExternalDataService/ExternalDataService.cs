@@ -311,23 +311,19 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
             }
         }
 
-        protected virtual async void OnExternalDataException(Exception e) {
-            await Task.Yield();
+        protected virtual void OnExternalDataException(Exception e) {
             ExternalDataException?.Invoke(this, e);
         }
 
-        protected virtual async void OnDataSourceEnabled(ExternalDataSourceEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnDataSourceEnabled(ExternalDataSourceEventArgs e) {
             DataSourceEnabled?.Invoke(this, e);
         }
 
-        protected virtual async void OnVolumeReceived(ExternalVolumeInputEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnVolumeReceived(ExternalVolumeInputEventArgs e) {
             VolumeReceived?.Invoke(this, e);
         }
 
-        protected virtual async void OnContentInputReceived(ExternalContentInputEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnContentInputReceived(ExternalContentInputEventArgs e) {
             ContentInputReceived?.Invoke(this, e);
         }
     }

@@ -61,12 +61,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
         public event EventHandler<DimensionVolumeInfo>? VolumeCaptured;
 
-        private static bool _isInitialized = false;
-        private static bool _isRuning = false;
-        private static Task? _volumeThread;
-        private static CancellationTokenSource? _cancellationTokenSource;
-        private byte[] _realTimeImageData = new byte[1280 * 800 * 3];
-        private static int _deviceNum = 0;
+        private bool _isInitialized;
+        private bool _isRuning;
+        private Task? _volumeThread;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private readonly byte[] _realTimeImageData = new byte[1280 * 800 * 3];
+        private int _deviceNum;
 
         public async Task<KeyValuePair<bool, int>> Initialize() {
             if (_isInitialized) {
@@ -91,9 +91,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             return new KeyValuePair<bool, int>(false, 0);
         }
 
-        public async void Dispose() {
-            //释放
-            await StopVolumeCapture();
+        public void Dispose() {
+            StopVolumeCapture().GetAwaiter().GetResult();
             CloseDevice();//关闭设备
             KillProcess();//关闭后台应用程序
             _isInitialized = false;
@@ -104,23 +103,29 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             if (!_isRuning) {
                 _isRuning = true;
                 _cancellationTokenSource = new CancellationTokenSource();
-                _volumeThread = Task.Factory.StartNew(async () => {
-                    await VolumeThread(_cancellationTokenSource.Token);
-                }, _cancellationTokenSource.Token);
+                _volumeThread = Task.Run(
+                    () => VolumeThread(_cancellationTokenSource.Token),
+                    _cancellationTokenSource.Token);
             }
         }
 
         public async Task StopVolumeCapture() {
             _cancellationTokenSource?.Cancel();
-            await Task.Delay(200);
             if (_volumeThread != null) {
-                await _volumeThread;
-                _volumeThread?.Dispose();
+                try {
+                    await _volumeThread;
+                }
+                catch (OperationCanceledException) {
+                }
+                _volumeThread.Dispose();
+                _volumeThread = null;
             }
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
             _isRuning = false;
         }
 
-        public async Task TriggerMeasurementPhotoAsync(CancellationToken cancellation = default) {
+        public Task TriggerMeasurementPhotoAsync(CancellationToken cancellation = default) {
             try {
                 var rec = ComputeOnceNoBlock(); //触发计算一次
                 var dimensionData = new float[3]; //存储长、宽、高数据
@@ -128,7 +133,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                 var len = GetDmsResult(dimensionData, imageData); //获取测量结果与测量结果的图像
                 if (len > 0) {
                     using var bmpStream = new MemoryStream(imageData, 0, len);
-                    var image = System.Drawing.Image.FromStream(bmpStream);
+                    using var decodedImage = System.Drawing.Image.FromStream(bmpStream);
+                    var image = new Bitmap(decodedImage);
                     // 处理图像
                     OnVolumeCaptured(new DimensionVolumeInfo() {
                         Length = dimensionData[0],
@@ -141,9 +147,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-            finally {
-                await Task.Delay(50, cancellation);
-            }
+            return Task.CompletedTask;
         }
 
         public async Task VolumeThread(CancellationToken token) {
@@ -157,7 +161,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                         var len = GetDmsResult(dimensionData, imageData); //获取测量结果与测量结果的图像
                         if (len > 0) {
                             using var bmpStream = new MemoryStream(imageData, 0, len);
-                            var image = System.Drawing.Image.FromStream(bmpStream);
+                            using var decodedImage = System.Drawing.Image.FromStream(bmpStream);
+                            var image = new Bitmap(decodedImage);
                             // 处理图像
                             OnVolumeCaptured(new DimensionVolumeInfo() {
                                 Length = dimensionData[0],
@@ -174,6 +179,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                         await Task.Delay(50, token);
                     }
                 }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) {
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");

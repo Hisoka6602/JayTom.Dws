@@ -1,12 +1,11 @@
 ﻿using System;
 using Prism.Events;
-using System.Diagnostics;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 
@@ -17,40 +16,47 @@ namespace JayTom.Dws.Client.EventMediators {
 
         public static EventAggregator Instance => _instance.Value;
 
-        private readonly ConcurrentDictionary<Type, List<Action<object>>> _eventSubscribers = new();
         private readonly IEventAggregator _eventAggregator = new Prism.Events.EventAggregator();
         private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
 
         public void Publish<TEventType>(TEventType eventData) {
-            var eventType = typeof(TEventType);
-            if (_eventSubscribers.TryGetValue(eventType, out var eventSubscriber)) {
-                foreach (var subscriber in eventSubscriber) {
-                    if (eventData != null) subscriber.Invoke(eventData);
-                }
-            }
-            /*var eventType = typeof(TEventType);
-            if (_eventSubscribers.TryGetValue(eventType, out var eventSubscriber)) {
-                var stopwatch = Stopwatch.StartNew();
-
-                foreach (var subscriber in eventSubscriber.ToList()) {
-                    stopwatch.Restart();
-                    await Task.Run(() => {
-                        if (eventData != null) subscriber.Invoke(eventData);
-                    });
-                    stopwatch.Stop();
-
-                    Debug.WriteLine($"Subscriber invoked in {stopwatch.ElapsedMilliseconds} ms");
-                }
-            }*/
-            //_eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
         }
 
         public void Subscribe<TEventType>(Action<TEventType> action) {
-            var eventType = typeof(TEventType);
-            if (!_eventSubscribers.ContainsKey(eventType)) {
-                _eventSubscribers[eventType] = new List<Action<object>>();
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
+                .Subscribe(action, ThreadOption.PublisherThread, true);
+        }
+
+        /// <summary>
+        /// 订阅异步事件处理器，并统一观察处理任务中的异常。
+        /// </summary>
+        /// <typeparam name="TEventType">事件数据类型。</typeparam>
+        /// <param name="action">异步事件处理器。</param>
+        public void Subscribe<TEventType>(Func<TEventType, Task> action) {
+            ArgumentNullException.ThrowIfNull(action);
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
+                .Subscribe(eventData => {
+                    _ = InvokeAsyncSubscriber(action, eventData);
+                }, ThreadOption.PublisherThread, true);
+        }
+
+        /// <summary>
+        /// 执行异步订阅并记录未处理异常，防止异常越过事件发布边界。
+        /// </summary>
+        /// <typeparam name="TEventType">事件数据类型。</typeparam>
+        /// <param name="action">异步事件处理器。</param>
+        /// <param name="eventData">事件数据。</param>
+        private static async Task InvokeAsyncSubscriber<TEventType>(
+            Func<TEventType, Task> action,
+            TEventType eventData) {
+            try {
+                await action(eventData);
             }
-            _eventSubscribers[eventType].Add(obj => action((TEventType)obj));
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(exception, "异步事件订阅处理失败");
+            }
         }
 
         public void PublishPackage<TEventType>(TEventType eventData) {
@@ -58,7 +64,7 @@ namespace JayTom.Dws.Client.EventMediators {
         }
 
         public void SubscribePackage<TEventType>(Action<TEventType> action) {
-            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, false);
+            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, true);
         }
 
         public void Unsubscribe<TEventType>(Action<TEventType> action) {

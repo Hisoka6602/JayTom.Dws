@@ -132,7 +132,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApi {
             }
         }
 
-        public new async Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where,
+        public new async Task<int> Total(Expression<Func<PackageInfoModel, bool>> @where,
             CancellationToken token = default) {
             try {
                 //联表

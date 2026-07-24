@@ -66,16 +66,26 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
         }
 
         private async Task OnReconnecting(Exception? arg) {
-            await Task.Yield();
-            Reconnecting?.Invoke(arg ?? new Exception());
+            var handlers = Reconnecting;
+            if (handlers is null) {
+                return;
+            }
+            foreach (Func<Exception, Task> handler in handlers.GetInvocationList()) {
+                await handler(arg ?? new Exception()).ConfigureAwait(false);
+            }
         }
 
         private async Task OnReconnected(string? arg) {
-            await Task.Yield();
             NLog.LogManager.GetCurrentClassLogger().Error($"重连成功:id={_hubConnection.ConnectionId}");
             IsConnected = true;
             ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
-            Reconnected?.Invoke(arg ?? string.Empty);
+            var handlers = Reconnected;
+            if (handlers is null) {
+                return;
+            }
+            foreach (Func<string, Task> handler in handlers.GetInvocationList()) {
+                await handler(arg ?? string.Empty).ConfigureAwait(false);
+            }
         }
 
         public async Task StopAsync(CancellationToken token = default) {
@@ -111,8 +121,13 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
         }
 
         protected virtual async Task OnReceiveMessage(ReceiveMessageInfo arg) {
-            await Task.Yield();
-            ReceiveMessage?.Invoke(arg);
+            var handlers = ReceiveMessage;
+            if (handlers is null) {
+                return;
+            }
+            foreach (Func<ReceiveMessageInfo, Task> handler in handlers.GetInvocationList()) {
+                await handler(arg).ConfigureAwait(false);
+            }
         }
 
         private void RegisterMethod(HubConnection hubConnection, string methodName, ReceiveMessageType type) {
@@ -126,9 +141,13 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
         }
 
         protected virtual async Task OnClosed(Exception? arg) {
-            await Task.Yield();
             IsConnected = false;
-            Closed?.Invoke(arg ?? new Exception());
+            var handlers = Closed;
+            if (handlers is not null) {
+                foreach (Func<Exception, Task> handler in handlers.GetInvocationList()) {
+                    await handler(arg ?? new Exception()).ConfigureAwait(false);
+                }
+            }
             if (AutoReconnect && !_isReconnecting) {
                 _isReconnecting = true;
                 while (!IsConnected) {

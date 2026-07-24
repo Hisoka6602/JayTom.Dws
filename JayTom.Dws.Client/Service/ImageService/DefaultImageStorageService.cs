@@ -24,8 +24,8 @@ namespace JayTom.Dws.Client.Service.ImageService {
         private readonly ISaveImage _saveImage;
         private readonly IConfigRepository _configRepository;
         private readonly IFtp _ftp;
-        private SemaphoreSlim _semaphore = new(1);
-        private SemaphoreSlim _saveSemaphore = new(2);
+        private readonly SemaphoreSlim _semaphore = new(1);
+        private readonly SemaphoreSlim _saveSemaphore = new(2);
         private VolumeSettingsDto? _volumeSettingsDto;
 
         public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
@@ -37,21 +37,37 @@ namespace JayTom.Dws.Client.Service.ImageService {
                 switch (settings) {
                     case SettingsChangedEvent { SettingsName: "SaveImageSettings" } model: {
                             await _semaphore.WaitAsync();
-                            ImageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
-                            if (ImageSettingsDto.IsFtpUploadEnabled) {
-                                var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
-                                    ImageSettingsDto.FtpInfo.Port,
-                                    ImageSettingsDto.FtpInfo.Username,
-                                    ImageSettingsDto.FtpInfo.Password);
-                                if (!key) {
-                                    OnImageSaveFailed(new Exception(value));
+                            try {
+                                ImageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
+                                if (ImageSettingsDto.IsFtpUploadEnabled) {
+                                    var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
+                                        ImageSettingsDto.FtpInfo.Port,
+                                        ImageSettingsDto.FtpInfo.Username,
+                                        ImageSettingsDto.FtpInfo.Password);
+                                    if (!key) {
+                                        OnImageSaveFailed(new Exception(value));
+                                    }
                                 }
                             }
-                            _semaphore.Release();
+                            catch (Exception exception) {
+                                NLog.LogManager.GetCurrentClassLogger()
+                                    .Error(exception, "重新加载存图配置失败");
+                            }
+                            finally {
+                                _semaphore.Release();
+                            }
                             break;
                         }
                     case SettingsChangedEvent { SettingsName: "VolumeSettings" } volumeSettings:
-                        _volumeSettingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(volumeSettings.SettingsName) ?? new VolumeSettingsDto();
+                        try {
+                            _volumeSettingsDto = await _configRepository
+                                .FirstOrDefaultEntity<VolumeSettingsDto>(volumeSettings.SettingsName)
+                                ?? new VolumeSettingsDto();
+                        }
+                        catch (Exception exception) {
+                            NLog.LogManager.GetCurrentClassLogger()
+                                .Error(exception, "重新加载体积配置失败");
+                        }
                         break;
                 }
             });
@@ -67,8 +83,8 @@ namespace JayTom.Dws.Client.Service.ImageService {
             float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
             if (image is null) return;
             ImageSettingsDto ??= await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken) ?? new ImageSettingsDto();
+            await _semaphore.WaitAsync(cancellationToken);
             try {
-                await _semaphore.WaitAsync(cancellationToken);
                 if (ImageSettingsDto.IsFtpUploadEnabled) {
                     var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
                         ImageSettingsDto.FtpInfo.Port,
@@ -86,8 +102,10 @@ namespace JayTom.Dws.Client.Service.ImageService {
 
             //开始保存
             //获取存图目录(根目录+模板子目录)
+            var saveLockTaken = false;
             try {
                 await _saveSemaphore.WaitAsync(cancellationToken);
+                saveLockTaken = true;
                 var pathList = ImageSettingsDto.SubDirectoryTemplate?
                     .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
@@ -201,7 +219,9 @@ namespace JayTom.Dws.Client.Service.ImageService {
             }
             finally {
                 image?.Dispose();
-                _saveSemaphore.Release();
+                if (saveLockTaken) {
+                    _saveSemaphore.Release();
+                }
             }
         }
 
@@ -210,8 +230,8 @@ namespace JayTom.Dws.Client.Service.ImageService {
             CancellationToken cancellationToken = default) {
             if (image is null) return;
             ImageSettingsDto ??= await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken) ?? new ImageSettingsDto();
+            await _semaphore.WaitAsync(cancellationToken);
             try {
-                await _semaphore.WaitAsync(cancellationToken);
                 if (ImageSettingsDto.IsFtpUploadEnabled) {
                     var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
                         ImageSettingsDto.FtpInfo.Port,
@@ -229,8 +249,10 @@ namespace JayTom.Dws.Client.Service.ImageService {
 
             //开始保存
             //获取存图目录(根目录+模板子目录)
+            var saveLockTaken = false;
             try {
                 await _saveSemaphore.WaitAsync(cancellationToken);
+                saveLockTaken = true;
                 var pathList = ImageSettingsDto.SubDirectoryTemplate?
                     .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
@@ -346,7 +368,9 @@ namespace JayTom.Dws.Client.Service.ImageService {
             }
             finally {
                 image?.Dispose();
-                _saveSemaphore.Release();
+                if (saveLockTaken) {
+                    _saveSemaphore.Release();
+                }
             }
         }
 
@@ -448,13 +472,11 @@ namespace JayTom.Dws.Client.Service.ImageService {
             };
         }
 
-        protected virtual async void OnImageSaveFailed(Exception e) {
-            await Task.Yield();
+        protected virtual void OnImageSaveFailed(Exception e) {
             ImageSaveFailed?.Invoke(this, e);
         }
 
-        protected virtual async void OnImageSaved(ImageSavedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnImageSaved(ImageSavedEventArgs e) {
             ImageSaved?.Invoke(this, e);
         }
     }

@@ -12,8 +12,8 @@ namespace JayTom.Dws.Domain.Repository {
         /// <param name="entity"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> Insert([NotNull] IRepository<T> dataRepository,
-            [NotNull] SemaphoreSlim insertSlim, [NotNull] T entity, CancellationToken token);
+        Task<bool> Insert(IRepository<T> dataRepository,
+            SemaphoreSlim insertSlim, T entity, CancellationToken token);
 
         /// <summary>
         /// 备份式插入(集合)
@@ -23,8 +23,8 @@ namespace JayTom.Dws.Domain.Repository {
         /// <param name="entities"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> InsertRange([NotNull] IRepository<T> dataRepository,
-            [NotNull] SemaphoreSlim insertSlim, [NotNull] List<T> entities, CancellationToken token);
+        Task<bool> InsertRange(IRepository<T> dataRepository,
+            SemaphoreSlim insertSlim, List<T> entities, CancellationToken token);
 
         /// <summary>
         /// 备份式(更新或插入)
@@ -34,8 +34,8 @@ namespace JayTom.Dws.Domain.Repository {
         /// <param name="entity"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> InsertOrUpdate([NotNull] IRepository<T> dataRepository,
-            [NotNull] SemaphoreSlim insertSlim, [NotNull] T entity, CancellationToken token);
+        Task<bool> InsertOrUpdate(IRepository<T> dataRepository,
+            SemaphoreSlim insertSlim, T entity, CancellationToken token);
 
         /// <summary>
         /// 备份式(更新或批量)
@@ -45,8 +45,8 @@ namespace JayTom.Dws.Domain.Repository {
         /// <param name="entities"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<bool> InsertOrUpdateRange([NotNull] IRepository<T> dataRepository,
-            [NotNull] SemaphoreSlim insertSlim, [NotNull] List<T> entities,
+        Task<bool> InsertOrUpdateRange(IRepository<T> dataRepository,
+            SemaphoreSlim insertSlim, List<T> entities,
             CancellationToken token);
     }
 }

@@ -12,8 +12,8 @@ namespace JayTom.Dws.Domain.Repository.License {
 
     public interface ILicensePermissionTemplateRepository : IMemoryCacheRepository<LicensePermissionTemplateInfo> {
 
-        public Task<KeyValuePair<bool, object>> Details([NotNull] Expression<Func<LicensePermissionTemplateInfo, bool>> @where, CancellationToken token = default);
+        public Task<KeyValuePair<bool, object>> Details(Expression<Func<LicensePermissionTemplateInfo, bool>> @where, CancellationToken token = default);
 
-        public Task<KeyValuePair<bool, object>> FirstDetails([NotNull] Expression<Func<LicensePermissionTemplateInfo, bool>> @where, CancellationToken token = default);
+        public Task<KeyValuePair<bool, object>> FirstDetails(Expression<Func<LicensePermissionTemplateInfo, bool>> @where, CancellationToken token = default);
     }
 }

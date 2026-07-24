@@ -325,7 +325,7 @@
                                 Style="{StaticResource MaterialDesignComboBox}">
                                 <b:Interaction.Triggers>
                                     <b:EventTrigger EventName="SelectionChanged">
-                                        <mvvm:InvokeCommandAction Command="{Binding ChannelSelectionChangedCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ComboBox}}, Path=SelectionChangedEventArgs}" />
+                                        <mvvm:InvokeCommandAction Command="{Binding ChannelSelectionChangedCommand}" />
                                     </b:EventTrigger>
                                 </b:Interaction.Triggers>
                             </ComboBox>

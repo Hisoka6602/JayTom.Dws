@@ -370,7 +370,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
             }
 
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromMilliseconds(200), stoppingToken).ContinueWith(a => {
+                await Task.Delay(TimeSpan.FromMilliseconds(200), stoppingToken).ConfigureAwait(false);
                     try {
                         //移除包裹
                         if (_createPackageSettingsDto.PackageRemoveMethods ==
@@ -389,7 +389,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                     catch (Exception e) {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
-                }, stoppingToken);
             }
         }
     }

@@ -51,7 +51,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
             return new KeyValuePair<bool, List<string>>(false, new List<string>());
         }
 
-        public new async Task<bool> Update([NotNull] VideoScanNodeInfoModel entity, CancellationToken token = default) {
+        public new async Task<bool> Update(VideoScanNodeInfoModel entity, CancellationToken token = default) {
             IDbContextTransaction? contextTransaction = null;
             var serializeObject = JsonConvert.SerializeObject(entity);
             try {

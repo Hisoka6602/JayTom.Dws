@@ -47,14 +47,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IImageRepository _imageRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExitInfoRepository _exitInfoRepository;
-        private ConcurrentQueue<PackageInfoModel> _insertItems = new();
-        private ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
-        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
-        private ConcurrentQueue<InstructionReceived> _instructionItems = new();
-        private ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
-        private ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
+        private readonly ConcurrentQueue<PackageInfoModel> _insertItems = new();
+        private readonly ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
+        private readonly ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
+        private readonly ConcurrentQueue<InstructionReceived> _instructionItems = new();
+        private readonly ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
+        private readonly ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
 
-        private static bool _isWindowsClose;
+        /// <summary>
+        /// 在任意持久化队列产生数据时唤醒后台消费者。
+        /// </summary>
+        private readonly SemaphoreSlim _workSignal = new(0, 1);
+
+        private CameraMetadata[] _cameraMetadata = Array.Empty<CameraMetadata>();
+        private int _isWindowsClose;
 
         public DataProcessingBackgroundService(IPackageRepository packageRepository,
             IImageStorageService imageStorageService, ISortingRepository sortingRepository,
@@ -72,7 +78,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args) {
                 //保存后触发
 
-                _savedImageItems.Enqueue(new SavedImageInfo() {
+                EnqueueWork(_savedImageItems, new SavedImageInfo() {
                     PackageTimestamp = args.PackageTimestamp,
                     BarCode = args.BarCode,
                     FilePath = args.FilePath,
@@ -81,11 +87,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ScanTime = args.ScanTime,
                 });
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is { } model) {
                     //添加
-                    _insertItems.Enqueue(new PackageInfoModel() {
+                    EnqueueWork(_insertItems, new PackageInfoModel() {
                         BarCodeInfo = model.BarCodeInfo,
                         WeightInfo = model.WeightInfo,
                         VolumeInfo = model.VolumeInfo,
@@ -94,50 +99,51 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is { } model) {
-                    _updateResponseItems.Enqueue(model);
+                    EnqueueWork(_updateResponseItems, model);
                 }
             });
-            EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<InstructionReceived>(item => {
                 if (item is { } model) {
-                    _instructionItems.Enqueue(model);
+                    EnqueueWork(_instructionItems, model);
                 }
             });
             EventAggregator.Instance.Subscribe<ExceptionSortingReceived>(item => {
                 if (item is { } model) {
-                    _exceptionSortingItems.Enqueue(model);
+                    EnqueueWork(_exceptionSortingItems, model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
-                    _isWindowsClose = true;
+                    Interlocked.Exchange(ref _isWindowsClose, 1);
+                    SignalWork();
                 }
             });
 
-            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item => {
                 if (item is { } info) {
-                    _packageExitUpdateItems.Enqueue(info);
+                    EnqueueWork(_packageExitUpdateItems, info);
                 }
             });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
+            // 相机名称是配置数据，只在进入持久化循环前加载一次。热循环只查内存快照。
+            var cameraConfigs = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
+            Volatile.Write(ref _cameraMetadata, cameraConfigs
+                .Select(camera => new CameraMetadata(camera.SerialNumber, camera.Name, camera.CustomName))
+                .ToArray());
+
+            while (!stoppingToken.IsCancellationRequested && Volatile.Read(ref _isWindowsClose) == 0) {
                 try {
-                    await Task.Delay(TimeSpan.FromMilliseconds(80), stoppingToken)
-                        .ContinueWith(async a => {
-                            if (a.IsCompletedSuccessfully) {
+                    await _workSignal.WaitAsync(stoppingToken);
                                 var tryDequeue = _insertItems.TryDequeue(out var insertModel);
                                 if (tryDequeue && insertModel is not null) {
                                     var insert = await _packageRepository.Insert(insertModel, stoppingToken);
                                     if (!insert) {
                                         LogManager.GetCurrentClassLogger().Error($"数据保存失败,正在重试...");
-                                        _insertItems.Enqueue(insertModel);
+                                        EnqueueWork(_insertItems, insertModel);
                                     }
                                 }
 
@@ -169,11 +175,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }, stoppingToken);
 
                                         if (!insert) {
-                                            _updateResponseItems.Enqueue(responseModel);
+                                            EnqueueWork(_updateResponseItems, responseModel);
                                         }
                                     }
                                     else {
-                                        _updateResponseItems.Enqueue(responseModel);
+                                        EnqueueWork(_updateResponseItems, responseModel);
                                     }
                                 }
                                 //更新图片路径
@@ -189,11 +195,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                         if (packageInfo is { Id: > 0 } packageInfoModel) {
                                             //获取相机信息
-                                            var cameraConfigInfoModel =
-                                                await _barcodeScannerCameraConfigRepository.FirstOrDefault(
-                                                    f =>
-                                                        f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber),
-                                                    stoppingToken);
+                                            var cameraConfigInfoModel = Volatile.Read(ref _cameraMetadata)
+                                                .FirstOrDefault(camera =>
+                                                    camera.SerialNumber.Equals(
+                                                        savedImageInfo.CameraSerialNumber,
+                                                        StringComparison.Ordinal));
 
                                             var insert = await _imageRepository.Insert(new ImageInfoModel() {
                                                 PackageId = packageInfoModel.Id,
@@ -205,11 +211,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             }, stoppingToken);
 
                                             if (!insert) {
-                                                _savedImageItems.Enqueue(savedImageInfo);
+                                                EnqueueWork(_savedImageItems, savedImageInfo);
                                             }
                                         }
                                         else {
-                                            _savedImageItems.Enqueue(savedImageInfo);
+                                            EnqueueWork(_savedImageItems, savedImageInfo);
                                         }
                                     }
                                     else if (savedImageInfo.ImageType == SaveImageType.PanoramaImage) {
@@ -220,11 +226,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(savedImageInfo.PackageTimestamp, stoppingToken);
 
                                         if (packageInfo is { Id: > 0 } packageInfoModel) {
-                                            var cameraConfigInfoModel =
-                                                await _barcodeScannerCameraConfigRepository.FirstOrDefault(
-                                                    f =>
-                                                        f.SerialNumber.Equals(savedImageInfo.CameraSerialNumber),
-                                                    stoppingToken);
+                                            var cameraConfigInfoModel = Volatile.Read(ref _cameraMetadata)
+                                                .FirstOrDefault(camera =>
+                                                    camera.SerialNumber.Equals(
+                                                        savedImageInfo.CameraSerialNumber,
+                                                        StringComparison.Ordinal));
 
                                             var insert = await _imageRepository.Insert(new ImageInfoModel() {
                                                 PackageId = packageInfoModel.Id,
@@ -236,11 +242,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             }, stoppingToken);
 
                                             if (!insert) {
-                                                _savedImageItems.Enqueue(savedImageInfo);
+                                                EnqueueWork(_savedImageItems, savedImageInfo);
                                             }
                                         }
                                         else {
-                                            _savedImageItems.Enqueue(savedImageInfo);
+                                            EnqueueWork(_savedImageItems, savedImageInfo);
                                         }
                                     }
                                 }
@@ -312,12 +318,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         }
 
                                         if (!isSortingUpdateInfo) {
-                                            _instructionItems.Enqueue(sortingModel);
+                                            EnqueueWork(_instructionItems, sortingModel);
                                         }
                                         _packageRepository.UpDateMemoryCachePackageInfo(packageInfo, stoppingToken);
                                     }
                                     else {
-                                        _instructionItems.Enqueue(sortingModel);
+                                        EnqueueWork(_instructionItems, sortingModel);
                                     }
                                 }
                                 //异常更新
@@ -341,11 +347,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             PackageCloudAbnormalSortingType.None;
                                         var update = await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
                                         if (!update) {
-                                            _exceptionSortingItems.Enqueue(exceptionSortingModel);
+                                            EnqueueWork(_exceptionSortingItems, exceptionSortingModel);
                                         }
                                     }
                                     else {
-                                        _exceptionSortingItems.Enqueue(exceptionSortingModel);
+                                        EnqueueWork(_exceptionSortingItems, exceptionSortingModel);
                                     }
                                 }
 
@@ -380,7 +386,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                             var update = await _exitInfoRepository.Update(packageInfo.ExitInfo, stoppingToken);
                                             if (!update) {
-                                                _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                                EnqueueWork(_packageExitUpdateItems, packageExitUpdateModel);
                                                 return;
                                             }
                                         }
@@ -403,7 +409,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                                             var insert = await _exitInfoRepository.Insert(packageInfo.ExitInfo, stoppingToken);
                                             if (!insert) {
-                                                _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                                EnqueueWork(_packageExitUpdateItems, packageExitUpdateModel);
                                                 return;
                                             }
                                         }
@@ -428,17 +434,62 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         _packageRepository.UpDateMemoryCachePackageInfo(packageInfo, stoppingToken);
                                     }
                                     else {
-                                        _packageExitUpdateItems.Enqueue(packageExitUpdateModel);
+                                        EnqueueWork(_packageExitUpdateItems, packageExitUpdateModel);
                                     }
                                 }
-                            }
-                        }, stoppingToken)
-                        .Unwrap();
+                                if (HasPendingWork()) {
+                                    SignalWork();
+                                }
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"数据存储异常,正在重试:{e}");
+                    if (HasPendingWork()) {
+                        SignalWork();
+                    }
                 }
             }
         }
+
+        /// <summary>
+        /// 将数据加入指定队列并通知后台消费者。
+        /// </summary>
+        /// <typeparam name="T">队列元素类型。</typeparam>
+        /// <param name="queue">目标并发队列。</param>
+        /// <param name="item">需要持久化的数据。</param>
+        private void EnqueueWork<T>(ConcurrentQueue<T> queue, T item) {
+            queue.Enqueue(item);
+            SignalWork();
+        }
+
+        /// <summary>
+        /// 尝试发送一次无计数累积的工作通知。
+        /// </summary>
+        private void SignalWork() {
+            if (_workSignal.CurrentCount != 0) {
+                return;
+            }
+
+            try {
+                _workSignal.Release();
+            }
+            catch (SemaphoreFullException) {
+                // 其他生产者已经完成通知，无需重复累积。
+            }
+        }
+
+        /// <summary>
+        /// 判断任意持久化队列中是否仍有待处理数据。
+        /// </summary>
+        /// <returns>存在待处理数据时返回 true。</returns>
+        private bool HasPendingWork() {
+            return !_insertItems.IsEmpty ||
+                   !_updateResponseItems.IsEmpty ||
+                   !_savedImageItems.IsEmpty ||
+                   !_instructionItems.IsEmpty ||
+                   !_exceptionSortingItems.IsEmpty ||
+                   !_packageExitUpdateItems.IsEmpty;
+        }
+
+        private sealed record CameraMetadata(string SerialNumber, string Name, string CustomName);
     }
 }

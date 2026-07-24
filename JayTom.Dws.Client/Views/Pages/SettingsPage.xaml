@@ -7,11 +7,15 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mvvm="http://prismlibrary.com/"
+    xmlns:dialog="clr-namespace:JayTom.Dws.Client.Views.Dialog"
     Name="SettingPage"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     Focusable="False"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <Page.Resources>
+        <materialDesign:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Page.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="SettingPage">
             <b:InvokeCommandAction Command="{Binding LoadedCommand}" CommandParameter="{Binding ElementName=RegionFrame}" />
@@ -74,6 +78,44 @@
                 Visibility="Visible">
                 Hisoka
             </TextBlock>
+
+            <!--  常驻加载遮罩不依赖 DialogHost 的注册时序，避免首次导航出现宿主未加载异常。  -->
+            <Grid
+                Grid.ColumnSpan="2"
+                Panel.ZIndex="1000"
+                Background="#99000000"
+                IsHitTestVisible="{Binding IsLoading}"
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.Style>
+                    <Style TargetType="{x:Type Grid}">
+                        <Setter Property="Opacity" Value="0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="Opacity" Value="1" />
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="0"
+                                                To="1"
+                                                Duration="0:0:0.18">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <dialog:LoadingDialog
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    DataContext="{Binding LoadingDialog}" />
+            </Grid>
         </Grid>
     </materialDesign:DialogHost>
 </Page>

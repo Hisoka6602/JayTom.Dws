@@ -75,13 +75,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly IConfigRepository _configRepository;
         private readonly IImageStorageService _imageStorageService;
         private readonly IMemoryCache _memoryCache;
-        private ConcurrentQueue<SubmitItemInfo> _submitItems = new();
+        private readonly ConcurrentQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
         private static SzjyApi.ApiParameter _szjyApiParam = new();
         private static WdtWmsApi.ApiParameter _wdtWmsApiParameter = new();
         private static WdtFlagshipApi.ApiParameter _wdtFlagshipApiParameter = new();
         private static JtExpressApi.ApiParameter _jtExpressApiParam = new();
+
+        /// <summary>
+        /// 极兔极昼接口参数快照。
+        /// </summary>
+        private static JtPolarDayApi.ApiParameter _jtPolarDayApiParam = new();
         private static RoutDataApi.ApiParameters _rstDataApiParam = new();
         private static CaiNiaoApi.ApiParameters _caiNiaoApiParam = new();
         private static EshippingitApi.ApiParameters _eshippingitApiParam = new();
@@ -90,19 +95,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
         private static JushuitanErpApi.ApiParameters _jushuitanErpParam = new();
         private static ZhouYiApi.ApiParameters _zhouYiApiParam = new();
-        private ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
+        private readonly ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
-        private ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
-        private SemaphoreSlim _takePackageSlim = new(1);
-        private ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
+        private readonly ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
+        private readonly SemaphoreSlim _takePackageSlim = new(1, 1);
+        private readonly SemaphoreSlim _settingsUpdateGate = new(1, 1);
+        private readonly ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
         private JtExpressDto _jtExpressDto = new();
         private IDataUploader? _submissionUploader;
 
         #region 非通用版本变量(临时)
 
         private static string _sunnenApiPackage = string.Empty;
-        private static bool _isWindowsClose;
+        private bool _isWindowsClose;
 
         #endregion 非通用版本变量(临时)
 
@@ -114,50 +120,58 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _imageStorageService = imageStorageService;
             _memoryCache = memoryCache;
             //包裹信息完成
-            EventAggregator.Instance.Subscribe<PackageInfo>(async item => {
+            EventAggregator.Instance.Subscribe<PackageInfo>(item => {
                 if (item is { BarCodeInfo: not null } model) {
-                    _submitItems.Enqueue(new SubmitItemInfo() {
-                        Barcode = model?.BarCodeInfo?.Barcode ?? string.Empty,
-                        Height = (float)(model?.VolumeInfo?.FormattedHeight ?? 0),
-                        ScanTime = model?.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                        Weight = (float)(model?.WeightInfo?.FormattedWeight ?? 0),
-                        Length = (float)(model?.VolumeInfo?.FormattedLength ?? 0),
-                        Width = (float)(model?.VolumeInfo?.FormattedWidth ?? 0),
-                        Volume = (float)(model?.VolumeInfo?.FormattedVolume ?? 0),
-                        Guid = model?.Guid ?? 0,
-                        IsCreatedByLowerMachine = (bool)model?.IsCreatedByLowerMachine,
-                        PackageCreationInstruction = model?.PackageCreationInstruction ?? string.Empty,
-                        IsStackedPackage = model?.IsStackedPackage,
-                        Timestamp = model?.Timestamp ?? 0,
-                        LinkedCarCount = model?.LinkedCarCount ?? 1,
-                        Other = model?.Other
-                        //图片暂时不写
-                    });
+                    SubmitItemInfo submitItem;
+                    bool shouldTrackSubmission;
+                    long submissionKey;
+                    lock (model.SyncRoot) {
+                        submitItem = new SubmitItemInfo {
+                            Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
+                            Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
+                            ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
+                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
+                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
+                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
+                            Guid = model.Guid,
+                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
+                            PackageCreationInstruction = model.PackageCreationInstruction ?? string.Empty,
+                            IsStackedPackage = model.IsStackedPackage,
+                            Timestamp = model.Timestamp,
+                            LinkedCarCount = model.LinkedCarCount,
+                            CameraSerialNumber =
+                                model.BarCodeInfo?.SerialNumber ??
+                                string.Empty,
+                            Other = model.Other
+                            //图片暂时不写
+                        };
+                        shouldTrackSubmission = model.IsCreatedByLowerMachine;
+                        submissionKey = new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds();
+                    }
+
+                    _submitItems.Enqueue(submitItem);
                     //添加到推送队列
-                    if (model?.IsCreatedByLowerMachine == true && _submissionUploader is not null) {
-                        try {
-                            await _takePackageSlim.WaitAsync();
-                            _packageSubmissionPushItems.TryAdd(
-                                new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds(),
-                                new PackageSubmissionPushInfo() {
-                                    PackageInfo = model
-                                });
-                        }
-                        finally {
-                            _takePackageSlim.Release();
-                        }
+                    if (shouldTrackSubmission && _submissionUploader is not null) {
+                        _packageSubmissionPushItems.TryAdd(
+                            submissionKey,
+                            new PackageSubmissionPushInfo() {
+                                PackageInfo = model
+                            });
                     }
                 }
             });
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                await Task.Yield();
-                if (item is { } model) {
-                    switch (model.SettingsName) {
+                await _settingsUpdateGate.WaitAsync();
+                try {
+                    if (item is { } model) {
+                        switch (model.SettingsName) {
                         case "ApiSettings":
                             _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
                             _submissionUploader = _apiSettingsDto?.Type switch {
                                 ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
                                 ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
+                                ApiType.JtPolarDayApi => new JtPolarDayApi(_httpClientFactory),
                                 ApiType.PostInApi => new PostInApi(_httpClientFactory),
                                 ApiType.PostApi => new PostApi(_httpClientFactory),
                                 _ => null
@@ -248,6 +262,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             };
                             break;
 
+                        case "JtPolarDayApiParameters": {
+                                var entity = await _configRepository
+                                    .FirstOrDefaultEntity<JtPolarDayDto>(
+                                        model.SettingsName) ??
+                                             new JtPolarDayDto();
+                                _jtPolarDayApiParam =
+                                    CreateJtPolarDayParameters(entity);
+                                break;
+                            }
+
                         case "RoutDataApiParameters": {
                                 var entity = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
                                 _rstDataApiParam = new RoutDataApi.ApiParameters() {
@@ -318,7 +342,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 };
                                 break;
                             }
+                        }
                     }
+                }
+                catch (Exception e) {
+                    LogManager.GetCurrentClassLogger()
+                        .Error(e, $"更新接口配置失败:{item.SettingsName}");
+                }
+                finally {
+                    _settingsUpdateGate.Release();
                 }
             });
             EventAggregator.Instance.Subscribe<PluginParamChangedEvent>(item => {
@@ -338,33 +370,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     ScanTime = args.ScanTime,
                 });
             };
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is WindowsAction { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
             });
             //集包推送
-            EventAggregator.Instance.Subscribe<PackageAggregationInfo>(async item => {
+            EventAggregator.Instance.Subscribe<PackageAggregationInfo>(item => {
                 //加入队列
                 if (item is { } info) {
                     _packageAggregationInfoItems.Enqueue(info);
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
-                if (item is { } model && _packageSubmissionPushItems.Any()) {
-                    await Task.Yield();
-                    try {
-                        await _takePackageSlim.WaitAsync();
-                        //获取包裹
-                        var (key, value) = _packageSubmissionPushItems.FirstOrDefault(f => f.Key.Equals(model.Timestamp));
-                        if (value is not null) {
-                            //更新格口信息
-                            value.ApiResponse = model;
-                        }
-                    }
-                    finally {
-                        _takePackageSlim.Release();
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
+                if (item is { } model) {
+                    if (_packageSubmissionPushItems.TryGetValue(model.Timestamp, out var value)) {
+                        // 引用以原子方式替换；热回调不等待上传工作器。
+                        value.ApiResponse = model;
                     }
                 }
             });
@@ -376,22 +399,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //更新格口信息
-            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(async item => {
-                if (item is { } model && _packageSubmissionPushItems.Any()) {
-                    try {
-                        await _takePackageSlim.WaitAsync();
-                        //获取包裹
-                        var (key, value) = _packageSubmissionPushItems.FirstOrDefault(f => f.Key.Equals(model.Timestamp));
-                        if (value is not null) {
-                            //更新格口信息
-                            value.PackageExitUpdateItems.Add(model);
-                        }
-                        else {
-                            NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent} 操作指令");
-                        }
+            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item => {
+                if (item is { } model) {
+                    if (_packageSubmissionPushItems.TryGetValue(model.Timestamp, out var value)) {
+                        // 并发队列保证上传工作器枚举时不会与热回调发生 List 竞态。
+                        value.PackageExitUpdateItems.Enqueue(model);
                     }
-                    finally {
-                        _takePackageSlim.Release();
+                    else {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent} 操作指令");
                     }
                 }
             });
@@ -401,17 +416,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             //读参数
             await ReadDefaultConfig();
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(30, stoppingToken).ContinueWith(_task => {
-                    //取出
-                    if (_task.IsCompletedSuccessfully) {
-                        try {
+                await Task.Delay(30, stoppingToken);
+                // 所有队列都由这一个工作器消费，避免未跟踪任务重入同一包裹。
+                try {
                             //需要判断用户选择的接口和参数设置
                             var tryDequeue = _submitItems.TryDequeue(out var info);
 
                             if (tryDequeue && info is not null) {
                                 //上传
                                 //判断上传接口
-                                Task.Factory.StartNew(async () => {
+                                await Task.Run(async () => {
                                     IDataUploader uploader;
                                     UploadResponse? uploadResponse = null;
                                     switch (_apiSettingsDto?.Type) {
@@ -534,6 +548,47 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                                         ExceptionMsg = value
                                                     };
                                                     Console.WriteLine("设置参数失败!");
+                                                }
+
+                                                break;
+                                            }
+                                        case ApiType.JtPolarDayApi: {
+                                                uploader = new JtPolarDayApi(
+                                                    _httpClientFactory);
+                                                var (key, value) =
+                                                    await uploader.SetParameters(
+                                                        _jtPolarDayApiParam);
+                                                if (key) {
+                                                    uploadResponse =
+                                                        await uploader.UploadData(
+                                                            info.Barcode ??
+                                                            string.Empty,
+                                                            info.Weight,
+                                                            info.ScanTime,
+                                                            info.Length,
+                                                            info.Width,
+                                                            info.Height,
+                                                            info.Volume,
+                                                            new UploadImageInfo {
+                                                                CameraCustomName =
+                                                                    info.CameraSerialNumber,
+                                                                CameraName =
+                                                                    info.CameraSerialNumber,
+                                                                CameraSerialNumber =
+                                                                    info.CameraSerialNumber
+                                                            },
+                                                            null,
+                                                            info.Other,
+                                                            stoppingToken);
+                                                }
+                                                else {
+                                                    uploadResponse =
+                                                        new UploadResponse {
+                                                            ExceptionMsg = value,
+                                                            ApiExceptionType =
+                                                                JayTom.Dws.Interface.ApiExceptionType
+                                                                    .LogicValidationFailed
+                                                        };
                                                 }
 
                                                 break;
@@ -811,7 +866,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             var dequeue = _savedImageItems.TryDequeue(out var model);
                             if (dequeue && model is not null && !string.IsNullOrEmpty(model.FilePath) &&
                                 model.ImageType == SaveImageType.BarcodeImage) {
-                                Task.Factory.StartNew(async () => {
+                                await Task.Run(async () => {
                                     //后续上传
                                     IDataUploader uploader;
                                     switch (_apiSettingsDto?.Type) {
@@ -821,25 +876,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                         case ApiType.GeekPlusApi:
 
                                             uploader = new GeekPlusApi(_httpClientFactory);
-                                            uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
+                                            using (var uploadImage = LoadImageSnapshot(model.FilePath)) {
+                                            await uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
                                                 model.ScanTime, imageInfo: new UploadImageInfo() {
                                                     CameraCustomName = model.CameraSerialNumber,
                                                     CameraName = model.CameraSerialNumber,
                                                     CameraSerialNumber = model.CameraSerialNumber,
-                                                    Image = Image.FromFile(model.FilePath ?? string.Empty)
+                                                    Image = uploadImage
                                                 }, token: stoppingToken);
+                                            }
                                             break;
 
                                         case ApiType.EshippingitApi:
                                             uploader = new EshippingitApi(_httpClientFactory);
                                             var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
                                             if (key) {
-                                                uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
+                                                using var uploadImage = LoadImageSnapshot(model.FilePath);
+                                                await uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
                                                     model.ScanTime, imageInfo: new UploadImageInfo() {
                                                         CameraCustomName = model.CameraSerialNumber,
                                                         CameraName = model.CameraSerialNumber,
                                                         CameraSerialNumber = model.CameraSerialNumber,
-                                                        Image = Image.FromFile(model.FilePath ?? string.Empty)
+                                                        Image = uploadImage
                                                     }, token: stoppingToken);
                                             }
                                             else {
@@ -854,11 +912,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             //获取需要提交到备用格口的数据
 
                             //获取包裹
-                            var pairs = _packageSubmissionPushItems?.Any(f => f.Value.PackageExitUpdateItems?.Any() == true
-                                                                              && f.Value.PackageInfo is not null) == true
-                                ? _packageSubmissionPushItems?.Where(f => (f.Value.PackageExitUpdateItems?.Any() == true)
-                                                                          && f.Value.PackageInfo is not null)?.ToList()
-                                : new List<KeyValuePair<long, PackageSubmissionPushInfo>>();
+                            List<KeyValuePair<long, PackageSubmissionPushInfo>> pairs;
+                            await _takePackageSlim.WaitAsync(stoppingToken);
+                            try {
+                                pairs = _packageSubmissionPushItems
+                                    .Where(pair =>
+                                        pair.Value.PackageExitUpdateItems.Count > 0 &&
+                                        pair.Value.PackageInfo is not null)
+                                    .ToList();
+                            }
+                            finally {
+                                _takePackageSlim.Release();
+                            }
 
                             if (pairs?.Any() == true) {
                                 if (_submissionUploader is not null) {
@@ -873,16 +938,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 */
 
                                     foreach (var pair in pairs) {
-                                        ReportProgress(pair, _submissionUploader, stoppingToken);
+                                        await ReportProgressAsync(
+                                            pair,
+                                            _submissionUploader,
+                                            stoppingToken);
                                     }
                                 }
                             }
                             //集包
                             var packageAggregationDequeue = _packageAggregationInfoItems.TryDequeue(out var packageAggregationInfo);
                             if (packageAggregationDequeue && packageAggregationInfo is not null) {
-                                //集包推送(判断需要使用的Api-Task.Factory.StartNew)
+                                //集包推送（判断需要使用的 API）
 
-                                Task.Factory.StartNew(async () => {
+                                await Task.Run(async () => {
                                     IDataUploader uploader;
                                     UploadResponse? uploadResponse = null;
                                     switch (_apiSettingsDto?.Type) {
@@ -894,7 +962,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                             uploader = new CaiNiaoApi(_httpClientFactory);
                                             var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                             if (key) {
-                                                uploader.PackageAggregation(packageAggregationInfo.PackageExitDefinitionInfo.ExitName,
+                                                await uploader.PackageAggregation(packageAggregationInfo.PackageExitDefinitionInfo.ExitName,
                                                     packageAggregationInfo.AggregatePackageCode,
                                                     packageAggregationInfo.PackagingTime,
                                                     packageAggregationInfo.PackageItems.Select(s => s.BarCodeInfo?.Barcode ?? string.Empty).ToList(), token: stoppingToken);
@@ -907,11 +975,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 }, stoppingToken);
                             }
                         }
-                        catch (Exception e) {
-                            LogManager.GetCurrentClassLogger().Error($"{e}");
-                        }
-                    }
-                }, stoppingToken);
+                catch (Exception e) {
+                    LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
             }
         }
 
@@ -988,8 +1054,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 Url = _jtExpressDto.Url,
                 UserName = _jtExpressDto.UserName,
                 WeightFlag = _jtExpressDto.WeightFlag,
-                InterceptorEnabled = _jtExpressApiParam.InterceptorEnabled
+                InterceptorEnabled = _jtExpressDto.InterceptorEnabled
             };
+            var jtPolarDayDto = await _configRepository
+                .FirstOrDefaultEntity<JtPolarDayDto>(
+                    "JtPolarDayApiParameters") ??
+                                    new JtPolarDayDto();
+            _jtPolarDayApiParam =
+                CreateJtPolarDayParameters(jtPolarDayDto);
             //络道科技Api
             var routDataApiDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();
             _rstDataApiParam = new RoutDataApi.ApiParameters() {
@@ -1052,13 +1124,94 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _submissionUploader = _apiSettingsDto?.Type switch {
                 ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
                 ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
+                ApiType.JtPolarDayApi => new JtPolarDayApi(_httpClientFactory),
                 ApiType.PostInApi => new PostInApi(_httpClientFactory),
                 ApiType.PostApi => new PostApi(_httpClientFactory),
                 _ => null
             };
         }
 
-        private KeyValuePair<int, CaiNiaoExitInfo> CaiNiaoStatusConvert(string barcode, List<PackageExitUpdateEvent> packageExitItems) {
+        /// <summary>
+        /// 将持久化配置转换为极昼接口参数快照。
+        /// </summary>
+        /// <param name="settings">持久化配置。</param>
+        /// <returns>极昼接口参数。</returns>
+        private static JtPolarDayApi.ApiParameter CreateJtPolarDayParameters(
+            JtPolarDayDto settings) {
+            return new JtPolarDayApi.ApiParameter {
+                BaseUrl = settings.BaseUrl,
+                AppKey = settings.AppKey,
+                AppSecret = settings.AppSecret,
+                EquipmentCode = settings.EquipmentCode,
+                SortingPlanCode = settings.SortingPlanCode,
+                OperateType = settings.OperateType,
+                Operator = settings.Operator,
+                MainLineCode = settings.MainLineCode,
+                EquipmentLayer = settings.EquipmentLayer,
+                AreaNum = settings.AreaNum,
+                MaxCircleNum = settings.MaxCircleNum,
+                SupplyDeskCode = settings.SupplyDeskCode,
+                SupplyDeskSerialNo = settings.SupplyDeskSerialNo,
+                SupplyDeskMethod = settings.SupplyDeskMethod,
+                SupplyDeskArea = settings.SupplyDeskArea,
+                LayerNum = settings.LayerNum,
+                ChuteModel = settings.ChuteModel,
+                FallArea = settings.FallArea,
+                WeightSource = settings.WeightSource,
+                QueryTimeoutMilliseconds =
+                    settings.QueryTimeoutMilliseconds,
+                TimeoutMilliseconds = settings.TimeoutMilliseconds,
+                RetryCount = settings.RetryCount,
+                RetryIntervalMilliseconds =
+                    settings.RetryIntervalMilliseconds
+            };
+        }
+
+        /// <summary>
+        /// 将本地分拣异常转换为极昼格口分类码。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="packageExitItems">落格事件。</param>
+        /// <returns>极昼格口分类码。</returns>
+        private static string ConvertToPolarDayGridCode(
+            string barcode,
+            IEnumerable<PackageExitUpdateEvent> packageExitItems) {
+            if (string.Equals(
+                    barcode,
+                    "noread",
+                    StringComparison.OrdinalIgnoreCase)) {
+                return "993";
+            }
+
+            var abnormalTypes = packageExitItems
+                .Select(item => item.PackageAbnormalSortingType)
+                .ToHashSet();
+            if (abnormalTypes.Contains(
+                    PackageAbnormalSortingType.MultipleBarCode)) {
+                return "994";
+            }
+
+            if (abnormalTypes.Contains(
+                    PackageAbnormalSortingType.NoSortingInstruction)) {
+                return "996";
+            }
+
+            if (abnormalTypes.Contains(
+                    PackageAbnormalSortingType.NetworkTimeout) ||
+                abnormalTypes.Contains(
+                    PackageAbnormalSortingType.ApiAccessError)) {
+                return "985";
+            }
+
+            return abnormalTypes.All(
+                type => type == PackageAbnormalSortingType.None)
+                ? "111"
+                : "992";
+        }
+
+        private KeyValuePair<int, CaiNiaoExitInfo> CaiNiaoStatusConvert(
+            string barcode,
+            IEnumerable<PackageExitUpdateEvent> packageExitItems) {
             if (packageExitItems.Any(a => (int)a.PackageAbnormalSortingType == (int)PackageAbnormalSortingType.LockExit) == true) {
                 return new KeyValuePair<int, CaiNiaoExitInfo>(3, new CaiNiaoExitInfo() {
                     ErrorReson = "锁格",
@@ -1094,10 +1247,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
         }
 
-        private async void ReportProgress(KeyValuePair<long, PackageSubmissionPushInfo> packageValue,
+        private async Task ReportProgressAsync(KeyValuePair<long, PackageSubmissionPushInfo> packageValue,
             IDataUploader uploader, CancellationToken token) {
+            var gateEntered = false;
             try {
                 await _takePackageSlim.WaitAsync(token);
+                gateEntered = true;
                 //提交
                 if (packageValue.Value is { PackageInfo: not null } && packageValue.Value.PackageExitUpdateItems?.Any() == true) {
                     switch (_apiSettingsDto?.Type) {
@@ -1120,7 +1275,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                 var caiNiaoStatusConvert = CaiNiaoStatusConvert(
                                     packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                     packageValue.Value.PackageExitUpdateItems);
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
+                                await uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
                                     packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
                                         CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
                                         CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.CameraSerialNumber ?? string.Empty,
@@ -1169,7 +1324,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     var caiNiaoStatusConvert = CaiNiaoStatusConvert(
                                         packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                         packageValue.Value.PackageExitUpdateItems);
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
+                                    await uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo.WeightInfo?.FormattedWeight ?? 0,
                                         packageValue.Value.PackageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo() {
                                             CameraCustomName = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                                             CameraName = packageValue.Value.PackageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
@@ -1204,7 +1359,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
                                         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
                                     });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                    await uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                         packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
                                         packageValue.Value.ApiResponse.UploadResponse, token: token);
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交");
@@ -1215,6 +1370,95 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
 
                             break;
+
+                        case ApiType.JtPolarDayApi: {
+                                var parameterResult =
+                                    await uploader.SetParameters(
+                                        _jtPolarDayApiParam);
+                                if (!parameterResult.Key) {
+                                    LogManager.GetCurrentClassLogger()
+                                        .Error(
+                                            $"设置极昼接口参数失败:{parameterResult.Value}");
+                                    break;
+                                }
+
+                                if (_memoryCache.TryGetValue(
+                                        packageValue.Key,
+                                        out _)) {
+                                    break;
+                                }
+
+                                var packageInfo =
+                                    packageValue.Value.PackageInfo;
+                                var exitItems = packageValue.Value
+                                    .PackageExitUpdateItems
+                                    .ToArray();
+                                var fallEvent = exitItems
+                                        .LastOrDefault(item =>
+                                            item.ExitType ==
+                                            SortingExitType.PhysicalExit) ??
+                                    exitItems.LastOrDefault(item =>
+                                        item.InstructionType is
+                                            InstructionType.SignalCallback or
+                                            InstructionType.PackageExceptionEx) ??
+                                    exitItems.Last();
+                                var barcode = packageInfo.BarCodeInfo?.Barcode ??
+                                              string.Empty;
+                                var cameraSerialNumber =
+                                    packageInfo.BarCodeInfo?.SerialNumber ??
+                                    string.Empty;
+                                var fallTime = fallEvent.InstructionInfos?
+                                                   .FirstOrDefault()?
+                                                   .InstructionGeneratedTime ??
+                                               fallEvent.CreateTime;
+                                _memoryCache.Set(
+                                    packageValue.Key,
+                                    packageValue.Value,
+                                    new MemoryCacheEntryOptions {
+                                        AbsoluteExpirationRelativeToNow =
+                                            TimeSpan.FromMinutes(1)
+                                    });
+                                await uploader.UploadInBackground(
+                                    barcode,
+                                    packageInfo.WeightInfo?.FormattedWeight ??
+                                    0,
+                                    packageInfo.BarCodeInfo?.ScanTime ??
+                                    DateTime.Now,
+                                    packageInfo.VolumeInfo?.FormattedLength ??
+                                    0,
+                                    packageInfo.VolumeInfo?.FormattedWidth ??
+                                    0,
+                                    packageInfo.VolumeInfo?.FormattedHeight ??
+                                    0,
+                                    packageInfo.VolumeInfo?.FormattedVolume ??
+                                    0,
+                                    new UploadImageInfo {
+                                        CameraCustomName = cameraSerialNumber,
+                                        CameraName = cameraSerialNumber,
+                                        CameraSerialNumber =
+                                            cameraSerialNumber
+                                    },
+                                    null,
+                                    new JtPolarDayApi.UploadContext {
+                                        LandOnCarTime =
+                                            packageInfo.BarCodeInfo?.ScanTime ??
+                                            packageInfo.CreateTime,
+                                        CarNum =
+                                            packageInfo.GrayscaleResultInfo is
+                                                { } grayscaleResult
+                                                ? grayscaleResult.CarNumber
+                                                    .ToString()
+                                                : packageInfo.Guid.ToString(),
+                                        GridNo = fallEvent.ExitName,
+                                        GridCode =
+                                            ConvertToPolarDayGridCode(
+                                                barcode,
+                                                exitItems),
+                                        FallTime = fallTime
+                                    },
+                                    token);
+                                break;
+                            }
 
                         case ApiType.PostInApi:
                             if (DateTime.Now.Subtract(packageValue.Value.PackageInfo.CreateTime).TotalSeconds >= 100) {
@@ -1236,7 +1480,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     packageValue.Value.ApiResponse.UploadResponse.RequestContent += $"落格:[{exitName}]";
                                 }
 
-                                uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                await uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                     packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
                                     packageValue.Value.ApiResponse.UploadResponse, token: token);
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
@@ -1260,7 +1504,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                                     _memoryCache.Set(packageValue.Key, packageValue.Value, new MemoryCacheEntryOptions {
                                         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
                                     });
-                                    uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
+                                    await uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                         packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
                                         packageValue.Value.ApiResponse.UploadResponse, token: token);
                                     NLog.LogManager.GetCurrentClassLogger().Error($"提交");
@@ -1290,7 +1534,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             }
             finally {
-                _takePackageSlim.Release();
+                if (gateEntered) {
+                    _takePackageSlim.Release();
+                }
+            }
+        }
+
+        private static Image? LoadImageSnapshot(string? path) {
+            if (string.IsNullOrWhiteSpace(path)) {
+                return null;
+            }
+
+            try {
+                using var source = Image.FromFile(path);
+                return new Bitmap(source);
+            }
+            catch (Exception e) when (e is System.IO.IOException or
+                                      UnauthorizedAccessException or
+                                      ArgumentException) {
+                LogManager.GetCurrentClassLogger().Warn(e, $"读取待上传图片失败:{path}");
+                return null;
             }
         }
 
@@ -1361,6 +1624,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// 是否叠包
             /// </summary>
             public bool? IsStackedPackage { get; set; }
+
+            /// <summary>
+            /// 扫码相机序列号
+            /// </summary>
+            public string CameraSerialNumber { get; set; } = string.Empty;
 
             /// <summary>
             /// 包裹时间戳
@@ -1448,12 +1716,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             /// <summary>
             /// 格口更新
             /// </summary>
-            public List<PackageExitUpdateEvent> PackageExitUpdateItems { get; set; } = new();
+            public ConcurrentQueue<PackageExitUpdateEvent> PackageExitUpdateItems { get; } = new();
 
             /// <summary>
             /// 回传信息
             /// </summary>
-            public ApiResponseReceived ApiResponse { get; set; } = new();
+            private ApiResponseReceived _apiResponse = new();
+
+            public ApiResponseReceived ApiResponse {
+                get => Volatile.Read(ref _apiResponse);
+                set => Volatile.Write(ref _apiResponse, value);
+            }
 
             /// <summary>
             /// 是否已提交过备用格口

@@ -33,9 +33,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private readonly IPackageDetectionSerialPort _packageDetectionSerialPort;
         private readonly IPackageDetectionTcp _packageDetectionTcp;
         private StackedPackageDetectionSettingsDto? _stackedPackageDetectionSettingsDto = new();
-        private ConcurrentQueue<PackageInfo> _stackedPackageItems = new();
-        private static Task? _clearThread;
-        private static CancellationTokenSource? _cancellationTokenSource;
+        private readonly Queue<PackageInfo> _stackedPackageItems = new();
+        private readonly object _queueSync = new();
+        private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
+        private Task? _clearThread;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private Regex? _stackedRegex;
+        private int _isConnected;
 
         public DefaultStackedPackageService(IConfigRepository configRepository,
             IPackageDetectionSerialPort packageDetectionSerialPort, IPackageDetectionTcp packageDetectionTcp) {
@@ -44,12 +48,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
             _packageDetectionTcp = packageDetectionTcp;
             _packageDetectionSerialPort.DataReceived += (sender, args) => {
                 //串口接收内容
-                if (_stackedPackageDetectionSettingsDto is not null) {
+                var regex = Volatile.Read(ref _stackedRegex);
+                if (regex is not null) {
                     try {
                         var isStacked = false;
-                        var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
-                        if (tryDequeue && result is not null) {
-                            isStacked = Regex.IsMatch(args.AsciiMessage, _stackedPackageDetectionSettingsDto.RegularExpression);
+                        PackageInfo? result = null;
+                        lock (_queueSync) {
+                            if (_stackedPackageItems.Count > 0) {
+                                result = _stackedPackageItems.Dequeue();
+                            }
+                        }
+                        if (result is not null) {
+                            isStacked = regex.IsMatch(args.AsciiMessage);
                         }
 
                         OnStackedPackageReturned(new StackedPackageEventArgs() {
@@ -72,15 +82,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"监测异常:{args.Exception.Message}"
                 });
             };
-            _packageDetectionTcp.Communication += async (sender, info) => {
+            _packageDetectionTcp.Communication += (sender, info) => {
                 //Tcp接收内容
 
-                if (_stackedPackageDetectionSettingsDto is not null) {
+                var regex = Volatile.Read(ref _stackedRegex);
+                if (regex is not null) {
                     try {
                         var isStacked = false;
-                        var tryDequeue = _stackedPackageItems.TryDequeue(out var result);
-                        if (tryDequeue && result is not null) {
-                            isStacked = Regex.IsMatch(info.Content, _stackedPackageDetectionSettingsDto.RegularExpression);
+                        PackageInfo? result = null;
+                        lock (_queueSync) {
+                            if (_stackedPackageItems.Count > 0) {
+                                result = _stackedPackageItems.Dequeue();
+                            }
+                        }
+                        if (result is not null) {
+                            isStacked = regex.IsMatch(info.Content);
                         }
 
                         OnStackedPackageReturned(new StackedPackageEventArgs() {
@@ -109,9 +125,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"监测Tcp连接异常:{s}"
                 });
             };
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item => {
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(item => {
                 if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info) {
-                    _stackedPackageItems.Enqueue(info.PackageInfo ?? new PackageInfo());
+                    if (Volatile.Read(ref _stackedRegex) is not null) {
+                        lock (_queueSync) {
+                            _stackedPackageItems.Enqueue(info.PackageInfo ?? new PackageInfo());
+                        }
+                    }
                     //NLog.LogManager.GetCurrentClassLogger().Error($"队列数:{_stackedPackageItems.Count}");
                 }
             });
@@ -125,25 +145,46 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<ExceptionEventArgs>? ExceptionOccurred;
 
-        public bool IsConnected { get; private set; }
+        public bool IsConnected => Volatile.Read(ref _isConnected) != 0;
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
+            await _lifecycleGate.WaitAsync(token);
+            try {
+                return await StartCore(token);
+            }
+            finally {
+                _lifecycleGate.Release();
+            }
+        }
+
+        private async Task<KeyValuePair<bool, string>> StartCore(CancellationToken token) {
             _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(
                 "StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
+            Volatile.Write(
+                ref _stackedRegex,
+                _stackedPackageDetectionSettingsDto.IsStackedPackageDetection
+                    ? new Regex(
+                        _stackedPackageDetectionSettingsDto.RegularExpression,
+                        RegexOptions.Compiled | RegexOptions.CultureInvariant)
+                    : null);
             //创建清理线程
             if (_clearThread is null && _stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
-                _cancellationTokenSource = new CancellationTokenSource();
+                _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var clearToken = _cancellationTokenSource.Token;
+                var timeout = _stackedPackageDetectionSettingsDto.Timeout;
                 _clearThread = Task.Run(async () => {
-                    while (!_cancellationTokenSource.IsCancellationRequested) {
-                        while (_stackedPackageItems.TryPeek(out var oldestPackage) &&
-                               DateTime.Now.Subtract(oldestPackage.CreateTime).TotalMilliseconds >
-                               _stackedPackageDetectionSettingsDto.Timeout) {
-                            _stackedPackageItems.TryDequeue(out _);
+                    while (!clearToken.IsCancellationRequested) {
+                        lock (_queueSync) {
+                            while (_stackedPackageItems.Count > 0 &&
+                                   DateTime.Now.Subtract(_stackedPackageItems.Peek().CreateTime)
+                                       .TotalMilliseconds > timeout) {
+                                _stackedPackageItems.Dequeue();
+                            }
                         }
 
-                        await Task.Delay(20, token);
+                        await Task.Delay(20, clearToken);
                     }
-                }, token);
+                }, clearToken);
             }
 
             //连接叠包
@@ -222,22 +263,33 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default) {
+            await _lifecycleGate.WaitAsync(token);
             try {
                 //停止线程
-                await Task.Yield();
                 _cancellationTokenSource?.Cancel();
                 if (_clearThread != null) {
-                    await _clearThread;
+                    try {
+                        await _clearThread;
+                    }
+                    catch (OperationCanceledException) when (_cancellationTokenSource?.IsCancellationRequested == true) {
+                        // 正常停止后台清理任务。
+                    }
                     _clearThread?.Dispose();
                 }
 
                 _clearThread = null;
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
+                Volatile.Write(ref _stackedRegex, null);
+                lock (_queueSync) {
+                    _stackedPackageItems.Clear();
+                }
                 if (_packageDetectionTcp.ConnectionStatus == ConnectionStatus.Connected) {
                     _packageDetectionTcp.Close();
                 }
 
                 if (_packageDetectionSerialPort.Status == SerialPortStatus.Running) {
-                    _packageDetectionTcp.Close();
+                    _packageDetectionSerialPort.Dispose();
                 }
                 OnDisconnected();
                 return new KeyValuePair<bool, string>(true, "停止成功");
@@ -247,6 +299,9 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     ExceptionMessage = $"监测连接停止异常:{e}"
                 });
             }
+            finally {
+                _lifecycleGate.Release();
+            }
 
             return new KeyValuePair<bool, string>(false, "停止失败");
         }
@@ -255,8 +310,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             throw new NotImplementedException();
         }
 
-        protected virtual async void OnStackedPackageReturned(StackedPackageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnStackedPackageReturned(StackedPackageEventArgs e) {
             if (e.IsStacked) {
                 EventAggregator.Instance.Publish(new SortingLogInfoModel {
                     CreateTime = DateTime.Now,
@@ -268,18 +322,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
             StackedPackageReturned?.Invoke(this, e);
         }
 
-        protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnExceptionOccurred(ExceptionEventArgs e) {
             ExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected() {
-            await Task.Yield();
+        protected virtual void OnConnected() {
+            Interlocked.Exchange(ref _isConnected, 1);
             Connected?.Invoke(this, EventArgs.Empty);
         }
 
-        protected virtual async void OnDisconnected() {
-            await Task.Yield();
+        protected virtual void OnDisconnected() {
+            Interlocked.Exchange(ref _isConnected, 0);
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
     }

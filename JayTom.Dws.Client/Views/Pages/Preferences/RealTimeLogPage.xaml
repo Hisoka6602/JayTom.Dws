@@ -44,11 +44,19 @@
             MinHeight="100"
             Margin="0,5"
             HorizontalAlignment="Stretch"
-            VerticalAlignment="Top"
+            VerticalAlignment="Stretch"
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Top"
             Foreground="White"
-            ItemsSource="{Binding LogItems}">
+            ItemsSource="{Binding LogItems}"
+            ScrollViewer.CanContentScroll="True"
+            ScrollViewer.IsDeferredScrollingEnabled="True"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            VirtualizingPanel.CacheLength="2,2"
+            VirtualizingPanel.CacheLengthUnit="Item"
+            VirtualizingPanel.IsVirtualizing="True"
+            VirtualizingPanel.ScrollUnit="Pixel"
+            VirtualizingPanel.VirtualizationMode="Recycling">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Height" Value="Auto" />
@@ -82,19 +90,14 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <!--  时间  -->
-                        <TextBox
+                        <TextBlock
                             Grid.Column="0"
                             MinHeight="30"
                             Margin="0"
                             Padding="0"
                             VerticalAlignment="Center"
-                            HorizontalContentAlignment="Left"
-                            VerticalContentAlignment="Center"
-                            BorderThickness="0"
                             Foreground="White"
-                            IsReadOnly="True"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                            Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding CreateTime, StringFormat={}{0:yyyy-MM-dd HH:mm:ss.fff}, Mode=OneWay}"
                             TextWrapping="Wrap" />
                         <TextBlock
                             Grid.Column="1"
@@ -103,19 +106,14 @@
                             Foreground="White"
                             Text="-&gt;" />
                         <!--  内容  -->
-                        <TextBox
+                        <TextBlock
                             Grid.Column="2"
                             MinHeight="30"
                             Margin="0"
                             Padding="0"
                             VerticalAlignment="Center"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalContentAlignment="Center"
-                            BorderThickness="0"
                             Foreground="White"
-                            IsReadOnly="True"
-                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                            Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding Message, Mode=OneWay}"
                             TextWrapping="Wrap" />
                     </Grid>
                 </DataTemplate>

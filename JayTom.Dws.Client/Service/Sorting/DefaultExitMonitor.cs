@@ -40,19 +40,23 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public event EventHandler<List<PackageExitDefinitionInfoModel>>? Initialized;
 
-        public bool IsConnected { get; private set; } = false;
+        public bool IsConnected => Volatile.Read(ref _isConnected) != 0;
 
         public event EventHandler<EventArgs>? Connected;
 
         public event EventHandler<EventArgs>? Disconnected;
 
-        private static Task? _monitorThread;
-        private static CancellationTokenSource? _cancellationTokenSource;
-        private static List<PackageExitDefinitionInfoModel> _definitionInfoModels = new();
+        private Task? _monitorThread;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private List<PackageExitDefinitionInfoModel> _definitionInfoModels = new();
         private Plc? plc;
         private PackageExitLockSettingsDto? _packageExitLockSettingsDto;
         private List<PackageExitLockBindingInfoModel>? _lockBindingInfoModels;
-        private bool _locking = false;
+        private readonly SemaphoreSlim _plcIoGate = new(1, 1);
+        private readonly SemaphoreSlim _writeGate = new(1, 1);
+        private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
+        private readonly object _statusSync = new();
+        private int _isConnected;
 
         public DefaultExitMonitor(IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IConfigRepository configRepository, IPackageExitLockBindingRepository packageExitLockBindingRepository) {
@@ -62,6 +66,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
+            await _lifecycleGate.WaitAsync(token);
+            try {
+                return await StartCore(token);
+            }
+            finally {
+                _lifecycleGate.Release();
+            }
+        }
+
+        private async Task<KeyValuePair<bool, string>> StartCore(CancellationToken token) {
             try {
                 var configInfoModel = await _configRepository.FirstOrDefault(f =>
                     f.ConfigName.Equals("PackageExitLockSettings"), token);
@@ -93,10 +107,25 @@ namespace JayTom.Dws.Client.Service.Sorting {
                     if (_packageExitLockSettingsDto.ProtocolType == LockProtocolType.S7) {
                         //S7监测
 
-                        plc ??= new Plc(CpuType.S7300, _packageExitLockSettingsDto.S7Config.Ip, (short)_packageExitLockSettingsDto.S7Config.Rack, (short)_packageExitLockSettingsDto.S7Config.Slot);
-                        await plc.OpenAsync(token);
-
-                        plc.ReadTimeout = _packageExitLockSettingsDto.S7Config.Timeout;
+                        await _writeGate.WaitAsync(token);
+                        try {
+                            await _plcIoGate.WaitAsync(token);
+                            try {
+                                plc ??= new Plc(
+                                    CpuType.S7300,
+                                    _packageExitLockSettingsDto.S7Config.Ip,
+                                    (short)_packageExitLockSettingsDto.S7Config.Rack,
+                                    (short)_packageExitLockSettingsDto.S7Config.Slot);
+                                await plc.OpenAsync(token);
+                                plc.ReadTimeout = _packageExitLockSettingsDto.S7Config.Timeout;
+                            }
+                            finally {
+                                _plcIoGate.Release();
+                            }
+                        }
+                        finally {
+                            _writeGate.Release();
+                        }
                         if (_monitorThread is null) {
                             _cancellationTokenSource = new CancellationTokenSource();
                             _monitorThread = Task.Run(async () => {
@@ -117,7 +146,14 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                 VarType = VarType.Byte
                                             }).Skip(i * 10).Take(10).ToList();
 
-                                            var readMultipleVarsAsync = await plc.ReadMultipleVarsAsync(dataItems, token);
+                                            IList<DataItem> readMultipleVarsAsync;
+                                            await _plcIoGate.WaitAsync(token);
+                                            try {
+                                                readMultipleVarsAsync = await plc.ReadMultipleVarsAsync(dataItems, token);
+                                            }
+                                            finally {
+                                                _plcIoGate.Release();
+                                            }
 
                                             foreach (var dataItem in readMultipleVarsAsync) {
                                                 var model = _lockBindingInfoModels.FirstOrDefault(f =>
@@ -127,26 +163,25 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                                         _definitionInfoModels.FirstOrDefault(f =>
                                                             f.Id.Equals(model.ExitId));
 
-                                                    if (Convert.ToByte(dataItem.Value) == 0) {
-                                                        //解锁
+                                                    PackageExitDefinitionInfoModel? changedModel = null;
+                                                    var isLocked = Convert.ToByte(dataItem.Value) != 0;
+                                                    lock (_statusSync) {
                                                         if (!initialized && infoModel is not null) {
-                                                            infoModel.IsLockExit = false;
+                                                            infoModel.IsLockExit = isLocked;
                                                         }
-
-                                                        if (infoModel?.IsLockExit == true) {
-                                                            OnUnLockExitEvent(infoModel);
-                                                            infoModel.IsLockExit = false;
+                                                        else if (infoModel is not null &&
+                                                                 infoModel.IsLockExit != isLocked) {
+                                                            infoModel.IsLockExit = isLocked;
+                                                            changedModel = infoModel;
                                                         }
                                                     }
-                                                    else {
-                                                        if (!initialized && infoModel is not null) {
-                                                            infoModel.IsLockExit = true;
-                                                        }
 
-                                                        // 锁
-                                                        if (infoModel?.IsLockExit == false) {
-                                                            OnLockExitEvent(infoModel);
-                                                            infoModel.IsLockExit = true;
+                                                    if (changedModel is not null) {
+                                                        if (isLocked) {
+                                                            OnLockExitEvent(changedModel);
+                                                        }
+                                                        else {
+                                                            OnUnLockExitEvent(changedModel);
                                                         }
                                                     }
                                                 }
@@ -162,7 +197,11 @@ namespace JayTom.Dws.Client.Service.Sorting {
                                     await Task.Delay(150, token);
                                     if (!isInitialized) {
                                         isInitialized = true;
-                                        OnInitialized(_definitionInfoModels);
+                                        lock (_statusSync) {
+                                            OnInitialized(_definitionInfoModels
+                                                .Select(CloneExitStatus)
+                                                .ToList());
+                                        }
                                     }
                                 }
                             }, token);
@@ -188,6 +227,16 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default) {
+            await _lifecycleGate.WaitAsync(token);
+            try {
+                return await StopCore(token);
+            }
+            finally {
+                _lifecycleGate.Release();
+            }
+        }
+
+        private async Task<KeyValuePair<bool, string>> StopCore(CancellationToken token) {
             //停止S7
             //停止循环线程
             try {
@@ -200,8 +249,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
                 _monitorThread = null;
 
-                plc?.Close();
-                plc = null;
+                await _writeGate.WaitAsync(token);
+                try {
+                    await _plcIoGate.WaitAsync(token);
+                    try {
+                        plc?.Close();
+                        plc = null;
+                    }
+                    finally {
+                        _plcIoGate.Release();
+                    }
+                }
+                finally {
+                    _writeGate.Release();
+                }
                 OnDisconnected();
                 return new KeyValuePair<bool, string>(true, "断开成功");
             }
@@ -218,20 +279,20 @@ namespace JayTom.Dws.Client.Service.Sorting {
         }
 
         public Task<KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>> GetAllPackageExitStatus() {
-            return Task.FromResult(new KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>(true, _definitionInfoModels));
+            lock (_statusSync) {
+                return Task.FromResult(new KeyValuePair<bool, List<PackageExitDefinitionInfoModel>>(
+                    true,
+                    _definitionInfoModels.Select(CloneExitStatus).ToList()));
+            }
         }
 
-        public async Task<KeyValuePair<bool, string>> AllLockExit() {
-            if (plc is not null && _lockBindingInfoModels is not null &&
-                _packageExitLockSettingsDto is not null) {
-                if (_locking) {
-                    return new KeyValuePair<bool, string>(false, $"锁格操作中");
-                }
-
-                try {
+        public Task<KeyValuePair<bool, string>> AllLockExit() {
+            return ExecutePlcWriteAsync("锁格", async currentPlc => {
+                var settings = _packageExitLockSettingsDto
+                               ?? throw new InvalidOperationException("锁格配置不存在");
                     /*foreach (var model in _lockBindingInfoModels) {
-                        await plc.WriteBytesAsync(DataType.DataBlock,
-                             _packageExitLockSettingsDto.S7Config.Db,
+                        await currentPlc.WriteBytesAsync(DataType.DataBlock,
+                             settings.S7Config.Db,
                              Convert.ToInt32(model.Address),
                              new ReadOnlyMemory<byte>(new byte[] { 0x1 }));
                         await Task.Delay(200);
@@ -252,37 +313,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         allOne = readBytesAsync.All(b => b == 0x1);
                     } while (!allOne);*/
                     var data = Enumerable.Repeat((byte)0x1, 100).ToArray();
-                    await plc.WriteBytesAsync(DataType.DataBlock,
-                        _packageExitLockSettingsDto.S7Config.Db,
+                    await currentPlc.WriteBytesAsync(DataType.DataBlock,
+                        settings.S7Config.Db,
                         Convert.ToInt32(0),
                         new ReadOnlyMemory<byte>(data));
                     await Task.Delay(2000);
-                    return new KeyValuePair<bool, string>(true, "锁格成功");
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"锁格失败:{e}");
-                    return new KeyValuePair<bool, string>(false, $"锁格失败:{e.Message}");
-                }
-                finally {
-                    _locking = false;
-                }
-            }
-            else {
-                return new KeyValuePair<bool, string>(false, "锁格未连接");
-            }
+            });
         }
 
-        public async Task<KeyValuePair<bool, string>> AllUnLockExit() {
-            if (plc is not null && _lockBindingInfoModels is not null &&
-                _packageExitLockSettingsDto is not null) {
-                if (_locking) {
-                    return new KeyValuePair<bool, string>(false, $"解锁操作中");
-                }
-
-                try {
+        public Task<KeyValuePair<bool, string>> AllUnLockExit() {
+            return ExecutePlcWriteAsync("解锁", async currentPlc => {
+                var settings = _packageExitLockSettingsDto
+                               ?? throw new InvalidOperationException("锁格配置不存在");
                     /*foreach (var model in _lockBindingInfoModels) {
-                        await plc.WriteBytesAsync(DataType.DataBlock,
-                            _packageExitLockSettingsDto.S7Config.Db,
+                        await currentPlc.WriteBytesAsync(DataType.DataBlock,
+                            settings.S7Config.Db,
                             Convert.ToInt32(model.Address),
                             new ReadOnlyMemory<byte>(new byte[100]));
                         await Task.Delay(200);
@@ -299,91 +344,86 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             Convert.ToInt32(0), 100);
                         allZero = readBytesAsync.All(b => b == 0x0);
                     } while (!allZero);*/
-                    await plc.WriteBytesAsync(DataType.DataBlock,
-                        _packageExitLockSettingsDto.S7Config.Db,
+                    await currentPlc.WriteBytesAsync(DataType.DataBlock,
+                        settings.S7Config.Db,
                         Convert.ToInt32(0),
                         new ReadOnlyMemory<byte>(new byte[100]));
                     await Task.Delay(2000);
-
-                    return new KeyValuePair<bool, string>(true, "解锁成功");
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"解锁失败:{e}");
-                    return new KeyValuePair<bool, string>(false, $"解锁失败:{e.Message}");
-                }
-                finally {
-                    _locking = false;
-                }
-            }
-            else {
-                return new KeyValuePair<bool, string>(false, "锁格未连接");
-            }
+            });
         }
 
-        public async Task<KeyValuePair<bool, string>> AllLockExit(int db, int address = 0, int length = 1) {
-            await Task.Yield();
-
+        public Task<KeyValuePair<bool, string>> AllLockExit(int db, int address = 0, int length = 1) {
             //锁格->256.0
-
-            if (plc is not null) {
-                if (_locking) {
-                    return new KeyValuePair<bool, string>(false, $"锁格操作中");
-                }
-                try {
-                    _locking = true;
-                    db = _packageExitLockSettingsDto?.S7Config.Db ?? 0;
-
-                    await plc.WriteBitAsync(DataType.DataBlock, db,
+            return ExecutePlcWriteAsync("锁格", async currentPlc => {
+                    var targetDb = _packageExitLockSettingsDto?.S7Config.Db ?? db;
+                    await currentPlc.WriteBitAsync(DataType.DataBlock, targetDb,
                         256, 0, true);
                     await Task.Delay(2000);
-                    await plc.WriteBitAsync(DataType.DataBlock, db,
+                    await currentPlc.WriteBitAsync(DataType.DataBlock, targetDb,
                         256, 0, false);
-                    return new KeyValuePair<bool, string>(true, $"锁格成功");
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"锁格失败:{e}");
-                    return new KeyValuePair<bool, string>(false, $"锁格失败:{e.Message}");
-                }
-                finally {
-                    _locking = false;
-                }
-            }
-            else {
-                return new KeyValuePair<bool, string>(false, "锁格未连接");
-            }
+            });
         }
 
-        public async Task<KeyValuePair<bool, string>> AllUnLockExit(int db, int address = 1, int length = 1) {
+        public Task<KeyValuePair<bool, string>> AllUnLockExit(int db, int address = 1, int length = 1) {
             //解锁->256.1
-            if (plc is not null) {
-                if (_locking) {
-                    return new KeyValuePair<bool, string>(false, $"解锁操作中");
-                }
-                try {
-                    _locking = true;
-                    db = _packageExitLockSettingsDto?.S7Config.Db ?? 0;
-                    await plc.WriteBitAsync(DataType.DataBlock, db,
+            return ExecutePlcWriteAsync("解锁", async currentPlc => {
+                    var targetDb = _packageExitLockSettingsDto?.S7Config.Db ?? db;
+                    await currentPlc.WriteBitAsync(DataType.DataBlock, targetDb,
                         256, 1, true);
                     await Task.Delay(2000);
-                    await plc.WriteBitAsync(DataType.DataBlock, db,
+                    await currentPlc.WriteBitAsync(DataType.DataBlock, targetDb,
                         256, 1, false);
-                    return new KeyValuePair<bool, string>(true, $"解锁成功");
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"解锁失败:{e}");
-                    return new KeyValuePair<bool, string>(false, $"解锁失败:{e.Message}");
+            });
+        }
+
+        private async Task<KeyValuePair<bool, string>> ExecutePlcWriteAsync(
+            string operationName,
+            Func<Plc, Task> writeAction) {
+            if (!await _writeGate.WaitAsync(0)) {
+                return new KeyValuePair<bool, string>(false, $"{operationName}操作中");
+            }
+
+            try {
+                await _plcIoGate.WaitAsync();
+                try {
+                    var currentPlc = plc;
+                    if (currentPlc is null) {
+                        return new KeyValuePair<bool, string>(false, "锁格未连接");
+                    }
+
+                    await writeAction(currentPlc);
+                    return new KeyValuePair<bool, string>(true, $"{operationName}成功");
                 }
                 finally {
-                    _locking = false;
+                    _plcIoGate.Release();
                 }
             }
-            else {
-                return new KeyValuePair<bool, string>(false, "锁格未连接");
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{operationName}失败:{e}");
+                return new KeyValuePair<bool, string>(false, $"{operationName}失败:{e.Message}");
+            }
+            finally {
+                _writeGate.Release();
             }
         }
 
-        protected virtual async void OnExceptionOccurred(ExceptionEventArgs e) {
-            await Task.Yield();
+        private static PackageExitDefinitionInfoModel CloneExitStatus(
+            PackageExitDefinitionInfoModel source) {
+            return new PackageExitDefinitionInfoModel {
+                Id = source.Id,
+                CommunicationConnectionId = source.CommunicationConnectionId,
+                Pid = source.Pid,
+                ExitName = source.ExitName,
+                Type = source.Type,
+                IsActive = source.IsActive,
+                IsLockExit = source.IsLockExit,
+                Remarks = source.Remarks,
+                CreateTime = source.CreateTime,
+                ModifyTime = source.ModifyTime
+            };
+        }
+
+        protected virtual void OnExceptionOccurred(ExceptionEventArgs e) {
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
                 Message = $"格口监控服务异常:{e.ExceptionMessage}",
@@ -392,8 +432,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             ExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnLockExitEvent(PackageExitDefinitionInfoModel e) {
-            await Task.Delay(1);
+        protected virtual void OnLockExitEvent(PackageExitDefinitionInfoModel e) {
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
                 Message = $"格口:[{e.ExitName}],锁定",
@@ -402,8 +441,7 @@ namespace JayTom.Dws.Client.Service.Sorting {
             LockExitEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnUnLockExitEvent(PackageExitDefinitionInfoModel e) {
-            await Task.Yield();
+        protected virtual void OnUnLockExitEvent(PackageExitDefinitionInfoModel e) {
             EventAggregator.Instance.Publish(new SortingLogInfoModel {
                 CreateTime = DateTime.Now,
                 Message = $"格口:[{e.ExitName}],解除锁定",
@@ -412,18 +450,17 @@ namespace JayTom.Dws.Client.Service.Sorting {
             UnLockExitEvent?.Invoke(this, e);
         }
 
-        protected virtual async void OnInitialized(List<PackageExitDefinitionInfoModel> e) {
-            await Task.Yield();
+        protected virtual void OnInitialized(List<PackageExitDefinitionInfoModel> e) {
             Initialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnConnected() {
-            await Task.Yield();
+        protected virtual void OnConnected() {
+            Interlocked.Exchange(ref _isConnected, 1);
             Connected?.Invoke(this, EventArgs.Empty);
         }
 
-        protected virtual async void OnDisconnected() {
-            await Task.Yield();
+        protected virtual void OnDisconnected() {
+            Interlocked.Exchange(ref _isConnected, 0);
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
     }

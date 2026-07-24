@@ -85,8 +85,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 NLog.LogManager.GetCurrentClassLogger().Error($"删除日志文件异常:{e}");
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken).ContinueWith(async a => {
-                    if (a.IsCompletedSuccessfully) {
+                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken).ConfigureAwait(false);
+                try {
                         //数据盘
                         if (_cacheClearSettingsDto?.MinimumSpaceRetention > 0) {
                             var diskInfo = (await _computer.GetDiskInfoAsync())
@@ -132,8 +132,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             }
                             _lastCleanupTime = DateTime.Now;
                         }
-                    }
-                });
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"定时清理异常:{e}");
+                }
             }
         }
 

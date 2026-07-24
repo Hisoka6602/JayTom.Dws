@@ -27,7 +27,7 @@ namespace JayTom.Dws.PluginInterface {
         /// <param name="panoramaImage"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, BarCodeResult>> Execute([NotNull] string barcode, [NotNull] double weight, double length = default, double width = default, double height = default,
+        Task<KeyValuePair<bool, BarCodeResult>> Execute(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, Image? image = default, Image? panoramaImage = default, CancellationToken token = default);
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace JayTom.Dws.PluginInterface {
         /// <param name="weight"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, BarCodeResult>> Execute([NotNull] string barcode, [NotNull] double weight, CancellationToken token = default);
+        Task<KeyValuePair<bool, BarCodeResult>> Execute(string barcode, double weight, CancellationToken token = default);
 
         /// <summary>
         /// 执行过滤
@@ -45,7 +45,7 @@ namespace JayTom.Dws.PluginInterface {
         /// <param name="barcode"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, BarCodeResult>> Execute([NotNull] string barcode, CancellationToken token = default);
+        Task<KeyValuePair<bool, BarCodeResult>> Execute(string barcode, CancellationToken token = default);
     }
 
     public class BarCodeResult {

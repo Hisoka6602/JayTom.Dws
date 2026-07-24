@@ -2,6 +2,7 @@
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.LogManagerPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:JayTom.Dws.Client.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:languages="clr-namespace:JayTom.Dws.Client.Languages"
     xmlns:local="clr-namespace:JayTom.Dws.Client.Views.Pages.Preferences"
@@ -35,72 +36,72 @@
             Style="{StaticResource MaterialDesignUniformTabControl}"
             TabStripPlacement="Top">
             <TabItem Foreground="White" Header="程序运行日志">
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/AppLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/AppLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="相机日志">
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/CameraLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/CameraLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="分拣日志">
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/SortingLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/SortingLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="称重日志">
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/WeighingLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/WeighingLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="体积日志">
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/VolumeLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/VolumeLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="Api日志">
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/APILogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/APILogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="输出日志">
 
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/OutputLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/OutputLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="输入日志" />
             <TabItem Foreground="White" Header="Ocr日志" />
             <TabItem Foreground="White" Header="Ftp日志">
 
-                <Frame
+                <controls:DeferredFrame
                     Margin="0"
                     Padding="0"
+                    DeferredSource="LogsViews/FTPLogPage.xaml"
                     Focusable="False"
-                    NavigationUIVisibility="Hidden"
-                    Source="LogsViews/FTPLogPage.xaml" />
+                    NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Foreground="White" Header="清理记录" />
             <TabItem Foreground="White" Header="异常日志" />

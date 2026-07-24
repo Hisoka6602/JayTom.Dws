@@ -14,10 +14,9 @@ namespace JayTom.Dws.Client.Service.SyncSettings {
 
         public SyncSettingsService(ICloudApiClientMessageHub cloudApiClientMessageHub) {
             _cloudApiClientMessageHub = cloudApiClientMessageHub;
-            _cloudApiClientMessageHub.ReceiveMessage += async info => {
+            _cloudApiClientMessageHub.ReceiveMessage += info => {
                 if (info.MethodName.Equals("SyncSettingsInfo")) {
                     try {
-                        await Task.Yield();
                         var syncSettingsInfo =
                             JsonConvert.DeserializeObject<SyncSettingsInfo>(info.MessageData.ToString() ??
                                                                             string.Empty);
@@ -29,6 +28,7 @@ namespace JayTom.Dws.Client.Service.SyncSettings {
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     }
                 }
+                return Task.CompletedTask;
             };
         }
 
@@ -47,12 +47,11 @@ namespace JayTom.Dws.Client.Service.SyncSettings {
 
         public event EventHandler<SyncSettingsInfo>? SyncContentReceived;
 
-        public async void Disconnect() {
-            await _cloudApiClientMessageHub.StopAsync();
+        public Task Disconnect() {
+            return _cloudApiClientMessageHub.StopAsync();
         }
 
-        protected virtual async void OnSyncContentReceived(SyncSettingsInfo e) {
-            await Task.Yield();
+        protected virtual void OnSyncContentReceived(SyncSettingsInfo e) {
             SyncContentReceived?.Invoke(this, e);
         }
     }

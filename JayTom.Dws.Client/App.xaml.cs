@@ -1,5 +1,6 @@
 ﻿using DryIoc;
 using System;
+using System.Linq;
 using Example;
 using Prism.Ioc;
 using System.IO;
@@ -37,6 +38,7 @@ using JayTom.Dws.Client.ViewModels;
 using Microsoft.Extensions.Hosting;
 using JayTom.Dws.Interface.License;
 using JayTom.Dws.Client.Views.Pages;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
@@ -129,9 +131,7 @@ namespace JayTom.Dws.Client {
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : PrismApplication {
-        private IHost? _host;
         private Mutex? _singleInstanceMutex;
-        private NamedPipeServerStream? pipeServer;
         private const string PipeName = "DwsPipe";
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry) {
@@ -214,28 +214,37 @@ namespace JayTom.Dws.Client {
             containerRegistry.GetContainer().RegisterServices(services => {
                 services.AddPooledDbContextFactory<SqliteContext>(options => {
                     options.UseSqlite(
-                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Data.db",
+                        CreateSqliteConnectionString("Data.db"),
                         builder => {
-                            builder.CommandTimeout(100); //180秒超时
+                            builder.CommandTimeout(100);
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                        })
+                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                        .EnableDetailedErrors(false)
+                        .EnableSensitiveDataLogging(false);
                 }, 300);
 
                 services.AddPooledDbContextFactory<SqliteConfContext>(options => {
                     options.UseSqlite(
-                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}Configuration.db",
+                        CreateSqliteConnectionString("Configuration.db"),
                         builder => {
-                            builder.CommandTimeout(100); //180秒超时
+                            builder.CommandTimeout(100);
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                        })
+                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                        .EnableDetailedErrors(false)
+                        .EnableSensitiveDataLogging(false);
                 }, 300);
                 services.AddPooledDbContextFactory<SqliteLogsContext>(options => {
                     options.UseSqlite(
-                        $"Data Source={System.AppDomain.CurrentDomain.BaseDirectory}ClientLogs.db",
+                        CreateSqliteConnectionString("ClientLogs.db"),
                         builder => {
-                            builder.CommandTimeout(100); //180秒超时
+                            builder.CommandTimeout(100);
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                        })
+                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                        .EnableDetailedErrors(false)
+                        .EnableSensitiveDataLogging(false);
                 }, 300);
 
                 //http
@@ -410,6 +419,18 @@ namespace JayTom.Dws.Client {
             return Container.Resolve<MainWindow>();
         }
 
+        /// <summary>
+        /// 创建启用连接池和写锁等待的 SQLite 连接字符串。
+        /// </summary>
+        /// <param name="databaseFileName">数据库文件名。</param>
+        /// <returns>SQLite 连接字符串。</returns>
+        private static string CreateSqliteConnectionString(string databaseFileName) {
+            return new SqliteConnectionStringBuilder {
+                DataSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, databaseFileName),
+                Mode = SqliteOpenMode.ReadWriteCreate
+            }.ToString();
+        }
+
         protected override void OnStartup(StartupEventArgs e) {
             NLog.LogManager.GetCurrentClassLogger().Error($"OnStartup开始");
             _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
@@ -470,46 +491,46 @@ namespace JayTom.Dws.Client {
         }
 
         protected override async void OnExit(ExitEventArgs e) {
-            EventAggregator.Instance.Publish(new AppLogInfoModel {
-                CreateTime = DateTime.Now,
-                Message = "程序关闭",
-                Type = LogType.Information
-            });
-            var deviceService = _host?.Services.GetService<IDeviceService>();
-            if (deviceService is not null) {
-                if (deviceService.RunningStatus) {
+            try {
+                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                    CreateTime = DateTime.Now,
+                    Message = "程序关闭",
+                    Type = LogType.Information
+                });
+
+                var serviceProvider = Container.Resolve<IServiceProvider>();
+                var deviceService = serviceProvider.GetService<IDeviceService>();
+                if (deviceService?.RunningStatus == true) {
                     await deviceService.Stop();
                 }
-            }
 
-            var sortingService = _host?.Services.GetService<ISortingService>();
-            if (sortingService is not null) {
-                if (sortingService.RunningStatus) {
+                var sortingService = serviceProvider.GetService<ISortingService>();
+                if (sortingService?.RunningStatus == true) {
                     await sortingService.Stop();
                 }
+
+                // 按注册顺序的逆序停止，避免有依赖关系的后台服务并发释放同一资源。
+                foreach (var service in serviceProvider.GetServices<IHostedService>().Reverse()) {
+                    await service.StopAsync(CancellationToken.None);
+                }
             }
-            /*if (_host is not null) {
-                await _host.StopAsync();
-                _host.Dispose();
-            }*/
-            if (_singleInstanceMutex is not null) {
-                _singleInstanceMutex.ReleaseMutex();
-                _singleInstanceMutex.Close();
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "程序关闭资源释放异常");
             }
+            finally {
+                if (_singleInstanceMutex is not null) {
+                    try {
+                        _singleInstanceMutex.ReleaseMutex();
+                    }
+                    catch (ApplicationException) {
+                        // 当前实例不再持有互斥锁时只需释放句柄。
+                    }
+                    _singleInstanceMutex.Dispose();
+                    _singleInstanceMutex = null;
+                }
 
-            var hostedServices = Container.GetContainer().GetServices<IHostedService>();
-
-            Parallel.ForEach(hostedServices, service => {
-                service.StopAsync(default);
-            });
-            /*foreach (var service in hostedServices) {
-                service.StopAsync(default).Wait();
-            }*/
-
-            await Task.Delay(1000);
-
-            GC.Collect();
-            base.OnExit(e);
+                base.OnExit(e);
+            }
         }
 
         private void NotifyExistingInstance() {
@@ -645,6 +666,7 @@ namespace JayTom.Dws.Client {
             ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
             ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
             ViewModelLocationProvider.Register<JtExpressApiPage, JtExpressApiPageViewModel>();
+            ViewModelLocationProvider.Register<JtPolarDayApiPage, JtPolarDayApiPageViewModel>();
             ViewModelLocationProvider.Register<RoutDataApiPage, RoutDataApiViewPageModel>();
             ViewModelLocationProvider.Register<CaiNiaoApiPage, CaiNiaoApiPageViewModel>();
             ViewModelLocationProvider.Register<EshippingitApiPage, EshippingitApiPageViewModel>();

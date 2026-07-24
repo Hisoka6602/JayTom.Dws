@@ -56,7 +56,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
                             catch (Exception e) {
                                 Console.WriteLine(e);
                             }
-                        }, System.Windows.Threading.DispatcherPriority.Render);
+                        }, System.Windows.Threading.DispatcherPriority.Background);
                     }
                 }
             };
@@ -210,13 +210,19 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
             set => SetProperty(ref _maxSize, value);
         }
 
-        public async void Dispose() {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+        public void Dispose() {
+            Action releaseResources = () => {
                 _isStopRead = true;
                 VideoFrame?.Freeze();
                 VideoFrame = null;
                 RealtimePreviewCallback = null;
-            });
+            };
+            if (Application.Current.Dispatcher.CheckAccess()) {
+                releaseResources();
+            }
+            else {
+                Application.Current.Dispatcher.Invoke(releaseResources);
+            }
         }
     }
 

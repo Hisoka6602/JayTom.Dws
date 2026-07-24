@@ -18,6 +18,7 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
+using JayTom.Dws.Domain.Repository;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
@@ -49,19 +50,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private readonly ISortingService _sortingService;
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
-        private ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
-        private ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
-        private ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
-        private ConcurrentQueue<SortingLogInfoModel> _sortingLogItems = new();
-        private ConcurrentQueue<WeighingLogInfoModel> _weighingLogItems = new();
-        private ConcurrentQueue<VolumeLogInfoModel> _volumeLogItems = new();
-        private ConcurrentQueue<ApiLogInfoModel> _apiLogInfoItems = new();
-        private ConcurrentQueue<OutputLogInfoModel> _outputLogItems = new();
-        private ConcurrentQueue<InputLogInfoModel> _inputLogItems = new();
-        private ConcurrentQueue<OcrLogInfoModel> _ocrLogItems = new();
-        private ConcurrentQueue<FtpLogInfoModel> _ftpLogItems = new();
-        private ConcurrentQueue<LogCleaningLogInfoModel> _logCleaningLogItems = new();
-        private static bool _isWindowsClose;
+        private readonly ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
+        private readonly ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
+        private readonly ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
+        private readonly ConcurrentQueue<SortingLogInfoModel> _sortingLogItems = new();
+        private readonly ConcurrentQueue<WeighingLogInfoModel> _weighingLogItems = new();
+        private readonly ConcurrentQueue<VolumeLogInfoModel> _volumeLogItems = new();
+        private readonly ConcurrentQueue<ApiLogInfoModel> _apiLogInfoItems = new();
+        private readonly ConcurrentQueue<OutputLogInfoModel> _outputLogItems = new();
+        private readonly ConcurrentQueue<InputLogInfoModel> _inputLogItems = new();
+        private readonly ConcurrentQueue<OcrLogInfoModel> _ocrLogItems = new();
+        private readonly ConcurrentQueue<FtpLogInfoModel> _ftpLogItems = new();
+        private readonly ConcurrentQueue<LogCleaningLogInfoModel> _logCleaningLogItems = new();
+
+        /// <summary>
+        /// 缓存需要由后台循环写出的诊断日志文本。
+        /// </summary>
+        private readonly ConcurrentQueue<string> _diagnosticLogItems = new();
+        private int _isWindowsClose;
 
         //LogCleaningLogInfoModel
         public LogProcessingService(IAppLogRepository appLogRepository,
@@ -98,8 +104,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _sortingService = sortingService;
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item => {
                 if (item is { } model) {
                     _appLogItems.Enqueue(new AppLogInfoModel() {
                         Type = LogType.Information,
@@ -108,16 +113,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //异常日志
-            EventAggregator.Instance.Subscribe<ExceptionLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<ExceptionLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
                     _exceptionItems.Enqueue(model);
                 }
             });
             //程序运行日志
-            EventAggregator.Instance.Subscribe<AppLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<AppLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -125,16 +128,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //相机日志
-            EventAggregator.Instance.Subscribe<CameraLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<CameraLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
                     _cameraLogItems.Enqueue(model);
                 }
             });
             //分拣日志
-            EventAggregator.Instance.Subscribe<SortingLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<SortingLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -143,8 +144,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             });
 
             //称重日志队列
-            EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -152,8 +152,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //体积日志队列
-            EventAggregator.Instance.Subscribe<VolumeLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<VolumeLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -161,19 +160,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //Api日志队列
-            EventAggregator.Instance.Subscribe<ApiLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<ApiLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
                     _apiLogInfoItems.Enqueue(model);
-                    NLog.LogManager.GetCurrentClassLogger().Info($"{model.RequestTime:yyyy-MM-dd HH:mm:ss.fff}--[Api请求]-{model.RequestContent}");
-                    NLog.LogManager.GetCurrentClassLogger().Info($"{model.ResponseTime:yyyy-MM-dd HH:mm:ss.fff}--[Api响应]-{model.ResponseContent}");
+                    _diagnosticLogItems.Enqueue(
+                        $"{model.RequestTime:yyyy-MM-dd HH:mm:ss.fff}--[Api请求]-{model.RequestContent}");
+                    _diagnosticLogItems.Enqueue(
+                        $"{model.ResponseTime:yyyy-MM-dd HH:mm:ss.fff}--[Api响应]-{model.ResponseContent}");
                 }
             });
             //输出日志队列
-            EventAggregator.Instance.Subscribe<OutputLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -181,19 +180,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //输入日志队列
-            EventAggregator.Instance.Subscribe<InputLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<InputLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
                     _inputLogItems.Enqueue(model);
 
-                    NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[输入]-{model.Message}");
+                    _diagnosticLogItems.Enqueue(
+                        $"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[输入]-{model.Message}");
                 }
             });
             //Ocr日志队列
-            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -201,8 +199,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //Ftp日志队列
-            EventAggregator.Instance.Subscribe<FtpLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<FtpLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
@@ -210,36 +207,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
             //清理记录队列
-            EventAggregator.Instance.Subscribe<LogCleaningLogInfoModel>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<LogCleaningLogInfoModel>(item => {
                 if (item is { } model) {
                     //添加
 
                     _logCleaningLogItems.Enqueue(model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
                     EventAggregator.Instance.Publish(new AppLogInfoModel {
                         CreateTime = DateTime.Now,
                         Message = "程序关闭",
                         Type = LogType.Information
                     });
-                    _isWindowsClose = true;
+                    Interlocked.Exchange(ref _isWindowsClose, 1);
                 }
             });
 
-            _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args) {
-                await Task.Yield();
+            _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"相机:{args.CameraSerialNumber}获取到条码[{args.Barcode}]",
                     CameraSerialNumber = args.CameraSerialNumber,
                 });
             };
-            _deviceService.VolumeCaptured += async delegate (object? sender, VolumeCapturedEventArgs args) {
-                await Task.Yield();
+            _deviceService.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"相机,获取体积信息:{args.Length},{args.Width},{args.Height}",
@@ -250,60 +243,52 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     DataSourceType = DataSourceType.DeviceInput
                 });
             };
-            _deviceService.CameraBound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                await Task.Yield();
+            _deviceService.CameraBound += delegate (object? sender, CameraFinderItemInfoModel model) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"相机:{model.SerialNumber},绑定到{model.BoundType}",
                     CameraSerialNumber = model.SerialNumber
                 });
             };
-            _deviceService.CameraEnumerationRefreshed += async delegate (object? sender, List<CameraFinderItemInfoModel> list) {
-                await Task.Yield();
+            _deviceService.CameraEnumerationRefreshed += delegate (object? sender, List<CameraFinderItemInfoModel> list) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"枚举相机",
                 });
             };
-            _deviceService.CameraDisconnected += async delegate (object? sender, List<ICamera> list) {
-                await Task.Yield();
+            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Warning,
                     Message = $"相机断开连接",
                 });
             };
-            _deviceService.CameraFault += async delegate (object? sender, List<ICamera> list) {
-                await Task.Yield();
+            _deviceService.CameraFault += delegate (object? sender, List<ICamera> list) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Exception,
                     Message = $"相机故障",
                 });
             };
-            _deviceService.CameraException += async delegate (object? sender, DeviceExceptionEventArgs args) {
-                await Task.Yield();
+            _deviceService.CameraException += delegate (object? sender, DeviceExceptionEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Exception,
                     Message = args.ExceptionMessage?.Message ?? string.Empty,
                 });
             };
-            _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                await Task.Yield();
+            _deviceService.CameraUnbound += delegate (object? sender, CameraFinderItemInfoModel model) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"相机已解绑",
                     CameraSerialNumber = model.SerialNumber
                 });
             };
-            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
-                await Task.Yield();
+            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Warning,
                     Message = $"相机:{args.CameraSerialNumber}光电触发但未识别到条码",
                     CameraSerialNumber = args.CameraSerialNumber
                 });
             };
-            _deviceService.PanoramaCaptured += async delegate (object? sender, PanoramaCaptureEventArgs args) {
-                await Task.Yield();
+            _deviceService.PanoramaCaptured += delegate (object? sender, PanoramaCaptureEventArgs args) {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"相机截取到全景图",
@@ -311,8 +296,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //Ocr
-            _deviceService.OcrContentRecognized += async delegate (object? sender, OcrResult args) {
-                await Task.Yield();
+            _deviceService.OcrContentRecognized += delegate (object? sender, OcrResult args) {
                 EventAggregator.Instance.Publish(new OcrLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"Ocr获取到条码[{args.BarCode}]",
@@ -334,16 +318,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 });
             };
             //磅秤
-            _deviceService.ScaleConnected += async delegate (object? sender, ScaleConnectedEventArgs args) {
-                await Task.Yield();
+            _deviceService.ScaleConnected += delegate (object? sender, ScaleConnectedEventArgs args) {
                 EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
                     Type = LogType.Information,
                     Message = $"磅秤已连接",
                     DataSourceType = DataSourceType.DeviceInput
                 });
             };
-            _deviceService.ScaleDisconnected += async delegate (object? sender, ScaleDisconnectedEventArgs args) {
-                await Task.Yield();
+            _deviceService.ScaleDisconnected += delegate (object? sender, ScaleDisconnectedEventArgs args) {
 
                 EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
                     Type = LogType.Warning,
@@ -361,8 +343,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     CommunicationType = CommunicationType.Receive,
                 });*/
             };
-            _externalDataService.ContentInputReceived += async (sender, args) => {
-                await Task.Yield();
+            _externalDataService.ContentInputReceived += (sender, args) => {
                 //外部输入输入
                 EventAggregator.Instance.Publish(new InputLogInfoModel() {
                     Type = LogType.Information,
@@ -377,80 +358,77 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             _exitMonitor.UnLockExitEvent += (sender, model) => {
                 NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]解锁");
             };*/
-            EventAggregator.Instance.Subscribe<InstructionReceived>(async item => {
-                await Task.Delay(100);
+            EventAggregator.Instance.Subscribe<InstructionReceived>(item => {
                 if (item is { } model && model.InstructionInfos?.Any() == true
                     ) {
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault();
                     switch (instructionInfoModel?.InstructionType) {
                         case InstructionType.CreatePackage:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[创建指令]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[创建指令]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.SendSorting:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[发送格口]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[发送格口]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.SignalCallback:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[分拣完成]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[分拣完成]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.PackageException:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹异常]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹异常]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.SendPreSignal:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[前置信号发送]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[前置信号发送]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.ReceivePreSignalReply:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[前置信号回复]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[前置信号回复]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.PackageInfoCompletedSignal:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹信息赋值完成]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹信息赋值完成]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.SequenceBindingReply:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[序号绑定回复]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[序号绑定回复]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.ResetButtonTrigger:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[按下复位]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[按下复位]{instructionInfoModel?.InstructionContent}");
                             break;
 
                         case InstructionType.PackageExceptionEx:
-                            NLog.LogManager.GetCurrentClassLogger().Info($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹异常(需要判断)]{instructionInfoModel?.InstructionContent}");
+                            _diagnosticLogItems.Enqueue($"{instructionInfoModel?.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[格口号:{model.ExitName}]-[序号:{model.SortingCode}]-[包裹异常(需要判断)]{instructionInfoModel?.InstructionContent}");
                             break;
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async position => {
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position => {
                 //创建包裹
-                await Task.Yield();
                 if (position is { } trigger) {
                     if (trigger is { TriggerPosition: TriggerPositionEnum.CreateTimePackageAfter, PackageInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[创建包裹成功]");
+                        _diagnosticLogItems.Enqueue($"{trigger.PackageInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[创建包裹成功]");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.RemovePackageAfter, PackageInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[移除包裹成功] {trigger.PackageInfo.BarCodeInfo?.Barcode} -[{trigger.Description}]");
+                        _diagnosticLogItems.Enqueue($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[移除包裹成功] {trigger.PackageInfo.BarCodeInfo?.Barcode} -[{trigger.Description}]");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo.BarCodeInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.BarCodeInfo.BindTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                        _diagnosticLogItems.Enqueue($"{trigger.PackageInfo.BarCodeInfo.BindTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.WeightSetValueAfter, PackageInfo.WeightInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[重量赋值] {trigger.PackageInfo.WeightInfo.FormattedWeight}");
+                        _diagnosticLogItems.Enqueue($"{trigger.PackageInfo.WeightInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[重量赋值] {trigger.PackageInfo.WeightInfo.FormattedWeight}");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.VolumeSetValueAfter, PackageInfo.VolumeInfo: not null }) {
-                        NLog.LogManager.GetCurrentClassLogger().Info($"{trigger.PackageInfo.VolumeInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[体积赋值] {trigger.PackageInfo.VolumeInfo.OriginalText}");
+                        _diagnosticLogItems.Enqueue($"{trigger.PackageInfo.VolumeInfo.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[体积赋值] {trigger.PackageInfo.VolumeInfo.OriginalText}");
                     }
                 }
             });
 
             //http
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(async item => {
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
                 if (item is { } model) {
-                    await Task.Yield();
                     EventAggregator.Instance.Publish(new ApiLogInfoModel() {
                         Type = model.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
                         ApiParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
@@ -465,102 +443,82 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     });
                 }
             });
-            _stackedPackageService.StackedPackageReturned += async (sender, args) => {
-                await Task.Yield();
-                NLog.LogManager.GetCurrentClassLogger()
-                    .Info(
-                        $"{args.ReceivedTime:yyyy-MM-dd HH:mm:ss.fff}--[叠包判断]-[判断结果:{(args.IsStacked ? "叠包" : "不叠包")}]-[序号:{args.PackageInfo?.Guid}]-{args.StackedContent}");
+            _stackedPackageService.StackedPackageReturned += (sender, args) => {
+                _diagnosticLogItems.Enqueue(
+                    $"{args.ReceivedTime:yyyy-MM-dd HH:mm:ss.fff}--[叠包判断]-[判断结果:{(args.IsStacked ? "叠包" : "不叠包")}]-[序号:{args.PackageInfo?.Guid}]-{args.StackedContent}");
             };
 
             //写出log字符串的信息
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
+            using var flushTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+            while (await flushTimer.WaitForNextTickAsync(stoppingToken) &&
+                   Volatile.Read(ref _isWindowsClose) == 0) {
                 try {
-                    await Task.Delay(TimeSpan.FromMilliseconds(120), stoppingToken).
-                        ContinueWith(async a => {
-                            if (a.IsCompletedSuccessfully) {
-                                //异常日志
-                                var isException = _exceptionItems.TryDequeue(out var exception);
-                                if (isException && exception is not null) {
-                                    await _exceptionLogRepository.Insert(exception, stoppingToken);
-                                }
-
-                                //程序日志
-                                var isAppLog = _appLogItems.TryDequeue(out var appLog);
-                                if (isAppLog && appLog is not null) {
-                                    await _appLogRepository.Insert(appLog, stoppingToken);
-                                }
-
-                                //相机日志
-                                var isCameraLog = _cameraLogItems.TryDequeue(out var cameraLog);
-                                if (isCameraLog && cameraLog is not null) {
-                                    await _cameraLogRepository.Insert(cameraLog, stoppingToken);
-                                }
-
-                                //分拣日志
-                                var isSortingLog = _sortingLogItems.TryDequeue(out var sortingLog);
-                                if (isSortingLog && sortingLog is not null) {
-                                    await _sortingLogRepository.Insert(sortingLog, stoppingToken);
-                                }
-
-                                //称重日志
-                                var isWeighingLog = _weighingLogItems.TryDequeue(out var weighingLog);
-                                if (isWeighingLog && weighingLog is not null) {
-                                    await _weighingLogRepository.Insert(weighingLog, stoppingToken);
-                                }
-
-                                //体积日志
-                                var isVolumeLog = _volumeLogItems.TryDequeue(out var volumeLog);
-                                if (isVolumeLog && volumeLog is not null) {
-                                    await _volumeLogRepository.Insert(volumeLog, stoppingToken);
-                                }
-
-                                //API日志
-                                var isApiLog = _apiLogInfoItems.TryDequeue(out var apiLog);
-                                if (isApiLog && apiLog is not null) {
-                                    await _apiLogRepository.Insert(apiLog, stoppingToken);
-                                }
-
-                                //输出日志
-                                var isOutputLog = _outputLogItems.TryDequeue(out var outputLog);
-                                if (isOutputLog && outputLog is not null) {
-                                    await _outputLogRepository.Insert(outputLog, stoppingToken);
-                                }
-
-                                //输入日志
-                                var isInputLog = _inputLogItems.TryDequeue(out var inputLog);
-                                if (isInputLog && inputLog is not null) {
-                                    await _inputLogRepository.Insert(inputLog, stoppingToken);
-                                }
-
-                                //OCR日志
-                                var isOcrLog = _ocrLogItems.TryDequeue(out var ocrLog);
-                                if (isOcrLog && ocrLog is not null) {
-                                    await _ocrLogRepository.Insert(ocrLog, stoppingToken);
-                                }
-
-                                //FTP日志
-                                var isFtpLog = _ftpLogItems.TryDequeue(out var ftpLog);
-                                if (isFtpLog && ftpLog is not null) {
-                                    await _ftpLogRepository.Insert(ftpLog, stoppingToken);
-                                }
-
-                                //清理记录
-                                var isLogCleaningLog = _logCleaningLogItems.TryDequeue(out var logCleaningLog);
-                                if (isLogCleaningLog && logCleaningLog is not null) {
-                                    await _cleanupLogRepository.Insert(logCleaningLog, stoppingToken);
-                                }
-                            }
-                        }, stoppingToken)
-                        .Unwrap();
+                    await FlushBatchAsync(_exceptionItems, _exceptionLogRepository, stoppingToken);
+                    await FlushBatchAsync(_appLogItems, _appLogRepository, stoppingToken);
+                    await FlushBatchAsync(_cameraLogItems, _cameraLogRepository, stoppingToken);
+                    await FlushBatchAsync(_sortingLogItems, _sortingLogRepository, stoppingToken);
+                    await FlushBatchAsync(_weighingLogItems, _weighingLogRepository, stoppingToken);
+                    await FlushBatchAsync(_volumeLogItems, _volumeLogRepository, stoppingToken);
+                    await FlushBatchAsync(_apiLogInfoItems, _apiLogRepository, stoppingToken);
+                    await FlushBatchAsync(_outputLogItems, _outputLogRepository, stoppingToken);
+                    await FlushBatchAsync(_inputLogItems, _inputLogRepository, stoppingToken);
+                    await FlushBatchAsync(_ocrLogItems, _ocrLogRepository, stoppingToken);
+                    await FlushBatchAsync(_ftpLogItems, _ftpLogRepository, stoppingToken);
+                    await FlushBatchAsync(_logCleaningLogItems, _cleanupLogRepository, stoppingToken);
+                    FlushDiagnosticMessages();
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                    break;
                 }
                 catch (Exception e) {
                     NLog.LogManager.GetCurrentClassLogger().Error($"日志管理异常:{e}");
                 }
-                finally {
-                    // await Task.Delay(120, stoppingToken);
+            }
+        }
+
+        /// <summary>
+        /// 在后台工作循环中批量写出诊断日志，避免事件热路径直接触发文件输出。
+        /// </summary>
+        private void FlushDiagnosticMessages() {
+            const int maximumBatchSize = 256;
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            for (var index = 0;
+                 index < maximumBatchSize && _diagnosticLogItems.TryDequeue(out var message);
+                 index++) {
+                logger.Info(message);
+            }
+        }
+
+        /// <summary>
+        /// 将队列中的日志按小批次写入数据库，减少上下文创建和事务提交次数。
+        /// </summary>
+        /// <typeparam name="T">日志实体类型。</typeparam>
+        /// <param name="queue">待写入的日志队列。</param>
+        /// <param name="repository">日志仓储。</param>
+        /// <param name="token">取消令牌。</param>
+        private static async Task FlushBatchAsync<T>(
+            ConcurrentQueue<T> queue,
+            IRepository<T> repository,
+            CancellationToken token) where T : class {
+            if (queue.IsEmpty) {
+                return;
+            }
+
+            const int maximumBatchSize = 64;
+            var batch = new List<T>(maximumBatchSize);
+            while (batch.Count < maximumBatchSize && queue.TryDequeue(out var item)) {
+                batch.Add(item);
+            }
+
+            var saved = batch.Count == 1
+                ? await repository.Insert(batch[0], token)
+                : await repository.InsertRange(batch, token);
+            if (!saved) {
+                foreach (var item in batch) {
+                    queue.Enqueue(item);
                 }
             }
         }

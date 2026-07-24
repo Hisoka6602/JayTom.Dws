@@ -25,8 +25,8 @@ namespace JayTom.Dws.Domain.Repository.License {
         /// <param name="order"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        new Task<KeyValuePair<bool, object>> SelectOrderByDescending<TOrder>([NotNull] Expression<Func<LicenseUserInfo, bool>> @where,
-            [NotNull] Expression<Func<LicenseUserInfo, TOrder>> order, CancellationToken token);
+        new Task<KeyValuePair<bool, object>> SelectOrderByDescending<TOrder>(Expression<Func<LicenseUserInfo, bool>> @where,
+            Expression<Func<LicenseUserInfo, TOrder>> order, CancellationToken token);
 
         /// <summary>
         /// 修改用户授权上限数量

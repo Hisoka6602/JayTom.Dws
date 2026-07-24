@@ -303,13 +303,14 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                         if (nvrCameraBindingInfoModels.Any(a => a.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))) {
                             var infoModels = nvrCameraBindingInfoModels.Where(w => w.SerialNumber.Equals(args.CompletedPackage.BarCodeInfo.SerialNumber))
                                 .ToList();
+                            var ipcNvrConfigs = await _ipcNvrConfigRepository.MemoryCacheData();
+                            var watermarkConfigs = await _nvrWatermarkConfigRepository.MemoryCacheData();
                             var results = infoModels.Select(s => {
-                                // 获取异步数据并同步等待完成
-                                var infoModel = _ipcNvrConfigRepository.MemoryCacheData().Result
+                                var infoModel = ipcNvrConfigs
                                     .FirstOrDefault(f => f.IpAddress.Equals(s.IpAddress) && f.Username.Equals(s.Username));
 
                                 if (infoModel != null) {
-                                    var watermarkConfigInfoModel = _nvrWatermarkConfigRepository.MemoryCacheData().Result
+                                    var watermarkConfigInfoModel = watermarkConfigs
                                         .FirstOrDefault(f => f.IpcNvrConfigId.Equals(infoModel.Id));
 
                                     if (watermarkConfigInfoModel != null) {
@@ -329,12 +330,12 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
 
                             if (results?.Any() == true && results?.FirstOrDefault().watermarkConfig is not null) {
                                 if (results.FirstOrDefault().DisplayMode == 0) {
-                                    _baseDaHuatech.AddRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                    await _baseDaHuatech.AddRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
                                         args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
                                         results.FirstOrDefault().watermarkConfig);
                                 }
                                 else {
-                                    _baseDaHuatech.AddSingleRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
+                                    await _baseDaHuatech.AddSingleRealTimeWatermark(results.Select(s => (s.SerialNumber, s.Channel)).ToList(),
                                         args.CompletedPackage.Timestamp, args.CompletedPackage.BarCodeInfo.Barcode,
                                         results.FirstOrDefault().watermarkConfig);
                                 }
@@ -392,8 +393,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken).ContinueWith(a => {
-                    try {
+                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
+                try {
                         if (PackageInfoManager.GetPackageCount() > 0 && _deviceService.RunningStatus) {
                             //判断存图路径等于空
                             var codeInfo = PackageInfoManager.GetPackage(f => f.Value is {
@@ -439,11 +440,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices {
                                 }
                             }
                         }
-                    }
-                    catch (Exception e) {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    }
-                }, stoppingToken);
+                }
+                catch (Exception e) {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                }
             }
         }
     }

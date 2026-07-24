@@ -31,9 +31,11 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         private readonly ITcpContentOutput _tcpContentOutput;
 
         private readonly ISoundRepository _soundRepository;
-        private SemaphoreSlim _semaphore = new(1);
+        private readonly SemaphoreSlim _settingsSemaphore = new(1, 1);
+        private readonly SemaphoreSlim _outputSemaphore = new(1, 1);
+        private readonly SemaphoreSlim _soundSemaphore = new(1, 1);
         private ResultOutputSettingsDto? _outputSettingsDto;
-        private ConcurrentDictionary<string, byte[]>? _sounds = new();
+        private ConcurrentDictionary<string, byte[]> _sounds = new();
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
 
         public DefaultResultOutputService(IConfigRepository configRepository,
@@ -52,83 +54,21 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             _soundRepository = soundRepository;
 
             //扫到包裹
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async position => {
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position => {
                 //播放声音事件
                 if (position is TriggerPositionEvent trigger) {
-                    if (_outputSettingsDto?.IsUseAudioOutput == true) {
-                        if (_outputSettingsDto?.AudioOutputSettingsInfo?.TriggerPosition == trigger.TriggerPosition) {
+                    var settings = Volatile.Read(ref _outputSettingsDto);
+                    if (settings?.IsUseAudioOutput == true) {
+                        if (settings.AudioOutputSettingsInfo?.TriggerPosition == trigger.TriggerPosition) {
                             SoundOutput(trigger.IsSuccess);
                         }
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
-                await Task.Yield();
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(settings => {
                 if (settings is SettingsChangedEvent { SettingsName: "ResultOutputSettings" }) {
-                    await _semaphore.WaitAsync();
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("ResultOutputSettings"));
-                    if (configInfoModel is not null) {
-                        try {
-                            _outputSettingsDto = JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value);
-                        }
-                        catch (Exception e) {
-                            OnOutputFailed(e);
-                        }
-                    }
-                    _outputSettingsDto ??= new ResultOutputSettingsDto();
-                    if (_outputSettingsDto.IsUseTcpOutput) {
-                        //连接Tcp
-                        //判断使用客户端还是服务端
-                        //如果使用服务端，则一开始就有开启
-                        if (_outputSettingsDto.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
-                            if (_tcpContentOutput.ConnectionStatus == ConnectionStatus.Connected) {
-                                //创建连接
-                                _tcpContentOutput.Close();
-                            }
-                            await _tcpContentOutput.Connect(_outputSettingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
-                                _outputSettingsDto.TcpSettingsInfo.ServerConfig.Port, ConnectionType.Server);
-                        }
-                        else {
-                            if (_tcpContentOutput.ConnectionStatus == ConnectionStatus.Connected) {
-                                //创建连接
-                                _tcpContentOutput.Close();
-                            }
-                            await _tcpContentOutput.Connect(_outputSettingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
-                                _outputSettingsDto.TcpSettingsInfo.ClientConfig.Port, ConnectionType.Client);
-                        }
-                    }
-
-                    if (_outputSettingsDto.IsUseAudioOutput) {
-                        var soundInfoModels = await _soundRepository.
-                            Select(s => s.Id > 0, o => o.Id);
-                        foreach (var soundInfoModel in soundInfoModels?.Where(soundInfoModel => soundInfoModel.SoundFile is not null) ?? new List<SoundInfoModel>()) {
-                            _sounds?.AddOrUpdate(soundInfoModel.SoundName,
-                                soundInfoModel?.SoundFile ?? Array.Empty<byte>(), (a, b) => b);
-                        }
-                    }
-
-                    if (_outputSettingsDto.IsUseSerialOutput) {
-                        //连接串口
-                        try {
-                            _serialPort?.Close();
-                            _serialPort = new System.IO.Ports.SerialPort() {
-                                BaudRate = _outputSettingsDto.SerialPortSettingsInfo.BaudRate,
-                                DataBits = _outputSettingsDto.SerialPortSettingsInfo.DataBits,
-                                Parity = _outputSettingsDto.SerialPortSettingsInfo.Parity,
-                                StopBits = _outputSettingsDto.SerialPortSettingsInfo.StopBits,
-                                PortName = _outputSettingsDto.SerialPortSettingsInfo.PortName,
-                            };
-                            _serialPort.Open();
-                            if (!_serialPort.IsOpen) {
-                                //语言设置
-                                OnOutputFailed(new Exception("输出串口连接失败"));
-                            }
-                        }
-                        catch (Exception e) {
-                            OnOutputFailed(e);
-                        }
-                    }
-                    _semaphore.Release();
+                    // 配置和声音来自数据库，必须脱离事件发布线程执行。
+                    _ = Task.Run(ReloadSettingsAsync);
                 }
             });
             //默认加载
@@ -137,16 +77,102 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             });
         }
 
+        private async Task ReloadSettingsAsync() {
+            await _settingsSemaphore.WaitAsync();
+            try {
+                var configInfoModel = await _configRepository.FirstOrDefault(
+                    settings => settings.ConfigName.Equals("ResultOutputSettings"));
+                var nextSettings = configInfoModel is null
+                    ? new ResultOutputSettingsDto()
+                    : JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value)
+                      ?? new ResultOutputSettingsDto();
+
+                var nextSounds = new ConcurrentDictionary<string, byte[]>();
+                if (nextSettings.IsUseAudioOutput) {
+                    var soundInfoModels = await _soundRepository.Select(s => s.Id > 0, o => o.Id);
+                    foreach (var soundInfoModel in soundInfoModels?
+                                 .Where(soundInfoModel => soundInfoModel.SoundFile is not null)
+                             ?? new List<SoundInfoModel>()) {
+                        nextSounds.TryAdd(
+                            soundInfoModel.SoundName,
+                            soundInfoModel.SoundFile ?? Array.Empty<byte>());
+                    }
+                }
+
+                // 输出资源的替换与发送使用同一把锁，避免发送时关闭串口/TCP。
+                await _outputSemaphore.WaitAsync();
+                try {
+                    if (_tcpContentOutput.ConnectionStatus == ConnectionStatus.Connected) {
+                        _tcpContentOutput.Close();
+                    }
+
+                    if (nextSettings.IsUseTcpOutput) {
+                        if (nextSettings.TcpSettingsInfo.ConnectionMode == TcpConnectionMode.Server) {
+                            await _tcpContentOutput.Connect(
+                                nextSettings.TcpSettingsInfo.ServerConfig.IpAddress,
+                                nextSettings.TcpSettingsInfo.ServerConfig.Port,
+                                ConnectionType.Server);
+                        }
+                        else {
+                            await _tcpContentOutput.Connect(
+                                nextSettings.TcpSettingsInfo.ClientConfig.IpAddress,
+                                nextSettings.TcpSettingsInfo.ClientConfig.Port,
+                                ConnectionType.Client);
+                        }
+                    }
+
+                    _serialPort?.Close();
+                    _serialPort?.Dispose();
+                    _serialPort = null;
+                    if (nextSettings.IsUseSerialOutput) {
+                        _serialPort = new System.IO.Ports.SerialPort {
+                            BaudRate = nextSettings.SerialPortSettingsInfo.BaudRate,
+                            DataBits = nextSettings.SerialPortSettingsInfo.DataBits,
+                            Parity = nextSettings.SerialPortSettingsInfo.Parity,
+                            StopBits = nextSettings.SerialPortSettingsInfo.StopBits,
+                            PortName = nextSettings.SerialPortSettingsInfo.PortName,
+                        };
+                        _serialPort.Open();
+                        if (!_serialPort.IsOpen) {
+                            OnOutputFailed(new Exception("输出串口连接失败"));
+                        }
+                    }
+
+                    Volatile.Write(ref _sounds, nextSounds);
+                    Volatile.Write(ref _outputSettingsDto, nextSettings);
+                }
+                finally {
+                    _outputSemaphore.Release();
+                }
+            }
+            catch (Exception e) {
+                OnOutputFailed(e);
+            }
+            finally {
+                _settingsSemaphore.Release();
+            }
+        }
+
         public event EventHandler<Exception>? OutputFailed;
 
         public void ExecuteOutput(string barCode, float weight, DateTime scanTime, float length, float width, float height,
             float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
-            if (_outputSettingsDto is not null &&
-                (_outputSettingsDto.IsUseLocationOutput || _outputSettingsDto.IsUseSerialOutput
-                || _outputSettingsDto.IsUseTcpOutput)) {
-                Task.Run(async () => {
+            var currentSettings = Volatile.Read(ref _outputSettingsDto);
+            if (currentSettings is not null &&
+                (currentSettings.IsUseLocationOutput || currentSettings.IsUseSerialOutput
+                 || currentSettings.IsUseTcpOutput)) {
+                _ = Task.Run(async () => {
+                    var lockTaken = false;
+                    try {
+                        await _outputSemaphore.WaitAsync(cancellationToken);
+                        lockTaken = true;
+                        var settings = Volatile.Read(ref _outputSettingsDto);
+                        if (settings is null) {
+                            return;
+                        }
+
                     //获取数据格式
-                    var list = _outputSettingsDto.DataTemplate
+                    var list = settings.DataTemplate
                         ?.Where(w => w.ApplicationType == ItemApplicationType.ResultData)?
                         .Select(s => ParseTemplate(s.Content, barCode, weight, scanTime, length, width, height,
                             volume, cameraSerialNumber, true))
@@ -158,29 +184,41 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                     var message = string.Join(",", list);
                     //使用polly
                     var retryPolicy = Policy.HandleResult<bool>(result => !result)
-                        .Or<TimeoutException>().RetryAsync(_outputSettingsDto.UploadSettingsInfo.RetryCount, (a, b) => {
+                        .Or<TimeoutException>().RetryAsync(settings.UploadSettingsInfo.RetryCount, (a, b) => {
                         });
 
                     await retryPolicy.ExecuteAsync(async () => {
-                        await Task.Delay(_outputSettingsDto.UploadSettingsInfo.SendDelay, cancellationToken);
+                        await Task.Delay(settings.UploadSettingsInfo.SendDelay, cancellationToken);
                         //Tcp输出
-                        if (_outputSettingsDto.IsUseTcpOutput) {
-                            return await TcpOutput(message, cancellationToken);
+                        if (settings.IsUseTcpOutput) {
+                            return await TcpOutput(settings, message, cancellationToken);
                         }
                         //串口输出
-                        if (_outputSettingsDto.IsUseSerialOutput) {
-                            if (_outputSettingsDto.SerialPortResultOutputInfo.IsUseCustomContentOutput) {
-                                return await SerialPortOutput(_outputSettingsDto.SerialPortResultOutputInfo.CustomOutputContent, cancellationToken);
+                        if (settings.IsUseSerialOutput) {
+                            if (settings.SerialPortResultOutputInfo.IsUseCustomContentOutput) {
+                                return await SerialPortOutput(settings, settings.SerialPortResultOutputInfo.CustomOutputContent);
                             }
                             else {
-                                return await SerialPortOutput(message, cancellationToken);
+                                return await SerialPortOutput(settings, message);
                             }
                         }
                         //Http输出
                         //位置输出
                         return true;
                     });
-                }, cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                        // 调用方取消属于正常结束。
+                    }
+                    catch (Exception e) {
+                        OnOutputFailed(e);
+                    }
+                    finally {
+                        if (lockTaken) {
+                            _outputSemaphore.Release();
+                        }
+                    }
+                });
             }
         }
 
@@ -190,10 +228,12 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         /// <param name="message"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<bool> TcpOutput(string message, CancellationToken cancellationToken = default) {
+        private async Task<bool> TcpOutput(
+            ResultOutputSettingsDto settings,
+            string message,
+            CancellationToken cancellationToken = default) {
             var isSend = false;
-            if (_outputSettingsDto is not null) {
-                if (_outputSettingsDto.IsUseTcpOutput) {
+            if (settings.IsUseTcpOutput) {
                     isSend = await _tcpContentOutput.SendMessage(message, cancellationToken);
                     if (isSend) {
                         EventAggregator.Instance.Publish(new TriggerPositionEvent() {
@@ -208,7 +248,6 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             Message = $"Tcp输出:{message}"
                         });
                     }
-                }
             }
 
             return isSend;
@@ -220,12 +259,10 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         /// <param name="message"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<bool> SerialPortOutput(string message, CancellationToken cancellationToken = default) {
-            await Task.Yield();
-            if (_outputSettingsDto is not null) {
-                if (_outputSettingsDto.IsUseSerialOutput) {
+        private Task<bool> SerialPortOutput(ResultOutputSettingsDto settings, string message) {
+            if (settings.IsUseSerialOutput) {
                     try {
-                        switch (_outputSettingsDto.SerialPortSettingsInfo.DataFormat) {
+                        switch (settings.SerialPortSettingsInfo.DataFormat) {
                             case DataFormatType.Ascii:
                                 _serialPort?.WriteLine(message);
                                 EventAggregator.Instance.Publish(new OutputLogInfoModel() {
@@ -235,7 +272,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                                     OutputType = OutputType.SerialPortOutput,
                                     Message = $"串口输出:{message}"
                                 });
-                                return true;
+                                return Task.FromResult(true);
 
                             case DataFormatType.Hex: {
                                     var toByteArray = HexStringToByteArray(message);
@@ -247,17 +284,16 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                                         OutputType = OutputType.SerialPortOutput,
                                         Message = $"串口输出:{message}"
                                     });
-                                    return true;
+                                    return Task.FromResult(true);
                                 }
                         }
                     }
                     catch (Exception e) {
                         OnOutputFailed(e);
-                        return false;
-                    }
+                        return Task.FromResult(false);
                 }
             }
-            return false;
+            return Task.FromResult(false);
         }
 
         /// <summary>
@@ -265,22 +301,30 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
         /// </summary>
         /// <param name="isSuccess"></param>
         /// <param name="cancellationToken"></param>
-        private async void SoundOutput(bool isSuccess, CancellationToken cancellationToken = default) {
+        private void SoundOutput(bool isSuccess, CancellationToken cancellationToken = default) {
+            _ = Task.Run(() => SoundOutputAsync(isSuccess, cancellationToken));
+        }
+
+        private async Task SoundOutputAsync(bool isSuccess, CancellationToken cancellationToken) {
+            var lockTaken = false;
             try {
-                if (_outputSettingsDto is not null && _sounds is not null) {
-                    if (_outputSettingsDto.IsUseAudioOutput) {
+                await _soundSemaphore.WaitAsync(cancellationToken);
+                lockTaken = true;
+                var settings = Volatile.Read(ref _outputSettingsDto);
+                var sounds = Volatile.Read(ref _sounds);
+                if (settings is not null) {
+                    if (settings.IsUseAudioOutput) {
                         if (isSuccess) {
-                            var tryGetValue = _sounds.TryGetValue(
-                                _outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio ?? string.Empty, out var file);
+                            var soundName = settings.AudioOutputSettingsInfo.SuccessAudio ?? string.Empty;
+                            var tryGetValue = sounds.TryGetValue(soundName, out var file);
                             if (tryGetValue && file is not null) {
-                                await _speech.PlayCacheByteFile(
-                                    _outputSettingsDto.AudioOutputSettingsInfo.SuccessAudio ?? string.Empty, file);
+                                await _speech.PlayCacheByteFile(soundName, file);
                                 EventAggregator.Instance.Publish(new OutputLogInfoModel() {
                                     Type = LogType.Information,
                                     CreateTime = DateTime.Now,
-                                    OutputContent = _outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty,
+                                    OutputContent = soundName,
                                     OutputType = OutputType.AudioOutput,
-                                    Message = $"声音输出:{_outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty}"
+                                    Message = $"声音输出:{soundName}"
                                 });
                             }
                             else {
@@ -288,17 +332,16 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                             }
                         }
                         else {
-                            var tryGetValue = _sounds.TryGetValue(
-                                _outputSettingsDto.AudioOutputSettingsInfo.FailureAudio ?? string.Empty, out var file);
+                            var soundName = settings.AudioOutputSettingsInfo.FailureAudio ?? string.Empty;
+                            var tryGetValue = sounds.TryGetValue(soundName, out var file);
                             if (tryGetValue && file is not null) {
-                                await _speech.PlayCacheByteFile(
-                                    _outputSettingsDto.AudioOutputSettingsInfo.FailureAudio ?? string.Empty, file);
+                                await _speech.PlayCacheByteFile(soundName, file);
                                 EventAggregator.Instance.Publish(new OutputLogInfoModel() {
                                     Type = LogType.Information,
                                     CreateTime = DateTime.Now,
-                                    OutputContent = _outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty,
+                                    OutputContent = soundName,
                                     OutputType = OutputType.AudioOutput,
-                                    Message = $"声音输出:{_outputSettingsDto?.AudioOutputSettingsInfo?.SuccessAudio ?? string.Empty}"
+                                    Message = $"声音输出:{soundName}"
                                 });
                             }
                             else {
@@ -308,8 +351,16 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
                     }
                 }
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                // 调用方取消属于正常结束。
+            }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            finally {
+                if (lockTaken) {
+                    _soundSemaphore.Release();
+                }
             }
         }
 
@@ -338,8 +389,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput {
             };
         }
 
-        protected virtual async void OnOutputFailed(Exception e) {
-            await Task.Yield();
+        protected virtual void OnOutputFailed(Exception e) {
             OutputFailed?.Invoke(this, e);
         }
 

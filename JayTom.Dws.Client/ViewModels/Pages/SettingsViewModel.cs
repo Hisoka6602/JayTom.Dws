@@ -10,6 +10,7 @@ using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Domain.Dto.AppDto;
@@ -32,6 +33,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private ObservableCollection<MenuItemInfoModel> _menuItems;
         private double _listBoxMaxHeight = 900;
         private PassWordSettingsDto? _passWordSettingsDto;
+
+        /// <summary>
+        /// 标记页面导航是否正在执行，避免连续点击重复创建页面。
+        /// </summary>
+        private bool _isNavigating;
+
+        /// <summary>
+        /// 记录当前设置页面，避免重复导航到同一页面。
+        /// </summary>
+        private string _currentPageClassName = "DataManagementPage";
+
+        /// <summary>
+        /// 加载动画至少显示的毫秒数，确保用户能够看清动画。
+        /// </summary>
+        private const int MinimumLoadingDurationMilliseconds = 700;
+
+        /// <summary>
+        /// 标记设置页加载遮罩是否可见。
+        /// </summary>
+        private bool _isLoading;
 
         public SettingsViewModel(IRegionManager regionManager, IConfigRepository configRepository) {
             _regionManager = regionManager;
@@ -304,6 +325,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         }
 
         /// <summary>
+        /// 获取加载动画使用的显示信息。
+        /// </summary>
+        public LoadingDialogViewModel LoadingDialog { get; } = new() {
+            Description = "正在加载页面..."
+        };
+
+        /// <summary>
+        /// 获取或设置设置页加载遮罩是否可见。
+        /// </summary>
+        public bool IsLoading {
+            get => _isLoading;
+            private set => SetProperty(ref _isLoading, value);
+        }
+
+        /// <summary>
         /// 点击事件
         /// </summary>
         public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
@@ -314,34 +350,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         public ICommand LoadedCommand => new DelegateCommand<Frame>(LoadedDelegate);
 
         private async void LoadedDelegate(Frame obj) {
+            _frame = obj;
             _passWordSettingsDto ??= await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                //加载loading
-                _frame = obj;
-                var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
-                    model.Identifier = "SettingDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-                    if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion")) {
-                        //创建区域(用于视觉树以外控件)
-                        RegionManager.SetRegionName(obj, "ContentRegion");
-                        RegionManager.SetRegionManager(obj, _regionManager);
-                        _regionManager.Regions["ContentRegion"].RequestNavigate("DataManagementPage");
-                    }
-                    if (DialogHost.IsDialogOpen(model.Identifier)) {
-                        DialogHost.Close(model.Identifier);
-                    }
-                }
-            });
+            if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion")) {
+                // 创建区域，用于视觉树以外的控件。
+                RegionManager.SetRegionName(obj, "ContentRegion");
+                RegionManager.SetRegionManager(obj, _regionManager);
+                await NavigateWithLoadingAsync(_currentPageClassName);
+            }
         }
 
         private async void MenuClickDelegate(MenuItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                //判断是否使用密码
+            if (_isNavigating ||
+                string.IsNullOrWhiteSpace(obj?.PageClassName) ||
+                string.Equals(
+                    _currentPageClassName,
+                    obj.PageClassName,
+                    StringComparison.Ordinal)) {
+                return;
+            }
 
-                //加载loading
-
-                //弹出密码框
+            _isNavigating = true;
+            try {
+                // 弹出密码框。
                 if (_passWordSettingsDto?.IsUsePasswordProtection == true && AppContext.GetData("IsValidationPassed") is not true &&
                     _passWordSettingsDto?.PasswordProtectionModuleItems
                         ?.Any(a => a.IsProtected && a.PageClassName.Equals(obj.PageClassName)) == true
@@ -357,48 +388,58 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     }
                 }
 
-                Task.Run(async () => {
-                    await Application.Current.Dispatcher.InvokeAsync(async () => {
-                        var loadingDialog = new LoadingDialog();
-                        if (loadingDialog.DataContext is LoadingDialogViewModel model) {
-                            model.Identifier = "SettingDialog";
-                            DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-                            await Task.Delay(400);
-                            //跳转
-                            {
-                                if (!obj.PageClassName.Equals(string.Empty)) {
-                                    foreach (var item in MenuItems) {
-                                        item.IsSelected = false;
-                                        item.RadiusRight = new CornerRadius(0, 0, 0, 0);
-                                    }
-                                    obj.IsSelected = true;
-                                    MenuItemInfoModel? previousItem = null, nextItem = null;
-                                    var of = MenuItems.IndexOf(obj);
-                                    if (of - 1 >= 0) {
-                                        //有前一个
-                                        previousItem = MenuItems[of - 1];
-                                    }
-                                    if (of < MenuItems.Count - 1) {
-                                        nextItem = MenuItems[of + 1];
-                                    }
+                foreach (var item in MenuItems) {
+                    item.IsSelected = false;
+                    item.RadiusRight = new CornerRadius(0, 0, 0, 0);
+                }
 
-                                    if (previousItem is not null) {
-                                        previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
-                                    }
+                obj.IsSelected = true;
+                MenuItemInfoModel? previousItem = null, nextItem = null;
+                var selectedIndex = MenuItems.IndexOf(obj);
+                if (selectedIndex > 0) {
+                    previousItem = MenuItems[selectedIndex - 1];
+                }
 
-                                    if (nextItem is not null) {
-                                        nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
-                                    }
-                                    _regionManager?.Regions?["ContentRegion"]?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
-                                }
-                            }
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        }
-                    });
-                });
-            });
+                if (selectedIndex < MenuItems.Count - 1) {
+                    nextItem = MenuItems[selectedIndex + 1];
+                }
+
+                if (previousItem is not null) {
+                    previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
+                }
+
+                if (nextItem is not null) {
+                    nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
+                }
+
+                await NavigateWithLoadingAsync(obj.PageClassName);
+            }
+            finally {
+                _isNavigating = false;
+            }
+        }
+
+        /// <summary>
+        /// 在显示加载动画后导航，并在目标页面完成首帧渲染后关闭动画。
+        /// </summary>
+        /// <param name="pageClassName">目标页面注册名称。</param>
+        private async Task NavigateWithLoadingAsync(string pageClassName) {
+            IsLoading = true;
+            var minimumAnimationTask = Task.Delay(MinimumLoadingDurationMilliseconds);
+            try {
+                // 先让加载遮罩和等待圈完成首帧渲染，再创建目标页面。
+                await Dispatcher.Yield(DispatcherPriority.ContextIdle);
+                _regionManager.Regions["ContentRegion"]
+                    .RequestNavigate(new Uri(pageClassName, UriKind.Relative));
+                _currentPageClassName = pageClassName;
+
+                // 等待目标页面完成首帧布局，同时让等待圈至少完整显示一段时间。
+                await Dispatcher.Yield(DispatcherPriority.ContextIdle);
+                await minimumAnimationTask;
+            }
+            finally {
+                IsLoading = false;
+            }
         }
     }
 }

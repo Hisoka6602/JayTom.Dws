@@ -616,12 +616,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
                                 RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
                                 BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
-                                IsBarcodeImageExists = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath?.IsFileExists() ?? false,
+                                IsBarcodeImageExists = !string.IsNullOrWhiteSpace(
+                                    s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath),
                                 Other = s.Other ?? string.Empty,
                                 ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
                                 PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
                                 new PanoramaImageItemModel() {
-                                    IsPanoramaImageExists = ps.LocalPath?.IsFileExists() ?? false,
+                                    IsPanoramaImageExists = !string.IsNullOrWhiteSpace(ps.LocalPath),
                                     PanoramaImagePath = ps.LocalPath
                                 })?.ToList() ?? new List<PanoramaImageItemModel>(),
                                 UploadInfo = new UploadItemModel {

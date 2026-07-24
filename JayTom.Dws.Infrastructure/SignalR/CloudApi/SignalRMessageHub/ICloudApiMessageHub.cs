@@ -14,21 +14,21 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         /// </summary>
         /// <param name="excludedClients"></param>
         //[HubMethodName("Stop")]
-        void Stop(List<string> excludedClients);
+        Task Stop(List<string> excludedClients);
 
         /// <summary>
         /// 启动
         /// </summary>
         /// <param name="excludedClients"></param>
         //[HubMethodName("Start")]
-        void Start(List<string> excludedClients);
+        Task Start(List<string> excludedClients);
 
         /// <summary>
         /// 退出
         /// </summary>
         /// <param name="excludedClients"></param>
         //[HubMethodName("Exit")]
-        void Exit(List<string> excludedClients);
+        Task Exit(List<string> excludedClients);
 
         /// <summary>
         /// 同步设置
@@ -38,7 +38,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         /// <param name="settingsName"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        void SyncSettingsInfo(string excludedClient, string settingsName, object message);
+        Task SyncSettingsInfo(string excludedClient, string settingsName, object message);
 
         /// <summary>
         /// 消息
@@ -47,7 +47,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         /// <param name="messageType"></param>
         /// <param name="message"></param>
         //[HubMethodName("MessageAll")]
-        void MessageAll(string messageType, object message);
+        Task MessageAll(string messageType, object message);
 
         /// <summary>
         /// 消息
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         /// <param name="messageType"></param>
         /// <param name="message"></param>
         //[HubMethodName("MessageToClient")]
-        void MessageToClient(string client, string messageType, object message);
+        Task MessageToClient(string client, string messageType, object message);
 
         /// <summary>
         /// 消息
@@ -67,7 +67,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         /// <param name="messageType"></param>
         /// <param name="message"></param>
         //[HubMethodName("MessageToClients")]
-        void MessageToClients(List<string> clients, string messageType, object message);
+        Task MessageToClients(List<string> clients, string messageType, object message);
 
         /// <summary>
         /// 消息
@@ -77,7 +77,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub {
         /// <param name="messageType"></param>
         /// <param name="message"></param>
         //[HubMethodName("MessageToGroup")]
-        void SendMessageToGroup(string clientGroup, string messageType, object message);
+        Task SendMessageToGroup(string clientGroup, string messageType, object message);
     }
 
     public class SyncSettingsInfo {

@@ -21,17 +21,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
     public class NormalUsbCamera : IIndustrialCamera {
         private UsbBarCodeReader? _usbBarCodeReader;
-        private SemaphoreSlim _semaphoreSlim = new(1, 1);
-        private SemaphoreSlim _drawSlim = new(1);
-        private SemaphoreSlim _takePhotoSlim = new(1);
-        private SemaphoreSlim _barCodeSlim = new(1);
-        private SemaphoreSlim _readImageSlim = new(1);
+        private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+        private readonly SemaphoreSlim _drawSlim = new(1);
+        private readonly SemaphoreSlim _takePhotoSlim = new(1);
+        private readonly SemaphoreSlim _barCodeSlim = new(1);
+        private readonly SemaphoreSlim _readImageSlim = new(1);
         private long _frameNo = 0;
 
         /// <summary>
         /// 设备列表
         /// </summary>
-        private static ConcurrentDictionary<string, CameraInfo> _devInfo = new();
+        private static readonly ConcurrentDictionary<string, CameraInfo> _devInfo = new();
 
         //过滤器
         private BarCodeFilterContainer _barCodeFilterContainer = new();
@@ -44,8 +44,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
         public NormalUsbCamera() {
         }
 
-        public async void Dispose() {
-            await Task.Yield();
+        public void Dispose() {
             if (_usbBarCodeReader is not null) {
                 _usbBarCodeReader.Dispose();
                 _usbBarCodeReader = null;
@@ -280,15 +279,15 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             }
         }
 
-        public async void SetParameters(Dictionary<string, object> parameters) {
+        public void SetParameters(Dictionary<string, object> parameters) {
             //设置参数
             if (_usbBarCodeReader is not null) {
                 foreach (var parameter in parameters) {
                     switch (parameter.Key) {
                         case "BarcodeReaderParameter": {
                                 //读码器参数
-                                var (key, value) = await _usbBarCodeReader.SetBarcodeReaderParameter(
-                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value);
+                                var (key, value) = _usbBarCodeReader.SetBarcodeReaderParameter(
+                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value).GetAwaiter().GetResult();
                                 if (!key) {
                                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                         Exception = new Exception(value)
@@ -299,8 +298,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                             }
                         case "UsbCameraParameter": {
                                 //相机参数
-                                var (key, value) = await _usbBarCodeReader.SetUsbCameraParameter(
-                                    (Dictionary<UsbCameraParameter, object>)parameter.Value);
+                                var (key, value) = _usbBarCodeReader.SetUsbCameraParameter(
+                                    (Dictionary<UsbCameraParameter, object>)parameter.Value).GetAwaiter().GetResult();
                                 if (!key) {
                                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                         Exception = new Exception(value)
@@ -367,43 +366,36 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             BarCodeFilterContainer.ResetFilter();
         }
 
-        protected virtual async void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
             CameraExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraInitialized(CameraInitializedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraInitialized(CameraInitializedEventArgs e) {
             Status = CameraStatus.Initialized;
             CameraInitialized?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraDisconnected(CameraConnectionEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
             Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStarted(CameraStartedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStarted(CameraStartedEventArgs e) {
             Status = CameraStatus.Running;
             CameraStarted?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraStopped(CameraStoppedEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
             Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
         }
 
-        protected virtual async void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
             Status = CameraStatus.Uninitialized;
             CameraUnregistered?.Invoke(this, e);
         }
 
-        protected virtual async void OnRealtimeImage(RealtimeImageEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             RealtimeImage?.Invoke(this, e);
         }
 
@@ -457,8 +449,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             }
         }
 
-        protected virtual async void OnBarcodeRead(BarcodeReadEventArgs e) {
-            await Task.Yield();
+        protected virtual void OnBarcodeRead(BarcodeReadEventArgs e) {
             BarcodeRead?.Invoke(this, e);
         }
     }

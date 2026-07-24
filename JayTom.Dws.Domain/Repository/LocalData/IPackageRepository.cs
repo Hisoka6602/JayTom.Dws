@@ -23,13 +23,13 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         /// <param name="token"></param>
         /// <returns></returns>
         Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackageOrderByDescending<TOrder>(
-            [NotNull] Expression<Func<PackageInfoModel, bool>> @where,
-            [NotNull] Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
+            Expression<Func<PackageInfoModel, bool>> @where,
+            Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token = default);
 
         Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackage<TOrder>(
-            [NotNull] Expression<Func<PackageInfoModel, bool>> @where,
-            [NotNull] Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
+            Expression<Func<PackageInfoModel, bool>> @where,
+            Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token = default);
 
         /// <summary>
@@ -38,9 +38,9 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         /// <param name="where"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, PackageInfoModel>> FirstOrDefaultInfo([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
+        Task<KeyValuePair<bool, PackageInfoModel>> FirstOrDefaultInfo(Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
 
-        new Task<int> Total([NotNull] Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
+        new Task<int> Total(Expression<Func<PackageInfoModel, bool>> @where, CancellationToken token = default);
 
         /// <summary>
         /// 获取缓存包裹数据

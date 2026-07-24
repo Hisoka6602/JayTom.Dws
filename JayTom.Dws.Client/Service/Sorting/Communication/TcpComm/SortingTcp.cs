@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
@@ -11,9 +9,10 @@ using JayTom.Dws.Plugin.Tcp.TcpServer;
 namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
 
     public class SortingTcp : BaseTcpOperations, ISortingTcp {
-        private static Task? _heartbeatThread;
-        private static CancellationTokenSource? _cancellationTokenSource;
+        private readonly object _heartbeatSync = new();
         private readonly ConcurrentQueue<string> _heartbeatQueue = new();
+        private Task? _heartbeatTask;
+        private CancellationTokenSource? _heartbeatCancellation;
 
         public SortingTcp(ITcpCommClient tcpCommClient, ITcpCommServer tcpCommServer) : base(tcpCommClient, tcpCommServer) {
             tcpCommClient.Communication += delegate (object? sender, CommunicationInfo info) {
@@ -41,40 +40,41 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
         public event EventHandler<Exception>? HeartbeatError;
 
         public void StartHeartbeat(string heartbeatData, FormatType formatType, TimeSpan interval) {
-            if (_heartbeatThread is null) {
-                _cancellationTokenSource = new CancellationTokenSource();
-                _heartbeatThread = Task.Run(async () => {
-                    while (!_cancellationTokenSource.IsCancellationRequested) {
-                        await Task.Delay(interval);
-                        if (_heartbeatQueue.Any()) {
-                            //异常
-                            OnHeartbeatError(new Exception("心跳包未接收到回应!"));
-                        }
+            lock (_heartbeatSync) {
+                if (_heartbeatTask is { IsCompleted: false }) {
+                    return;
+                }
 
-                        if (ConnectionStatus == ConnectionStatus.Connected) {
-                            _heartbeatQueue.Clear();
-                            _heartbeatQueue.Enqueue(heartbeatData);
-                            if (formatType == FormatType.Ascii) {
-                                await SendMessage(heartbeatData);
-                            }
-                            else if (formatType == FormatType.Hex) {
-                                await SendMessage(ConvertHexStringToByteArray(heartbeatData));
-                            }
-                        }
-                    }
-                });
+                _heartbeatCancellation?.Dispose();
+                _heartbeatCancellation = new CancellationTokenSource();
+                _heartbeatTask = RunHeartbeatAsync(heartbeatData, formatType, interval,
+                    _heartbeatCancellation.Token);
             }
         }
 
-        public async void StopHeartbeat() {
-            _cancellationTokenSource?.Cancel();
-            if (_heartbeatThread != null) {
-                await _heartbeatThread;
-                _heartbeatThread?.Dispose();
-                _heartbeatQueue.Clear();
+        public void StopHeartbeat() {
+            CancellationTokenSource? cancellation;
+            Task? heartbeatTask;
+            lock (_heartbeatSync) {
+                cancellation = _heartbeatCancellation;
+                heartbeatTask = _heartbeatTask;
+                _heartbeatCancellation = null;
+                _heartbeatTask = null;
             }
 
-            _heartbeatThread = null;
+            cancellation?.Cancel();
+            _heartbeatQueue.Clear();
+
+            if (cancellation is not null) {
+                if (heartbeatTask is null) {
+                    cancellation.Dispose();
+                }
+                else {
+                    _ = heartbeatTask.ContinueWith(_ => cancellation.Dispose(),
+                        CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
+                }
+            }
         }
 
         public void Dispose() {
@@ -82,9 +82,40 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
             Close();
         }
 
-        protected virtual async void OnHeartbeatError(Exception e) {
-            await Task.Yield();
+        protected virtual void OnHeartbeatError(Exception e) {
             HeartbeatError?.Invoke(this, e);
+        }
+
+        private async Task RunHeartbeatAsync(string heartbeatData, FormatType formatType,
+            TimeSpan interval, CancellationToken cancellationToken) {
+            try {
+                while (true) {
+                    await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
+
+                    if (!_heartbeatQueue.IsEmpty) {
+                        OnHeartbeatError(new Exception("心跳包未接收到回应!"));
+                    }
+
+                    if (ConnectionStatus != ConnectionStatus.Connected) {
+                        continue;
+                    }
+
+                    _heartbeatQueue.Clear();
+                    _heartbeatQueue.Enqueue(heartbeatData);
+                    if (formatType == FormatType.Ascii) {
+                        await SendMessage(heartbeatData).ConfigureAwait(false);
+                    }
+                    else if (formatType == FormatType.Hex) {
+                        await SendMessage(ConvertHexStringToByteArray(heartbeatData)).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                // 正常停止心跳。
+            }
+            catch (Exception exception) {
+                OnHeartbeatError(exception);
+            }
         }
     }
 }

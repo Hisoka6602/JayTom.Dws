@@ -8,7 +8,6 @@ using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
-using Microsoft.Extensions.Configuration;
 using JayTom.Dws.Infrastructure.IComputer;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
@@ -19,12 +18,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
     public class ComputerInfoBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IComputer _computer;
-        private static bool _isWindowsClose;
+        private static readonly TimeSpan WarningInterval = TimeSpan.FromMinutes(5);
+        private bool _isWindowsClose;
+        private long _lastCpuUsageWarning;
+        private long _lastCpuTemperatureWarning;
+        private long _lastMemoryWarning;
+        private long _lastCollectionError;
 
         public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter, IComputer computer) {
             _computerInfoReporter = computerInfoReporter;
             _computer = computer;
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
                 if (item is { Type: WindowsActionType.Close }) {
                     _isWindowsClose = true;
                 }
@@ -32,127 +36,111 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            var counter = new PerformanceCounter("System", "System Up Time");
+            using var counter = new PerformanceCounter("System", "System Up Time");
             var systemInfo = _computer.GetSystemInfo();
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken).ContinueWith(async a => {
-                    if (a.IsCompletedSuccessfully) {
-                        await Task.Run(async () => {
-                            // 并行获取各项信息
-                            var cpuInfoTask = _computer.GetCpuInfoAsync();
-                            var fanSpeedTask = _computer.GetFanSpeedAsync();
-                            var memoryInfoTask = _computer.GetMemoryInfoAsync();
-                            var gpuInfosTask = _computer.GetGpuInformationAsync();
-                            var networkInfoTask = _computer.GetNetworkInfoAsync();
-                            var diskInfoTask = _computer.GetDiskInfoAsync();
-                            var localNetworkConnectionInfosAsync = _computer.GetLocalNetworkConnectionInfosAsync();
-                            await Task.WhenAll(cpuInfoTask, fanSpeedTask, localNetworkConnectionInfosAsync, memoryInfoTask,
-                                gpuInfosTask, networkInfoTask, diskInfoTask);
-                            // 提取各项信息
-                            var cpuInfoAsync = cpuInfoTask.Result;
-                            var fanSpeed = fanSpeedTask.Result;
-                            var memoryInfoAsync = memoryInfoTask.Result;
-                            var gpuInfos = gpuInfosTask.Result;
-                            var networkInfo = networkInfoTask.Result;
-                            var diskInfoAsync = diskInfoTask.Result;
-                            var localNetworkConnectionInfos = localNetworkConnectionInfosAsync.Result;
-                            // 提交到事件
-                            var computerInfoModel = new ComputerInfoModel() {
-                                CpuInfo = new CpuInfoModel() {
-                                    ClockSpeed = cpuInfoAsync.CpuBusSpeed,
-                                    CpuTemperature = cpuInfoAsync.CpuPackageTemperature,
-                                    FanSpeed = fanSpeed,
-                                    Name = cpuInfoAsync.CpuName,
-                                    NumberOfCores = cpuInfoAsync.CpuCoreInfos?.Count ?? 0,
-                                    UsagePercentage = cpuInfoAsync.CpuTotalUsedPercent,
-                                },
-                                MemoryInfo = new MemoryInfoModel() {
-                                    AvailableSizeBytes = memoryInfoAsync.AvailableMemory,
-                                    UsedPercentage = memoryInfoAsync.UsedMemoryPercent,
-                                    MemoryRemaining = memoryInfoAsync.AvailableMemoryPercentage,
-                                    TotalSizeBytes = memoryInfoAsync.UsedMemory + memoryInfoAsync.AvailableMemory
-                                },
-                                GpuInfo = new GpuInfoModel() {
-                                    Name = gpuInfos?[0]?.Name,
-                                    UsagePercentage = gpuInfos?[0]?.Utilization ?? 0,
-                                    /*MemorySizeGb = (float)(gpuInfos?[1]?.TotalMemory ?? 0) / 1024 / 1024 / 1024,
-                                UsedMemoryGb = (float)((gpuInfos?[1]?.TotalMemory ?? 0) - (gpuInfos?[0]?.FreeMemory ?? 0)) / 1024 / 1024 / 1024,
-                                UsedMemoryPercentage = gpuInfos?[1]?.Utilization ?? 0,*/
-                                },
-                                NetworkInfo = new NetworkInfoModel() {
-                                    DownloadSpeed = networkInfo.NetworkDownloadSpeed,
-                                    UploadSpeed = networkInfo.NetworkUploadSpeed,
-                                    IpAddress = networkInfo.IpAddress,
-                                },
-                                /*HardDiskList = diskInfoAsync?.Select(s => new HardDiskInfoModel {
-                                DiskName = s.Name,
-                                FreeSpaceBytes = s.AvailableDiskSpace,
-                                FreeSpacePercentage = s.AvailableDiskSpacePercentage,
-                                UsedSpaceBytes = s.UsedDiskSpace,
-                                UsedSpacePercentage = (float)s.UsedDiskSpacePercentage,
-                            })?.ToList(),*/
-                                LocalNetworkConnectionInfos = localNetworkConnectionInfos?.Select(s =>
-                                    new LocalNetworkConnectionInfoModel() {
-                                        ConnectionName = s.ConnectionName,
-                                        DownloadSpeed = s.DownloadSpeed,
-                                        UploadSpeed = s.UploadSpeed,
-                                        Speed = s.Speed / 1000,
-                                        IsConnection = s.IsConnection,
-                                        Type = (NetworkType)s.Type
-                                    })?.ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
-                                UpTime = TimeSpan.FromSeconds(counter.NextValue()),
-                                SystemInfoString = systemInfoString
-                            };
-                            _computerInfoReporter.OnComputerInfoReceived(computerInfoModel);
-                            //Cpu警告
-                            if (computerInfoModel.CpuInfo.UsagePercentage >= 95) {
-                                EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                    CreateTime = DateTime.Now,
-                                    Message = $"Cpu占用过高:{computerInfoModel.CpuInfo.UsagePercentage}%",
-                                    Type = LogType.Warning
-                                });
-                            }
+                try {
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken).ConfigureAwait(false);
 
-                            //温度警告
-                            if (computerInfoModel.CpuInfo.CpuTemperature >= 85) {
-                                EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                    CreateTime = DateTime.Now,
-                                    Message = $"Cpu温度过高:{computerInfoModel.CpuInfo.CpuTemperature}°",
-                                    Type = LogType.Warning
-                                });
-                            }
+                    // 这些采集操作彼此独立，并发执行即可，不需要再包一层 Task.Run。
+                    var cpuInfoTask = _computer.GetCpuInfoAsync();
+                    var fanSpeedTask = _computer.GetFanSpeedAsync();
+                    var memoryInfoTask = _computer.GetMemoryInfoAsync();
+                    var gpuInfosTask = _computer.GetGpuInformationAsync();
+                    var networkInfoTask = _computer.GetNetworkInfoAsync();
+                    var localNetworkInfosTask = _computer.GetLocalNetworkConnectionInfosAsync();
+                    await Task.WhenAll(cpuInfoTask, fanSpeedTask, memoryInfoTask, gpuInfosTask,
+                        networkInfoTask, localNetworkInfosTask).ConfigureAwait(false);
 
-                            //内存警告
-                            if (computerInfoModel.MemoryInfo.UsedPercentage >= 90) {
-                                EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                    CreateTime = DateTime.Now,
-                                    Message = $"内存占用过高:{computerInfoModel.MemoryInfo.UsedPercentage}%",
-                                    Type = LogType.Warning
-                                });
-                            }
+                    var cpuInfo = await cpuInfoTask.ConfigureAwait(false);
+                    var fanSpeed = await fanSpeedTask.ConfigureAwait(false);
+                    var memoryInfo = await memoryInfoTask.ConfigureAwait(false);
+                    var gpuInfos = await gpuInfosTask.ConfigureAwait(false);
+                    var networkInfo = await networkInfoTask.ConfigureAwait(false);
+                    var localNetworkInfos = await localNetworkInfosTask.ConfigureAwait(false);
+                    var primaryGpu = gpuInfos?.FirstOrDefault();
 
-                            //硬盘警告
-                            if (computerInfoModel.HardDiskList?.Any(a => a.UsedSpacePercentage >= 95) == true) {
-                                var hardDiskInfoModel =
-                                    computerInfoModel.HardDiskList.FirstOrDefault(f => f.UsedSpacePercentage >= 95);
-                                if (hardDiskInfoModel is not null) {
-                                    EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                        CreateTime = DateTime.Now,
-                                        Message =
-                                            $"硬盘占用过高:{hardDiskInfoModel.DiskName}:{hardDiskInfoModel.UsedSpacePercentage}%",
-                                        Type = LogType.Warning
-                                    });
-                                }
-                            }
+                    var computerInfoModel = new ComputerInfoModel {
+                        CpuInfo = new CpuInfoModel {
+                            ClockSpeed = cpuInfo.CpuBusSpeed,
+                            CpuTemperature = cpuInfo.CpuPackageTemperature,
+                            FanSpeed = fanSpeed,
+                            Name = cpuInfo.CpuName,
+                            NumberOfCores = cpuInfo.CpuCoreInfos?.Count ?? 0,
+                            UsagePercentage = cpuInfo.CpuTotalUsedPercent,
+                        },
+                        MemoryInfo = new MemoryInfoModel {
+                            AvailableSizeBytes = memoryInfo.AvailableMemory,
+                            UsedPercentage = memoryInfo.UsedMemoryPercent,
+                            MemoryRemaining = memoryInfo.AvailableMemoryPercentage,
+                            TotalSizeBytes = memoryInfo.UsedMemory + memoryInfo.AvailableMemory
+                        },
+                        GpuInfo = new GpuInfoModel {
+                            Name = primaryGpu?.Name,
+                            UsagePercentage = primaryGpu?.Utilization ?? 0,
+                        },
+                        NetworkInfo = new NetworkInfoModel {
+                            DownloadSpeed = networkInfo.NetworkDownloadSpeed,
+                            UploadSpeed = networkInfo.NetworkUploadSpeed,
+                            IpAddress = networkInfo.IpAddress,
+                        },
+                        LocalNetworkConnectionInfos = localNetworkInfos?.Select(s =>
+                            new LocalNetworkConnectionInfoModel {
+                                ConnectionName = s.ConnectionName,
+                                DownloadSpeed = s.DownloadSpeed,
+                                UploadSpeed = s.UploadSpeed,
+                                Speed = s.Speed / 1000,
+                                IsConnection = s.IsConnection,
+                                Type = (NetworkType)s.Type
+                            }).ToList() ?? new List<LocalNetworkConnectionInfoModel>(),
+                        UpTime = TimeSpan.FromSeconds(counter.NextValue()),
+                        SystemInfoString = systemInfoString
+                    };
 
-                            if (memoryInfoAsync.UsedMemoryPercent >= 70) {
-                                GC.Collect();
-                            }
-                        }, stoppingToken);
+                    _computerInfoReporter.OnComputerInfoReceived(computerInfoModel);
+
+                    if (computerInfoModel.CpuInfo.UsagePercentage >= 95) {
+                        PublishThrottledLog(
+                            $"Cpu占用过高:{computerInfoModel.CpuInfo.UsagePercentage}%",
+                            LogType.Warning, ref _lastCpuUsageWarning);
                     }
-                }, stoppingToken).Unwrap();
+
+                    if (computerInfoModel.CpuInfo.CpuTemperature >= 85) {
+                        PublishThrottledLog(
+                            $"Cpu温度过高:{computerInfoModel.CpuInfo.CpuTemperature}°",
+                            LogType.Warning, ref _lastCpuTemperatureWarning);
+                    }
+
+                    if (computerInfoModel.MemoryInfo.UsedPercentage >= 90) {
+                        PublishThrottledLog(
+                            $"内存占用过高:{computerInfoModel.MemoryInfo.UsedPercentage}%",
+                            LogType.Warning, ref _lastMemoryWarning);
+                    }
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                    break;
+                }
+                catch (Exception exception) {
+                    PublishThrottledLog($"电脑状态采集异常:{exception.Message}",
+                        LogType.Exception, ref _lastCollectionError);
+                }
             }
+        }
+
+        private static void PublishThrottledLog(string message, LogType type, ref long lastPublishedTimestamp) {
+            var now = Stopwatch.GetTimestamp();
+            if (lastPublishedTimestamp != 0 &&
+                Stopwatch.GetElapsedTime(lastPublishedTimestamp, now) < WarningInterval) {
+                return;
+            }
+
+            lastPublishedTimestamp = now;
+            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                CreateTime = DateTime.Now,
+                Message = message,
+                Type = type
+            });
         }
     }
 }

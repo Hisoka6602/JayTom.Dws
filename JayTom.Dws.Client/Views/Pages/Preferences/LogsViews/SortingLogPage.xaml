@@ -458,7 +458,8 @@
                         MinHeight="100"
                         Margin="0,5"
                         ItemTemplate="{StaticResource SortingLogItemTemplate}"
-                        ItemsSource="{Binding SortingLogItems, UpdateSourceTrigger=PropertyChanged}">
+                        ItemsSource="{Binding SortingLogItems, Mode=OneWay}"
+                        Style="{StaticResource CustomListBoxStyle}">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Height" Value="Auto" />

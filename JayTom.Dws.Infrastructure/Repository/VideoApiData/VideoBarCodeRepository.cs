@@ -131,7 +131,7 @@ namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
             return new KeyValuePair<bool, object>(false, "null");
         }
 
-        public new async Task<bool> Insert([NotNull] VideoBarCodeInfoModel entity, CancellationToken token = default) {
+        public new async Task<bool> Insert(VideoBarCodeInfoModel entity, CancellationToken token = default) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();

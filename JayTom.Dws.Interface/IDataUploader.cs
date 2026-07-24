@@ -6,6 +6,7 @@ using System.Net.Mime;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using LegacyUploadMeasurement = System.Double;
 
 namespace JayTom.Dws.Interface {
 
@@ -25,9 +26,9 @@ namespace JayTom.Dws.Interface {
         /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight,
-            double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default,
+        Task<UploadResponse> UploadData(string barcode, LegacyUploadMeasurement weight,
+            LegacyUploadMeasurement length = default, LegacyUploadMeasurement width = default, LegacyUploadMeasurement height = default,
+            LegacyUploadMeasurement volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default);
 
@@ -46,8 +47,8 @@ namespace JayTom.Dws.Interface {
         /// <param name="token"></param>
         /// <param name="imageInfo"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
+        Task<UploadResponse> UploadData(string barcode, LegacyUploadMeasurement weight, DateTime scanTime, LegacyUploadMeasurement length = default, LegacyUploadMeasurement width = default, LegacyUploadMeasurement height = default,
+            LegacyUploadMeasurement volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 设置接口参数
@@ -60,8 +61,8 @@ namespace JayTom.Dws.Interface {
         /// <summary>
         /// 包裹结束后上传(无返回接收)
         /// </summary>
-        void UploadInBackground([NotNull] string barcode, [NotNull] double weight, DateTime scanTime, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        Task UploadInBackground(string barcode, LegacyUploadMeasurement weight, DateTime scanTime, LegacyUploadMeasurement length = default, LegacyUploadMeasurement width = default, LegacyUploadMeasurement height = default,
+            LegacyUploadMeasurement volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default);
 
         /// <summary>
@@ -73,7 +74,279 @@ namespace JayTom.Dws.Interface {
         /// <param name="packageItems"></param>
         /// <param name="other"></param>
         /// <param name="token"></param>
-        void PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems, object? other = null, CancellationToken token = default);
+        Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems, object? other = null, CancellationToken token = default);
+    }
+
+    /// <summary>
+    /// 将 IDataUploader 遗留浮点边界立即转换为定点数的适配基类。
+    /// </summary>
+    public abstract class FixedPointDataUploaderBase : IDataUploader {
+        /// <summary>
+        /// 使用定点测量值上传数据，供禁止浮点数的新代码直接调用。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>上传响应。</returns>
+        public Task<UploadResponse> UploadFixedPointData(
+            string barcode,
+            decimal weight,
+            decimal length = default,
+            decimal width = default,
+            decimal height = default,
+            decimal volume = default,
+            UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default,
+            object? other = null,
+            CancellationToken token = default) {
+            return UploadFixedPointDataAsync(
+                barcode,
+                weight,
+                length,
+                width,
+                height,
+                volume,
+                imageInfo,
+                panoramaImageInfos,
+                other,
+                token);
+        }
+
+        /// <summary>
+        /// 将遗留测量值转换为定点数并上传数据。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>上传响应。</returns>
+        public Task<UploadResponse> UploadData(
+            string barcode,
+            LegacyUploadMeasurement weight,
+            LegacyUploadMeasurement length = default,
+            LegacyUploadMeasurement width = default,
+            LegacyUploadMeasurement height = default,
+            LegacyUploadMeasurement volume = default,
+            UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default,
+            object? other = null,
+            CancellationToken token = default) {
+            return UploadFixedPointDataAsync(
+                barcode,
+                Convert.ToDecimal(weight),
+                Convert.ToDecimal(length),
+                Convert.ToDecimal(width),
+                Convert.ToDecimal(height),
+                Convert.ToDecimal(volume),
+                imageInfo,
+                panoramaImageInfos,
+                other,
+                token);
+        }
+
+        /// <summary>
+        /// 将带扫码时间的遗留测量值转换为定点数并上传数据。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="scanTime">扫码时间。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>上传响应。</returns>
+        public Task<UploadResponse> UploadData(
+            string barcode,
+            LegacyUploadMeasurement weight,
+            DateTime scanTime,
+            LegacyUploadMeasurement length = default,
+            LegacyUploadMeasurement width = default,
+            LegacyUploadMeasurement height = default,
+            LegacyUploadMeasurement volume = default,
+            UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default,
+            object? other = null,
+            CancellationToken token = default) {
+            return UploadFixedPointDataAsync(
+                barcode,
+                Convert.ToDecimal(weight),
+                scanTime,
+                Convert.ToDecimal(length),
+                Convert.ToDecimal(width),
+                Convert.ToDecimal(height),
+                Convert.ToDecimal(volume),
+                imageInfo,
+                panoramaImageInfos,
+                other,
+                token);
+        }
+
+        /// <summary>
+        /// 设置接口参数。
+        /// </summary>
+        /// <typeparam name="T">参数类型。</typeparam>
+        /// <param name="parameters">接口参数。</param>
+        /// <returns>参数是否设置成功及失败原因。</returns>
+        public abstract Task<KeyValuePair<bool, string>> SetParameters<T>(
+            T parameters);
+
+        /// <summary>
+        /// 将遗留测量值转换为定点数并执行后台上传。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="scanTime">扫码时间。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>后台上传任务。</returns>
+        public Task UploadInBackground(
+            string barcode,
+            LegacyUploadMeasurement weight,
+            DateTime scanTime,
+            LegacyUploadMeasurement length = default,
+            LegacyUploadMeasurement width = default,
+            LegacyUploadMeasurement height = default,
+            LegacyUploadMeasurement volume = default,
+            UploadImageInfo? imageInfo = default,
+            List<UploadImageInfo>? panoramaImageInfos = default,
+            object? other = null,
+            CancellationToken token = default) {
+            return UploadFixedPointDataInBackgroundAsync(
+                barcode,
+                Convert.ToDecimal(weight),
+                scanTime,
+                Convert.ToDecimal(length),
+                Convert.ToDecimal(width),
+                Convert.ToDecimal(height),
+                Convert.ToDecimal(volume),
+                imageInfo,
+                panoramaImageInfos,
+                other,
+                token);
+        }
+
+        /// <summary>
+        /// 执行集包上传。
+        /// </summary>
+        /// <param name="packageExit">格口。</param>
+        /// <param name="aggregatePackageCode">集包码。</param>
+        /// <param name="packagingTime">集包时间。</param>
+        /// <param name="packageItems">包裹列表。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>集包上传任务。</returns>
+        public abstract Task PackageAggregation(
+            string packageExit,
+            string aggregatePackageCode,
+            DateTime packagingTime,
+            List<string> packageItems,
+            object? other = null,
+            CancellationToken token = default);
+
+        /// <summary>
+        /// 使用定点测量值上传数据。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>上传响应。</returns>
+        protected abstract Task<UploadResponse> UploadFixedPointDataAsync(
+            string barcode,
+            decimal weight,
+            decimal length,
+            decimal width,
+            decimal height,
+            decimal volume,
+            UploadImageInfo? imageInfo,
+            List<UploadImageInfo>? panoramaImageInfos,
+            object? other,
+            CancellationToken token);
+
+        /// <summary>
+        /// 使用带扫码时间的定点测量值上传数据。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="scanTime">扫码时间。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>上传响应。</returns>
+        protected abstract Task<UploadResponse> UploadFixedPointDataAsync(
+            string barcode,
+            decimal weight,
+            DateTime scanTime,
+            decimal length,
+            decimal width,
+            decimal height,
+            decimal volume,
+            UploadImageInfo? imageInfo,
+            List<UploadImageInfo>? panoramaImageInfos,
+            object? other,
+            CancellationToken token);
+
+        /// <summary>
+        /// 使用定点测量值执行后台上传。
+        /// </summary>
+        /// <param name="barcode">条码。</param>
+        /// <param name="weight">重量。</param>
+        /// <param name="scanTime">扫码时间。</param>
+        /// <param name="length">长度。</param>
+        /// <param name="width">宽度。</param>
+        /// <param name="height">高度。</param>
+        /// <param name="volume">体积。</param>
+        /// <param name="imageInfo">扫码图片。</param>
+        /// <param name="panoramaImageInfos">全景图片。</param>
+        /// <param name="other">扩展信息。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>后台上传任务。</returns>
+        protected abstract Task UploadFixedPointDataInBackgroundAsync(
+            string barcode,
+            decimal weight,
+            DateTime scanTime,
+            decimal length,
+            decimal width,
+            decimal height,
+            decimal volume,
+            UploadImageInfo? imageInfo,
+            List<UploadImageInfo>? panoramaImageInfos,
+            object? other,
+            CancellationToken token);
     }
 
     public class UploadResponse {
