@@ -1,0 +1,128 @@
+﻿name: 生成 DWS 生产授权文件
+
+on:
+  workflow_dispatch:
+    inputs:
+      license_code:
+        description: 授权码，会写入授权文件
+        required: true
+        type: string
+      machine_code:
+        description: 目标 DWS 设备“授权设置”页面显示的 32 位机器码
+        required: true
+        type: string
+      customer_name:
+        description: 客户名称，会写入授权文件
+        required: true
+        type: string
+      expiration_date:
+        description: 到期时间，例如 2027-12-31 或 2027-12-31 23:59:59
+        required: true
+        type: string
+      max_binding_scanner_count:
+        description: 允许绑定的扫码器数量
+        required: false
+        default: '1'
+        type: string
+      applied_template_name:
+        description: 应用模板名称
+        required: false
+        default: DWS
+        type: string
+      remarks:
+        description: 授权备注
+        required: false
+        default: ''
+        type: string
+      is_available:
+        description: 授权码是否可用；生产授权通常保持 true
+        required: false
+        default: true
+        type: boolean
+      output_name:
+        description: 产物文件名，现场放入 DWS 程序目录的 License 文件夹
+        required: false
+        default: License.key
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate-license:
+    name: 离线生成授权文件
+    runs-on: windows-latest
+    environment: production-license
+    timeout-minutes: 10
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: 还原授权生成工具依赖
+        shell: pwsh
+        run: dotnet restore .\JayTom.Dws.LicenseTool\JayTom.Dws.LicenseTool.csproj -p:Platform=x64
+
+      - name: 离线生成授权文件
+        env:
+          INPUT_LICENSE_CODE: ${{ inputs.license_code }}
+          INPUT_MACHINE_CODE: ${{ inputs.machine_code }}
+          INPUT_CUSTOMER_NAME: ${{ inputs.customer_name }}
+          INPUT_EXPIRATION_DATE: ${{ inputs.expiration_date }}
+          INPUT_MAX_BINDING_SCANNER_COUNT: ${{ inputs.max_binding_scanner_count }}
+          INPUT_APPLIED_TEMPLATE_NAME: ${{ inputs.applied_template_name }}
+          INPUT_REMARKS: ${{ inputs.remarks }}
+          INPUT_IS_AVAILABLE: ${{ inputs.is_available }}
+          OUTPUT_NAME: ${{ inputs.output_name }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          if (-not [string]::IsNullOrWhiteSpace($env:INPUT_LICENSE_CODE)) {
+            Write-Host "::add-mask::$env:INPUT_LICENSE_CODE"
+          }
+
+          $normalizedOutputName = $env:OUTPUT_NAME.Trim()
+          if ($normalizedOutputName -notmatch '^[A-Za-z0-9_.-]+\.key$') {
+            throw '产物文件名只能使用英文字母、数字、点、下划线、短横线，并且必须以 .key 结尾。'
+          }
+
+          $artifactDirectory = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath 'artifacts\license'
+          $outputPath = Join-Path -Path $artifactDirectory -ChildPath $normalizedOutputName
+
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
+            -LicenseCode $env:INPUT_LICENSE_CODE `
+            -MachineCode $env:INPUT_MACHINE_CODE `
+            -CustomerName $env:INPUT_CUSTOMER_NAME `
+            -ExpirationDate $env:INPUT_EXPIRATION_DATE `
+            -MaxBindingScannerCount $env:INPUT_MAX_BINDING_SCANNER_COUNT `
+            -AppliedTemplateName $env:INPUT_APPLIED_TEMPLATE_NAME `
+            -Remarks $env:INPUT_REMARKS `
+            -IsAvailable $env:INPUT_IS_AVAILABLE `
+            -OutputPath $outputPath
+
+          $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
+          $summary = @"
+          ### DWS 生产授权文件已生成
+
+          - 机器码：$machineCode
+          - 客户名称：$env:INPUT_CUSTOMER_NAME
+          - 到期时间：$env:INPUT_EXPIRATION_DATE
+          - 产物文件：$normalizedOutputName
+          - 使用方式：下载本次工作流 artifact，将 `$normalizedOutputName` 放入 DWS 程序目录的 `License` 文件夹。
+          "@
+
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      - name: 上传授权文件产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dws-production-license-${{ inputs.machine_code }}
+          path: artifacts/license/*.key
+          if-no-files-found: error
+          retention-days: 30
