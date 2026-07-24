@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using JayTom.Dws.License;
 
@@ -55,7 +56,10 @@ internal sealed partial record LicenseGenerationRequest(
     /// <param name="arguments">命令行参数。</param>
     /// <returns>授权生成请求。</returns>
     public static LicenseGenerationRequest FromArguments(ToolArguments arguments) {
-        var licenseCode = arguments.GetRequired("--license-code").Trim();
+        var licenseCode = arguments.GetOptional("--license-code", string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(licenseCode)) {
+            licenseCode = CreateLicenseCode();
+        }
         var machineCode = arguments.GetRequired("--machine-code").Trim().ToUpperInvariant();
         if (!MachineCodeRegex().IsMatch(machineCode)) {
             throw new ArgumentException("机器码必须是 32 位十六进制字符串。");
@@ -120,6 +124,20 @@ internal sealed partial record LicenseGenerationRequest(
         var hasTimePart = value.Contains(':', StringComparison.Ordinal) ||
                           value.Contains('T', StringComparison.OrdinalIgnoreCase);
         return hasTimePart ? expirationDate : expirationDate.Date.AddDays(1).AddTicks(-1);
+    }
+
+    /// <summary>
+    /// 创建随机授权码。
+    /// </summary>
+    /// <returns>随机授权码。</returns>
+    private static string CreateLicenseCode() {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Span<char> result = stackalloc char[32];
+        for (var index = 0; index < result.Length; index++) {
+            result[index] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
+        }
+
+        return new string(result);
     }
 
     /// <summary>
@@ -297,6 +315,7 @@ internal sealed class ToolArguments {
     /// </summary>
     public static void WriteHelp() {
         Console.WriteLine("用法：JayTom.Dws.LicenseTool --license-code <授权码> --machine-code <机器码> --customer-name <客户名称> --expiration-date <到期时间> --output <输出文件>");
+        Console.WriteLine("提示：--license-code 可留空，工具会自动生成 32 位随机授权码。");
         Console.WriteLine("调试：JayTom.Dws.LicenseTool --print-machine-code");
         Console.WriteLine("校验：JayTom.Dws.LicenseTool --validate-file <授权文件>");
     }

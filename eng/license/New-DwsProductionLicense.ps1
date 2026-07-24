@@ -6,9 +6,9 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string] $LicenseCode,
+    [Parameter()]
+    [AllowEmptyString()]
+    [string] $LicenseCode = '',
 
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^[A-Fa-f0-9]{32}$')]
@@ -57,6 +57,30 @@ $toolProjectPath = Join-Path -Path $repositoryRoot -ChildPath 'JayTom.Dws.Licens
 $outputFullPath = [System.IO.Path]::GetFullPath($OutputPath)
 $outputDirectory = [System.IO.Path]::GetDirectoryName($outputFullPath)
 $isAvailableValue = [System.Convert]::ToBoolean($IsAvailable)
+
+if ([string]::IsNullOrWhiteSpace($LicenseCode)) {
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    $builder = [System.Text.StringBuilder]::new(32)
+    $randomNumberGenerator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try {
+        $randomByte = New-Object byte[] 1
+        for ($index = 0; $index -lt 32; $index++) {
+            do {
+                $randomNumberGenerator.GetBytes($randomByte)
+                $randomValue = [int]$randomByte[0]
+            } while ($randomValue -ge 252)
+
+            $charIndex = $randomValue % $alphabet.Length
+            [void]$builder.Append($alphabet[$charIndex])
+        }
+    }
+    finally {
+        $randomNumberGenerator.Dispose()
+    }
+
+    $LicenseCode = $builder.ToString()
+    Write-Host ('授权码未填写，已自动生成：{0}' -f $LicenseCode)
+}
 
 if ([string]::IsNullOrWhiteSpace($outputDirectory)) {
     throw '授权文件输出目录不能为空。'

@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       license_code:
-        description: 授权码，会写入授权文件
-        required: true
+        description: 授权码，会写入授权文件；留空时自动随机生成 32 位授权码
+        required: false
+        default: ''
         type: string
       machine_code:
         description: 目标 DWS 设备“授权设置”页面显示的 32 位机器码
@@ -83,8 +84,20 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
 
-          if (-not [string]::IsNullOrWhiteSpace($env:INPUT_LICENSE_CODE)) {
-            Write-Host "::add-mask::$env:INPUT_LICENSE_CODE"
+          $effectiveLicenseCode = $env:INPUT_LICENSE_CODE.Trim()
+          $licenseCodeWasGenerated = $false
+          if ([string]::IsNullOrWhiteSpace($effectiveLicenseCode)) {
+            $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+            $builder = [System.Text.StringBuilder]::new(32)
+            for ($index = 0; $index -lt 32; $index++) {
+              $charIndex = [System.Security.Cryptography.RandomNumberGenerator]::GetInt32(0, $alphabet.Length)
+              [void]$builder.Append($alphabet[$charIndex])
+            }
+
+            $effectiveLicenseCode = $builder.ToString()
+            $licenseCodeWasGenerated = $true
+          } else {
+            Write-Host "::add-mask::$effectiveLicenseCode"
           }
 
           $normalizedOutputName = $env:OUTPUT_NAME.Trim()
@@ -96,7 +109,7 @@ jobs:
           $outputPath = Join-Path -Path $artifactDirectory -ChildPath $normalizedOutputName
 
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
-            -LicenseCode $env:INPUT_LICENSE_CODE `
+            -LicenseCode $effectiveLicenseCode `
             -MachineCode $env:INPUT_MACHINE_CODE `
             -CustomerName $env:INPUT_CUSTOMER_NAME `
             -ExpirationDate $env:INPUT_EXPIRATION_DATE `
@@ -107,9 +120,11 @@ jobs:
             -OutputPath $outputPath
 
           $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
+          $summaryLicenseCode = if ($licenseCodeWasGenerated) { $effectiveLicenseCode } else { '使用手动输入值' }
           $summary = @"
           ### DWS 生产授权文件已生成
 
+          - 授权码：$summaryLicenseCode
           - 机器码：$machineCode
           - 客户名称：$env:INPUT_CUSTOMER_NAME
           - 到期时间：$env:INPUT_EXPIRATION_DATE
