@@ -293,7 +293,7 @@ namespace JayTom.Dws.Client.ViewModels {
             }
 
             await Application.Current.Dispatcher.InvokeAsync(() => {
-                NLog.LogManager.GetCurrentClassLogger().Error($"进入主页加载");
+                NLog.LogManager.GetCurrentClassLogger().Info("进入主页加载");
                 if (otherSettings is not null) {
                     LogoSource = logoSource;
                     ProgramTitle = otherSettings.ProgramTitle;
@@ -368,7 +368,7 @@ namespace JayTom.Dws.Client.ViewModels {
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             }
-            NLog.LogManager.GetCurrentClassLogger().Error($"完成主页加载");
+            NLog.LogManager.GetCurrentClassLogger().Info("完成主页加载");
 
             //连接同步配置
         }

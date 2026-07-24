@@ -117,16 +117,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 var configInfoModels = await _communicationConnectionConfigRepository.Select(s =>
                     s.Id > 0, o => o.Id);
 
-                var infoModels = items.Select(s => new PackageExitDefinitionInfoModel {
-                    CreateTime = DateTime.Now,
-                    ExitName = s.ExitName,
-                    IsActive = s.IsActive,
-                    ModifyTime = DateTime.Now,
-                    Remarks = s.Remarks,
-                    Type = s.Type,
-                    CommunicationConnectionId = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))?.Id ?? 0,
-                    CommunicationConnectionConfigInfo = configInfoModels.FirstOrDefault(f => f.ConnectionName.Equals(s.CommunicationConnectionName))
-                }).Where(w => w.CommunicationConnectionConfigInfo != null).ToList();
+                var connectionIdsByName = configInfoModels
+                    .Where(item => !string.IsNullOrWhiteSpace(item.ConnectionName))
+                    .GroupBy(item => item.ConnectionName, StringComparer.Ordinal)
+                    .ToDictionary(group => group.Key, group => group.First().Id, StringComparer.Ordinal);
+                var infoModels = new List<PackageExitDefinitionInfoModel>(items.Count);
+                foreach (var item in items) {
+                    if (!connectionIdsByName.TryGetValue(
+                            item.CommunicationConnectionName ?? string.Empty,
+                            out var connectionId)) {
+                        continue;
+                    }
+
+                    infoModels.Add(new PackageExitDefinitionInfoModel {
+                        CreateTime = DateTime.Now,
+                        ExitName = item.ExitName,
+                        IsActive = item.IsActive,
+                        ModifyTime = DateTime.Now,
+                        Remarks = item.Remarks,
+                        Type = item.Type,
+                        CommunicationConnectionId = connectionId
+                    });
+                }
 
                 var insertOrUpdate = await _packageExitDefinitionRepository.InsertRange(infoModels);
                 if (insertOrUpdate) {

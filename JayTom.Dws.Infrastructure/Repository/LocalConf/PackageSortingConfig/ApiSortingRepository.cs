@@ -71,6 +71,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var apiSortingInfoModels = concardContext?.Set<ApiSortingInfoModel>();
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             await apiSortingInfoModels.AddAsync(entity, token);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
@@ -104,6 +105,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var apiSortingInfoModels = concardContext?.Set<ApiSortingInfoModel>();
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entities);
                             await apiSortingInfoModels.AddRangeAsync(entities, token);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
@@ -141,6 +143,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                             var ruleInfoModels = apiRuleInfoModels?.AsTracking()?.Where(w => w.ApiSortingId.Equals(entity.Id))
                                 ?.ToList() ?? new List<ApiRuleInfoModel>();
                             concardContext.RemoveRange(ruleInfoModels);
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             apiSortingInfoModels.Update(entity);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);

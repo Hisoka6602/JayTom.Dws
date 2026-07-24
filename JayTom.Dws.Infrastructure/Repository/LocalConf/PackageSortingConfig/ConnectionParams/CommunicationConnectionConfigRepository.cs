@@ -52,6 +52,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Co
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var communicationConnectionConfigInfoModels = concardContext?.Set<CommunicationConnectionConfigInfoModel>();
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             var entityEntry = await communicationConnectionConfigInfoModels.AddAsync(entity, token);
                             var saveChangesAsync = await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
@@ -85,6 +86,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Co
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var communicationConnectionConfigInfoModels = concardContext?.Set<CommunicationConnectionConfigInfoModel>();
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entities);
                             await communicationConnectionConfigInfoModels.AddRangeAsync(entities, token);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
@@ -137,6 +139,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.Co
                             concardContext.RemoveRange(connectionConfigInfoModels);
                             concardContext.RemoveRange(extensionConfigInfoModels);
                             concardContext.RemoveRange(configInfoModels);
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             communicationConnectionConfigInfoModels.Update(entity);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);

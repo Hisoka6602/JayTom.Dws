@@ -15,7 +15,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {
         [Column("TcpConnectionConfigId")]
         public long TcpConnectionConfigId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(TcpConnectionConfigId))]
         public virtual TcpConnectionConfigInfoModel? TcpConnectionConfigInfoInfo { get; set; }
 
         /// <summary>

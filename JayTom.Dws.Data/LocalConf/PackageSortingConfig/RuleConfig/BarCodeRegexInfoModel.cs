@@ -24,7 +24,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         [Column("RegexPattern"), Required, InsertOrUpdata]
         public string RegexPattern { get; set; } = string.Empty;
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(BarCodeSortingId))]
         public virtual BarCodeSortingInfoModel? BarCodeSortingInfo { get; set; }
     }
 }

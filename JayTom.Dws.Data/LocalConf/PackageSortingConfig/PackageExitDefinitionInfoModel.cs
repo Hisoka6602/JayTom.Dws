@@ -22,7 +22,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         [Column("CommunicationConnectionId"), Required, InsertOrUpdata]
         public long CommunicationConnectionId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(CommunicationConnectionId))]
         public virtual CommunicationConnectionConfigInfoModel? CommunicationConnectionConfigInfo { get; set; }
 
         /// <summary>

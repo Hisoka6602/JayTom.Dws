@@ -54,7 +54,7 @@ namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
         [Column("IpcNvrConfigId")]
         public long IpcNvrConfigId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(IpcNvrConfigId))]
         public virtual IpcNvrConfigInfoModel? IpcNvrConfigInfo { get; set; }
     }
 }

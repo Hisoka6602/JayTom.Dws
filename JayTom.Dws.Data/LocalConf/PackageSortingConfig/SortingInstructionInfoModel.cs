@@ -13,7 +13,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         [Column("InstructionBindingId"), Required, InsertOrUpdata]
         public long InstructionBindingId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(InstructionBindingId))]
         public virtual SortingInstructionBindingInfoModel? SortingInstructionBindingInfo { get; set; }
 
         /// <summary>

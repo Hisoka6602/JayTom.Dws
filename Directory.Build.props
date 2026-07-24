@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('JayTom.Dws.'))">
-    <!-- 旧代码告警由代码质量基线冻结；任何其他新告警直接按编译错误处理。 -->
+    <!-- 旧代码警告由代码质量基线冻结；任何其他新警告直接按编译错误处理。 -->
     <NoWarn>$(NoWarn);CS0067;CS0162;CS0168;CS0169;CS0219;CS0414;CS0649;CS4014;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8620;CS8625;CS8629</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
@@ -10,5 +10,9 @@
     <NuGetAuditLevel>low</NuGetAuditLevel>
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
     <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('JayTom.Dws.')) and '$(PublishProfile)' != ''">
+    <!-- 发布阶段不重复访问远程漏洞审计源；依赖源仍沿用 NuGet 正常配置。 -->
+    <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
 </Project>

@@ -650,6 +650,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
 
                                 break;
@@ -662,6 +664,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
 
                                 break;
@@ -674,6 +678,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -685,6 +691,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -696,6 +704,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -707,6 +717,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -718,6 +730,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -729,6 +743,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -740,6 +756,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -751,6 +769,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -762,6 +782,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     }
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }
@@ -774,6 +796,8 @@ JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings 
                                     });
                                 }
                                 catch (Exception e) {
+                                    NLog.LogManager.GetCurrentClassLogger()
+                                        .Error(e, $"远程同步配置失败:{info.SettingsName}");
                                 }
                                 break;
                             }

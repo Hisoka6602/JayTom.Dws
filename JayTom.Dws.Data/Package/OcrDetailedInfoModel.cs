@@ -12,7 +12,7 @@ namespace JayTom.Dws.Data.Package {
         [Column("OcrInfoId")]
         public long OcrInfoId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(OcrInfoId))]
         public virtual OcrInfoModel? OcrInfo { get; set; }
 
         /// <summary>

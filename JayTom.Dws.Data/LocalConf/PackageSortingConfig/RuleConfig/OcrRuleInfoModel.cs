@@ -18,7 +18,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         [Column("JsonContent"), Required, InsertOrUpdata]
         public string JsonContent { get; set; } = string.Empty;
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(OcrSortingId))]
         public virtual OcrSortingInfoModel? OcrSortingInfo { get; set; }
     }
 }

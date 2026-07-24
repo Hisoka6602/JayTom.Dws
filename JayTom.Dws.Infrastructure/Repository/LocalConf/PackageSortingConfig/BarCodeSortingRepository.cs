@@ -72,6 +72,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                         if (contextTransaction is not null) {
                             var infoSet = concardContext?.Set<BarCodeSortingInfoModel>();
 
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             await infoSet.AddAsync(entity, token);
                             await concardContext?.SaveChangesAsync(token);
 
@@ -106,6 +107,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var infoSet = concardContext?.Set<BarCodeSortingInfoModel>();
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entities);
                             await infoSet.AddRangeAsync(entities, token);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
@@ -143,6 +145,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
                             var ruleInfoModels = ruleSet?.AsTracking()?.Where(w => w.BarCodeSortingId.Equals(entity.Id))
                                 ?.ToList() ?? new List<BarCodeRegexInfoModel>();
                             concardContext.RemoveRange(ruleInfoModels);
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             infoSet.Update(entity);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);

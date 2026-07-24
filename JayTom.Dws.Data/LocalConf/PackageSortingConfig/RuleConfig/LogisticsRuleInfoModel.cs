@@ -30,7 +30,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         [Column("RuleName"), Required, InsertOrUpdata]
         public string RuleName { get; set; } = string.Empty;*/
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(LogisticsSortingId))]
         public virtual LogisticsSortingInfoModel? LogisticsSortingInfo { get; set; }
     }
 }

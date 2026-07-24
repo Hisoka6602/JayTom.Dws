@@ -18,7 +18,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         [Column("ExitId"), Required, UpdateBy]
         public long ExitId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(ExitId))]
         public virtual PackageExitDefinitionInfoModel? PackageExitDefinitionInfo { get; set; }
 
         /// <summary>

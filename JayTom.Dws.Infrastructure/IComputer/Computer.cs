@@ -4,7 +4,7 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Management;
 using System.Diagnostics;
-using Microsoft.VisualBasic;
+using Microsoft.Win32;
 using System.Threading.Tasks;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
@@ -13,29 +13,128 @@ using LibreHardwareMonitor.Hardware;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Diagnostics.Eventing.Reader;
+using System.Threading;
 
 namespace JayTom.Dws.Infrastructure.IComputer {
 
     public class Computer : IComputer {
-        private static LibreHardwareMonitor.Hardware.Computer? _computer = null;
+        /// <summary>
+        /// 线程安全的硬件监控器工厂，确保进程内只初始化一次底层驱动和传感器。
+        /// </summary>
+        private static readonly Lazy<LibreHardwareMonitor.Hardware.Computer?> HardwareMonitor =
+            new(CreateHardwareMonitor, LazyThreadSafetyMode.ExecutionAndPublication);
 
+        /// <summary>
+        /// 当前进程共享的硬件监控器；初始化失败时为空并自动降级为系统接口采集。
+        /// </summary>
+        private readonly LibreHardwareMonitor.Hardware.Computer? _computer;
+
+        /// <summary>
+        /// 标记内存采集异常是否已经记录，避免周期采集失败时重复刷写日志。
+        /// </summary>
+        private static int _memoryInfoErrorLogged;
+
+        /// <summary>
+        /// Windows 全局内存状态数据。
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MemoryStatusEx {
+            /// <summary>
+            /// 结构体字节长度。
+            /// </summary>
+            public uint Length;
+
+            /// <summary>
+            /// 内存使用百分比。
+            /// </summary>
+            public uint MemoryLoad;
+
+            /// <summary>
+            /// 物理内存总字节数。
+            /// </summary>
+            public ulong TotalPhysicalMemory;
+
+            /// <summary>
+            /// 可用物理内存字节数。
+            /// </summary>
+            public ulong AvailablePhysicalMemory;
+
+            /// <summary>
+            /// 页面文件总字节数。
+            /// </summary>
+            public ulong TotalPageFile;
+
+            /// <summary>
+            /// 可用页面文件字节数。
+            /// </summary>
+            public ulong AvailablePageFile;
+
+            /// <summary>
+            /// 虚拟内存总字节数。
+            /// </summary>
+            public ulong TotalVirtualMemory;
+
+            /// <summary>
+            /// 可用虚拟内存字节数。
+            /// </summary>
+            public ulong AvailableVirtualMemory;
+
+            /// <summary>
+            /// 扩展虚拟内存可用字节数。
+            /// </summary>
+            public ulong AvailableExtendedVirtualMemory;
+        }
+
+        /// <summary>
+        /// 读取 Windows 全局内存状态。
+        /// </summary>
+        /// <param name="buffer">接收内存状态的结构体。</param>
+        /// <returns>读取成功时为真。</returns>
+        [return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx buffer);
+
+        /// <summary>
+        /// 初始化电脑信息采集服务。
+        /// </summary>
         public Computer() {
-            if (_computer is null) {
-                _computer = new LibreHardwareMonitor.Hardware.Computer {
-                    IsMotherboardEnabled = true,
-                    IsCpuEnabled = true,
-                    IsStorageEnabled = true,
-                    IsBatteryEnabled = true,
-                    IsControllerEnabled = true,
-                    IsNetworkEnabled = true,
-                    IsPsuEnabled = true,
-                    IsGpuEnabled = true,
-                    IsMemoryEnabled = true,
-                };
-                _computer.Open();
+            _computer = HardwareMonitor.Value;
+        }
+
+        /// <summary>
+        /// 创建硬件监控器，并逐类隔离不兼容的硬件枚举异常。
+        /// </summary>
+        /// <returns>可用的硬件监控器；基础初始化失败时返回空。</returns>
+        private static LibreHardwareMonitor.Hardware.Computer? CreateHardwareMonitor() {
+            var computer = new LibreHardwareMonitor.Hardware.Computer();
+            try {
+                // 先以空硬件组打开，再逐类启用，避免单个设备组异常导致整个客户端无法启动。
+                computer.Open();
             }
-            else {
-                _computer.Reset();
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Warn(exception,
+                    "硬件监控基础组件初始化失败，已降级为系统接口采集。");
+                return null;
+            }
+
+            TryEnableHardwareCategory("CPU", () => computer.IsCpuEnabled = true);
+            TryEnableHardwareCategory("主板", () => computer.IsMotherboardEnabled = true);
+            TryEnableHardwareCategory("GPU", () => computer.IsGpuEnabled = true);
+            return computer;
+        }
+
+        /// <summary>
+        /// 启用单个硬件类别；类别不兼容时记录告警并继续启动。
+        /// </summary>
+        /// <param name="categoryName">硬件类别名称。</param>
+        /// <param name="enableAction">启用硬件类别的操作。</param>
+        private static void TryEnableHardwareCategory(string categoryName, Action enableAction) {
+            try {
+                enableAction();
+            }
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Warn(exception,
+                    $"硬件监控类别“{categoryName}”初始化失败，已跳过该类别。");
             }
         }
 
@@ -354,77 +453,46 @@ namespace JayTom.Dws.Infrastructure.IComputer {
 
         public MemoryInfo GetMemoryInfo() {
             try {
-                var managementClass = new ManagementClass("Win32_ComputerSystem");
-                var totalMemory = managementClass.GetInstances().Cast<ManagementObject>()
-                    .Sum(m => long.TryParse(m["TotalPhysicalMemory"].ToString(), out var result) ? result : 0);
-                var process = Process.GetCurrentProcess();
-                var usedMemory = process.WorkingSet64;
-                var availableMemory = totalMemory - usedMemory;
-                var availableMemoryPercent = (float)Math.Round((double)availableMemory / totalMemory * 100, 2);
-                var usedMemoryPercent = (float)Math.Round((double)usedMemory / totalMemory * 100, 2);
-                string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-                var sizeIndex = (int)Math.Floor(Math.Log(availableMemory, 1024));
-                var formattedAvailableMemory = availableMemory / Math.Pow(1024, sizeIndex);
-                var availableMemoryFormat = $"{formattedAvailableMemory:0.##} {sizes[sizeIndex]}";
+                var memoryStatus = new MemoryStatusEx {
+                    Length = Convert.ToUInt32(Marshal.SizeOf<MemoryStatusEx>())
+                };
+                if (!GlobalMemoryStatusEx(ref memoryStatus)) {
+                    throw new InvalidOperationException(
+                        $"读取系统内存状态失败，Windows 错误码：{Marshal.GetLastWin32Error()}。");
+                }
 
-                sizeIndex = (int)Math.Floor(Math.Log(usedMemory, 1024));
-                var formattedUsedMemory = usedMemory / Math.Pow(1024, sizeIndex);
-                var usedMemoryFormat = $"{formattedUsedMemory:0.##} {sizes[sizeIndex]}";
-                return new MemoryInfo() {
+                var totalMemory = Convert.ToInt64(memoryStatus.TotalPhysicalMemory);
+                var availableMemory = Convert.ToInt64(memoryStatus.AvailablePhysicalMemory);
+                var usedMemory = Math.Max(0, totalMemory - availableMemory);
+                var availableMemoryPercent = totalMemory > 0
+                    ? Math.Round(Convert.ToDecimal(availableMemory) / totalMemory * 100m, 2)
+                    : 0m;
+                var usedMemoryPercent = totalMemory > 0
+                    ? Math.Round(Convert.ToDecimal(usedMemory) / totalMemory * 100m, 2)
+                    : 0m;
+
+                Interlocked.Exchange(ref _memoryInfoErrorLogged, 0);
+                return new MemoryInfo {
                     UsedMemory = usedMemory,
                     AvailableMemory = availableMemory,
-                    AvailableMemoryFormat = availableMemoryFormat,
-                    AvailableMemoryPercentage = availableMemoryPercent,
-                    UsedMemoryFormat = usedMemoryFormat,
-                    UsedMemoryPercent = usedMemoryPercent,
+                    AvailableMemoryFormat = FormatByteSize(availableMemory),
+                    AvailableMemoryPercentage = Convert.ToSingle(availableMemoryPercent),
+                    UsedMemoryFormat = FormatByteSize(usedMemory),
+                    UsedMemoryPercent = Convert.ToSingle(usedMemoryPercent),
                 };
             }
-            catch {
-                // Do nothing and return default MemoryInfo object
+            catch (Exception exception) {
+                if (Interlocked.Exchange(ref _memoryInfoErrorLogged, 1) == 0) {
+                    NLog.LogManager.GetCurrentClassLogger().Warn(exception,
+                        "物理内存信息采集失败，后续相同异常将不再重复写入日志。");
+                }
             }
+
             return new MemoryInfo();
         }
 
-        public async Task<MemoryInfo> GetMemoryInfoAsync() {
-            try {
-                await Task.Yield();
-                var managementClass = new ManagementClass("Win32_OperatingSystem");
-                var instances = managementClass.GetInstances();
-                var managementObject = instances.Cast<ManagementObject>().FirstOrDefault();
-
-                if (managementObject != null) {
-                    var totalPhysicalMemory = long.Parse(managementObject["TotalVisibleMemorySize"].ToString() ?? string.Empty);
-                    var freePhysicalMemory = long.Parse(managementObject["FreePhysicalMemory"].ToString() ?? string.Empty);
-                    var usedMemory = totalPhysicalMemory - freePhysicalMemory;
-
-                    var availableMemoryPercent = (float)Math.Round((double)freePhysicalMemory / totalPhysicalMemory * 100, 2);
-                    var usedMemoryPercent = (float)Math.Round((double)usedMemory / totalPhysicalMemory * 100, 2);
-
-                    string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-                    var sizeIndex = (int)Math.Floor(Math.Log(freePhysicalMemory, 1024));
-                    var formattedAvailableMemory = freePhysicalMemory / Math.Pow(1024, sizeIndex);
-                    var availableMemoryFormat = $"{formattedAvailableMemory:0.##} {sizes[sizeIndex]}";
-
-                    sizeIndex = (int)Math.Floor(Math.Log(usedMemory, 1024));
-                    var formattedUsedMemory = usedMemory / Math.Pow(1024, sizeIndex);
-                    var usedMemoryFormat = $"{formattedUsedMemory:0.##} {sizes[sizeIndex]}";
-
-                    return new MemoryInfo() {
-                        UsedMemory = usedMemory,
-                        AvailableMemory = freePhysicalMemory,
-                        AvailableMemoryFormat = availableMemoryFormat,
-                        AvailableMemoryPercentage = availableMemoryPercent,
-                        UsedMemoryFormat = usedMemoryFormat,
-                        UsedMemoryPercent = usedMemoryPercent,
-                    };
-                }
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                // Do nothing and return default MemoryInfo object
-            }
-
-            return new MemoryInfo();
+        public Task<MemoryInfo> GetMemoryInfoAsync() {
+            return Task.FromResult(GetMemoryInfo());
         }
 
         public DateTime? GetLastShutdownTime() {
@@ -505,35 +573,41 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         }
 
         public SystemInfo GetSystemInfo() {
-            var systemInfo = new SystemInfo();
-
             try {
-                // 构造 WMI 查询语句
-                const string query = "SELECT * FROM Win32_OperatingSystem";
+                using var localMachine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                using var currentVersion = localMachine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion", false);
+                using var cryptography = localMachine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Cryptography", false);
 
-                // 创建 ManagementObjectSearcher 对象
-                using var searcher = new ManagementObjectSearcher(query);
-                // 获取查询结果集合
-                var result = searcher.Get();
+                var systemInfo = new SystemInfo {
+                    DeviceName = Environment.MachineName,
+                    DeviceId = cryptography?.GetValue("MachineGuid")?.ToString() ?? string.Empty,
+                    ProductId = currentVersion?.GetValue("ProductId")?.ToString() ?? string.Empty,
+                    SystemType = Environment.Is64BitOperatingSystem ? "64 位操作系统" : "32 位操作系统",
+                    WindowsVersion = Environment.OSVersion.Version.ToString(),
+                    OsVersion = currentVersion?.GetValue("ProductName")?.ToString()
+                        ?? Environment.OSVersion.VersionString
+                };
 
-                // 遍历结果集合并读取系统信息
-                foreach (var o in result) {
-                    var obj = (ManagementObject)o;
-                    systemInfo.DeviceName = obj?["CSName"]?.ToString() ?? string.Empty;          // 设备名称
-                    systemInfo.ProductId = obj?["SerialNumber"]?.ToString() ?? string.Empty;     // 产品ID
-                    systemInfo.SystemType = obj?["OSArchitecture"]?.ToString() ?? string.Empty;  // 系统类型
-                    systemInfo.WindowsVersion = obj?["Version"]?.ToString() ?? string.Empty;     // Windows 版本
-                    systemInfo.InstallDate = FormatDateTime(obj?["InstallDate"]?.ToString()); // 安装日期
-                    systemInfo.OsVersion = obj?["Caption"]?.ToString() ?? string.Empty;           // 操作系统版本
-                    // 获取设备ID
-                    systemInfo.DeviceId = GetComputerSystemUuid();
+                var installDateValue = currentVersion?.GetValue("InstallDate")?.ToString();
+                if (long.TryParse(installDateValue, out var installDateSeconds)) {
+                    systemInfo.InstallDate =
+                        DateTimeOffset.FromUnixTimeSeconds(installDateSeconds).LocalDateTime;
                 }
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-            }
 
-            return systemInfo;
+                return systemInfo;
+            }
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Warn(exception,
+                    "系统信息读取失败，已返回基础环境信息。");
+                return new SystemInfo {
+                    DeviceName = Environment.MachineName,
+                    SystemType = Environment.Is64BitOperatingSystem ? "64 位操作系统" : "32 位操作系统",
+                    WindowsVersion = Environment.OSVersion.Version.ToString(),
+                    OsVersion = Environment.OSVersion.VersionString
+                };
+            }
         }
 
         public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync1() {
@@ -668,21 +742,25 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             return machineCode;
         }
 
-        private string? GetComputerSystemUuid() {
-            using var searcher = new ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
-            foreach (var o in searcher.Get()) {
-                var obj = (ManagementObject)o;
-                return obj["UUID"]?.ToString();
+        /// <summary>
+        /// 将字节数格式化为便于界面显示的定点数容量文本。
+        /// </summary>
+        /// <param name="byteCount">字节数。</param>
+        /// <returns>带容量单位的文本。</returns>
+        private static string FormatByteSize(long byteCount) {
+            if (byteCount <= 0) {
+                return "0 B";
             }
 
-            return "";
-        }
-
-        private DateTime? FormatDateTime(string? dateTimeString) {
-            if (dateTimeString is { Length: >= 14 }) {
-                return DateTime.ParseExact(dateTimeString[..14], "yyyyMMddHHmmss", null);
+            string[] units = { "B", "KB", "MB", "GB", "TB" };
+            var value = Convert.ToDecimal(byteCount);
+            var unitIndex = 0;
+            while (value >= 1024m && unitIndex < units.Length - 1) {
+                value /= 1024m;
+                unitIndex++;
             }
-            return null;
+
+            return $"{value:0.##} {units[unitIndex]}";
         }
     }
 }

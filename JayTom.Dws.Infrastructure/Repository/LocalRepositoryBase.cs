@@ -58,6 +58,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public async Task<bool> Insert(T entity, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
+                EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                 concardContext.Set<T>().Add(entity);
                 return await concardContext.SaveChangesAsync(token) > 0;
             }
@@ -82,6 +83,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
+                EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entitylist);
                 concardContext.Set<T>().AddRange(entitylist);
                 return await concardContext.SaveChangesAsync(token) > 0;
             }
@@ -295,6 +297,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
                         if (contextTransaction is not null) {
                             var dbSet = concardContext?.Set<T>();
+                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
                             dbSet.Update(entity);
                             await concardContext?.SaveChangesAsync(token);
                             await contextTransaction.CommitAsync(token);
@@ -610,33 +613,68 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () => {
                     await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
-                        /*await concardContext.BulkInsertOrUpdateOrDeleteAsync(entities, new BulkConfig() {
-                            UseTempDB = true,
-                            PropertiesToExcludeOnUpdate = excludeOnUpdateColumns
-                        }, type: typeof(T), cancellationToken: token);
-                        await contextTransaction.CommitAsync(token);
-                        return true;*/
-                        // 1. 获取数据库中的所有实体
-                        var existingEntities = await EntityFrameworkQueryableExtensions.ToListAsync(
-                            concardContext.Set<T>(), token);
-                        // 4. 找到需要删除的实体
-                        var entitiesToDelete = existingEntities.Except(entities).ToList();
-                        concardContext.RemoveRange(entitiesToDelete);
-                        await concardContext.SaveChangesAsync(token);
-                        // 2. 找到需要插入的实体
-                        var entitiesToAdd = entities.Except(existingEntities).ToList();
-                        concardContext.AddRange(entitiesToAdd);
-                        await concardContext.SaveChangesAsync(token);
-                        // 3. 找到需要更新的实体
-                        var entitiesToUpdate = entities.Intersect(existingEntities).ToList();
+                        EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entities);
+                        var dbSet = concardContext.Set<T>();
+                        var primaryKeyProperty =
+                            EntityGraphWriteGuard.GetSinglePrimaryKeyProperty(concardContext, typeof(T));
+                        if (primaryKeyProperty is null) {
+                            await concardContext.BulkInsertOrUpdateOrDeleteAsync(entities, new BulkConfig() {
+                                UseTempDB = true,
+                                PropertiesToExcludeOnUpdate = excludeOnUpdateColumns
+                            }, type: typeof(T), cancellationToken: token);
+                            await contextTransaction.CommitAsync(token);
+                            return true;
+                        }
+
+                        // 云端同步按主键比较，避免引用比较导致“全删再全加”。
+                        var existingEntities = await dbSet.AsNoTracking().ToListAsync(token);
+                        var incomingEntitiesByKey = entities
+                            .Where(entity => !EntityGraphWriteGuard.IsDefaultPrimaryKeyValue(
+                                EntityGraphWriteGuard.GetPrimaryKeyValue(entity, primaryKeyProperty),
+                                primaryKeyProperty))
+                            .GroupBy(entity => EntityGraphWriteGuard.GetPrimaryKeyValue(entity, primaryKeyProperty))
+                            .Where(group => group.Key is not null)
+                            .ToDictionary(group => group.Key!, group => group.Last());
+                        var incomingKeys = incomingEntitiesByKey.Keys.ToHashSet();
+                        var existingKeys = existingEntities
+                            .Select(entity => EntityGraphWriteGuard.GetPrimaryKeyValue(entity, primaryKeyProperty))
+                            .Where(key => key is not null)
+                            .Select(key => key!)
+                            .ToHashSet();
+
+                        var entitiesToDelete = existingEntities
+                            .Where(entity => {
+                                var key = EntityGraphWriteGuard.GetPrimaryKeyValue(entity, primaryKeyProperty);
+                                return key is not null && !incomingKeys.Contains(key);
+                            })
+                            .ToList();
+                        if (entitiesToDelete.Count > 0) {
+                            concardContext.RemoveRange(entitiesToDelete);
+                            await concardContext.SaveChangesAsync(token);
+                        }
+
+                        var entitiesToAdd = entities
+                            .Where(entity => {
+                                var key = EntityGraphWriteGuard.GetPrimaryKeyValue(entity, primaryKeyProperty);
+                                return EntityGraphWriteGuard.IsDefaultPrimaryKeyValue(key, primaryKeyProperty) ||
+                                       key is not null && !existingKeys.Contains(key);
+                            })
+                            .ToList();
+                        if (entitiesToAdd.Count > 0) {
+                            concardContext.AddRange(entitiesToAdd);
+                        }
+
+                        var entitiesToUpdate = incomingEntitiesByKey
+                            .Where(pair => existingKeys.Contains(pair.Key))
+                            .Select(pair => pair.Value)
+                            .ToList();
                         foreach (var entity in entitiesToUpdate) {
-                            concardContext.Entry(entity).State = EntityState.Modified;
+                            concardContext.Update(entity);
                             foreach (var property in excludeOnUpdateColumns) {
                                 concardContext.Entry(entity).Property(property).IsModified = false;
                             }
                         }
 
-                        // 5. 提交事务
                         await concardContext.SaveChangesAsync(token);
                         await contextTransaction.CommitAsync(token);
 

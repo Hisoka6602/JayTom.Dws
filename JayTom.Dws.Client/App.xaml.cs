@@ -432,7 +432,7 @@ namespace JayTom.Dws.Client {
         }
 
         protected override void OnStartup(StartupEventArgs e) {
-            NLog.LogManager.GetCurrentClassLogger().Error($"OnStartup开始");
+            NLog.LogManager.GetCurrentClassLogger().Info("OnStartup开始");
             _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
             if (!createdNew) {
                 // 另一个实例已经在运行，尝试激活它的窗口
@@ -487,7 +487,7 @@ namespace JayTom.Dws.Client {
                 Thread.CurrentThread.CurrentUICulture = culture;
             }
 
-            NLog.LogManager.GetCurrentClassLogger().Error($"OnStartup结束");
+            NLog.LogManager.GetCurrentClassLogger().Info("OnStartup结束");
         }
 
         protected override async void OnExit(ExitEventArgs e) {
@@ -695,10 +695,10 @@ namespace JayTom.Dws.Client {
 
             foreach (var service in hostedServices) {
                 var serviceName = service.GetType().Name;
-                NLog.LogManager.GetCurrentClassLogger().Error($"服务名: {serviceName}");
+                NLog.LogManager.GetCurrentClassLogger().Info($"服务名: {serviceName}");
                 await service.StartAsync(default);
             }
-            NLog.LogManager.GetCurrentClassLogger().Error($"全部服务启动完成");
+            NLog.LogManager.GetCurrentClassLogger().Info("全部服务启动完成");
         }
     }
 }

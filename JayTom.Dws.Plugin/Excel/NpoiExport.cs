@@ -18,6 +18,11 @@ namespace JayTom.Dws.Plugin.Excel {
         private ICellStyle? HeaderStyle { get; set; } = null;
         private ICellStyle? ContentStyle { get; set; } = null;
 
+        /// <summary>
+        /// 串行化共享样式状态的导出操作，避免并发导出时把一个工作簿的样式应用到另一个工作簿。
+        /// </summary>
+        private readonly SemaphoreSlim _exportSemaphore = new(1, 1);
+
         public async Task<List<T>> ReadExcel<T>(string filePath, Func<float, Task> progressPercentage, Func<Exception, Task> exceptionFunc, CancellationToken token = default) where T : class, new() {
             var cellInfos = new List<CellInfo>();
             var keyCellInfos = new List<CellInfo>();
@@ -481,7 +486,8 @@ namespace JayTom.Dws.Plugin.Excel {
                 list.Any() != true) {
                 return false;
             }
-            await Task.Yield();
+
+            await _exportSemaphore.WaitAsync(cancelToken);
             try {
                 //判断行/分文件
                 var maxPageSize = 50 * 10000;
@@ -495,10 +501,13 @@ namespace JayTom.Dws.Plugin.Excel {
                     //写Excel文件
                     //HSSFWorkbook book = new HSSFWorkbook();
 
-                    if (path?.IndexOf(".xlsx") > 0) // 2007版本
+                    var extension = Path.GetExtension(path);
+                    if (extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase)) // 2007版本
                         book = new XSSFWorkbook();
-                    else if (path?.IndexOf(".xls") > 0) // 2003版本
+                    else if (extension.Equals(".xls", StringComparison.OrdinalIgnoreCase)) // 2003版本
                         book = new HSSFWorkbook();
+                    else
+                        throw new NotSupportedException($"不支持的 Excel 文件扩展名：{extension}");
 
                     var sheet = book?.CreateSheet(sheetName);//页文件
                     if (sheet is not null) {
@@ -593,7 +602,8 @@ namespace JayTom.Dws.Plugin.Excel {
                     // 写入到客户端操作
                     cancelToken.ThrowIfCancellationRequested();
                     await using var ms = new MemoryStream();
-                    book?.Write(ms, false);
+                    // 后续还要复位并复制内存流，因此必须要求 NPOI 保持流为打开状态。
+                    book?.Write(ms, true);
                     if (path != null) {
                         var fileInfo = new FileInfo(path);
                         var fileName = path;
@@ -619,8 +629,12 @@ namespace JayTom.Dws.Plugin.Excel {
                 return true;
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error(e, $"Excel 导出失败，目标文件：{path}");
                 exception.Invoke(e);
                 return false;
+            }
+            finally {
+                _exportSemaphore.Release();
             }
         }
 
@@ -630,7 +644,8 @@ namespace JayTom.Dws.Plugin.Excel {
                 list.Any() != true) {
                 return new KeyValuePair<bool, byte[]?>(false, null);
             }
-            await Task.Yield();
+
+            await _exportSemaphore.WaitAsync(cancelToken);
             try {
                 IWorkbook book = null;
                 TitleStyle = null;
@@ -730,14 +745,19 @@ namespace JayTom.Dws.Plugin.Excel {
                 }
                 // 写出
                 await using var ms = new MemoryStream();
-                book?.Write(ms, false);
+                // 后续还要读取内存流，因此必须要求 NPOI 保持流为打开状态。
+                book?.Write(ms, true);
 
                 progress.Invoke(100);
                 return new KeyValuePair<bool, byte[]?>(true, ms.ToArray());
             }
             catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error(e, "Excel 数据导出失败。");
                 exception.Invoke(e);
                 return new KeyValuePair<bool, byte[]?>(false, null);
+            }
+            finally {
+                _exportSemaphore.Release();
             }
         }
 

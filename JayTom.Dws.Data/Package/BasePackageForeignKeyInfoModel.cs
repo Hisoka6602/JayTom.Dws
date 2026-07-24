@@ -13,7 +13,7 @@ namespace JayTom.Dws.Data.Package {
         [Column("PackageId"), JsonIgnore]
         public long PackageId { get; set; }
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(PackageId))]
         public virtual PackageInfoModel? PackageInfo { get; set; }
     }
 }

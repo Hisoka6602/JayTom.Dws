@@ -48,7 +48,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         [Column("Formula"), Required, InsertOrUpdata]
         public string Formula { get; set; } = string.Empty;
 
-        [ForeignKey("Id")]
+        [ForeignKey(nameof(VolumeSortingId))]
         public virtual VolumeSortingInfoModel? VolumeSortingInfo { get; set; }
     }
 

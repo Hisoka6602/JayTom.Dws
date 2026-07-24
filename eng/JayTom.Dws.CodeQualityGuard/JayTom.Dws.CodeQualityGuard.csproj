@@ -5,16 +5,23 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- 始终使用当前 .NET SDK 的 Roslyn 核心程序集，兼容 dotnet 与 Visual Studio MSBuild。 -->
+    <RoslynBinariesPath>$(NetCoreRoot)sdk\$(NETCoreSdkVersion)\Roslyn\bincore</RoslynBinariesPath>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>$(MSBuildSDKsPath)\..\Roslyn\bincore\Microsoft.CodeAnalysis.dll</HintPath>
+      <HintPath>$(RoslynBinariesPath)\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.CSharp">
-      <HintPath>$(MSBuildSDKsPath)\..\Roslyn\bincore\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+      <HintPath>$(RoslynBinariesPath)\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
+
+  <Target Name="ValidateRoslynBinariesPath" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(RoslynBinariesPath)\Microsoft.CodeAnalysis.dll')"
+           Text="未找到 Roslyn 编译程序集：$(RoslynBinariesPath)。请确认当前 .NET SDK 安装完整。" />
+  </Target>
 </Project>

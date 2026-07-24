@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- 常规还原同时生成 x64 发布资产，避免发布阶段重新解析运行时依赖。 -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <Platforms>x64</Platforms>
@@ -93,8 +95,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
-    <ProjectReference Include="..\eng\JayTom.Dws.CodeQualityGuard\JayTom.Dws.CodeQualityGuard.csproj"
-                      ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
@@ -201,9 +201,18 @@
     <MakeDir Directories="$(LicenseFolder)" Condition="!Exists('$(LicenseFolder)')" />
   </Target>
 
+  <!-- 代码质量守卫是编译工具，单独构建以避免进入 Client 的运行时发布依赖图。 -->
+  <Target Name="BuildCodeQualityGuard"
+          Condition="'$(MSBuildProjectName)' == 'JayTom.Dws.Client' and '$(DesignTimeBuild)' != 'true'">
+    <MSBuild Projects="$(MSBuildProjectDirectory)\..\eng\JayTom.Dws.CodeQualityGuard\JayTom.Dws.CodeQualityGuard.csproj"
+             Targets="Restore;Build"
+             Properties="Configuration=$(Configuration);NuGetAudit=false"
+             RemoveProperties="Platform;TargetFramework;TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers;SelfContained;PublishProfile;PublishDir;PublishProtocol;_TargetId" />
+  </Target>
+
   <Target Name="RunCodeQualityGuard"
           BeforeTargets="CoreCompile"
-          DependsOnTargets="ResolveProjectReferences"
+          DependsOnTargets="BuildCodeQualityGuard"
           Condition="'$(MSBuildProjectName)' == 'JayTom.Dws.Client' and '$(DesignTimeBuild)' != 'true'">
     <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)\..\eng\JayTom.Dws.CodeQualityGuard\bin\$(Configuration)\net10.0\JayTom.Dws.CodeQualityGuard.dll&quot; &quot;$(MSBuildProjectDirectory)\..&quot; &quot;$(MSBuildProjectDirectory)\..\eng\CodeQualityBaseline.json&quot;" />
   </Target>
