@@ -13,15 +13,49 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
     /// <summary>
     /// 基于TouchSocket的TCP客户端实现
     /// 支持自动重连和手动重连功能
-    /// 自动重连：通过TouchSocket的UseReconnection插件配置，设置为-1实现无限自动重连
+    /// 自动重连：首次连接成功后，中途断开才进入后台重连，避免配置错误时启动阶段无限刷异常
     /// 手动重连：通过Reconnect方法，传入count<=0实现无限手动重连
     /// </summary>
     public class TouchSocketTcpClient : ITcpCommClient {
         private TouchSocket.Sockets.TcpClient? _tcpClient;
+        /// <summary>
+        /// 自动重连同步锁。
+        /// </summary>
+        private readonly object _reconnectSync = new();
+
+        /// <summary>
+        /// 发送同步锁。
+        /// </summary>
+        private readonly SemaphoreSlim _sendSlim = new(1, 1);
+
+        /// <summary>
+        /// 连接同步锁，避免并发连接同一个客户端实例。
+        /// </summary>
+        private readonly SemaphoreSlim _connectSlim = new(1, 1);
+
+        /// <summary>
+        /// 自动重连取消源。
+        /// </summary>
+        private CancellationTokenSource? _reconnectCancellation;
+
+        /// <summary>
+        /// 自动重连后台任务。
+        /// </summary>
+        private Task? _reconnectTask;
+
+        /// <summary>
+        /// 当前是否正在主动关闭连接。
+        /// </summary>
+        private bool _isClosing;
+
+        /// <summary>
+        /// 是否至少成功连接过一次。
+        /// </summary>
+        private bool _hasConnectedOnce;
+
         public string IpAddress { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
         private int _dataLen = 0;
-        private readonly SemaphoreSlim _sendSlim = new(1, 1);
 
         public int DataLen {
             get => _dataLen;
@@ -44,6 +78,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         public event EventHandler<Exception>? SendError;
 
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
+            _isClosing = false;
             FormatType = dataType;
             var parameter = SetParameter(new TcpConnectParam() {
                 Address = ipAddress,
@@ -53,16 +88,26 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
             });
             DataLen = dataLen;
             if (parameter) {
-                return await Connect(dataType, dataLen, token);
+                return await ConnectCore(dataType, dataLen, timeOut, token);
             }
 
             return false;
         }
 
         public async Task<bool> Connect(FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
+            _isClosing = false;
+            return await ConnectCore(dataType, dataLen, 1000, token);
+        }
+
+        private async Task<bool> ConnectCore(FormatType dataType = FormatType.Ascii, int dataLen = 0, int timeOut = 1000, CancellationToken token = default) {
+            await _connectSlim.WaitAsync(token);
             try {
                 DataLen = dataLen;
                 FormatType = dataType;
+                if (ConnectionStatus == ConnectionStatus.Connected) {
+                    return true;
+                }
+
                 if (_tcpClient is null) {
                     _tcpClient = new TouchSocket.Sockets.TcpClient();
                     _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
@@ -88,19 +133,28 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     _tcpClient.Disconnected += delegate (ITcpClientBase client, DisconnectEventArgs args) {
                         OnDisconnected($"IpAddress:{IpAddress},Port:{Port}");
                         NLog.LogManager.GetCurrentClassLogger().Error($"断开:IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}");
+                        StartAutoReconnect();
                     };
                 }
 
-                var tcpClient = await _tcpClient.ConnectAsync(60 * 1000);
+                var connectTimeout = Math.Max(timeOut, 1000);
+                var tcpClient = await _tcpClient.ConnectAsync(connectTimeout);
                 if (tcpClient is not null &&
                     tcpClient.IP.Equals(IpAddress) &&
                     tcpClient.Port.Equals(Port)) {
+                    _hasConnectedOnce = true;
+                    ConnectionStatus = ConnectionStatus.Connected;
                     return true;
                 }
             }
             catch (Exception e) {
+                ConnectionStatus = ConnectionStatus.Disconnected;
+                OnConnectionException($"TCP客户端连接失败:IpAddress:{IpAddress},Port:{Port},Message:{e.Message}");
                 OnException(e);
                 return false;
+            }
+            finally {
+                _connectSlim.Release();
             }
             return false;
         }
@@ -170,13 +224,12 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         _tcpClient.Disconnected += delegate (ITcpClientBase client, DisconnectEventArgs args) {
                             OnDisconnected($"IpAddress:{IpAddress},Port:{Port}");
                             NLog.LogManager.GetCurrentClassLogger().Error($"断开:IpAddress:{IpAddress},Port:{Port},ConnectionStatus:{ConnectionStatus}");
+                            StartAutoReconnect();
                         };
                     }
-                    var touchSocketConfig = new TouchSocketConfig().SetRemoteIPHost(new IPHost($"{tcpConnect.Address}:{tcpConnect.Port}"))
-                        .UsePlugin().SetBufferLength(tcpConnect.DataLength).ConfigurePlugins(a => {
-                            // Use -1 for unlimited reconnection attempts
-                            a.UseReconnection(-1, true, 1000);
-                        });
+                    var touchSocketConfig = new TouchSocketConfig()
+                        .SetRemoteIPHost(new IPHost($"{tcpConnect.Address}:{tcpConnect.Port}"))
+                        .SetBufferLength(tcpConnect.DataLength);
 
                     _tcpClient?.Setup(touchSocketConfig);
                     return true;
@@ -260,9 +313,86 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         public void Close() {
+            _isClosing = true;
+            StopAutoReconnect();
             _tcpClient?.Close();
             _tcpClient = null;
+            _hasConnectedOnce = false;
             ConnectionStatus = ConnectionStatus.Disconnected;
+        }
+
+        /// <summary>
+        /// 启动自动重连，仅在曾经成功连接且不是主动关闭时生效。
+        /// </summary>
+        private void StartAutoReconnect() {
+            lock (_reconnectSync) {
+                if (_isClosing || !_hasConnectedOnce) {
+                    return;
+                }
+
+                if (_reconnectTask is { IsCompleted: false }) {
+                    return;
+                }
+
+                _reconnectCancellation?.Dispose();
+                _reconnectCancellation = new CancellationTokenSource();
+                var token = _reconnectCancellation.Token;
+                _reconnectTask = Task.Run(() => RunAutoReconnectAsync(token), CancellationToken.None);
+            }
+        }
+
+        /// <summary>
+        /// 停止自动重连。
+        /// </summary>
+        private void StopAutoReconnect() {
+            CancellationTokenSource? cancellation;
+            Task? reconnectTask;
+            lock (_reconnectSync) {
+                cancellation = _reconnectCancellation;
+                reconnectTask = _reconnectTask;
+                _reconnectCancellation = null;
+                _reconnectTask = null;
+            }
+
+            if (cancellation is null) {
+                return;
+            }
+
+            cancellation.Cancel();
+            if (reconnectTask is null) {
+                cancellation.Dispose();
+            }
+            else {
+                _ = reconnectTask.ContinueWith(_ => cancellation.Dispose(),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+            }
+        }
+
+        /// <summary>
+        /// 执行自动重连循环。
+        /// </summary>
+        private async Task RunAutoReconnectAsync(CancellationToken token) {
+            try {
+                while (!_isClosing &&
+                       !token.IsCancellationRequested &&
+                       ConnectionStatus != ConnectionStatus.Connected) {
+                    await Task.Delay(1000, token);
+
+                    if (_isClosing || token.IsCancellationRequested) {
+                        return;
+                    }
+
+                    await ConnectCore(FormatType, DataLen, 5000, token);
+                }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) {
+                // 主动停止自动重连。
+            }
+            catch (Exception e) {
+                OnException(e);
+            }
         }
 
         protected virtual void OnConnectionException(string e) {
@@ -283,6 +413,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         protected virtual void OnConnected(string e) {
+            _hasConnectedOnce = true;
             ConnectionStatus = ConnectionStatus.Connected;
             Connected?.Invoke(this, e);
         }
