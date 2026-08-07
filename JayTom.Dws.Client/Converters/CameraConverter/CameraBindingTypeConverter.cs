@@ -10,27 +10,35 @@ using System.Collections.Generic;
 using JayTom.Dws.Camera.Attributes;
 using JayTom.Dws.PluginInterface.Utils;
 
-namespace JayTom.Dws.Client.Converters.CameraConverter {
+namespace JayTom.Dws.Client.Converters.CameraConverter
+{
 
-    public class CameraBindingTypeConverter : IValueConverter {
+    public class CameraBindingTypeConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is CameraBindingType type) {
-                if (parameter?.ToString()?.Equals("font", StringComparison.CurrentCultureIgnoreCase) == true) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is CameraBindingType type)
+            {
+                if (parameter?.ToString()?.Equals("font", StringComparison.CurrentCultureIgnoreCase) == true)
+                {
                     return type.GetCameraFontIcon();
                 }
-                else if (parameter?.ToString()?.Equals("color", StringComparison.CurrentCultureIgnoreCase) == true) {
+                else if (parameter?.ToString()?.Equals("color", StringComparison.CurrentCultureIgnoreCase) == true)
+                {
                     var color = (Color)ColorConverter.ConvertFromString(type.GetCameraBackgroundColor());
                     return new SolidColorBrush(color);
                 }
-                else if (parameter?.ToString()?.Equals("ToolTip", StringComparison.CurrentCultureIgnoreCase) == true) {
+                else if (parameter?.ToString()?.Equals("ToolTip", StringComparison.CurrentCultureIgnoreCase) == true)
+                {
                     return type.GetDescription();
                 }
             }
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

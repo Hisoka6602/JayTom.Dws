@@ -38,9 +38,11 @@ using JayTom.Dws.Client.ViewModels.Editors.CloudService;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
+{
 
-    public class NetworkVideoRecorderPageViewModel : SettingsPageTemplateViewModel {
+    public class NetworkVideoRecorderPageViewModel : SettingsPageTemplateViewModel
+    {
 
         //private readonly INvrManager _nvrManager;
         private NvrClientSettingsModel _vnrClientSettingsInfo = new();
@@ -55,7 +57,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         private SemaphoreSlim _playSlim = new(1);
 
         public NetworkVideoRecorderPageViewModel(IConfigRepository configRepository,
-            INvrManager nvrManager) : base(configRepository) {
+            INvrManager nvrManager) : base(configRepository)
+        {
             /*_nvrManager = nvrManager;
             _nvrManager.RealTimePreviewCallback += async delegate (object? sender, RealTimePreviewEventArgs args) {
                 /*if (args.Data is not null) {
@@ -88,22 +91,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             };*/
         }
 
-        public MemoryStream VideoMemoryStream {
+        public MemoryStream VideoMemoryStream
+        {
             get => _videoMemoryStream;
             set => SetProperty(ref _videoMemoryStream, value);
         }
 
-        public NvrClientSettingsModel NvrClientSettingsInfo {
+        public NvrClientSettingsModel NvrClientSettingsInfo
+        {
             get => _vnrClientSettingsInfo;
             set => SetProperty(ref _vnrClientSettingsInfo, value);
         }
 
-        public ObservableCollection<int> ChannelItems {
+        public ObservableCollection<int> ChannelItems
+        {
             get => _channelItems;
             set => SetProperty(ref _channelItems, value);
         }
 
-        public int SelectChannel {
+        public int SelectChannel
+        {
             get => _selectChannel;
             set => SetProperty(ref _selectChannel, value);
         }
@@ -111,7 +118,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         /// <summary>
         /// 是否播放中
         /// </summary>
-        public bool IsPlaying {
+        public bool IsPlaying
+        {
             get => _isPlaying;
             set => SetProperty(ref _isPlaying, value);
         }
@@ -119,7 +127,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         /// <summary>
         /// 是否登录中
         /// </summary>
-        public bool IsLogInProgress {
+        public bool IsLogInProgress
+        {
             get => _isLogInProgress;
             set => SetProperty(ref _isLogInProgress, value);
         }
@@ -127,10 +136,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         public override string Identifier => "CloudServiceDialogHost";
         public override string SettingsName => "NetworkVideoRecorderSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new NvrClientSettingsDto() {
+                Value = JsonConvert.SerializeObject(new NvrClientSettingsDto()
+                {
                     Ip = NvrClientSettingsInfo.Ip,
                     Port = NvrClientSettingsInfo.Port,
                     IsUseBarcodeWatermark = NvrClientSettingsInfo.IsUseBarcodeWatermark,
@@ -144,26 +156,33 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
 
-                try {
-                    if (obj is Page page) {
+                try
+                {
+                    if (obj is Page page)
+                    {
                         var visualChild = PluginInterface.Utils.Utils.GetVisualChild<VlcControl>(page, f => f.Name.Equals("VlcPlayer"));
-                        if (visualChild != null) {
+                        if (visualChild != null)
+                        {
                             _vlcPlay = visualChild;
                             _vlcPlay.SourceProvider.CreatePlayer(new DirectoryInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}VideoLAN\\VLC"));
                         }
                     }
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                     base.MessageQueue.Enqueue($"{e.Message}");
                 }
 
                 var vnrClientSettingsDto = await _configRepository.FirstOrDefaultEntity<NvrClientSettingsDto>(SettingsName) ?? new NvrClientSettingsDto();
-                NvrClientSettingsInfo = new NvrClientSettingsModel() {
+                NvrClientSettingsInfo = new NvrClientSettingsModel()
+                {
                     Ip = vnrClientSettingsDto.Ip,
                     Port = vnrClientSettingsDto.Port,
                     IsUseBarcodeWatermark = vnrClientSettingsDto.IsUseBarcodeWatermark,
@@ -179,34 +198,44 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         /// </summary>
         public ICommand ChannelSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(ChannelSelectionChangedDelegate);
 
-        private async void ChannelSelectionChangedDelegate(SelectionChangedEventArgs obj) {
-            try {
+        private async void ChannelSelectionChangedDelegate(SelectionChangedEventArgs obj)
+        {
+            try
+            {
                 await _playSlim.WaitAsync();
-                if (IsPlaying) {
+                if (IsPlaying)
+                {
                     _vlcPlay?.SourceProvider?.MediaPlayer?.Pause();
                     IsPlaying = false;
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-            finally {
+            finally
+            {
                 _playSlim.Release();
             }
         }
 
         public ICommand PlayCommand => new DelegateCommand<SelectionChangedEventArgs>(PlayDelegate);
 
-        private async void PlayDelegate(SelectionChangedEventArgs obj) {
+        private async void PlayDelegate(SelectionChangedEventArgs obj)
+        {
             //播放
-            try {
+            try
+            {
                 await _playSlim.WaitAsync();
-                if (IsPlaying) {
+                if (IsPlaying)
+                {
                     _vlcPlay?.SourceProvider?.MediaPlayer?.Pause();
                     IsPlaying = false;
                 }
-                else {
-                    if (_vlcPlay is not null && ChannelItems?.Any() == true) {
+                else
+                {
+                    if (_vlcPlay is not null && ChannelItems?.Any() == true)
+                    {
                         // _vlcPlay.SourceProvider.MediaPlayer.SetMedia(new Uri("rtsp://admin:a12345678@192.168.31.166:554/cam/realmonitor?channel=4&subtype=0"));
                         _vlcPlay.SourceProvider.MediaPlayer.SetMedia(new Uri($"rtsp://{NvrClientSettingsInfo.Username}:{NvrClientSettingsInfo.Password}@{NvrClientSettingsInfo.Ip}:554/cam/realmonitor?channel={SelectChannel}&subtype=0"));
                         _vlcPlay.SourceProvider.MediaPlayer.Play();
@@ -214,10 +243,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                     }
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-            finally {
+            finally
+            {
                 _playSlim.Release();
             }
         }
@@ -228,8 +259,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
         public ICommand LogInCommand => new DelegateCommand<object>(LogInDelegate);
 
-        private void LogInDelegate(object obj) {
-            if (!IsLogInProgress) {
+        private void LogInDelegate(object obj)
+        {
+            if (!IsLogInProgress)
+            {
                 IsLogInProgress = true;
                 /*Task.Run(async () => {
                     var (key, value) = await _nvrManager.Login(NvrClientSettingsInfo.Ip,
@@ -264,9 +297,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         /// </summary>
         public ICommand BindingCommand => new DelegateCommand<object>(BindingDelegate);
 
-        private async void BindingDelegate(object obj) {
+        private async void BindingDelegate(object obj)
+        {
             var nvrCameraBindingEditor = new NvrCameraBindingEditor();
-            if (nvrCameraBindingEditor.DataContext is NvrCameraBindingEditorViewModel model) {
+            if (nvrCameraBindingEditor.DataContext is NvrCameraBindingEditorViewModel model)
+            {
                 model.Identifier = Identifier;
                 model.Channel = SelectChannel;
                 model.IpAddress = NvrClientSettingsInfo.Ip;
@@ -274,7 +309,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
                 model.Username = NvrClientSettingsInfo.Username;
                 model.Password = NvrClientSettingsInfo.Password;
                 await DialogHost.Show(nvrCameraBindingEditor, model.Identifier);
-                if (!string.IsNullOrEmpty(model.Message)) {
+                if (!string.IsNullOrEmpty(model.Message))
+                {
                     base.MessageQueue.Enqueue(model.Message);
                 }
             }

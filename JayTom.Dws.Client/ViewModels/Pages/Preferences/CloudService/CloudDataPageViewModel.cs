@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
+{
 
-    public class CloudDataPageViewModel : BindableBase {
+    public class CloudDataPageViewModel : BindableBase
+    {
     }
 }

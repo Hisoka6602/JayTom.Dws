@@ -16,9 +16,11 @@ using JayTom.Dws.Interface.Jushuitan;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class JushuitanApiPageViewModel : SettingsPageTemplateViewModel {
+    public class JushuitanApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
         private JushuitanErpApiModel _jushuitanErpApiInfo = new();
@@ -28,40 +30,49 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private double _weight;
 
         public JushuitanApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory, IDialogService dialogService) : base(configRepository) {
+            IHttpClientFactory httpClientFactory, IDialogService dialogService) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
         }
 
-        public JushuitanErpApiModel JushuitanErpApiInfo {
+        public JushuitanErpApiModel JushuitanErpApiInfo
+        {
             get => _jushuitanErpApiInfo;
             set => SetProperty(ref _jushuitanErpApiInfo, value);
         }
 
-        public bool IsRefreshing {
+        public bool IsRefreshing
+        {
             get => _isRefreshing;
             set => SetProperty(ref _isRefreshing, value);
         }
 
-        public bool IsUploading {
+        public bool IsUploading
+        {
             get => _isUploading;
             set => SetProperty(ref _isUploading, value);
         }
 
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
 
-        public double Weight {
+        public double Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var settingsDto = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>(SettingsName) ?? new JushuitanErpApiDto();
-                JushuitanErpApiInfo = new JushuitanErpApiModel() {
+                JushuitanErpApiInfo = new JushuitanErpApiModel()
+                {
                     AppKey = settingsDto.AppKey,
                     AccessToken = settingsDto.AccessToken,
                     AppSecret = settingsDto.AppSecret,
@@ -81,10 +92,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "JushuitanErpApiParametersDialogHost";
         public override string SettingsName => "JushuitanErpApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new JushuitanErpApiDto() {
+                Value = JsonConvert.SerializeObject(new JushuitanErpApiDto()
+                {
                     AppKey = JushuitanErpApiInfo.AppKey,
                     AccessToken = JushuitanErpApiInfo.AccessToken,
                     AppSecret = JushuitanErpApiInfo.AppSecret,
@@ -106,13 +120,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public ICommand RefreshAccessTokenCommand => new DelegateCommand<object>(RefreshAccessTokenDelegate);
 
-        private async void RefreshAccessTokenDelegate(object obj) {
+        private async void RefreshAccessTokenDelegate(object obj)
+        {
             //刷新Token,并保存
-            if (!IsRefreshing) {
+            if (!IsRefreshing)
+            {
                 IsRefreshing = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var jushuitanErpApi = new JushuitanErpApi(_httpClientFactory);
-                    await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters() {
+                    await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters()
+                    {
                         AppKey = JushuitanErpApiInfo.AppKey,
                         AccessToken = JushuitanErpApiInfo.AccessToken,
                         AppSecret = JushuitanErpApiInfo.AppSecret,
@@ -128,29 +146,36 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     });
 
                     var (key, value) = await jushuitanErpApi.RefreshAccessTokenAsync();
-                    if (key) {
+                    if (key)
+                    {
                         //赋值
                         //刷新
-                        try {
+                        try
+                        {
                             var jObject = JObject.Parse(value);
-                            if (jObject["data"]?["access_token"] is not null) {
+                            if (jObject["data"]?["access_token"] is not null)
+                            {
                                 JushuitanErpApiInfo.AccessToken = jObject["data"]?["access_token"]?.ToString() ?? string.Empty;
                                 JushuitanErpApiInfo.LastTokenUpdateTime = DateTime.Now;
                                 var expiresIn = Convert.ToInt32(jObject["data"]?["expires_in"] ?? "0");
-                                if (expiresIn > 0) {
+                                if (expiresIn > 0)
+                                {
                                     JushuitanErpApiInfo.TokenExpireTime = DateTime.Now.AddSeconds(expiresIn);
                                 }
                                 base.MessageQueue.Enqueue("刷新成功");
                             }
-                            else {
+                            else
+                            {
                                 base.MessageQueue.Enqueue($"access_token字段不存在");
                             }
                         }
-                        catch (Exception e) {
+                        catch (Exception e)
+                        {
                             base.MessageQueue.Enqueue($"解析返回内容失败:{e.Message}");
                         }
                     }
-                    else {
+                    else
+                    {
                         //提示错误
                         base.MessageQueue.Enqueue(value);
                     }
@@ -161,15 +186,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public ICommand UploadCommand => new DelegateCommand<object>(UploadDelegate);
 
-        private async void UploadDelegate(object obj) {
+        private async void UploadDelegate(object obj)
+        {
             //上传测试
 
-            if (!IsUploading) {
+            if (!IsUploading)
+            {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     //上传
                     var jushuitanErpApi = new JushuitanErpApi(_httpClientFactory);
-                    await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters() {
+                    await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters()
+                    {
                         AppKey = JushuitanErpApiInfo.AppKey,
                         AccessToken = JushuitanErpApiInfo.AccessToken,
                         AppSecret = JushuitanErpApiInfo.AppSecret,

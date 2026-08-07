@@ -13,9 +13,11 @@ using JayTom.Dws.Interface.Szjy188;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class SzjyApiPageViewModel : SettingsPageTemplateViewModel {
+    public class SzjyApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
         private string _barcode = string.Empty;
@@ -35,12 +37,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private string _nickname = string.Empty;
 
         public SzjyApiPageViewModel(IConfigRepository configRepository, IHttpClientFactory httpClientFactory,
-            IDialogService dialogService) : base(configRepository) {
+            IDialogService dialogService) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
         }
 
-        public SzjyApiInfoModel SzjyApiInfo {
+        public SzjyApiInfoModel SzjyApiInfo
+        {
             get => _szjyApiInfo;
             set => SetProperty(ref _szjyApiInfo, value);
         }
@@ -48,7 +52,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 条码
         /// </summary>
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
@@ -56,7 +61,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 重量
         /// </summary>
-        public double Weight {
+        public double Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
@@ -64,7 +70,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 长度
         /// </summary>
-        public double Length {
+        public double Length
+        {
             get => _length;
             set => SetProperty(ref _length, value);
         }
@@ -72,7 +79,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 宽度
         /// </summary>
-        public double Width {
+        public double Width
+        {
             get => _width;
             set => SetProperty(ref _width, value);
         }
@@ -80,7 +88,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 高度
         /// </summary>
-        public double Height {
+        public double Height
+        {
             get => _height;
             set => SetProperty(ref _height, value);
         }
@@ -88,7 +97,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 用户名
         /// </summary>
-        public string Username {
+        public string Username
+        {
             get => _username;
             set => SetProperty(ref _username, value);
         }
@@ -96,7 +106,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 昵称
         /// </summary>
-        public string Nickname {
+        public string Nickname
+        {
             get => _nickname;
             set => SetProperty(ref _nickname, value);
         }
@@ -104,7 +115,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// uid
         /// </summary>
-        public int Uid {
+        public int Uid
+        {
             get => _uid;
             set => SetProperty(ref _uid, value);
         }
@@ -112,7 +124,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 是否成功登录
         /// </summary>
-        public bool IsLoginSuccessful {
+        public bool IsLoginSuccessful
+        {
             get => _isLoginSuccessful;
             set => SetProperty(ref _isLoginSuccessful, value);
         }
@@ -120,7 +133,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 登录中
         /// </summary>
-        public bool IsLoggingIn {
+        public bool IsLoggingIn
+        {
             get => _isLoggingIn;
             set => SetProperty(ref _isLoggingIn, value);
         }
@@ -128,7 +142,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 上传中
         /// </summary>
-        public bool IsUploading {
+        public bool IsUploading
+        {
             get => _isUploading;
             set => SetProperty(ref _isUploading, value);
         }
@@ -136,10 +151,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "SzjyApiParametersDialogHost";
         public override string SettingsName => "SzjyApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new SzjyApiDto {
+                Value = JsonConvert.SerializeObject(new SzjyApiDto
+                {
                     UserName = SzjyApiInfo.UserName,
                     Machine = SzjyApiInfo.Machine,
                     Password = SzjyApiInfo.Password,
@@ -152,12 +170,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(SettingsName) ?? new SzjyApiDto();
-                    SzjyApiInfo = new SzjyApiInfoModel() {
+                    SzjyApiInfo = new SzjyApiInfoModel()
+                    {
                         Url = settingsDto.Url,
                         Machine = settingsDto.Machine,
                         Password = settingsDto.Password,
@@ -168,18 +190,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             }
         }
 
-        public ICommand LogInCommand {
+        public ICommand LogInCommand
+        {
             get => new DelegateCommand<object>(LogInDelegate);
         }
 
-        private async void LogInDelegate(object obj) {
-            if (!IsLoggingIn) {
+        private async void LogInDelegate(object obj)
+        {
+            if (!IsLoggingIn)
+            {
                 IsLoggingIn = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     IsLoginSuccessful = false;
                     //设置参数
                     var szjyApi = new SzjyApi(_httpClientFactory);
-                    await szjyApi.SetParameters(new SzjyApi.ApiParameter() {
+                    await szjyApi.SetParameters(new SzjyApi.ApiParameter()
+                    {
                         Machine = SzjyApiInfo.Machine,
                         Password = SzjyApiInfo.Password,
                         Url = SzjyApiInfo.Url,
@@ -189,19 +216,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
                     //登录
                     var (key, value) = await szjyApi.LogIn(SzjyApiInfo.UserName, SzjyApiInfo.Password);
-                    if (key && value is not null) {
-                        if (value.Status == 0) {
+                    if (key && value is not null)
+                    {
+                        if (value.Status == 0)
+                        {
                             IsLoginSuccessful = true;
                             Username = value.UserName;
                             Nickname = value.NickName;
                             Uid = value.Uid;
                             IsLoginSuccessful = true;
                         }
-                        else {
+                        else
+                        {
                             base.MessageQueue.Enqueue($"{value.Message}");
                         }
                     }
-                    else {
+                    else
+                    {
                         base.MessageQueue.Enqueue("连接失败!");
                     }
                     IsLoggingIn = false;
@@ -209,17 +240,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             }
         }
 
-        public ICommand UploadCommand {
+        public ICommand UploadCommand
+        {
             get => new DelegateCommand<object>(UploadDelegate);
         }
 
-        private async void UploadDelegate(object obj) {
-            if (!IsUploading) {
+        private async void UploadDelegate(object obj)
+        {
+            if (!IsUploading)
+            {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     //上传
                     var szjyApi = new SzjyApi(_httpClientFactory);
-                    await szjyApi.SetParameters(new SzjyApi.ApiParameter() {
+                    await szjyApi.SetParameters(new SzjyApi.ApiParameter()
+                    {
                         Machine = SzjyApiInfo.Machine,
                         Password = SzjyApiInfo.Password,
                         Url = SzjyApiInfo.Url,

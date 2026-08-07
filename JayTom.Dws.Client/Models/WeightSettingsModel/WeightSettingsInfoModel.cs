@@ -6,9 +6,11 @@ using JayTom.Dws.Plugin.Scale;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
-namespace JayTom.Dws.Client.Models.WeightSettingsModel {
+namespace JayTom.Dws.Client.Models.WeightSettingsModel
+{
 
-    public class WeightSettingsInfoModel : BindableBase {
+    public class WeightSettingsInfoModel : BindableBase
+    {
         private WeightMode _mode = WeightMode.None;
         private SerialPortSettingsInfoModel _connection = new();
         private CommonWeightParamsModel _commonWeight = new();
@@ -21,7 +23,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 称重模式
         /// </summary>
-        public WeightMode Mode {
+        public WeightMode Mode
+        {
             get => _mode;
             set => SetProperty(ref _mode, value);
         }
@@ -30,7 +33,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// 连接模式
         /// </summary>
 
-        public ScaleCommunicationMode ScaleCommunicationMode {
+        public ScaleCommunicationMode ScaleCommunicationMode
+        {
             get => _scaleCommunicationMode;
             set => SetProperty(ref _scaleCommunicationMode, value);
         }
@@ -38,7 +42,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 连接参数
         /// </summary>
-        public SerialPortSettingsInfoModel Connection {
+        public SerialPortSettingsInfoModel Connection
+        {
             get => _connection;
             set => SetProperty(ref _connection, value);
         }
@@ -46,7 +51,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// Tcp连接参数
         /// </summary>
-        public TcpSettingsInfoModel TcpSettingsInfo {
+        public TcpSettingsInfoModel TcpSettingsInfo
+        {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
@@ -54,7 +60,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 公共参数
         /// </summary>
-        public CommonWeightParamsModel CommonWeight {
+        public CommonWeightParamsModel CommonWeight
+        {
             get => _commonWeight;
             set => SetProperty(ref _commonWeight, value);
         }
@@ -62,7 +69,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 静态称参数
         /// </summary>
-        public StaticWeightParamsModel StaticWeight {
+        public StaticWeightParamsModel StaticWeight
+        {
             get => _staticWeight;
             set => SetProperty(ref _staticWeight, value);
         }
@@ -70,7 +78,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 动态称参数
         /// </summary>
-        public DynamicWeightParamsModel DynamicWeight {
+        public DynamicWeightParamsModel DynamicWeight
+        {
             get => _dynamicWeight;
             set => SetProperty(ref _dynamicWeight, value);
         }
@@ -78,7 +87,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 重量附加属性
         /// </summary>
-        public AdditionalWeightPropertiesModel AdditionalWeight {
+        public AdditionalWeightPropertiesModel AdditionalWeight
+        {
             get => _additionalWeight;
             set => SetProperty(ref _additionalWeight, value);
         }

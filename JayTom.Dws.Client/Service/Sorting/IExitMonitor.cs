@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.Service.Sorting {
+namespace JayTom.Dws.Client.Service.Sorting
+{
 
-    public interface IExitMonitor {
+    public interface IExitMonitor
+    {
 
         /// <summary>
         /// 锁格回调

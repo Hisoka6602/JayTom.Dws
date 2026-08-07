@@ -56,11 +56,11 @@ namespace JayTom.Dws.Interface.ttx {
                 waybillCode = barcode,
                 weight = Math.Round(Convert.ToDecimal(weight), 3),
             };
-            var content = new FormUrlEncodedContent(new[]
-            {
+            var content = new FormUrlEncodedContent(
+            [
                 new KeyValuePair<string, string>("api", ApiParameters?.Api??string.Empty),
                 new KeyValuePair<string, string>("data", JsonConvert.SerializeObject(data))
-            });
+            ]);
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -133,11 +133,11 @@ namespace JayTom.Dws.Interface.ttx {
                 waybillCode = barcode,
                 weight = Math.Round(Convert.ToDecimal(weight), 3),
             };
-            var content = new FormUrlEncodedContent(new[]
-            {
+            var content = new FormUrlEncodedContent(
+            [
                 new KeyValuePair<string, string>("api", ApiParameters?.Api??string.Empty),
                 new KeyValuePair<string, string>("data", JsonConvert.SerializeObject(data))
-            });
+            ]);
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
             stopwatch.Start();

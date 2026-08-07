@@ -23,9 +23,11 @@ using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEve
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages
+{
 
-    public class BarcodeSortingViewModel : BulkOperationsTemplateViewModel<BarCodeSortingItemInfoModel> {
+    public class BarcodeSortingViewModel : BulkOperationsTemplateViewModel<BarCodeSortingItemInfoModel>
+    {
         private readonly IBarCodeSortingRepository _barCodeSortingRepository;
         private readonly IBarCodeRegexRepository _barCodeRegexRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -35,36 +37,45 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public BarcodeSortingViewModel(IBarCodeSortingRepository barCodeSortingRepository,
             IBarCodeRegexRepository barCodeRegexRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) : base(excel) {
+            IExcel excel) : base(excel)
+        {
             _barCodeSortingRepository = barCodeSortingRepository;
             _barCodeRegexRepository = barCodeRegexRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
-        public ObservableCollection<BarCodeSortingItemInfoModel> BarCodeSortingItems {
+        public ObservableCollection<BarCodeSortingItemInfoModel> BarCodeSortingItems
+        {
             get => _barCodeSortingItems;
             set => SetProperty(ref _barCodeSortingItems, value);
         }
 
-        protected override async void AddDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        protected override async void AddDelegate(object obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var barcodeSortingRuleEditor = new BarcodeSortingRuleEditor();
-                if (barcodeSortingRuleEditor.DataContext is BarcodeSortingRuleEditorViewModel model) {
+                if (barcodeSortingRuleEditor.DataContext is BarcodeSortingRuleEditorViewModel model)
+                {
                     model.Identifier = Identifier;
                     await DialogHost.Show(barcodeSortingRuleEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent))
+                    {
                         MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
-                    if (model.IsOk) {
+                    if (model.IsOk)
+                    {
                         //添加到数据库
-                        var infoModel = new BarCodeSortingInfoModel() {
+                        var infoModel = new BarCodeSortingInfoModel()
+                        {
                             CreateTime = model.BarCodeSortingItemInfo.CreateTime,
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             ModifyTime = model.BarCodeSortingItemInfo.ModifyTime,
                             Remarks = model.BarCodeSortingItemInfo.Remarks,
                             SortingName = model.BarCodeSortingItemInfo.SortingName,
-                            BarCodeRegexItems = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel() {
+                            BarCodeRegexItems = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel()
+                            {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
@@ -72,15 +83,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             })?.ToList()
                         };
                         var insertOrUpdate = await _barCodeSortingRepository.InsertDetailAsync(infoModel);
-                        if (insertOrUpdate) {
+                        if (insertOrUpdate)
+                        {
                             EventAggregator.Instance.Publish(infoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
                             });
                             MessageQueue.Enqueue("保存成功");
                         }
-                        else {
+                        else
+                        {
                             MessageQueue.Enqueue("保存失败");
                         }
                     }
@@ -95,18 +109,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override string SettingsName => "BarcodeSortingItemsSettings";
 
-        public override void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
                 RefreshData();
             }
         }
 
-        protected override async Task<bool> DeleteProcess(object obj) {
-            if (obj is BarCodeSortingItemInfoModel item) {
+        protected override async Task<bool> DeleteProcess(object obj)
+        {
+            if (obj is BarCodeSortingItemInfoModel item)
+            {
                 var logisticsCodeRecognitionInfoModel = await _barCodeSortingRepository.
                     FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (logisticsCodeRecognitionInfoModel is not null) {
+                if (logisticsCodeRecognitionInfoModel is not null)
+                {
                     return await _barCodeSortingRepository.Delete(logisticsCodeRecognitionInfoModel);
                 }
             }
@@ -114,30 +133,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return false;
         }
 
-        protected override async void ModifyDelegate(object obj) {
-            if (obj is BarCodeSortingItemInfoModel item) {
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
+        protected override async void ModifyDelegate(object obj)
+        {
+            if (obj is BarCodeSortingItemInfoModel item)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var barcodeSortingRuleEditor = new BarcodeSortingRuleEditor();
-                    if (barcodeSortingRuleEditor.DataContext is BarcodeSortingRuleEditorViewModel model) {
+                    if (barcodeSortingRuleEditor.DataContext is BarcodeSortingRuleEditorViewModel model)
+                    {
                         model.Identifier = Identifier;
                         model.BarCodeSortingItemInfo = item;
                         model.BarCodeRegexItems = item.BarCodeRegexItems;
                         await DialogHost.Show(barcodeSortingRuleEditor, model.Identifier);
-                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                        if (!string.IsNullOrEmpty(model.ExceptionContent))
+                        {
                             MessageQueue.Enqueue(model.ExceptionContent);
                             RefreshData();
                             return;
                         }
-                        if (model.IsOk) {
+                        if (model.IsOk)
+                        {
                             //添加到数据库
-                            var infoModel = new BarCodeSortingInfoModel() {
+                            var infoModel = new BarCodeSortingInfoModel()
+                            {
                                 CreateTime = model.BarCodeSortingItemInfo.CreateTime,
                                 ExitId = model.SelectPackageExitDefinitionInfo.Id,
                                 ModifyTime = model.BarCodeSortingItemInfo.ModifyTime,
                                 Remarks = model.BarCodeSortingItemInfo.Remarks,
                                 SortingName = model.BarCodeSortingItemInfo.SortingName,
                                 Id = model.BarCodeSortingItemInfo.Id,
-                                BarCodeRegexItems = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel {
+                                BarCodeRegexItems = model.BarCodeRegexItems.Select(s => new BarCodeRegexInfoModel
+                                {
                                     CreateTime = s.CreateTime,
                                     ModifyTime = s.ModifyTime,
                                     Remarks = s.Remarks,
@@ -145,15 +172,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 })?.ToList()
                             };
                             var insertOrUpdate = await _barCodeSortingRepository.UpdateDetailAsync(infoModel);
-                            if (insertOrUpdate) {
+                            if (insertOrUpdate)
+                            {
                                 EventAggregator.Instance.Publish(infoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
                                 });
                                 MessageQueue.Enqueue("保存成功");
                             }
-                            else {
+                            else
+                            {
                                 MessageQueue.Enqueue("保存失败");
                             }
                         }
@@ -163,19 +193,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        protected override async Task ClearProcess() {
+        protected override async Task ClearProcess()
+        {
             var barCodeSortingInfoModels = await _barCodeSortingRepository.Select(s => s.Id > 0,
                 o => o.Id);
             await _barCodeSortingRepository.DeleteRange(barCodeSortingInfoModels);
         }
 
-        protected override async Task RefreshDataProcess() {
+        protected override async Task RefreshDataProcess()
+        {
             await Task.Delay(300);
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _barCodeSortingRepository
                 .BarCodeSortingItems(s => s.Id > 0);
             BarCodeSortingItems.Clear();
-            var infoModels = models?.Select((s, i) => new BarCodeSortingItemInfoModel {
+            var infoModels = models?.Select((s, i) => new BarCodeSortingItemInfoModel
+            {
                 CreateTime = s.CreateTime,
                 Id = s.Id,
                 ModifyTime = s.ModifyTime,
@@ -184,7 +217,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 SortingName = s.SortingName,
                 ExitId = s.ExitId,
                 ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
-                BarCodeRegexItems = new ObservableCollection<BarCodeRegexItemInfoModel>(s.BarCodeRegexItems?.Select((s1, i1) => new BarCodeRegexItemInfoModel {
+                BarCodeRegexItems = new ObservableCollection<BarCodeRegexItemInfoModel>(s.BarCodeRegexItems?.Select((s1, i1) => new BarCodeRegexItemInfoModel
+                {
                     CreateTime = s1.CreateTime,
                     Id = s1.Id,
                     BarCodeSortingId = s1.BarCodeSortingId,
@@ -200,7 +234,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override bool IsSelectAnyItem() => BarCodeSortingItems.Any(a => a.IsSelect);
 
-        protected override async Task BulkDeleteProcess() {
+        protected override async Task BulkDeleteProcess()
+        {
             var selectIds = BarCodeSortingItems.Where(w => w.IsSelect)
                 .Select(s => s.Id).ToList();
             var barCodeSortingInfoModels = await _barCodeSortingRepository.Select(s => selectIds.Contains(s.Id),
@@ -208,10 +243,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             await _barCodeSortingRepository.DeleteRange(barCodeSortingInfoModels);
         }
 
-        protected override List<BarCodeSortingItemInfoModel> ExportProcess() {
+        protected override List<BarCodeSortingItemInfoModel> ExportProcess()
+        {
             return BarCodeSortingItems
                 ?.SelectMany(s => s.SortingRuleGroup.Split("\n")
-                    .Select(item => new BarCodeSortingItemInfoModel {
+                    .Select(item => new BarCodeSortingItemInfoModel
+                    {
                         CreateTime = s.CreateTime,
                         ExitId = s.ExitId,
                         ModifyTime = s.ModifyTime,
@@ -225,13 +262,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 ?.ToList() ?? new List<BarCodeSortingItemInfoModel>();
         }
 
-        protected override async Task<bool> ImportProcess(List<BarCodeSortingItemInfoModel> items) {
-            if (items?.Any() == true) {
+        protected override async Task<bool> ImportProcess(List<BarCodeSortingItemInfoModel> items)
+        {
+            if (items?.Any() == true)
+            {
                 var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                     o => o.CreateTime);
                 var dateTime = DateTime.Now;
                 var barCodeSortingInfoModels = items
-                    .Select(s => new BarCodeSortingInfoModel() {
+                    .Select(s => new BarCodeSortingInfoModel()
+                    {
                         CreateTime = dateTime,
                         ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
                         ModifyTime = dateTime,
@@ -248,13 +288,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         }
                     })
                     .GroupBy(s => s.SortingName)
-                    .Select(group => new BarCodeSortingInfoModel {
+                    .Select(group => new BarCodeSortingInfoModel
+                    {
                         CreateTime = group.First().CreateTime,
                         ExitId = group.First().ExitId,
                         SortingName = group.Key,
                         ModifyTime = group.First().ModifyTime,
                         Remarks = group.First().Remarks,
-                        BarCodeRegexItems = group.SelectMany(item => item.BarCodeRegexItems).ToList()
+                        BarCodeRegexItems = [.. group.SelectMany(item => item.BarCodeRegexItems)]
                     })
                     .ToList();
 

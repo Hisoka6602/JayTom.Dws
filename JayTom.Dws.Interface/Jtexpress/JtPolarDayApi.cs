@@ -33,10 +33,57 @@ namespace JayTom.Dws.Interface.Jtexpress {
         private const string QueryChutePath = "/polarDay/query/queryChute";
 
         /// <summary>
+        /// 新版极昼服务正式地址。
+        /// </summary>
+        public const string ProductionBaseUrl =
+            "https://sdsonline.jtexpress.com.cn/sdsOnlineApi";
+
+        /// <summary>
+        /// 新版极昼服务测试地址。
+        /// </summary>
+        public const string TestBaseUrl =
+            "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
+
+        /// <summary>
+        /// 旧版小件回传正式地址。
+        /// </summary>
+        public const string LegacySmallItemProductionUrl =
+            "https://assscan.jtexpress.com.cn/assscanface/face/" +
+            "assScanSmallUpper/smallUpperDataUpload";
+
+        /// <summary>
+        /// 旧版小件回传测试地址。
+        /// </summary>
+        public const string LegacySmallItemTestUrl =
+            "https://uat-assscan.jtexpress.com.cn/assscanface/face/" +
+            "assScanSmallUpper/smallUpperDataUpload";
+
+        /// <summary>
+        /// 默认场地编码。
+        /// </summary>
+        public const string DefaultSiteCode = "6398155";
+
+        /// <summary>
+        /// 默认设备编码。
+        /// </summary>
+        public const string DefaultEquipmentCode = "ZXJCD6398155001";
+
+        /// <summary>
+        /// 默认分拣方案编码。
+        /// </summary>
+        public const string DefaultSortingPlanCode = "6398155-001";
+
+        /// <summary>
+        /// 默认登录人账号。
+        /// </summary>
+        public const string DefaultOperator = "LS6398155001";
+
+        /// <summary>
         /// JSON 序列化配置。
         /// </summary>
         private static readonly JsonSerializerOptions JsonOptions = new() {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
@@ -60,9 +107,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// </summary>
         /// <param name="httpClientFactory">HTTP 客户端工厂。</param>
         public JtPolarDayApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory ??
-                                 throw new ArgumentNullException(
-                                     nameof(httpClientFactory));
+            ArgumentNullException.ThrowIfNull(httpClientFactory);
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -148,6 +194,40 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
+        /// 使用当前旧版配置回传一条测试运单。
+        /// </summary>
+        /// <param name="barcode">测试运单号。</param>
+        /// <param name="weight">测试重量，单位千克。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>包含请求和响应详情的测试结果。</returns>
+        public Task<UploadResponse> TestLegacySmallItemUploadAsync(
+            string barcode,
+            decimal weight,
+            CancellationToken token = default) {
+            ArgumentException.ThrowIfNullOrWhiteSpace(barcode);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(weight);
+            var parameters = Volatile.Read(ref _parameters);
+            var now = DateTime.Now;
+            var context = new UploadContext {
+                CarNum = "1",
+                GridNo = "1",
+                GridCode = "111",
+                CyclesNum = 0,
+                FallTime = now
+            };
+            return SendLegacySmallItemAsync(
+                barcode.Trim(),
+                weight,
+                0,
+                0,
+                0,
+                now,
+                context,
+                parameters,
+                token);
+        }
+
+        /// <summary>
         /// 上传落格事件。
         /// </summary>
         /// <param name="barcode">条码。</param>
@@ -175,6 +255,22 @@ namespace JayTom.Dws.Interface.Jtexpress {
             object? other,
             CancellationToken token) {
             var context = other as UploadContext ?? new UploadContext();
+            var parameters = Volatile.Read(ref _parameters);
+            if (parameters.UseLegacyUpload) {
+                await UploadLegacySmallItemAsync(
+                        barcode,
+                        weight,
+                        length,
+                        width,
+                        height,
+                        scanTime,
+                        context,
+                        parameters,
+                        token)
+                    .ConfigureAwait(false);
+                return;
+            }
+
             var scanRequest = CreateRequest(
                 ScanEventType,
                 barcode,
@@ -226,6 +322,132 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
+        /// 按旧版小件协议回传一条完整分拣记录。
+        /// </summary>
+        private async Task UploadLegacySmallItemAsync(
+            string barcode,
+            decimal weight,
+            decimal length,
+            decimal width,
+            decimal height,
+            DateTime scanTime,
+            UploadContext context,
+            ApiParameter parameters,
+            CancellationToken token) {
+            if (string.IsNullOrWhiteSpace(context.CarNum) ||
+                string.IsNullOrWhiteSpace(context.GridNo) ||
+                string.IsNullOrWhiteSpace(context.GridCode)) {
+                Logger.Error("极昼旧版小件回传缺少小车号、格口或格口分类码");
+                return;
+            }
+
+            if (context.CyclesNum < 0) {
+                Logger.Error("极昼旧版小件回传的循环圈数不能小于零");
+                return;
+            }
+
+            var response = await SendLegacySmallItemAsync(
+                    barcode,
+                    weight,
+                    length,
+                    width,
+                    height,
+                    scanTime,
+                    context,
+                    parameters,
+                    token)
+                .ConfigureAwait(false);
+            if (response.IsSuccess) {
+                Logger.Info(
+                    $"极昼旧版小件回传成功:{barcode},{context.GridNo}");
+            }
+            else {
+                Logger.Error(
+                    $"极昼旧版小件回传失败:{barcode},{context.GridNo}," +
+                    response.ExceptionMsg);
+            }
+        }
+
+        /// <summary>
+        /// 发送一条旧版小件回传请求并返回完整结果。
+        /// </summary>
+        private Task<UploadResponse> SendLegacySmallItemAsync(
+            string barcode,
+            decimal weight,
+            decimal length,
+            decimal width,
+            decimal height,
+            DateTime scanTime,
+            UploadContext context,
+            ApiParameter parameters,
+            CancellationToken token) {
+            var request = CreateLegacySmallItemRequest(
+                barcode,
+                weight,
+                length,
+                width,
+                height,
+                scanTime,
+                context,
+                parameters);
+            return ExecuteRequestAsync(
+                string.Empty,
+                new[] { request },
+                parameters,
+                parameters.TimeoutMilliseconds,
+                EvaluateLegacyUploadResponse,
+                token,
+                parameters.LegacyUploadUrl,
+                true);
+        }
+
+        /// <summary>
+        /// 创建旧版小件回传报文。
+        /// </summary>
+        private static LegacySmallItemRequest CreateLegacySmallItemRequest(
+            string barcode,
+            decimal weight,
+            decimal length,
+            decimal width,
+            decimal height,
+            DateTime scanTime,
+            UploadContext context,
+            ApiParameter parameters) {
+            var uploadTime = DateTime.Now;
+            return new LegacySmallItemRequest {
+                WaybillNo = NormalizeBarcode(barcode),
+                // 旧协议字段名为 networkCode，业务含义实际是场地编码。
+                NetworkCode = parameters.SiteCode,
+                ScanTime = scanTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                UserNum = parameters.Operator,
+                Weight = PositiveMeasurementOrNull(weight),
+                Length = PositiveMeasurementOrNull(length),
+                Wide = PositiveMeasurementOrNull(width),
+                High = PositiveMeasurementOrNull(height),
+                UploadResult = IsNoReadBarcode(barcode) ? 2 : 1,
+                CrossBeltMac = parameters.CrossBeltMac,
+                SupplyDeskCode = parameters.SupplyDeskCode,
+                SupplyDeskMac = parameters.SupplyDeskMac,
+                UploadTime = uploadTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                SortingPlanCode = parameters.SortingPlanCode,
+                OperateType = parameters.OperateType,
+                EquipmentCode = parameters.EquipmentCode,
+                EquipmentLayer = parameters.EquipmentLayer,
+                GridNo = context.GridNo,
+                PackageNo = EmptyToNull(context.PackageNo),
+                FallTime = (context.FallTime ?? uploadTime)
+                    .ToString("yyyy-MM-dd HH:mm:ss"),
+                NextStation = EmptyToNull(context.NextStation),
+                CyclesNum = RoundMeasurement(context.CyclesNum),
+                CarNum = context.CarNum,
+                GridCode = context.GridCode,
+                Rfid = EmptyToNull(context.Rfid),
+                ThirdCode = EmptyToNull(context.ThirdCode),
+                BagUserCode = EmptyToNull(context.BagUserCode)
+            };
+        }
+
+        /// <summary>
         /// 极昼 IDataUploader 接入不使用集包上报。
         /// </summary>
         /// <param name="packageExit">格口。</param>
@@ -266,6 +488,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             var isPackageEvent = eventType == PackageEventType;
             return new DeviceInfoRequest {
                 EquipmentCode = parameters.EquipmentCode,
+                SiteCode = parameters.SiteCode,
                 EventType = eventType,
                 WaybillNo = NormalizeBarcode(barcode),
                 OperateType = parameters.OperateType,
@@ -406,8 +629,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
             int timeoutMilliseconds,
             Func<string, (bool IsSuccess, string ExceptionMessage,
                 ApiExceptionType ExceptionType)> evaluateResponse,
-            CancellationToken token) {
-            var requestUrl = CombineUrl(parameters.BaseUrl, relativePath);
+            CancellationToken token,
+            string? absoluteUrl = null,
+            bool useLegacyCredentials = false) {
+            var requestUrl = string.IsNullOrWhiteSpace(absoluteUrl)
+                ? CombineUrl(parameters.BaseUrl, relativePath)
+                : absoluteUrl;
             var requestTime = DateTime.Now;
             var requestBytes = JsonSerializer.SerializeToUtf8Bytes(
                 request,
@@ -429,6 +656,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                             requestBytes,
                             parameters,
                             timeoutMilliseconds,
+                            useLegacyCredentials,
                             token)
                         .ConfigureAwait(false);
                     var evaluation = evaluateResponse(responseContent);
@@ -513,6 +741,170 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
+        /// 判定旧版小件回传响应。
+        /// </summary>
+        private static (bool IsSuccess, string ExceptionMessage,
+            ApiExceptionType ExceptionType) EvaluateLegacyUploadResponse(
+            string responseContent) {
+            if (string.IsNullOrWhiteSpace(responseContent)) {
+                return (
+                    false,
+                    "极昼旧版小件回传响应为空",
+                    ApiExceptionType.ContentParsingException);
+            }
+
+            try {
+                using var document = JsonDocument.Parse(responseContent);
+                var root = document.RootElement;
+                if (root.ValueKind == JsonValueKind.String) {
+                    var text = root.GetString() ?? string.Empty;
+                    return IsLegacySuccessText(text)
+                        ? (true, string.Empty, ApiExceptionType.None)
+                        : (
+                            false,
+                            text,
+                            ApiExceptionType.LogicValidationFailed);
+                }
+
+                if (root.ValueKind != JsonValueKind.Object) {
+                    return (
+                        false,
+                        "极昼旧版小件回传响应格式无效",
+                        ApiExceptionType.ContentParsingException);
+                }
+
+                if (TryGetJsonProperty(root, "fail", out var fail) &&
+                    fail.ValueKind == JsonValueKind.True) {
+                    return (
+                        false,
+                        GetLegacyResponseMessage(root),
+                        ApiExceptionType.LogicValidationFailed);
+                }
+
+                if (TryGetJsonProperty(root, "succ", out var succeeded)) {
+                    var isSuccess = IsLegacySuccessValue(succeeded);
+                    return isSuccess
+                        ? (true, string.Empty, ApiExceptionType.None)
+                        : (
+                            false,
+                            GetLegacyResponseMessage(root),
+                            ApiExceptionType.LogicValidationFailed);
+                }
+
+                if (TryGetJsonProperty(root, "success", out var success) ||
+                    TryGetJsonProperty(root, "result", out success)) {
+                    var isSuccess = IsLegacySuccessValue(success);
+                    return isSuccess
+                        ? (true, string.Empty, ApiExceptionType.None)
+                        : (
+                            false,
+                            GetLegacyResponseMessage(root),
+                            ApiExceptionType.LogicValidationFailed);
+                }
+
+                if (TryGetJsonProperty(root, "code", out var code)) {
+                    var isSuccess = IsLegacySuccessValue(code);
+                    return isSuccess
+                        ? (true, string.Empty, ApiExceptionType.None)
+                        : (
+                            false,
+                            GetLegacyResponseMessage(root),
+                            ApiExceptionType.LogicValidationFailed);
+                }
+
+                var message = GetLegacyResponseMessage(root);
+                if (!string.IsNullOrWhiteSpace(message)) {
+                    return IsLegacySuccessText(message)
+                        ? (true, string.Empty, ApiExceptionType.None)
+                        : (
+                            false,
+                            message,
+                            ApiExceptionType.LogicValidationFailed);
+                }
+
+                return (true, string.Empty, ApiExceptionType.None);
+            }
+            catch (JsonException) {
+                var text = responseContent.Trim();
+                return IsLegacySuccessText(text)
+                    ? (true, string.Empty, ApiExceptionType.None)
+                    : (
+                        false,
+                        text,
+                        ApiExceptionType.ContentParsingException);
+            }
+        }
+
+        /// <summary>
+        /// 判断旧版响应值是否表示成功。
+        /// </summary>
+        private static bool IsLegacySuccessValue(JsonElement value) {
+            if (value.ValueKind is JsonValueKind.True) {
+                return true;
+            }
+
+            if (value.ValueKind is JsonValueKind.Number &&
+                value.TryGetInt32(out var number)) {
+                return number is 0 or 1 or 200;
+            }
+
+            return value.ValueKind == JsonValueKind.String &&
+                   IsLegacySuccessText(value.GetString() ?? string.Empty);
+        }
+
+        /// <summary>
+        /// 判断旧版响应文本是否表示成功。
+        /// </summary>
+        private static bool IsLegacySuccessText(string value) {
+            var normalized = value.Trim();
+            return normalized is "0" or "1" or "200" ||
+                   normalized.Equals(
+                       "success",
+                       StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals(
+                       "ok",
+                       StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Contains(
+                       "成功",
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 读取旧版响应中的提示信息。
+        /// </summary>
+        private static string GetLegacyResponseMessage(JsonElement root) {
+            if (TryGetJsonProperty(root, "msg", out var message) ||
+                TryGetJsonProperty(root, "message", out message) ||
+                TryGetJsonProperty(root, "errorMsg", out message)) {
+                return message.ValueKind == JsonValueKind.String
+                    ? message.GetString() ?? string.Empty
+                    : message.ToString();
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 不区分大小写读取 JSON 字段。
+        /// </summary>
+        private static bool TryGetJsonProperty(
+            JsonElement element,
+            string name,
+            out JsonElement value) {
+            foreach (var property in element.EnumerateObject()) {
+                if (property.Name.Equals(
+                        name,
+                        StringComparison.OrdinalIgnoreCase)) {
+                    value = property.Value;
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>
         /// 判定目标格口查询响应。
         /// </summary>
         /// <param name="responseContent">响应正文。</param>
@@ -547,6 +939,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <param name="requestBytes">请求正文。</param>
         /// <param name="parameters">参数快照。</param>
         /// <param name="timeoutMilliseconds">请求超时毫秒数。</param>
+        /// <param name="useLegacyCredentials">是否使用旧版回传凭证。</param>
         /// <param name="token">取消令牌。</param>
         /// <returns>响应正文。</returns>
         private async Task<string> SendAsync(
@@ -554,11 +947,18 @@ namespace JayTom.Dws.Interface.Jtexpress {
             byte[] requestBytes,
             ApiParameter parameters,
             int timeoutMilliseconds,
+            bool useLegacyCredentials,
             CancellationToken token) {
+            var appKey = useLegacyCredentials
+                ? parameters.LegacyAppKey
+                : parameters.AppKey;
+            var appSecret = useLegacyCredentials
+                ? parameters.LegacyAppSecret
+                : parameters.AppSecret;
             var timestamp =
                 DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
             var signature = CreateSignature(
-                parameters.AppSecret,
+                appSecret,
                 timestamp,
                 requestBytes);
             using var request = new HttpRequestMessage(
@@ -572,7 +972,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 signature);
             request.Headers.TryAddWithoutValidation(
                 "appKey",
-                parameters.AppKey);
+                appKey);
             request.Headers.TryAddWithoutValidation(
                 "X-Trace-Id",
                 Guid.NewGuid().ToString());
@@ -619,8 +1019,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
             var body = Encoding.UTF8.GetString(bodyBytes);
             var source = Encoding.UTF8.GetBytes(
                 string.Concat(appSecret, timestamp, body));
-            var md5Hex = Convert.ToHexString(MD5.HashData(source))
-                .ToLowerInvariant();
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+            var md5Hex = Convert.ToHexStringLower(MD5.HashData(source));
             return Convert.ToBase64String(
                 Encoding.UTF8.GetBytes(md5Hex));
         }
@@ -655,6 +1055,50 @@ namespace JayTom.Dws.Interface.Jtexpress {
 
             if (parameters.OperateType is < 1 or > 3) {
                 return "极昼操作类型只能为 1、2 或 3";
+            }
+
+            if (parameters.UseLegacyUpload) {
+                if (string.IsNullOrWhiteSpace(parameters.LegacyAppKey) ||
+                    string.IsNullOrWhiteSpace(parameters.LegacyAppSecret)) {
+                    return "极昼旧版回传 AppKey 和 AppSecret 不能为空";
+                }
+
+                if (parameters.OperateType > 2) {
+                    return "极昼旧版回传的操作类型只能为 1 或 2";
+                }
+
+                if (!Uri.TryCreate(
+                        parameters.LegacyUploadUrl,
+                        UriKind.Absolute,
+                        out var legacyUploadUri) ||
+                    legacyUploadUri.Scheme is not "http" and not "https") {
+                    return "极昼旧版回传地址无效";
+                }
+
+                if (string.IsNullOrWhiteSpace(parameters.SiteCode) ||
+                    string.IsNullOrWhiteSpace(parameters.CrossBeltMac) ||
+                    string.IsNullOrWhiteSpace(parameters.SupplyDeskMac)) {
+                    return "极昼旧版回传的场地编码、交叉带 MAC 和供件台 MAC 不能为空";
+                }
+
+                if (!IsMacAddress(parameters.CrossBeltMac) ||
+                    !IsMacAddress(parameters.SupplyDeskMac)) {
+                    return "极昼旧版回传 MAC 格式无效，应填写 12 位十六进制 MAC 地址";
+                }
+
+                if (parameters.EquipmentLayer <= 0) {
+                    return "极昼旧版回传的设备层数必须大于零";
+                }
+
+                if (string.IsNullOrWhiteSpace(parameters.SupplyDeskCode)) {
+                    return "极昼旧版回传的供件台编号不能为空";
+                }
+
+                return string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(parameters.SiteCode)) {
+                return "极昼场地编码不能为空";
             }
 
             if (parameters.EquipmentLayer <= 0 ||
@@ -699,6 +1143,26 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
+        /// 判断文本是否为常见的 12 位十六进制 MAC 地址。
+        /// </summary>
+        private static bool IsMacAddress(string value) {
+            var hexCount = 0;
+            foreach (var character in value.Trim()) {
+                if (character is ':' or '-' or '.') {
+                    continue;
+                }
+
+                if (!Uri.IsHexDigit(character)) {
+                    return false;
+                }
+
+                hexCount++;
+            }
+
+            return hexCount == 12;
+        }
+
+        /// <summary>
         /// 检查单票落格模式覆盖值。
         /// </summary>
         /// <param name="chuteModel">单票落格模式；空值表示使用接口配置。</param>
@@ -714,13 +1178,20 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <param name="barcode">原始条码。</param>
         /// <returns>协议条码。</returns>
         private static string NormalizeBarcode(string barcode) {
+            return IsNoReadBarcode(barcode)
+                ? "NoRead"
+                : barcode;
+        }
+
+        /// <summary>
+        /// 判断是否为未识别条码。
+        /// </summary>
+        private static bool IsNoReadBarcode(string barcode) {
             return string.IsNullOrWhiteSpace(barcode) ||
                    string.Equals(
                        barcode,
                        "noread",
-                       StringComparison.OrdinalIgnoreCase)
-                ? "NoRead"
-                : barcode;
+                       StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -730,6 +1201,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <returns>定点测量值。</returns>
         private static decimal RoundMeasurement(decimal value) {
             return Math.Round(value, 2, MidpointRounding.AwayFromZero);
+        }
+
+        /// <summary>
+        /// 将有效测量值保留两位小数，否则省略该可选字段。
+        /// </summary>
+        private static decimal? PositiveMeasurementOrNull(decimal value) {
+            return value > 0 ? RoundMeasurement(value) : null;
         }
 
         /// <summary>
@@ -754,6 +1232,48 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
+        /// 根据新版服务环境取得默认旧版小件回传地址。
+        /// </summary>
+        public static string GetDefaultLegacyUploadUrl(string baseUrl) {
+            return baseUrl.Contains(
+                "uat",
+                StringComparison.OrdinalIgnoreCase)
+                ? LegacySmallItemTestUrl
+                : LegacySmallItemProductionUrl;
+        }
+
+        /// <summary>
+        /// 将空地址或内置测试地址切换为新版正式环境地址。
+        /// </summary>
+        /// <param name="baseUrl">当前保存的新版服务地址。</param>
+        /// <returns>可继续使用的正式或自定义服务地址。</returns>
+        public static string NormalizeProductionBaseUrl(string? baseUrl) {
+            return string.IsNullOrWhiteSpace(baseUrl) ||
+                   string.Equals(
+                       baseUrl.TrimEnd('/'),
+                       TestBaseUrl,
+                       StringComparison.OrdinalIgnoreCase)
+                ? ProductionBaseUrl
+                : baseUrl;
+        }
+
+        /// <summary>
+        /// 将空地址或内置测试地址切换为旧版正式回传地址。
+        /// </summary>
+        /// <param name="legacyUploadUrl">当前保存的旧版回传地址。</param>
+        /// <returns>可继续使用的正式或自定义回传地址。</returns>
+        public static string NormalizeLegacyProductionUrl(
+            string? legacyUploadUrl) {
+            return string.IsNullOrWhiteSpace(legacyUploadUrl) ||
+                   string.Equals(
+                       legacyUploadUrl,
+                       LegacySmallItemTestUrl,
+                       StringComparison.OrdinalIgnoreCase)
+                ? LegacySmallItemProductionUrl
+                : legacyUploadUrl;
+        }
+
+        /// <summary>
         /// 创建脱敏参数日志。
         /// </summary>
         /// <param name="parameters">接口参数。</param>
@@ -764,6 +1284,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 new {
                     parameters.BaseUrl,
                     parameters.AppKey,
+                    parameters.UseLegacyUpload,
+                    parameters.LegacyUploadUrl,
+                    parameters.LegacyAppKey,
+                    parameters.SiteCode,
+                    parameters.CrossBeltMac,
+                    parameters.SupplyDeskMac,
                     parameters.EquipmentCode,
                     parameters.SortingPlanCode,
                     parameters.OperateType,
@@ -796,7 +1322,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// 极昼服务基础地址。
             /// </summary>
             public string BaseUrl { get; set; } =
-                "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
+                ProductionBaseUrl;
 
             /// <summary>
             /// 应用标识。
@@ -809,14 +1335,52 @@ namespace JayTom.Dws.Interface.Jtexpress {
             public string AppSecret { get; set; } = string.Empty;
 
             /// <summary>
+            /// 是否使用旧版小件回传；默认使用新版回传。
+            /// </summary>
+            public bool UseLegacyUpload { get; set; }
+
+            /// <summary>
+            /// 旧版小件回传地址。
+            /// </summary>
+            public string LegacyUploadUrl { get; set; } =
+                LegacySmallItemProductionUrl;
+
+            /// <summary>
+            /// 旧版小件回传应用标识。
+            /// </summary>
+            public string LegacyAppKey { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 旧版小件回传应用密钥。
+            /// </summary>
+            public string LegacyAppSecret { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 新版回传场地编码。
+            /// </summary>
+            public string SiteCode { get; set; } = DefaultSiteCode;
+
+            /// <summary>
+            /// 旧版小件回传交叉带 MAC 地址。
+            /// </summary>
+            public string CrossBeltMac { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 旧版小件回传供件台 MAC 地址。
+            /// </summary>
+            public string SupplyDeskMac { get; set; } = string.Empty;
+
+            /// <summary>
             /// 设备编号。
             /// </summary>
-            public string EquipmentCode { get; set; } = string.Empty;
+            public string EquipmentCode { get; set; } =
+                DefaultEquipmentCode;
 
             /// <summary>
             /// 分拣计划编码。
             /// </summary>
-            public string SortingPlanCode { get; set; } = string.Empty;
+            public string SortingPlanCode { get; set; } =
+                DefaultSortingPlanCode;
 
             /// <summary>
             /// 操作类型，1 出港、2 进港、3 进出港。
@@ -826,7 +1390,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// <summary>
             /// 操作员 JMS 账号。
             /// </summary>
-            public string Operator { get; set; } = string.Empty;
+            public string Operator { get; set; } = DefaultOperator;
 
             /// <summary>
             /// 格口查询使用的可选主线编码。
@@ -917,6 +1481,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     BaseUrl = BaseUrl,
                     AppKey = AppKey,
                     AppSecret = AppSecret,
+                    UseLegacyUpload = UseLegacyUpload,
+                    LegacyUploadUrl = LegacyUploadUrl,
+                    LegacyAppKey = LegacyAppKey,
+                    LegacyAppSecret = LegacyAppSecret,
+                    SiteCode = SiteCode,
+                    CrossBeltMac = CrossBeltMac,
+                    SupplyDeskMac = SupplyDeskMac,
                     EquipmentCode = EquipmentCode,
                     SortingPlanCode = SortingPlanCode,
                     OperateType = OperateType,
@@ -984,6 +1555,16 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// RFID 标签。
             /// </summary>
             public string Rfid { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 旧版小件回传使用的格口下一站或目的地。
+            /// </summary>
+            public string NextStation { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 旧版小件回传使用的三段码。
+            /// </summary>
+            public string ThirdCode { get; set; } = string.Empty;
 
             /// <summary>
             /// 落格模式；为空时使用接口配置值。
@@ -1064,6 +1645,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// 设备编号。
             /// </summary>
             public string EquipmentCode { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 场地编码。
+            /// </summary>
+            public string SiteCode { get; set; } = string.Empty;
 
             /// <summary>
             /// 事件类型。

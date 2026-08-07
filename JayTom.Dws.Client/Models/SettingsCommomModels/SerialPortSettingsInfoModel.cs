@@ -3,9 +3,11 @@ using System.IO.Ports;
 using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Data.LocalLog;
 
-namespace JayTom.Dws.Client.Models.SettingsCommomModels {
+namespace JayTom.Dws.Client.Models.SettingsCommomModels
+{
 
-    public class SerialPortSettingsInfoModel : BindableBase {
+    public class SerialPortSettingsInfoModel : BindableBase
+    {
         private string _portName = string.Empty;
         private int _baudRate;
         private int _dataBits;
@@ -16,7 +18,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 串口
         /// </summary>
-        public string PortName {
+        public string PortName
+        {
             get => _portName;
             set => SetProperty(ref _portName, value);
         }
@@ -24,7 +27,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 波特率
         /// </summary>
-        public int BaudRate {
+        public int BaudRate
+        {
             get => _baudRate;
             set => SetProperty(ref _baudRate, value);
         }
@@ -32,7 +36,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 数据位
         /// </summary>
-        public int DataBits {
+        public int DataBits
+        {
             get => _dataBits;
             set => SetProperty(ref _dataBits, value);
         }
@@ -40,7 +45,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 效验位
         /// </summary>
-        public Parity Parity {
+        public Parity Parity
+        {
             get => _parity;
             set => SetProperty(ref _parity, value);
         }
@@ -48,7 +54,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 停止位
         /// </summary>
-        public StopBits StopBits {
+        public StopBits StopBits
+        {
             get => _stopBits;
             set => SetProperty(ref _stopBits, value);
         }
@@ -56,7 +63,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 数据格式
         /// </summary>
-        public DataFormatType DataFormat {
+        public DataFormatType DataFormat
+        {
             get => _dataFormat;
             set => SetProperty(ref _dataFormat, value);
         }

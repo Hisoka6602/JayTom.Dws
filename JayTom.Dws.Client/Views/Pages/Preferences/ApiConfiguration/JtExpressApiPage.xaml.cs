@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration
+{
     /// <summary>
     /// JtExpressApiPage.xaml 的交互逻辑
     /// </summary>
-    public partial class JtExpressApiPage : Page {
-        public JtExpressApiPage() {
+    public partial class JtExpressApiPage : Page
+    {
+        public JtExpressApiPage()
+        {
             InitializeComponent();
         }
     }

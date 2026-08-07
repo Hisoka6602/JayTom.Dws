@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.LogsViews {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.LogsViews
+{
     /// <summary>
     /// SortingLogPage.xaml 的交互逻辑
     /// </summary>
-    public partial class SortingLogPage : Page {
-        public SortingLogPage() {
+    public partial class SortingLogPage : Page
+    {
+        public SortingLogPage()
+        {
             InitializeComponent();
         }
     }

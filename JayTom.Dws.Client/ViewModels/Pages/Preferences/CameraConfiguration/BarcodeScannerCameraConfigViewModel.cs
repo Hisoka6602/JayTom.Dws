@@ -14,9 +14,11 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
+{
 
-    public class BarcodeScannerCameraConfigViewModel : BindableBase {
+    public class BarcodeScannerCameraConfigViewModel : BindableBase
+    {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
 
@@ -24,42 +26,71 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private SnackbarMessageQueue _barcodeScannerCameraMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isShowRealTimeImage;
+        /// <summary>
+        /// 相机绑定事件处理器，保存实例以便页面卸载时退订。
+        /// </summary>
+        private readonly EventHandler<CameraFinderItemInfoModel> _cameraBoundHandler;
+        /// <summary>
+        /// 相机解绑事件处理器，保存实例以便页面卸载时退订。
+        /// </summary>
+        private readonly EventHandler<CameraFinderItemInfoModel> _cameraUnboundHandler;
+        /// <summary>
+        /// 页面事件是否已订阅。
+        /// </summary>
+        private bool _eventsSubscribed;
 
         public BarcodeScannerCameraConfigViewModel(IDeviceService deviceService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository) {
+            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository)
+        {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
-            _deviceService.CameraBound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                if (model.BoundType == CameraBindingType.ScannerCamera) {
-                    await Application.Current.Dispatcher.InvokeAsync(async () => {
+            _cameraBoundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
+            {
+                if (model.BoundType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera)
+                {
+                    try
+                    {
                         //增加到集合,从数据库获取
                         var infoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
                             f.SerialNumber.Equals(model.SerialNumber));
-                        if (infoModel is not null) {
-                            BarcodeScannerCameraItems.Add(new BarcodeScannerCameraItemInfoModel() {
-                                ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
-                                CameraType = (CameraType)infoModel.CameraType,
-                                IpAddress = infoModel.IpAddress,
-                                IsShowRealTimeImage = infoModel.IsShowRealTimeImage,
-                                Name = infoModel.Name,
-                                SerialNumber = infoModel.SerialNumber,
-                                Version = infoModel.Version,
-                                Model = infoModel.Model,
-                                Num = BarcodeScannerCameraItems.Count + 1,
-                            });
+                        if (infoModel is not null)
+                        {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                                BarcodeScannerCameraItems.Add(new BarcodeScannerCameraItemInfoModel
+                                {
+                                    ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
+                                    CameraType = (CameraType)infoModel.CameraType,
+                                    IpAddress = infoModel.IpAddress,
+                                    IsShowRealTimeImage = infoModel.IsShowRealTimeImage,
+                                    Name = infoModel.Name,
+                                    SerialNumber = infoModel.SerialNumber,
+                                    Version = infoModel.Version,
+                                    Model = infoModel.Model,
+                                    Num = BarcodeScannerCameraItems.Count + 1
+                                }));
                         }
-                    });
+                    }
+                    catch (Exception exception)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                            BarcodeScannerCameraMessageQueue.Enqueue(
+                                $"加载新绑定扫码相机失败:{exception.Message}"));
+                    }
                 }
             };
-            _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
+            _cameraUnboundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
+            {
                 //解绑相机,更新列表
-                await Application.Current.Dispatcher.InvokeAsync(() => {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
                     var infoModel =
                         BarcodeScannerCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
-                    if (infoModel is not null) {
+                    if (infoModel is not null)
+                    {
                         BarcodeScannerCameraItems.Remove(infoModel);
                         //重新排列
-                        for (var i = 0; i < BarcodeScannerCameraItems.Count; i++) {
+                        for (var i = 0; i < BarcodeScannerCameraItems.Count; i++)
+                        {
                             BarcodeScannerCameraItems[i].Num = i + 1;
                         }
                     }
@@ -67,12 +98,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             };
         }
 
-        public SnackbarMessageQueue BarcodeScannerCameraMessageQueue {
+        public SnackbarMessageQueue BarcodeScannerCameraMessageQueue
+        {
             get => _barcodeScannerCameraMessageQueue;
             set => SetProperty(ref _barcodeScannerCameraMessageQueue, value);
         }
 
-        public ObservableCollection<BarcodeScannerCameraItemInfoModel> BarcodeScannerCameraItems {
+        public ObservableCollection<BarcodeScannerCameraItemInfoModel> BarcodeScannerCameraItems
+        {
             get => _barcodeScannerCameraItems;
             set => SetProperty(ref _barcodeScannerCameraItems, value);
         }
@@ -80,36 +113,72 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 是否显示实时图像
         /// </summary>
-        public bool IsShowRealTimeImage {
+        public bool IsShowRealTimeImage
+        {
             get => _isShowRealTimeImage;
             set => SetProperty(ref _isShowRealTimeImage, value);
         }
 
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(object obj) {
-            LoadCameraItems();
+        /// <summary>
+        /// 页面卸载命令。
+        /// </summary>
+        public ICommand UnloadedCommand => new DelegateCommand<object>(UnloadedDelegate);
+
+        private void LoadedDelegate(object obj)
+        {
+            if (!_eventsSubscribed)
+            {
+                _deviceService.CameraBound += _cameraBoundHandler;
+                _deviceService.CameraUnbound += _cameraUnboundHandler;
+                _eventsSubscribed = true;
+            }
+
+            _ = LoadCameraItemsAsync();
+        }
+
+        /// <summary>
+        /// 页面卸载时解除设备事件订阅。
+        /// </summary>
+        private void UnloadedDelegate(object obj)
+        {
+            if (!_eventsSubscribed)
+            {
+                return;
+            }
+
+            _deviceService.CameraBound -= _cameraBoundHandler;
+            _deviceService.CameraUnbound -= _cameraUnboundHandler;
+            _eventsSubscribed = false;
         }
 
         /// <summary>
         /// 解绑
         /// </summary>
-        public ICommand UnbindCameraCommand {
+        public ICommand UnbindCameraCommand
+        {
             get => new DelegateCommand<BarcodeScannerCameraItemInfoModel>(UnbindCameraDelegate);
         }
 
-        private async void UnbindCameraDelegate(BarcodeScannerCameraItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void UnbindCameraDelegate(BarcodeScannerCameraItemInfoModel obj)
+        {
+            try
+            {
                 var isSuccess = false;
                 var model = await _barcodeScannerCameraConfigRepository.
                     FirstOrDefault(s =>
                         s.SerialNumber.Equals(obj.SerialNumber));
-                if (model is not null) {
+                if (model is not null)
+                {
                     var delete = await _barcodeScannerCameraConfigRepository.Delete(model);
-                    if (delete) {
-                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel() {
+                    if (delete)
+                    {
+                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel()
+                        {
                             BoundType = CameraBindingType.ScannerCamera,
                             ConnectionType = obj.ConnectionType,
                             HasBinding = false,
@@ -126,26 +195,35 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 }
                 BarcodeScannerCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Unbind")}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
-            });
+            }
+            catch (Exception exception)
+            {
+                BarcodeScannerCameraMessageQueue.Enqueue($"解绑扫码相机失败:{exception.Message}");
+            }
         }
 
         /// <summary>
         /// 保存选择项修改
         /// </summary>
-        public ICommand ApplyChangesCommand {
+        public ICommand ApplyChangesCommand
+        {
             get => new DelegateCommand<BarcodeScannerCameraItemInfoModel>(ApplyChangesDelegate);
         }
 
-        private async void ApplyChangesDelegate(BarcodeScannerCameraItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ApplyChangesDelegate(BarcodeScannerCameraItemInfoModel obj)
+        {
+            try
+            {
                 var isSuccess = false;
                 var infoModel = await _barcodeScannerCameraConfigRepository.
                     FirstOrDefault(f =>
                         f.SerialNumber.Equals(obj.SerialNumber));
-                if (infoModel is not null) {
+                if (infoModel is not null)
+                {
                     infoModel.IsShowRealTimeImage = obj.IsShowRealTimeImage;
                     var update = await _barcodeScannerCameraConfigRepository.Update(infoModel);
-                    if (update) {
+                    if (update)
+                    {
                         var (key, value) = await _deviceService.OnCameraParametersModified(new List<CameraParametersModifiedEventArgs>()
                         {
                             new()
@@ -159,36 +237,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 }
                 BarcodeScannerCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
-            });
+            }
+            catch (Exception exception)
+            {
+                BarcodeScannerCameraMessageQueue.Enqueue($"保存扫码相机失败:{exception.Message}");
+            }
         }
 
         /// <summary>
         /// 应用全部更改
         /// </summary>
-        public ICommand ApplyAllChangesCommand {
+        public ICommand ApplyAllChangesCommand
+        {
             get => new DelegateCommand<object>(ApplyAllChangesDelegate);
         }
 
-        private async void ApplyAllChangesDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ApplyAllChangesDelegate(object obj)
+        {
+            try
+            {
                 var isSuccess = false;
                 var infoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                if (infoModels?.Any() == true) {
-                    foreach (var model in infoModels) {
+                if (infoModels?.Any() == true)
+                {
+                    foreach (var model in infoModels)
+                    {
                         model.IsShowRealTimeImage = IsShowRealTimeImage;
                     }
 
                     var updateRange = await _barcodeScannerCameraConfigRepository.UpdateRange(infoModels);
-                    if (updateRange) {
-                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs {
+                    if (updateRange)
+                    {
+                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs
+                        {
                             Type = CameraBindingType.ScannerCamera,
-                            Parameters = infoModels
+                            Parameters = s
                         })?.ToList();
 
                         var (key, value) = await _deviceService.OnCameraParametersModified(list ?? new List<CameraParametersModifiedEventArgs>());
                         isSuccess = key;
-                        if (isSuccess) {
-                            LoadCameraItems();
+                        if (isSuccess)
+                        {
+                            await LoadCameraItemsAsync();
                         }
                     }
                 }
@@ -197,15 +287,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 //触发修改事件
                 BarcodeScannerCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
-            });
+            }
+            catch (Exception exception)
+            {
+                BarcodeScannerCameraMessageQueue.Enqueue($"批量保存扫码相机失败:{exception.Message}");
+            }
         }
 
-        private async void LoadCameraItems() {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                BarcodeScannerCameraItems.Clear();
-                await Task.Delay(100);
-                var infoModels = await _barcodeScannerCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                var itemInfoModels = infoModels.Select((s, i) => new BarcodeScannerCameraItemInfoModel {
+        /// <summary>
+        /// 加载扫码相机配置列表。
+        /// </summary>
+        private async Task LoadCameraItemsAsync()
+        {
+            try
+            {
+                var infoModels = await _barcodeScannerCameraConfigRepository.Select(
+                    static camera => camera.Id > 0,
+                    static camera => camera.Id);
+                var itemInfoModels = infoModels.Select((s, i) => new BarcodeScannerCameraItemInfoModel
+                {
                     ConnectionType = (CameraConnectionType)s.ConnectionType,
                     CameraType = (CameraType)s.CameraType,
                     IpAddress = s.IpAddress,
@@ -215,9 +315,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     Num = i + 1,
                     SerialNumber = s.SerialNumber,
                     Version = s.Version
-                })?.ToList();
+                }).ToList();
+                BarcodeScannerCameraItems.Clear();
                 BarcodeScannerCameraItems.AddRange(itemInfoModels);
-            });
+            }
+            catch (Exception exception)
+            {
+                BarcodeScannerCameraMessageQueue.Enqueue($"加载扫码相机失败:{exception.Message}");
+            }
         }
     }
 }

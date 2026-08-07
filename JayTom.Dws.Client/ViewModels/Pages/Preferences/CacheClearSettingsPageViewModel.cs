@@ -16,9 +16,11 @@ using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Client.Models.CacheClearSettings;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class CacheClearSettingsPageViewModel : SettingsPageTemplateViewModel {
+    public class CacheClearSettingsPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IComputer _computer;
         private readonly IFtp _ftp;
         private readonly ICacheCleanupService _cacheCleanupService;
@@ -33,7 +35,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private bool _isShowingFtpSpaceInfo;
 
         public CacheClearSettingsPageViewModel(IConfigRepository configRepository,
-            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) : base(configRepository) {
+            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) : base(configRepository)
+        {
             _computer = computer;
             _ftp = ftp;
             _cacheCleanupService = cacheCleanupService;
@@ -42,7 +45,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否删除中
         /// </summary>
-        public bool IsDeletingInProgress {
+        public bool IsDeletingInProgress
+        {
             get => _isDeletingInProgress;
             set => SetProperty(ref _isDeletingInProgress, value);
         }
@@ -50,7 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否同一磁盘存储
         /// </summary>
-        public bool IsSameDiskStorage {
+        public bool IsSameDiskStorage
+        {
             get => _isSameDiskStorage;
             set => SetProperty(ref _isSameDiskStorage, value);
         }
@@ -58,7 +63,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否显示Ftp空间占用
         /// </summary>
-        public bool IsShowingFtpSpaceInfo {
+        public bool IsShowingFtpSpaceInfo
+        {
             get => _isShowingFtpSpaceInfo;
             set => SetProperty(ref _isShowingFtpSpaceInfo, value);
         }
@@ -66,7 +72,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// Ftp占用信息
         /// </summary>
-        public FtpUsageInfo FtpUsageInfo {
+        public FtpUsageInfo FtpUsageInfo
+        {
             get => _ftpUsageInfo;
             set => SetProperty(ref _ftpUsageInfo, value);
         }
@@ -74,7 +81,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 本地磁盘占用信息
         /// </summary>
-        public LocalDiskUsageInfo LocalDiskUsageInfo {
+        public LocalDiskUsageInfo LocalDiskUsageInfo
+        {
             get => _localDiskUsageInfo;
             set => SetProperty(ref _localDiskUsageInfo, value);
         }
@@ -82,7 +90,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 最小空间保留（以MB为单位）
         /// </summary>
-        public long MinimumSpaceRetention {
+        public long MinimumSpaceRetention
+        {
             get => _minimumSpaceRetention;
             set => SetProperty(ref _minimumSpaceRetention, value);
         }
@@ -90,7 +99,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 自动清理参数
         /// </summary>
-        public CacheClearSettingsInfoModel AutoCleanupParams {
+        public CacheClearSettingsInfoModel AutoCleanupParams
+        {
             get => _autoCleanupParams;
             set => SetProperty(ref _autoCleanupParams, value);
         }
@@ -98,7 +108,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 手动清理参数
         /// </summary>
-        public CacheClearSettingsInfoModel ManualCleanupParams {
+        public CacheClearSettingsInfoModel ManualCleanupParams
+        {
             get => _manualCleanupParams;
             set => SetProperty(ref _manualCleanupParams, value);
         }
@@ -106,22 +117,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 手动清理方法
         /// </summary>
-        public ICommand ManualCleanupCommand {
+        public ICommand ManualCleanupCommand
+        {
             get => new DelegateCommand<string>(ManualCleanupDelegate);
         }
 
-        private void ManualCleanupDelegate(string obj) {
-            switch (obj) {
+        private void ManualCleanupDelegate(string obj)
+        {
+            switch (obj)
+            {
                 case "BarcodeData":
                     //删除指定天数之前的条码数据
-                    Task.Run(async () => {
-                        if (!IsDeletingInProgress && ManualCleanupParams.BarcodeDataAgoDays > 0) {
+                    Task.Run(async () =>
+                    {
+                        if (!IsDeletingInProgress && ManualCleanupParams.BarcodeDataAgoDays > 0)
+                        {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteBarcodeDataOlderThanDays(
                                     ManualCleanupParams.BarcodeDataAgoDays);
 
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
@@ -132,14 +149,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                 case "ScanImage":
                     //删除指定天数之前的扫码图片
-                    Task.Run(async () => {
-                        if (!IsDeletingInProgress && ManualCleanupParams.ScanImageAgoDays > 0) {
+                    Task.Run(async () =>
+                    {
+                        if (!IsDeletingInProgress && ManualCleanupParams.ScanImageAgoDays > 0)
+                        {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteScanImagesOlderThanDays(ManualCleanupParams
                                     .ScanImageAgoDays);
 
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
@@ -150,12 +170,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                 case "PanoramaImage":
                     //删除指定天数之前的全景图片
-                    Task.Run(async () => {
-                        if (!IsDeletingInProgress && ManualCleanupParams.PanoramaImageAgoDays > 0) {
+                    Task.Run(async () =>
+                    {
+                        if (!IsDeletingInProgress && ManualCleanupParams.PanoramaImageAgoDays > 0)
+                        {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeletePanoramaImagesOlderThanDays(ManualCleanupParams.PanoramaImageAgoDays);
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
@@ -166,12 +189,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                 case "FtpImage":
                     //删除指定天数之前的FTP
-                    Task.Run(async () => {
-                        if (!IsDeletingInProgress && ManualCleanupParams.FtpImageAgoDays > 0) {
+                    Task.Run(async () =>
+                    {
+                        if (!IsDeletingInProgress && ManualCleanupParams.FtpImageAgoDays > 0)
+                        {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteFtpImagesOlderThanDays(ManualCleanupParams.FtpImageAgoDays);
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
@@ -182,12 +208,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
                 case "LogData":
                     //删除指定天数之前的日志
-                    Task.Run(async () => {
-                        if (!IsDeletingInProgress && ManualCleanupParams.LogDataAgoDays > 0) {
+                    Task.Run(async () =>
+                    {
+                        if (!IsDeletingInProgress && ManualCleanupParams.LogDataAgoDays > 0)
+                        {
                             IsDeletingInProgress = true;
                             var (key, value) =
                                 await _cacheCleanupService.DeleteLogDataOlderThanDays(ManualCleanupParams.LogDataAgoDays);
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 base.MessageQueue.Enqueue(key ? Languages.Language.ResourceManager.GetString("删除成功") ?? string.Empty
                                     : $"{Languages.Language.ResourceManager.GetString("删除失败") ?? string.Empty},{value}");
                             });
@@ -201,10 +230,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public override string Identifier => "CacheClearSettingsDialogHost";
         public override string SettingsName => "CacheClearSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CacheClearSettingsDto() {
+                Value = JsonConvert.SerializeObject(new CacheClearSettingsDto()
+                {
                     BarcodeDataAgoDays = AutoCleanupParams.BarcodeDataAgoDays,
                     FtpImageAgoDays = AutoCleanupParams.FtpImageAgoDays,
                     LogDataAgoDays = AutoCleanupParams.LogDataAgoDays,
@@ -219,38 +251,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             return insertOrUpdate;
         }
 
-        public override void LoadedDelegate(object obj) {
-            Task.Run(async () => {
+        public override void LoadedDelegate(object obj)
+        {
+            Task.Run(async () =>
+            {
                 LocalDiskUsageInfo localDiskUsageInfo = new();
                 FtpUsageInfo ftpUsageInfo = new();
                 _imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings");
-                if (_imageSettingsDto is not null) {
-                    if (!string.IsNullOrEmpty(_imageSettingsDto.ImageRootDirectory)) {
+                if (_imageSettingsDto is not null)
+                {
+                    if (!string.IsNullOrEmpty(_imageSettingsDto.ImageRootDirectory))
+                    {
                         var pathRoot = Path.GetPathRoot(_imageSettingsDto.ImageRootDirectory);
                         IsSameDiskStorage = string.Equals(pathRoot, Path.GetPathRoot(System.Diagnostics.Process.GetCurrentProcess()?.MainModule?.FileName), StringComparison.OrdinalIgnoreCase) &&
                                             Directory.Exists($"{_imageSettingsDto.ImageRootDirectory}\\BarcodeImage") &&
                                             Directory.Exists($"{_imageSettingsDto.ImageRootDirectory}\\PanoramaImage");
                     }
 
-                    if (!_ftp.IsConnected) {
+                    if (!_ftp.IsConnected)
+                    {
                         var (key, value) = await _ftp.Connect(_imageSettingsDto.FtpInfo.IpAddress, _imageSettingsDto.FtpInfo.Port, _imageSettingsDto.FtpInfo.Username,
                             _imageSettingsDto.FtpInfo.Password);
                         IsShowingFtpSpaceInfo = (key && await _ftp.DirectoryExists("BarcodeImage") &&
                                                  await _ftp.DirectoryExists("PanoramaImage"));
                     }
                 }
-                if (IsSameDiskStorage) {
+                if (IsSameDiskStorage)
+                {
                     localDiskUsageInfo = GetDiskUsageInfo();
                 }
 
                 //判断FTP是否连接
-                if (IsShowingFtpSpaceInfo) {
+                if (IsShowingFtpSpaceInfo)
+                {
                     ftpUsageInfo = await GetFtpUsageInfo();
                 }
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    if (IsSameDiskStorage) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (IsSameDiskStorage)
+                    {
                         double progress = 0;
-                        LocalDiskUsageInfo = new LocalDiskUsageInfo() {
+                        LocalDiskUsageInfo = new LocalDiskUsageInfo()
+                        {
                             DiskUsagePercentage = localDiskUsageInfo.DiskUsagePercentage,
                             UsedBytes = localDiskUsageInfo.UsedBytes,
                             DataUsagePercentage = progress += localDiskUsageInfo.DataUsagePercentage,
@@ -261,10 +303,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         };
                     }
                     //判断FTP是否连接
-                    if (IsShowingFtpSpaceInfo) {
+                    if (IsShowingFtpSpaceInfo)
+                    {
                         double progress = 0;
 
-                        FtpUsageInfo = new FtpUsageInfo() {
+                        FtpUsageInfo = new FtpUsageInfo()
+                        {
                             DiskUsagePercentage = ftpUsageInfo.DiskUsagePercentage,
                             DataUsagePercentage = progress += ftpUsageInfo.DataUsagePercentage,
                             ScanImageUsagePercentage = progress += ftpUsageInfo.ScanImageUsagePercentage,
@@ -276,9 +320,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 });
 
                 var cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>(SettingsName);
-                if (cacheClearSettingsDto is not null) {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                        AutoCleanupParams = new CacheClearSettingsInfoModel() {
+                if (cacheClearSettingsDto is not null)
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        AutoCleanupParams = new CacheClearSettingsInfoModel()
+                        {
                             BarcodeDataAgoDays = cacheClearSettingsDto.BarcodeDataAgoDays,
                             FtpImageAgoDays = cacheClearSettingsDto.FtpImageAgoDays,
                             LogDataAgoDays = cacheClearSettingsDto.LogDataAgoDays,
@@ -291,11 +338,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });
         }
 
-        private LocalDiskUsageInfo GetDiskUsageInfo() {
+        private LocalDiskUsageInfo GetDiskUsageInfo()
+        {
             var localDiskUsageInfo = new LocalDiskUsageInfo();
             var firstOrDefault = _computer.GetDiskInfo()?.FirstOrDefault(w =>
                 w.Name.Equals(Path.GetPathRoot(Directory.GetCurrentDirectory())?.Replace(":\\", string.Empty)));
-            if (firstOrDefault is not null) {
+            if (firstOrDefault is not null)
+            {
                 localDiskUsageInfo.DiskUsagePercentage = (double)firstOrDefault.UsedDiskSpacePercentage;
                 localDiskUsageInfo.UsedBytes = firstOrDefault.UsedDiskSpace;
 
@@ -304,7 +353,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 //获取已用空间字节数
                 //获取数据(data.db文件大小)
                 var dbFileName = $"{AppDomain.CurrentDomain.BaseDirectory}\\data.db";
-                if (File.Exists(dbFileName)) {
+                if (File.Exists(dbFileName))
+                {
                     var length = new FileInfo(dbFileName).Length;
                     var space = (double)length / firstOrDefault.UsedDiskSpace;
                     localDiskUsageInfo.DataUsagePercentage = space;
@@ -312,7 +362,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 //获取扫码文件夹数据总大小
 
                 var barcodeImageDirectory = $"{_imageSettingsDto?.ImageRootDirectory}\\BarcodeImage";
-                if (Directory.Exists(barcodeImageDirectory)) {
+                if (Directory.Exists(barcodeImageDirectory))
+                {
                     var totalSizeInBytes = Directory.GetFiles(barcodeImageDirectory, "*", SearchOption.AllDirectories)
                         .AsParallel()
                         .Select(file => new FileInfo(file).Length)
@@ -322,7 +373,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 }
                 //获取全景图片文件夹数据总大小
                 var panoramaImageDirectory = $"{_imageSettingsDto?.ImageRootDirectory}\\PanoramaImage";
-                if (Directory.Exists(panoramaImageDirectory)) {
+                if (Directory.Exists(panoramaImageDirectory))
+                {
                     var totalSizeInBytes = Directory.GetFiles(panoramaImageDirectory, "*", SearchOption.AllDirectories)
                         .AsParallel()
                         .Select(file => new FileInfo(file).Length)
@@ -332,7 +384,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 }
                 //获取日志文件(log.db文件大小,目前没有填0)
                 var logFileName = $"{AppDomain.CurrentDomain.BaseDirectory}\\log.db";
-                if (File.Exists(logFileName)) {
+                if (File.Exists(logFileName))
+                {
                     var length = new FileInfo(logFileName).Length;
                     var space = (double)length / firstOrDefault.UsedDiskSpace;
                     localDiskUsageInfo.LogFileUsagePercentage = space;
@@ -350,12 +403,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             return localDiskUsageInfo;
         }
 
-        private async Task<FtpUsageInfo> GetFtpUsageInfo() {
+        private async Task<FtpUsageInfo> GetFtpUsageInfo()
+        {
             var info = new FtpUsageInfo();
 
             var ftpDiskInfo = await _ftp.GetDiskUsage();
 
-            if (ftpDiskInfo is not null) {
+            if (ftpDiskInfo is not null)
+            {
                 info.UsedBytes = ftpDiskInfo.UsedSize;
                 var directorySize = await _ftp.GetDirectorySize("PanoramaImage");
                 info.PanoramaImageUsagePercentage = (double)directorySize / info.UsedBytes;

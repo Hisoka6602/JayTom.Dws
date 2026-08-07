@@ -5,11 +5,13 @@ using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
+namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm
+{
 
     /// <summary>
     /// Tcp内容输入
     /// </summary>
-    public interface ITcpContentInput : ITcpOperations {
+    public interface ITcpContentInput : ITcpOperations
+    {
     }
 }

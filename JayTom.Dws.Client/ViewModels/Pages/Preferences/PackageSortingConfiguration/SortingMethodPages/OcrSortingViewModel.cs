@@ -27,9 +27,11 @@ using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEve
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages
+{
 
-    public class OcrSortingViewModel : BulkOperationsTemplateViewModel<ExcelOcrSortingItemInfoModel> {
+    public class OcrSortingViewModel : BulkOperationsTemplateViewModel<ExcelOcrSortingItemInfoModel>
+    {
         private readonly IOcrSortingRepository _ocrSortingRepository;
         private readonly IOcrRuleRepository _ocrRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -39,36 +41,45 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public OcrSortingViewModel(IOcrSortingRepository ocrSortingRepository,
             IOcrRuleRepository ocrRuleRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) : base(excel) {
+            IExcel excel) : base(excel)
+        {
             _ocrSortingRepository = ocrSortingRepository;
             _ocrRuleRepository = ocrRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
-        public ObservableCollection<OcrSortingItemInfoModel> OcrSortingItems {
+        public ObservableCollection<OcrSortingItemInfoModel> OcrSortingItems
+        {
             get => _ocrSortingItems;
             set => SetProperty(ref _ocrSortingItems, value);
         }
 
-        protected override async void AddDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        protected override async void AddDelegate(object obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var ocrSortingRuleEditor = new OcrSortingRuleEditor();
-                if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model) {
+                if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model)
+                {
                     model.Identifier = Identifier;
                     await DialogHost.Show(ocrSortingRuleEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent))
+                    {
                         MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
 
-                    if (model.IsOk) {
-                        var ocrSortingInfoModel = new OcrSortingInfoModel() {
+                    if (model.IsOk)
+                    {
+                        var ocrSortingInfoModel = new OcrSortingInfoModel()
+                        {
                             CreateTime = model.OcrSortingItemInfo.CreateTime,
                             ModifyTime = model.OcrSortingItemInfo.ModifyTime,
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.OcrSortingItemInfo.Remarks,
                             SortingName = model.OcrSortingItemInfo.SortingName,
-                            OcrRuleItems = model.OcrRuleItems.Select(s => new OcrRuleInfoModel() {
+                            OcrRuleItems = model.OcrRuleItems.Select(s => new OcrRuleInfoModel()
+                            {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
@@ -76,15 +87,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             })?.ToList()
                         };
                         var insert = await _ocrSortingRepository.InsertDetailAsync(ocrSortingInfoModel);
-                        if (insert) {
+                        if (insert)
+                        {
                             EventAggregator.Instance.Publish(ocrSortingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
                             });
                             MessageQueue.Enqueue("保存成功");
                         }
-                        else {
+                        else
+                        {
                             MessageQueue.Enqueue("保存失败");
                         }
                     }
@@ -99,18 +113,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override string SettingsName => "OcrSortingItemsSettings";
 
-        public override void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
                 RefreshData();
             }
         }
 
-        protected override async Task<bool> DeleteProcess(object obj) {
-            if (obj is OcrSortingItemInfoModel item) {
+        protected override async Task<bool> DeleteProcess(object obj)
+        {
+            if (obj is OcrSortingItemInfoModel item)
+            {
                 var ocrSortingInfoModel = await _ocrSortingRepository.
                     FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (ocrSortingInfoModel is not null) {
+                if (ocrSortingInfoModel is not null)
+                {
                     return await _ocrSortingRepository.Delete(ocrSortingInfoModel);
                 }
             }
@@ -118,30 +137,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return false;
         }
 
-        protected override async void ModifyDelegate(object obj) {
-            if (obj is OcrSortingItemInfoModel item) {
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
+        protected override async void ModifyDelegate(object obj)
+        {
+            if (obj is OcrSortingItemInfoModel item)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var ocrSortingRuleEditor = new OcrSortingRuleEditor();
-                    if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model) {
+                    if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model)
+                    {
                         model.Identifier = Identifier;
                         model.OcrSortingItemInfo = item;
                         model.OcrRuleItems = item.OcrRuleItems ?? new ObservableCollection<OcrRuleItemInfoModel>();
                         await DialogHost.Show(ocrSortingRuleEditor, model.Identifier);
-                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                        if (!string.IsNullOrEmpty(model.ExceptionContent))
+                        {
                             MessageQueue.Enqueue(model.ExceptionContent);
                             RefreshData();
                             return;
                         }
 
-                        if (model.IsOk) {
-                            var ocrSortingInfoModel = new OcrSortingInfoModel() {
+                        if (model.IsOk)
+                        {
+                            var ocrSortingInfoModel = new OcrSortingInfoModel()
+                            {
                                 CreateTime = model.OcrSortingItemInfo.CreateTime,
                                 ModifyTime = model.OcrSortingItemInfo.ModifyTime,
                                 ExitId = model.SelectPackageExitDefinitionInfo.Id,
                                 Remarks = model.OcrSortingItemInfo.Remarks,
                                 SortingName = model.OcrSortingItemInfo.SortingName,
                                 Id = model.OcrSortingItemInfo.Id,
-                                OcrRuleItems = model.OcrRuleItems.Select(s => new OcrRuleInfoModel() {
+                                OcrRuleItems = model.OcrRuleItems.Select(s => new OcrRuleInfoModel()
+                                {
                                     CreateTime = s.CreateTime,
                                     ModifyTime = s.ModifyTime,
                                     OcrSortingId = model.OcrSortingItemInfo.Id,
@@ -150,15 +177,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 })?.ToList()
                             };
                             var insert = await _ocrSortingRepository.UpdateDetailAsync(ocrSortingInfoModel);
-                            if (insert) {
+                            if (insert)
+                            {
                                 EventAggregator.Instance.Publish(ocrSortingInfoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
                                 });
                                 MessageQueue.Enqueue("保存成功");
                             }
-                            else {
+                            else
+                            {
                                 MessageQueue.Enqueue("保存失败");
                             }
                         }
@@ -168,13 +198,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        protected override async Task<bool> ImportProcess(List<ExcelOcrSortingItemInfoModel> items) {
-            if (items?.Any() == true) {
+        protected override async Task<bool> ImportProcess(List<ExcelOcrSortingItemInfoModel> items)
+        {
+            if (items?.Any() == true)
+            {
                 var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                     o => o.CreateTime);
                 var dateTime = DateTime.Now;
                 var ocrSortingInfoModels = items
-                    .Select(s => new OcrSortingInfoModel() {
+                    .Select(s => new OcrSortingInfoModel()
+                    {
                         CreateTime = dateTime,
                         ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
                         ModifyTime = dateTime,
@@ -201,13 +234,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         }
                     })
                     .GroupBy(s => s.SortingName)
-                    .Select(group => new OcrSortingInfoModel {
+                    .Select(group => new OcrSortingInfoModel
+                    {
                         CreateTime = group.First().CreateTime,
                         ExitId = group.First().ExitId,
                         SortingName = group.Key,
                         ModifyTime = group.First().ModifyTime,
                         Remarks = group.First().Remarks,
-                        OcrRuleItems = group.SelectMany(item => item.OcrRuleItems).ToList()
+                        OcrRuleItems = [.. group.SelectMany(item => item.OcrRuleItems)]
                     })
                     .ToList();
 
@@ -218,18 +252,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return false;
         }
 
-        protected override async Task ClearProcess() {
+        protected override async Task ClearProcess()
+        {
             var ocrSortingInfoModels = await _ocrSortingRepository.Select(s => s.Id > 0, o => o.Id);
             await _ocrSortingRepository.DeleteRange(ocrSortingInfoModels);
         }
 
-        protected override async Task RefreshDataProcess() {
+        protected override async Task RefreshDataProcess()
+        {
             await Task.Delay(300);
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _ocrSortingRepository
                 .OcrSortingItems(s => s.Id > 0);
             OcrSortingItems.Clear();
-            var infoModels = models?.Select((s, i) => new OcrSortingItemInfoModel() {
+            var infoModels = models?.Select((s, i) => new OcrSortingItemInfoModel()
+            {
                 CreateTime = s.CreateTime,
                 Id = s.Id,
                 ModifyTime = s.ModifyTime,
@@ -238,7 +275,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 ExitId = s.ExitId,
                 SortingName = s.SortingName,
                 ExitName = packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ?? string.Empty,
-                OcrRuleItems = new ObservableCollection<OcrRuleItemInfoModel>(s.OcrRuleItems?.Select((s1, i1) => new OcrRuleItemInfoModel() {
+                OcrRuleItems = new ObservableCollection<OcrRuleItemInfoModel>(s.OcrRuleItems?.Select((s1, i1) => new OcrRuleItemInfoModel()
+                {
                     CreateTime = s1.CreateTime,
                     Id = s1.Id,
                     OcrSortingId = s1.OcrSortingId,
@@ -255,7 +293,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override bool IsSelectAnyItem() => OcrSortingItems.Any(a => a.IsSelect);
 
-        protected override async Task BulkDeleteProcess() {
+        protected override async Task BulkDeleteProcess()
+        {
             var selectIds = OcrSortingItems.Where(w => w.IsSelect).Select(s => s.Id)
                 .ToList();
             var ocrSortingInfoModels = await _ocrSortingRepository.Select(w => selectIds.Contains(w.Id),
@@ -264,12 +303,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             await _ocrSortingRepository.DeleteRange(ocrSortingInfoModels);
         }
 
-        protected override List<ExcelOcrSortingItemInfoModel> ExportProcess() {
+        protected override List<ExcelOcrSortingItemInfoModel> ExportProcess()
+        {
             return OcrSortingItems
                 ?.SelectMany(s => s.OcrRuleItems?
-                    .Select(item => {
+                    .Select(item =>
+                    {
                         var ruleDto = JsonConvert.DeserializeObject<OcrRuleJsonDto>(item.JsonContent);
-                        return new ExcelOcrSortingItemInfoModel() {
+                        return new ExcelOcrSortingItemInfoModel()
+                        {
                             CreateTime = s.CreateTime,
                             ExitId = s.ExitId,
                             ModifyTime = s.ModifyTime,
@@ -291,28 +333,36 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 ?.ToList() ?? new List<ExcelOcrSortingItemInfoModel>();
         }
 
-        public string FormatRule(string jsonContent) {
+        public string FormatRule(string jsonContent)
+        {
             var content = string.Empty;
-            try {
+            try
+            {
                 var ocrRuleJsonDto = JsonConvert.DeserializeObject<OcrRuleJsonDto>(jsonContent);
-                if (ocrRuleJsonDto is not null) {
-                    if (ocrRuleJsonDto.IsUseThreeSegmentCodeValidation) {
+                if (ocrRuleJsonDto is not null)
+                {
+                    if (ocrRuleJsonDto.IsUseThreeSegmentCodeValidation)
+                    {
                         content += $"三段码包含:[{ocrRuleJsonDto.ThreeSegmentCodeContainsChars}]  ";
                     }
-                    if (ocrRuleJsonDto.IsUseRecipientAddressValidation) {
+                    if (ocrRuleJsonDto.IsUseRecipientAddressValidation)
+                    {
                         content += $"收件人地址包含:[{ocrRuleJsonDto.RecipientAddressContainsChars}]  ";
                     }
-                    if (ocrRuleJsonDto.IsUseSenderAddressValidation) {
+                    if (ocrRuleJsonDto.IsUseSenderAddressValidation)
+                    {
                         content += $"发件人地址包含:[{ocrRuleJsonDto.SenderAddressContainsChars}]  ";
                     }
-                    if (ocrRuleJsonDto.IsUseSenderPhoneNumberValidation) {
+                    if (ocrRuleJsonDto.IsUseSenderPhoneNumberValidation)
+                    {
                         content += $"发件人手机尾号包含:[{ocrRuleJsonDto.SenderPhoneNumberEndsWith}]  ";
                     }
 
                     return content;
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 return "解析错误";
             }
             return "解析错误";

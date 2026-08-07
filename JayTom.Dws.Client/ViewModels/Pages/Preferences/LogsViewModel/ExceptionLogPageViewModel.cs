@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
+{
 
-    public class ExceptionLogPageViewModel : BindableBase {
+    public class ExceptionLogPageViewModel : BindableBase
+    {
     }
 }

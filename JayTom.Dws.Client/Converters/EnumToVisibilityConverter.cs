@@ -7,12 +7,16 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class EnumToVisibilityConverter : IValueConverter {
+    public class EnumToVisibilityConverter : IValueConverter
+    {
 
-        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-            if (value == null || parameter == null) {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null)
+            {
                 return Visibility.Collapsed;
             }
 
@@ -23,7 +27,8 @@ namespace JayTom.Dws.Client.Converters {
             return strings?.Any(a => a.Equals(enumValue, StringComparison.InvariantCultureIgnoreCase)) == true ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

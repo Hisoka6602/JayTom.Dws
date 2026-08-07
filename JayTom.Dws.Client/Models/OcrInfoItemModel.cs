@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class OcrInfoItemModel : BindableBase {
+    public class OcrInfoItemModel : BindableBase
+    {
         private string _recipientAddress = string.Empty;
         private string _recipientName = string.Empty;
         private string _recipientPhone = string.Empty;
@@ -20,7 +22,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 收件人地址。
         /// </summary>
-        public string RecipientAddress {
+        public string RecipientAddress
+        {
             get => _recipientAddress;
             set => SetProperty(ref _recipientAddress, value);
         }
@@ -28,7 +31,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 收件人姓名。
         /// </summary>
-        public string RecipientName {
+        public string RecipientName
+        {
             get => _recipientName;
             set => SetProperty(ref _recipientName, value);
         }
@@ -36,7 +40,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 收件人电话。
         /// </summary>
-        public string RecipientPhone {
+        public string RecipientPhone
+        {
             get => _recipientPhone;
             set => SetProperty(ref _recipientPhone, value);
         }
@@ -44,7 +49,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 寄件人姓名。
         /// </summary>
-        public string SenderName {
+        public string SenderName
+        {
             get => _senderName;
             set => SetProperty(ref _senderName, value);
         }
@@ -52,7 +58,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 寄件人地址。
         /// </summary>
-        public string SenderAddress {
+        public string SenderAddress
+        {
             get => _senderAddress;
             set => SetProperty(ref _senderAddress, value);
         }
@@ -60,7 +67,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 寄件人电话。
         /// </summary>
-        public string SenderPhone {
+        public string SenderPhone
+        {
             get => _senderPhone;
             set => SetProperty(ref _senderPhone, value);
         }
@@ -68,7 +76,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 三段码。
         /// </summary>
-        public string ThreeSegmentCode {
+        public string ThreeSegmentCode
+        {
             get => _threeSegmentCode;
             set => SetProperty(ref _threeSegmentCode, value);
         }
@@ -76,7 +85,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 耗时(ms)
         /// </summary>
-        public long ElapsedTime {
+        public long ElapsedTime
+        {
             get => _elapsedTime;
             set => SetProperty(ref _elapsedTime, value);
         }

@@ -4,9 +4,11 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 
-namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
+namespace JayTom.Dws.Client.Models.VolumeSettingsModel
+{
 
-    public class VolumeSettingsInfoModel : BindableBase {
+    public class VolumeSettingsInfoModel : BindableBase
+    {
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
         private bool _isUseExternalVolumeInput;
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
@@ -21,7 +23,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 体积单位
         /// </summary>
-        public VolumeUnit Unit {
+        public VolumeUnit Unit
+        {
             get => _unit;
             set => SetProperty(ref _unit, value);
         }
@@ -29,7 +32,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 数据模板
         /// </summary>
-        public ObservableCollection<ItemBaseTemplateModel> DataTemplate {
+        public ObservableCollection<ItemBaseTemplateModel> DataTemplate
+        {
             get => _dataTemplate;
             set => SetProperty(ref _dataTemplate, value);
         }
@@ -37,7 +41,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 分隔符
         /// </summary>
-        public string Separator {
+        public string Separator
+        {
             get => _separator;
             set => SetProperty(ref _separator, value);
         }
@@ -45,7 +50,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 是否使用外部体积输入
         /// </summary>
-        public bool IsUseExternalVolumeInput {
+        public bool IsUseExternalVolumeInput
+        {
             get => _isUseExternalVolumeInput;
             set => SetProperty(ref _isUseExternalVolumeInput, value);
         }
@@ -53,7 +59,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 是否主动触发体积获取
         /// </summary>
-        public bool IsTriggerVolumeRequest {
+        public bool IsTriggerVolumeRequest
+        {
             get => _triggerVolumeRequest;
             set => SetProperty(ref _triggerVolumeRequest, value);
         }
@@ -61,7 +68,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 是否使用融合超时
         /// </summary>
-        public bool IsUseFusionTimeout {
+        public bool IsUseFusionTimeout
+        {
             get => _isUseFusionTimeout;
             set => SetProperty(ref _isUseFusionTimeout, value);
         }
@@ -69,7 +77,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 融合超时时间
         /// </summary>
-        public int FusionTimeout {
+        public int FusionTimeout
+        {
             get => _fusionTimeout;
             set => SetProperty(ref _fusionTimeout, value);
         }
@@ -77,7 +86,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 发送参数
         /// </summary>
-        public VolumeInformationRequesterInfoModel VolumeInformationRequesterInfo {
+        public VolumeInformationRequesterInfoModel VolumeInformationRequesterInfo
+        {
             get => _volumeInformationRequesterInfo;
             set => SetProperty(ref _volumeInformationRequesterInfo, value);
         }
@@ -85,7 +95,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 触发延迟(毫秒)
         /// </summary>
-        public int TriggerDelayMilliseconds {
+        public int TriggerDelayMilliseconds
+        {
             get => _triggerDelayMilliseconds;
             set => SetProperty(ref _triggerDelayMilliseconds, value);
         }

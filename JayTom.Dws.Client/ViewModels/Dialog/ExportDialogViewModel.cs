@@ -5,9 +5,11 @@ using System.Threading;
 using System.Diagnostics;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog {
+namespace JayTom.Dws.Client.ViewModels.Dialog
+{
 
-    public class ExportDialogViewModel : BindableBase {
+    public class ExportDialogViewModel : BindableBase
+    {
         private double _maxProgress = 100;
         private double _progress = 0;
         private string _progressText = $"0%";
@@ -15,50 +17,58 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         private string _message = string.Empty;
         private string _filePath = string.Empty;
 
-        public double MaxProgress {
+        public double MaxProgress
+        {
             get => _maxProgress;
             set => SetProperty(ref _maxProgress, value);
         }
 
-        public double Progress {
+        public double Progress
+        {
             get => _progress;
             set => SetProperty(ref _progress, value);
         }
 
-        public string ProgressText {
+        public string ProgressText
+        {
             get => _progressText;
             set => SetProperty(ref _progressText, value);
         }
 
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public string Message {
+        public string Message
+        {
             get => _message;
             set => SetProperty(ref _message, value);
         }
 
-        public string FilePath {
+        public string FilePath
+        {
             get => _filePath;
             set => SetProperty(ref _filePath, value);
         }
 
         public CancellationToken CancelToken { get; set; }
         public Stopwatch RunStopwatch { get; set; } = new Stopwatch();
-        private CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        private CancellationTokenSource _tokenSource = new();
 
         /// <summary>
         /// 取消事件
         /// </summary>
-        public EventHandler<EventArgs> CancelAfter = (sender, args) => {
+        public EventHandler<EventArgs> CancelAfter = (sender, args) =>
+        {
         };
 
         /// <summary>
         /// 完成事件
         /// </summary>
-        public EventHandler<object> Completed = (sender, o) => {
+        public EventHandler<object> Completed = (sender, o) =>
+        {
         };
 
         /// <summary>
@@ -66,14 +76,16 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private void LoadedDelegate(object obj) {
+        private void LoadedDelegate(object obj)
+        {
         }
 
         /// <summary>
         /// 取消
         /// </summary>
 
-        public ICommand CancelCommand {
+        public ICommand CancelCommand
+        {
             get => new DelegateCommand<object>(CancelDelegate);
         }
 
@@ -82,7 +94,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// </summary>
         /// <param name="obj"></param>
         /// <exception cref="NotImplementedException"></exception>
-        private void CancelDelegate(object obj) {
+        private void CancelDelegate(object obj)
+        {
         }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
 using JayTom.Dws.Plugin.Tcp;
 
-namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm {
+namespace JayTom.Dws.Client.Service.Sorting.Communication.TcpComm
+{
 
-    public interface ISortingTcp : ITcpOperations, IDisposable {
+    public interface ISortingTcp : ITcpOperations, IDisposable
+    {
 
         /// <summary>
         /// 心跳包异常事件

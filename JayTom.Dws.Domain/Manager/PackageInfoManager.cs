@@ -7,6 +7,7 @@ using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using System.Collections.Concurrent;
+using System.Threading;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 
@@ -132,15 +133,18 @@ namespace JayTom.Dws.Domain.Manager {
             }
 
             try {
-                foreach (var pair in _packageInfos.OrderBy(item => item.Key)) {
+                PackageInfo? result = null;
+                var resultKey = DateTime.MaxValue;
+                foreach (var pair in _packageInfos) {
                     lock (pair.Value.SyncRoot) {
-                        if (predicate(pair)) {
-                            return pair.Value;
+                        if (pair.Key < resultKey && predicate(pair)) {
+                            result = pair.Value;
+                            resultKey = pair.Key;
                         }
                     }
                 }
 
-                return null;
+                return result;
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
@@ -160,15 +164,17 @@ namespace JayTom.Dws.Domain.Manager {
             }
 
             try {
-                // 逆向遍历集合，找到第一个符合条件的键值对
-                foreach (var kvp in _packageInfos.OrderByDescending(k => k.Key)) {
-                    lock (kvp.Value.SyncRoot) {
-                        if (predicate(kvp)) {
-                            return kvp.Value;
+                PackageInfo? result = null;
+                var resultKey = DateTime.MinValue;
+                foreach (var pair in _packageInfos) {
+                    lock (pair.Value.SyncRoot) {
+                        if (pair.Key > resultKey && predicate(pair)) {
+                            result = pair.Value;
+                            resultKey = pair.Key;
                         }
                     }
                 }
-                return null;
+                return result;
             }
             catch (Exception ex) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"An error occurred in GetPackage: {ex.Message}");
@@ -311,12 +317,26 @@ namespace JayTom.Dws.Domain.Manager {
         /// <summary>
         /// 是否已完成(完成输出、上传、但未从集合删除)
         /// </summary>
-        public bool IsCompleted;
+        private int _isCompleted;
+        /// <summary>
+        /// 获取或设置包裹信息是否已经填充完成。
+        /// </summary>
+        public bool IsCompleted {
+            get => Volatile.Read(ref _isCompleted) != 0;
+            set => Volatile.Write(ref _isCompleted, value ? 1 : 0);
+        }
 
         /// <summary>
         /// 是否完成存图
         /// </summary>
-        public bool IsSavedImage;
+        private int _isSavedImage;
+        /// <summary>
+        /// 获取或设置包裹图像是否已经转交保存流程。
+        /// </summary>
+        public bool IsSavedImage {
+            get => Volatile.Read(ref _isSavedImage) != 0;
+            set => Volatile.Write(ref _isSavedImage, value ? 1 : 0);
+        }
 
         /// <summary>
         /// 需要扣除的长度
@@ -414,7 +434,7 @@ namespace JayTom.Dws.Domain.Manager {
 
         public object? Other { get; set; }
 
-        private readonly object _removalLock = new();
+        private readonly System.Threading.Lock _removalLock = new();
 
         public void StartTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageTimer> removeTimers) {
             lock (SyncRoot) {

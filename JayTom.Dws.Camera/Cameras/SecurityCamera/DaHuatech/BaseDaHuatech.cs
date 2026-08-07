@@ -30,7 +30,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static fSearchDevicesCBEx? _mSearchDevicesCbEx;
         private static fSnapRevCallBack? _mSnapRevCallBack;
         private static BaseDaHuatech? _instance;
-        private static object _initLock = new();
+        private static readonly System.Threading.Lock _initLock = new();
         private static SemaphoreSlim _enumerateSlim = new(1);
         private readonly SemaphoreSlim _ptzOperationSlim = new(1);
         private static ConcurrentDictionary<string, DEVICE_NET_INFO_EX> _devInfo = new();
@@ -45,7 +45,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         // private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
         private static SemaphoreSlim _snapRevPhotoSlim = new(1);
 
-        private static byte[] _imageBytes = Array.Empty<byte>();
+        private static byte[] _imageBytes = [];
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
         private static Channel<(Func<Bitmap, Task> Callback, Bitmap Image)> _channel;
@@ -55,7 +55,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         private static DecCBFun? _decCbFun;
         private static fCBDecode? _fCbDecode;
         private static ConcurrentDictionary<string, HistoricalWatermark> _historicalWatermarkInfos = new();
-        private static readonly object _watermarkUpdateLock = new();
+        private static readonly System.Threading.Lock _watermarkUpdateLock = new();
 
         private static List<DevLogInInfo> _realTimePreviewInfos = new();
 
@@ -904,8 +904,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 }).Select(s => new RealTimeWatermarkInfo() {
                     LoginId = s.Key.LoginId,
                     ChannelId = s.Key.ChannelId,
-                    CustomInfo = GetNET_OSD_CUSTOM_TITLE(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
-                    CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+                    CustomInfo = GetNET_OSD_CUSTOM_TITLE([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId))], 8),
+                    CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId))], 8),
                 }).Select(ac => new Action(() => {
                     var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
                     if (!osdConfig) {

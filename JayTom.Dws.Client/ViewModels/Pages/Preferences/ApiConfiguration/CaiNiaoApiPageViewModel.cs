@@ -13,23 +13,30 @@ using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class CaiNiaoApiPageViewModel : SettingsPageTemplateViewModel {
+    public class CaiNiaoApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private CaiNiaoApiModel _caiNiaoApiInfo = new();
 
-        public CaiNiaoApiPageViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public CaiNiaoApiPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
-        public CaiNiaoApiModel CaiNiaoApiInfo {
+        public CaiNiaoApiModel CaiNiaoApiInfo
+        {
             get => _caiNiaoApiInfo;
             set => SetProperty(ref _caiNiaoApiInfo, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var settingsDto = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(SettingsName) ?? new CaiNiaoApiDto();
-                CaiNiaoApiInfo = new CaiNiaoApiModel() {
+                CaiNiaoApiInfo = new CaiNiaoApiModel()
+                {
                     BcrCode = settingsDto.BcrCode,
                     BcrName = settingsDto.BcrName,
                     Source = settingsDto.Source,
@@ -43,10 +50,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "CaiNiaoApiParametersDialogHost";
         public override string SettingsName => "CaiNiaoApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CaiNiaoApiDto() {
+                Value = JsonConvert.SerializeObject(new CaiNiaoApiDto()
+                {
                     BcrCode = CaiNiaoApiInfo.BcrCode,
                     BcrName = CaiNiaoApiInfo.BcrName,
                     Source = CaiNiaoApiInfo.Source,

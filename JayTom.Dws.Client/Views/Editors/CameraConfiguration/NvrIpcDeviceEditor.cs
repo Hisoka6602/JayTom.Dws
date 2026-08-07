@@ -13,14 +13,17 @@ using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Views.Editors.CameraConfiguration {
+namespace JayTom.Dws.Client.Views.Editors.CameraConfiguration
+{
 
     /// <summary>
     /// NVRIPCDeviceEditor.xaml 的交互逻辑
     /// </summary>
-    public partial class NvrIpcDeviceEditor : UserControl {
+    public partial class NvrIpcDeviceEditor : UserControl
+    {
 
-        public NvrIpcDeviceEditor() {
+        public NvrIpcDeviceEditor()
+        {
             InitializeComponent();
         }
     }

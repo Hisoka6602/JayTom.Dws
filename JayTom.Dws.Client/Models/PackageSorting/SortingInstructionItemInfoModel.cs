@@ -1,6 +1,8 @@
-﻿namespace JayTom.Dws.Client.Models.PackageSorting {
+﻿namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class SortingInstructionItemInfoModel : BasePackageSortingItemInfoModel {
+    public class SortingInstructionItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long _instructionBindingId;
         private string _instruction = string.Empty;
         private string _replyContent = string.Empty;
@@ -9,7 +11,8 @@
         /// 绑定Id
         /// </summary>
 
-        public long InstructionBindingId {
+        public long InstructionBindingId
+        {
             get => _instructionBindingId;
             set => SetProperty(ref _instructionBindingId, value);
         }
@@ -18,7 +21,8 @@
         /// 指令
         /// </summary>
 
-        public string Instruction {
+        public string Instruction
+        {
             get => _instruction;
             set => SetProperty(ref _instruction, value);
         }
@@ -26,7 +30,8 @@
         /// <summary>
         /// 应答内容
         /// </summary>
-        public string ReplyContent {
+        public string ReplyContent
+        {
             get => _replyContent;
             set => SetProperty(ref _replyContent, value);
         }

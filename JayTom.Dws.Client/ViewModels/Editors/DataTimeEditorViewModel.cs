@@ -4,9 +4,11 @@ using Prism.Commands;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 
-namespace JayTom.Dws.Client.ViewModels.Editors {
+namespace JayTom.Dws.Client.ViewModels.Editors
+{
 
-    public class DataTimeEditorViewModel : BindableBase {
+    public class DataTimeEditorViewModel : BindableBase
+    {
         private DateTime? _selectedDate = DateTime.Now;
         private DateTime? _selectedTime = DateTime.Now;
         private DateTime? _selectedDataTime = DateTime.Today;
@@ -16,7 +18,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
         /// <summary>
         /// 标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
@@ -24,7 +27,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
         /// <summary>
         /// 选择日期
         /// </summary>
-        public DateTime? SelectedDate {
+        public DateTime? SelectedDate
+        {
             get => _selectedDate;
             set => SetProperty(ref _selectedDate, value);
         }
@@ -32,7 +36,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
         /// <summary>
         /// 选择时间
         /// </summary>
-        public DateTime? SelectedTime {
+        public DateTime? SelectedTime
+        {
             get => _selectedTime;
             set => SetProperty(ref _selectedTime, value);
         }
@@ -40,12 +45,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
         /// <summary>
         /// 选择的结果
         /// </summary>
-        public DateTime? SelectedDataTime {
+        public DateTime? SelectedDataTime
+        {
             get => _selectedDataTime;
             set => SetProperty(ref _selectedDataTime, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
@@ -53,46 +60,56 @@ namespace JayTom.Dws.Client.ViewModels.Editors {
         /// <summary>
         /// 确定
         /// </summary>
-        public ICommand OkCommand {
+        public ICommand OkCommand
+        {
             get => new DelegateCommand<object>(OkDelegate);
         }
 
-        public ICommand TodayCommand {
+        public ICommand TodayCommand
+        {
             get => new DelegateCommand<object>(TodayDelegate);
         }
 
-        private void TodayDelegate(object obj) {
+        private void TodayDelegate(object obj)
+        {
             SelectedDate = DateTime.Today;
             SelectedTime = DateTime.Today;
             SelectedDataTime = Convert.ToDateTime($"{SelectedDate.Value:yyyy-MM-dd} {SelectedTime:HH:mm:ss}");
             IsOk = true;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
-        private void OkDelegate(object obj) {
+        private void OkDelegate(object obj)
+        {
             if (SelectedDate is not null &&
-                SelectedTime is not null) {
+                SelectedTime is not null)
+            {
                 SelectedDataTime = Convert.ToDateTime($"{SelectedDate.Value:yyyy-MM-dd} {SelectedTime:HH:mm:ss}");
                 IsOk = true;
             }
 
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
-        public ICommand NowCommand {
+        public ICommand NowCommand
+        {
             get => new DelegateCommand<object>(NowDelegate);
         }
 
-        private void NowDelegate(object obj) {
+        private void NowDelegate(object obj)
+        {
             SelectedDate = DateTime.Now;
             SelectedTime = DateTime.Now;
             SelectedDataTime = Convert.ToDateTime($"{SelectedDate.Value:yyyy-MM-dd} {SelectedTime:HH:mm:ss}");
             IsOk = true;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }

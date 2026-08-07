@@ -1,9 +1,11 @@
 ﻿using Prism.Mvvm;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class LanguageInfoModel : BindableBase {
+    public class LanguageInfoModel : BindableBase
+    {
 
         /// <summary>
         /// 语言

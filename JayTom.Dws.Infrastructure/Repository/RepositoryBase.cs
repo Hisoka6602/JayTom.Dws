@@ -22,8 +22,9 @@ namespace JayTom.Dws.Infrastructure.Repository {
             typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
         public RepositoryBase(IDbContextFactory<DbContext> contextFactory, IMemoryCache cache) {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            ArgumentNullException.ThrowIfNull(contextFactory);
             ArgumentNullException.ThrowIfNull(cache);
+            _contextFactory = contextFactory;
         }
 
         public async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
@@ -297,7 +298,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var exclude = new List<string>();
                 var memberInfos = ((NewExpression)excludeColumns.Body).Members;
                 if (memberInfos is not null) {
-                    exclude = memberInfos.Select(p => p.Name).ToList();
+                    exclude = [.. memberInfos.Select(p => p.Name)];
                 }
 
                 var propertyInfos = EntityProperties;
@@ -348,7 +349,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var exclude = new List<string>();
                 var memberInfos = ((NewExpression)excludeColumns.Body).Members;
                 if (memberInfos is not null) {
-                    exclude = memberInfos.Select(p => p.Name).ToList();
+                    exclude = [.. memberInfos.Select(p => p.Name)];
                 }
                 using var semaphoreLease =
                     await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
@@ -510,7 +511,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var exclude = new List<string>();
                 var memberInfos = ((NewExpression)excludeColumns.Body).Members;
                 if (memberInfos is not null) {
-                    exclude = memberInfos.Select(p => p.Name).ToList();
+                    exclude = [.. memberInfos.Select(p => p.Name)];
                 }
 
                 await using var concardContext = _contextFactory.CreateDbContext();

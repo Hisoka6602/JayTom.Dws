@@ -6,9 +6,11 @@ using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using JayTom.Dws.Infrastructure.SignalR.CloudApi.SignalRMessageHub;
 
-namespace JayTom.Dws.Client.Service.SyncSettings {
+namespace JayTom.Dws.Client.Service.SyncSettings
+{
 
-    public interface ISyncSettingsService {
+    public interface ISyncSettingsService
+    {
 
         /// <summary>
         /// 是否已连接

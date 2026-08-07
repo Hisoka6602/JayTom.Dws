@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
-    public class ZhouYiApiModel : BindableBase {
+    public class ZhouYiApiModel : BindableBase
+    {
         private string _url = "http://api.zygp.site/openapi/express/fjUpload";
         private int _timeOut = 10000;
         private string _appid = string.Empty;
@@ -18,7 +20,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -26,27 +29,32 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }
 
-        public string AppId {
+        public string AppId
+        {
             get => _appid;
             set => SetProperty(ref _appid, value);
         }
 
-        public string AppKey {
+        public string AppKey
+        {
             get => _appKey;
             set => SetProperty(ref _appKey, value);
         }
 
-        public bool NeedUpload {
+        public bool NeedUpload
+        {
             get => _needUpload;
             set => SetProperty(ref _needUpload, value);
         }
 
-        public bool IsFstCode {
+        public bool IsFstCode
+        {
             get => _isFstCode;
             set => SetProperty(ref _isFstCode, value);
         }

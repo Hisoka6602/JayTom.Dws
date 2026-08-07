@@ -9,9 +9,11 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class BarcodeReaderSettingsInfoModel : BindableBase {
+    public class BarcodeReaderSettingsInfoModel : BindableBase
+    {
         /*private bool _isUseOrCode = true;
         private bool _isUseMicroQr = true;
         private bool _isUseCode39 = true;
@@ -127,7 +129,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 本地化模式
         /// </summary>
-        public int LocalizationMode {
+        public int LocalizationMode
+        {
             get => _localizationMode;
             set => SetProperty(ref _localizationMode, value);
         }
@@ -135,7 +138,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 去模糊级别
         /// </summary>
-        public int DeblurLevel {
+        public int DeblurLevel
+        {
             get => _deblurLevel;
             set => SetProperty(ref _deblurLevel, value);
         }
@@ -143,7 +147,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 期望的条形码数量
         /// </summary>
-        public int ExpectedBarcodesCount {
+        public int ExpectedBarcodesCount
+        {
             get => _expectedBarcodesCount;
             set => SetProperty(ref _expectedBarcodesCount, value);
         }
@@ -151,7 +156,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 缩放阈值
         /// </summary>
-        public int ScaleDownThreshold {
+        public int ScaleDownThreshold
+        {
             get => _scaleDownThreshold;
             set => SetProperty(ref _scaleDownThreshold, value);
         }
@@ -159,7 +165,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用文本过滤模式
         /// </summary>
-        public bool IsUseTextFilterMode {
+        public bool IsUseTextFilterMode
+        {
             get => _isUseTextFilterMode;
             set => SetProperty(ref _isUseTextFilterMode, value);
         }
@@ -167,7 +174,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用区域预检测模式
         /// </summary>
-        public bool IsUseRegionPredetectionMode {
+        public bool IsUseRegionPredetectionMode
+        {
             get => _isUseRegionPredetectionMode;
             set => SetProperty(ref _isUseRegionPredetectionMode, value);
         }
@@ -175,7 +183,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 灰度转换模式
         /// </summary>
-        public int GrayscaleTransformationMode {
+        public int GrayscaleTransformationMode
+        {
             get => _grayscaleTransformationMode;
             set => SetProperty(ref _grayscaleTransformationMode, value);
         }
@@ -183,7 +192,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 图像预处理模式
         /// </summary>
-        public int ImagePreprocessingMode {
+        public int ImagePreprocessingMode
+        {
             get => _imagePreprocessingMode;
             set => SetProperty(ref _imagePreprocessingMode, value);
         }
@@ -191,7 +201,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 最小结果置信度
         /// </summary>
-        public int MinResultConfidence {
+        public int MinResultConfidence
+        {
             get => _minResultConfidence;
             set => SetProperty(ref _minResultConfidence, value);
         }
@@ -199,7 +210,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 纹理检测敏感度
         /// </summary>
-        public int TextureDetectionSensitivity {
+        public int TextureDetectionSensitivity
+        {
             get => _textureDetectionSensitivity;
             set => SetProperty(ref _textureDetectionSensitivity, value);
         }
@@ -207,7 +219,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 二值化块大小
         /// </summary>
-        public int BinarizationBlockSize {
+        public int BinarizationBlockSize
+        {
             get => _binarizationBlockSize;
             set => SetProperty(ref _binarizationBlockSize, value);
         }
@@ -215,7 +228,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 识别模式
         /// </summary>
-        public int RecognitionMode {
+        public int RecognitionMode
+        {
             get => _recognitionMode;
             set => SetProperty(ref _recognitionMode, value);
         }
@@ -223,7 +237,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 识别跳过帧
         /// </summary>
-        public int RecognitionSkipFrames {
+        public int RecognitionSkipFrames
+        {
             get => _recognitionSkipFrames;
             set => SetProperty(ref _recognitionSkipFrames, value);
         }
@@ -231,7 +246,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 图片缩放百分比
         /// </summary>
-        public int ScalePercentage {
+        public int ScalePercentage
+        {
             get => _scalePercentage;
             set => SetProperty(ref _scalePercentage, value);
         }
@@ -239,7 +255,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 条码类型
         /// </summary>
-        public BarcodeType BarcodeType {
+        public BarcodeType BarcodeType
+        {
             get => _barcodeType;
             set => SetProperty(ref _barcodeType, value);
         }
@@ -247,13 +264,15 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 条码类型列表
         /// </summary>
-        public ObservableCollection<BarcodeTypeItemInfoModel> BarcodeTypeItems {
+        public ObservableCollection<BarcodeTypeItemInfoModel> BarcodeTypeItems
+        {
             get => _barcodeTypeItems;
             set => SetProperty(ref _barcodeTypeItems, value);
         }
     }
 
-    public class BarcodeTypeItemInfoModel {
+    public class BarcodeTypeItemInfoModel
+    {
         public string DisplayName { get; set; } = string.Empty;
         public BarcodeType EnumValue { get; set; }
         public bool IsChecked { get; set; }

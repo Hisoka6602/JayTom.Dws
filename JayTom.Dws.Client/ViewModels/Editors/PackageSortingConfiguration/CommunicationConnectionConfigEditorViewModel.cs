@@ -20,9 +20,11 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
+{
 
-    public class CommunicationConnectionConfigEditorViewModel : BindableBase {
+    public class CommunicationConnectionConfigEditorViewModel : BindableBase
+    {
         private string _identifier = string.Empty;
         private ObservableCollection<string> _portItems = new();
 
@@ -189,7 +191,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private bool _isOk;
         private string _exceptionContent = string.Empty;
 
-        public CommunicationConnectionItemInfoModel CommunicationConnectionItem {
+        public CommunicationConnectionItemInfoModel CommunicationConnectionItem
+        {
             get => _communicationConnectionItem;
             set => SetProperty(ref _communicationConnectionItem, value);
         }
@@ -197,22 +200,26 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 窗口标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public ObservableCollection<CommunicationProtocolInfoModel> CommunicationProtocolItems {
+        public ObservableCollection<CommunicationProtocolInfoModel> CommunicationProtocolItems
+        {
             get => _communicationProtocolItems;
             set => SetProperty(ref _communicationProtocolItems, value);
         }
 
-        public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems {
+        public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems
+        {
             get => _communicationsTypeItems;
             set => SetProperty(ref _communicationsTypeItems, value);
         }
 
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems
+        {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
@@ -220,7 +227,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 串口列表
         /// </summary>
-        public ObservableCollection<string> PortItems {
+        public ObservableCollection<string> PortItems
+        {
             get => _portItems;
             set => SetProperty(ref _portItems, value);
         }
@@ -228,7 +236,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 效验位下拉选项
         /// </summary>
-        public ObservableCollection<ParityInfoModel> ParityItems {
+        public ObservableCollection<ParityInfoModel> ParityItems
+        {
             get => _parityItems;
             set => SetProperty(ref _parityItems, value);
         }
@@ -236,7 +245,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 停止位下拉选项
         /// </summary>
-        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
+        public ObservableCollection<StopBitsInfoModel> StopBitsItems
+        {
             get => _stopBitsItems;
             set => SetProperty(ref _stopBitsItems, value);
         }
@@ -244,7 +254,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 波特率
         /// </summary>
-        public ObservableCollection<int> BaudRateItems {
+        public ObservableCollection<int> BaudRateItems
+        {
             get => _baudRateItems;
             set => SetProperty(ref _baudRateItems, value);
         }
@@ -252,7 +263,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 数据位
         /// </summary>
-        public ObservableCollection<int> DataBitsItems {
+        public ObservableCollection<int> DataBitsItems
+        {
             get => _dataBitsItems;
             set => SetProperty(ref _dataBitsItems, value);
         }
@@ -260,12 +272,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 是否保存中
         /// </summary>
-        public bool IsSavingInProgress {
+        public bool IsSavingInProgress
+        {
             get => _isSavingInProgress;
             set => SetProperty(ref _isSavingInProgress, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
@@ -273,7 +287,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 异常内容
         /// </summary>
-        public string ExceptionContent {
+        public string ExceptionContent
+        {
             get => _exceptionContent;
             set => SetProperty(ref _exceptionContent, value);
         }
@@ -283,9 +298,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// </summary>
         public ICommand PortUpdateCommand => new DelegateCommand(PortUpdateDelegate);
 
-        private async void PortUpdateDelegate() {
+        private async void PortUpdateDelegate()
+        {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
             });
@@ -296,21 +313,26 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// </summary>
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
-        private void SaveDelegate() {
+        private void SaveDelegate()
+        {
             //保存返回
-            try {
-                if (CommunicationConnectionItem.CommunicationType.Value == CommunicationsType.None) {
+            try
+            {
+                if (CommunicationConnectionItem.CommunicationType.Value == CommunicationsType.None)
+                {
                     throw new Exception("CommunicationType is None");
                 }
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(CommunicationConnectionItem.ConnectionName, nameof(CommunicationConnectionItem.ConnectionName));
                 IsOk = true;
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 IsOk = false;
                 ExceptionContent = e.Message;
             }
 
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
@@ -320,9 +342,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// </summary>
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
-        private void CancelDelegate() {
+        private void CancelDelegate()
+        {
             IsOk = false;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
@@ -332,8 +356,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
                 //加载内容

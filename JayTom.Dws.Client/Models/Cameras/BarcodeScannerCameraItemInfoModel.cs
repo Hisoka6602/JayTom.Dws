@@ -1,14 +1,15 @@
-﻿namespace JayTom.Dws.Client.Models.Cameras {
+﻿namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class BarcodeScannerCameraItemInfoModel : BaseCameraItemInfoModel {
-        private bool _isShowRealTimeImage;
-
+    public class BarcodeScannerCameraItemInfoModel : BaseCameraItemInfoModel
+    {
         /// <summary>
         /// 是否显示实时图像
         /// </summary>
-        public bool IsShowRealTimeImage {
-            get => _isShowRealTimeImage;
-            set => SetProperty(ref _isShowRealTimeImage, value);
+        public bool IsShowRealTimeImage
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
     }
 }

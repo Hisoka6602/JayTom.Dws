@@ -441,14 +441,14 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 var lines = (await File.ReadAllLinesAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ExpressBill", "Lib", "resource", "configure.ini")))
                     // 过滤注释行和不符合预期格式的行
                     .ToList();
-                lines = lines.Select(line => {
+                lines = [.. lines.Select(line => {
                     foreach (var parameter in (parameters ?? new Dictionary<string, object>()).Where(parameter => line.StartsWith(parameter.Key))) {
                         // 修改 log_level 的值
                         line = $"{parameter.Key}{(line.Contains("=") ? "=" : ":")}{parameter.Value?.ToString()?.ToLower()}";
                     }
 
                     return line;
-                }).ToList();
+                })];
                 await File.WriteAllLinesAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ExpressBill", "Lib", "resource", "configure.ini"), lines);
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }

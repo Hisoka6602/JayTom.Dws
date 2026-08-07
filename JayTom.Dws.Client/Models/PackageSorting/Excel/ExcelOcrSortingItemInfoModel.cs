@@ -7,9 +7,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
+namespace JayTom.Dws.Client.Models.PackageSorting.Excel
+{
 
-    public class ExcelOcrSortingItemInfoModel : BasePackageSortingItemInfoModel {
+    public class ExcelOcrSortingItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long? _exitId;
         private string? _exitName;
         private string _sortingName = string.Empty;
@@ -25,7 +27,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// <summary>
         /// 出口代码
         /// </summary>
-        public long? ExitId {
+        public long? ExitId
+        {
             get => _exitId;
             set => SetProperty(ref _exitId, value);
         }
@@ -34,7 +37,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 出口名称
         /// </summary>
         [DisplayName("格口名称"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string? ExitName {
+        public string? ExitName
+        {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
         }
@@ -43,7 +47,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 规则名称
         /// </summary>
         [DisplayName("规则名称"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string SortingName {
+        public string SortingName
+        {
             get => _sortingName;
             set => SetProperty(ref _sortingName, value);
         }
@@ -52,7 +57,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 是否使用三段码判断
         /// </summary>
         [DisplayName("是否使用三段码判断"), MemberNotNull, ExcelInfo(Width = 6000, IsBooleanToInt = true)]
-        public bool IsUseThreeSegmentCodeValidation {
+        public bool IsUseThreeSegmentCodeValidation
+        {
             get => _isUseThreeSegmentCodeValidation;
             set => SetProperty(ref _isUseThreeSegmentCodeValidation, value);
         }
@@ -61,7 +67,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 三段码包含字符
         /// </summary>
         [DisplayName("三段码包含字符"), MemberNotNull, ExcelInfo(Width = 5000)]
-        public string ThreeSegmentCodeContainsChars {
+        public string ThreeSegmentCodeContainsChars
+        {
             get => _threeSegmentCodeContainsChars;
             set => SetProperty(ref _threeSegmentCodeContainsChars, value);
         }
@@ -70,7 +77,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 是否使用收件人地址判断
         /// </summary>
         [DisplayName("是否使用收件人地址判断"), MemberNotNull, ExcelInfo(Width = 7000, IsBooleanToInt = true)]
-        public bool IsUseRecipientAddressValidation {
+        public bool IsUseRecipientAddressValidation
+        {
             get => _isUseRecipientAddressValidation;
             set => SetProperty(ref _isUseRecipientAddressValidation, value);
         }
@@ -79,7 +87,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 收件人地址包含字符
         /// </summary>
         [DisplayName("收件人地址包含字符"), MemberNotNull, ExcelInfo(Width = 7000)]
-        public string RecipientAddressContainsChars {
+        public string RecipientAddressContainsChars
+        {
             get => _recipientAddressContainsChars;
             set => SetProperty(ref _recipientAddressContainsChars, value);
         }
@@ -88,7 +97,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 是否使用发件人地址判断
         /// </summary>
         [DisplayName("是否使用发件人地址判断"), MemberNotNull, ExcelInfo(Width = 7000, IsBooleanToInt = true)]
-        public bool IsUseSenderAddressValidation {
+        public bool IsUseSenderAddressValidation
+        {
             get => _isUseSenderAddressValidation;
             set => SetProperty(ref _isUseSenderAddressValidation, value);
         }
@@ -97,7 +107,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 发件人地址包含字符
         /// </summary>
         [DisplayName("发件人地址包含字符"), MemberNotNull, ExcelInfo(Width = 7000)]
-        public string SenderAddressContainsChars {
+        public string SenderAddressContainsChars
+        {
             get => _senderAddressContainsChars;
             set => SetProperty(ref _senderAddressContainsChars, value);
         }
@@ -106,7 +117,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 是否使用发件人手机尾号判断
         /// </summary>
         [DisplayName("是否使用发件人手机尾号判断"), MemberNotNull, ExcelInfo(Width = 8000, IsBooleanToInt = true)]
-        public bool IsUseSenderPhoneNumberValidation {
+        public bool IsUseSenderPhoneNumberValidation
+        {
             get => _isUseSenderPhoneNumberValidation;
             set => SetProperty(ref _isUseSenderPhoneNumberValidation, value);
         }
@@ -115,7 +127,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 发件人手机尾号
         /// </summary>
         [DisplayName("发件人手机尾号"), MemberNotNull, ExcelInfo(Width = 7000)]
-        public string SenderPhoneNumberEndsWith {
+        public string SenderPhoneNumberEndsWith
+        {
             get => _senderPhoneNumberEndsWith;
             set => SetProperty(ref _senderPhoneNumberEndsWith, value);
         }

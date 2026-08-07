@@ -33,13 +33,13 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                 Description = description,
                 ModifyIp = ipAddress,
                 CreateTime = DateTime.Now,
-                LicenseFeatureInfos = licenseFeatures.Select(s => new LicenseFeatureInfo() {
+                LicenseFeatureInfos = [.. licenseFeatures.Select(s => new LicenseFeatureInfo() {
                     CreateTime = DateTime.Now,
                     Description = s.Description,
                     FeatureGuid = s.FeatureGuid,
                     FeatureName = s.FeatureName,
                     IsActive = s.IsActive
-                }).ToList()
+                })]
             }, token);
             return new KeyValuePair<bool, object>(insert, $"创建{(insert ? "成功" : "失败")}");
         }

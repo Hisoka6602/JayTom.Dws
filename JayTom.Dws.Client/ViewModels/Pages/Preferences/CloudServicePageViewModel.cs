@@ -13,14 +13,17 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class CloudServicePageViewModel : BindableBase {
+    public class CloudServicePageViewModel : BindableBase
+    {
         private readonly IRegionManager _regionManager;
         private static bool _isLoaded;
         private ObservableCollection<MenuItemInfoModel> _cloudServiceMenuItems = new();
 
-        public CloudServicePageViewModel(IRegionManager regionManager) {
+        public CloudServicePageViewModel(IRegionManager regionManager)
+        {
             _regionManager = regionManager;
             CloudServiceMenuItems = new ObservableCollection<MenuItemInfoModel>()
             {
@@ -68,18 +71,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             };
         }
 
-        public ObservableCollection<MenuItemInfoModel> CloudServiceMenuItems {
+        public ObservableCollection<MenuItemInfoModel> CloudServiceMenuItems
+        {
             get => _cloudServiceMenuItems;
             set => SetProperty(ref _cloudServiceMenuItems, value);
         }
 
         public ICommand LoadedCommand => new DelegateCommand<Frame>(LoadedDelegate);
 
-        private async void LoadedDelegate(Frame obj) {
-            if (!_isLoaded) {
+        private async void LoadedDelegate(Frame obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    if (!_regionManager.Regions.ContainsRegionWithName("CloudServiceRegion")) {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (!_regionManager.Regions.ContainsRegionWithName("CloudServiceRegion"))
+                    {
                         //创建区域(用于视觉树以外控件)
                         RegionManager.SetRegionName(obj, "CloudServiceRegion");
                         RegionManager.SetRegionManager(obj, _regionManager);
@@ -94,10 +102,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
 
-        private async void MenuClickDelegate(MenuItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!obj.PageClassName.Equals(string.Empty)) {
-                    foreach (var item in CloudServiceMenuItems) {
+        private async void MenuClickDelegate(MenuItemInfoModel obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (!obj.PageClassName.Equals(string.Empty))
+                {
+                    foreach (var item in CloudServiceMenuItems)
+                    {
                         item.IsSelected = false;
                     }
 

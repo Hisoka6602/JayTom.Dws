@@ -1,7 +1,9 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.OcrSettingsModel {
-    public class OcrSettingsInfoModel : BindableBase {
+namespace JayTom.Dws.Client.Models.OcrSettingsModel
+{
+    public class OcrSettingsInfoModel : BindableBase
+    {
         private bool _isUseOcr;
         private bool _isThreeSegmentCode;
         private bool _isShowRecognitionTime;
@@ -18,7 +20,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否使用 OCR 识别
         /// </summary>
-        public bool IsUseOcr {
+        public bool IsUseOcr
+        {
             get => _isUseOcr;
             set => SetProperty(ref _isUseOcr, value);
         }
@@ -26,7 +29,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否识别三段码
         /// </summary>
-        public bool IsThreeSegmentCode {
+        public bool IsThreeSegmentCode
+        {
             get => _isThreeSegmentCode;
             set => SetProperty(ref _isThreeSegmentCode, value);
         }
@@ -34,7 +38,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否显示识别耗时
         /// </summary>
-        public bool IsShowRecognitionTime {
+        public bool IsShowRecognitionTime
+        {
             get => _isShowRecognitionTime;
             set => SetProperty(ref _isShowRecognitionTime, value);
         }
@@ -42,7 +47,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否显示收件人信息
         /// </summary>
-        public bool IsShowReceiverInfo {
+        public bool IsShowReceiverInfo
+        {
             get => _isShowReceiverInfo;
             set => SetProperty(ref _isShowReceiverInfo, value);
         }
@@ -50,7 +56,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否显示发件人信息
         /// </summary>
-        public bool IsShowSenderInfo {
+        public bool IsShowSenderInfo
+        {
             get => _isShowSenderInfo;
             set => SetProperty(ref _isShowSenderInfo, value);
         }
@@ -58,7 +65,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 识别超时时间
         /// </summary>
-        public int RecognitionTimeout {
+        public int RecognitionTimeout
+        {
             get => _recognitionTimeout;
             set => SetProperty(ref _recognitionTimeout, value);
         }
@@ -66,7 +74,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 算法选择
         /// </summary>
-        public string ModelFilePath {
+        public string ModelFilePath
+        {
             get => _modelFilePath;
             set => SetProperty(ref _modelFilePath, value);
         }
@@ -74,7 +83,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 置信度
         /// </summary>
-        public float ConfidenceThreshold {
+        public float ConfidenceThreshold
+        {
             get => _confidenceThreshold;
             set => SetProperty(ref _confidenceThreshold, value);
         }
@@ -82,7 +92,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 截图扩充倍数
         /// </summary>
-        public float RectangleScale {
+        public float RectangleScale
+        {
             get => _rectangleScale;
             set => SetProperty(ref _rectangleScale, value);
         }
@@ -90,7 +101,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 截图存图路径
         /// </summary>
-        public string CropImagePath {
+        public string CropImagePath
+        {
             get => _cropImagePath;
             set => SetProperty(ref _cropImagePath, value);
         }
@@ -98,7 +110,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否开启截图保存
         /// </summary>
-        public bool IsSaveCropImage {
+        public bool IsSaveCropImage
+        {
             get => _isSaveCropImage;
             set => SetProperty(ref _isSaveCropImage, value);
         }
@@ -106,7 +119,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel {
         /// <summary>
         /// 是否开启条码二次确认
         /// </summary>
-        public bool IsSecondConfirmationEnabled {
+        public bool IsSecondConfirmationEnabled
+        {
             get => _isSecondConfirmationEnabled;
             set => SetProperty(ref _isSecondConfirmationEnabled, value);
         }

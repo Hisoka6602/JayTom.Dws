@@ -4,7 +4,8 @@ using JayTom.Dws.Data.Package;
 
 namespace JayTom.Dws.Client.Models.DataModels
 {
-    public class WeightItemModel : BindableBase {
+    public class WeightItemModel : BindableBase
+    {
         private SourceType _sourceType;
         private string _serialPortName = string.Empty;
         private string _originalText = string.Empty;
@@ -14,7 +15,8 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 来源类型
         /// </summary>
-        public SourceType SourceType {
+        public SourceType SourceType
+        {
             get => _sourceType;
             set => SetProperty(ref _sourceType, value);
         }
@@ -22,7 +24,8 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 串口名称
         /// </summary>
-        public string SerialPortName {
+        public string SerialPortName
+        {
             get => _serialPortName;
             set => SetProperty(ref _serialPortName, value);
         }
@@ -30,7 +33,8 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 源字符
         /// </summary>
-        public string OriginalText {
+        public string OriginalText
+        {
             get => _originalText;
             set => SetProperty(ref _originalText, value);
         }
@@ -38,7 +42,8 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 格式化后重量
         /// </summary>
-        public double FormattedWeight {
+        public double FormattedWeight
+        {
             get => _formattedWeight;
             set => SetProperty(ref _formattedWeight, value);
         }
@@ -46,7 +51,8 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreateTime {
+        public DateTime? CreateTime
+        {
             get => _createTime;
             set => SetProperty(ref _createTime, value);
         }

@@ -30,9 +30,11 @@ using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEve
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages
+{
 
-    public class ApiResponseSortingViewModel : BulkOperationsTemplateViewModel<ExcelApiSortingItemInfoModel> {
+    public class ApiResponseSortingViewModel : BulkOperationsTemplateViewModel<ExcelApiSortingItemInfoModel>
+    {
         private readonly IApiSortingRepository _apiSortingRepository;
         private readonly IApiRuleRepository _apiRuleRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -42,35 +44,44 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public ApiResponseSortingViewModel(IApiSortingRepository apiSortingRepository,
             IApiRuleRepository apiRuleRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) : base(excel) {
+            IExcel excel) : base(excel)
+        {
             _apiSortingRepository = apiSortingRepository;
             _apiRuleRepository = apiRuleRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
-        public ObservableCollection<ApiSortingItemInfoModel> ApiSortingItems {
+        public ObservableCollection<ApiSortingItemInfoModel> ApiSortingItems
+        {
             get => _apiSortingItems;
             set => SetProperty(ref _apiSortingItems, value);
         }
 
-        protected override async void AddDelegate(object obj) {
+        protected override async void AddDelegate(object obj)
+        {
             var apiSortingRuleEditor = new ApiSortingRuleEditor();
-            if (apiSortingRuleEditor.DataContext is ApiSortingRuleEditorViewModel model) {
+            if (apiSortingRuleEditor.DataContext is ApiSortingRuleEditorViewModel model)
+            {
                 model.Identifier = Identifier;
                 await DialogHost.Show(apiSortingRuleEditor, model.Identifier);
-                if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                if (!string.IsNullOrEmpty(model.ExceptionContent))
+                {
                     base.MessageQueue.Enqueue(model.ExceptionContent);
                     return;
                 }
-                if (model.IsOk) {
-                    await Application.Current.Dispatcher.InvokeAsync(async () => {
-                        var apiSortingInfoModel = new ApiSortingInfoModel() {
+                if (model.IsOk)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                        var apiSortingInfoModel = new ApiSortingInfoModel()
+                        {
                             CreateTime = model.ApiSortingItemInfo.CreateTime,
                             ModifyTime = model.ApiSortingItemInfo.ModifyTime,
                             ExitId = model.SelectPackageExitDefinitionInfo.Id,
                             Remarks = model.ApiSortingItemInfo.Remarks,
                             SortingName = model.ApiSortingItemInfo.SortingName,
-                            ApiRuleItems = model.ApiRuleItems.Select(s => new ApiRuleInfoModel() {
+                            ApiRuleItems = model.ApiRuleItems.Select(s => new ApiRuleInfoModel()
+                            {
                                 CreateTime = s.CreateTime,
                                 ModifyTime = s.ModifyTime,
                                 Remarks = s.Remarks,
@@ -78,15 +89,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             })?.ToList()
                         };
                         var insert = await _apiSortingRepository.InsertDetailAsync(apiSortingInfoModel);
-                        if (insert) {
+                        if (insert)
+                        {
                             EventAggregator.Instance.Publish(apiSortingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
                             });
                             base.MessageQueue.Enqueue("保存成功");
                         }
-                        else {
+                        else
+                        {
                             base.MessageQueue.Enqueue("保存失败");
                         }
                     });
@@ -102,37 +116,47 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override string SettingsName => "ApiSortingItemsSettings";
 
-        public override void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
                 RefreshData();
             }
         }
 
-        protected override async void ModifyDelegate(object obj) {
-            if (obj is ApiSortingItemInfoModel item) {
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
+        protected override async void ModifyDelegate(object obj)
+        {
+            if (obj is ApiSortingItemInfoModel item)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var apiSortingRuleEditor = new ApiSortingRuleEditor();
-                    if (apiSortingRuleEditor.DataContext is ApiSortingRuleEditorViewModel model) {
+                    if (apiSortingRuleEditor.DataContext is ApiSortingRuleEditorViewModel model)
+                    {
                         model.Identifier = Identifier;
                         model.ApiSortingItemInfo = item;
                         model.ApiRuleItems = item.ApiRuleItems ?? new ObservableCollection<ApiRuleItemInfoModel>();
                         await DialogHost.Show(apiSortingRuleEditor, model.Identifier);
-                        if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                        if (!string.IsNullOrEmpty(model.ExceptionContent))
+                        {
                             base.MessageQueue.Enqueue(model.ExceptionContent);
                             RefreshData();
                             return;
                         }
 
-                        if (model.IsOk) {
-                            var apiSortingInfoModel = new ApiSortingInfoModel() {
+                        if (model.IsOk)
+                        {
+                            var apiSortingInfoModel = new ApiSortingInfoModel()
+                            {
                                 CreateTime = model.ApiSortingItemInfo.CreateTime,
                                 ModifyTime = model.ApiSortingItemInfo.ModifyTime,
                                 ExitId = model.SelectPackageExitDefinitionInfo.Id,
                                 Remarks = model.ApiSortingItemInfo.Remarks,
                                 SortingName = model.ApiSortingItemInfo.SortingName,
                                 Id = model.ApiSortingItemInfo.Id,
-                                ApiRuleItems = model.ApiRuleItems.Select(s => new ApiRuleInfoModel() {
+                                ApiRuleItems = model.ApiRuleItems.Select(s => new ApiRuleInfoModel()
+                                {
                                     CreateTime = s.CreateTime,
                                     ModifyTime = s.ModifyTime,
                                     ApiSortingId = model.ApiSortingItemInfo.Id,
@@ -141,15 +165,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 })?.ToList()
                             };
                             var insert = await _apiSortingRepository.UpdateDetailAsync(apiSortingInfoModel);
-                            if (insert) {
+                            if (insert)
+                            {
                                 EventAggregator.Instance.Publish(apiSortingInfoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
                                 });
                                 base.MessageQueue.Enqueue("保存成功");
                             }
-                            else {
+                            else
+                            {
                                 base.MessageQueue.Enqueue("保存失败");
                             }
                         }
@@ -159,11 +186,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        protected override async Task<bool> DeleteProcess(object obj) {
-            if (obj is ApiSortingItemInfoModel item) {
+        protected override async Task<bool> DeleteProcess(object obj)
+        {
+            if (obj is ApiSortingItemInfoModel item)
+            {
                 var apiSortingInfoModel = await _apiSortingRepository.
                     FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (apiSortingInfoModel is not null) {
+                if (apiSortingInfoModel is not null)
+                {
                     return await _apiSortingRepository.Delete(apiSortingInfoModel);
                 }
             }
@@ -171,19 +201,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return false;
         }
 
-        protected override async Task ClearProcess() {
+        protected override async Task ClearProcess()
+        {
             var apiSortingInfoModels = await _apiSortingRepository.Select(f => f.Id > 0, o => o.Id);
 
             await _apiSortingRepository.DeleteRange(apiSortingInfoModels);
         }
 
-        protected override async Task RefreshDataProcess() {
+        protected override async Task RefreshDataProcess()
+        {
             await Task.Delay(300);
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
             var models = await _apiSortingRepository
                 .ApiSortingItems(s => s.Id > 0);
             ApiSortingItems.Clear();
-            var infoModels = models?.Select((s, i) => new ApiSortingItemInfoModel() {
+            var infoModels = models?.Select((s, i) => new ApiSortingItemInfoModel()
+            {
                 CreateTime = s.CreateTime,
                 Id = s.Id,
                 ModifyTime = s.ModifyTime,
@@ -195,7 +228,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     packageExitDefinitionInfoModels?.FirstOrDefault(f => f.Id.Equals(s.ExitId))?.ExitName ??
                     string.Empty,
                 ApiRuleItems = new ObservableCollection<ApiRuleItemInfoModel>(s.ApiRuleItems?.Select((s1, i1) =>
-                    new ApiRuleItemInfoModel() {
+                    new ApiRuleItemInfoModel()
+                    {
                         CreateTime = s1.CreateTime,
                         Id = s1.Id,
                         ApiSortingId = s1.ApiSortingId,
@@ -211,11 +245,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             ApiSortingItems.AddRange(infoModels);
         }
 
-        public string FormatRule(string jsonContent) {
-            try {
+        public string FormatRule(string jsonContent)
+        {
+            try
+            {
                 var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(jsonContent);
-                if (apiRuleJsonDto is not null) {
-                    var status = apiRuleJsonDto.ResponseStatus switch {
+                if (apiRuleJsonDto is not null)
+                {
+                    var status = apiRuleJsonDto.ResponseStatus switch
+                    {
                         UploadStatus.Failed => "失败",
                         UploadStatus.NotUploaded => "未上传",
                         UploadStatus.Succeeded => "成功",
@@ -223,19 +261,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     };
                     var content = string.Empty;
                     if (!apiRuleJsonDto.IsUseStringComparison) return $"响应状态:{status} {content}";
-                    if (apiRuleJsonDto.IsUseStringSearch) {
+                    if (apiRuleJsonDto.IsUseStringSearch)
+                    {
                         content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}] ";
                     }
-                    else if (apiRuleJsonDto.IsUseJsonField) {
+                    else if (apiRuleJsonDto.IsUseJsonField)
+                    {
                         content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}] ";
                     }
-                    if (apiRuleJsonDto.IsUseStringComparison) {
+                    if (apiRuleJsonDto.IsUseStringComparison)
+                    {
                         content += $"方向:[{(apiRuleJsonDto.SearchDirection == SearchDirection.Forward ? "正向" : "反向")}]";
                     }
                     return $"响应状态:{status} {content}";
                 }
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 return "解析错误";
             }
             return "解析错误";
@@ -243,12 +285,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override bool IsSelectAnyItem() => ApiSortingItems.Any(a => a.IsSelect);
 
-        protected override List<ExcelApiSortingItemInfoModel> ExportProcess() {
+        protected override List<ExcelApiSortingItemInfoModel> ExportProcess()
+        {
             return ApiSortingItems
-                ?.SelectMany(s => s.ApiRuleItems?.Select(item => {
+                ?.SelectMany(s => s.ApiRuleItems?.Select(item =>
+                {
                     var ruleDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(item.JsonContent);
 
-                    return new ExcelApiSortingItemInfoModel {
+                    return new ExcelApiSortingItemInfoModel
+                    {
                         CreateTime = s.CreateTime,
                         ExitId = s.ExitId,
                         ModifyTime = s.ModifyTime,
@@ -269,14 +314,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 ?.ToList() ?? new List<ExcelApiSortingItemInfoModel>();
         }
 
-        protected override async Task<bool> ImportProcess(List<ExcelApiSortingItemInfoModel> items) {
-            if (items?.Any() == true) {
-                try {
+        protected override async Task<bool> ImportProcess(List<ExcelApiSortingItemInfoModel> items)
+        {
+            if (items?.Any() == true)
+            {
+                try
+                {
                     var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                     o => o.CreateTime);
                     var dateTime = DateTime.Now;
                     var apiSortingInfoModels = items
-                        .Select(s => new ApiSortingInfoModel() {
+                        .Select(s => new ApiSortingInfoModel()
+                        {
                             CreateTime = dateTime,
                             ExitId = packageExitDefinitionInfoModels.FirstOrDefault(f => f.ExitName.Equals(s.ExitName))?.Id ?? 0,
                             ModifyTime = dateTime,
@@ -303,19 +352,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             }
                         })
                         .GroupBy(s => s.SortingName) // 根据 SortingName 进行分组
-                        .Select(group => new ApiSortingInfoModel() {
+                        .Select(group => new ApiSortingInfoModel()
+                        {
                             CreateTime = group.First().CreateTime,
                             ExitId = group.First().ExitId,
                             SortingName = group.Key,
                             ModifyTime = group.First().ModifyTime,
                             Remarks = group.First().Remarks,
-                            ApiRuleItems = group.SelectMany(item => item.ApiRuleItems ?? new List<ApiRuleInfoModel>()).ToList()
+                            ApiRuleItems = [.. group.SelectMany(item => item.ApiRuleItems ?? new List<ApiRuleInfoModel>())]
                         })
                         .ToList();
                     //批量添加
                     return await _apiSortingRepository.InsertRangeDetailAsync(apiSortingInfoModels);
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
             }
@@ -324,7 +375,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         }
 
         //批量删除
-        protected override async Task BulkDeleteProcess() {
+        protected override async Task BulkDeleteProcess()
+        {
             var selectIds = ApiSortingItems.
                 Where(w => w.IsSelect).Select(s => s.Id).ToList();
             var apiSortingInfoModels = await _apiSortingRepository.Select(w => selectIds.Contains(w.Id), o => o.Id);

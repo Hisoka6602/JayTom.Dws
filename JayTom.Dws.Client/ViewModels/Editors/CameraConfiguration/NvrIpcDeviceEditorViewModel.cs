@@ -16,8 +16,10 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
-    public class NvrIpcDeviceEditorViewModel : BindableBase {
+namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
+{
+    public class NvrIpcDeviceEditorViewModel : BindableBase
+    {
         private readonly IDeviceService _deviceService;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private string _identifier = string.Empty;
@@ -31,53 +33,63 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private ObservableCollection<IpcNvrItemInfoModel> _selectDevices = new();
         private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
 
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public string Message {
+        public string Message
+        {
             get => _message;
             set => SetProperty(ref _message, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
 
-        public EditorOperationType ShowType {
+        public EditorOperationType ShowType
+        {
             get => _showType;
             set => SetProperty(ref _showType, value);
         }
 
-        public ObservableCollection<DeviceType> DeviceTypeItems {
+        public ObservableCollection<DeviceType> DeviceTypeItems
+        {
             get => _deviceTypeItems;
             set => SetProperty(ref _deviceTypeItems, value);
         }
 
-        public ObservableCollection<IpcNvrItemInfoModel> SelectDevices {
+        public ObservableCollection<IpcNvrItemInfoModel> SelectDevices
+        {
             get => _selectDevices;
             set => SetProperty(ref _selectDevices, value);
         }
 
-        public SnackbarMessageQueue NvrIpcDeviceEditorMessageQueue {
+        public SnackbarMessageQueue NvrIpcDeviceEditorMessageQueue
+        {
             get => _nvrIpcDeviceEditorMessageQueue;
             set => SetProperty(ref _nvrIpcDeviceEditorMessageQueue, value);
         }
 
-        public int SelectDeviceCount {
+        public int SelectDeviceCount
+        {
             get => _selectDeviceCount;
             set => SetProperty(ref _selectDeviceCount, value);
         }
 
-        public IpcNvrItemInfoModel IpcNvrItemInfo {
+        public IpcNvrItemInfoModel IpcNvrItemInfo
+        {
             get => _ipcNvrItemInfo;
             set => SetProperty(ref _ipcNvrItemInfo, value);
         }
 
         public NvrIpcDeviceEditorViewModel(IDeviceService deviceService,
-            IIpcNvrConfigRepository ipcNvrConfigRepository) {
+            IIpcNvrConfigRepository ipcNvrConfigRepository)
+        {
             _deviceService = deviceService;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
         }
@@ -87,14 +99,18 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private void LoadedDelegate(object obj) {
-            if (ShowType != EditorOperationType.BatchChangePassword) {
+        private void LoadedDelegate(object obj)
+        {
+            if (ShowType != EditorOperationType.BatchChangePassword)
+            {
                 SelectDevices.Clear();
             }
-            else {
+            else
+            {
                 SelectDeviceCount = SelectDevices.Count;
             }
-            if (ShowType != EditorOperationType.Edit) {
+            if (ShowType != EditorOperationType.Edit)
+            {
                 IpcNvrItemInfo = new IpcNvrItemInfoModel();
             }
         }
@@ -104,28 +120,36 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// </summary>
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
-        private void SaveDelegate() {
-            if (ShowType == EditorOperationType.BatchChangePassword) {
-                if (string.IsNullOrEmpty(IpcNvrItemInfo.Username) || string.IsNullOrEmpty(IpcNvrItemInfo.Password)) {
+        private void SaveDelegate()
+        {
+            if (ShowType == EditorOperationType.BatchChangePassword)
+            {
+                if (string.IsNullOrEmpty(IpcNvrItemInfo.Username) || string.IsNullOrEmpty(IpcNvrItemInfo.Password))
+                {
                     NvrIpcDeviceEditorMessageQueue.Enqueue("账号和密码均不能为空");
                     return;
                 }
 
-                if (!SelectDevices.Any()) {
+                if (!SelectDevices.Any())
+                {
                     Message = "未选中需要修改的项";
                 }
-                else {
-                    foreach (var ipcNvrItemInfoModel in SelectDevices) {
+                else
+                {
+                    foreach (var ipcNvrItemInfoModel in SelectDevices)
+                    {
                         ipcNvrItemInfoModel.Username = IpcNvrItemInfo.Username;
                         ipcNvrItemInfoModel.Password = IpcNvrItemInfo.Password;
                     }
                 }
             }
-            else if (ShowType is EditorOperationType.Add or EditorOperationType.Edit) {
+            else if (ShowType is EditorOperationType.Add or EditorOperationType.Edit)
+            {
                 if (string.IsNullOrEmpty(IpcNvrItemInfo.Username) ||
                     string.IsNullOrEmpty(IpcNvrItemInfo.Password) ||
                     string.IsNullOrEmpty(IpcNvrItemInfo.IpAddress) ||
-                    IpcNvrItemInfo.Port <= 0) {
+                    IpcNvrItemInfo.Port <= 0)
+                {
                     NvrIpcDeviceEditorMessageQueue.Enqueue("账号、密码、IP、端口均不能为空");
                     return;
 
@@ -136,7 +160,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
 
             IsOk = true;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
@@ -146,15 +171,18 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// </summary>
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
-        private void CancelDelegate() {
-            if (DialogHost.IsDialogOpen(Identifier)) {
+        private void CancelDelegate()
+        {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand TestLogInCommand => new DelegateCommand(TestLogInDelegate);
 
-        private void TestLogInDelegate() {
+        private void TestLogInDelegate()
+        {
             //加载通道
             NvrIpcDeviceEditorMessageQueue.Enqueue("登录测试");
         }

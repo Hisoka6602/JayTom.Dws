@@ -13,9 +13,11 @@ using JayTom.Dws.Domain.Dto.ApiDto;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class WdtWmsApiPageViewModel : SettingsPageTemplateViewModel {
+    public class WdtWmsApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
         private WdtWmsApiInfo _wdtWmsApiInfo = new();
@@ -27,12 +29,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public WdtWmsApiPageViewModel(IHttpClientFactory httpClientFactory,
             IDialogService dialogService,
-            IConfigRepository configRepository) : base(configRepository) {
+            IConfigRepository configRepository) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
         }
 
-        public WdtWmsApiInfo WdtWmsApiInfo {
+        public WdtWmsApiInfo WdtWmsApiInfo
+        {
             get => _wdtWmsApiInfo;
             set => SetProperty(ref _wdtWmsApiInfo, value);
         }
@@ -40,7 +44,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 条码
         /// </summary>
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
@@ -48,7 +53,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 重量
         /// </summary>
-        public double Weight {
+        public double Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
@@ -56,7 +62,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 箱子条码
         /// </summary>
-        public string BoxBarcode {
+        public string BoxBarcode
+        {
             get => _boxBarcode;
             set => SetProperty(ref _boxBarcode, value);
         }
@@ -64,7 +71,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 上传中
         /// </summary>
-        public bool IsUploading {
+        public bool IsUploading
+        {
             get => _isUploading;
             set => SetProperty(ref _isUploading, value);
         }
@@ -72,10 +80,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "WdtWmsApiParametersDialogHost";
         public override string SettingsName => "WdtWmsApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new WdtWmsApiDto() {
+                Value = JsonConvert.SerializeObject(new WdtWmsApiDto()
+                {
                     AppKey = WdtWmsApiInfo.AppKey,
                     AppSecret = WdtWmsApiInfo.AppSecret,
                     Sid = WdtWmsApiInfo.Sid,
@@ -91,12 +102,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(SettingsName) ?? new WdtWmsApiDto();
-                    WdtWmsApiInfo = new WdtWmsApiInfo() {
+                    WdtWmsApiInfo = new WdtWmsApiInfo()
+                    {
                         Url = settingsDto.Url,
                         AppKey = settingsDto.AppKey,
                         AppSecret = settingsDto.AppSecret,
@@ -112,13 +127,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public ICommand UploadCommand => new DelegateCommand<object>(UploadDelegate);
 
-        private async void UploadDelegate(object obj) {
-            if (!IsUploading) {
+        private async void UploadDelegate(object obj)
+        {
+            if (!IsUploading)
+            {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     //上传
                     var wdtWmsApi = new WdtWmsApi(_httpClientFactory);
-                    await wdtWmsApi.SetParameters(new WdtWmsApi.ApiParameter {
+                    await wdtWmsApi.SetParameters(new WdtWmsApi.ApiParameter
+                    {
                         AppKey = WdtWmsApiInfo.AppKey,
                         AppSecret = WdtWmsApiInfo.AppSecret,
                         Sid = WdtWmsApiInfo.Sid,

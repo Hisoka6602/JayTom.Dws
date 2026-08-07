@@ -1,9 +1,11 @@
 ﻿using Prism.Mvvm;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class HomeToolInfoModel : BindableBase {
+    public class HomeToolInfoModel : BindableBase
+    {
         private string _name = string.Empty;
         private string _iconFont = string.Empty;
         private ICommand _openCommand;
@@ -15,7 +17,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 名称
         /// </summary>
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -23,7 +26,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 字体图标
         /// </summary>
-        public string IconFont {
+        public string IconFont
+        {
             get => _iconFont;
             set => SetProperty(ref _iconFont, value);
         }
@@ -31,7 +35,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 打开事件
         /// </summary>
-        public ICommand OpenCommand {
+        public ICommand OpenCommand
+        {
             get => _openCommand;
             set => SetProperty(ref _openCommand, value);
         }
@@ -39,7 +44,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 简介
         /// </summary>
-        public string Brief {
+        public string Brief
+        {
             get => _brief;
             set => SetProperty(ref _brief, value);
         }
@@ -47,7 +53,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 是否模态窗口
         /// </summary>
-        public bool IsModal {
+        public bool IsModal
+        {
             get => _isModal;
             set => SetProperty(ref _isModal, value);
         }
@@ -55,7 +62,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 控件类名
         /// </summary>
-        public string ControlClassName {
+        public string ControlClassName
+        {
             get => _controlClassName;
             set => SetProperty(ref _controlClassName, value);
         }
@@ -63,7 +71,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 是否能被运行
         /// </summary>
-        public bool IsRunnable {
+        public bool IsRunnable
+        {
             get => _isRunnable;
             set => SetProperty(ref _isRunnable, value);
         }

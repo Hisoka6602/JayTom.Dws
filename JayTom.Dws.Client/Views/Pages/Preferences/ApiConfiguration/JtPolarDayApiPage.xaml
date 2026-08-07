@@ -52,6 +52,23 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="InputMethod.IsInputMethodEnabled" Value="False" />
         </Style>
+
+        <!--  与极兔 API 配置页一致的枚举下拉框样式。  -->
+        <Style
+            x:Key="ParameterComboBoxStyle"
+            BasedOn="{StaticResource MaterialDesignComboBox}"
+            TargetType="{x:Type ComboBox}">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="5,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="15" />
+            <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="Dark" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
     </Page.Resources>
 
     <b:Interaction.Triggers>
@@ -119,16 +136,16 @@
                     </Border>
                 </StackPanel>
 
-                <!--  AppKey、AppSecret。  -->
+                <!--  新版接口 AppKey、AppSecret。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="AppKey:" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="新版AppKey:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
                             Width="220"
                             Style="{StaticResource ParameterTextBoxStyle}"
                             Text="{Binding PolarDayApiInfo.AppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="AppSecret:" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="新版AppSecret:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
                             Width="220"
@@ -137,19 +154,223 @@
                     </Border>
                 </StackPanel>
 
+                <!--  回传协议仅控制分拣数据回传，其他极昼接口始终使用新版。  -->
+                <StackPanel Margin="50,8,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        Style="{StaticResource ParameterLabelStyle}"
+                        Text="数据回传协议:" />
+                    <RadioButton
+                        Margin="8,0,18,0"
+                        VerticalAlignment="Center"
+                        Content="新版回传（默认）"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        GroupName="PolarDayUploadProtocol"
+                        IsChecked="{Binding PolarDayApiInfo.UseCurrentUpload, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                    <RadioButton
+                        VerticalAlignment="Center"
+                        Content="旧版小件回传（兼容）"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        GroupName="PolarDayUploadProtocol"
+                        IsChecked="{Binding PolarDayApiInfo.UseLegacyUpload, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                </StackPanel>
+                <TextBlock
+                    Margin="55,4,0,5"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="该选项仅切换自动分拣数据回传；目标格口查询等接口始终使用新版。" />
+
+                <!--  旧版小件回传专属参数。  -->
+                <StackPanel Margin="0,0,0,5">
+                    <StackPanel.Style>
+                        <Style TargetType="{x:Type StackPanel}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger
+                                    Binding="{Binding PolarDayApiInfo.UseLegacyUpload}"
+                                    Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            Style="{StaticResource ParameterLabelStyle}"
+                            Text="旧版回传地址:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="500"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding PolarDayApiInfo.LegacyUploadUrl, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            Style="{StaticResource ParameterLabelStyle}"
+                            Text="旧版AppKey:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="220"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding PolarDayApiInfo.LegacyAppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                        <TextBlock
+                            Style="{StaticResource ParameterLabelStyle}"
+                            Text="旧版AppSecret:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="220"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding PolarDayApiInfo.LegacyAppSecret, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock
+                        Margin="55,2,0,0"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="旧版凭证仅用于小件回传；正式与测试环境的 AppKey/AppSecret 不可混用。" />
+
+                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            Style="{StaticResource ParameterLabelStyle}"
+                            Text="交叉带MAC:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="170"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding PolarDayApiInfo.CrossBeltMac, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                        <TextBlock
+                            Style="{StaticResource ParameterLabelStyle}"
+                            Text="供件台MAC:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="170"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SupplyDeskMac, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock
+                        Margin="55,2,0,0"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="请填写真实交叉带及供件台 MAC；旧版操作类型仅支持：1出港、2进港。" />
+
+                    <!--  旧版真实回传测试。  -->
+                    <StackPanel Margin="50,12,0,0" Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="测试运单号:" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="280"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding LegacyTestBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                        <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="重量(kg):" />
+                        <Border Style="{StaticResource ParameterContainerStyle}">
+                            <TextBox
+                                Width="100"
+                                Style="{StaticResource ParameterTextBoxStyle}"
+                                Text="{Binding LegacyTestWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                        <Button
+                            MinWidth="120"
+                            MinHeight="30"
+                            Margin="10,0"
+                            materialDesign:ButtonAssist.CornerRadius="5"
+                            Background="#2E2E2E"
+                            BorderThickness="0"
+                            Command="{Binding LegacyTestUploadCommand}"
+                            FocusVisualStyle="{x:Null}"
+                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource IconFontFamily}"
+                                        FontSize="18"
+                                        Foreground="DarkGray"
+                                        Text="&#xe6d4;" />
+                                    <TextBlock
+                                        Margin="2,1,0,0"
+                                        VerticalAlignment="Center"
+                                        FontFamily="{StaticResource CustomFontFamily}"
+                                        FontSize="14"
+                                        FontWeight="Bold"
+                                        Foreground="DarkGray"
+                                        Text="测试回传" />
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLegacyTesting}" Value="True">
+                                                    <Setter Property="Visibility" Value="Hidden" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                </StackPanel>
+                                <ProgressBar
+                                    Width="25"
+                                    Height="25"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsIndeterminate="True"
+                                    Value="0">
+                                    <ProgressBar.Style>
+                                        <Style
+                                            BasedOn="{StaticResource MaterialDesignCircularProgressBar}"
+                                            TargetType="ProgressBar">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLegacyTesting}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ProgressBar.Style>
+                                </ProgressBar>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock
+                        Margin="55,3,0,0"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="DarkGray"
+                        Text="测试会向当前旧版地址提交真实记录，重量必须大于 0；测试小车号和格口号为 1，格口编码为 111。" />
+                </StackPanel>
+
                 <!--  设备编号、分拣计划。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="场地编码:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="130"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.SiteCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
                     <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="设备编号:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
-                            Width="210"
+                            Width="190"
                             Style="{StaticResource ParameterTextBoxStyle}"
                             Text="{Binding PolarDayApiInfo.EquipmentCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                     <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="分拣计划:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
-                            Width="210"
+                            Width="160"
                             Style="{StaticResource ParameterTextBoxStyle}"
                             Text="{Binding PolarDayApiInfo.SortingPlanCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
@@ -236,37 +457,49 @@
 
                 <!--  小件协议枚举参数。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="操作类型(1-3):" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="操作类型:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
-                        <TextBox
-                            Width="60"
-                            Style="{StaticResource ParameterTextBoxStyle}"
-                            Text="{Binding PolarDayApiInfo.OperateType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        <ComboBox
+                            Width="140"
+                            DisplayMemberPath="Name"
+                            ItemsSource="{Binding OperateTypeItems}"
+                            SelectedValue="{Binding PolarDayApiInfo.OperateType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            SelectedValuePath="Value"
+                            Style="{StaticResource ParameterComboBoxStyle}" />
                     </Border>
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件方式(1-5):" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="供件方式:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
-                        <TextBox
-                            Width="60"
-                            Style="{StaticResource ParameterTextBoxStyle}"
-                            Text="{Binding PolarDayApiInfo.SupplyDeskMethod, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                    </Border>
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="重量来源(0/1):" />
-                    <Border Style="{StaticResource ParameterContainerStyle}">
-                        <TextBox
-                            Width="60"
-                            Style="{StaticResource ParameterTextBoxStyle}"
-                            Text="{Binding PolarDayApiInfo.WeightSource, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        <ComboBox
+                            Width="160"
+                            DisplayMemberPath="Name"
+                            ItemsSource="{Binding SupplyDeskMethodItems}"
+                            SelectedValue="{Binding PolarDayApiInfo.SupplyDeskMethod, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            SelectedValuePath="Value"
+                            Style="{StaticResource ParameterComboBoxStyle}" />
                     </Border>
                 </StackPanel>
 
                 <!--  小件落格参数。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="落格模式(1-4):" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="重量来源:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
-                        <TextBox
-                            Width="70"
-                            Style="{StaticResource ParameterTextBoxStyle}"
-                            Text="{Binding PolarDayApiInfo.ChuteModel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        <ComboBox
+                            Width="150"
+                            DisplayMemberPath="Name"
+                            ItemsSource="{Binding WeightSourceItems}"
+                            SelectedValue="{Binding PolarDayApiInfo.WeightSource, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            SelectedValuePath="Value"
+                            Style="{StaticResource ParameterComboBoxStyle}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="落格模式:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <ComboBox
+                            Width="150"
+                            DisplayMemberPath="Name"
+                            ItemsSource="{Binding ChuteModelItems}"
+                            SelectedValue="{Binding PolarDayApiInfo.ChuteModel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            SelectedValuePath="Value"
+                            Style="{StaticResource ParameterComboBoxStyle}" />
                     </Border>
                     <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="默认落格供件区:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">

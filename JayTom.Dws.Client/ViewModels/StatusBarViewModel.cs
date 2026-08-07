@@ -32,9 +32,11 @@ using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels {
+namespace JayTom.Dws.Client.ViewModels
+{
 
-    public class StatusBarViewModel : BindableBase {
+    public class StatusBarViewModel : BindableBase
+    {
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IDeviceService _deviceService;
         private readonly IFtp _ftp;
@@ -85,17 +87,21 @@ namespace JayTom.Dws.Client.ViewModels {
             },
         };
 
-        private ComputerInfoModel _computerInfo = new() {
-            MemoryInfo = new MemoryInfoModel() {
+        private ComputerInfoModel _computerInfo = new()
+        {
+            MemoryInfo = new MemoryInfoModel()
+            {
                 UsedPercentage = 80,
                 MemoryRemaining = 20,
             },
-            CpuInfo = new CpuInfoModel() {
+            CpuInfo = new CpuInfoModel()
+            {
                 UsagePercentage = 90,
                 CpuTemperature = 76,
                 Name = "Intel(R) Core(TM) i7-1065G7 CPU @ 1.30GHz"
             },
-            GpuInfo = new GpuInfoModel() {
+            GpuInfo = new GpuInfoModel()
+            {
                 Name = "Intel(R) Iris(R) Plus Graphics",
                 UsagePercentage = 11,
             },
@@ -130,7 +136,8 @@ namespace JayTom.Dws.Client.ViewModels {
             IStackedPackageService stackedPackageService,
             ISortingConnectionService sortingConnectionService,
             ISoundRepository soundRepository,
-            IGrayscaleService grayscaleService) {
+            IGrayscaleService grayscaleService)
+        {
             _computerInfoReporter = computerInfoReporter;
             _deviceService = deviceService;
             _ftp = ftp;
@@ -144,155 +151,208 @@ namespace JayTom.Dws.Client.ViewModels {
             _sortingConnectionService = sortingConnectionService;
             _soundRepository = soundRepository;
             _grayscaleService = grayscaleService;
-            _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model) {
-                try {
+            _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model)
+            {
+                try
+                {
                     var dispatcher = System.Windows.Application.Current?.Dispatcher;
-                    if (dispatcher is not null) {
-                        await dispatcher.InvokeAsync(() => {
+                    if (dispatcher is not null)
+                    {
+                        await dispatcher.InvokeAsync(() =>
+                        {
                             //加载到界面内容
                             ComputerInfo = model;
-                            if (ConnectionItems.Any(a => a.ConnectionState is ConnectionState.ConnectionFailed)) {
+                            if (ConnectionItems.Any(a => a.ConnectionState is ConnectionState.ConnectionFailed))
+                            {
                                 ConnectionSolidColorBrush = Brushes.Red;
                             }
-                            else if (ConnectionItems.Any(a => a.ConnectionState == ConnectionState.Disconnected)) {
+                            else if (ConnectionItems.Any(a => a.ConnectionState == ConnectionState.Disconnected))
+                            {
                                 ConnectionSolidColorBrush = Brushes.DarkGray;
                             }
                             else if (ConnectionItems.Any() &&
-                                     ConnectionItems.All(a => a.ConnectionState == ConnectionState.Connected)) {
+                                     ConnectionItems.All(a => a.ConnectionState == ConnectionState.Connected))
+                            {
                                 ConnectionSolidColorBrush = Brushes.LimeGreen;
                             }
-                            else {
+                            else
+                            {
                                 ConnectionSolidColorBrush = Brushes.DarkGray;
                             }
 
-                            if (CameraItems.Any(a => a.Status == CameraStatus.Failure)) {
+                            if (CameraItems.Any(a => a.Status == CameraStatus.Failure))
+                            {
                                 CameraSolidColorBrush = Brushes.Red;
                             }
-                            else if (CameraItems.Any(a => a.Status == CameraStatus.Disconnected)) {
+                            else if (CameraItems.Any(a => a.Status == CameraStatus.Disconnected))
+                            {
                                 CameraSolidColorBrush = Brushes.DarkGray;
                             }
                             else if (CameraItems.Any() &&
-                                     CameraItems.All(a => a.Status == CameraStatus.Running)) {
+                                     CameraItems.All(a => a.Status == CameraStatus.Running))
+                            {
                                 CameraSolidColorBrush = Brushes.LimeGreen;
                             }
-                            else {
+                            else
+                            {
                                 CameraSolidColorBrush = Brushes.DarkGray;
                             }
                         }, DispatcherPriority.Background);
                     }
                 }
-                catch (TaskCanceledException) {
+                catch (TaskCanceledException)
+                {
                     // 应用退出时调度任务可能被取消。
                 }
-                catch (Exception exception) {
+                catch (Exception exception)
+                {
                     NLog.LogManager.GetCurrentClassLogger()
                         .Error(exception, "更新状态栏电脑信息失败");
                 }
             };
-            EventAggregator.Instance.Subscribe<TimerDto>(async item => {
-                if (item is TimerDto model) {
-                    try {
-                        if (System.Windows.Application.Current?.Dispatcher is not null) {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            EventAggregator.Instance.Subscribe<TimerDto>(async item =>
+            {
+                if (item is TimerDto model)
+                {
+                    try
+                    {
+                        if (System.Windows.Application.Current?.Dispatcher is not null)
+                        {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 //加载到界面内容
                                 FormattedElapsed = model.FormattedElapsed;
                             }, DispatcherPriority.Background);
                         }
                     }
-                    catch (TaskCanceledException) {
+                    catch (TaskCanceledException)
+                    {
                         //
                     }
-                    catch (Exception e) {
+                    catch (Exception e)
+                    {
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<CameraItemInfoModel>(async item => {
-                if (item is CameraItemInfoModel model) {
-                    try {
+            EventAggregator.Instance.Subscribe<CameraItemInfoModel>(async item =>
+            {
+                if (item is CameraItemInfoModel model)
+                {
+                    try
+                    {
                         await UpdateSlim.WaitAsync();
-                        if (System.Windows.Application.Current?.Dispatcher is not null) {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                        if (System.Windows.Application.Current?.Dispatcher is not null)
+                        {
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
-                                if (cameraItemInfoModel is not null) {
+                                if (cameraItemInfoModel is not null)
+                                {
                                     cameraItemInfoModel.Status = model.Status;
                                 }
-                                else {
+                                else
+                                {
                                     CameraItems?.Add(model);
                                 }
                             }, DispatcherPriority.Background);
                         }
                     }
-                    finally {
+                    finally
+                    {
                         UpdateSlim.Release();
                     }
                 }
             });
             //解绑
-            _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                try {
+            _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model)
+            {
+                try
+                {
                     await UpdateSlim.WaitAsync();
-                    if (System.Windows.Application.Current?.Dispatcher is not null) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    if (System.Windows.Application.Current?.Dispatcher is not null)
+                    {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
                             var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
-                            if (cameraItemInfoModel is not null) {
+                            if (cameraItemInfoModel is not null)
+                            {
                                 CameraItems?.Remove(cameraItemInfoModel);
                                 cameraItemInfoModel.Dispose();
                             }
                         }, DispatcherPriority.Background);
                     }
                 }
-                finally {
+                finally
+                {
                     UpdateSlim.Release();
                 }
             };
             //断开
-            _deviceService.CameraDisconnected += async delegate (object? sender, List<ICamera> list) {
-                try {
+            _deviceService.CameraDisconnected += async delegate (object? sender, List<ICamera> list)
+            {
+                try
+                {
                     await UpdateSlim.WaitAsync();
-                    if (System.Windows.Application.Current?.Dispatcher is not null) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            foreach (var cameraItemInfoModel in list.Select(camera => CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))).OfType<CameraItemInfoModel>()) {
+                    if (System.Windows.Application.Current?.Dispatcher is not null)
+                    {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            foreach (var cameraItemInfoModel in list.Select(camera => CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))).OfType<CameraItemInfoModel>())
+                            {
                                 cameraItemInfoModel.Status = CameraStatus.Disconnected;
                             }
                         }, DispatcherPriority.Background);
                     }
                 }
-                finally {
+                finally
+                {
                     UpdateSlim.Release();
                 }
             };
             //异常
-            _deviceService.CameraFault += async delegate (object? sender, List<ICamera> list) {
-                try {
+            _deviceService.CameraFault += async delegate (object? sender, List<ICamera> list)
+            {
+                try
+                {
                     await UpdateSlim.WaitAsync();
-                    if (System.Windows.Application.Current?.Dispatcher is not null) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            foreach (var camera in list) {
+                    if (System.Windows.Application.Current?.Dispatcher is not null)
+                    {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            foreach (var camera in list)
+                            {
                                 var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info.SerialNumber));
-                                if (cameraItemInfoModel is not null) {
-                                    cameraItemInfoModel.Status = CameraStatus.Disconnected;
-                                }
+                                cameraItemInfoModel?.Status = CameraStatus.Disconnected;
                             }
                         }, DispatcherPriority.Background);
                     }
                 }
-                finally {
+                finally
+                {
                     UpdateSlim.Release();
                 }
             };
             //相机初始化
-            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
-                try {
+            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list)
+            {
+                try
+                {
                     await UpdateSlim.WaitAsync();
-                    if (System.Windows.Application.Current?.Dispatcher is not null) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            foreach (var camera in list) {
+                    if (System.Windows.Application.Current?.Dispatcher is not null)
+                    {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            foreach (var camera in list)
+                            {
                                 var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info.SerialNumber));
-                                if (cameraItemInfoModel is not null) {
+                                if (cameraItemInfoModel is not null)
+                                {
                                     cameraItemInfoModel.Status = CameraStatus.Running;
                                 }
-                                else {
-                                    CameraItems?.Add(new CameraItemInfoModel() {
+                                else
+                                {
+                                    CameraItems?.Add(new CameraItemInfoModel()
+                                    {
                                         SerialNumber = camera?.Info?.SerialNumber ?? string.Empty,
                                         Type = (CameraType)(camera?.Info?.Type ?? Camera.CameraType.IndustrialCamera),
                                         ConnectionType = (camera?.Info?.ConnectionType ?? CameraConnectionType.Unknown),
@@ -304,170 +364,204 @@ namespace JayTom.Dws.Client.ViewModels {
                         }, DispatcherPriority.Background);
                     }
                 }
-                finally {
+                finally
+                {
                     UpdateSlim.Release();
                 }
             };
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                if (item is SettingsChangedEvent info) {
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            {
+                if (item is SettingsChangedEvent info)
+                {
                     var newConnectionItems = new List<ConnectionItemInfoModel>();
-                        //判断添加
-                        //FTP图片上传
-                        var imageSettingsDto = await configRepository
-                            .FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings")
-                            .ConfigureAwait(false) ?? new ImageSettingsDto();
-                        if (imageSettingsDto.IsFtpUploadEnabled) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "FTP图片上传",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.FTP,
-                            });
-                        }
-                        //称重
-                        var weightSettingsDto = await configRepository
-                            .FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings")
-                            .ConfigureAwait(false) ?? new WeightSettingsDto();
-                        if (weightSettingsDto.Mode == WeightMode.Dynamic) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "动态称重",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
-                            });
-                        }
-                        else if (weightSettingsDto.Mode == WeightMode.Static) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "静态称重",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
-                            });
-                        }
-                        //体积
-                        var volumeSettingsDto = await configRepository
-                            .FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings")
-                            .ConfigureAwait(false) ?? new VolumeSettingsDto();
-                        if (volumeSettingsDto.IsUseExternalVolumeInput) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "外部体积",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp ? Models.StatusBarModels.ConnectionType.TCP : Models.StatusBarModels.ConnectionType.SerialPort,
-                            });
-                        }
-                        //TCP输出结果
-                        var resultOutputSettingsDto = await configRepository
-                                                          .FirstOrDefaultEntity<ResultOutputSettingsDto>("ResultOutputSettings")
-                                                          .ConfigureAwait(false) ??
-                                                      new ResultOutputSettingsDto();
-                        if (resultOutputSettingsDto.IsUseTcpOutput) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "TCP输出结果",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
-                            });
-                        }
-                        //串口输出结果
-                        if (resultOutputSettingsDto.IsUseSerialOutput) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "串口输出结果",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
-                            });
-                        }
-                        //音频输出
-                        if (resultOutputSettingsDto.IsUseAudioOutput) {
-                            //检测文件是否存在
-                            var total = await _soundRepository.Total(t => t.Id > 0).ConfigureAwait(false);
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "音频输出",
-                                ConnectionState = total > 0 ? ConnectionState.Connected : ConnectionState.ConnectionFailed,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.Audio,
-                            });
-                        }
-                        //位置输出
-                        if (resultOutputSettingsDto.IsUseLocationOutput) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "位置输出",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.Location,
-                            });
-                        }
-                        //控件输入
-                        var contentInputSettingsDto = await configRepository
-                                                          .FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings")
-                                                          .ConfigureAwait(false) ??
-                                                      new ContentInputSettingsDto();
-                        if (contentInputSettingsDto.IsUseControlInput) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "控件输入",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.Custom,
-                            });
-                        }
-                        //Tcp输入
-                        if (contentInputSettingsDto.IsUseTcpInput) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = "Tcp输入",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
-                            });
-                        }
-                        //获取下位机连接
-                        var models = await communicationConnectionConfigRepository.
-                            CommunicationConnectionConfigItems(s => s.Id > 0).ConfigureAwait(false);
-                        models.ForEach(f => {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = $"[下位机]{f.ConnectionName}",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = f.CommunicationType == 1 ? Models.StatusBarModels.ConnectionType.SerialPort : Models.StatusBarModels.ConnectionType.TCP,
-                            });
+                    //判断添加
+                    //FTP图片上传
+                    var imageSettingsDto = await configRepository
+                        .FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings")
+                        .ConfigureAwait(false) ?? new ImageSettingsDto();
+                    if (imageSettingsDto.IsFtpUploadEnabled)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "FTP图片上传",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.FTP,
                         });
-                        //锁格
-                        var packageExitLockSettingsDto = await configRepository
-                                                             .FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings")
-                                                             .ConfigureAwait(false) ??
-                                                         new PackageExitLockSettingsDto();
-                        if (packageExitLockSettingsDto.IsUsePackageExitLock) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = $"锁格检测",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
-                            });
-                        }
+                    }
+                    //称重
+                    var weightSettingsDto = await configRepository
+                        .FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings")
+                        .ConfigureAwait(false) ?? new WeightSettingsDto();
+                    if (weightSettingsDto.Mode == WeightMode.Dynamic)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "动态称重",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
+                        });
+                    }
+                    else if (weightSettingsDto.Mode == WeightMode.Static)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "静态称重",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
+                        });
+                    }
+                    //体积
+                    var volumeSettingsDto = await configRepository
+                        .FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings")
+                        .ConfigureAwait(false) ?? new VolumeSettingsDto();
+                    if (volumeSettingsDto.IsUseExternalVolumeInput)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "外部体积",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = volumeSettingsDto.VolumeInformationRequesterInfo.VolumeRequesterType == VolumeRequesterType.Tcp ? Models.StatusBarModels.ConnectionType.TCP : Models.StatusBarModels.ConnectionType.SerialPort,
+                        });
+                    }
+                    //TCP输出结果
+                    var resultOutputSettingsDto = await configRepository
+                                                      .FirstOrDefaultEntity<ResultOutputSettingsDto>("ResultOutputSettings")
+                                                      .ConfigureAwait(false) ??
+                                                  new ResultOutputSettingsDto();
+                    if (resultOutputSettingsDto.IsUseTcpOutput)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "TCP输出结果",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                        });
+                    }
+                    //串口输出结果
+                    if (resultOutputSettingsDto.IsUseSerialOutput)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "串口输出结果",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.SerialPort,
+                        });
+                    }
+                    //音频输出
+                    if (resultOutputSettingsDto.IsUseAudioOutput)
+                    {
+                        //检测文件是否存在
+                        var total = await _soundRepository.Total(t => t.Id > 0).ConfigureAwait(false);
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "音频输出",
+                            ConnectionState = total > 0 ? ConnectionState.Connected : ConnectionState.ConnectionFailed,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.Audio,
+                        });
+                    }
+                    //位置输出
+                    if (resultOutputSettingsDto.IsUseLocationOutput)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "位置输出",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.Location,
+                        });
+                    }
+                    //控件输入
+                    var contentInputSettingsDto = await configRepository
+                                                      .FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings")
+                                                      .ConfigureAwait(false) ??
+                                                  new ContentInputSettingsDto();
+                    if (contentInputSettingsDto.IsUseControlInput)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "控件输入",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.Custom,
+                        });
+                    }
+                    //Tcp输入
+                    if (contentInputSettingsDto.IsUseTcpInput)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = "Tcp输入",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                        });
+                    }
+                    //获取下位机连接
+                    var models = await communicationConnectionConfigRepository.
+                        CommunicationConnectionConfigItems(s => s.Id > 0).ConfigureAwait(false);
+                    models.ForEach(f =>
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = $"[下位机]{f.ConnectionName}",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = f.CommunicationType == 1 ? Models.StatusBarModels.ConnectionType.SerialPort : Models.StatusBarModels.ConnectionType.TCP,
+                        });
+                    });
+                    //锁格
+                    var packageExitLockSettingsDto = await configRepository
+                                                         .FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings")
+                                                         .ConfigureAwait(false) ??
+                                                     new PackageExitLockSettingsDto();
+                    if (packageExitLockSettingsDto.IsUsePackageExitLock)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = $"锁格检测",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                        });
+                    }
 
-                        //叠包
+                    //叠包
 
-                        var stackedPackageDetectionSettingsDto = await configRepository
-                                                                     .FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings")
-                                                                     .ConfigureAwait(false) ??
-                                                                 new StackedPackageDetectionSettingsDto();
-                        if (stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = $"叠包检测",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
-                            });
-                        }
+                    var stackedPackageDetectionSettingsDto = await configRepository
+                                                                 .FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings")
+                                                                 .ConfigureAwait(false) ??
+                                                             new StackedPackageDetectionSettingsDto();
+                    if (stackedPackageDetectionSettingsDto.IsStackedPackageDetection)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = $"叠包检测",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                        });
+                    }
 
-                        //灰度仪
-                        var grayscaleDeviceSettingsDto = await configRepository
-                                                             .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings")
-                                                             .ConfigureAwait(false) ??
-                                                         new GrayscaleDeviceSettingsDto();
-                        if (grayscaleDeviceSettingsDto.IsUseGrayscaleDetector) {
-                            newConnectionItems.Add(new ConnectionItemInfoModel() {
-                                ConnectionName = $"灰度仪",
-                                ConnectionState = ConnectionState.Disconnected,
-                                ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
-                            });
-                        }
+                    //灰度仪
+                    var grayscaleDeviceSettingsDto = await configRepository
+                                                         .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings")
+                                                         .ConfigureAwait(false) ??
+                                                     new GrayscaleDeviceSettingsDto();
+                    if (grayscaleDeviceSettingsDto.IsUseGrayscaleDetector)
+                    {
+                        newConnectionItems.Add(new ConnectionItemInfoModel()
+                        {
+                            ConnectionName = $"灰度仪",
+                            ConnectionState = ConnectionState.Disconnected,
+                            ConnectionType = Models.StatusBarModels.ConnectionType.TCP,
+                        });
+                    }
 
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
                         var itemsToRemove = ConnectionItems.Except(newConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
                         var itemsToAdd = newConnectionItems.Except(ConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
 
-                        foreach (var model in itemsToRemove) {
+                        foreach (var model in itemsToRemove)
+                        {
                             ConnectionItems.Remove(model);
                         }
-                        foreach (var model in itemsToAdd) {
+                        foreach (var model in itemsToAdd)
+                        {
                             ConnectionItems.Add(model);
                         }
                     }, DispatcherPriority.Background);
@@ -538,54 +632,63 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <param name="connectionName">连接名称。</param>
         /// <param name="state">目标状态。</param>
         /// <param name="matchSuffix">是否按名称后缀匹配。</param>
-        private void SetConnectionState(string connectionName, ConnectionState state, bool matchSuffix = false) {
+        private void SetConnectionState(string connectionName, ConnectionState state, bool matchSuffix = false)
+        {
             var dispatcher = System.Windows.Application.Current?.Dispatcher;
-            if (dispatcher is null) {
+            if (dispatcher is null)
+            {
                 return;
             }
-            Action updateState = () => {
+            Action updateState = () =>
+            {
                 var model = ConnectionItems.FirstOrDefault(item =>
                     matchSuffix
                         ? item.ConnectionName.EndsWith(connectionName, StringComparison.Ordinal)
                         : item.ConnectionName.Equals(connectionName, StringComparison.Ordinal));
-                if (model is not null) {
-                    model.ConnectionState = state;
-                }
+                model?.ConnectionState = state;
             };
-            if (dispatcher.CheckAccess()) {
+            if (dispatcher.CheckAccess())
+            {
                 updateState();
             }
-            else {
+            else
+            {
                 _ = dispatcher.InvokeAsync(updateState, DispatcherPriority.Background);
             }
         }
 
-        public string FormattedElapsed {
+        public string FormattedElapsed
+        {
             get => _formattedElapsed;
             set => SetProperty(ref _formattedElapsed, value);
         }
 
-        public ObservableCollection<string> ExceptionItems {
+        public ObservableCollection<string> ExceptionItems
+        {
             get => _exceptionItems;
             set => SetProperty(ref _exceptionItems, value);
         }
 
-        public ObservableCollection<CameraItemInfoModel> CameraItems {
+        public ObservableCollection<CameraItemInfoModel> CameraItems
+        {
             get => _cameraItems;
             set => SetProperty(ref _cameraItems, value);
         }
 
-        public ObservableCollection<SerialPortInfoModel> SerialPortItems {
+        public ObservableCollection<SerialPortInfoModel> SerialPortItems
+        {
             get => _serialPortItems;
             set => SetProperty(ref _serialPortItems, value);
         }
 
-        public SolidColorBrush ConnectionSolidColorBrush {
+        public SolidColorBrush ConnectionSolidColorBrush
+        {
             get => _connectionSolidColorBrush;
             set => SetProperty(ref _connectionSolidColorBrush, value);
         }
 
-        public SolidColorBrush CameraSolidColorBrush {
+        public SolidColorBrush CameraSolidColorBrush
+        {
             get => _cameraSolidColorBrush;
             set => SetProperty(ref _cameraSolidColorBrush, value);
         }
@@ -593,7 +696,8 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <summary>
         /// 连接信息
         /// </summary>
-        public ObservableCollection<ConnectionItemInfoModel> ConnectionItems {
+        public ObservableCollection<ConnectionItemInfoModel> ConnectionItems
+        {
             get => _connectionItems;
             set => SetProperty(ref _connectionItems, value);
         }
@@ -601,14 +705,16 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <summary>
         /// 电脑信息
         /// </summary>
-        public ComputerInfoModel ComputerInfo {
+        public ComputerInfoModel ComputerInfo
+        {
             get => _computerInfo;
             set => SetProperty(ref _computerInfo, value);
         }
 
         public ICommand ClearExceptionCommand => new DelegateCommand<object>(ClearExceptionDelegate);
 
-        private async void ClearExceptionDelegate(object obj) {
+        private async void ClearExceptionDelegate(object obj)
+        {
             //清空异常信息
             ExceptionItems?.Clear();
         }

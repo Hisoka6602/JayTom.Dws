@@ -1,13 +1,16 @@
 ﻿using System.Windows.Controls;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences {
+namespace JayTom.Dws.Client.Views.Pages.Preferences
+{
 
     /// <summary>
     /// WeightSettingPage.xaml 的交互逻辑
     /// </summary>
-    public partial class WeightSettingPages : Page {
+    public partial class WeightSettingPages : Page
+    {
 
-        public WeightSettingPages() {
+        public WeightSettingPages()
+        {
             InitializeComponent();
         }
     }

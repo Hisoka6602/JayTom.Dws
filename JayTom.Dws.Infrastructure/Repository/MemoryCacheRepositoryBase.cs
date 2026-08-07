@@ -202,7 +202,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             var discoveredNames = context.Model.FindEntityType(typeof(T))?
                 .GetNavigations()
                 .Select(navigation => navigation.Name)
-                .ToArray() ?? Array.Empty<string>();
+                .ToArray() ?? [];
             Interlocked.CompareExchange(
                 ref _navigationPropertyNames, discoveredNames, null);
             return Volatile.Read(ref _navigationPropertyNames) ?? discoveredNames;

@@ -1,9 +1,11 @@
 ﻿using Prism.Mvvm;
 using System.Windows.Media;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class IconInfoModel : BindableBase {
+    public class IconInfoModel : BindableBase
+    {
 
         /// <summary>
         /// 图标代码

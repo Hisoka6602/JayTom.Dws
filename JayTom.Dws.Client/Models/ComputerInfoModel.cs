@@ -2,9 +2,11 @@
 using Prism.Mvvm;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class ComputerInfoModel : BindableBase {
+    public class ComputerInfoModel : BindableBase
+    {
         private List<HardDiskInfoModel>? _hardDiskList = new();
         private MemoryInfoModel _memoryInfo = new();
         private CpuInfoModel _cpuInfo = new();
@@ -22,7 +24,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 磁盘列表
         /// </summary>
-        public List<HardDiskInfoModel>? HardDiskList {
+        public List<HardDiskInfoModel>? HardDiskList
+        {
             get => _hardDiskList;
             set => SetProperty(ref _hardDiskList, value);
         }
@@ -30,7 +33,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 内存信息
         /// </summary>
-        public MemoryInfoModel MemoryInfo {
+        public MemoryInfoModel MemoryInfo
+        {
             get => _memoryInfo;
             set => SetProperty(ref _memoryInfo, value);
         }
@@ -38,7 +42,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// Cpu信息
         /// </summary>
-        public CpuInfoModel CpuInfo {
+        public CpuInfoModel CpuInfo
+        {
             get => _cpuInfo;
             set => SetProperty(ref _cpuInfo, value);
         }
@@ -46,7 +51,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// Gpu信息
         /// </summary>
-        public GpuInfoModel GpuInfo {
+        public GpuInfoModel GpuInfo
+        {
             get => _gpuInfo;
             set => SetProperty(ref _gpuInfo, value);
         }
@@ -54,7 +60,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 网络信息类
         /// </summary>
-        public NetworkInfoModel NetworkInfo {
+        public NetworkInfoModel NetworkInfo
+        {
             get => _networkInfo;
             set => SetProperty(ref _networkInfo, value);
         }
@@ -62,7 +69,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 本地连接信息类
         /// </summary>
-        public List<LocalNetworkConnectionInfoModel> LocalNetworkConnectionInfos {
+        public List<LocalNetworkConnectionInfoModel> LocalNetworkConnectionInfos
+        {
             get => _localNetworkConnectionInfos;
             set => SetProperty(ref _localNetworkConnectionInfos, value);
         }
@@ -70,7 +78,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 上次关机时间
         /// </summary>
-        public DateTime LastShutdownTime {
+        public DateTime LastShutdownTime
+        {
             get => _lastShutdownTime;
             set => SetProperty(ref _lastShutdownTime, value);
         }
@@ -78,7 +87,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 本次开机运行时长
         /// </summary>
-        public TimeSpan UpTime {
+        public TimeSpan UpTime
+        {
             get => _upTime;
             set => SetProperty(ref _upTime, value);
         }
@@ -86,7 +96,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 计算机用户名称
         /// </summary>
-        public string? UserName {
+        public string? UserName
+        {
             get => _userName;
             set => SetProperty(ref _userName, value);
         }
@@ -94,7 +105,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 计算机名称
         /// </summary>
-        public string? ComputerName {
+        public string? ComputerName
+        {
             get => _computerName;
             set => SetProperty(ref _computerName, value);
         }
@@ -102,7 +114,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 上次关机是否为意外关机
         /// </summary>
-        public bool IsUnexpectedShutdown {
+        public bool IsUnexpectedShutdown
+        {
             get => _isUnexpectedShutdown;
             set => SetProperty(ref _isUnexpectedShutdown, value);
         }
@@ -110,7 +123,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 意外关机原因
         /// </summary>
-        public string? UnexpectedShutdownReason {
+        public string? UnexpectedShutdownReason
+        {
             get => _unexpectedShutdownReason;
             set => SetProperty(ref _unexpectedShutdownReason, value);
         }
@@ -118,7 +132,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 系统信息
         /// </summary>
-        public string SystemInfoString {
+        public string SystemInfoString
+        {
             get => _systemInfoString;
             set => SetProperty(ref _systemInfoString, value);
         }
@@ -127,7 +142,8 @@ namespace JayTom.Dws.Client.Models {
     /// <summary>
     /// 硬盘信息类
     /// </summary>
-    public class HardDiskInfoModel : BindableBase {
+    public class HardDiskInfoModel : BindableBase
+    {
         private string _diskName = string.Empty;
         private float _freeSpacePercentage;
         private long _freeSpaceBytes;
@@ -135,7 +151,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 磁盘名称
         /// </summary>
-        public string DiskName {
+        public string DiskName
+        {
             get => _diskName;
             set => SetProperty(ref _diskName, value);
         }
@@ -143,7 +160,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 磁盘剩余空间
         /// </summary>
-        public float FreeSpacePercentage {
+        public float FreeSpacePercentage
+        {
             get => _freeSpacePercentage;
             set => SetProperty(ref _freeSpacePercentage, value);
         }
@@ -151,7 +169,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 磁盘剩余字节
         /// </summary>
-        public long FreeSpaceBytes {
+        public long FreeSpaceBytes
+        {
             get => _freeSpaceBytes;
             set => SetProperty(ref _freeSpaceBytes, value);
         }
@@ -195,7 +214,8 @@ namespace JayTom.Dws.Client.Models {
     /// <summary>
     /// 内存信息类
     /// </summary>
-    public class MemoryInfoModel : BindableBase {
+    public class MemoryInfoModel : BindableBase
+    {
         private float _memoryRemaining;
         private string? _memoryType;
         private long _totalSizeBytes;
@@ -205,7 +225,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 内存类型
         /// </summary>
-        public string? MemoryType {
+        public string? MemoryType
+        {
             get => _memoryType;
             set => SetProperty(ref _memoryType, value);
         }
@@ -213,7 +234,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 内存总大小
         /// </summary>
-        public long TotalSizeBytes {
+        public long TotalSizeBytes
+        {
             get => _totalSizeBytes;
             set => SetProperty(ref _totalSizeBytes, value);
         }
@@ -221,7 +243,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 可用内存大小
         /// </summary>
-        public long AvailableSizeBytes {
+        public long AvailableSizeBytes
+        {
             get => _availableSizeBytes;
             set => SetProperty(ref _availableSizeBytes, value);
         }
@@ -229,7 +252,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 使用内存百分比
         /// </summary>
-        public float UsedPercentage {
+        public float UsedPercentage
+        {
             get => _usedPercentage;
             set => SetProperty(ref _usedPercentage, value);
         }
@@ -237,7 +261,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 内存剩余比率
         /// </summary>
-        public float MemoryRemaining {
+        public float MemoryRemaining
+        {
             get => _memoryRemaining;
             set => SetProperty(ref _memoryRemaining, value);
         }
@@ -246,7 +271,8 @@ namespace JayTom.Dws.Client.Models {
     /// <summary>
     /// Cpu信息类
     /// </summary>
-    public class CpuInfoModel : BindableBase {
+    public class CpuInfoModel : BindableBase
+    {
         private string? _name;
         private string? _manufacturer;
         private string? _model;
@@ -261,7 +287,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 名称
         /// </summary>
-        public string? Name {
+        public string? Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -269,7 +296,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// CPU 制造商
         /// </summary>
-        public string? Manufacturer {
+        public string? Manufacturer
+        {
             get => _manufacturer;
             set => SetProperty(ref _manufacturer, value);
         }
@@ -277,7 +305,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// CPU 型号
         /// </summary>
-        public string? Model {
+        public string? Model
+        {
             get => _model;
             set => SetProperty(ref _model, value);
         }
@@ -285,7 +314,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// CPU 核心数
         /// </summary>
-        public int NumberOfCores {
+        public int NumberOfCores
+        {
             get => _numberOfCores;
             set => SetProperty(ref _numberOfCores, value);
         }
@@ -293,7 +323,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// CPU 时钟速度
         /// </summary>
-        public float ClockSpeed {
+        public float ClockSpeed
+        {
             get => _clockSpeed;
             set => SetProperty(ref _clockSpeed, value);
         }
@@ -301,7 +332,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         ///  CPU 使用率
         /// </summary>
-        public float UsagePercentage {
+        public float UsagePercentage
+        {
             get => _usagePercentage;
             set => SetProperty(ref _usagePercentage, value);
         }
@@ -309,7 +341,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 逻辑处理器数量
         /// </summary>
-        public int NumberOfLogicalProcessors {
+        public int NumberOfLogicalProcessors
+        {
             get => _numberOfLogicalProcessors;
             set => SetProperty(ref _numberOfLogicalProcessors, value);
         }
@@ -317,7 +350,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 插槽数量
         /// </summary>
-        public int SocketCount {
+        public int SocketCount
+        {
             get => _socketCount;
             set => SetProperty(ref _socketCount, value);
         }
@@ -325,7 +359,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// Cpu温度
         /// </summary>
-        public float CpuTemperature {
+        public float CpuTemperature
+        {
             get => _cpuTemperature;
             set => SetProperty(ref _cpuTemperature, value);
         }
@@ -333,7 +368,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 风扇转速
         /// </summary>
-        public int FanSpeed {
+        public int FanSpeed
+        {
             get => _fanSpeed;
             set => SetProperty(ref _fanSpeed, value);
         }
@@ -342,7 +378,8 @@ namespace JayTom.Dws.Client.Models {
     /// <summary>
     /// GPU 信息类
     /// </summary>
-    public class GpuInfoModel : BindableBase {
+    public class GpuInfoModel : BindableBase
+    {
         private string? _name;
         private string? _manufacturer;
         private string? _model;
@@ -354,7 +391,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 名称
         /// </summary>
-        public string? Name {
+        public string? Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -362,7 +400,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// GPU 制造商
         /// </summary>
-        public string? Manufacturer {
+        public string? Manufacturer
+        {
             get => _manufacturer;
             set => SetProperty(ref _manufacturer, value);
         }
@@ -370,7 +409,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// GPU 型号
         /// </summary>
-        public string? Model {
+        public string? Model
+        {
             get => _model;
             set => SetProperty(ref _model, value);
         }
@@ -378,7 +418,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// GPU 内存大小
         /// </summary>
-        public float MemorySizeGb {
+        public float MemorySizeGb
+        {
             get => _memorySizeGb;
             set => SetProperty(ref _memorySizeGb, value);
         }
@@ -386,7 +427,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         ///  GPU 使用率
         /// </summary>
-        public float UsagePercentage {
+        public float UsagePercentage
+        {
             get => _usagePercentage;
             set => SetProperty(ref _usagePercentage, value);
         }
@@ -394,7 +436,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 已使用内存大小
         /// </summary>
-        public float UsedMemoryGb {
+        public float UsedMemoryGb
+        {
             get => _usedMemoryGb;
             set => SetProperty(ref _usedMemoryGb, value);
         }
@@ -402,7 +445,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 已使用内存百分比
         /// </summary>
-        public float UsedMemoryPercentage {
+        public float UsedMemoryPercentage
+        {
             get => _usedMemoryPercentage;
             set => SetProperty(ref _usedMemoryPercentage, value);
         }
@@ -411,14 +455,16 @@ namespace JayTom.Dws.Client.Models {
     /// <summary>
     /// 网络信息类
     /// </summary>
-    public class NetworkInfoModel : BindableBase {
+    public class NetworkInfoModel : BindableBase
+    {
         private string? _ipAddress;
         private string? _macAddress;
 
         /// <summary>
         /// IP 地址
         /// </summary>
-        public string? IpAddress {
+        public string? IpAddress
+        {
             get => _ipAddress;
             set => SetProperty(ref _ipAddress, value);
         }
@@ -426,7 +472,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// MAC 地址
         /// </summary>
-        public string? MacAddress {
+        public string? MacAddress
+        {
             get => _macAddress;
             set => SetProperty(ref _macAddress, value);
         }
@@ -462,7 +509,8 @@ namespace JayTom.Dws.Client.Models {
     /// <summary>
     /// 本地连接信息类
     /// </summary>
-    public class LocalNetworkConnectionInfoModel : BindableBase {
+    public class LocalNetworkConnectionInfoModel : BindableBase
+    {
         private string _connectionName = string.Empty;
         private long _uploadSpeed;
         private long _downloadSpeed;
@@ -470,7 +518,8 @@ namespace JayTom.Dws.Client.Models {
         private bool _isConnection;
         private NetworkType _type = NetworkType.Unknown;
 
-        public bool IsConnection {
+        public bool IsConnection
+        {
             get => _isConnection;
             set => SetProperty(ref _isConnection, value);
         }
@@ -478,7 +527,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 连接名称
         /// </summary>
-        public string ConnectionName {
+        public string ConnectionName
+        {
             get => _connectionName;
             set => SetProperty(ref _connectionName, value);
         }
@@ -486,7 +536,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 上传速率
         /// </summary>
-        public long UploadSpeed {
+        public long UploadSpeed
+        {
             get => _uploadSpeed;
             set => SetProperty(ref _uploadSpeed, value);
         }
@@ -494,7 +545,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 下载速率
         /// </summary>
-        public long DownloadSpeed {
+        public long DownloadSpeed
+        {
             get => _downloadSpeed;
             set => SetProperty(ref _downloadSpeed, value);
         }
@@ -502,7 +554,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 速度
         /// </summary>
-        public long Speed {
+        public long Speed
+        {
             get => _speed;
             set => SetProperty(ref _speed, value);
         }
@@ -510,13 +563,15 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 网络类型
         /// </summary>
-        public NetworkType Type {
+        public NetworkType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
     }
 
-    public enum NetworkType {
+    public enum NetworkType
+    {
 
         /// <summary>
         /// 以太网

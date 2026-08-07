@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.Models.AppSettingModel {
+namespace JayTom.Dws.Client.Models.AppSettingModel
+{
 
-    public class SyncSettingsModel : BindableBase {
+    public class SyncSettingsModel : BindableBase
+    {
         private string _url = string.Empty;
         private bool _isUseAlgorithmSync;
         private bool _isUseApiSync;
@@ -34,7 +36,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
             new SettingsSyncItemInfoModel {DisplayName ="供包台模式配置同步:",Value = "IsUseSupplyCounterSync"},
         };
 
-        public bool IsUseSyncSettings {
+        public bool IsUseSyncSettings
+        {
             get => _isUseSyncSettings;
             set => SetProperty(ref _isUseSyncSettings, value);
         }
@@ -42,7 +45,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 同步的 URL。
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -50,7 +54,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用算法配置同步。
         /// </summary>
-        public bool IsUseAlgorithmSync {
+        public bool IsUseAlgorithmSync
+        {
             get => _isUseAlgorithmSync;
             set => SetProperty(ref _isUseAlgorithmSync, value);
         }
@@ -58,7 +63,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用 API 接口配置同步。
         /// </summary>
-        public bool IsUseApiSync {
+        public bool IsUseApiSync
+        {
             get => _isUseApiSync;
             set => SetProperty(ref _isUseApiSync, value);
         }
@@ -66,7 +72,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用存图配置同步。
         /// </summary>
-        public bool IsUseImageStorageSync {
+        public bool IsUseImageStorageSync
+        {
             get => _isUseImageStorageSync;
             set => SetProperty(ref _isUseImageStorageSync, value);
         }
@@ -74,7 +81,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用过滤配置同步。
         /// </summary>
-        public bool IsUseFilterSync {
+        public bool IsUseFilterSync
+        {
             get => _isUseFilterSync;
             set => SetProperty(ref _isUseFilterSync, value);
         }
@@ -82,7 +90,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用内容输入配置同步。
         /// </summary>
-        public bool IsUseContentInputSync {
+        public bool IsUseContentInputSync
+        {
             get => _isUseContentInputSync;
             set => SetProperty(ref _isUseContentInputSync, value);
         }
@@ -90,7 +99,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否组包配置同步。
         /// </summary>
-        public bool IsUsePackagingSync {
+        public bool IsUsePackagingSync
+        {
             get => _isUsePackagingSync;
             set => SetProperty(ref _isUsePackagingSync, value);
         }
@@ -98,7 +108,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用 OCR 配置同步。
         /// </summary>
-        public bool IsUseOcrSync {
+        public bool IsUseOcrSync
+        {
             get => _isUseOcrSync;
             set => SetProperty(ref _isUseOcrSync, value);
         }
@@ -106,7 +117,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用云端配置同步。
         /// </summary>
-        public bool IsUseCloudSync {
+        public bool IsUseCloudSync
+        {
             get => _isUseCloudSync;
             set => SetProperty(ref _isUseCloudSync, value);
         }
@@ -114,17 +126,20 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用空间清理配置同步。
         /// </summary>
-        public bool IsUseSpaceCleaningSync {
+        public bool IsUseSpaceCleaningSync
+        {
             get => _isUseSpaceCleaningSync;
             set => SetProperty(ref _isUseSpaceCleaningSync, value);
         }
 
-        public ObservableCollection<SettingsSyncItemInfoModel> PackageSortingSyncItems {
+        public ObservableCollection<SettingsSyncItemInfoModel> PackageSortingSyncItems
+        {
             get => _packageSortingSyncItems;
             set => SetProperty(ref _packageSortingSyncItems, value);
         }
 
-        public class SettingsSyncItemInfoModel {
+        public class SettingsSyncItemInfoModel
+        {
             public string DisplayName { get; set; } = string.Empty;
             public string Value { get; set; } = string.Empty;
             public bool IsChecked { get; set; }

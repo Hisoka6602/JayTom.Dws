@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration
+{
     /// <summary>
     /// PackageExitLockEditor.xaml 的交互逻辑
     /// </summary>
-    public partial class PackageExitLockEditor : UserControl {
-        public PackageExitLockEditor() {
+    public partial class PackageExitLockEditor : UserControl
+    {
+        public PackageExitLockEditor()
+        {
             InitializeComponent();
         }
     }

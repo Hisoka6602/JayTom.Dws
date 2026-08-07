@@ -49,7 +49,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
         private static readonly SemaphoreSlim _enumerateSlim = new(1, 1);
         private static readonly SemaphoreSlim _takePhotoSlim = new(1, 1);
-        private static readonly object _initLock = new();
+        private static readonly System.Threading.Lock _initLock = new();
         private static DaHuaBarCodeReader? _instance;
 
         /// <summary>
@@ -423,14 +423,19 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
             //set stream type 设置码流类型 (一律主码流)
             const EM_STREAM_TYPE streamType = EM_STREAM_TYPE.MAIN;
             var pStream = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(int)));
-            Marshal.StructureToPtr((int)streamType, pStream, true);
-            NETClient.SetDeviceMode(mLoginId, EM_USEDEV_MODE.RECORD_STREAM_TYPE, pStream);
-            //query record file 查询录像文件
-            var ret = NETClient.QueryRecordFile(mLoginId, channelId, EM_QUERY_RECORD_TYPE.ALL, startTime, endTime, null, ref infos, ref fileCount, 5000, false);
-            Console.WriteLine($"{channelId}");
-            Console.WriteLine($"{startTime}--{endTime}");
-            Console.WriteLine($"fileCount:{fileCount}");
-            return (false == ret || fileCount <= 0) ? new KeyValuePair<bool, string>(false, "录像文件不存在") : new KeyValuePair<bool, string>(true, string.Empty);
+            try {
+                Marshal.StructureToPtr((int)streamType, pStream, false);
+                NETClient.SetDeviceMode(mLoginId, EM_USEDEV_MODE.RECORD_STREAM_TYPE, pStream);
+                //query record file 查询录像文件
+                var ret = NETClient.QueryRecordFile(mLoginId, channelId, EM_QUERY_RECORD_TYPE.ALL, startTime, endTime, null, ref infos, ref fileCount, 5000, false);
+                Console.WriteLine($"{channelId}");
+                Console.WriteLine($"{startTime}--{endTime}");
+                Console.WriteLine($"fileCount:{fileCount}");
+                return (false == ret || fileCount <= 0) ? new KeyValuePair<bool, string>(false, "录像文件不存在") : new KeyValuePair<bool, string>(true, string.Empty);
+            }
+            finally {
+                Marshal.FreeHGlobal(pStream);
+            }
         }
 
         //实时抓图(一张)

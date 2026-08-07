@@ -180,7 +180,7 @@ namespace JayTom.Dws.Plugin.Tcp {
                 return byteArray;
             }
             catch (Exception e) {
-                return Array.Empty<byte>();
+                return [];
             }
         }
     }

@@ -8,14 +8,20 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.ApiDto;
 
-namespace JayTom.Dws.Client.Converters.ApiConverter {
+namespace JayTom.Dws.Client.Converters.ApiConverter
+{
 
-    public class SearchDirectionToBooleanConverter : IValueConverter {
+    public class SearchDirectionToBooleanConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is not null) {
-                if (Enum.TryParse(value.ToString(), out SearchDirection selectedType)) {
-                    if (Enum.TryParse(parameter.ToString(), out SearchDirection result)) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is not null)
+            {
+                if (Enum.TryParse(value.ToString(), out SearchDirection selectedType))
+                {
+                    if (Enum.TryParse(parameter.ToString(), out SearchDirection result))
+                    {
                         return selectedType == result;
                     }
                 }
@@ -24,9 +30,12 @@ namespace JayTom.Dws.Client.Converters.ApiConverter {
             return false;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (Enum.TryParse(parameter.ToString(), out SearchDirection result)) {
-                if (value is true) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (Enum.TryParse(parameter.ToString(), out SearchDirection result))
+            {
+                if (value is true)
+                {
                     return result;
                 }
             }

@@ -56,9 +56,11 @@ using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdat
 using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages {
+namespace JayTom.Dws.Client.ViewModels.Pages
+{
 
-    public class HomeViewModel : BindableBase {
+    public class HomeViewModel : BindableBase
+    {
         private readonly IDialogService _dialogService;
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
@@ -118,12 +120,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         private readonly Task _uiUpdateWorker;
         private BindableBase? _currentViewModel;
 
-        public SnackbarMessageQueue HomeMessageQueue {
+        public SnackbarMessageQueue HomeMessageQueue
+        {
             get => _homeMessageQueue;
             set => SetProperty(ref _homeMessageQueue, value);
         }
 
-        public ObservableCollection<PackageItemModel> PackageItems {
+        public ObservableCollection<PackageItemModel> PackageItems
+        {
             get => _packageItems;
             set => SetProperty(ref _packageItems, value);
         }
@@ -131,7 +135,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// Ocr设置
         /// </summary>
-        public OcrSettingsInfoModel OcrSettingsInfo {
+        public OcrSettingsInfoModel OcrSettingsInfo
+        {
             get => _ocrSettingsInfo;
             set => SetProperty(ref _ocrSettingsInfo, value);
         }
@@ -139,7 +144,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// Ocr显示信息
         /// </summary>
-        public OcrInfoItemModel OcrItemInfo {
+        public OcrInfoItemModel OcrItemInfo
+        {
             get => _ocrItemInfo;
             set => SetProperty(ref _ocrItemInfo, value);
         }
@@ -147,7 +153,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 体积单位
         /// </summary>
-        public VolumeUnit VolumeUnit {
+        public VolumeUnit VolumeUnit
+        {
             get => _volumeUnit;
             set => SetProperty(ref _volumeUnit, value);
         }
@@ -155,7 +162,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 总数
         /// </summary>
-        public int TotalDataCount {
+        public int TotalDataCount
+        {
             get => _totalDataCount;
             set => SetProperty(ref _totalDataCount, value);
         }
@@ -163,7 +171,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 上传数量
         /// </summary>
-        public int UploadedDataCount {
+        public int UploadedDataCount
+        {
             get => _uploadedDataCount;
             set => SetProperty(ref _uploadedDataCount, value);
         }
@@ -171,7 +180,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 异常数量
         /// </summary>
-        public int AbnormalDataCount {
+        public int AbnormalDataCount
+        {
             get => _abnormalDataCount;
             set => SetProperty(ref _abnormalDataCount, value);
         }
@@ -179,7 +189,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 设备运行状态
         /// </summary>
-        public bool RunningStatus {
+        public bool RunningStatus
+        {
             get => _runningStatus;
             set => SetProperty(ref _runningStatus, value);
         }
@@ -187,7 +198,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 开关按钮切换状态
         /// </summary>
-        public bool IsSwitchingState {
+        public bool IsSwitchingState
+        {
             get => _isSwitchingState;
             set => SetProperty(ref _isSwitchingState, value);
         }
@@ -195,7 +207,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 左边的实时视图
         /// </summary>
-        public BindableBase? CurrentViewModel {
+        public BindableBase? CurrentViewModel
+        {
             get => _currentViewModel;
             set => SetProperty(ref _currentViewModel, value);
         }
@@ -205,7 +218,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 条码
         /// </summary>
-        public string BarCode {
+        public string BarCode
+        {
             get => _barCode;
             set => SetProperty(ref _barCode, value);
         }
@@ -213,7 +227,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 重量
         /// </summary>
-        public float Weight {
+        public float Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
@@ -221,7 +236,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 体积
         /// </summary>
-        public float Volume {
+        public float Volume
+        {
             get => _volume;
             set => SetProperty(ref _volume, value);
         }
@@ -229,7 +245,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 长度
         /// </summary>
-        public float Length {
+        public float Length
+        {
             get => _length;
             set => SetProperty(ref _length, value);
         }
@@ -237,7 +254,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 宽度
         /// </summary>
-        public float Width {
+        public float Width
+        {
             get => _width;
             set => SetProperty(ref _width, value);
         }
@@ -245,7 +263,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 高度
         /// </summary>
-        public float Height {
+        public float Height
+        {
             get => _height;
             set => SetProperty(ref _height, value);
         }
@@ -260,7 +279,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             IConfigRepository configRepository,
             ISortingService sortingService,
             IClientLicenseApi clientLicenseApi,
-            IContainer container) {
+            IContainer container)
+        {
             _dialogService = dialogService;
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
@@ -271,53 +291,70 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             _clientLicenseApi = clientLicenseApi;
             _container = container;
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
-            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     BarCode = args?.Barcode ?? "未识别到条码";
                 }, DispatcherPriority.Background);
             };
-            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
+            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list)
+            {
                 //更新现有列表,例如删除相机成员
             };
             _deviceService.VolumeCaptured += DeviceServiceOnVolumeCaptured;
-            _deviceService.DeviceException += async delegate (object? sender, DeviceExceptionEventArgs args) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _deviceService.DeviceException += async delegate (object? sender, DeviceExceptionEventArgs args)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     HomeMessageQueue.Enqueue(args?.ExceptionMessage?.Message ?? string.Empty);
                 }, DispatcherPriority.Background);
 
                 //弹出提示框
             };
-            _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     Weight = args.Weight;
                 }, DispatcherPriority.Background);
             };
             _deviceService.OcrContentRecognized += DeviceServiceOnOcrContentRecognized;
-            _deviceService.BarCodeKeyReceived += async (sender, s) => {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _deviceService.BarCodeKeyReceived += async (sender, s) =>
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     BarCode = s.Barcode;
                 }, DispatcherPriority.Background);
             };
 
-            _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
             };
-            _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("结果输出异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
             };
             //外部数据
-            _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("外部输入异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
             };
             //外部全量数据
-            _externalDataService.ContentInputReceived += async (sender, args) => {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _externalDataService.ContentInputReceived += async (sender, args) =>
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     BarCode = args?.Barcode ?? "未解析到条码";
                     Weight = args?.Weight ?? 0;
                     Length = args?.Length ?? 0;
@@ -326,8 +363,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     Volume = args?.Volume ?? 0;
                 }, DispatcherPriority.Background);
             };
-            _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args) {
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+            _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     Length = (float)args.Length;
                     Width = (float)args.Width;
                     Height = (float)args.Height;
@@ -335,15 +374,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }, DispatcherPriority.Background);
             };
             //分拣
-            _sortingService.HeartbeatError += delegate (object? sender, Exception exception) {
+            _sortingService.HeartbeatError += delegate (object? sender, Exception exception)
+            {
                 HomeMessageQueue.Enqueue($"{exception.Message}");
             };
-            _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
+            _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args)
+            {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(info => {
-                if (info is { } model) {
-                    _pendingPackageItems.Enqueue(new PackageItemModel() {
+            EventAggregator.Instance.Subscribe<PackageInfo>(info =>
+            {
+                if (info is { } model)
+                {
+                    _pendingPackageItems.Enqueue(new PackageItemModel()
+                    {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
                         ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
                         Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
@@ -355,41 +399,56 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(info => {
-                if (info is { } args) {
-                    Application.Current.Dispatcher.InvokeAsync(() => {
+            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(info =>
+            {
+                if (info is { } args)
+                {
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
                         //更新右边信息
                         BarCode = args?.Barcode ?? "未识别到条码";
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
-                try {
-                    if (info is { } model) {
-                        if (model.SettingsName.Equals("VolumeSettings")) {
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info =>
+            {
+                try
+                {
+                    if (info is { } model)
+                    {
+                        if (model.SettingsName.Equals("VolumeSettings"))
+                        {
                             var configInfoModel = await _configRepository
                                 .FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"))
                                 .ConfigureAwait(false);
-                            if (configInfoModel is not null) {
+                            if (configInfoModel is not null)
+                            {
                                 var volumeSettingsDto =
                                     JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                                if (volumeSettingsDto is not null) {
-                                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                                if (volumeSettingsDto is not null)
+                                {
+                                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                                    {
                                         VolumeUnit = volumeSettingsDto.Unit;
                                     }, DispatcherPriority.Background);
                                 }
                             }
                         }
-                        else if (model.SettingsName.Equals("OcrSettings")) {
+                        else if (model.SettingsName.Equals("OcrSettings"))
+                        {
                             var configInfoModel = await _configRepository
                                 .FirstOrDefault(s => s.ConfigName.Equals("OcrSettings"))
                                 .ConfigureAwait(false);
-                            if (configInfoModel is not null) {
+                            if (configInfoModel is not null)
+                            {
                                 var ocrSettingsDto =
                                     JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
-                                if (ocrSettingsDto is not null) {
-                                    await Application.Current.Dispatcher.InvokeAsync(() => {
-                                        OcrSettingsInfo = new OcrSettingsInfoModel() {
+                                if (ocrSettingsDto is not null)
+                                {
+                                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                                    {
+                                        OcrSettingsInfo = new OcrSettingsInfoModel()
+                                        {
                                             IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
                                             IsUseOcr = ocrSettingsDto.IsUseOcr,
                                             IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
@@ -403,31 +462,41 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                         }
                     }
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     Console.WriteLine(e);
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item => {
-                if (item is { } model) {
+            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item =>
+            {
+                if (item is { } model)
+                {
                     _updateResponseItems.Enqueue(model);
                 }
             });
             //更新云视频上传状态
-            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(item => {
-                if (item is { } model) {
+            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(item =>
+            {
+                if (item is { } model)
+                {
                     _cloudVideoUploadItems.Enqueue(model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
-                if (item is { Type: WindowsActionType.Close }) {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            {
+                if (item is { Type: WindowsActionType.Close })
+                {
                     _cancellationTokenSource.Cancel();
                 }
             });
             //程序启停
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
-                if (item is { } info) {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            {
+                if (item is { } info)
+                {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    {
                         CreateTime = DateTime.Now,
                         Message = $"程序{(info.Status == ApplicationStatus.Start ? "启动" : "停止")}",
                         Type = LogType.Information
@@ -435,16 +504,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 }
             });
             //更新格口
-            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item => {
-                if (item is { } model) {
+            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item =>
+            {
+                if (item is { } model)
+                {
                     _packageExitUpdateItems.Enqueue(model);
                 }
             });
             _uiUpdateWorker = Task.Run(ProcessUiUpdates);
             //远程指令
-            EventAggregator.Instance.Subscribe<RemoteAction>(async item => {
-                if (item is { } remoteAction) {
-                    switch (remoteAction.Command) {
+            EventAggregator.Instance.Subscribe<RemoteAction>(async item =>
+            {
+                if (item is { } remoteAction)
+                {
+                    switch (remoteAction.Command)
+                    {
                         case RemoteCommand.Start:
                         case RemoteCommand.Stop:
                             StartDelegate(remoteAction.Command);
@@ -462,8 +536,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args) {
-            await Application.Current.Dispatcher.BeginInvoke(() => {
+        private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args)
+        {
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
                 //更新右边信息
                 BarCode = args?.BarCode ?? "未识别到条码";
                 OcrItemInfo.ElapsedTime = args?.ElapsedTime ?? 0;
@@ -477,8 +553,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }, DispatcherPriority.Background);
         }
 
-        private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args) {
-            await Application.Current.Dispatcher.BeginInvoke(() => {
+        private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args)
+        {
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
                 Length = (float)args.Length;
                 Width = (float)args.Width;
                 Height = (float)args.Height;
@@ -486,8 +564,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }, DispatcherPriority.Background);
         }
 
-        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args) {
-            await Application.Current.Dispatcher.BeginInvoke(() => {
+        private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args)
+        {
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
                 BarCode = args?.Barcode ?? "未识别到条码";
             }, DispatcherPriority.Background);
         }
@@ -496,28 +576,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
         public ICommand LoadedCommand => new DelegateCommand<Page>(LoadedDelegate);
 
-        private async void LoadedDelegate(Page obj) {
-            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+        private async void LoadedDelegate(Page obj)
+        {
+            EventAggregator.Instance.Publish(new SettingsChangedEvent
+            {
                 SettingsName = "VolumeSettings"
             });
-            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+            EventAggregator.Instance.Publish(new SettingsChangedEvent
+            {
                 SettingsName = "OcrSettings"
             });
 
             var configInfoModel = await _configRepository
                 .FirstOrDefault(f => f.ConfigName.Equals("OtherSettings"))
                 .ConfigureAwait(false);
-            if (configInfoModel is not null) {
-                try {
+            if (configInfoModel is not null)
+            {
+                try
+                {
                     var settingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                    if (settingsDto is not null && settingsDto.IsAutoStart) {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
+                    if (settingsDto is not null && settingsDto.IsAutoStart)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
                             StartDelegate(null);
                         }, DispatcherPriority.Background);
                     }
                 }
-                catch (Exception e) {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                catch (Exception e)
+                {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    {
                         CreateTime = DateTime.Now,
                         Message = e.Message,
                         Type = LogType.Exception
@@ -526,9 +615,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
         }
 
-        private void UploadStatusDelegate(PackageItemModel obj) {
+        private void UploadStatusDelegate(PackageItemModel obj)
+        {
             //判断状态是否已上传再获进行弹窗
-            if (obj.RequestStatus != UploadStatus.NotUploaded) {
+            if (obj.RequestStatus != UploadStatus.NotUploaded)
+            {
                 _dialogService.Show("ApiAccessDialog", new DialogParameters { { "PackageItem", obj } }, null);
             }
         }
@@ -538,17 +629,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         public ICommand StartCommand => new DelegateCommand<object>(StartDelegate);
 
-        private async void StartDelegate(object obj) {
-            await Task.Run(async () => {
+        private async void StartDelegate(object obj)
+        {
+            await Task.Run(async () =>
+            {
                 var command = RemoteCommand.None;
-                if (obj is RemoteCommand remoteCommand) {
+                if (obj is RemoteCommand remoteCommand)
+                {
                     command = remoteCommand;
                 }
-                if (!IsSwitchingState) {
-                    try {
+                if (!IsSwitchingState)
+                {
+                    try
+                    {
                         await _runningSemaphoreSlim.WaitAsync();
                         IsSwitchingState = true;
-                        if (!RunningStatus && (obj is null || command == RemoteCommand.Start)) {
+                        if (!RunningStatus && (obj is null || command == RemoteCommand.Start))
+                        {
                             //效验
                             /*
                             var machineCode = await _computer.GenerateMachineCode();
@@ -620,34 +717,77 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 #endif
 
                             //启动
-                            await _externalDataService.Start();
-                            var (key, value) = await _deviceService.Start();
-                            await _sortingService.Start();
+                            var (externalDataStarted, externalDataMessage) = await _externalDataService.Start();
+                            if (!externalDataStarted)
+                            {
+                                EventAggregator.Instance.Publish(new AppLogInfoModel
+                                {
+                                    CreateTime = DateTime.Now,
+                                    Message = externalDataMessage,
+                                    Type = LogType.Exception
+                                });
+                                HomeMessageQueue.Enqueue(externalDataMessage);
+                                return;
+                            }
+
+                            var (deviceStarted, deviceMessage) = await _deviceService.Start();
+                            if (!deviceStarted)
+                            {
+                                await _externalDataService.Stop();
+                                EventAggregator.Instance.Publish(new AppLogInfoModel
+                                {
+                                    CreateTime = DateTime.Now,
+                                    Message = deviceMessage,
+                                    Type = LogType.Exception
+                                });
+                                HomeMessageQueue.Enqueue(deviceMessage);
+                                return;
+                            }
+
+                            var (sortingStarted, sortingMessage) = await _sortingService.Start();
+                            if (!sortingStarted)
+                            {
+                                await _deviceService.Stop();
+                                await _externalDataService.Stop();
+                                EventAggregator.Instance.Publish(new AppLogInfoModel
+                                {
+                                    CreateTime = DateTime.Now,
+                                    Message = sortingMessage,
+                                    Type = LogType.Exception
+                                });
+                                HomeMessageQueue.Enqueue(sortingMessage);
+                                return;
+                            }
                             //提示
                             //ApplicationStatusChanged
-                            EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                            EventAggregator.Instance.Publish(new ApplicationStatusChanged
+                            {
                                 Status = ApplicationStatus.Start
                             });
                             AppContext.SetData("IsRunning", true);
                         }
-                        else {
+                        else
+                        {
                             //停止
                             HomeMessageQueue.Clear();
                             await _externalDataService.Stop();
                             var (key, value) = await _deviceService.Stop();
                             await _sortingService.Stop();
                             //提示
-                            EventAggregator.Instance.Publish(new ApplicationStatusChanged {
+                            EventAggregator.Instance.Publish(new ApplicationStatusChanged
+                            {
                                 Status = ApplicationStatus.Stop
                             });
                             AppContext.SetData("IsRunning", false);
                         }
 
-                        await Application.Current.Dispatcher.BeginInvoke(() => {
+                        await Application.Current.Dispatcher.BeginInvoke(() =>
+                        {
                             RunningStatus = _deviceService.RunningStatus;
                         }, DispatcherPriority.Background);
                     }
-                    finally {
+                    finally
+                    {
                         _runningSemaphoreSlim.Release();
                         IsSwitchingState = false;
                     }
@@ -658,43 +798,54 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 批量处理主页 UI 更新，避免高频事件持续抢占输入线程。
         /// </summary>
-        private async Task ProcessUiUpdates() {
-            try {
+        private async Task ProcessUiUpdates()
+        {
+            try
+            {
                 using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(33));
-                while (await timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
+                while (await timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false))
+                {
                     if (_pendingPackageItems.IsEmpty &&
                         _updateResponseItems.IsEmpty &&
                         _packageExitUpdateItems.IsEmpty &&
-                        _cloudVideoUploadItems.IsEmpty) {
+                        _cloudVideoUploadItems.IsEmpty)
+                    {
                         continue;
                     }
                     var dispatcher = Application.Current?.Dispatcher;
-                    if (dispatcher is null) {
+                    if (dispatcher is null)
+                    {
                         break;
                     }
-                    await dispatcher.InvokeAsync(() => {
+                    await dispatcher.InvokeAsync(() =>
+                    {
                         var deferredResponses = new List<ApiResponseReceived>();
                         var deferredExits = new List<PackageExitUpdateEvent>();
                         var deferredUploads = new List<CloudVideoUploadMessage>();
                         for (var index = 0;
                              index < 16 && _pendingPackageItems.TryDequeue(out var packageItem);
-                             index++) {
+                             index++)
+                        {
                             TotalDataCount++;
                             packageItem.Num = TotalDataCount;
                             PackageItems.Insert(0, packageItem);
-                            if (PackageItems.Count > 50) {
+                            if (PackageItems.Count > 50)
+                            {
                                 PackageItems.RemoveAt(PackageItems.Count - 1);
                             }
                         }
 
                         for (var index = 0;
                              index < 32 && _updateResponseItems.TryDequeue(out var updateResponse);
-                             index++) {
+                             index++)
+                        {
                             var packageItem = PackageItems.FirstOrDefault(item =>
                                 item.Barcode.Equals(updateResponse.Barcode) &&
                                 item.ScanTime.Equals(updateResponse.ScanTime));
-                            if (packageItem is null) {
-                                if (DateTime.Now - updateResponse.ScanTime < TimeSpan.FromSeconds(10)) {
+                            if (packageItem is null)
+                            {
+                                if (DateTime.Now - updateResponse.ScanTime < TimeSpan.FromSeconds(10))
+                                {
                                     deferredResponses.Add(updateResponse);
                                 }
                                 continue;
@@ -702,22 +853,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                             var nextStatus = updateResponse.UploadResponse?.IsSuccess == true
                                 ? UploadStatus.Succeeded
                                 : UploadStatus.Failed;
-                            if (packageItem.RequestStatus != nextStatus) {
-                                if (packageItem.RequestStatus == UploadStatus.Succeeded) {
+                            if (packageItem.RequestStatus != nextStatus)
+                            {
+                                if (packageItem.RequestStatus == UploadStatus.Succeeded)
+                                {
                                     UploadedDataCount = Math.Max(0, UploadedDataCount - 1);
                                 }
-                                else if (packageItem.RequestStatus == UploadStatus.Failed) {
+                                else if (packageItem.RequestStatus == UploadStatus.Failed)
+                                {
                                     AbnormalDataCount = Math.Max(0, AbnormalDataCount - 1);
                                 }
                                 packageItem.RequestStatus = nextStatus;
-                                if (nextStatus == UploadStatus.Succeeded) {
+                                if (nextStatus == UploadStatus.Succeeded)
+                                {
                                     UploadedDataCount++;
                                 }
-                                else {
+                                else
+                                {
                                     AbnormalDataCount++;
                                 }
                             }
-                            packageItem.UploadInfo = new UploadItemModel {
+                            packageItem.UploadInfo = new UploadItemModel
+                            {
                                 DurationInSeconds = updateResponse.UploadResponse?.Duration ?? 0,
                                 ExceptionMessage = updateResponse.UploadResponse?.ExceptionMsg ?? string.Empty,
                                 InterfaceParameters = updateResponse.UploadResponse?.ApiParameters ?? string.Empty,
@@ -732,18 +889,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                         for (var index = 0;
                              index < 32 && _packageExitUpdateItems.TryDequeue(out var exitInfo);
-                             index++) {
+                             index++)
+                        {
                             var packageItem =
                                 PackageItems.FirstOrDefault(item => item.TimestampedGuid.Equals(exitInfo.Timestamp));
-                            if (packageItem is null) {
-                                if (DateTime.Now - exitInfo.CreateTime < TimeSpan.FromSeconds(20)) {
+                            if (packageItem is null)
+                            {
+                                if (DateTime.Now - exitInfo.CreateTime < TimeSpan.FromSeconds(20))
+                                {
                                     deferredExits.Add(exitInfo);
                                 }
                                 continue;
                             }
-                            if (packageItem.PackageExitStatus is PackageExitStatus.None or PackageExitStatus.Normal) {
+                            if (packageItem.PackageExitStatus is PackageExitStatus.None or PackageExitStatus.Normal)
+                            {
                                 packageItem.ExitName = exitInfo.ExitName;
-                                packageItem.PackageExitStatus = exitInfo.InstructionType switch {
+                                packageItem.PackageExitStatus = exitInfo.InstructionType switch
+                                {
                                     InstructionType.SignalCallback => PackageExitStatus.Normal,
                                     InstructionType.PackageException => PackageExitStatus.Abnormal,
                                     InstructionType.PackageExceptionEx => PackageExitStatus.Abnormal,
@@ -754,34 +916,42 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
 
                         for (var index = 0;
                              index < 32 && _cloudVideoUploadItems.TryDequeue(out var uploadInfo);
-                             index++) {
+                             index++)
+                        {
                             var packageItem = PackageItems.FirstOrDefault(item =>
                                 item.Barcode.Equals(uploadInfo.Barcode) &&
                                 item.ScanTime.Equals(uploadInfo.ScanTime));
-                            if (packageItem is null) {
-                                if (DateTime.Now - uploadInfo.ScanTime < TimeSpan.FromSeconds(10)) {
+                            if (packageItem is null)
+                            {
+                                if (DateTime.Now - uploadInfo.ScanTime < TimeSpan.FromSeconds(10))
+                                {
                                     deferredUploads.Add(uploadInfo);
                                 }
                                 continue;
                             }
                             packageItem.IsUploadedToCloudVideo = uploadInfo.IsSuccessful;
                         }
-                        foreach (var response in deferredResponses) {
+                        foreach (var response in deferredResponses)
+                        {
                             _updateResponseItems.Enqueue(response);
                         }
-                        foreach (var exit in deferredExits) {
+                        foreach (var exit in deferredExits)
+                        {
                             _packageExitUpdateItems.Enqueue(exit);
                         }
-                        foreach (var upload in deferredUploads) {
+                        foreach (var upload in deferredUploads)
+                        {
                             _cloudVideoUploadItems.Enqueue(upload);
                         }
                     }, DispatcherPriority.Background);
                 }
             }
-            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested) {
+            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+            {
                 //应用关闭时正常退出。
             }
-            catch (Exception exception) {
+            catch (Exception exception)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error(exception, "主页 UI 更新任务异常");
             }
         }
@@ -791,9 +961,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         public ICommand ClearCountCommand => new DelegateCommand<object>(ClearCountDelegate);
 
-        private async void ClearCountDelegate(object obj) {
-            await Application.Current.Dispatcher.BeginInvoke(() => {
-                if (_deviceService.RunningStatus) {
+        private async void ClearCountDelegate(object obj)
+        {
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                if (_deviceService.RunningStatus)
+                {
                     HomeMessageQueue.Enqueue("请先停止运行再清空");
                     return;
                 }

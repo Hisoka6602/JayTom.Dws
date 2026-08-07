@@ -10,20 +10,33 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Windows.Threading;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class RealTimeLogViewModel : BindableBase {
+    public class RealTimeLogViewModel : BindableBase
+    {
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         /// <summary>
         /// 待显示日志的有界缓冲队列。
         /// </summary>
-        private readonly ConcurrentQueue<BaseLogItemModel> _pendingLogs = new();
+        private readonly Queue<BaseLogItemModel> _pendingLogs = new(500);
+        /// <summary>
+        /// 待显示日志队列同步锁。
+        /// </summary>
+        private readonly System.Threading.Lock _pendingLogsLock = new();
+        /// <summary>
+        /// 日志批量刷新信号。
+        /// </summary>
+        private readonly SemaphoreSlim _pendingLogSignal = new(0, 1);
+        /// <summary>
+        /// 日志批量刷新信号是否已经置位。
+        /// </summary>
+        private int _pendingLogSignalArmed;
         /// <summary>
         /// 日志刷新任务取消源。
         /// </summary>
@@ -33,22 +46,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         private readonly Task _logUpdateWorker;
 
-        public RealTimeLogViewModel() {
+        public RealTimeLogViewModel()
+        {
             //相机日志
-            EventAggregator.Instance.Subscribe<CameraLogInfoModel>(item => {
-                if (item is CameraLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<CameraLogInfoModel>(item =>
+            {
+                if (item is CameraLogInfoModel model)
+                {
                     //添加
 
                     OnAddLog(model.CreateTime, $"[相机]-{model.Message}");
                 }
             });
             //分拣日志
-            EventAggregator.Instance.Subscribe<SortingLogInfoModel>(item => {
-                if (item is SortingLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<SortingLogInfoModel>(item =>
+            {
+                if (item is SortingLogInfoModel model)
+                {
                     //添加
                     var type = string.Empty;
-                    if (model.CommunicationType is not null) {
-                        type = model.CommunicationType switch {
+                    if (model.CommunicationType is not null)
+                    {
+                        type = model.CommunicationType switch
+                        {
                             CommunicationType.Receive => "(接收)",
                             CommunicationType.Send => "(发送)",
                             _ => type
@@ -58,43 +78,55 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                 }
             });
             //称重日志队列
-            EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(item => {
-                if (item is WeighingLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(item =>
+            {
+                if (item is WeighingLogInfoModel model)
+                {
                     //添加
 
                     OnAddLog(model.CreateTime, $"[称重]-{model.Message}");
                 }
             });
             //体积日志队列
-            EventAggregator.Instance.Subscribe<VolumeLogInfoModel>(item => {
-                if (item is VolumeLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<VolumeLogInfoModel>(item =>
+            {
+                if (item is VolumeLogInfoModel model)
+                {
                     //添加
 
                     OnAddLog(model.CreateTime, $"[体积]-{model.Message}");
                 }
             });
             //Api日志队列
-            EventAggregator.Instance.Subscribe<ApiLogInfoModel>(item => {
-                if (item is ApiLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<ApiLogInfoModel>(item =>
+            {
+                if (item is ApiLogInfoModel model)
+                {
                     //添加
                     OnAddLog(model.CreateTime, $"[Api]-{($"Url:{model.Url}\n耗时:{model.Duration * 1000:F2}ms")}");
                 }
             });
             //Ocr日志
-            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(item => {
-                if (item is OcrLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(item =>
+            {
+                if (item is OcrLogInfoModel model)
+                {
                     //添加
                     OnAddLog(model.CreateTime, $"[Ocr]-{model.Message}");
                 }
             });
-            EventAggregator.Instance.Subscribe<InputLogInfoModel>(item => {
-                if (item is InputLogInfoModel model) {
+            EventAggregator.Instance.Subscribe<InputLogInfoModel>(item =>
+            {
+                if (item is InputLogInfoModel model)
+                {
                     //添加
                     OnAddLog(model.CreateTime, $"[输入]-{model.Message}");
                 }
             });
-            EventAggregator.Instance.Subscribe<JayTom.Dws.Client.EventMediators.WindowsAction>(item => {
-                if (item is { Type: JayTom.Dws.Client.EventMediators.WindowsActionType.Close }) {
+            EventAggregator.Instance.Subscribe<JayTom.Dws.Client.EventMediators.WindowsAction>(item =>
+            {
+                if (item is { Type: JayTom.Dws.Client.EventMediators.WindowsActionType.Close })
+                {
                     _cancellationTokenSource.Cancel();
                 }
             });
@@ -116,64 +148,122 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             });*/
         }
 
-        public ObservableCollection<BaseLogItemModel> LogItems {
+        public ObservableCollection<BaseLogItemModel> LogItems
+        {
             get => _logItems;
             set => SetProperty(ref _logItems, value);
         }
 
-        public void OnAddLog(DateTime createTime, string message) {
-            _pendingLogs.Enqueue(new BaseLogItemModel {
-                CreateTime = createTime,
-                Message = message
-            });
-            while (_pendingLogs.Count > 500 && _pendingLogs.TryDequeue(out _)) {
-                //日志突发时丢弃最旧的待显示项，避免阻塞主界面。
+        public void OnAddLog(DateTime createTime, string message)
+        {
+            lock (_pendingLogsLock)
+            {
+                if (_pendingLogs.Count >= 500)
+                {
+                    //日志突发时丢弃最旧的待显示项，避免阻塞主界面。
+                    _pendingLogs.Dequeue();
+                }
+                _pendingLogs.Enqueue(new BaseLogItemModel
+                {
+                    CreateTime = createTime,
+                    Message = message
+                });
             }
+
+            SignalPendingLogs();
         }
 
         /// <summary>
         /// 批量刷新实时日志，限制每帧对 UI 集合的修改数量。
         /// </summary>
-        private async Task ProcessPendingLogs() {
-            try {
-                using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
-                while (await timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
-                    if (_pendingLogs.IsEmpty) {
-                        continue;
-                    }
+        private async Task ProcessPendingLogs()
+        {
+            try
+            {
+                var cancellationToken = _cancellationTokenSource.Token;
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await _pendingLogSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    Interlocked.Exchange(ref _pendingLogSignalArmed, 0);
+                    await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken).ConfigureAwait(false);
+
                     var batch = new List<BaseLogItemModel>(32);
-                    while (batch.Count < 32 && _pendingLogs.TryDequeue(out var logItem)) {
-                        batch.Add(logItem);
+                    lock (_pendingLogsLock)
+                    {
+                        while (batch.Count < 32 && _pendingLogs.Count > 0)
+                        {
+                            batch.Add(_pendingLogs.Dequeue());
+                        }
                     }
+
                     var dispatcher = System.Windows.Application.Current?.Dispatcher;
-                    if (dispatcher is null) {
+                    if (dispatcher is null)
+                    {
                         break;
                     }
-                    await dispatcher.InvokeAsync(() => {
-                        foreach (var logItem in batch) {
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var logItem in batch)
+                        {
                             LogItems.Insert(0, logItem);
                         }
-                        while (LogItems.Count > 100) {
+                        while (LogItems.Count > 100)
+                        {
                             LogItems.RemoveAt(LogItems.Count - 1);
                         }
                     }, DispatcherPriority.Background);
+
+                    if (HasPendingLogs())
+                    {
+                        SignalPendingLogs();
+                    }
                 }
             }
-            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested) {
+            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+            {
                 //应用关闭时正常退出。
             }
-            catch (Exception exception) {
+            catch (Exception exception)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error(exception, "实时日志 UI 更新任务异常");
             }
         }
 
-        public ICommand ClearLogCommand {
+        public ICommand ClearLogCommand
+        {
             get => new DelegateCommand<object>(ClearLogDelegate);
         }
 
-        private void ClearLogDelegate(object obj) {
+        private void ClearLogDelegate(object obj)
+        {
             LogItems.Clear();
-            _pendingLogs.Clear();
+            lock (_pendingLogsLock)
+            {
+                _pendingLogs.Clear();
+            }
+        }
+
+        /// <summary>
+        /// 判断是否仍有待显示日志。
+        /// </summary>
+        /// <returns>日志队列非空时返回 <see langword="true"/>。</returns>
+        private bool HasPendingLogs()
+        {
+            lock (_pendingLogsLock)
+            {
+                return _pendingLogs.Count > 0;
+            }
+        }
+
+        /// <summary>
+        /// 置位日志刷新信号，并合并高频重复通知。
+        /// </summary>
+        private void SignalPendingLogs()
+        {
+            if (Interlocked.Exchange(ref _pendingLogSignalArmed, 1) == 0)
+            {
+                _pendingLogSignal.Release();
+            }
         }
     }
 }

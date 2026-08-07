@@ -686,11 +686,11 @@ namespace JayTom.Dws.Camera {
                         Image = bitmap
                     };
                     if (bars is { Length: > 0 }) {
-                        barcodeScannedEventArgs.BarCodes = bars.Select(s => new BarcodeInfo {
+                        barcodeScannedEventArgs.BarCodes = [.. bars.Select(s => new BarcodeInfo {
                             Barcode = s.BarcodeText,
                             BarcodeRegion = s.LocalizationResult.ResultPoints?.ToList(),
                             BarcodeType = s.LocalizationResult.BarcodeFormatString
-                        }).ToList();
+                        })];
                         barcodeScannedEventArgs.RecognitionTime = elapsedMilliseconds;
                     }
                     OnBarcodeScanned(barcodeScannedEventArgs);
@@ -789,27 +789,35 @@ namespace JayTom.Dws.Camera {
         }
 
         private static byte[] GetImageData(Bitmap bitmap) {
-            Rectangle rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+            Rectangle rect = new(0, 0, bitmap.Width, bitmap.Height);
             BitmapData bmpData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, bitmap.PixelFormat);
-
-            int bytesPerPixel = Bitmap.GetPixelFormatSize(bmpData.PixelFormat) / 8;
-            int bufferSize = bmpData.Stride * bitmap.Height;
-            byte[] buffer = new byte[bufferSize];
-            Marshal.Copy(bmpData.Scan0, buffer, 0, bufferSize);
-
-            bitmap.UnlockBits(bmpData);
-
-            return buffer;
+            try {
+                var stride = Math.Abs(bmpData.Stride);
+                var buffer = new byte[stride * bitmap.Height];
+                for (var row = 0; row < bitmap.Height; row++) {
+                    Marshal.Copy(
+                        IntPtr.Add(bmpData.Scan0, row * bmpData.Stride),
+                        buffer,
+                        row * stride,
+                        stride);
+                }
+                return buffer;
+            }
+            finally {
+                bitmap.UnlockBits(bmpData);
+            }
         }
 
         // 获取位图的步长（stride）
         private static int GetStride(Bitmap bitmap) {
             BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, bitmap.PixelFormat);
-            int stride = bmpData.Stride;
-            bitmap.UnlockBits(bmpData);
-
-            return stride;
+            try {
+                return Math.Abs(bmpData.Stride);
+            }
+            finally {
+                bitmap.UnlockBits(bmpData);
+            }
         }
 
         // 获取位图的像素格式
@@ -830,24 +838,19 @@ namespace JayTom.Dws.Camera {
             // 锁定Bitmap对象的内存区域，并获取其指针
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, bitmap.PixelFormat);
-            IntPtr ptr = bitmapData.Scan0;
+            try {
+                var stride = Math.Abs(bitmapData.Stride);
+                var buffer = new byte[bitmapData.Height * stride];
+                for (var row = 0; row < bitmapData.Height; row++) {
+                    var sourceRow = IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride);
+                    Marshal.Copy(sourceRow, buffer, row * stride, stride);
+                }
 
-            // 计算每行像素需要的字节数
-            int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
-            int stride = bitmapData.Stride;
-
-            // 创建缓冲区，并将Bitmap对象的数据复制到缓冲区
-            int bufferSize = bitmapData.Height * Math.Abs(bitmapData.Stride);
-            byte[] buffer = new byte[bufferSize];
-            Marshal.Copy(ptr, buffer, 0, bufferSize);
-
-            // 解锁Bitmap对象的内存区域
-            bitmap.UnlockBits(bitmapData);
-
-            // 获取像素格式
-            EnumImagePixelFormat pixelFormat = GetImagePixelFormat(bitmap.PixelFormat);
-
-            return (buffer, stride, pixelFormat);
+                return (buffer, stride, GetImagePixelFormat(bitmap.PixelFormat));
+            }
+            finally {
+                bitmap.UnlockBits(bitmapData);
+            }
         }
 
         private static EnumImagePixelFormat GetImagePixelFormat(PixelFormat pixelFormat) {
@@ -865,92 +868,28 @@ namespace JayTom.Dws.Camera {
         }
 
         public static Bitmap FastClone(Bitmap sourceBitmap) {
-            // 创建新的Bitmap对象
-            Bitmap destBitmap = new Bitmap(sourceBitmap.Width, sourceBitmap.Height, sourceBitmap.PixelFormat);
-
-            // 锁定源Bitmap对象的内存区域，并获取其指针
-            BitmapData sourceData = sourceBitmap.LockBits(new Rectangle(0, 0, sourceBitmap.Width, sourceBitmap.Height),
-                ImageLockMode.ReadOnly, sourceBitmap.PixelFormat);
-            IntPtr sourcePtr = sourceData.Scan0;
-
-            // 锁定目标Bitmap对象的内存区域，并获取其指针
-            BitmapData destData = destBitmap.LockBits(new Rectangle(0, 0, destBitmap.Width, destBitmap.Height),
-                ImageLockMode.WriteOnly, destBitmap.PixelFormat);
-            IntPtr destPtr = destData.Scan0;
-
-            // 计算每行像素需要的字节数
-            int bytesPerPixel = Image.GetPixelFormatSize(sourceBitmap.PixelFormat) / 8;
-            int stride = sourceData.Stride;
-
-            // 使用Marshal.Copy方法将源Bitmap对象的数据复制到目标Bitmap对象
-            unsafe {
-                byte* source = (byte*)sourcePtr.ToPointer();
-                byte* dest = (byte*)destPtr.ToPointer();
-                for (int y = 0; y < sourceBitmap.Height; y++) {
-                    // 计算当前行的起始位置
-                    byte* rowSource = source + (y * stride);
-                    byte* rowDest = dest + (y * destData.Stride);
-
-                    // 将当前行的像素数据复制到目标Bitmap对象
-                    Buffer.MemoryCopy(rowSource, rowDest, destData.Stride, stride);
-                }
-            }
-
-            // 解锁源Bitmap对象和目标Bitmap对象的内存区域
-            sourceBitmap.UnlockBits(sourceData);
-            destBitmap.UnlockBits(destData);
-
-            return destBitmap;
+            return sourceBitmap.Clone(
+                new Rectangle(0, 0, sourceBitmap.Width, sourceBitmap.Height),
+                sourceBitmap.PixelFormat);
         }
 
         public static unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
+            if (sourceImage is null || thumbnailWidth <= 0 || thumbnailHeight <= 0) {
                 return null;
             }
 
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppArgb);
+            using var graphics = Graphics.FromImage(thumbnail);
+            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
+            graphics.DrawImage(
+                sourceImage,
+                new Rectangle(0, 0, thumbnailWidth, thumbnailHeight),
+                new Rectangle(0, 0, sourceImage.Width, sourceImage.Height),
+                GraphicsUnit.Pixel);
+            return thumbnail;
         }
     }
 }

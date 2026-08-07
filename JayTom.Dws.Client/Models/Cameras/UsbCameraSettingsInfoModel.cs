@@ -6,9 +6,11 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class UsbCameraSettingsInfoModel : BindableBase {
+    public class UsbCameraSettingsInfoModel : BindableBase
+    {
         private int _exposure;
         private Size _resolution;
         private int _brightness;
@@ -46,7 +48,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 曝光度
         /// </summary>
-        public int Exposure {
+        public int Exposure
+        {
             get => _exposure;
             set => SetProperty(ref _exposure, value);
         }
@@ -54,7 +57,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 分辨率
         /// </summary>
-        public Size Resolution {
+        public Size Resolution
+        {
             get => _resolution;
             set => SetProperty(ref _resolution, value);
         }
@@ -62,7 +66,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 亮度
         /// </summary>
-        public int Brightness {
+        public int Brightness
+        {
             get => _brightness;
             set => SetProperty(ref _brightness, value);
         }
@@ -70,7 +75,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 对比度
         /// </summary>
-        public int Contrast {
+        public int Contrast
+        {
             get => _contrast;
             set => SetProperty(ref _contrast, value);
         }
@@ -78,7 +84,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 色调
         /// </summary>
-        public int Hue {
+        public int Hue
+        {
             get => _hue;
             set => SetProperty(ref _hue, value);
         }
@@ -86,7 +93,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 饱和度
         /// </summary>
-        public int Saturation {
+        public int Saturation
+        {
             get => _saturation;
             set => SetProperty(ref _saturation, value);
         }
@@ -94,7 +102,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 锐度
         /// </summary>
-        public int Sharpness {
+        public int Sharpness
+        {
             get => _sharpness;
             set => SetProperty(ref _sharpness, value);
         }
@@ -102,7 +111,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 伽马值
         /// </summary>
-        public int Gamma {
+        public int Gamma
+        {
             get => _gamma;
             set => SetProperty(ref _gamma, value);
         }
@@ -110,7 +120,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 白平衡
         /// </summary>
-        public int WhiteBalance {
+        public int WhiteBalance
+        {
             get => _whiteBalance;
             set => SetProperty(ref _whiteBalance, value);
         }
@@ -118,7 +129,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 背光补偿
         /// </summary>
-        public int BklightComp {
+        public int BklightComp
+        {
             get => _bklightComp;
             set => SetProperty(ref _bklightComp, value);
         }
@@ -126,7 +138,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 增益
         /// </summary>
-        public int Gain {
+        public int Gain
+        {
             get => _gain;
             set => SetProperty(ref _gain, value);
         }
@@ -134,7 +147,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 变焦
         /// </summary>
-        public int Zoom {
+        public int Zoom
+        {
             get => _zoom;
             set => SetProperty(ref _zoom, value);
         }
@@ -142,7 +156,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 对焦
         /// </summary>
-        public int Focus {
+        public int Focus
+        {
             get => _focus;
             set => SetProperty(ref _focus, value);
         }
@@ -150,7 +165,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 光圈
         /// </summary>
-        public int Iris {
+        public int Iris
+        {
             get => _iris;
             set => SetProperty(ref _iris, value);
         }
@@ -158,7 +174,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 水平旋转
         /// </summary>
-        public int Pan {
+        public int Pan
+        {
             get => _pan;
             set => SetProperty(ref _pan, value);
         }
@@ -166,7 +183,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 垂直旋转
         /// </summary>
-        public int Tilt {
+        public int Tilt
+        {
             get => _tilt;
             set => SetProperty(ref _tilt, value);
         }
@@ -174,7 +192,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 翻转
         /// </summary>
-        public int Roll {
+        public int Roll
+        {
             get => _roll;
             set => SetProperty(ref _roll, value);
         }
@@ -182,7 +201,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义曝光度
         /// </summary>
-        public bool IsCustomExposureEnabled {
+        public bool IsCustomExposureEnabled
+        {
             get => _isCustomExposureEnabled;
             set => SetProperty(ref _isCustomExposureEnabled, value);
         }
@@ -190,7 +210,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义亮度
         /// </summary>
-        public bool IsCustomBrightnessEnabled {
+        public bool IsCustomBrightnessEnabled
+        {
             get => _isCustomBrightnessEnabled;
             set => SetProperty(ref _isCustomBrightnessEnabled, value);
         }
@@ -198,7 +219,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义对比度
         /// </summary>
-        public bool IsCustomContrastEnabled {
+        public bool IsCustomContrastEnabled
+        {
             get => _isCustomContrastEnabled;
             set => SetProperty(ref _isCustomContrastEnabled, value);
         }
@@ -206,7 +228,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义色调
         /// </summary>
-        public bool IsCustomHueEnabled {
+        public bool IsCustomHueEnabled
+        {
             get => _isCustomHueEnabled;
             set => SetProperty(ref _isCustomHueEnabled, value);
         }
@@ -214,7 +237,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义饱和度
         /// </summary>
-        public bool IsCustomSaturationEnabled {
+        public bool IsCustomSaturationEnabled
+        {
             get => _isCustomSaturationEnabled;
             set => SetProperty(ref _isCustomSaturationEnabled, value);
         }
@@ -222,7 +246,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义锐度
         /// </summary>
-        public bool IsCustomSharpnessEnabled {
+        public bool IsCustomSharpnessEnabled
+        {
             get => _isCustomSharpnessEnabled;
             set => SetProperty(ref _isCustomSharpnessEnabled, value);
         }
@@ -230,7 +255,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义伽马值
         /// </summary>
-        public bool IsCustomGammaEnabled {
+        public bool IsCustomGammaEnabled
+        {
             get => _isCustomGammaEnabled;
             set => SetProperty(ref _isCustomGammaEnabled, value);
         }
@@ -238,7 +264,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义白平衡
         /// </summary>
-        public bool IsCustomWhiteBalanceEnabled {
+        public bool IsCustomWhiteBalanceEnabled
+        {
             get => _isCustomWhiteBalanceEnabled;
             set => SetProperty(ref _isCustomWhiteBalanceEnabled, value);
         }
@@ -246,7 +273,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义背光补偿
         /// </summary>
-        public bool IsCustomBacklightCompensationEnabled {
+        public bool IsCustomBacklightCompensationEnabled
+        {
             get => _isCustomBacklightCompensationEnabled;
             set => SetProperty(ref _isCustomBacklightCompensationEnabled, value);
         }
@@ -254,7 +282,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义增益
         /// </summary>
-        public bool IsCustomGainEnabled {
+        public bool IsCustomGainEnabled
+        {
             get => _isCustomGainEnabled;
             set => SetProperty(ref _isCustomGainEnabled, value);
         }
@@ -262,7 +291,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义变焦
         /// </summary>
-        public bool IsCustomZoomEnabled {
+        public bool IsCustomZoomEnabled
+        {
             get => _isCustomZoomEnabled;
             set => SetProperty(ref _isCustomZoomEnabled, value);
         }
@@ -270,7 +300,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义对焦
         /// </summary>
-        public bool IsCustomFocusEnabled {
+        public bool IsCustomFocusEnabled
+        {
             get => _isCustomFocusEnabled;
             set => SetProperty(ref _isCustomFocusEnabled, value);
         }
@@ -278,7 +309,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义光圈
         /// </summary>
-        public bool IsCustomApertureEnabled {
+        public bool IsCustomApertureEnabled
+        {
             get => _isCustomApertureEnabled;
             set => SetProperty(ref _isCustomApertureEnabled, value);
         }
@@ -287,7 +319,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// 是否自定义水平旋转
         /// </summary>
 
-        public bool IsCustomHorizontalRotationEnabled {
+        public bool IsCustomHorizontalRotationEnabled
+        {
             get => _isCustomHorizontalRotationEnabled;
             set => SetProperty(ref _isCustomHorizontalRotationEnabled, value);
         }
@@ -295,7 +328,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义垂直旋转
         /// </summary>
-        public bool IsCustomVerticalRotationEnabled {
+        public bool IsCustomVerticalRotationEnabled
+        {
             get => _isCustomVerticalRotationEnabled;
             set => SetProperty(ref _isCustomVerticalRotationEnabled, value);
         }
@@ -303,7 +337,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否自定义翻转
         /// </summary>
-        public bool IsCustomFlipEnabled {
+        public bool IsCustomFlipEnabled
+        {
             get => _isCustomFlipEnabled;
             set => SetProperty(ref _isCustomFlipEnabled, value);
         }

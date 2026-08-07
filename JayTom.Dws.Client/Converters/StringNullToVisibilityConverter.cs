@@ -7,13 +7,18 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class StringNullToVisibilityConverter : IValueConverter {
+    public class StringNullToVisibilityConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is string textValue) {
-                if (string.IsNullOrEmpty(textValue)) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string textValue)
+            {
+                if (string.IsNullOrEmpty(textValue))
+                {
                     return Visibility.Collapsed;
                 }
                 return Visibility.Visible;
@@ -21,7 +26,8 @@ namespace JayTom.Dws.Client.Converters {
             return Visibility.Collapsed;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

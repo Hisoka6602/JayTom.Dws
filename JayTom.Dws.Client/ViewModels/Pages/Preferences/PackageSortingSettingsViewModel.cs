@@ -9,14 +9,17 @@ using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class PackageSortingSettingsViewModel : BindableBase {
+    public class PackageSortingSettingsViewModel : BindableBase
+    {
         private readonly IRegionManager _regionManager;
         private ObservableCollection<MenuItemInfoModel> _packageSortingMenuItems;
         private static bool _isLoaded;
 
-        public PackageSortingSettingsViewModel(IRegionManager regionManager) {
+        public PackageSortingSettingsViewModel(IRegionManager regionManager)
+        {
             _regionManager = regionManager;
             _packageSortingMenuItems = new ObservableCollection<MenuItemInfoModel>()
             {
@@ -142,18 +145,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             };
         }
 
-        public ObservableCollection<MenuItemInfoModel> PackageSortingMenuItems {
+        public ObservableCollection<MenuItemInfoModel> PackageSortingMenuItems
+        {
             get => _packageSortingMenuItems;
             set => SetProperty(ref _packageSortingMenuItems, value);
         }
 
         public ICommand LoadedCommand => new DelegateCommand<Frame>(LoadedDelegate);
 
-        private async void LoadedDelegate(Frame obj) {
-            if (!_isLoaded) {
+        private async void LoadedDelegate(Frame obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    if (!_regionManager.Regions.ContainsRegionWithName("PackageSortingRegion")) {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (!_regionManager.Regions.ContainsRegionWithName("PackageSortingRegion"))
+                    {
                         //创建区域(用于视觉树以外控件)
                         RegionManager.SetRegionName(obj, "PackageSortingRegion");
                         RegionManager.SetRegionManager(obj, _regionManager);
@@ -168,10 +176,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
 
-        private async void MenuClickDelegate(MenuItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!obj.PageClassName.Equals(string.Empty)) {
-                    foreach (var item in PackageSortingMenuItems) {
+        private async void MenuClickDelegate(MenuItemInfoModel obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (!obj.PageClassName.Equals(string.Empty))
+                {
+                    foreach (var item in PackageSortingMenuItems)
+                    {
                         item.IsSelected = false;
                     }
 

@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
 
-    public class WeighingLogItemModel : BaseLogItemModel {
+    public class WeighingLogItemModel : BaseLogItemModel
+    {
         private string? _source;
         private CommunicationType? _communicationType;
         private DataFormatType? _dataFormatType;
@@ -17,7 +19,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 源数据
         /// </summary>
-        public string? Source {
+        public string? Source
+        {
             get => _source;
             set => SetProperty(ref _source, value);
         }
@@ -25,7 +28,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 通讯类型
         /// </summary>
-        public CommunicationType? CommunicationType {
+        public CommunicationType? CommunicationType
+        {
             get => _communicationType;
             set => SetProperty(ref _communicationType, value);
         }
@@ -33,7 +37,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 数据类型
         /// </summary>
-        public DataFormatType? DataFormatType {
+        public DataFormatType? DataFormatType
+        {
             get => _dataFormatType;
             set => SetProperty(ref _dataFormatType, value);
         }
@@ -41,7 +46,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 数据来源类型
         /// </summary>
-        public DataSourceType? DataSourceType {
+        public DataSourceType? DataSourceType
+        {
             get => _dataSourceType;
             set => SetProperty(ref _dataSourceType, value);
         }
@@ -49,7 +55,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 格式化后的重量
         /// </summary>
-        public double FormatWeight {
+        public double FormatWeight
+        {
             get => _formatWeight;
             set => SetProperty(ref _formatWeight, value);
         }

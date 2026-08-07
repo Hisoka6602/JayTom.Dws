@@ -10,10 +10,13 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
 {
 
-    public class CommunicationsTypeFontConverter : IValueConverter {
+    public class CommunicationsTypeFontConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            return value switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value switch
+            {
                 CommunicationsType.Ethernet => "\xe631",
                 CommunicationsType.SerialPort => "\xe62c",
                 CommunicationsType.TCP => "\xe62f",
@@ -23,8 +26,10 @@ namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
             };
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            return value switch {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value switch
+            {
                 CommunicationsType.Ethernet => "\xe631",
                 CommunicationsType.SerialPort => "\xe62c",
                 CommunicationsType.TCP => "\xe62f",

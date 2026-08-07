@@ -67,23 +67,23 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         private int _loadedSize = 0;
 
         private readonly DaHuatechNVR.FastForwardSpeed[] _fastForwardSpeeds =
-            { DaHuatechNVR.FastForwardSpeed.X2,
+            [ DaHuatechNVR.FastForwardSpeed.X2,
                 DaHuatechNVR.FastForwardSpeed.X4,
                 DaHuatechNVR.FastForwardSpeed.X8,
                 DaHuatechNVR.FastForwardSpeed.X16,
                 DaHuatechNVR.FastForwardSpeed.Normal
-            };
+            ];
 
         private int _currentSpeedIndex = 0;
 
         // 定义慢放速度数组
-        private readonly DaHuatechNVR.SlowSpeed[] _slowMotionSpeeds = {
+        private readonly DaHuatechNVR.SlowSpeed[] _slowMotionSpeeds = [
             DaHuatechNVR.SlowSpeed.X2,
             DaHuatechNVR.SlowSpeed.X4,
             DaHuatechNVR.SlowSpeed.X8,
             DaHuatechNVR.SlowSpeed.X16,
             DaHuatechNVR.SlowSpeed.Normal,
-        };
+        ];
 
         // 当前慢放速度索引
         private int _currentSlowMotionSpeedIndex = 0;

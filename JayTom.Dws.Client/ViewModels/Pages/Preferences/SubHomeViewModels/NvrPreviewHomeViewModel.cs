@@ -23,9 +23,11 @@ using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
 using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
+{
 
-    public class NvrPreviewHomeViewModel : BindableBase {
+    public class NvrPreviewHomeViewModel : BindableBase
+    {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IConfigRepository _configRepository;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
@@ -33,23 +35,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         private BaseDaHuatech? _baseDaHuatech;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
 
-        public ObservableCollection<NvrPreviewViewItemInfo> NvrPreviewViewItems {
+        public ObservableCollection<NvrPreviewViewItemInfo> NvrPreviewViewItems
+        {
             get => _nvrPreviewViewItems;
             set => SetProperty(ref _nvrPreviewViewItems, value);
         }
 
         public NvrPreviewHomeViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
             IConfigRepository configRepository,
-            IIpcNvrConfigRepository ipcNvrConfigRepository) {
+            IIpcNvrConfigRepository ipcNvrConfigRepository)
+        {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _configRepository = configRepository;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
 
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(async item => {
-                if (item is { } info) {
-                    if (info.Status == EventMediators.ApplicationStatus.Start) {
-                        try {
+            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(async item =>
+            {
+                if (item is { } info)
+                {
+                    if (info.Status == EventMediators.ApplicationStatus.Start)
+                    {
+                        try
+                        {
                             await _runningSemaphoreSlim.WaitAsync();
                             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
                             await BaseDaHuatech.EnumDevices();
@@ -58,56 +66,68 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                             var bindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
                             var infoModels = bindingInfoModels.Where(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath))
                                 .ToList();
-                            foreach (var model in infoModels) {
-                                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                            foreach (var model in infoModels)
+                            {
+                                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                                {
                                     var serialNumber = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
                                             f.IpAddress.Equals(model.IpAddress) &&
                                             f.Password.Equals(model.Password))
                                         ?.SerialNumber ?? string.Empty;
-                                    var previewViewItemInfo = new NvrPreviewViewItemInfo() {
+                                    var previewViewItemInfo = new NvrPreviewViewItemInfo()
+                                    {
                                         SerialNumber = serialNumber,
                                         ChannelId = model.Channel,
-                                        IncreaseZoomCommand = new DelegateCommand<object>(sub => {
+                                        IncreaseZoomCommand = new DelegateCommand<object>(sub =>
+                                        {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                                             _baseDaHuatech?.AdjustZoomContinuouslyAsync(serialNumber,
                                                 model.Channel,
                                                 true, isStart);
                                         }),
-                                        DecreaseZoomCommand = new DelegateCommand<object>(sub => {
+                                        DecreaseZoomCommand = new DelegateCommand<object>(sub =>
+                                        {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                                             _baseDaHuatech?.AdjustZoomContinuouslyAsync(serialNumber,
                                                 model.Channel,
                                                 false, isStart);
                                         }),
-                                        IncreaseFocusCommand = new DelegateCommand<object>(sub => {
+                                        IncreaseFocusCommand = new DelegateCommand<object>(sub =>
+                                        {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                                             _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(serialNumber,
                                                 model.Channel,
                                                 true, isStart);
                                         }),
-                                        DecreaseFocusCommand = new DelegateCommand<object>(sub => {
+                                        DecreaseFocusCommand = new DelegateCommand<object>(sub =>
+                                        {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                                             _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(serialNumber,
                                                 model.Channel,
                                                 false, isStart);
                                         }),
-                                        AutoFocusCommand = new DelegateCommand<object>(sub => {
+                                        AutoFocusCommand = new DelegateCommand<object>(sub =>
+                                        {
                                             _baseDaHuatech?.AutoFocusAsync(serialNumber,
                                                 model.Channel);
                                         }),
                                         ToggleImageSizeCommand = ToggleImageSizeCommand
                                     };
-                                    if (previewViewItemInfo.VideoFrame is not null) {
+                                    if (previewViewItemInfo.VideoFrame is not null)
+                                    {
                                         var ipcNvrConfigInfoModel = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
                                             f.IpAddress.Equals(model.IpAddress) &&
                                             f.Password.Equals(model.Password));
-                                        if (ipcNvrConfigInfoModel is not null) {
+                                        if (ipcNvrConfigInfoModel is not null)
+                                        {
                                             var (key, value) = await _baseDaHuatech.LogIn(ipcNvrConfigInfoModel.SerialNumber, model.Username, model.Password);
-                                            if (key) {
+                                            if (key)
+                                            {
                                                 _baseDaHuatech.RegisterRealtimePreviewCallback(ipcNvrConfigInfoModel.SerialNumber, model.Channel, previewViewItemInfo.RealtimePreviewCallback);
 
                                                 var (b, s) = await _baseDaHuatech.StartRealTimePreview(ipcNvrConfigInfoModel.SerialNumber, model.Channel);
-                                                if (b) {
+                                                if (b)
+                                                {
                                                     previewViewItemInfo.IsShow = true;
                                                 }
                                             }
@@ -118,18 +138,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                                 });
                             }
                         }
-                        finally {
+                        finally
+                        {
                             _runningSemaphoreSlim.Release();
                         }
                     }
-                    else if (info.Status == EventMediators.ApplicationStatus.Stop) {
+                    else if (info.Status == EventMediators.ApplicationStatus.Stop)
+                    {
                         //停止
-                        try {
+                        try
+                        {
                             await _runningSemaphoreSlim.WaitAsync();
                             await Task.Delay(300);
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
                                 var itemInfos = NvrPreviewViewItems.Where(w => w.VideoFrame != null).ToList();
-                                foreach (var itemInfo in itemInfos) {
+                                foreach (var itemInfo in itemInfos)
+                                {
                                     _baseDaHuatech?.StopRealtimePreview(itemInfo.SerialNumber, itemInfo.ChannelId);
                                     itemInfo.Dispose();
                                 }
@@ -137,7 +162,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                                 NvrPreviewViewItems.Clear();
                             });
                         }
-                        finally {
+                        finally
+                        {
                             _runningSemaphoreSlim.Release();
                         }
                     }
@@ -147,14 +173,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
         public ICommand ToggleImageSizeCommand => new DelegateCommand<NvrPreviewViewItemInfo>(ToggleImageSizeDelegate);
 
-        private void ToggleImageSizeDelegate(NvrPreviewViewItemInfo obj) {
-            if (obj.ScreenState == ScreenState.Normal) {
-                foreach (var videoPlayerModel in NvrPreviewViewItems) {
+        private void ToggleImageSizeDelegate(NvrPreviewViewItemInfo obj)
+        {
+            if (obj.ScreenState == ScreenState.Normal)
+            {
+                foreach (var videoPlayerModel in NvrPreviewViewItems)
+                {
                     videoPlayerModel.ScreenState = !videoPlayerModel.Equals(obj) ? ScreenState.Hidden : ScreenState.Maximized;
                 }
             }
-            else {
-                foreach (var videoPlayerModel in NvrPreviewViewItems) {
+            else
+            {
+                foreach (var videoPlayerModel in NvrPreviewViewItems)
+                {
                     videoPlayerModel.ScreenState = ScreenState.Normal;
                 }
             }

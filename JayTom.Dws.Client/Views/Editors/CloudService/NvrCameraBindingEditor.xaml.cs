@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Editors.CloudService {
+namespace JayTom.Dws.Client.Views.Editors.CloudService
+{
     /// <summary>
     /// NvrCameraBindingEditor.xaml 的交互逻辑
     /// </summary>
-    public partial class NvrCameraBindingEditor : UserControl {
-        public NvrCameraBindingEditor() {
+    public partial class NvrCameraBindingEditor : UserControl
+    {
+        public NvrCameraBindingEditor()
+        {
             InitializeComponent();
         }
     }

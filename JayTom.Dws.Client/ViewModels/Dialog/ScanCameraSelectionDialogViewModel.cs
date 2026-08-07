@@ -12,49 +12,60 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Models.Cameras;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog {
+namespace JayTom.Dws.Client.ViewModels.Dialog
+{
 
-    public class ScanCameraSelectionDialogViewModel : BindableBase, IDialogAware {
+    public class ScanCameraSelectionDialogViewModel : BindableBase, IDialogAware
+    {
         private ObservableCollection<CameraFinderItemInfoModel> _cameras = new();
         private CameraFinderItemInfoModel _selectedCamera = new();
 
-        public ObservableCollection<CameraFinderItemInfoModel> Cameras {
+        public ObservableCollection<CameraFinderItemInfoModel> Cameras
+        {
             get => _cameras;
             set => SetProperty(ref _cameras, value);
         }
 
-        public CameraFinderItemInfoModel SelectedCamera {
+        public CameraFinderItemInfoModel SelectedCamera
+        {
             get => _selectedCamera;
             set => SetProperty(ref _selectedCamera, value);
         }
 
-        public bool CanCloseDialog() {
+        public bool CanCloseDialog()
+        {
             return true;
         }
 
-        public void OnDialogClosed() {
+        public void OnDialogClosed()
+        {
         }
 
-        public void OnDialogOpened(IDialogParameters parameters) {
+        public void OnDialogOpened(IDialogParameters parameters)
+        {
             var infoModels = parameters.GetValue<ObservableCollection<CameraFinderItemInfoModel>>("Cameras")?
                 .Where(w => w is { HasBinding: true, BoundType: CameraBindingType.OcrCamera or CameraBindingType.ScannerCamera })
                 ?.ToList();
             Cameras.AddRange(infoModels);
         }
 
-        public ICommand CloseCommand {
+        public ICommand CloseCommand
+        {
             get => new DelegateCommand<object>(CloseDelegate);
         }
 
-        private void CloseDelegate(object obj) {
+        private void CloseDelegate(object obj)
+        {
             RequestClose?.Invoke(new DialogResult(ButtonResult.Cancel));
         }
 
-        public ICommand OkCommand {
+        public ICommand OkCommand
+        {
             get => new DelegateCommand<object>(OkDelegate);
         }
 
-        private void OkDelegate(object obj) {
+        private void OkDelegate(object obj)
+        {
             OnRequestClose(new DialogResult(ButtonResult.OK, new DialogParameters()
             {
                 {"SelectedCamera",SelectedCamera},
@@ -65,7 +76,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public event Action<IDialogResult>? RequestClose;
 
-        protected virtual void OnRequestClose(IDialogResult obj) {
+        protected virtual void OnRequestClose(IDialogResult obj)
+        {
             RequestClose?.Invoke(obj);
         }
     }

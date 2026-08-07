@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Dialog {
+namespace JayTom.Dws.Client.Views.Dialog
+{
     /// <summary>
     /// BulkDeleteAccessDialog.xaml 的交互逻辑
     /// </summary>
-    public partial class BulkDeleteAccessDialog : UserControl {
-        public BulkDeleteAccessDialog() {
+    public partial class BulkDeleteAccessDialog : UserControl
+    {
+        public BulkDeleteAccessDialog()
+        {
             InitializeComponent();
         }
     }

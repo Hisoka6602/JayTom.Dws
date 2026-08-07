@@ -14,9 +14,11 @@ using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
 
-namespace JayTom.Dws.Client.Service.Sorting {
+namespace JayTom.Dws.Client.Service.Sorting
+{
 
-    public interface ISortingService {
+    public interface ISortingService
+    {
 
         /// <summary>
         /// 异常事件
@@ -196,11 +198,13 @@ namespace JayTom.Dws.Client.Service.Sorting {
         void SendPackageCenter(int num, InstructionsAttach attach, CancellationToken token = default);
     }
 
-    public class ExceptionEventArgs : EventArgs {
+    public class ExceptionEventArgs : EventArgs
+    {
         public string ExceptionMessage { get; set; } = string.Empty;
     }
 
-    public class RetryEventArgs : EventArgs {
+    public class RetryEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 失败原因
@@ -218,7 +222,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public List<string> Instructions { get; set; } = new();
     }
 
-    public class PackageInstructionEventArgs : EventArgs {
+    public class PackageInstructionEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 关键字
@@ -241,13 +246,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public string ConnectionName { get; set; } = string.Empty;
     }
 
-    public class LogEventArgs : EventArgs {
+    public class LogEventArgs : EventArgs
+    {
         public string LogContent { get; set; } = string.Empty;
 
         //接收的内容
     }
 
-    public class SortingParam {
+    public class SortingParam
+    {
         public object? Tag { get; set; }
 
         /// <summary>
@@ -344,7 +351,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
     /// <summary>
     /// 执行指令回传类
     /// </summary>
-    public class InstructionReceived {
+    public class InstructionReceived
+    {
 
         /// <summary>
         /// 包裹关联时间戳
@@ -417,7 +425,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public string ConnectionName { get; set; } = string.Empty;
     }
 
-    public class ExceptionSortingReceived {
+    public class ExceptionSortingReceived
+    {
 
         /// <summary>
         /// 条码关联时间戳
@@ -446,7 +455,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public string SortingCode { get; set; } = string.Empty;
     }
 
-    public class SortingExitReceived {
+    public class SortingExitReceived
+    {
 
         /// <summary>
         /// 包裹关联时间戳

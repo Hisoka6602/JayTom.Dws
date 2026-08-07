@@ -1,16 +1,19 @@
 ﻿using Prism.Mvvm;
 using JayTom.Dws.Domain.Dto;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel
+{
 
-    public class ApiTypeInfoModel : BindableBase {
+    public class ApiTypeInfoModel : BindableBase
+    {
         private string _name = string.Empty;
         private ApiType _value = ApiType.None;
 
         /// <summary>
         /// 名称
         /// </summary>
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -18,7 +21,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel {
         /// <summary>
         /// 实际内容
         /// </summary>
-        public ApiType Value {
+        public ApiType Value
+        {
             get => _value;
             set => SetProperty(ref _value, value);
         }

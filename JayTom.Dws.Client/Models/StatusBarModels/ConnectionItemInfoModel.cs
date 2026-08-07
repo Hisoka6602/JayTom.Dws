@@ -5,44 +5,53 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.StatusBarModels {
+namespace JayTom.Dws.Client.Models.StatusBarModels
+{
 
     /// <summary>
     /// 连接信息类
     /// </summary>
-    public class ConnectionItemInfoModel : BindableBase {
+    public class ConnectionItemInfoModel : BindableBase
+    {
         private string _connectionName = string.Empty;
         private ConnectionType _connectionType = ConnectionType.None;
         private ConnectionState _connectionState = ConnectionState.Disconnected;
 
-        public string ConnectionName {
+        public string ConnectionName
+        {
             get => _connectionName;
             set => SetProperty(ref _connectionName, value);
         }
 
-        public ConnectionType ConnectionType {
+        public ConnectionType ConnectionType
+        {
             get => _connectionType;
             set => SetProperty(ref _connectionType, value);
         }
 
-        public ConnectionState ConnectionState {
+        public ConnectionState ConnectionState
+        {
             get => _connectionState;
             set => SetProperty(ref _connectionState, value);
         }
     }
 
-    public class ConnectionItemInfoModelComparer : IEqualityComparer<ConnectionItemInfoModel> {
+    public class ConnectionItemInfoModelComparer : IEqualityComparer<ConnectionItemInfoModel>
+    {
 
-        public bool Equals(ConnectionItemInfoModel? x, ConnectionItemInfoModel? y) {
+        public bool Equals(ConnectionItemInfoModel? x, ConnectionItemInfoModel? y)
+        {
             return x != null && x?.ConnectionName == y?.ConnectionName && x?.ConnectionType == y?.ConnectionType;
         }
 
-        public int GetHashCode(ConnectionItemInfoModel obj) {
+        public int GetHashCode(ConnectionItemInfoModel obj)
+        {
             return obj.ConnectionName.GetHashCode() ^ obj.ConnectionType.GetHashCode();
         }
     }
 
-    public enum ConnectionType {
+    public enum ConnectionType
+    {
         None,
 
         /// <summary>
@@ -76,7 +85,8 @@ namespace JayTom.Dws.Client.Models.StatusBarModels {
         Custom
     }
 
-    public enum ConnectionState {
+    public enum ConnectionState
+    {
 
         /// <summary>
         /// 未连接

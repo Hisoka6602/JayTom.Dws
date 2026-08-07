@@ -6,86 +6,87 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class NvrCameraMappingItemInfoModel : BindableBase {
-        private string _ipAddress = string.Empty;
-        private int _port;
-        private string _username = string.Empty;
-        private string _serialNumber = string.Empty;
-        private string _displayIdentifier = string.Empty;
-        private SourceType _bindingSource = SourceType.None;
-        private string _remarks = string.Empty;
-        private int _channel;
-        private int _num;
-
-        public int Num {
-            get => _num;
-            set => SetProperty(ref _num, value);
+    public class NvrCameraMappingItemInfoModel : BindableBase
+    {
+        public int Num
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// IP地址
         /// </summary>
-        public string IpAddress {
-            get => _ipAddress;
-            set => SetProperty(ref _ipAddress, value);
-        }
+        public string IpAddress
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
 
         /// <summary>
         /// 端口号
         /// </summary>
-        public int Port {
-            get => _port;
-            set => SetProperty(ref _port, value);
+        public int Port
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// 用户名
         /// </summary>
-        public string Username {
-            get => _username;
-            set => SetProperty(ref _username, value);
-        }
+        public string Username
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
 
         /// <summary>
         /// 输入序列号(来源设备唯一标识)
         /// </summary>
-        public string SerialNumber {
-            get => _serialNumber;
-            set => SetProperty(ref _serialNumber, value);
-        }
+        public string SerialNumber
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
 
         /// <summary>
         /// 显示标识
         /// </summary>
-        public string DisplayIdentifier {
-            get => _displayIdentifier;
-            set => SetProperty(ref _displayIdentifier, value);
-        }
+        public string DisplayIdentifier
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
 
         /// <summary>
         /// 绑定源
         /// </summary>
-        public SourceType BindingSource {
-            get => _bindingSource;
-            set => SetProperty(ref _bindingSource, value);
-        }
+        public SourceType BindingSource
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = SourceType.None;
 
         /// <summary>
         /// 备注
         /// </summary>
-        public string Remarks {
-            get => _remarks;
-            set => SetProperty(ref _remarks, value);
-        }
+        public string Remarks
+        {
+            get;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
 
         /// <summary>
         /// 取流通道
         /// </summary>
-        public int Channel {
-            get => _channel;
-            set => SetProperty(ref _channel, value);
+        public int Channel
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
     }
 }

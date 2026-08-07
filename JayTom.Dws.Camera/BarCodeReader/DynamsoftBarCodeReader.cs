@@ -467,53 +467,19 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             return (buffer, stride, pixelFormat);
         }*/
 
-        public static unsafe (byte[] buffer, int stride, EnumImagePixelFormat pixelFormat) GetBitmapData(Bitmap bitmap) {
+        public static (byte[] buffer, int stride, EnumImagePixelFormat pixelFormat) GetBitmapData(Bitmap bitmap) {
             var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                                              ImageLockMode.ReadOnly, bitmap.PixelFormat);
             try {
-                var bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
-                var stride = bitmapData.Stride;
-                var bufferSize = bitmapData.Height * Math.Abs(bitmapData.Stride);
-
-                // Allocate managed memory for the buffer
+                var stride = Math.Abs(bitmapData.Stride);
+                var bufferSize = bitmapData.Height * stride;
                 var buffer = new byte[bufferSize];
-
-                // Allocate unmanaged memory for pixel data
-                byte* ptr = null;
-                try {
-                    ptr = (byte*)Marshal.AllocHGlobal(bufferSize);
-                    var bufferPtr = ptr;
-
-                    // Copy bitmap data to unmanaged memory
-                    for (var y = 0; y < bitmapData.Height; y++) {
-                        var source = (byte*)bitmapData.Scan0 + y * bitmapData.Stride;
-                        Buffer.MemoryCopy(source, bufferPtr, stride, stride);
-                        bufferPtr += stride;
-                    }
-
-                    // Parallel processing of rows
-                    Parallel.For(0, bitmapData.Height, y => {
-                        var rowPtr = ptr + y * stride;
-                        // Process each pixel in the row (example: invert colors)
-                        for (var x = 0; x < bitmapData.Width; x++) {
-                            // Example: Invert colors (just for illustration)
-                            rowPtr[x * bytesPerPixel] = (byte)(255 - rowPtr[x * bytesPerPixel]);
-                            rowPtr[x * bytesPerPixel + 1] = (byte)(255 - rowPtr[x * bytesPerPixel + 1]);
-                            rowPtr[x * bytesPerPixel + 2] = (byte)(255 - rowPtr[x * bytesPerPixel + 2]);
-                        }
-                    });
-
-                    // Copy the processed data from unmanaged to managed memory
-                    Marshal.Copy((IntPtr)ptr, buffer, 0, bufferSize);
-
-                    var pixelFormat = GetImagePixelFormat(bitmap.PixelFormat);
-                    return (buffer, stride, pixelFormat);
+                for (var row = 0; row < bitmapData.Height; row++) {
+                    var sourceRow = IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride);
+                    Marshal.Copy(sourceRow, buffer, row * stride, stride);
                 }
-                finally {
-                    if (ptr != null) {
-                        Marshal.FreeHGlobal((IntPtr)ptr);
-                    }
-                }
+
+                return (buffer, stride, GetImagePixelFormat(bitmap.PixelFormat));
             }
             finally {
                 bitmap.UnlockBits(bitmapData);
@@ -521,92 +487,28 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         }
 
         public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
+            if (sourceImage is null || thumbnailWidth <= 0 || thumbnailHeight <= 0) {
                 return null;
             }
 
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    var sourcePtr = (byte*)sourceData.Scan0;
-                    var thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-
-                    // 使用 Parallel.For 进行并行处理
-                    Parallel.For(0, thumbnailHeight, y => {
-                        for (var x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    });
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppArgb);
+            using var graphics = Graphics.FromImage(thumbnail);
+            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
+            graphics.DrawImage(
+                sourceImage,
+                new Rectangle(0, 0, thumbnailWidth, thumbnailHeight),
+                new Rectangle(0, 0, sourceImage.Width, sourceImage.Height),
+                GraphicsUnit.Pixel);
+            return thumbnail;
         }
 
         public static Bitmap FastClone(Bitmap sourceBitmap) {
-            // 创建新的Bitmap对象
-            var destBitmap = new Bitmap(sourceBitmap.Width, sourceBitmap.Height, sourceBitmap.PixelFormat);
-
-            // 锁定源Bitmap对象的内存区域，并获取其指针
-            var sourceData = sourceBitmap.LockBits(new Rectangle(0, 0, sourceBitmap.Width, sourceBitmap.Height),
-                ImageLockMode.ReadOnly, sourceBitmap.PixelFormat);
-            var sourcePtr = sourceData.Scan0;
-
-            // 锁定目标Bitmap对象的内存区域，并获取其指针
-            var destData = destBitmap.LockBits(new Rectangle(0, 0, destBitmap.Width, destBitmap.Height),
-                ImageLockMode.WriteOnly, destBitmap.PixelFormat);
-            var destPtr = destData.Scan0;
-
-            // 计算每行像素需要的字节数
-            var bytesPerPixel = Image.GetPixelFormatSize(sourceBitmap.PixelFormat) / 8;
-            var stride = sourceData.Stride;
-
-            // 使用Marshal.Copy方法将源Bitmap对象的数据复制到目标Bitmap对象
-            unsafe {
-                var source = (byte*)sourcePtr.ToPointer();
-                var dest = (byte*)destPtr.ToPointer();
-                for (var y = 0; y < sourceBitmap.Height; y++) {
-                    // 计算当前行的起始位置
-                    var rowSource = source + (y * stride);
-                    var rowDest = dest + (y * destData.Stride);
-
-                    // 将当前行的像素数据复制到目标Bitmap对象
-                    Buffer.MemoryCopy(rowSource, rowDest, destData.Stride, stride);
-                }
-            }
-
-            // 解锁源Bitmap对象和目标Bitmap对象的内存区域
-            sourceBitmap.UnlockBits(sourceData);
-            destBitmap.UnlockBits(destData);
-
-            return destBitmap;
+            return sourceBitmap.Clone(
+                new Rectangle(0, 0, sourceBitmap.Width, sourceBitmap.Height),
+                sourceBitmap.PixelFormat);
         }
 
         private static EnumImagePixelFormat GetImagePixelFormat(PixelFormat pixelFormat) {

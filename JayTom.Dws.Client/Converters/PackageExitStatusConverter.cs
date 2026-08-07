@@ -9,21 +9,29 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.DataModels;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class PackageExitStatusConverter : IValueConverter {
+    public class PackageExitStatusConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is PackageExitStatus status) {
-                if (parameter?.ToString()?.Equals("Foreground") == true) {
-                    return status switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is PackageExitStatus status)
+            {
+                if (parameter?.ToString()?.Equals("Foreground") == true)
+                {
+                    return status switch
+                    {
                         PackageExitStatus.Normal => new SolidColorBrush(Colors.LawnGreen),
                         PackageExitStatus.Abnormal => new SolidColorBrush(Colors.OrangeRed),
                         _ => new SolidColorBrush(Colors.White),
                     };
                 }
-                else if (parameter?.ToString()?.Equals("FontWeight") == true) {
-                    return status switch {
+                else if (parameter?.ToString()?.Equals("FontWeight") == true)
+                {
+                    return status switch
+                    {
                         PackageExitStatus.Normal => FontWeights.Bold,
                         PackageExitStatus.Abnormal => FontWeights.Bold,
                         _ => FontWeights.Normal,
@@ -33,7 +41,8 @@ namespace JayTom.Dws.Client.Converters {
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

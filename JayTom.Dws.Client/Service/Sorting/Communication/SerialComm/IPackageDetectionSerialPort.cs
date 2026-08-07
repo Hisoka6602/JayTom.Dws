@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.SerialPort;
 
-namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
+namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm
+{
 
-    public interface IPackageDetectionSerialPort : ISerialPort {
+    public interface IPackageDetectionSerialPort : ISerialPort
+    {
     }
 }

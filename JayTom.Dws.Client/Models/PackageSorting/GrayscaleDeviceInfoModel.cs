@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class GrayscaleDeviceInfoModel : BindableBase {
+    public class GrayscaleDeviceInfoModel : BindableBase
+    {
         private bool _isUseGrayscaleDetector;
         private bool _isCheckPackageOrientation;
         private TcpConnectionConfigItemInfoModel? _tcpConnectionConfigInfo;
@@ -27,7 +29,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否使用灰度仪检测包裹
         /// </summary>
-        public bool IsUseGrayscaleDetector {
+        public bool IsUseGrayscaleDetector
+        {
             get => _isUseGrayscaleDetector;
             set => SetProperty(ref _isUseGrayscaleDetector, value);
         }
@@ -35,7 +38,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否判断包裹偏向
         /// </summary>
-        public bool IsCheckPackageOrientation {
+        public bool IsCheckPackageOrientation
+        {
             get => _isCheckPackageOrientation;
             set => SetProperty(ref _isCheckPackageOrientation, value);
         }
@@ -44,7 +48,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// Tcp连接参数
         /// </summary>
 
-        public TcpConnectionConfigItemInfoModel? TcpConnectionConfigInfo {
+        public TcpConnectionConfigItemInfoModel? TcpConnectionConfigInfo
+        {
             get => _tcpConnectionConfigInfo;
             set => SetProperty(ref _tcpConnectionConfigInfo, value);
         }
@@ -52,7 +57,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 主框架区域(矩形区域4个点)
         /// </summary>
-        public Rectangle MainFrameRegion {
+        public Rectangle MainFrameRegion
+        {
             get => _mainFrameRegion;
             set => SetProperty(ref _mainFrameRegion, value);
         }
@@ -60,7 +66,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 附加框架区域(矩形区域4个点)
         /// </summary>
-        public Rectangle AdditionalFrameRegion {
+        public Rectangle AdditionalFrameRegion
+        {
             get => _additionalFrameRegion;
             set => SetProperty(ref _additionalFrameRegion, value);
         }
@@ -68,7 +75,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 区域内包含的小车数量
         /// </summary>
-        public int RegionCarCount {
+        public int RegionCarCount
+        {
             get => _regionCarCount;
             set => SetProperty(ref _regionCarCount, value);
         }
@@ -76,7 +84,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 超时时间
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }
@@ -84,7 +93,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 线体小车数量
         /// </summary>
-        public int LineCarCount {
+        public int LineCarCount
+        {
             get => _lineCarCount;
             set => SetProperty(ref _lineCarCount, value);
         }
@@ -92,7 +102,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 小车取数偏移
         /// </summary>
-        public int CarNumberOffset {
+        public int CarNumberOffset
+        {
             get => _carNumberOffset;
             set => SetProperty(ref _carNumberOffset, value);
         }
@@ -100,7 +111,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 方向是否取反
         /// </summary>
-        public bool IsDirectionReversed {
+        public bool IsDirectionReversed
+        {
             get => _isDirectionReversed;
             set => SetProperty(ref _isDirectionReversed, value);
         }
@@ -108,7 +120,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 占用附加框属性百分比
         /// </summary>
-        public int AdditionalBoxSpacePercentage {
+        public int AdditionalBoxSpacePercentage
+        {
             get => _additionalBoxSpacePercentage;
             set => SetProperty(ref _additionalBoxSpacePercentage, value);
         }
@@ -116,7 +129,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 最小发送间隔，单位为毫秒
         /// </summary>
-        public int MinSendInterval {
+        public int MinSendInterval
+        {
             get => _minSendInterval;
             set => SetProperty(ref _minSendInterval, value);
         }
@@ -124,7 +138,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 主框包裹包裹判断占比
         /// </summary>
-        public int MainBoxPackageRatio {
+        public int MainBoxPackageRatio
+        {
             get => _mainBoxPackageRatio;
             set => SetProperty(ref _mainBoxPackageRatio, value);
         }

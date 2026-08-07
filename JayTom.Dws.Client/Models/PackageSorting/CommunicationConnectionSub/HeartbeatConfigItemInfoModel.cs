@@ -4,9 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
+namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub
+{
 
-    public class HeartbeatConfigItemInfoModel : BasePackageSortingItemInfoModel {
+    public class HeartbeatConfigItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private bool _isHeartbeatActive;
         private string _heartbeatContent = string.Empty;
         private int _heartbeatInterval;
@@ -16,7 +18,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 是否使用心跳包
         /// </summary>
-        public bool IsHeartbeatEnabled {
+        public bool IsHeartbeatEnabled
+        {
             get => _isHeartbeatEnabled;
             set => SetProperty(ref _isHeartbeatEnabled, value);
         }
@@ -24,7 +27,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 是否主动发送心跳包
         /// </summary>
-        public bool IsHeartbeatActive {
+        public bool IsHeartbeatActive
+        {
             get => _isHeartbeatActive;
             set => SetProperty(ref _isHeartbeatActive, value);
         }
@@ -32,7 +36,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 心跳包内容
         /// </summary>
-        public string HeartbeatContent {
+        public string HeartbeatContent
+        {
             get => _heartbeatContent;
             set => SetProperty(ref _heartbeatContent, value);
         }
@@ -40,7 +45,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 心跳包间隔
         /// </summary>
-        public int HeartbeatInterval {
+        public int HeartbeatInterval
+        {
             get => _heartbeatInterval;
             set => SetProperty(ref _heartbeatInterval, value);
         }
@@ -48,7 +54,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 是否使用固定心跳包内容
         /// </summary>
-        public bool IsFixedHeartbeatContent {
+        public bool IsFixedHeartbeatContent
+        {
             get => _isFixedHeartbeatContent;
             set => SetProperty(ref _isFixedHeartbeatContent, value);
         }

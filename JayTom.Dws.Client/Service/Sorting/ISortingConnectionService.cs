@@ -11,9 +11,15 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 
-namespace JayTom.Dws.Client.Service.Sorting {
+namespace JayTom.Dws.Client.Service.Sorting
+{
 
-    public interface ISortingConnectionService {
+    public interface ISortingConnectionService
+    {
+        /// <summary>
+        /// 是否至少存在一个可用的下位机连接。
+        /// </summary>
+        bool IsConnected { get; }
 
         /// <summary>
         /// 连接事件
@@ -110,7 +116,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         void SendPackageCenter(int num, InstructionsAttach info, CancellationToken token = default);
     }
 
-    public class ConnectionCommunicationMessageInfo : CommunicationInfo {
+    public class ConnectionCommunicationMessageInfo : CommunicationInfo
+    {
 
         /// <summary>
         /// 连接名称
@@ -148,7 +155,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         public long? Guid { get; set; }
     }
 
-    public class ConnectionInfo {
+    public class ConnectionInfo
+    {
 
         /// <summary>
         /// 连接名称

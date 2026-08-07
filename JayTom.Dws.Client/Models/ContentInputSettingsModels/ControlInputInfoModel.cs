@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
+namespace JayTom.Dws.Client.Models.ContentInputSettingsModels
+{
 
-    public class ControlInputInfoModel : BindableBase {
+    public class ControlInputInfoModel : BindableBase
+    {
         private bool _isReceiveBarcode;
         private bool _isReceiveWeight;
         private bool _isReceiveLength;
@@ -13,7 +15,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         /// <summary>
         /// 是否接收条码
         /// </summary>
-        public bool IsReceiveBarcode {
+        public bool IsReceiveBarcode
+        {
             get => _isReceiveBarcode;
             set => SetProperty(ref _isReceiveBarcode, value);
         }
@@ -21,7 +24,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         /// <summary>
         /// 是否接收重量
         /// </summary>
-        public bool IsReceiveWeight {
+        public bool IsReceiveWeight
+        {
             get => _isReceiveWeight;
             set => SetProperty(ref _isReceiveWeight, value);
         }
@@ -29,7 +33,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         /// <summary>
         /// 是否接收长度
         /// </summary>
-        public bool IsReceiveLength {
+        public bool IsReceiveLength
+        {
             get => _isReceiveLength;
             set => SetProperty(ref _isReceiveLength, value);
         }
@@ -37,7 +42,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         /// <summary>
         /// 是否接收宽度
         /// </summary>
-        public bool IsReceiveWidth {
+        public bool IsReceiveWidth
+        {
             get => _isReceiveWidth;
             set => SetProperty(ref _isReceiveWidth, value);
         }
@@ -45,7 +51,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         /// <summary>
         /// 是否接收高度
         /// </summary>
-        public bool IsReceiveHeight {
+        public bool IsReceiveHeight
+        {
             get => _isReceiveHeight;
             set => SetProperty(ref _isReceiveHeight, value);
         }
@@ -53,7 +60,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         /// <summary>
         /// 是否接收体积
         /// </summary>
-        public bool IsReceiveVolume {
+        public bool IsReceiveVolume
+        {
             get => _isReceiveVolume;
             set => SetProperty(ref _isReceiveVolume, value);
         }

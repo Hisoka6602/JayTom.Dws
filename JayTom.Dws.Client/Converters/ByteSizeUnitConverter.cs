@@ -2,14 +2,18 @@
 using System.Windows.Data;
 using System.Globalization;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class ByteSizeUnitConverter : IValueConverter {
-        private readonly string[] _sizes = { "KB", "MB", "GB", "TB" };
+    public class ByteSizeUnitConverter : IValueConverter
+    {
+        private readonly string[] _sizes = ["KB", "MB", "GB", "TB"];
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             var conversionRate = parameter is "1000" ? 1000 : 1024;
-            if (value is long bytes) {
+            if (value is long bytes)
+            {
                 if (bytes == 0)
                     return _sizes[0];
 
@@ -20,9 +24,11 @@ namespace JayTom.Dws.Client.Converters {
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             var conversionRate = parameter is "1000" ? 1000 : 1024;
-            if (value is long bytes) {
+            if (value is long bytes)
+            {
                 if (bytes == 0)
                     return _sizes[0];
 

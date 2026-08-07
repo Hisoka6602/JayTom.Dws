@@ -18,9 +18,11 @@ using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
+namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
+{
 
-    public class NvrCameraBindingEditorViewModel : BindableBase {
+    public class NvrCameraBindingEditorViewModel : BindableBase
+    {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
@@ -54,7 +56,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
 
         public NvrCameraBindingEditorViewModel(IDeviceService deviceService,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository) {
+            INvrCameraBindingRepository nvrCameraBindingRepository)
+        {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
@@ -63,7 +66,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 窗口标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
@@ -71,7 +75,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 消息
         /// </summary>
-        public string Message {
+        public string Message
+        {
             get => _message;
             set => SetProperty(ref _message, value);
         }
@@ -79,7 +84,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// IP地址
         /// </summary>
-        public string IpAddress {
+        public string IpAddress
+        {
             get => _ipAddress;
             set => SetProperty(ref _ipAddress, value);
         }
@@ -87,7 +93,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 端口号
         /// </summary>
-        public int Port {
+        public int Port
+        {
             get => _port;
             set => SetProperty(ref _port, value);
         }
@@ -95,7 +102,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 用户名
         /// </summary>
-        public string Username {
+        public string Username
+        {
             get => _username;
             set => SetProperty(ref _username, value);
         }
@@ -103,7 +111,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 密码
         /// </summary>
-        public string Password {
+        public string Password
+        {
             get => _password;
             set => SetProperty(ref _password, value);
         }
@@ -111,7 +120,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 通道
         /// </summary>
-        public int Channel {
+        public int Channel
+        {
             get => _channel;
             set => SetProperty(ref _channel, value);
         }
@@ -119,21 +129,26 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
         /// <summary>
         /// 是否全选
         /// </summary>
-        public bool IsAllSelect {
+        public bool IsAllSelect
+        {
             get => _isAllSelect;
             set => SetProperty(ref _isAllSelect, value);
         }
 
-        public ObservableCollection<NvrCameraBindingItemInfoModel> NvrCameraBindingItems {
+        public ObservableCollection<NvrCameraBindingItemInfoModel> NvrCameraBindingItems
+        {
             get => _nvrCameraBindingItems;
             set => SetProperty(ref _nvrCameraBindingItems, value);
         }
 
         public ICommand SelectedCommand => new DelegateCommand<object>(SelectedDelegate);
 
-        private async void SelectedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                foreach (var bindingItem in NvrCameraBindingItems) {
+        private async void SelectedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                foreach (var bindingItem in NvrCameraBindingItems)
+                {
                     bindingItem.IsBinding = IsAllSelect;
                 }
             });
@@ -141,12 +156,15 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj)
+        {
             //加载扫码相机
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 NvrCameraBindingItems.Clear();
                 if (_deviceService.CameraItems?.Any() != true &&
-                    !_deviceService.RunningStatus) {
+                    !_deviceService.RunningStatus)
+                {
                     await _deviceService.OnCameraEnumerationRefreshed();
                 }
                 var configInfoModels = await _barcodeScannerCameraConfigRepository
@@ -156,14 +174,18 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                     s.Channel.Equals(Channel) &&
                     s.IpAddress.Equals(IpAddress) &&
                     s.Port.Equals(Port), o => o.Id);
-                if (configInfoModels?.Any() == true) {
-                    if (_deviceService.CameraItems?.Any() == true) {
+                if (configInfoModels?.Any() == true)
+                {
+                    if (_deviceService.CameraItems?.Any() == true)
+                    {
                         var num = 1;
-                        foreach (var barcodeScannerCameraConfigInfoModel in configInfoModels) {
+                        foreach (var barcodeScannerCameraConfigInfoModel in configInfoModels)
+                        {
                             var isExistingSerialNumber = _deviceService.CameraItems.Any(a =>
                                 a.SerialNumber.Equals(barcodeScannerCameraConfigInfoModel.SerialNumber));
 
-                            NvrCameraBindingItems.Add(new NvrCameraBindingItemInfoModel() {
+                            NvrCameraBindingItems.Add(new NvrCameraBindingItemInfoModel()
+                            {
                                 CameraSerialNumber = barcodeScannerCameraConfigInfoModel.SerialNumber,
                                 CustomCameraName = isExistingSerialNumber ? barcodeScannerCameraConfigInfoModel.CustomName : $"{barcodeScannerCameraConfigInfoModel.CustomName}(无效)",
                                 Num = num,
@@ -178,10 +200,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
 
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
-        private async void SaveDelegate() {
+        private async void SaveDelegate()
+        {
             //保存到表
             //先删除
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var list = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => s.CameraSerialNumber)?.ToList() ??
                            new List<string>();
                 var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.Select(s =>
@@ -189,15 +213,18 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                     s.IpAddress.Equals(IpAddress) &&
                     s.Port.Equals(Port)), o => o.Id);
                 //|| list.Contains(s.BarcodeScannerSerialNumber)
-                if (nvrCameraBindingInfoModels?.Any() == true) {
+                if (nvrCameraBindingInfoModels?.Any() == true)
+                {
                     var deleteRange = await _nvrCameraBindingRepository.DeleteRange(nvrCameraBindingInfoModels);
-                    if (!deleteRange) {
+                    if (!deleteRange)
+                    {
                         Message = "保存失败";
                     }
                 }
                 //修改删除条件
 
-                var cameraBindingInfoModels = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => new NvrCameraBindingInfoModel {
+                var cameraBindingInfoModels = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => new NvrCameraBindingInfoModel
+                {
                     //BarcodeScannerSerialNumber = s.CameraSerialNumber,
                     Channel = Channel,
                     IpAddress = IpAddress,
@@ -207,15 +234,19 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
                 })?.ToList();
                 var insertRange = await _nvrCameraBindingRepository.InsertRange(cameraBindingInfoModels ??
                     new List<NvrCameraBindingInfoModel>());
-                if (!insertRange) {
+                if (!insertRange)
+                {
                     Message = "保存失败";
                 }
-                else {
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                else
+                {
+                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    {
                         SettingsName = "NvrCameraBindingInfoModel"
                     });
                 }
-                if (DialogHost.IsDialogOpen(Identifier)) {
+                if (DialogHost.IsDialogOpen(Identifier))
+                {
                     DialogHost.Close(Identifier);
                 }
             });
@@ -223,8 +254,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService {
 
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
-        private void CancelDelegate() {
-            if (DialogHost.IsDialogOpen(Identifier)) {
+        private void CancelDelegate()
+        {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }

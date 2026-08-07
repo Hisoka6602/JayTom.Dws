@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
-    public class SzjyApiInfoModel : BindableBase {
+    public class SzjyApiInfoModel : BindableBase
+    {
         private string _url = string.Empty;
         private string _userName = string.Empty;
         private string _password = string.Empty;
@@ -12,7 +14,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -20,7 +23,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 账号
         /// </summary>
-        public string UserName {
+        public string UserName
+        {
             get => _userName;
             set => SetProperty(ref _userName, value);
         }
@@ -28,7 +32,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 密码
         /// </summary>
-        public string Password {
+        public string Password
+        {
             get => _password;
             set => SetProperty(ref _password, value);
         }
@@ -36,7 +41,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 机器码
         /// </summary>
-        public string Machine {
+        public string Machine
+        {
             get => _machine;
             set => SetProperty(ref _machine, value);
         }
@@ -44,7 +50,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }

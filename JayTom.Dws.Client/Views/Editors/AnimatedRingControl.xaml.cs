@@ -14,32 +14,38 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 
-namespace JayTom.Dws.Client.Views.Editors {
+namespace JayTom.Dws.Client.Views.Editors
+{
 
     /// <summary>
     /// AnimatedRingControl.xaml 的交互逻辑
     /// </summary>
-    public partial class AnimatedRingControl : UserControl {
+    public partial class AnimatedRingControl : UserControl
+    {
         private Storyboard _storyboard;
         private const int SegmentCount = 10; // 段数
         private const double StrokeThickness = 15; // 线条粗细
         private const double AnimationDuration = 1.0; // 动画持续时间（秒）
         private const double MaxOpacity = 0.6; // 最大不透明度
 
-        public AnimatedRingControl() {
+        public AnimatedRingControl()
+        {
             InitializeComponent();
             Loaded += AnimatedRingControl_Loaded;
             SizeChanged += AnimatedRingControl_SizeChanged;
         }
 
-        private void AnimatedRingControl_Loaded(object sender, RoutedEventArgs e) {
+        private void AnimatedRingControl_Loaded(object sender, RoutedEventArgs e)
+        {
             CreateSegments();
-            if (IsAnimationEnabled) {
+            if (IsAnimationEnabled)
+            {
                 StartAnimations();
             }
         }
 
-        private void AnimatedRingControl_SizeChanged(object sender, SizeChangedEventArgs e) {
+        private void AnimatedRingControl_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
             UpdateSegments();
         }
 
@@ -49,17 +55,22 @@ namespace JayTom.Dws.Client.Views.Editors {
             DependencyProperty.Register(nameof(IsAnimationEnabled), typeof(bool), typeof(AnimatedRingControl),
                 new PropertyMetadata(true, OnIsAnimationEnabledChanged));
 
-        public bool IsAnimationEnabled {
+        public bool IsAnimationEnabled
+        {
             get => (bool)GetValue(IsAnimationEnabledProperty);
             set => SetValue(IsAnimationEnabledProperty, value);
         }
 
-        private static void OnIsAnimationEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
-            if (d is AnimatedRingControl control) {
-                if ((bool)e.NewValue) {
+        private static void OnIsAnimationEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is AnimatedRingControl control)
+            {
+                if ((bool)e.NewValue)
+                {
                     control.StartAnimations();
                 }
-                else {
+                else
+                {
                     control.StopAnimations();
                 }
             }
@@ -69,7 +80,8 @@ namespace JayTom.Dws.Client.Views.Editors {
             DependencyProperty.Register(nameof(ControlOpacity), typeof(double), typeof(AnimatedRingControl),
                 new PropertyMetadata(1.0));
 
-        public double ControlOpacity {
+        public double ControlOpacity
+        {
             get => (double)GetValue(ControlOpacityProperty);
             set => SetValue(ControlOpacityProperty, value);
         }
@@ -78,7 +90,8 @@ namespace JayTom.Dws.Client.Views.Editors {
 
         #region Segment Creation and Update
 
-        private void CreateSegments() {
+        private void CreateSegments()
+        {
             MainCanvas.Children.Clear();
             _storyboard = new Storyboard();
 
@@ -86,12 +99,15 @@ namespace JayTom.Dws.Client.Views.Editors {
             var center = new Point(ActualWidth / 2, ActualHeight / 2);
             var angleStep = 360.0 / SegmentCount;
 
-            for (var i = 0; i < SegmentCount; i++) {
+            for (var i = 0; i < SegmentCount; i++)
+            {
                 var segmentPath = CreateSegmentPath(radius, center, i * angleStep);
-                if (segmentPath is not null) {
+                if (segmentPath is not null)
+                {
                     MainCanvas.Children.Add(segmentPath);
 
-                    var opacityAnimation = new DoubleAnimation {
+                    var opacityAnimation = new DoubleAnimation
+                    {
                         From = 0,
                         To = MaxOpacity,
                         Duration = TimeSpan.FromSeconds(AnimationDuration),
@@ -107,7 +123,8 @@ namespace JayTom.Dws.Client.Views.Editors {
             }
         }
 
-        private Path? CreateSegmentPath(double radius, Point center, double angle) {
+        private Path? CreateSegmentPath(double radius, Point center, double angle)
+        {
             if (radius <= 0) return null;
             var startAngle = angle - 5; // 每个段的角度范围，可以根据需要调整
             var endAngle = angle + 5;
@@ -117,7 +134,8 @@ namespace JayTom.Dws.Client.Views.Editors {
 
             var isLargeArc = Math.Abs(endAngle - startAngle) > 180;
 
-            var pathFigure = new PathFigure {
+            var pathFigure = new PathFigure
+            {
                 StartPoint = startPoint,
                 Segments = {
                     new ArcSegment
@@ -133,7 +151,8 @@ namespace JayTom.Dws.Client.Views.Editors {
             var pathGeometry = new PathGeometry();
             pathGeometry.Figures.Add(pathFigure);
 
-            return new Path {
+            return new Path
+            {
                 Data = pathGeometry,
                 Stroke = Brushes.White,
                 StrokeThickness = StrokeThickness,
@@ -144,7 +163,8 @@ namespace JayTom.Dws.Client.Views.Editors {
             };
         }
 
-        private Point ComputeCartesianCoordinate(double angle, double radius, Point center) {
+        private Point ComputeCartesianCoordinate(double angle, double radius, Point center)
+        {
             // 将角度转换为弧度
             var angleRad = (Math.PI / 180.0) * angle;
 
@@ -154,14 +174,16 @@ namespace JayTom.Dws.Client.Views.Editors {
             return new Point(x, y);
         }
 
-        private void UpdateSegments() {
+        private void UpdateSegments()
+        {
             if (MainCanvas.Children.Count == 0)
                 return;
 
             var radius = Math.Min(ActualWidth, ActualHeight) / 2 - StrokeThickness;
             var center = new Point(ActualWidth / 2, ActualHeight / 2);
 
-            for (var i = 0; i < SegmentCount; i++) {
+            for (var i = 0; i < SegmentCount; i++)
+            {
                 var angle = i * (360.0 / SegmentCount);
                 var segmentPath = (Path)MainCanvas.Children[i];
 
@@ -175,11 +197,13 @@ namespace JayTom.Dws.Client.Views.Editors {
 
         #region Animation Control
 
-        private void StartAnimations() {
+        private void StartAnimations()
+        {
             _storyboard?.Begin(this, true);
         }
 
-        private void StopAnimations() {
+        private void StopAnimations()
+        {
             _storyboard?.Stop(this);
         }
 

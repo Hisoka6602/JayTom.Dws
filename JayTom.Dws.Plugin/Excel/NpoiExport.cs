@@ -766,7 +766,7 @@ namespace JayTom.Dws.Plugin.Excel {
             cellStyle.FillForegroundColor = 0;
             cellStyle.FillPattern = FillPattern.SolidForeground;
 
-            ((XSSFColor)cellStyle.FillForegroundColorColor).SetRgb(new[] { color.R, color.G, color.B });//设置单元格背景色
+            ((XSSFColor)cellStyle.FillForegroundColorColor).SetRgb([color.R, color.G, color.B]);//设置单元格背景色
             return cellStyle;
         }
 
@@ -846,7 +846,7 @@ namespace JayTom.Dws.Plugin.Excel {
             //背景色
             TitleStyle.FillForegroundColor = 0;
             TitleStyle.FillPattern = FillPattern.SolidForeground;
-            ((XSSFColor)TitleStyle.FillForegroundColorColor).SetRgb(new byte[] { 101, 179, 255 });
+            ((XSSFColor)TitleStyle.FillForegroundColorColor).SetRgb([101, 179, 255]);
 
             TitleStyle.FillBackgroundColor = HSSFColor.SkyBlue.Index;
             var fontLeft = book.CreateFont();

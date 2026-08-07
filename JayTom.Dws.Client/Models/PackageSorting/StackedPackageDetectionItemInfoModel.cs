@@ -9,9 +9,11 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class StackedPackageDetectionItemInfoModel : BindableBase {
+    public class StackedPackageDetectionItemInfoModel : BindableBase
+    {
         private bool _isStackedPackageDetection;
         private SerialPortConfigItemInfoModel? _serialPortConfigInfo;
         private TcpConnectionConfigItemInfoModel? _tcpConnectionConfigInfo;
@@ -23,7 +25,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否监测叠包
         /// </summary>
-        public bool IsStackedPackageDetection {
+        public bool IsStackedPackageDetection
+        {
             get => _isStackedPackageDetection;
             set => SetProperty(ref _isStackedPackageDetection, value);
         }
@@ -36,7 +39,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 串口配置
         /// </summary>
-        public SerialPortConfigItemInfoModel? SerialPortConfigInfo {
+        public SerialPortConfigItemInfoModel? SerialPortConfigInfo
+        {
             get => _serialPortConfigInfo;
             set => SetProperty(ref _serialPortConfigInfo, value);
         }
@@ -44,7 +48,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// Tcp配置
         /// </summary>
-        public TcpConnectionConfigItemInfoModel? TcpConnectionConfigInfo {
+        public TcpConnectionConfigItemInfoModel? TcpConnectionConfigInfo
+        {
             get => _tcpConnectionConfigInfo;
             set => SetProperty(ref _tcpConnectionConfigInfo, value);
         }
@@ -52,7 +57,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 判断正则表达式
         /// </summary>
-        public string RegularExpression {
+        public string RegularExpression
+        {
             get => _regularExpression;
             set => SetProperty(ref _regularExpression, value);
         }
@@ -60,7 +66,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 判断的字符
         /// </summary>
-        public string CheckerContent {
+        public string CheckerContent
+        {
             get => _checkerContent;
             set => SetProperty(ref _checkerContent, value);
         }
@@ -68,7 +75,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 判断超时时间
         /// </summary>
-        public int Timeout {
+        public int Timeout
+        {
             get => _timeout;
             set => SetProperty(ref _timeout, value);
         }
@@ -76,7 +84,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否自动异常口
         /// </summary>
-        public bool IsAutoExceptionSorting {
+        public bool IsAutoExceptionSorting
+        {
             get => _isAutoExceptionSorting;
             set => SetProperty(ref _isAutoExceptionSorting, value);
         }

@@ -4,9 +4,11 @@ using JayTom.Dws.Data.Package;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
+namespace JayTom.Dws.Client.Models.PackageSorting.Excel
+{
 
-    public class ExcelApiSortingItemInfoModel : BasePackageSortingItemInfoModel {
+    public class ExcelApiSortingItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long? _exitId;
         private string? _exitName;
         private string _sortingName = string.Empty;
@@ -21,7 +23,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// <summary>
         /// 出口代码
         /// </summary>
-        public long? ExitId {
+        public long? ExitId
+        {
             get => _exitId;
             set => SetProperty(ref _exitId, value);
         }
@@ -30,7 +33,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 出口名称
         /// </summary>
         [DisplayName("格口名称"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string? ExitName {
+        public string? ExitName
+        {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
         }
@@ -39,7 +43,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 规则名称
         /// </summary>
         [DisplayName("规则名称"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string SortingName {
+        public string SortingName
+        {
             get => _sortingName;
             set => SetProperty(ref _sortingName, value);
         }
@@ -48,7 +53,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 上传状态
         /// </summary>
         [DisplayName("上传状态(0=成功、1=失败、2=未上传)"), MemberNotNull, ExcelInfo(Width = 8000, IsEnumToInt = true)]
-        public UploadStatus ResponseStatus {
+        public UploadStatus ResponseStatus
+        {
             get => _responseStatus;
             set => SetProperty(ref _responseStatus, value);
         }
@@ -57,7 +63,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 是否使用字符串判断
         /// </summary>
         [DisplayName("是否使用字符串判断(1=是、0=否)"), MemberNotNull, ExcelInfo(Width = 8000, IsBooleanToInt = true)]
-        public bool IsUseStringComparison {
+        public bool IsUseStringComparison
+        {
             get => _isUseStringComparison;
             set => SetProperty(ref _isUseStringComparison, value);
         }
@@ -66,7 +73,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 查找字符串内容
         /// </summary>
         [DisplayName("查找字符串内容"), MemberNotNull, ExcelInfo(Width = 6000)]
-        public string SearchStringContent {
+        public string SearchStringContent
+        {
             get => _searchStringContent;
             set => SetProperty(ref _searchStringContent, value);
         }
@@ -75,7 +83,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// 是否使用Json取值
         /// </summary>
         [DisplayName("是否使用Json取值"), MemberNotNull, ExcelInfo(Width = 6000, IsBooleanToInt = true)]
-        public bool IsUseJsonField {
+        public bool IsUseJsonField
+        {
             get => _isUseJsonField;
             set => SetProperty(ref _isUseJsonField, value);
         }
@@ -84,7 +93,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// Json字段
         /// </summary>
         [DisplayName("Json字段名"), MemberNotNull, ExcelInfo(Width = 5000)]
-        public string JsonField {
+        public string JsonField
+        {
             get => _jsonField;
             set => SetProperty(ref _jsonField, value);
         }
@@ -93,13 +103,15 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel {
         /// Json字段值
         /// </summary>
         [DisplayName("Json字段值"), MemberNotNull, ExcelInfo(Width = 5000)]
-        public string JsonFieldValue {
+        public string JsonFieldValue
+        {
             get => _jsonFieldValue;
             set => SetProperty(ref _jsonFieldValue, value);
         }
 
         [DisplayName("查找方向(0=正、1=反)"), MemberNotNull, ExcelInfo(Width = 8000, IsEnumToInt = true)]
-        public SearchDirection SearchDirection {
+        public SearchDirection SearchDirection
+        {
             get => _searchDirection;
             set => SetProperty(ref _searchDirection, value);
         }

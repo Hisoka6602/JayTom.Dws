@@ -3,16 +3,22 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class CpuTemperatureColorConverter : IValueConverter {
+    public class CpuTemperatureColorConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is float rate) {
-                if (rate is >= 70 and < 85) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is float rate)
+            {
+                if (rate is >= 70 and < 85)
+                {
                     return new SolidColorBrush(Colors.DarkOrange);
                 }
-                else if (rate >= 85) {
+                else if (rate >= 85)
+                {
                     return new SolidColorBrush(Colors.Red);
                 }
 
@@ -21,12 +27,16 @@ namespace JayTom.Dws.Client.Converters {
             return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#31C731"));
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is float rate) {
-                if (rate is >= 70 and < 85) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is float rate)
+            {
+                if (rate is >= 70 and < 85)
+                {
                     return new SolidColorBrush(Colors.DarkOrange);
                 }
-                else if (rate >= 85) {
+                else if (rate >= 85)
+                {
                     return new SolidColorBrush(Colors.Red);
                 }
 

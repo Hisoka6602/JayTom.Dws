@@ -90,7 +90,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 var stDevInfo = (MvCodeReader.MV_CODEREADER_DEVICE_INFO)(Marshal.PtrToStructure(_sdkDeviceList.pDeviceInfo[i], typeof(MvCodeReader.MV_CODEREADER_DEVICE_INFO)) ?? new MvCodeReader.MV_CODEREADER_DEVICE_INFO());
                 if (stDevInfo.nTLayerType == MvCodeReader.MV_CODEREADER_GIGE_DEVICE) {
                     //网口相机
-                    var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(stDevInfo.SpecialInfo.stGigEInfo ?? Array.Empty<byte>(), 0);
+                    var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(stDevInfo.SpecialInfo.stGigEInfo ?? [], 0);
                     var stGigEDeviceInfo = (MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO)(Marshal.PtrToStructure(buffer, typeof(MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO)) ?? new MvCodeReader.MV_CODEREADER_GIGE_DEVICE_INFO());
                     var cameraInfo = new CameraInfo() {
                         Brand = stGigEDeviceInfo.chManufacturerName ?? string.Empty,
@@ -389,7 +389,23 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         }
 
         public Task<KeyValuePair<bool, string>> Stop() {
-            return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
+            if (_mvCodeReader is null || Status is CameraStatus.Uninitialized or CameraStatus.Paused) {
+                return Task.FromResult(
+                    new KeyValuePair<bool, string>(true, "相机已停止"));
+            }
+
+            var result = _mvCodeReader.MV_CODEREADER_StopGrabbing_NET();
+            if (result != MvCodeReader.MV_CODEREADER_OK) {
+                return Task.FromResult(
+                    new KeyValuePair<bool, string>(false, $"停止失败,{result:X}"));
+            }
+
+            Status = CameraStatus.Paused;
+            CameraStopped?.Invoke(this, new CameraStoppedEventArgs {
+                CameraInfo = Info
+            });
+            return Task.FromResult(
+                new KeyValuePair<bool, string>(true, "停止成功"));
         }
 
         public void Dispose() {
@@ -742,11 +758,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             var barcodeTriggeredEventArgsList = new List<BarcodeTriggeredEventArgs>();
 
             //识别到条码调用
-            char[] nullChars = { '\0' };
+            char[] nullChars = ['\0'];
             //需要设置触发时间才能过滤
             for (var i = 0; i < stBcrResultEx2.nCodeNum; i++) {
                 var barcode = Encoding.Default
-                    .GetString(stBcrResultEx2.stBcrInfoEx2?[i].chCode ?? Array.Empty<byte>())
+                    .GetString(stBcrResultEx2.stBcrInfoEx2?[i].chCode ?? [])
                     ?.TrimEnd(nullChars);
                 var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                     BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
@@ -775,7 +791,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                             ScanTime = scanTime,
-                            AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                            AreaCoords = [.. Enumerable.Range(0, 4).Select(s => {
                                 if (bmp is { Size: { Width: > 0, Height: > 0 } } &&
                                     stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 } &&
                                     stBcrResultEx2.stBcrInfoEx2.Length > i) {
@@ -786,7 +802,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 }
 
                                 return default;
-                            }).ToList(),
+                            })],
                             FrameNo = _frameNo
                         });
                     }
@@ -1012,9 +1028,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private List<Point> ConvertPoint(List<double>? coord) {
             var points = new List<Point>();
             if (coord?.Count == 8) {
-                points = Enumerable.Range(0, coord.Count / 2)
-                    .Select(i => new Point((int)coord[i * 2], (int)coord[i * 2 + 1]))
-                    .ToList();
+                points = [.. Enumerable.Range(0, coord.Count / 2).Select(i => new Point((int)coord[i * 2], (int)coord[i * 2 + 1]))];
 
                 return SortPointsInCounterClockwiseOrder(points);
             }
@@ -1198,53 +1212,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         }
 
         public unsafe Bitmap? GenerateThumbnail1(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, sourceImage.PixelFormat == PixelFormat.Format24bppRgb ? PixelFormat.Format24bppRgb : PixelFormat.Format32bppRgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, sourceImage.PixelFormat == PixelFormat.Format24bppRgb ? PixelFormat.Format24bppRgb : PixelFormat.Format32bppRgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+            return GenerateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         protected virtual void OnOcrContentRecognized(OcrResult e) {

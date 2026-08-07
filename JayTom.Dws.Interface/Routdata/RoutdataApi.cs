@@ -337,13 +337,8 @@ namespace JayTom.Dws.Interface.Routdata {
         }
 
         public static string GetSha256Hex(byte[] bytes) {
-            using var sha256 = SHA256.Create();
-            var hashBytes = sha256.ComputeHash(bytes);
-            var builder = new StringBuilder();
-            foreach (var b in hashBytes) {
-                builder.Append(b.ToString("x2"));
-            }
-            return builder.ToString();
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
+            return Convert.ToHexStringLower(SHA256.HashData(bytes));
         }
 
         public enum ApiMethod {

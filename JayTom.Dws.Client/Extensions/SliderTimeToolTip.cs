@@ -11,26 +11,34 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Converters;
 using System.Windows.Controls.Primitives;
 
-namespace JayTom.Dws.Client.Extensions {
+namespace JayTom.Dws.Client.Extensions
+{
 
-    public class SliderTimeToolTip {
+    public class SliderTimeToolTip
+    {
 
         public static readonly DependencyProperty AutoTickFrequencyProperty =
             DependencyProperty.RegisterAttached("AutoTickFrequency", typeof(bool), typeof(SliderTimeToolTip), new PropertyMetadata(false, OnAutoTickFrequencyChanged));
 
-        public static bool GetAutoTickFrequency(DependencyObject obj) {
+        public static bool GetAutoTickFrequency(DependencyObject obj)
+        {
             return (bool)obj.GetValue(AutoTickFrequencyProperty);
         }
 
-        public static void SetAutoTickFrequency(DependencyObject obj, bool value) {
+        public static void SetAutoTickFrequency(DependencyObject obj, bool value)
+        {
             obj.SetValue(AutoTickFrequencyProperty, value);
         }
 
-        private static void OnAutoTickFrequencyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
-            if (d is Slider slider && e.NewValue is bool isEnabled) {
-                if (isEnabled) {
+        private static void OnAutoTickFrequencyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Slider slider && e.NewValue is bool isEnabled)
+            {
+                if (isEnabled)
+                {
                     // Calculate and set TickFrequency when ActualWidth changes
-                    slider.SizeChanged += (s, args) => {
+                    slider.SizeChanged += (s, args) =>
+                    {
                         UpdateTickFrequency(slider);
                     };
 
@@ -40,8 +48,10 @@ namespace JayTom.Dws.Client.Extensions {
             }
         }
 
-        private static void UpdateTickFrequency(Slider slider) {
-            if (slider.ActualWidth > 0 && slider.Maximum > slider.Minimum) {
+        private static void UpdateTickFrequency(Slider slider)
+        {
+            if (slider.ActualWidth > 0 && slider.Maximum > slider.Minimum)
+            {
                 var range = slider.Maximum - slider.Minimum;
                 slider.TickFrequency = range / (slider.ActualWidth / 20);
             }
@@ -50,27 +60,34 @@ namespace JayTom.Dws.Client.Extensions {
         public static readonly DependencyProperty IsTimeToolTipEnabledProperty =
             DependencyProperty.RegisterAttached("IsTimeToolTipEnabled", typeof(bool), typeof(SliderTimeToolTip), new PropertyMetadata(false, OnIsTimeToolTipEnabledChanged));
 
-        public static bool GetIsTimeToolTipEnabled(DependencyObject obj) {
+        public static bool GetIsTimeToolTipEnabled(DependencyObject obj)
+        {
             return (bool)obj.GetValue(IsTimeToolTipEnabledProperty);
         }
 
-        public static void SetIsTimeToolTipEnabled(DependencyObject obj, bool value) {
+        public static void SetIsTimeToolTipEnabled(DependencyObject obj, bool value)
+        {
             obj.SetValue(IsTimeToolTipEnabledProperty, value);
         }
 
-        private static void OnIsTimeToolTipEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
-            if (d is Slider slider && e.NewValue is bool isEnabled) {
-                if (isEnabled) {
+        private static void OnIsTimeToolTipEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Slider slider && e.NewValue is bool isEnabled)
+            {
+                if (isEnabled)
+                {
                     slider.Tag = false;
                     // Set up the ToolTip and event handlers
                     slider.AutoToolTipPlacement = AutoToolTipPlacement.None; // Disable the default AutoToolTipPlacement
                     var toolTip = new ToolTip();
                     slider.ToolTip = toolTip;
 
-                    slider.MouseMove += (sender, args) => {
+                    slider.MouseMove += (sender, args) =>
+                    {
                         var mousePosition = args.MouseDevice.GetPosition(slider);
                         // 获取Slider的Track
-                        if (slider.Template.FindName("PART_Track", slider) is Track track && !track.Thumb.IsDragging) {
+                        if (slider.Template.FindName("PART_Track", slider) is Track track && !track.Thumb.IsDragging)
+                        {
                             // 计算鼠标相对于 Track 的位置
                             var relativePosition = (mousePosition.X - (track.Thumb.ActualWidth / 2)) / (track.ActualWidth - track.Thumb.ActualWidth);
 
@@ -86,17 +103,21 @@ namespace JayTom.Dws.Client.Extensions {
                             toolTip.VerticalAlignment = VerticalAlignment.Top;
                             toolTip.VerticalOffset = -70;
 
-                            if (!toolTip.IsOpen) {
+                            if (!toolTip.IsOpen)
+                            {
                                 toolTip.IsOpen = true;
                             }
                         }
                     };
-                    slider.MouseLeave += (s, args) => {
+                    slider.MouseLeave += (s, args) =>
+                    {
                         toolTip.IsOpen = false;
                     };
 
-                    slider.ValueChanged += (s, args) => {
-                        if (slider.IsMouseOver) {
+                    slider.ValueChanged += (s, args) =>
+                    {
+                        if (slider.IsMouseOver)
+                        {
                             var mousePosition = Mouse.GetPosition(slider);
                             toolTip.PlacementTarget = slider;
                             toolTip.Content = new DoubleToTimeToolTipConverter().Convert(slider.Value, typeof(string), null, null);
@@ -104,13 +125,15 @@ namespace JayTom.Dws.Client.Extensions {
                             toolTip.HorizontalAlignment = HorizontalAlignment.Left;
                             toolTip.VerticalAlignment = VerticalAlignment.Top;
                             toolTip.VerticalOffset = -70;
-                            if (!toolTip.IsOpen) {
+                            if (!toolTip.IsOpen)
+                            {
                                 toolTip.IsOpen = true;
                             }
                         }
                     };
                 }
-                else {
+                else
+                {
                     // Clean up if the property is set to false
                     slider.ToolTip = null;
                     slider.MouseEnter -= null;

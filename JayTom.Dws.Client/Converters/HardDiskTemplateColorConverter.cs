@@ -3,16 +3,22 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class HardDiskTemplateColorConverter : IValueConverter {
+    public class HardDiskTemplateColorConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is float rate) {
-                if (rate is >= 80 and < 95) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is float rate)
+            {
+                if (rate is >= 80 and < 95)
+                {
                     return new SolidColorBrush(Colors.DarkOrange);
                 }
-                else if (rate >= 95) {
+                else if (rate >= 95)
+                {
                     return new SolidColorBrush(Colors.Red);
                 }
 
@@ -21,12 +27,16 @@ namespace JayTom.Dws.Client.Converters {
             return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#31C731"));
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is float rate) {
-                if (rate is >= 80 and < 95) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is float rate)
+            {
+                if (rate is >= 80 and < 95)
+                {
                     return new SolidColorBrush(Colors.DarkOrange);
                 }
-                else if (rate >= 95) {
+                else if (rate >= 95)
+                {
                     return new SolidColorBrush(Colors.Red);
                 }
 

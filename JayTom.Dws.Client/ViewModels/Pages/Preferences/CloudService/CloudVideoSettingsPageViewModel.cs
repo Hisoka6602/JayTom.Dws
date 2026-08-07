@@ -27,62 +27,81 @@ using JayTom.Dws.Client.Models.LogsItemModels;
 using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Client.Models.CloudSettingModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
+{
 
-    public class CloudVideoSettingsPageViewModel : SettingsPageTemplateViewModel {
+    public class CloudVideoSettingsPageViewModel : SettingsPageTemplateViewModel
+    {
         private CloudVideoSettingsModel _cloudVideoSettings = new();
         private bool _isLoaded;
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         private SemaphoreSlim _logSlim = new(1);
 
-        public CloudVideoSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository) {
-            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item => {
-                if (item is { } model) {
-                    try {
+        public CloudVideoSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
+            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item =>
+            {
+                if (item is { } model)
+                {
+                    try
+                    {
                         await _logSlim.WaitAsync();
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            LogItems.Insert(0, new BaseLogItemModel() {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            LogItems.Insert(0, new BaseLogItemModel()
+                            {
                                 CreateTime = DateTime.Now,
                                 Message =
                                     $"条码:[{model.Barcode}],上传[{(model.IsSuccessful ? "成功" : "失败")}],扫码图数量:{model.ScanImageCount},全景图数量:{model.PanoramaImageCount}"
                             });
-                            if (LogItems.Count > 100) {
+                            if (LogItems.Count > 100)
+                            {
                                 LogItems.RemoveAt(LogItems.Count - 1);
                             }
                         }, DispatcherPriority.Background);
                     }
-                    finally {
+                    finally
+                    {
                         _logSlim.Release();
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<CloudVideoUploadRetryMessage>(async item => {
-                if (item is { } model) {
-                    try {
+            EventAggregator.Instance.Subscribe<CloudVideoUploadRetryMessage>(async item =>
+            {
+                if (item is { } model)
+                {
+                    try
+                    {
                         await _logSlim.WaitAsync();
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            LogItems.Insert(0, new BaseLogItemModel() {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            LogItems.Insert(0, new BaseLogItemModel()
+                            {
                                 CreateTime = DateTime.Now,
                                 Message = $"条码:[{model.Barcode}],重试次数:{model.RetryCount}"
                             });
-                            if (LogItems.Count > 100) {
+                            if (LogItems.Count > 100)
+                            {
                                 LogItems.RemoveAt(LogItems.Count - 1);
                             }
                         }, DispatcherPriority.Background);
                     }
-                    finally {
+                    finally
+                    {
                         _logSlim.Release();
                     }
                 }
             });
         }
 
-        public CloudVideoSettingsModel CloudVideoSettings {
+        public CloudVideoSettingsModel CloudVideoSettings
+        {
             get => _cloudVideoSettings;
             set => SetProperty(ref _cloudVideoSettings, value);
         }
 
-        public ObservableCollection<BaseLogItemModel> LogItems {
+        public ObservableCollection<BaseLogItemModel> LogItems
+        {
             get => _logItems;
             set => SetProperty(ref _logItems, value);
         }
@@ -90,10 +109,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
         public override string Identifier => "CloudServiceDialogHost";
         public override string SettingsName => "CloudVideoSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CloudVideoSettingsDto() {
+                Value = JsonConvert.SerializeObject(new CloudVideoSettingsDto()
+                {
                     Concurrency = CloudVideoSettings.Concurrency,
                     IsAutoUploadUnsyncedData = CloudVideoSettings.IsAutoUploadUnsyncedData,
                     IsUseCloudVideoUpload = CloudVideoSettings.IsUseCloudVideoUpload,
@@ -110,11 +132,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
                 var cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(SettingsName) ?? new CloudVideoSettingsDto();
-                CloudVideoSettings = new CloudVideoSettingsModel {
+                CloudVideoSettings = new CloudVideoSettingsModel
+                {
                     Concurrency = cloudVideoSettingsDto.Concurrency,
                     IsAutoUploadUnsyncedData = cloudVideoSettingsDto.IsAutoUploadUnsyncedData,
                     IsUseCloudVideoUpload = cloudVideoSettingsDto.IsUseCloudVideoUpload,
@@ -130,7 +155,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService {
 
         public ICommand ClearLogCommand => new DelegateCommand<object>(ClearLogDelegate);
 
-        private async void ClearLogDelegate(object obj) {
+        private async void ClearLogDelegate(object obj)
+        {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(LogItems.Clear);
         }
     }

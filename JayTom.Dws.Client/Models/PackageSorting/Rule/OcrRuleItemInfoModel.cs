@@ -1,8 +1,10 @@
 ﻿using System.Net.Http.Json;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+namespace JayTom.Dws.Client.Models.PackageSorting.Rule
+{
 
-    public class OcrRuleItemInfoModel : BasePackageSortingItemInfoModel {
+    public class OcrRuleItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long _ocrSortingId;
         private string _jsonContent = string.Empty;
         private string _formatJsonContent = string.Empty;
@@ -10,7 +12,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
         /// <summary>
         /// OcrId
         /// </summary>
-        public long OcrSortingId {
+        public long OcrSortingId
+        {
             get => _ocrSortingId;
             set => SetProperty(ref _ocrSortingId, value);
         }
@@ -18,12 +21,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
         /// <summary>
         /// 规则
         /// </summary>
-        public string JsonContent {
+        public string JsonContent
+        {
             get => _jsonContent;
             set => SetProperty(ref _jsonContent, value);
         }
 
-        public string FormatJsonContent {
+        public string FormatJsonContent
+        {
             get => _formatJsonContent;
             set => SetProperty(ref _formatJsonContent, value);
         }

@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.ViewModels.Pages {
+namespace JayTom.Dws.Client.ViewModels.Pages
+{
 
-    public class NvrHomePageViewModel : BindableBase {
+    public class NvrHomePageViewModel : BindableBase
+    {
     }
 }

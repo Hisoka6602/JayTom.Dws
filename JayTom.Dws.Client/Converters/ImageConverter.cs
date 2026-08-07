@@ -7,13 +7,18 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class ImageConverter : IMultiValueConverter {
+    public class ImageConverter : IMultiValueConverter
+    {
 
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
-            foreach (var value in values) {
-                if (value is not null && value != DependencyProperty.UnsetValue) {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            foreach (var value in values)
+            {
+                if (value is not null && value != DependencyProperty.UnsetValue)
+                {
                     return value;
                 }
             }
@@ -21,7 +26,8 @@ namespace JayTom.Dws.Client.Converters {
             return Binding.DoNothing;
         }
 
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

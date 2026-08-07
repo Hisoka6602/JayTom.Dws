@@ -4,9 +4,11 @@ using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class PackageExitDefinitionItemInfoModel : BasePackageSortingItemInfoModel {
+    public class PackageExitDefinitionItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private string _exitName = string.Empty;
         private ExitType _type = ExitType.PackageExit;
         private bool _isActive = true;
@@ -18,12 +20,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 连接Id
         /// </summary>
-        public long CommunicationConnectionId {
+        public long CommunicationConnectionId
+        {
             get => _communicationConnectionId;
             set => SetProperty(ref _communicationConnectionId, value);
         }
 
-        public long Pid {
+        public long Pid
+        {
             get => _pid;
             set => SetProperty(ref _pid, value);
         }
@@ -32,7 +36,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 连接名称
         /// </summary>
         [DisplayName("连接名称"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string? CommunicationConnectionName {
+        public string? CommunicationConnectionName
+        {
             get => _communicationConnectionName;
             set => SetProperty(ref _communicationConnectionName, value);
         }
@@ -41,7 +46,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 格口名称
         /// </summary>
         [DisplayName("格口名称"), MemberNotNull, Key, ExcelInfo(Width = 5000)]
-        public string ExitName {
+        public string ExitName
+        {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
         }
@@ -50,7 +56,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 格口类型
         /// </summary>
         [DisplayName("格口类型(0=包裹出口、1=异常出口)"), MemberNotNull, ExcelInfo(Width = 6000, IsEnumToInt = true)]
-        public ExitType Type {
+        public ExitType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
@@ -59,7 +66,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 格口名称
         /// </summary>
         [DisplayName("主格口"), MemberNotNull, ExcelInfo(Width = 5000)]
-        public string MainExitName {
+        public string MainExitName
+        {
             get => _mainExitName;
             set => SetProperty(ref _mainExitName, value);
         }
@@ -68,7 +76,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 是否生效
         /// </summary>
         [DisplayName("是否生效(0=不生效、1=生效)"), MemberNotNull, ExcelInfo(Width = 6000, IsBooleanToInt = true)]
-        public bool IsActive {
+        public bool IsActive
+        {
             get => _isActive;
             set => SetProperty(ref _isActive, value);
         }

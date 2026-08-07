@@ -10,11 +10,15 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters
 {
 
-    public class CommunicationMethodConverter : IValueConverter {
+    public class CommunicationMethodConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is CommunicationsType communicationsType) {
-                return communicationsType switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is CommunicationsType communicationsType)
+            {
+                return communicationsType switch
+                {
                     CommunicationsType.None => "无",
                     CommunicationsType.SerialPort => "串口通信",
                     CommunicationsType.TCP => "TCP通信",
@@ -29,7 +33,8 @@ namespace JayTom.Dws.Client.Converters
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

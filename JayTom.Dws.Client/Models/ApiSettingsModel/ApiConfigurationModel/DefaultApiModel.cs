@@ -3,8 +3,10 @@ using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
-    public class DefaultApiModel : BindableBase {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
+    public class DefaultApiModel : BindableBase
+    {
         private ObservableCollection<ItemBaseTemplateModel> _dataTemplate = new();
 
         private bool _isUseJsonUpload;
@@ -21,7 +23,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 数据模板
         /// </summary>
-        public ObservableCollection<ItemBaseTemplateModel> DataTemplate {
+        public ObservableCollection<ItemBaseTemplateModel> DataTemplate
+        {
             get => _dataTemplate;
             set => SetProperty(ref _dataTemplate, value);
         }
@@ -29,7 +32,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否使用Json上传
         /// </summary>
-        public bool IsUseJsonUpload {
+        public bool IsUseJsonUpload
+        {
             get => _isUseJsonUpload;
             set => SetProperty(ref _isUseJsonUpload, value);
         }
@@ -37,7 +41,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -45,7 +50,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 请求超时时间
         /// </summary>
-        public int Timeout {
+        public int Timeout
+        {
             get => _timeout;
             set => SetProperty(ref _timeout, value);
         }
@@ -53,7 +59,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 验证模式
         /// </summary>
-        public ResponseValidationMode ValidationMode {
+        public ResponseValidationMode ValidationMode
+        {
             get => _validationMode;
             set => SetProperty(ref _validationMode, value);
         }
@@ -61,7 +68,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 完全匹配的内容
         /// </summary>
-        public string CompleteMatch {
+        public string CompleteMatch
+        {
             get => _completeMatch;
             set => SetProperty(ref _completeMatch, value);
         }
@@ -69,7 +77,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 包含字符串的内容
         /// </summary>
-        public string StringContains {
+        public string StringContains
+        {
             get => _stringContains;
             set => SetProperty(ref _stringContains, value);
         }
@@ -77,7 +86,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 正则表达式
         /// </summary>
-        public string RegularExpression {
+        public string RegularExpression
+        {
             get => _regularExpression;
             set => SetProperty(ref _regularExpression, value);
         }
@@ -85,7 +95,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否上传图片
         /// </summary>
-        public bool IsUseUploadImage {
+        public bool IsUseUploadImage
+        {
             get => _isUseUploadImage;
             set => SetProperty(ref _isUseUploadImage, value);
         }
@@ -93,7 +104,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否上传扫码图
         /// </summary>
-        public bool IsUploadScanImage {
+        public bool IsUploadScanImage
+        {
             get => _isUploadScanImage;
             set => SetProperty(ref _isUploadScanImage, value);
         }
@@ -101,7 +113,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否上传全景图
         /// </summary>
-        public bool IsUploadPanoramaImage {
+        public bool IsUploadPanoramaImage
+        {
             get => _isUploadPanoramaImage;
             set => SetProperty(ref _isUploadPanoramaImage, value);
         }

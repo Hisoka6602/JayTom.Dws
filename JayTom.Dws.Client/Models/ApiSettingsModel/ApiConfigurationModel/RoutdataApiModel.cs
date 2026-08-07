@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
-    public class RoutDataApiModel : BindableBase {
+    public class RoutDataApiModel : BindableBase
+    {
         private string _url = string.Empty;
         private int _timeOut = 1000;
         private string _signKey = string.Empty;
@@ -19,7 +21,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -27,7 +30,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }
@@ -35,7 +39,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// SignKey
         /// </summary>
-        public string SignKey {
+        public string SignKey
+        {
             get => _signKey;
             set => SetProperty(ref _signKey, value);
         }
@@ -43,7 +48,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 重试次数
         /// </summary>
-        public int RetryCount {
+        public int RetryCount
+        {
             get => _retryCount;
             set => SetProperty(ref _retryCount, value);
         }
@@ -51,7 +57,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 重试间隔
         /// </summary>
-        public int RetryInterval {
+        public int RetryInterval
+        {
             get => _retryInterval;
             set => SetProperty(ref _retryInterval, value);
         }
@@ -59,7 +66,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备代码
         /// </summary>
-        public string DeviceCode {
+        public string DeviceCode
+        {
             get => _deviceCode;
             set => SetProperty(ref _deviceCode, value);
         }
@@ -67,7 +75,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 机构代码
         /// </summary>
-        public string OrgCode {
+        public string OrgCode
+        {
             get => _orgCode;
             set => SetProperty(ref _orgCode, value);
         }

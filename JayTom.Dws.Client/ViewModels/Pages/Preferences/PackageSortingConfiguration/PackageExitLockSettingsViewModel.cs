@@ -33,9 +33,11 @@ using JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
-    public class PackageExitLockSettingsViewModel : SettingsPageTemplateViewModel {
+    public class PackageExitLockSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
 
@@ -52,7 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IConfigRepository configRepository, IExcel excel,
-            IDeviceService deviceService, IExitMonitor exitMonitor) : base(configRepository) {
+            IDeviceService deviceService, IExitMonitor exitMonitor) : base(configRepository)
+        {
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
 
@@ -60,35 +63,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             _deviceService = deviceService;
             _exitMonitor = exitMonitor;
             //锁格事件回调
-            _exitMonitor.LockExitEvent += async (sender, model) => {
-                await Application.Current.Dispatcher.InvokeAsync(() => {
+            _exitMonitor.LockExitEvent += async (sender, model) =>
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
                     var packageExitLockBindingItemInfoModel = PackageExitLockBindingItems.FirstOrDefault(f => f.ExitName.Equals(model.ExitName));
-                    if (packageExitLockBindingItemInfoModel is not null) {
-                        packageExitLockBindingItemInfoModel.CurrentStatus = ExitLockStatus.Lock;
-                    }
+                    packageExitLockBindingItemInfoModel?.CurrentStatus = ExitLockStatus.Lock;
                 });
             };
-            _exitMonitor.UnLockExitEvent += async (sender, model) => {
-                await Application.Current.Dispatcher.InvokeAsync(() => {
+            _exitMonitor.UnLockExitEvent += async (sender, model) =>
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
                     var packageExitLockBindingItemInfoModel = PackageExitLockBindingItems.FirstOrDefault(f => f.ExitName.Equals(model.ExitName));
-                    if (packageExitLockBindingItemInfoModel is not null) {
-                        packageExitLockBindingItemInfoModel.CurrentStatus = ExitLockStatus.Unlock;
-                    }
+                    packageExitLockBindingItemInfoModel?.CurrentStatus = ExitLockStatus.Unlock;
                 });
             };
         }
 
-        public ObservableCollection<PackageExitLockBindingItemInfoModel> PackageExitLockBindingItems {
+        public ObservableCollection<PackageExitLockBindingItemInfoModel> PackageExitLockBindingItems
+        {
             get => _packageExitLockBindingItems;
             set => SetProperty(ref _packageExitLockBindingItems, value);
         }
 
-        public PackageExitLockSettingsModel PackageExitLockSettings {
+        public PackageExitLockSettingsModel PackageExitLockSettings
+        {
             get => _packageExitLockSettings;
             set => SetProperty(ref _packageExitLockSettings, value);
         }
 
-        public ObservableCollection<LockProtocolType> LockProtocolTypeItems {
+        public ObservableCollection<LockProtocolType> LockProtocolTypeItems
+        {
             get => _lockProtocolTypeItems;
             set => SetProperty(ref _lockProtocolTypeItems, value);
         }
@@ -96,7 +102,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 锁格中
         /// </summary>
-        public bool IsExitLockProgress {
+        public bool IsExitLockProgress
+        {
             get => _isExitLockProgress;
             set => SetProperty(ref _isExitLockProgress, value);
         }
@@ -104,21 +111,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 解锁中
         /// </summary>
-        public bool IsUnExitLockProgress {
+        public bool IsUnExitLockProgress
+        {
             get => _isUnExitLockProgress;
             set => SetProperty(ref _isUnExitLockProgress, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await Application.Current.Dispatcher.InvokeAsync(async () => {
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var packageExitLockSettingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>(SettingsName);
-                    if (packageExitLockSettingsDto is not null) {
-                        PackageExitLockSettings = new PackageExitLockSettingsModel() {
+                    if (packageExitLockSettingsDto is not null)
+                    {
+                        PackageExitLockSettings = new PackageExitLockSettingsModel()
+                        {
                             IsUsePackageExitLock = packageExitLockSettingsDto.IsUsePackageExitLock,
                             ProtocolType = packageExitLockSettingsDto.ProtocolType,
-                            S7Config = new S7ConfigModel {
+                            S7Config = new S7ConfigModel
+                            {
                                 Db = packageExitLockSettingsDto.S7Config.Db,
                                 Ip = packageExitLockSettingsDto.S7Config.Ip,
                                 Slot = packageExitLockSettingsDto.S7Config.Slot,
@@ -128,7 +142,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             IsAutoExceptionSorting = packageExitLockSettingsDto.IsAutoExceptionSorting
                         };
                     }
-                    else {
+                    else
+                    {
                         base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
                     }
                 });
@@ -138,20 +153,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public ICommand AddCommand => new DelegateCommand<object>(AddDelegate);
 
-        private async void AddDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void AddDelegate(object obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var packageExitLockEditor = new PackageExitLockEditor();
-                if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model) {
+                if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model)
+                {
                     model.Identifier = "PackageExitLockDialog";
                     await DialogHost.Show(packageExitLockEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent))
+                    {
                         base.MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
 
-                    if (model.IsOk) {
+                    if (model.IsOk)
+                    {
                         //保存到数据库
-                        var packageExitLockBindingInfoModel = new PackageExitLockBindingInfoModel() {
+                        var packageExitLockBindingInfoModel = new PackageExitLockBindingInfoModel()
+                        {
                             Address = model.Address,
                             CreateTime = DateTime.Now,
                             ExitId = model.SelectExitDefinitionInfo.Id,
@@ -163,15 +184,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         //检查是否已存在相同格口
                         var bindingInfoModel = await _packageExitLockBindingRepository.FirstOrDefault(
                             s => s.ExitId.Equals(model.SelectExitDefinitionInfo.Id));
-                        if (bindingInfoModel is not null) {
+                        if (bindingInfoModel is not null)
+                        {
                             base.MessageQueue.Enqueue($"格口:{model.SelectExitDefinitionInfo.ExitName} 重复绑定");
                             return;
                         }
 
                         var insert = await _packageExitLockBindingRepository.Insert(packageExitLockBindingInfoModel);
-                        if (insert) {
+                        if (insert)
+                        {
                             EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = "PackageExitLockBindingItemSettings",
                                 IsLocallySaved = true
                             });
@@ -179,7 +203,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             //刷新列表
                             RefreshData();
                         }
-                        else {
+                        else
+                        {
                             base.MessageQueue.Enqueue("保存失败");
                         }
                     }
@@ -189,47 +214,60 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public ICommand ImportCommand => new DelegateCommand<object>(ImportDelegate);
 
-        private async void ImportDelegate(object obj) {
+        private async void ImportDelegate(object obj)
+        {
             //导入
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog() {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog()
+            {
                 Title = "Please select the file to import.",
                 Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
                 DefaultExt = "xlsx",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             };
-            if (openFileDialog.ShowDialog() == true) {
+            if (openFileDialog.ShowDialog() == true)
+            {
                 var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                if (exportDialog.DataContext is ExportDialogViewModel model)
+                {
                     model.FilePath = openFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
                     DialogHost.Show(exportDialog, model.Identifier);
 
-                    var models = await _excel.ReadExcel<PackageExitLockBindingItemInfoModel>(openFileDialog.FileName, async p => {
+                    var models = await _excel.ReadExcel<PackageExitLockBindingItemInfoModel>(openFileDialog.FileName, async p =>
+                    {
                         model.Progress = p;
                         model.ProgressText = $"{p}%";
-                        if (p == 100) {
-                            await Application.Current.Dispatcher.InvokeAsync(() => {
-                                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                        if (p == 100)
+                        {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                if (DialogHost.IsDialogOpen(model.Identifier))
+                                {
                                     DialogHost.Close(model.Identifier);
                                 }
                             });
                         }
-                    }, async e => {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    }, async e =>
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (DialogHost.IsDialogOpen(model.Identifier))
+                            {
                                 DialogHost.Close(model.Identifier);
                             }
                         });
                         base.MessageQueue?.Enqueue(e.Message);
                     });
                     await Task.Delay(500);
-                    if (models?.Any() == true) {
+                    if (models?.Any() == true)
+                    {
                         var duplicateExitNames = models.GroupBy(g => g.ExitName)
                             .Where(g => g.Count() > 1)  // 选择具有重复键的组
                             .Select(g => g.Key)
                             .ToList();
-                        if (duplicateExitNames.Any()) {
+                        if (duplicateExitNames.Any())
+                        {
                             var join = string.Join(",", duplicateExitNames);
                             base.MessageQueue.Enqueue($"{join},重复了");
                             return;
@@ -237,7 +275,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         //批量添加到数据库
                         var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
 
-                        var infoModels = models.Select(s => new PackageExitLockBindingInfoModel {
+                        var infoModels = models.Select(s => new PackageExitLockBindingInfoModel
+                        {
                             Address = s.Address,
                             CreateTime = s.CreateTime,
                             ModifyTime = s.ModifyTime,
@@ -250,17 +289,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         }).Where(w => !w.ExitId.Equals(0)).ToList();
 
                         var insertOrUpdate = await _packageExitLockBindingRepository.InsertOrUpdateRange(infoModels);
-                        if (insertOrUpdate) {
+                        if (insertOrUpdate)
+                        {
                             EventAggregator.Instance.Publish(infoModels.FirstOrDefault());
                             base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = "PackageExitLockBindingItemSettings",
                                 IsLocallySaved = true
                             });
                         }
-                        else {
+                        else
+                        {
                             base.MessageQueue.Enqueue("保存失败");
                         }
                     }
@@ -270,24 +312,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public ICommand ExportCommand => new DelegateCommand<object>(ExportDelegate);
 
-        private async void ExportDelegate(object obj) {
+        private async void ExportDelegate(object obj)
+        {
             //导出
-            if (PackageExitLockBindingItems?.Any() != true) {
+            if (PackageExitLockBindingItems?.Any() != true)
+            {
                 base.MessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
                 return;
             }
 
             //导出
 
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog()
+            {
                 Title = "Please select the location to save the file.",
                 Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
                 DefaultExt = "xlsx",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             };
-            if (saveFileDialog.ShowDialog() == true) {
+            if (saveFileDialog.ShowDialog() == true)
+            {
                 var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                if (exportDialog.DataContext is ExportDialogViewModel model)
+                {
                     model.FilePath = saveFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
@@ -295,22 +342,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     var export = await _excel.Export(saveFileDialog.FileName,
                         $"锁格配置列表",
                         "锁格配置列表", PackageExitLockBindingItems?.ToList() ?? new List<PackageExitLockBindingItemInfoModel>(),
-                        new List<string>(), async p => {
+                        new List<string>(), async p =>
+                        {
                             model.Progress = p;
                             model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                            if (p == 100)
+                            {
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                {
+                                    if (DialogHost.IsDialogOpen(model.Identifier))
+                                    {
                                         DialogHost.Close(model.Identifier);
                                     }
                                 });
                             }
-                        }, e => {
+                        }, e =>
+                        {
                             base.MessageQueue?.Enqueue(e.Message);
                         });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    if (!export)
+                    {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (DialogHost.IsDialogOpen(model.Identifier))
+                            {
                                 DialogHost.Close(model.Identifier);
                             }
                         });
@@ -321,21 +376,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public ICommand ModifyCommand => new DelegateCommand<PackageExitLockBindingItemInfoModel>(ModifyDelegate);
 
-        private async void ModifyDelegate(PackageExitLockBindingItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ModifyDelegate(PackageExitLockBindingItemInfoModel obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var packageExitLockEditor = new PackageExitLockEditor();
-                if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model) {
+                if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model)
+                {
                     model.Identifier = "PackageExitLockDialog";
                     model.PackageExitLockBindingItemInfo = obj;
                     await DialogHost.Show(packageExitLockEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent))
+                    {
                         base.MessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
 
-                    if (model.IsOk) {
+                    if (model.IsOk)
+                    {
                         //更新到数据库
-                        var packageExitLockBindingInfoModel = new PackageExitLockBindingInfoModel() {
+                        var packageExitLockBindingInfoModel = new PackageExitLockBindingInfoModel()
+                        {
                             Address = model.Address,
                             CreateTime = DateTime.Now,
                             ExitId = model.SelectExitDefinitionInfo.Id,
@@ -347,17 +408,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         };
 
                         var update = await _packageExitLockBindingRepository.Update(packageExitLockBindingInfoModel);
-                        if (update) {
+                        if (update)
+                        {
                             EventAggregator.Instance.Publish(packageExitLockBindingInfoModel);
                             base.MessageQueue.Enqueue("保存成功");
                             //刷新列表
                             RefreshData();
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = "PackageExitLockBindingItemSettings",
                                 IsLocallySaved = true
                             });
                         }
-                        else {
+                        else
+                        {
                             base.MessageQueue.Enqueue("保存失败");
                         }
                     }
@@ -367,16 +431,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public ICommand DeleteCommand => new DelegateCommand<PackageExitLockBindingItemInfoModel>(DeleteDelegate);
 
-        private async void DeleteDelegate(PackageExitLockBindingItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void DeleteDelegate(PackageExitLockBindingItemInfoModel obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var model = await _packageExitLockBindingRepository.
                     FirstOrDefault(f =>
                         f.ExitId.Equals(obj.ExitId));
-                if (model is not null) {
+                if (model is not null)
+                {
                     var delete = await _packageExitLockBindingRepository.Delete(model);
-                    if (delete) {
+                    if (delete)
+                    {
                         RefreshData();
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent
+                        {
                             SettingsName = "PackageExitLockBindingItemSettings",
                             IsLocallySaved = true
                         });
@@ -388,18 +457,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "PackageExitLockSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            if (_deviceService.RunningStatus) {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            if (_deviceService.RunningStatus)
+            {
                 IsSavingInProgress = false;
                 MessageQueue.Enqueue($"设备工作中,无法设置");
                 return false;
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto() {
+                Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto()
+                {
                     IsUsePackageExitLock = PackageExitLockSettings.IsUsePackageExitLock,
                     ProtocolType = PackageExitLockSettings.ProtocolType,
-                    S7Config = new S7ConfigDto {
+                    S7Config = new S7ConfigDto
+                    {
                         Db = PackageExitLockSettings.S7Config.Db,
                         Ip = PackageExitLockSettings.S7Config.Ip,
                         Slot = PackageExitLockSettings.S7Config.Slot,
@@ -414,10 +488,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return true;
         }
 
-        private async void RefreshData() {
+        private async void RefreshData()
+        {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 model.Identifier = "PackageExitLockListViewDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
@@ -427,11 +503,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 o => o.Id);
             var (key, value) = await _exitMonitor.GetAllPackageExitStatus();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 PackageExitLockBindingItems.Clear();
 
-                if (infoModels?.Any() == true) {
-                    var packageExitLockBindingItemInfoModels = infoModels.Select((s, i) => new PackageExitLockBindingItemInfoModel {
+                if (infoModels?.Any() == true)
+                {
+                    var packageExitLockBindingItemInfoModels = infoModels.Select((s, i) => new PackageExitLockBindingItemInfoModel
+                    {
                         Address = s.Address,
                         CreateTime = s.CreateTime,
                         ModifyTime = s.ModifyTime,
@@ -449,7 +528,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     })?.ToList() ?? new List<PackageExitLockBindingItemInfoModel>();
                     PackageExitLockBindingItems.AddRange(packageExitLockBindingItemInfoModels);
                 }
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                if (DialogHost.IsDialogOpen(model.Identifier))
+                {
                     DialogHost.Close(model.Identifier);
                 }
             });
@@ -461,14 +541,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// 一键锁格
         /// </summary>
         /// <param name="obj"></param>
-        private void AllLockExitDelegate(object obj) {
-            if (IsExitLockProgress || IsUnExitLockProgress) {
+        private void AllLockExitDelegate(object obj)
+        {
+            if (IsExitLockProgress || IsUnExitLockProgress)
+            {
                 return;
             }
 
             IsExitLockProgress = true;
-            Task.Run(async () => {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            Task.Run(async () =>
+            {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     await Task.Delay(3000);
                     var (key, value) = await _exitMonitor.AllLockExit();
                     MessageQueue.Enqueue(value);
@@ -483,14 +567,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// 一键解锁
         /// </summary>
         /// <param name="obj"></param>
-        private void AllUnLockExitDelegate(object obj) {
-            if (IsExitLockProgress || IsUnExitLockProgress) {
+        private void AllUnLockExitDelegate(object obj)
+        {
+            if (IsExitLockProgress || IsUnExitLockProgress)
+            {
                 return;
             }
 
             IsUnExitLockProgress = true;
-            Task.Run(async () => {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            Task.Run(async () =>
+            {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     await Task.Delay(3000);
                     var (key, value) = await _exitMonitor.AllUnLockExit();
                     MessageQueue.Enqueue(value);

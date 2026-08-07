@@ -21,9 +21,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             var insert = await base.Insert(entity, token);
             if (insert) {
                 var infoModel = base._cache.Get<PackageInfoModel>(entity.PackageId);
-                if (infoModel is not null) {
-                    infoModel.SortingInfo = entity;
-                }
+                infoModel?.SortingInfo = entity;
             }
             return insert;
         }

@@ -19,11 +19,23 @@ namespace JayTom.Dws.Interface.Post {
     /// <summary>
     /// 揽投机构
     /// </summary>
-    public class PostInApi : IDataUploader {
+    public partial class PostInApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters? Parameters { get; private set; }
         private static long _num = 1;
         public object SettingLock { get; private set; } = new();
+
+        /// <summary>
+        /// 获取解析邮政响应信封的源生成正则。
+        /// </summary>
+        [GeneratedRegex(@"#HEAD::(.*?)::\|\|#END")]
+        private static partial Regex ResponseEnvelopeRegex();
+
+        /// <summary>
+        /// 获取解析异常落格编号的源生成正则。
+        /// </summary>
+        [GeneratedRegex(@"落格:\[(\d+)\]")]
+        private static partial Regex ExceptionExitRegex();
 
         public PostInApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -132,12 +144,11 @@ namespace JayTom.Dws.Interface.Post {
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    var pattern = @"#HEAD::(.*?)::\|\|#END";
-                    var match = Regex.Match(resultContent, pattern);
+                    var match = ResponseEnvelopeRegex().Match(resultContent);
                     if (match.Success) {
                         // Extract the content and split by '::'
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 7 && parts[7].Length >= 4) {
                             //格口
@@ -252,12 +263,11 @@ namespace JayTom.Dws.Interface.Post {
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    var pattern = @"#HEAD::(.*?)::\|\|#END";
-                    var match = Regex.Match(resultContent, pattern);
+                    var match = ResponseEnvelopeRegex().Match(resultContent);
                     if (match.Success) {
                         // Extract the content and split by '::'
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 7 && parts[7].Length >= 4) {
                             //格口
@@ -321,12 +331,11 @@ namespace JayTom.Dws.Interface.Post {
                 var mailType = "0";
                 var sortingSchemeCode = "0";
                 if (!string.IsNullOrWhiteSpace(uploadResponse.ResponseContent)) {
-                    var pattern = @"#HEAD::(.*?)::\|\|#END";
-                    var match = Regex.Match(uploadResponse.ResponseContent, pattern);
+                    var match = ResponseEnvelopeRegex().Match(uploadResponse.ResponseContent);
                     if (match.Success) {
                         // Extract the content and split by '::'
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 7 && parts[7].Length >= 4) {
                             //格口
@@ -425,19 +434,17 @@ namespace JayTom.Dws.Interface.Post {
                     var routingDirection = "0";
                     var mailType = "0";
                     var sortingSchemeCode = "0";
-                    string pattern = @"落格:\[(\d+)\]";
-                    var match = Regex.Match(exceptionResponse.ResponseContent, pattern);
+                    var match = ExceptionExitRegex().Match(exceptionResponse.ResponseContent);
                     if (match.Success) {
                         var content = match.Groups[1].Value;
                         int.TryParse(content, out var exit);
                         chuteCode = exit.ToString();
                     }
                     //取出路向
-                    pattern = @"#HEAD::(.*?)::\|\|#END";
-                    match = Regex.Match(exceptionResponse.RequestContent, pattern);
+                    match = ResponseEnvelopeRegex().Match(exceptionResponse.RequestContent);
                     if (match.Success) {
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 1) {
                             //路向
@@ -661,10 +668,9 @@ namespace JayTom.Dws.Interface.Post {
                 var sign = $"{Parameters?.CsbInfo?.Password}{data}";
 
                 for (int i = 0; i < 2; i++) {
-                    using var md5 = System.Security.Cryptography.MD5.Create();
-                    var result = md5.ComputeHash(Encoding.UTF8.GetBytes(sign));
-                    var strResult = BitConverter.ToString(result);
-                    sign = strResult.Replace("-", "");
+                    // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+                    sign = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(
+                        Encoding.UTF8.GetBytes(sign)));
                 }
                 var bytes = Encoding.UTF8.GetBytes(sign);
                 var base64Sign = Convert.ToBase64String(bytes);
@@ -757,10 +763,10 @@ namespace JayTom.Dws.Interface.Post {
             }
 
             //设置csb要求的头参数
-            newDict.Add("_api_name", new object[] { apiName });
-            newDict.Add("_api_version", new object[] { apiVersion });
-            newDict.Add("_api_access_key", new object[] { accessKey });
-            newDict.Add("_api_timestamp", new object[] { timeStamp });
+            newDict.Add("_api_name", [apiName]);
+            newDict.Add("_api_version", [apiVersion]);
+            newDict.Add("_api_access_key", [accessKey]);
+            newDict.Add("_api_timestamp", [timeStamp]);
 
             //对所有参数进行排序
             var sortedDict = from pair in newDict orderby pair.Key select pair;

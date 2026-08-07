@@ -21,26 +21,33 @@ using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
+{
 
-    public class SyncSettingsViewModel : SettingsPageTemplateViewModel {
+    public class SyncSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private SyncSettingsModel _syncSettingsInfo = new();
         private bool _isConnecting;
 
-        public SyncSettingsModel SyncSettingsInfo {
+        public SyncSettingsModel SyncSettingsInfo
+        {
             get => _syncSettingsInfo;
             set => SetProperty(ref _syncSettingsInfo, value);
         }
 
-        public bool IsConnecting {
+        public bool IsConnecting
+        {
             get => _isConnecting;
             set => SetProperty(ref _isConnecting, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(SettingsName) ?? new SyncSettingsDto();
-                SyncSettingsInfo = new SyncSettingsModel() {
+                SyncSettingsInfo = new SyncSettingsModel()
+                {
                     Url = syncSettingsDto.Url,
                     IsUseAlgorithmSync = syncSettingsDto.IsUseAlgorithmSync,
                     IsUseApiSync = syncSettingsDto.IsUseApiSync,
@@ -53,8 +60,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                     IsUseSpaceCleaningSync = syncSettingsDto.IsUseSpaceCleaningSync,
                     IsUseSyncSettings = syncSettingsDto.IsUseSyncSettings
                 };
-                foreach (var model in SyncSettingsInfo.PackageSortingSyncItems) {
-                    switch (model.Value) {
+                foreach (var model in SyncSettingsInfo.PackageSortingSyncItems)
+                {
+                    switch (model.Value)
+                    {
                         case "IsUseConnectionSync" when syncSettingsDto.IsUseConnectionSync:
                         case "IsUseExitSync" when syncSettingsDto.IsUseExitSync:
                         case "IsUseInstructionSync" when syncSettingsDto.IsUseInstructionSync:
@@ -74,8 +83,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
 
         public override string SettingsName => "SyncSettingsSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var syncSettingsDto = new SyncSettingsDto() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var syncSettingsDto = new SyncSettingsDto()
+            {
                 Url = SyncSettingsInfo.Url,
                 IsUseAlgorithmSync = SyncSettingsInfo.IsUseAlgorithmSync,
                 IsUseApiSync = SyncSettingsInfo.IsUseApiSync,
@@ -88,8 +99,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                 IsUseSpaceCleaningSync = SyncSettingsInfo.IsUseSpaceCleaningSync,
                 IsUseSyncSettings = SyncSettingsInfo.IsUseSyncSettings
             };
-            foreach (var model in SyncSettingsInfo.PackageSortingSyncItems) {
-                switch (model.Value) {
+            foreach (var model in SyncSettingsInfo.PackageSortingSyncItems)
+            {
+                switch (model.Value)
+                {
                     case "IsUseConnectionSync":
                         syncSettingsDto.IsUseConnectionSync = model.IsChecked;
                         break;
@@ -123,7 +136,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                         break;
                 }
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
                 Value = JsonConvert.SerializeObject(syncSettingsDto)
             });
@@ -132,7 +146,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             return insertOrUpdate;
         }
 
-        public SyncSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public SyncSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
         /// <summary>
@@ -140,7 +155,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         /// </summary>
         public ICommand ConnectCommand => new DelegateCommand<object>(ConnectDelegate);
 
-        private void ConnectDelegate(object obj) {
+        private void ConnectDelegate(object obj)
+        {
         }
     }
 }

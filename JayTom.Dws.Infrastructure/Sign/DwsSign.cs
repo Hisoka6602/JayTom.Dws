@@ -8,14 +8,11 @@ namespace JayTom.Dws.Infrastructure.Sign {
 
         public bool IsValid(string md5Content, string secret, string content, string constkey) {
             if (md5Content.Length < 16) return false;
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(secret + content + constkey));
-                var strResult = BitConverter.ToString(result);
-                sign = strResult.Replace("-", "");
-            }
+            // DWS-HEX-COMPACT: 签名校验必须兼容既有的无分隔符摘要格式。
+            var sign = Convert.ToHexString(MD5.HashData(
+                Encoding.UTF8.GetBytes(secret + content + constkey)));
 
-            return sign.ToUpper().Equals(md5Content.ToUpper());
+            return sign.Equals(md5Content, StringComparison.OrdinalIgnoreCase);
         }
 
         public bool IsValid(string md5Content, string secret, string content) {

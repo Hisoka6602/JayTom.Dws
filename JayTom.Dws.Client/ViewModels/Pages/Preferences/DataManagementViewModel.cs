@@ -40,9 +40,11 @@ using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class DataManagementViewModel : BindableBase {
+    public class DataManagementViewModel : BindableBase
+    {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
         private readonly IConfigRepository _configRepository;
@@ -58,7 +60,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private float _maxWeight;
         private bool _isLoaded;
 
-        private ObservableCollection<PackageItemModel> _packageItems = new() {
+        private ObservableCollection<PackageItemModel> _packageItems = new()
+        {
         };
 
         private UploadStatus? _selectedUploadStatus;
@@ -72,21 +75,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             IExcel excel,
             IConfigRepository configRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IPackageRepository packageRepository) {
+            IPackageRepository packageRepository)
+        {
             _dialogService = dialogService;
             _excel = excel;
             _configRepository = configRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _packageRepository = packageRepository;
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info => {
-                if (info is SettingsChangedEvent model) {
-                    if (model.SettingsName.Equals("VolumeSettings")) {
-                        await Application.Current.Dispatcher.InvokeAsync(async () => {
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info =>
+            {
+                if (info is SettingsChangedEvent model)
+                {
+                    if (model.SettingsName.Equals("VolumeSettings"))
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(async () =>
+                        {
                             //临时写在这里加载配置，后续修改通过事件通知
                             var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
-                            if (configInfoModel is not null) {
+                            if (configInfoModel is not null)
+                            {
                                 var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                                if (volumeSettingsDto is not null) {
+                                if (volumeSettingsDto is not null)
+                                {
                                     VolumeUnit = volumeSettingsDto.Unit;
                                 }
                             }
@@ -99,7 +109,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 提示内容
         /// </summary>
-        public SnackbarMessageQueue DataManagementMessageQueue {
+        public SnackbarMessageQueue DataManagementMessageQueue
+        {
             get => _dataManagementMessageQueue;
             set => SetProperty(ref _dataManagementMessageQueue, value);
         }
@@ -107,29 +118,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 体积单位
         /// </summary>
-        public VolumeUnit VolumeUnit {
+        public VolumeUnit VolumeUnit
+        {
             get => _volumeUnit;
             set => SetProperty(ref _volumeUnit, value);
         }
 
         #region 搜索工具栏条件
 
-        public DateTime? StartTime {
+        public DateTime? StartTime
+        {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime? EndTime {
+        public DateTime? EndTime
+        {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
 
-        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems
+        {
             get => _packageExitDefinitionItems;
             set => SetProperty(ref _packageExitDefinitionItems, value);
         }
 
-        public PackageExitDefinitionItemInfoModel? SelectExitDefinitionInfo {
+        public PackageExitDefinitionItemInfoModel? SelectExitDefinitionInfo
+        {
             get => _selectExitDefinitionInfo;
             set => SetProperty(ref _selectExitDefinitionInfo, value);
         }
@@ -137,7 +153,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 条码
         /// </summary>
-        public string BarCode {
+        public string BarCode
+        {
             get => _barCode;
             set => SetProperty(ref _barCode, value);
         }
@@ -145,7 +162,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 最小重量
         /// </summary>
-        public float MinWeight {
+        public float MinWeight
+        {
             get => _minWeight;
             set => SetProperty(ref _minWeight, value);
         }
@@ -153,7 +171,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 最大重量
         /// </summary>
-        public float MaxWeight {
+        public float MaxWeight
+        {
             get => _maxWeight;
             set => SetProperty(ref _maxWeight, value);
         }
@@ -161,11 +180,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 验证浮点数
         /// </summary>
-        public ICommand ValidateInputCommand {
+        public ICommand ValidateInputCommand
+        {
             get => new DelegateCommand<object>(ValidateInputDelegate);
         }
 
-        private void ValidateInputDelegate(object args) {
+        private void ValidateInputDelegate(object args)
+        {
             var type = args.GetType();
             Console.WriteLine(type);
             /*if (!Regex.IsMatch(args.Text, @"^[0-9]*(?:\.[0-9]*)?$")) {
@@ -173,7 +194,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             }*/
         }
 
-        public ObservableCollection<UploadStatus> UploadStatusList {
+        public ObservableCollection<UploadStatus> UploadStatusList
+        {
             get => _uploadStatusList;
             set => SetProperty(ref _uploadStatusList, value);
         }
@@ -181,7 +203,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 上传状态
         /// </summary>
-        public UploadStatus? SelectedUploadStatus {
+        public UploadStatus? SelectedUploadStatus
+        {
             get => _selectedUploadStatus;
             set => SetProperty(ref _selectedUploadStatus, value);
         }
@@ -193,7 +216,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 页数
         /// </summary>
-        public int PageCount {
+        public int PageCount
+        {
             get => _pageCount;
             set => SetProperty(ref _pageCount, value);
         }
@@ -201,7 +225,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 页码
         /// </summary>
-        public int PageIndex {
+        public int PageIndex
+        {
             get => _pageIndex;
             set => SetProperty(ref _pageIndex, value);
         }
@@ -213,11 +238,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 上一页
         /// </summary>
-        public ICommand PreviousPageCommand {
+        public ICommand PreviousPageCommand
+        {
             get => new DelegateCommand<object>(PreviousPageDelegate);
         }
 
-        private void PreviousPageDelegate(object obj) {
+        private void PreviousPageDelegate(object obj)
+        {
             if (PageIndex <= 1) return;
             PageIndex--;
             LoadData(PageIndex);
@@ -226,11 +253,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 下一页
         /// </summary>
-        public ICommand NextPageCommand {
+        public ICommand NextPageCommand
+        {
             get => new DelegateCommand<object>(NextPageDelegate);
         }
 
-        private void NextPageDelegate(object obj) {
+        private void NextPageDelegate(object obj)
+        {
             if (PageIndex >= PageCount) return;
             PageIndex++;
             LoadData(PageIndex);
@@ -239,11 +268,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 首页
         /// </summary>
-        public ICommand FirstPageCommand {
+        public ICommand FirstPageCommand
+        {
             get => new DelegateCommand<object>(FirstPageDelegate);
         }
 
-        private void FirstPageDelegate(object obj) {
+        private void FirstPageDelegate(object obj)
+        {
             PageIndex = 1;
             LoadData(PageIndex);
         }
@@ -251,27 +282,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 尾页
         /// </summary>
-        public ICommand LastPageCommand {
+        public ICommand LastPageCommand
+        {
             get => new DelegateCommand<object>(LastPageDelegate);
         }
 
-        private void LastPageDelegate(object obj) {
-            if (PageCount > 0) {
+        private void LastPageDelegate(object obj)
+        {
+            if (PageCount > 0)
+            {
                 PageIndex = PageCount;
                 LoadData(PageIndex);
             }
         }
 
         //跳转
-        public ICommand JumpPageCommand {
+        public ICommand JumpPageCommand
+        {
             get => new DelegateCommand<object>(JumpPageDelegate);
         }
 
-        private void JumpPageDelegate(object obj) {
-            if (PageIndex >= 0 && PageIndex <= PageCount) {
+        private void JumpPageDelegate(object obj)
+        {
+            if (PageIndex >= 0 && PageIndex <= PageCount)
+            {
                 LoadData(PageIndex);
             }
-            else {
+            else
+            {
                 PageIndex = 1;
             }
         }
@@ -281,25 +319,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 最大高度
         /// </summary>
-        public double PageMaxHeight {
+        public double PageMaxHeight
+        {
             get => _pageMaxHeight;
             set => SetProperty(ref _pageMaxHeight, value);
         }
 
-        public ObservableCollection<PackageItemModel> PackageItems {
+        public ObservableCollection<PackageItemModel> PackageItems
+        {
             get => _packageItems;
             set => SetProperty(ref _packageItems, value);
         }
 
         public ICommand LoadedCommand => new DelegateCommand<Page>(LoadedDelegate);
 
-        private async void LoadedDelegate(Page obj) {
+        private async void LoadedDelegate(Page obj)
+        {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
             PackageExitDefinitionItems.Clear();
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 PackageExitDefinitionItems.Clear();
-                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
+                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel
+                {
                     CreateTime = s.CreateTime,
                     ExitName = s.ExitName,
                     Id = s.Id,
@@ -310,15 +353,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     Type = s.Type
                 })?.ToList();
 
-                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                if (packageExitDefinitionItemInfoModels?.Any() == true)
+                {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                 }
             });
-            if (!_isLoaded) {
+            if (!_isLoaded)
+            {
                 var parentContainer = PluginInterface.Utils.Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
-                if (parentContainer is not null) {
+                if (parentContainer is not null)
+                {
                     PageMaxHeight = parentContainer.ActualHeight;
-                    parentContainer.SizeChanged += delegate (object sender, SizeChangedEventArgs args) {
+                    parentContainer.SizeChanged += delegate (object sender, SizeChangedEventArgs args)
+                    {
                         PageMaxHeight = parentContainer.ActualHeight;
                     };
                 }
@@ -330,29 +377,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public ICommand OpenDateTimeDialogCommand => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
 
-        private async void OpenDateTimeDialogDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void OpenDateTimeDialogDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var dataTimeEditor = new DataTimeEditor();
-                if (dataTimeEditor.DataContext is DataTimeEditorViewModel model) {
+                if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
+                {
                     model.Identifier = "DataManagementDialog";
-                    if (obj?.ToString()?.Equals("StartTime") == true) {
+                    if (obj?.ToString()?.Equals("StartTime") == true)
+                    {
                         model.SelectedDataTime = StartTime ?? DateTime.Today;
                         model.SelectedDate = StartTime ?? DateTime.Today;
                         model.SelectedTime = StartTime ?? DateTime.Today;
                     }
-                    else {
+                    else
+                    {
                         model.SelectedDataTime = EndTime ?? DateTime.Now;
                         model.SelectedDate = EndTime ?? DateTime.Now;
                         model.SelectedTime = EndTime ?? DateTime.Now;
                     }
 
                     await DialogHost.Show(dataTimeEditor, model.Identifier);
-                    if (model.IsOk) {
-                        if (obj?.ToString()?.Equals("StartTime") == true) {
+                    if (model.IsOk)
+                    {
+                        if (obj?.ToString()?.Equals("StartTime") == true)
+                        {
                             StartTime = model.SelectedDataTime.Value;
                         }
-                        else if (obj?.ToString()?.Equals("EndTime") == true) {
-                            if (DateTime.Now.CompareTo(model.SelectedDataTime.Value) < 0) {
+                        else if (obj?.ToString()?.Equals("EndTime") == true)
+                        {
+                            if (DateTime.Now.CompareTo(model.SelectedDataTime.Value) < 0)
+                            {
                                 //DataListMessageQueue.Enqueue("截止时间不能超过当前时间!");
                                 EndTime = DateTime.Now;
                                 return;
@@ -369,9 +425,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand UploadStatusCommand => new DelegateCommand<PackageItemModel>(UploadStatusDelegate);
 
-        private void UploadStatusDelegate(PackageItemModel obj) {
+        private void UploadStatusDelegate(PackageItemModel obj)
+        {
             //判断状态是否已上传再获进行弹窗
-            if (obj.RequestStatus != UploadStatus.NotUploaded) {
+            if (obj.RequestStatus != UploadStatus.NotUploaded)
+            {
                 _dialogService.Show("ApiAccessDialog", new DialogParameters { { "PackageItem", obj } }, null);
             }
         }
@@ -381,12 +439,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand OpenPackagedImageCommand => new DelegateCommand<PackageItemModel>(OpenPackagedImageDelegate);
 
-        private void OpenPackagedImageDelegate(PackageItemModel obj) {
-            if (File.Exists(obj?.BarcodeImagePath)) {
-                try {
+        private void OpenPackagedImageDelegate(PackageItemModel obj)
+        {
+            if (File.Exists(obj?.BarcodeImagePath))
+            {
+                try
+                {
                     Process.Start(new ProcessStartInfo(obj.BarcodeImagePath) { UseShellExecute = true });
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Console.WriteLine($@"Failed to open the image: {ex.Message}");
                 }
             }
@@ -397,12 +459,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand OpenPackagedImageFolderCommand => new DelegateCommand<PackageItemModel>(OpenPackagedImageFolderDelegate);
 
-        private void OpenPackagedImageFolderDelegate(PackageItemModel obj) {
-            if (File.Exists(obj?.BarcodeImagePath)) {
-                try {
+        private void OpenPackagedImageFolderDelegate(PackageItemModel obj)
+        {
+            if (File.Exists(obj?.BarcodeImagePath))
+            {
+                try
+                {
                     Process.Start("explorer.exe", $"/select,\"{obj.BarcodeImagePath}\"");
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Console.WriteLine($@"Failed to open the image: {ex.Message}");
                 }
             }
@@ -414,12 +480,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public ICommand OpenPanoramaImageCommand => new DelegateCommand<PanoramaImageItemModel>(OpenPanoramaImageDelegate);
 
-        private void OpenPanoramaImageDelegate(PanoramaImageItemModel obj) {
-            if (File.Exists(obj?.PanoramaImagePath)) {
-                try {
+        private void OpenPanoramaImageDelegate(PanoramaImageItemModel obj)
+        {
+            if (File.Exists(obj?.PanoramaImagePath))
+            {
+                try
+                {
                     Process.Start(new ProcessStartInfo(obj.PanoramaImagePath) { UseShellExecute = true });
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Console.WriteLine($@"Failed to open the image: {ex.Message}");
                 }
             }
@@ -448,8 +518,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand ClearSearchCriteriaCommand => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
 
-        private async void ClearSearchCriteriaDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void ClearSearchCriteriaDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 StartTime = null;
                 EndTime = null;
                 SelectExitDefinitionInfo = null;
@@ -464,7 +536,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand SearchDataCommand => new DelegateCommand<object>(SearchDataDelegate);
 
-        private void SearchDataDelegate(object obj) {
+        private void SearchDataDelegate(object obj)
+        {
             PageIndex = 1;
             LoadData(PageIndex);
         }
@@ -474,22 +547,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand ExportDataCommand => new DelegateCommand<object>(ExportDataDelegate);
 
-        private async void ExportDataDelegate(object obj) {
-            if (PackageItems?.Any() != true) {
+        private async void ExportDataDelegate(object obj)
+        {
+            if (PackageItems?.Any() != true)
+            {
                 DataManagementMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
                 return;
             }
 
             //导出
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog() {
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog()
+            {
                 Title = "Please select the location to save the file.",
                 Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
                 DefaultExt = "xlsx",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             };
-            if (saveFileDialog.ShowDialog() == true) {
+            if (saveFileDialog.ShowDialog() == true)
+            {
                 var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model) {
+                if (exportDialog.DataContext is ExportDialogViewModel model)
+                {
                     model.FilePath = saveFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
@@ -497,8 +575,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     //如果页数超过1页则从数据库获取数据(未完成)  ExcelPackageItemModel
                     // var packageItemModels = new List<PackageItemModel>();
                     var packageItemModels = new List<ExcelPackageItemModel>();
-                    if (PageCount > 0) {
-                        for (var i = 0; i < PageCount; i++) {
+                    if (PageCount > 0)
+                    {
+                        for (var i = 0; i < PageCount; i++)
+                        {
                             var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
                                s.BarCodeInfo != null && s.WeightInfo != null &&
                                (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
@@ -510,8 +590,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
                            o => o.PackageCreateTime, i, 500, new CancellationToken(false));
 
-                            if (infoModels?.Any() == true) {
-                                var itemModels = infoModels?.Select((s, num) => new ExcelPackageItemModel {
+                            if (infoModels?.Any() == true)
+                            {
+                                var itemModels = infoModels?.Select((s, num) => new ExcelPackageItemModel
+                                {
                                     Num = num + 1 + (i * 500),
                                     TimestampedGuid = s.PackageTimestamped,
                                     Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
@@ -538,22 +620,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     var export = await _excel.Export(saveFileDialog.FileName,
                         $"PackageItems",
                         "PackageItems", packageItemModels,
-                        new List<string>(), async p => {
+                        new List<string>(), async p =>
+                        {
                             model.Progress = p;
                             model.ProgressText = $"{p}%";
-                            if (p == 100) {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                            if (p == 100)
+                            {
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                {
+                                    if (DialogHost.IsDialogOpen(model.Identifier))
+                                    {
                                         DialogHost.Close(model.Identifier);
                                     }
                                 });
                             }
-                        }, e => {
+                        }, e =>
+                        {
                             DataManagementMessageQueue?.Enqueue(e.Message);
                         });
-                    if (!export) {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    if (!export)
+                    {
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (DialogHost.IsDialogOpen(model.Identifier))
+                            {
                                 DialogHost.Close(model.Identifier);
                             }
                         });
@@ -566,12 +656,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// 加载数据
         /// </summary>
         /// <param name="pageIndex"></param>
-        private void LoadData(int pageIndex) {
+        private void LoadData(int pageIndex)
+        {
             const int pageSize = 500;
             //这里的查询要分开锁，不然显示有卡顿
-            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                if (loadingDialog.DataContext is LoadingDialogViewModel model)
+                {
                     model.Identifier = "DataManagementDialog";
                     DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
                     await Task.Delay(500);
@@ -590,7 +683,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
                             (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
                         new CancellationToken(false));
-                    if (total > 0) {
+                    if (total > 0)
+                    {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
                                 s.BarCodeInfo != null && s.WeightInfo != null &&
@@ -603,8 +697,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
                             o => o.PackageCreateTime, pageIndex - 1, pageSize, new CancellationToken(false));
 
-                        if (infoModels?.Any() == true) {
-                            var itemModels = infoModels?.Select((s, i) => new PackageItemModel {
+                        if (infoModels?.Any() == true)
+                        {
+                            var itemModels = infoModels?.Select((s, i) => new PackageItemModel
+                            {
                                 Num = i + 1,
                                 TimestampedGuid = s.PackageTimestamped,
                                 Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
@@ -621,11 +717,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                 Other = s.Other ?? string.Empty,
                                 ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
                                 PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
-                                new PanoramaImageItemModel() {
+                                new PanoramaImageItemModel()
+                                {
                                     IsPanoramaImageExists = !string.IsNullOrWhiteSpace(ps.LocalPath),
                                     PanoramaImagePath = ps.LocalPath
                                 })?.ToList() ?? new List<PanoramaImageItemModel>(),
-                                UploadInfo = new UploadItemModel {
+                                UploadInfo = new UploadItemModel
+                                {
                                     DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
                                     ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
                                     InterfaceParameters = s.UploadInfo?.InterfaceParameters ?? string.Empty,
@@ -636,13 +734,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     ResponseContent = s.UploadInfo?.ResponseContent ?? string.Empty,
                                     ResponseTime = s.UploadInfo?.ResponseTime
                                 },
-                                WeightInfo = new WeightItemModel() {
+                                WeightInfo = new WeightItemModel()
+                                {
                                     CreateTime = s.WeightInfo?.CreateTime,
                                     FormattedWeight = s.WeightInfo?.FormattedWeight ?? 0,
                                     OriginalText = s.WeightInfo?.OriginalText ?? string.Empty,
                                     SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
                                 },
-                                SortingInfo = new SortingItemModel {
+                                SortingInfo = new SortingItemModel
+                                {
                                     IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
                                     SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
                                     SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
@@ -653,13 +753,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     IsAbnormalSorting = s.SortingInfo?.IsAbnormalSorting ?? false,
                                     AbnormalSortingType = s.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None,
                                     InstructionInfoItems = new ObservableCollection<InstructionInfoItemModel>(s.SortingInfo?.InstructionInfos?
-                                        .Select(s1 => new InstructionInfoItemModel() {
+                                        .Select(s1 => new InstructionInfoItemModel()
+                                        {
                                             InstructionGeneratedTime = s1.InstructionGeneratedTime,
                                             InstructionType = s1.InstructionType,
                                             InstructionContent = s1.InstructionContent
                                         })?.ToList() ?? new List<InstructionInfoItemModel>())
                                 },
-                                VolumeInfo = new VolumeItemModel() {
+                                VolumeInfo = new VolumeItemModel()
+                                {
                                     CreateTime = s.VolumeInfo?.CreateTime,
                                     FormattedHeight = s.VolumeInfo?.FormattedHeight ?? 0,
                                     FormattedLength = s.VolumeInfo?.FormattedLength ?? 0,
@@ -668,13 +770,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                                     OriginalText = s.VolumeInfo?.OriginalText ?? string.Empty,
                                     SourceType = s.VolumeInfo?.SourceType ?? SourceType.Camera
                                 },
-                                OcrInfo = new OcrItemInfo() {
+                                OcrInfo = new OcrItemInfo()
+                                {
                                     CreateTime = s.OcrInfo?.RecognizeTime,
                                     /*OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
                                     OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
                                     ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty*/
                                 },
-                                ExitInfo = new ExitInfoItemModel() {
+                                ExitInfo = new ExitInfoItemModel()
+                                {
                                     PhysicalExitId = s.ExitInfo?.PhysicalExitId ?? 0,
                                     PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
                                     TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
@@ -685,15 +789,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             PackageItems.AddRange(itemModels);
                             DataManagementMessageQueue?.Enqueue($"共查询到:{total}条数据,显示{PackageItems?.Count}条");
                         }
-                        else {
+                        else
+                        {
                             DataManagementMessageQueue?.Enqueue("Error loading data. Please try again.");
                         }
                     }
-                    else {
+                    else
+                    {
                         DataManagementMessageQueue?.Enqueue("No data matching the criteria found.");
                     }
 
-                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    if (DialogHost.IsDialogOpen(model.Identifier))
+                    {
                         DialogHost.Close(model.Identifier);
                     }
                 }
@@ -702,7 +809,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public ICommand ShowDetailsCommand => new DelegateCommand<object>(ShowDetailsDelegate);
 
-        private void ShowDetailsDelegate(object obj) {
+        private void ShowDetailsDelegate(object obj)
+        {
             _dialogService.Show("PackageDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
         }
 
@@ -711,9 +819,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand ViewNvrRecordingCommand => new DelegateCommand<PackageItemModel>(ViewNvrRecordingDelegate);
 
-        private async void ViewNvrRecordingDelegate(PackageItemModel obj) {
+        private async void ViewNvrRecordingDelegate(PackageItemModel obj)
+        {
             var nvrRecordingDialog = new NvrRecordingDialog();
-            if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model) {
+            if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model)
+            {
                 model.Identifier = "SettingDialog";
                 model.PackageItemModel = obj;
                 await DialogHost.Show(nvrRecordingDialog, model.Identifier);

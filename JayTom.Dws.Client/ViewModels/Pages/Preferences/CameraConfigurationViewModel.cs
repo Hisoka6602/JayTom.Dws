@@ -9,14 +9,17 @@ using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class CameraConfigurationViewModel : BindableBase {
+    public class CameraConfigurationViewModel : BindableBase
+    {
         private readonly IRegionManager _regionManager;
         private static bool _isLoaded;
         private ObservableCollection<MenuItemInfoModel> _cameraMenuItems = new();
 
-        public CameraConfigurationViewModel(IRegionManager regionManager) {
+        public CameraConfigurationViewModel(IRegionManager regionManager)
+        {
             _regionManager = regionManager;
             _cameraMenuItems = new()
         {
@@ -115,20 +118,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         };
         }
 
-        public ObservableCollection<MenuItemInfoModel> CameraMenuItems {
+        public ObservableCollection<MenuItemInfoModel> CameraMenuItems
+        {
             get => _cameraMenuItems;
             set => SetProperty(ref _cameraMenuItems, value);
         }
 
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<Frame>(LoadedDelegate);
         }
 
-        private async void LoadedDelegate(Frame obj) {
-            if (!_isLoaded) {
+        private async void LoadedDelegate(Frame obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    if (!_regionManager.Regions.ContainsRegionWithName("CameraConfigRegion")) {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (!_regionManager.Regions.ContainsRegionWithName("CameraConfigRegion"))
+                    {
                         //创建区域(用于视觉树以外控件)
                         RegionManager.SetRegionName(obj, "CameraConfigRegion");
                         RegionManager.SetRegionManager(obj, _regionManager);
@@ -143,10 +152,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand ClickCommand => new DelegateCommand<MenuItemInfoModel>(MenuClickDelegate);
 
-        private async void MenuClickDelegate(MenuItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!obj.PageClassName.Equals(string.Empty)) {
-                    foreach (var item in CameraMenuItems) {
+        private async void MenuClickDelegate(MenuItemInfoModel obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (!obj.PageClassName.Equals(string.Empty))
+                {
+                    foreach (var item in CameraMenuItems)
+                    {
                         item.IsSelected = false;
                     }
 

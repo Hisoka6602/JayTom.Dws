@@ -9,9 +9,11 @@ using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 
-namespace JayTom.Dws.Client.EventMediators {
+namespace JayTom.Dws.Client.EventMediators
+{
 
-    public class EventAggregator {
+    public class EventAggregator
+    {
         private static readonly Lazy<EventAggregator> _instance = new(() => new EventAggregator());
 
         public static EventAggregator Instance => _instance.Value;
@@ -19,11 +21,13 @@ namespace JayTom.Dws.Client.EventMediators {
         private readonly IEventAggregator _eventAggregator = new Prism.Events.EventAggregator();
         private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
 
-        public void Publish<TEventType>(TEventType eventData) {
+        public void Publish<TEventType>(TEventType eventData)
+        {
             _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
         }
 
-        public void Subscribe<TEventType>(Action<TEventType> action) {
+        public void Subscribe<TEventType>(Action<TEventType> action)
+        {
             _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
                 .Subscribe(action, ThreadOption.PublisherThread, true);
         }
@@ -33,10 +37,12 @@ namespace JayTom.Dws.Client.EventMediators {
         /// </summary>
         /// <typeparam name="TEventType">事件数据类型。</typeparam>
         /// <param name="action">异步事件处理器。</param>
-        public void Subscribe<TEventType>(Func<TEventType, Task> action) {
+        public void Subscribe<TEventType>(Func<TEventType, Task> action)
+        {
             ArgumentNullException.ThrowIfNull(action);
             _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
-                .Subscribe(eventData => {
+                .Subscribe(eventData =>
+                {
                     _ = InvokeAsyncSubscriber(action, eventData);
                 }, ThreadOption.PublisherThread, true);
         }
@@ -49,30 +55,37 @@ namespace JayTom.Dws.Client.EventMediators {
         /// <param name="eventData">事件数据。</param>
         private static async Task InvokeAsyncSubscriber<TEventType>(
             Func<TEventType, Task> action,
-            TEventType eventData) {
-            try {
+            TEventType eventData)
+        {
+            try
+            {
                 await action(eventData);
             }
-            catch (Exception exception) {
+            catch (Exception exception)
+            {
                 NLog.LogManager.GetCurrentClassLogger()
                     .Error(exception, "异步事件订阅处理失败");
             }
         }
 
-        public void PublishPackage<TEventType>(TEventType eventData) {
+        public void PublishPackage<TEventType>(TEventType eventData)
+        {
             _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
         }
 
-        public void SubscribePackage<TEventType>(Action<TEventType> action) {
+        public void SubscribePackage<TEventType>(Action<TEventType> action)
+        {
             _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, true);
         }
 
-        public void Unsubscribe<TEventType>(Action<TEventType> action) {
+        public void Unsubscribe<TEventType>(Action<TEventType> action)
+        {
             _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(action);
         }
     }
 
-    public class SettingsChangedEvent {
+    public class SettingsChangedEvent
+    {
 
         /// <summary>
         /// 配置名称
@@ -85,7 +98,8 @@ namespace JayTom.Dws.Client.EventMediators {
         public bool IsLocallySaved { get; set; }
     }
 
-    public class TriggerPositionEvent {
+    public class TriggerPositionEvent
+    {
 
         /// <summary>
         /// 触发位置
@@ -108,7 +122,8 @@ namespace JayTom.Dws.Client.EventMediators {
         public string Description { get; set; } = string.Empty;
     }
 
-    public class BarcodeTypeProviderEvent {
+    public class BarcodeTypeProviderEvent
+    {
 
         /// <summary>
         /// 条码
@@ -141,13 +156,15 @@ namespace JayTom.Dws.Client.EventMediators {
         public float VolumeToDeduct { get; set; }
     }
 
-    public class PluginParamChangedEvent {
+    public class PluginParamChangedEvent
+    {
         public PluginType Type { get; set; }
         public string PluginName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public enum PluginType {
+    public enum PluginType
+    {
 
         /// <summary>
         /// 拓展包
@@ -215,7 +232,8 @@ namespace JayTom.Dws.Client.EventMediators {
         HomeTool,
     }
 
-    public class WindowsAction {
+    public class WindowsAction
+    {
         public object? Windows { get; set; }
         public WindowsActionType Type { get; set; }
     }
@@ -223,7 +241,8 @@ namespace JayTom.Dws.Client.EventMediators {
     /// <summary>
     /// 远程操作
     /// </summary>
-    public class RemoteAction {
+    public class RemoteAction
+    {
 
         /// <summary>
         /// 消息
@@ -236,7 +255,8 @@ namespace JayTom.Dws.Client.EventMediators {
         public RemoteCommand Command { get; set; }
     }
 
-    public enum WindowsActionType {
+    public enum WindowsActionType
+    {
 
         /// <summary>
         /// 最小化
@@ -274,11 +294,13 @@ namespace JayTom.Dws.Client.EventMediators {
         Activate
     }
 
-    public class ApplicationStatusChanged {
+    public class ApplicationStatusChanged
+    {
         public ApplicationStatus Status { get; set; }
     }
 
-    public enum ApplicationStatus {
+    public enum ApplicationStatus
+    {
         Start,
         Stop
     }
@@ -286,7 +308,8 @@ namespace JayTom.Dws.Client.EventMediators {
     /// <summary>
     /// 远程指令
     /// </summary>
-    public enum RemoteCommand {
+    public enum RemoteCommand
+    {
         None,
 
         /// <summary>
@@ -313,7 +336,8 @@ namespace JayTom.Dws.Client.EventMediators {
     /// <summary>
     /// 格口更新事件
     /// </summary>
-    public class PackageExitUpdateEvent {
+    public class PackageExitUpdateEvent
+    {
 
         /// <summary>
         /// 包裹创建时间
@@ -362,7 +386,8 @@ namespace JayTom.Dws.Client.EventMediators {
         public ExitType Type { get; set; }
     }
 
-    public enum PackageAbnormalSortingType {
+    public enum PackageAbnormalSortingType
+    {
 
         /// <summary>
         /// 无
@@ -455,7 +480,8 @@ namespace JayTom.Dws.Client.EventMediators {
         UnstableLineSpeed
     }
 
-    public enum SortingExitType {
+    public enum SortingExitType
+    {
 
         /// <summary>
         /// 物理格口
@@ -471,7 +497,8 @@ namespace JayTom.Dws.Client.EventMediators {
     /// <summary>
     /// 推送包裹
     /// </summary>
-    public class PushPackageInfo {
+    public class PushPackageInfo
+    {
 
         /// <summary>
         /// 落格信息
@@ -492,7 +519,8 @@ namespace JayTom.Dws.Client.EventMediators {
     /// <summary>
     /// 推送备用格口分拣
     /// </summary>
-    public class PushAlternateExitSorterEvent {
+    public class PushAlternateExitSorterEvent
+    {
 
         /// <summary>
         /// 包裹信息

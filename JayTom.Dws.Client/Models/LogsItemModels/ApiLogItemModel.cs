@@ -4,9 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
 
-    public class ApiLogItemModel : BaseLogItemModel {
+    public class ApiLogItemModel : BaseLogItemModel
+    {
         private string _requestContent = string.Empty;
         private string _responseContent = string.Empty;
         private DateTime _requestTime;
@@ -19,7 +21,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 请求内容
         /// </summary>
-        public string RequestContent {
+        public string RequestContent
+        {
             get => _requestContent;
             set => SetProperty(ref _requestContent, value);
         }
@@ -27,7 +30,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 响应内容
         /// </summary>
-        public string ResponseContent {
+        public string ResponseContent
+        {
             get => _responseContent;
             set => SetProperty(ref _responseContent, value);
         }
@@ -35,7 +39,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 上传时间
         /// </summary>
-        public DateTime RequestTime {
+        public DateTime RequestTime
+        {
             get => _requestTime;
             set => SetProperty(ref _requestTime, value);
         }
@@ -43,7 +48,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 返回时间
         /// </summary>
-        public DateTime ResponseTime {
+        public DateTime ResponseTime
+        {
             get => _responseTime;
             set => SetProperty(ref _responseTime, value);
         }
@@ -51,7 +57,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 耗时(秒)
         /// </summary>
-        public double Duration {
+        public double Duration
+        {
             get => _duration;
             set => SetProperty(ref _duration, value);
         }
@@ -59,7 +66,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 接口参数
         /// </summary>
-        public string ApiParameters {
+        public string ApiParameters
+        {
             get => _apiParameters;
             set => SetProperty(ref _apiParameters, value);
         }
@@ -67,7 +75,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 异常信息
         /// </summary>
-        public string ExceptionMsg {
+        public string ExceptionMsg
+        {
             get => _exceptionMsg;
             set => SetProperty(ref _exceptionMsg, value);
         }
@@ -75,7 +84,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }

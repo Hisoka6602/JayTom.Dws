@@ -1,16 +1,19 @@
 ﻿using JayTom.Dws.Domain.Dto;
 using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
+namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel
+{
 
-    public class TriggerPositionModel : BindableBase {
+    public class TriggerPositionModel : BindableBase
+    {
         private string _triggerPositionName = string.Empty;
         private TriggerPositionEnum _triggerPositionValue;
 
         /// <summary>
         /// 名称
         /// </summary>
-        public string TriggerPositionName {
+        public string TriggerPositionName
+        {
             get => _triggerPositionName;
             set => SetProperty(ref _triggerPositionName, value);
         }
@@ -18,7 +21,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 实际内容
         /// </summary>
-        public TriggerPositionEnum TriggerPositionValue {
+        public TriggerPositionEnum TriggerPositionValue
+        {
             get => _triggerPositionValue;
             set => SetProperty(ref _triggerPositionValue, value);
         }

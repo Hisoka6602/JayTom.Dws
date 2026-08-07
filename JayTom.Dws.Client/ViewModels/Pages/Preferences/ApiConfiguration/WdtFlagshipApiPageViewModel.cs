@@ -14,9 +14,11 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class WdtFlagshipApiPageViewModel : SettingsPageTemplateViewModel {
+    public class WdtFlagshipApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
         private WdtFlagshipApiInfoModel _wdtFlagshipApiInfo = new();
@@ -28,12 +30,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public WdtFlagshipApiPageViewModel(IHttpClientFactory httpClientFactory,
             IDialogService dialogService,
-            IConfigRepository configRepository) : base(configRepository) {
+            IConfigRepository configRepository) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
         }
 
-        public WdtFlagshipApiInfoModel WdtFlagshipApiInfo {
+        public WdtFlagshipApiInfoModel WdtFlagshipApiInfo
+        {
             get => _wdtFlagshipApiInfo;
             set => SetProperty(ref _wdtFlagshipApiInfo, value);
         }
@@ -41,7 +45,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 条码
         /// </summary>
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
@@ -49,7 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 重量
         /// </summary>
-        public double Weight {
+        public double Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
@@ -57,7 +63,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 上传中
         /// </summary>
-        public bool IsUploading {
+        public bool IsUploading
+        {
             get => _isUploading;
             set => SetProperty(ref _isUploading, value);
         }
@@ -65,10 +72,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "WdtFlagshipApiParametersDialogHost";
         public override string SettingsName => "WdtFlagshipApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new WdtFlagshipApiDto() {
+                Value = JsonConvert.SerializeObject(new WdtFlagshipApiDto()
+                {
                     Key = WdtFlagshipApiInfo.Key,
                     Appsecret = WdtFlagshipApiInfo.Appsecret,
                     Sid = WdtFlagshipApiInfo.Sid,
@@ -88,13 +98,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(SettingsName) ??
                                       new WdtFlagshipApiDto();
-                    WdtFlagshipApiInfo = new WdtFlagshipApiInfoModel() {
+                    WdtFlagshipApiInfo = new WdtFlagshipApiInfoModel()
+                    {
                         Url = settingsDto.Url,
                         Key = settingsDto.Key,
                         Appsecret = settingsDto.Appsecret,
@@ -112,17 +126,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             }
         }
 
-        public ICommand UploadCommand {
+        public ICommand UploadCommand
+        {
             get => new DelegateCommand<object>(UploadDelegate);
         }
 
-        private async void UploadDelegate(object obj) {
-            if (!IsUploading) {
+        private async void UploadDelegate(object obj)
+        {
+            if (!IsUploading)
+            {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     //上传
                     var wdtFlagshipApi = new WdtFlagshipApi(_httpClientFactory);
-                    await wdtFlagshipApi.SetParameters(new WdtFlagshipApi.ApiParameter {
+                    await wdtFlagshipApi.SetParameters(new WdtFlagshipApi.ApiParameter
+                    {
                         Key = WdtFlagshipApiInfo.Key,
                         Appsecret = WdtFlagshipApiInfo.Appsecret,
                         Sid = WdtFlagshipApiInfo.Sid,

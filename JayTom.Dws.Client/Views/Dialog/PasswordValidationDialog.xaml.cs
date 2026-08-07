@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Dialog {
+namespace JayTom.Dws.Client.Views.Dialog
+{
     /// <summary>
     /// PasswordValidationDialog.xaml 的交互逻辑
     /// </summary>
-    public partial class PasswordValidationDialog : UserControl {
-        public PasswordValidationDialog() {
+    public partial class PasswordValidationDialog : UserControl
+    {
+        public PasswordValidationDialog()
+        {
             InitializeComponent();
         }
     }

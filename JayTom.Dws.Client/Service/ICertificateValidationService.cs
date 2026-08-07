@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
-namespace JayTom.Dws.Client.Service {
+namespace JayTom.Dws.Client.Service
+{
 
-    public interface ICertificateValidationService {
+    public interface ICertificateValidationService
+    {
 
         /// <summary>
         /// 时间验证

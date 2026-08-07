@@ -5,36 +5,47 @@ using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
+using JayTom.Dws.Plugin;
 
-namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
+namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm
+{
 
-    public class SortingSerialPort : BaseSerialPort, ISortingSerialPort {
-        private readonly object _heartbeatSync = new();
+    public class SortingSerialPort : BaseSerialPort, ISortingSerialPort
+    {
+        private readonly System.Threading.Lock _heartbeatSync = new();
         private readonly ConcurrentQueue<string> _heartbeatQueue = new();
         private Task? _heartbeatTask;
         private CancellationTokenSource? _heartbeatCancellation;
 
-        public SortingSerialPort(SerialPort serialPort) : base(serialPort) {
-            base.DataReceived += (sender, args) => {
+        public SortingSerialPort(SerialPort serialPort) : base(serialPort)
+        {
+            base.DataReceived += (sender, args) =>
+            {
                 var tryDequeue = _heartbeatQueue.TryDequeue(out var data);
-                if (tryDequeue && !string.IsNullOrEmpty(data)) {
-                    if (!args.AsciiMessage.Equals(data)) {
+                if (tryDequeue && !string.IsNullOrEmpty(data))
+                {
+                    if (!args.AsciiMessage.Equals(data))
+                    {
                         _heartbeatQueue.Enqueue(data);
                     }
                 }
             };
         }
 
-        public new void Dispose() {
+        public new void Dispose()
+        {
             StopHeartbeat();
             base.Dispose();
         }
 
         public event EventHandler<Exception>? HeartbeatError;
 
-        public void StartHeartbeat(string heartbeatData, SerialPortFormat formatType, TimeSpan interval) {
-            lock (_heartbeatSync) {
-                if (_heartbeatTask is { IsCompleted: false }) {
+        public void StartHeartbeat(string heartbeatData, SerialPortFormat formatType, TimeSpan interval)
+        {
+            lock (_heartbeatSync)
+            {
+                if (_heartbeatTask is { IsCompleted: false })
+                {
                     return;
                 }
 
@@ -45,10 +56,12 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
             }
         }
 
-        public void StopHeartbeat() {
+        public void StopHeartbeat()
+        {
             CancellationTokenSource? cancellation;
             Task? heartbeatTask;
-            lock (_heartbeatSync) {
+            lock (_heartbeatSync)
+            {
                 cancellation = _heartbeatCancellation;
                 heartbeatTask = _heartbeatTask;
                 _heartbeatCancellation = null;
@@ -58,11 +71,14 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
             cancellation?.Cancel();
             _heartbeatQueue.Clear();
 
-            if (cancellation is not null) {
-                if (heartbeatTask is null) {
+            if (cancellation is not null)
+            {
+                if (heartbeatTask is null)
+                {
                     cancellation.Dispose();
                 }
-                else {
+                else
+                {
                     _ = heartbeatTask.ContinueWith(_ => cancellation.Dispose(),
                         CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously,
                         TaskScheduler.Default);
@@ -70,38 +86,51 @@ namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
             }
         }
 
-        protected virtual void OnHeartbeatError(Exception e) {
+        protected virtual void OnHeartbeatError(Exception e)
+        {
             HeartbeatError?.Invoke(this, e);
         }
 
         private async Task RunHeartbeatAsync(string heartbeatData, SerialPortFormat formatType,
-            TimeSpan interval, CancellationToken cancellationToken) {
-            try {
-                while (true) {
+            TimeSpan interval, CancellationToken cancellationToken)
+        {
+            var comparisonContent = formatType == SerialPortFormat.Hex
+                ? HexDataFormatter.Normalize(heartbeatData)
+                : heartbeatData;
+            try
+            {
+                while (true)
+                {
                     await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
 
-                    if (!_heartbeatQueue.IsEmpty) {
+                    if (!_heartbeatQueue.IsEmpty)
+                    {
                         OnHeartbeatError(new Exception("心跳包未接收到回应!"));
                     }
 
-                    if (base.Status != SerialPortStatus.Running) {
+                    if (base.Status != SerialPortStatus.Running)
+                    {
                         continue;
                     }
 
                     _heartbeatQueue.Clear();
-                    _heartbeatQueue.Enqueue(heartbeatData);
-                    if (formatType == SerialPortFormat.Ascii) {
+                    _heartbeatQueue.Enqueue(comparisonContent);
+                    if (formatType == SerialPortFormat.Ascii)
+                    {
                         Send(heartbeatData);
                     }
-                    else {
+                    else
+                    {
                         Send(ConvertHexStringToByteArray(heartbeatData));
                     }
                 }
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
                 // 正常停止心跳。
             }
-            catch (Exception exception) {
+            catch (Exception exception)
+            {
                 OnHeartbeatError(exception);
             }
         }

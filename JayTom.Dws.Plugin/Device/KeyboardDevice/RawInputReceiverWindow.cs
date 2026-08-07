@@ -10,7 +10,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         private WndProcDelegate _wndProcDelegate;
 
         private static RawInputReceiverWindow? _instance;
-        private static readonly object _lock = new();
+        private static readonly System.Threading.Lock _lock = new();
 
         private bool _isMessageLoopRunning;
 

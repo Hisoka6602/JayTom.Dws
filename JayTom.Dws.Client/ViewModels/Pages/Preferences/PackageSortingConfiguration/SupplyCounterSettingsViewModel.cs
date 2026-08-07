@@ -14,29 +14,36 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
     /// <summary>
     /// 供包台设置
     /// </summary>
-    public class SupplyCounterSettingsViewModel : SettingsPageTemplateViewModel {
+    public class SupplyCounterSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private SupplyCounterInfoModel _supplyCounterInfo = new();
 
-        public SupplyCounterSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public SupplyCounterSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "SupplyCounterSettings";
 
-        public SupplyCounterInfoModel SupplyCounterInfo {
+        public SupplyCounterInfoModel SupplyCounterInfo
+        {
             get => _supplyCounterInfo;
             set => SetProperty(ref _supplyCounterInfo, value);
         }
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new SupplyCounterSettingsDto {
+                Value = JsonConvert.SerializeObject(new SupplyCounterSettingsDto
+                {
                     SendPreSequenceNumber = SupplyCounterInfo.SendPreSequenceNumber,
                     IsUseSupplyCounterMode = SupplyCounterInfo.IsUseSupplyCounterMode,
                     WaitForVolumeInformation = SupplyCounterInfo.WaitForVolumeInformation,
@@ -57,11 +64,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var settingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(SettingsName) ?? new SupplyCounterSettingsDto();
 
-                SupplyCounterInfo = new SupplyCounterInfoModel() {
+                SupplyCounterInfo = new SupplyCounterInfoModel()
+                {
                     SendPreSequenceNumber = settingsDto.SendPreSequenceNumber,
                     IsUseSupplyCounterMode = settingsDto.IsUseSupplyCounterMode,
                     WaitForVolumeInformation = settingsDto.WaitForVolumeInformation,

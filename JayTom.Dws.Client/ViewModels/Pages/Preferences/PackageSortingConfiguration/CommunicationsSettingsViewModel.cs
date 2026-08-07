@@ -38,9 +38,11 @@ using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEve
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
-    public class CommunicationsSettingsViewModel : BindableBase {
+    public class CommunicationsSettingsViewModel : BindableBase
+    {
         private readonly IConfigRepository _configRepository;
         private readonly ISortingService _sortingService;
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
@@ -218,19 +220,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public CommunicationsSettingsViewModel(IConfigRepository configRepository,
             ISortingService sortingService,
             ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        {
             _configRepository = configRepository;
             _sortingService = sortingService;
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args) {
+            _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args)
+            {
                 CommunicationsSettingsMessageQueue.Enqueue(args.ExceptionMessage);
             };
         }
 
         public string SettingsName => "CommunicationsItemsSettings";
 
-        public SnackbarMessageQueue CommunicationsSettingsMessageQueue {
+        public SnackbarMessageQueue CommunicationsSettingsMessageQueue
+        {
             get => _communicationsSettingsMessageQueue;
             set => SetProperty(ref _communicationsSettingsMessageQueue, value);
         }
@@ -240,32 +245,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             set => SetProperty(ref _communicationsSettingsInfo, value);
         }*/
 
-        public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems {
+        public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems
+        {
             get => _communicationsTypeItems;
             set => SetProperty(ref _communicationsTypeItems, value);
         }
 
-        public ObservableCollection<CommunicationProtocolInfoModel> CommunicationProtocolItems {
+        public ObservableCollection<CommunicationProtocolInfoModel> CommunicationProtocolItems
+        {
             get => _communicationProtocolItems;
             set => SetProperty(ref _communicationProtocolItems, value);
         }
 
-        public CommunicationsTypeInfoModel SelectCommunicationsType {
+        public CommunicationsTypeInfoModel SelectCommunicationsType
+        {
             get => _selectCommunicationsType;
             set => SetProperty(ref _selectCommunicationsType, value);
         }
 
-        public CommunicationProtocolInfoModel SelectCommunicationProtocol {
+        public CommunicationProtocolInfoModel SelectCommunicationProtocol
+        {
             get => _selectCommunicationProtocol;
             set => SetProperty(ref _selectCommunicationProtocol, value);
         }
 
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems
+        {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
 
-        public DataFormatTypeInfoModel SelectDataFormat {
+        public DataFormatTypeInfoModel SelectDataFormat
+        {
             get => _selectDataFormat;
             set => SetProperty(ref _selectDataFormat, value);
         }
@@ -273,7 +284,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 串口列表
         /// </summary>
-        public ObservableCollection<string> PortItems {
+        public ObservableCollection<string> PortItems
+        {
             get => _portItems;
             set => SetProperty(ref _portItems, value);
         }
@@ -281,7 +293,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 效验位下拉选项
         /// </summary>
-        public ObservableCollection<ParityInfoModel> ParityItems {
+        public ObservableCollection<ParityInfoModel> ParityItems
+        {
             get => _parityItems;
             set => SetProperty(ref _parityItems, value);
         }
@@ -289,7 +302,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 效验位
         /// </summary>
-        public ParityInfoModel SelectParity {
+        public ParityInfoModel SelectParity
+        {
             get => _selectParity;
             set => SetProperty(ref _selectParity, value);
         }
@@ -297,7 +311,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 停止位下拉选项
         /// </summary>
-        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
+        public ObservableCollection<StopBitsInfoModel> StopBitsItems
+        {
             get => _stopBitsItems;
             set => SetProperty(ref _stopBitsItems, value);
         }
@@ -305,7 +320,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 停止位
         /// </summary>
-        public StopBitsInfoModel SelectStopBits {
+        public StopBitsInfoModel SelectStopBits
+        {
             get => _selectStopBits;
             set => SetProperty(ref _selectStopBits, value);
         }
@@ -313,7 +329,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 波特率
         /// </summary>
-        public ObservableCollection<int> BaudRateItems {
+        public ObservableCollection<int> BaudRateItems
+        {
             get => _baudRateItems;
             set => SetProperty(ref _baudRateItems, value);
         }
@@ -321,7 +338,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 数据位
         /// </summary>
-        public ObservableCollection<int> DataBitsItems {
+        public ObservableCollection<int> DataBitsItems
+        {
             get => _dataBitsItems;
             set => SetProperty(ref _dataBitsItems, value);
         }
@@ -329,12 +347,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 是否保存中
         /// </summary>
-        public bool IsSavingInProgress {
+        public bool IsSavingInProgress
+        {
             get => _isSavingInProgress;
             set => SetProperty(ref _isSavingInProgress, value);
         }
 
-        public ObservableCollection<CommunicationConnectionItemInfoModel> CommunicationConnectionItems {
+        public ObservableCollection<CommunicationConnectionItemInfoModel> CommunicationConnectionItems
+        {
             get => _communicationConnectionItems;
             set => SetProperty(ref _communicationConnectionItems, value);
         }
@@ -342,13 +362,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 串口刷新
         /// </summary>
-        public ICommand PortUpdateCommand {
+        public ICommand PortUpdateCommand
+        {
             get => new DelegateCommand(PortUpdateDelegate);
         }
 
-        private async void PortUpdateDelegate() {
+        private async void PortUpdateDelegate()
+        {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
             });
@@ -357,39 +380,49 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 窗口加载
         /// </summary>
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(object obj) {
+        private void LoadedDelegate(object obj)
+        {
             RefreshData();
         }
 
-        public ICommand AddCommand {
+        public ICommand AddCommand
+        {
             get => new DelegateCommand<object>(AddDelegate);
         }
 
-        private async void AddDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void AddDelegate(object obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var recognitionEditor = new CommunicationConnectionConfigEditor();
-                if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model) {
+                if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model)
+                {
                     model.Identifier = "CommunicationsSettingsDialog";
                     await DialogHost.Show(recognitionEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent))
+                    {
                         CommunicationsSettingsMessageQueue.Enqueue(model.ExceptionContent);
                         return;
                     }
 
-                    if (model.IsOk) {
+                    if (model.IsOk)
+                    {
                         //添加到数据库
                         var insertDetailAsync = await _communicationConnectionConfigRepository.InsertDetailAsync(
-                            new CommunicationConnectionConfigInfoModel() {
+                            new CommunicationConnectionConfigInfoModel()
+                            {
                                 CommunicationProtocol =
                                     model.CommunicationConnectionItem.CommunicationProtocol.Value.ToString(),
                                 CommunicationType = (int)model.CommunicationConnectionItem.CommunicationType.Value,
                                 ConnectionName = model.CommunicationConnectionItem.ConnectionName,
                                 CreateTime = DateTime.Now,
-                                DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel() {
+                                DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel()
+                                {
                                     CreateTime = DateTime.Now,
                                     ModifyTime = DateTime.Now,
                                     MaxRetryCount = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
@@ -397,7 +430,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     ValidateDeviceResponse = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.ValidateDeviceResponse ?? false,
                                 },
-                                HeartbeatConfigInfo = new HeartbeatConfigInfoModel() {
+                                HeartbeatConfigInfo = new HeartbeatConfigInfoModel()
+                                {
                                     CreateTime = DateTime.Now,
                                     ModifyTime = DateTime.Now,
                                     HeartbeatInterval = model.CommunicationConnectionItem.HeartbeatConfigInfo
@@ -414,7 +448,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 },
                                 IsActive = true,
                                 IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
-                                SerialPortConfigInfo = new SerialPortConfigInfoModel() {
+                                SerialPortConfigInfo = new SerialPortConfigInfoModel()
+                                {
                                     BaudRate = model.CommunicationConnectionItem.SerialPortConfigInfo?.BaudRate ?? 0,
                                     CreateTime = DateTime.Now,
                                     DataBits = model.CommunicationConnectionItem.SerialPortConfigInfo?.DataBits ?? 0,
@@ -429,7 +464,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     StopBits = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo?.StopBits
                                         .Value ?? 0),
                                 },
-                                TcpConnectionConfigInfo = new TcpConnectionConfigInfoModel() {
+                                TcpConnectionConfigInfo = new TcpConnectionConfigInfoModel()
+                                {
                                     CreateTime = DateTime.Now,
                                     ModifyTime = DateTime.Now,
                                     ConnectionMode = (int)(model.CommunicationConnectionItem.TcpConnectionConfigInfo
@@ -455,15 +491,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                         ?.DataFormat?.Value ?? 0)
                                 },
                             });
-                        if (insertDetailAsync) {
+                        if (insertDetailAsync)
+                        {
                             CommunicationsSettingsMessageQueue.Enqueue("保存成功");
                             RefreshData();
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
                             });
                         }
-                        else {
+                        else
+                        {
                             CommunicationsSettingsMessageQueue.Enqueue("保存失败");
                         }
                     }
@@ -474,14 +513,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 修改
         /// </summary>
-        public ICommand ModifyCommand {
+        public ICommand ModifyCommand
+        {
             get => new DelegateCommand<CommunicationConnectionItemInfoModel>(ModifyDelegate);
         }
 
-        private async void ModifyDelegate(CommunicationConnectionItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ModifyDelegate(CommunicationConnectionItemInfoModel obj)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var recognitionEditor = new CommunicationConnectionConfigEditor();
-                if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model) {
+                if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model)
+                {
                     model.Identifier = "CommunicationsSettingsDialog";
                     model.CommunicationProtocolItems = CommunicationProtocolItems;
                     model.DataFormatTypeItems = DataFormatTypeItems;
@@ -492,29 +535,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     model.ParityItems = ParityItems;
                     model.CommunicationConnectionItem = obj;
                     await DialogHost.Show(recognitionEditor, model.Identifier);
-                    if (!string.IsNullOrEmpty(model.ExceptionContent)) {
+                    if (!string.IsNullOrEmpty(model.ExceptionContent))
+                    {
                         CommunicationsSettingsMessageQueue.Enqueue(model.ExceptionContent);
                         RefreshData();
                         return;
                     }
 
-                    if (model.IsOk) {
+                    if (model.IsOk)
+                    {
                         //更新到数据库
                         var insertDetailAsync = await _communicationConnectionConfigRepository.UpdateDetailAsync(
-                            new CommunicationConnectionConfigInfoModel() {
+                            new CommunicationConnectionConfigInfoModel()
+                            {
                                 Id = model.CommunicationConnectionItem.Id,
                                 CommunicationProtocol =
                                     model.CommunicationConnectionItem.CommunicationProtocol.Value.ToString(),
                                 CommunicationType = (int)model.CommunicationConnectionItem.CommunicationType.Value,
                                 ConnectionName = model.CommunicationConnectionItem.ConnectionName,
-                                DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel() {
+                                DeviceExtensionConfigInfo = new DeviceExtensionConfigInfoModel()
+                                {
                                     ModifyTime = DateTime.Now,
                                     MaxRetryCount = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.MaxRetryCount ?? 0,
                                     ValidateDeviceResponse = model.CommunicationConnectionItem.DeviceExtensionConfigInfo
                                         ?.ValidateDeviceResponse ?? false,
                                 },
-                                HeartbeatConfigInfo = new HeartbeatConfigInfoModel() {
+                                HeartbeatConfigInfo = new HeartbeatConfigInfoModel()
+                                {
                                     ModifyTime = DateTime.Now,
                                     HeartbeatInterval = model.CommunicationConnectionItem.HeartbeatConfigInfo
                                         ?.HeartbeatInterval ?? 0,
@@ -530,7 +578,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 },
                                 IsActive = true,
                                 IsAutoReconnect = model.CommunicationConnectionItem.IsAutoReconnect,
-                                SerialPortConfigInfo = new SerialPortConfigInfoModel() {
+                                SerialPortConfigInfo = new SerialPortConfigInfoModel()
+                                {
                                     BaudRate = model.CommunicationConnectionItem.SerialPortConfigInfo?.BaudRate ?? 0,
                                     DataBits = model.CommunicationConnectionItem.SerialPortConfigInfo?.DataBits ?? 0,
                                     DataFormat = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo
@@ -544,7 +593,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     StopBits = (int)(model.CommunicationConnectionItem.SerialPortConfigInfo?.StopBits
                                         .Value ?? 0),
                                 },
-                                TcpConnectionConfigInfo = new TcpConnectionConfigInfoModel() {
+                                TcpConnectionConfigInfo = new TcpConnectionConfigInfoModel()
+                                {
                                     ModifyTime = DateTime.Now,
                                     ConnectionMode = (int)(model.CommunicationConnectionItem.TcpConnectionConfigInfo
                                         ?.ConnectionMode ?? 0),
@@ -571,7 +621,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             });
                         CommunicationsSettingsMessageQueue.Enqueue(insertDetailAsync ? "保存成功" : "保存失败");
                         RefreshData();
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                        EventAggregator.Instance.Publish(new SettingsChangedEvent
+                        {
                             SettingsName = SettingsName,
                             IsLocallySaved = true
                         });
@@ -583,20 +634,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 删除
         /// </summary>
-        public ICommand DeleteCommand {
+        public ICommand DeleteCommand
+        {
             get => new DelegateCommand<CommunicationConnectionItemInfoModel>(DeleteDelegate);
         }
 
-        private async void DeleteDelegate(CommunicationConnectionItemInfoModel obj) {
+        private async void DeleteDelegate(CommunicationConnectionItemInfoModel obj)
+        {
             var communicationConnectionConfigInfoModel = await _communicationConnectionConfigRepository.
                 FirstOrDefault(f =>
                     f.Id.Equals(obj.Id));
-            if (communicationConnectionConfigInfoModel is not null) {
+            if (communicationConnectionConfigInfoModel is not null)
+            {
                 var delete = await _communicationConnectionConfigRepository.Delete(communicationConnectionConfigInfoModel);
-                if (delete) {
+                if (delete)
+                {
                     //刷新列表
                     RefreshData();
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent {
+                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    {
                         SettingsName = SettingsName,
                         IsLocallySaved = true
                     });
@@ -604,10 +660,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        private async void RefreshData() {
+        private async void RefreshData()
+        {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 model.Identifier = "CommunicationsSettingsDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
@@ -617,9 +675,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             var models = await _communicationConnectionConfigRepository.
                 CommunicationConnectionConfigItems(s => s.Id > 0);
 
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 CommunicationConnectionItems.Clear();
-                var infoModels = models?.Select((s, i) => new CommunicationConnectionItemInfoModel {
+                var infoModels = models?.Select((s, i) => new CommunicationConnectionItemInfoModel
+                {
                     ModifyCommand = ModifyCommand,
                     DeleteCommand = DeleteCommand,
                     CreateTime = s.CreateTime,
@@ -630,7 +690,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     CommunicationProtocol = CommunicationProtocolItems.FirstOrDefault(f => f.Value.ToString().Equals(s.CommunicationProtocol)) ?? new CommunicationProtocolInfoModel(),
                     CommunicationType = CommunicationsTypeItems.FirstOrDefault(f => (int)f.Value == s.CommunicationType) ?? new CommunicationsTypeInfoModel(),
                     ConnectionName = s.ConnectionName,
-                    DeviceExtensionConfigInfo = new DeviceExtensionConfigItemInfoModel() {
+                    DeviceExtensionConfigInfo = new DeviceExtensionConfigItemInfoModel()
+                    {
                         CreateTime = s.CreateTime,
                         ModifyTime = s.ModifyTime,
                         MaxRetryCount = s.DeviceExtensionConfigInfo
@@ -638,7 +699,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         ValidateDeviceResponse = s.DeviceExtensionConfigInfo
                             ?.ValidateDeviceResponse ?? false,
                     },
-                    HeartbeatConfigInfo = new HeartbeatConfigItemInfoModel() {
+                    HeartbeatConfigInfo = new HeartbeatConfigItemInfoModel()
+                    {
                         CreateTime = s.CreateTime,
                         ModifyTime = s.ModifyTime,
                         HeartbeatInterval = s.HeartbeatConfigInfo
@@ -654,7 +716,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     },
                     IsActive = s.IsActive,
                     IsAutoReconnect = s.IsAutoReconnect,
-                    SerialPortConfigInfo = new SerialPortConfigItemInfoModel() {
+                    SerialPortConfigInfo = new SerialPortConfigItemInfoModel()
+                    {
                         BaudRate = s.SerialPortConfigInfo?.BaudRate ?? 0,
                         CreateTime = s.CreateTime,
                         DataBits = s.SerialPortConfigInfo?.DataBits ?? 0,
@@ -667,14 +730,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                    string.Empty,
                         StopBits = StopBitsItems.FirstOrDefault(f => (int)f.Value == s.SerialPortConfigInfo?.StopBits) ?? new StopBitsInfoModel(),
                     },
-                    TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel() {
+                    TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel()
+                    {
                         ConnectionMode = (TcpConnectionMode)(s.TcpConnectionConfigInfo
                             ?.ConnectionMode ?? 0),
-                        ServerParameter = new TcpConfigItemInfoModel() {
+                        ServerParameter = new TcpConfigItemInfoModel()
+                        {
                             IpAddress = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 1)?.IpAddress ?? string.Empty,
                             Port = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 1)?.Port ?? 0,
                         },
-                        ClientParameter = new TcpConfigItemInfoModel() {
+                        ClientParameter = new TcpConfigItemInfoModel()
+                        {
                             IpAddress = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.IpAddress ?? string.Empty,
                             Port = s.TcpConnectionConfigInfo?.TcpConfigItems?.FirstOrDefault(f => f.Type == 0)?.Port ?? 0,
                         },
@@ -684,7 +750,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     ConnectionCount = packageExitDefinitionInfoModels?.Where(w => w.CommunicationConnectionId.Equals(s.Id))?.Count() ?? 0
                 })?.ToList();
                 CommunicationConnectionItems.AddRange(infoModels);
-                if (DialogHost.IsDialogOpen(model.Identifier)) {
+                if (DialogHost.IsDialogOpen(model.Identifier))
+                {
                     DialogHost.Close(model.Identifier);
                 }
             });

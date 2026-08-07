@@ -11,9 +11,15 @@ using System.Text.RegularExpressions;
 
 namespace JayTom.Dws.Interface.ZhouYi {
 
-    public class ZhouYiApi : IDataUploader {
+    public partial class ZhouYiApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         private ApiParameters _parameters = new();
+
+        /// <summary>
+        /// 获取移除空白字符的源生成正则。
+        /// </summary>
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex WhitespaceRegex();
 
         public ZhouYiApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -36,19 +42,14 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
             var bodyStr = jobj.ToString(Formatting.None);
 
-            var bodyStrNoWs = Regex.Replace(bodyStr, "\\s+", string.Empty);
+            var bodyStrNoWs = WhitespaceRegex().Replace(bodyStr, string.Empty);
 
             var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
             var signPlain = $"{_parameters.AppId}{bodyStrNoWs}{timestamp}{_parameters.AppKey}";
 
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(signPlain));
-                var sb = new StringBuilder(hash.Length * 2);
-                foreach (var b in hash) sb.Append(b.ToString("x2"));
-                sign = sb.ToString();
-            }
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
+            var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
 
             using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
@@ -118,19 +119,14 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
             var bodyStr = jobj.ToString(Formatting.None);
 
-            var bodyStrNoWs = Regex.Replace(bodyStr, "\\s+", string.Empty);
+            var bodyStrNoWs = WhitespaceRegex().Replace(bodyStr, string.Empty);
 
             var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
             var signPlain = $"{_parameters.AppId}{bodyStrNoWs}{timestamp}{_parameters.AppKey}";
 
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(signPlain));
-                var sb = new StringBuilder(hash.Length * 2);
-                foreach (var b in hash) sb.Append(b.ToString("x2"));
-                sign = sb.ToString();
-            }
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
+            var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
 
             using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);

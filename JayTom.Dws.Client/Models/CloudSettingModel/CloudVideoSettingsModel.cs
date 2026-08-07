@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.CloudSettingModel {
+namespace JayTom.Dws.Client.Models.CloudSettingModel
+{
 
-    public class CloudVideoSettingsModel : BindableBase {
+    public class CloudVideoSettingsModel : BindableBase
+    {
         private bool _isUseCloudVideoUpload;
         private int _retryAttempts = 5;
         private bool _isAutoUploadUnsyncedData;
@@ -24,7 +26,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 是否开启云视频上传
         /// </summary>
-        public bool IsUseCloudVideoUpload {
+        public bool IsUseCloudVideoUpload
+        {
             get => _isUseCloudVideoUpload;
             set => SetProperty(ref _isUseCloudVideoUpload, value);
         }
@@ -32,7 +35,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 失败重试次数
         /// </summary>
-        public int RetryAttempts {
+        public int RetryAttempts
+        {
             get => _retryAttempts;
             set => SetProperty(ref _retryAttempts, value);
         }
@@ -40,7 +44,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 是否自动上传未同步的数据
         /// </summary>
-        public bool IsAutoUploadUnsyncedData {
+        public bool IsAutoUploadUnsyncedData
+        {
             get => _isAutoUploadUnsyncedData;
             set => SetProperty(ref _isAutoUploadUnsyncedData, value);
         }
@@ -48,7 +53,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 并发数 (1-10)
         /// </summary>
-        public int Concurrency {
+        public int Concurrency
+        {
             get => _concurrency;
             set => SetProperty(ref _concurrency, value);
         }
@@ -64,7 +70,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 请求超时时间
         /// </summary>
-        public int RequestTimeout {
+        public int RequestTimeout
+        {
             get => _requestTimeout;
             set => SetProperty(ref _requestTimeout, value);
         }
@@ -72,7 +79,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 节点名称
         /// </summary>
-        public string NodeName {
+        public string NodeName
+        {
             get => _nodeName;
             set => SetProperty(ref _nodeName, value);
         }
@@ -80,7 +88,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         ///  登录名
         /// </summary>
-        public string LoginName {
+        public string LoginName
+        {
             get => _loginName;
             set => SetProperty(ref _loginName, value);
         }
@@ -88,7 +97,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// ip/域名
         /// </summary>
-        public string WebDoMain {
+        public string WebDoMain
+        {
             get => _webDoMain;
             set => SetProperty(ref _webDoMain, value);
         }
@@ -96,7 +106,8 @@ namespace JayTom.Dws.Client.Models.CloudSettingModel {
         /// <summary>
         /// 上传间隔
         /// </summary>
-        public int UploadIntervalInSeconds {
+        public int UploadIntervalInSeconds
+        {
             get => _uploadIntervalInSeconds;
             set => SetProperty(ref _uploadIntervalInSeconds, value);
         }

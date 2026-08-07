@@ -6,14 +6,15 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
 
-    public class FtpLogItemModel : BaseLogItemModel {
-        private FtpCommunicationType _ftpCommunicationType;
-
-        public FtpCommunicationType FtpCommunicationType {
-            get => _ftpCommunicationType;
-            set => SetProperty(ref _ftpCommunicationType, value);
+    public class FtpLogItemModel : BaseLogItemModel
+    {
+        public FtpCommunicationType FtpCommunicationType
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
     }
 }

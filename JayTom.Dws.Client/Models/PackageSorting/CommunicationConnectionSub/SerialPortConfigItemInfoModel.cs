@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
+namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub
+{
 
-    public class SerialPortConfigItemInfoModel : BasePackageSortingItemInfoModel {
+    public class SerialPortConfigItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private string _portName = string.Empty;
         private int _baudRate;
         private int _dataBits;
@@ -18,7 +20,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 串口名
         /// </summary>
-        public string PortName {
+        public string PortName
+        {
             get => _portName;
             set => SetProperty(ref _portName, value);
         }
@@ -26,7 +29,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 波特率
         /// </summary>
-        public int BaudRate {
+        public int BaudRate
+        {
             get => _baudRate;
             set => SetProperty(ref _baudRate, value);
         }
@@ -34,7 +38,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 数据位
         /// </summary>
-        public int DataBits {
+        public int DataBits
+        {
             get => _dataBits;
             set => SetProperty(ref _dataBits, value);
         }
@@ -42,7 +47,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 效验位
         /// </summary>
-        public ParityInfoModel Parity {
+        public ParityInfoModel Parity
+        {
             get => _parity;
             set => SetProperty(ref _parity, value);
         }
@@ -50,7 +56,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 停止位
         /// </summary>
-        public StopBitsInfoModel StopBits {
+        public StopBitsInfoModel StopBits
+        {
             get => _stopBits;
             set => SetProperty(ref _stopBits, value);
         }
@@ -58,7 +65,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 数据格式
         /// </summary>
-        public DataFormatTypeInfoModel DataFormat {
+        public DataFormatTypeInfoModel DataFormat
+        {
             get => _dataFormat;
             set => SetProperty(ref _dataFormat, value);
         }

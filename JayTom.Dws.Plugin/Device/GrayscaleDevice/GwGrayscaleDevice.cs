@@ -142,7 +142,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
             };
             try {
                 NLog.LogManager.GetCurrentClassLogger()
-                    .Info($"接收到的内容:{BitConverter.ToString(dataBytes).Replace("-", " ")}");
+                    .Info($"接收到的内容:{HexDataFormatter.Format(dataBytes)}");
                 if (dataBytes.Length == 67 && dataBytes.LastOrDefault() == 0x0A) {
                     var replace = Encoding.UTF8.GetString(dataBytes[..5]).Replace("\0", "0");
                     //小车号

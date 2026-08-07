@@ -1,9 +1,11 @@
 ﻿using JayTom.Dws.Domain.Dto;
 using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
+namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel
+{
 
-    public class AudioOutputSettingsInfoModel : BindableBase {
+    public class AudioOutputSettingsInfoModel : BindableBase
+    {
         private string? _successAudio;
         private string? _failureAudio;
         private TriggerPositionEnum _triggerPosition;
@@ -12,7 +14,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 成功音频
         /// </summary>
-        public string? SuccessAudio {
+        public string? SuccessAudio
+        {
             get => _successAudio;
             set => SetProperty(ref _successAudio, value);
         }
@@ -20,7 +23,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 失败音频
         /// </summary>
-        public string? FailureAudio {
+        public string? FailureAudio
+        {
             get => _failureAudio;
             set => SetProperty(ref _failureAudio, value);
         }
@@ -28,7 +32,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 触发位置
         /// </summary>
-        public TriggerPositionEnum TriggerPosition {
+        public TriggerPositionEnum TriggerPosition
+        {
             get => _triggerPosition;
             set => SetProperty(ref _triggerPosition, value);
         }
@@ -36,7 +41,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 结果判断
         /// </summary>
-        public ResultEnum Result {
+        public ResultEnum Result
+        {
             get => _result;
             set => SetProperty(ref _result, value);
         }

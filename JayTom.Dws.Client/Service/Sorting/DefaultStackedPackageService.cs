@@ -26,15 +26,17 @@ using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
 
-namespace JayTom.Dws.Client.Service.Sorting {
+namespace JayTom.Dws.Client.Service.Sorting
+{
 
-    public class DefaultStackedPackageService : IStackedPackageService {
+    public class DefaultStackedPackageService : IStackedPackageService
+    {
         private readonly IConfigRepository _configRepository;
         private readonly IPackageDetectionSerialPort _packageDetectionSerialPort;
         private readonly IPackageDetectionTcp _packageDetectionTcp;
         private StackedPackageDetectionSettingsDto? _stackedPackageDetectionSettingsDto = new();
         private readonly Queue<PackageInfo> _stackedPackageItems = new();
-        private readonly object _queueSync = new();
+        private readonly System.Threading.Lock _queueSync = new();
         private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
         private Task? _clearThread;
         private CancellationTokenSource? _cancellationTokenSource;
@@ -42,93 +44,122 @@ namespace JayTom.Dws.Client.Service.Sorting {
         private int _isConnected;
 
         public DefaultStackedPackageService(IConfigRepository configRepository,
-            IPackageDetectionSerialPort packageDetectionSerialPort, IPackageDetectionTcp packageDetectionTcp) {
+            IPackageDetectionSerialPort packageDetectionSerialPort, IPackageDetectionTcp packageDetectionTcp)
+        {
             _configRepository = configRepository;
             _packageDetectionSerialPort = packageDetectionSerialPort;
             _packageDetectionTcp = packageDetectionTcp;
-            _packageDetectionSerialPort.DataReceived += (sender, args) => {
+            _packageDetectionSerialPort.DataReceived += (sender, args) =>
+            {
                 //串口接收内容
                 var regex = Volatile.Read(ref _stackedRegex);
-                if (regex is not null) {
-                    try {
+                if (regex is not null)
+                {
+                    try
+                    {
                         var isStacked = false;
                         PackageInfo? result = null;
-                        lock (_queueSync) {
-                            if (_stackedPackageItems.Count > 0) {
+                        lock (_queueSync)
+                        {
+                            if (_stackedPackageItems.Count > 0)
+                            {
                                 result = _stackedPackageItems.Dequeue();
                             }
                         }
-                        if (result is not null) {
+                        if (result is not null)
+                        {
                             isStacked = regex.IsMatch(args.AsciiMessage);
                         }
 
-                        OnStackedPackageReturned(new StackedPackageEventArgs() {
+                        OnStackedPackageReturned(new StackedPackageEventArgs()
+                        {
                             PackageInfo = result,
                             PackageTime = result?.CreateTime ?? DateTime.MinValue,
                             IsStacked = isStacked,
                             StackedContent = args.AsciiMessage
                         });
                     }
-                    catch (Exception e) {
-                        OnExceptionOccurred(new ExceptionEventArgs() {
+                    catch (Exception e)
+                    {
+                        OnExceptionOccurred(new ExceptionEventArgs()
+                        {
                             ExceptionMessage = $"接收内容解析错误:{args.AsciiMessage}"
                         });
                     }
                 }
             };
-            _packageDetectionSerialPort.ErrorOccurred += (sender, args) => {
+            _packageDetectionSerialPort.ErrorOccurred += (sender, args) =>
+            {
                 //串口报错
-                OnExceptionOccurred(new ExceptionEventArgs() {
+                OnExceptionOccurred(new ExceptionEventArgs()
+                {
                     ExceptionMessage = $"监测异常:{args.Exception.Message}"
                 });
             };
-            _packageDetectionTcp.Communication += (sender, info) => {
+            _packageDetectionTcp.Communication += (sender, info) =>
+            {
                 //Tcp接收内容
 
                 var regex = Volatile.Read(ref _stackedRegex);
-                if (regex is not null) {
-                    try {
+                if (regex is not null)
+                {
+                    try
+                    {
                         var isStacked = false;
                         PackageInfo? result = null;
-                        lock (_queueSync) {
-                            if (_stackedPackageItems.Count > 0) {
+                        lock (_queueSync)
+                        {
+                            if (_stackedPackageItems.Count > 0)
+                            {
                                 result = _stackedPackageItems.Dequeue();
                             }
                         }
-                        if (result is not null) {
+                        if (result is not null)
+                        {
                             isStacked = regex.IsMatch(info.Content);
                         }
 
-                        OnStackedPackageReturned(new StackedPackageEventArgs() {
+                        OnStackedPackageReturned(new StackedPackageEventArgs()
+                        {
                             PackageInfo = result,
                             PackageTime = result?.CreateTime ?? DateTime.MinValue,
                             IsStacked = isStacked,
                             StackedContent = info.Content
                         });
                     }
-                    catch (Exception e) {
-                        OnExceptionOccurred(new ExceptionEventArgs() {
+                    catch (Exception e)
+                    {
+                        OnExceptionOccurred(new ExceptionEventArgs()
+                        {
                             ExceptionMessage = $"接收内容解析错误:{info.Content}"
                         });
                     }
                 }
             };
-            _packageDetectionTcp.Exception += (sender, exception) => {
+            _packageDetectionTcp.Exception += (sender, exception) =>
+            {
                 //Tcp报错
-                OnExceptionOccurred(new ExceptionEventArgs() {
+                OnExceptionOccurred(new ExceptionEventArgs()
+                {
                     ExceptionMessage = $"监测异常:{exception.Message}"
                 });
             };
-            _packageDetectionTcp.ConnectionException += (sender, s) => {
+            _packageDetectionTcp.ConnectionException += (sender, s) =>
+            {
                 //Tcp连接报错
-                OnExceptionOccurred(new ExceptionEventArgs() {
+                OnExceptionOccurred(new ExceptionEventArgs()
+                {
                     ExceptionMessage = $"监测Tcp连接异常:{s}"
                 });
             };
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(item => {
-                if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info) {
-                    if (Volatile.Read(ref _stackedRegex) is not null) {
-                        lock (_queueSync) {
+            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(item =>
+            {
+                if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info)
+                {
+                    if (Volatile.Read(ref _stackedRegex) is not null)
+                    {
+                        lock (_queueSync)
+                        {
                             _stackedPackageItems.Enqueue(info.PackageInfo ?? new PackageInfo());
                         }
                     }
@@ -147,17 +178,21 @@ namespace JayTom.Dws.Client.Service.Sorting {
 
         public bool IsConnected => Volatile.Read(ref _isConnected) != 0;
 
-        public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default)
+        {
             await _lifecycleGate.WaitAsync(token);
-            try {
+            try
+            {
                 return await StartCore(token);
             }
-            finally {
+            finally
+            {
                 _lifecycleGate.Release();
             }
         }
 
-        private async Task<KeyValuePair<bool, string>> StartCore(CancellationToken token) {
+        private async Task<KeyValuePair<bool, string>> StartCore(CancellationToken token)
+        {
             _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(
                 "StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
             Volatile.Write(
@@ -165,19 +200,25 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 _stackedPackageDetectionSettingsDto.IsStackedPackageDetection
                     ? new Regex(
                         _stackedPackageDetectionSettingsDto.RegularExpression,
-                        RegexOptions.Compiled | RegexOptions.CultureInvariant)
+                        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+                        TimeSpan.FromMilliseconds(100))
                     : null);
             //创建清理线程
-            if (_clearThread is null && _stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
+            if (_clearThread is null && _stackedPackageDetectionSettingsDto.IsStackedPackageDetection)
+            {
                 _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
                 var clearToken = _cancellationTokenSource.Token;
                 var timeout = _stackedPackageDetectionSettingsDto.Timeout;
-                _clearThread = Task.Run(async () => {
-                    while (!clearToken.IsCancellationRequested) {
-                        lock (_queueSync) {
+                _clearThread = Task.Run(async () =>
+                {
+                    while (!clearToken.IsCancellationRequested)
+                    {
+                        lock (_queueSync)
+                        {
                             while (_stackedPackageItems.Count > 0 &&
                                    DateTime.Now.Subtract(_stackedPackageItems.Peek().CreateTime)
-                                       .TotalMilliseconds > timeout) {
+                                       .TotalMilliseconds > timeout)
+                            {
                                 _stackedPackageItems.Dequeue();
                             }
                         }
@@ -188,11 +229,15 @@ namespace JayTom.Dws.Client.Service.Sorting {
             }
 
             //连接叠包
-            if (_stackedPackageDetectionSettingsDto.IsStackedPackageDetection) {
-                if (_stackedPackageDetectionSettingsDto.CommunicationType == CommunicationsType.SerialPort) {
+            if (_stackedPackageDetectionSettingsDto.IsStackedPackageDetection)
+            {
+                if (_stackedPackageDetectionSettingsDto.CommunicationType == CommunicationsType.SerialPort)
+                {
                     //串口
-                    if (_stackedPackageDetectionSettingsDto.SerialPortConfigInfo is null) {
-                        OnExceptionOccurred(new ExceptionEventArgs() {
+                    if (_stackedPackageDetectionSettingsDto.SerialPortConfigInfo is null)
+                    {
+                        OnExceptionOccurred(new ExceptionEventArgs()
+                        {
                             ExceptionMessage = "串口参数为空,无法连接"
                         });
                         return new KeyValuePair<bool, string>(false, "串口参数为空,无法连接");
@@ -206,23 +251,29 @@ namespace JayTom.Dws.Client.Service.Sorting {
                         _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.StopBits,
                         (SerialPortFormat)_stackedPackageDetectionSettingsDto.SerialPortConfigInfo.DataFormat
                     );
-                    if (connect) {
+                    if (connect)
+                    {
                         OnConnected();
                     }
-                    else {
+                    else
+                    {
                         OnDisconnected();
                     }
                     return new KeyValuePair<bool, string>(connect, $"叠包监测连接:{(connect ? "成功" : "失败")}");
                 }
-                else if (_stackedPackageDetectionSettingsDto.CommunicationType == CommunicationsType.TCP) {
+                else if (_stackedPackageDetectionSettingsDto.CommunicationType == CommunicationsType.TCP)
+                {
                     //Tcp
-                    if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo is null) {
-                        OnExceptionOccurred(new ExceptionEventArgs() {
+                    if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo is null)
+                    {
+                        OnExceptionOccurred(new ExceptionEventArgs()
+                        {
                             ExceptionMessage = "Tcp参数为空,无法连接"
                         });
                         return new KeyValuePair<bool, string>(false, "Tcp参数为空,无法连接");
                     }
-                    if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ConnectionMode == TcpConnectionMode.Server) {
+                    if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ConnectionMode == TcpConnectionMode.Server)
+                    {
                         var connect = await _packageDetectionTcp.Connect(
                             _stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ServerConfig.IpAddress,
                             _stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ServerConfig.Port,
@@ -230,15 +281,18 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             1000,
                             (FormatType)_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.DataFormat,
                             0, token);
-                        if (connect) {
+                        if (connect)
+                        {
                             OnConnected();
                         }
-                        else {
+                        else
+                        {
                             OnDisconnected();
                         }
                         return new KeyValuePair<bool, string>(connect, $"叠包监测连接:{(connect ? "成功" : "失败")}");
                     }
-                    else if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ConnectionMode == TcpConnectionMode.Client) {
+                    else if (_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ConnectionMode == TcpConnectionMode.Client)
+                    {
                         var connect = await _packageDetectionTcp.Connect(
                             _stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ClientConfig.IpAddress,
                             _stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.ClientConfig.Port,
@@ -246,10 +300,12 @@ namespace JayTom.Dws.Client.Service.Sorting {
                             1000,
                             (FormatType)_stackedPackageDetectionSettingsDto.TcpConnectionConfigInfo.DataFormat,
                             0, token);
-                        if (connect) {
+                        if (connect)
+                        {
                             OnConnected();
                         }
-                        else {
+                        else
+                        {
                             OnDisconnected();
                         }
                         return new KeyValuePair<bool, string>(connect, $"叠包监测连接:{(connect ? "成功" : "失败")}");
@@ -257,21 +313,27 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 }
                 return new KeyValuePair<bool, string>(false, "未知连接方式");
             }
-            else {
+            else
+            {
                 return new KeyValuePair<bool, string>(true, "无需监测叠包状态");
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default) {
+        public async Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default)
+        {
             await _lifecycleGate.WaitAsync(token);
-            try {
+            try
+            {
                 //停止线程
                 _cancellationTokenSource?.Cancel();
-                if (_clearThread != null) {
-                    try {
+                if (_clearThread != null)
+                {
+                    try
+                    {
                         await _clearThread;
                     }
-                    catch (OperationCanceledException) when (_cancellationTokenSource?.IsCancellationRequested == true) {
+                    catch (OperationCanceledException) when (_cancellationTokenSource?.IsCancellationRequested == true)
+                    {
                         // 正常停止后台清理任务。
                     }
                     _clearThread?.Dispose();
@@ -281,38 +343,48 @@ namespace JayTom.Dws.Client.Service.Sorting {
                 _cancellationTokenSource?.Dispose();
                 _cancellationTokenSource = null;
                 Volatile.Write(ref _stackedRegex, null);
-                lock (_queueSync) {
+                lock (_queueSync)
+                {
                     _stackedPackageItems.Clear();
                 }
-                if (_packageDetectionTcp.ConnectionStatus == ConnectionStatus.Connected) {
+                if (_packageDetectionTcp.ConnectionStatus == ConnectionStatus.Connected)
+                {
                     _packageDetectionTcp.Close();
                 }
 
-                if (_packageDetectionSerialPort.Status == SerialPortStatus.Running) {
+                if (_packageDetectionSerialPort.Status == SerialPortStatus.Running)
+                {
                     _packageDetectionSerialPort.Dispose();
                 }
                 OnDisconnected();
                 return new KeyValuePair<bool, string>(true, "停止成功");
             }
-            catch (Exception e) {
-                OnExceptionOccurred(new ExceptionEventArgs() {
+            catch (Exception e)
+            {
+                OnExceptionOccurred(new ExceptionEventArgs()
+                {
                     ExceptionMessage = $"监测连接停止异常:{e}"
                 });
             }
-            finally {
+            finally
+            {
                 _lifecycleGate.Release();
             }
 
             return new KeyValuePair<bool, string>(false, "停止失败");
         }
 
-        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
+        public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters)
+        {
             throw new NotImplementedException();
         }
 
-        protected virtual void OnStackedPackageReturned(StackedPackageEventArgs e) {
-            if (e.IsStacked) {
-                EventAggregator.Instance.Publish(new SortingLogInfoModel {
+        protected virtual void OnStackedPackageReturned(StackedPackageEventArgs e)
+        {
+            if (e.IsStacked)
+            {
+                EventAggregator.Instance.Publish(new SortingLogInfoModel
+                {
                     CreateTime = DateTime.Now,
                     Message = $"包裹:[{e.PackageInfo?.Guid:X4}]-[{e.PackageInfo?.BarCodeInfo?.Barcode}],叠包",
                     Type = LogType.Information
@@ -322,16 +394,19 @@ namespace JayTom.Dws.Client.Service.Sorting {
             StackedPackageReturned?.Invoke(this, e);
         }
 
-        protected virtual void OnExceptionOccurred(ExceptionEventArgs e) {
+        protected virtual void OnExceptionOccurred(ExceptionEventArgs e)
+        {
             ExceptionOccurred?.Invoke(this, e);
         }
 
-        protected virtual void OnConnected() {
+        protected virtual void OnConnected()
+        {
             Interlocked.Exchange(ref _isConnected, 1);
             Connected?.Invoke(this, EventArgs.Empty);
         }
 
-        protected virtual void OnDisconnected() {
+        protected virtual void OnDisconnected()
+        {
             Interlocked.Exchange(ref _isConnected, 0);
             Disconnected?.Invoke(this, EventArgs.Empty);
         }

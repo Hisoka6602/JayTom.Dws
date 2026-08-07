@@ -2,8 +2,10 @@
 using System.Windows;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
-    public class CombinedWorkflowNodeModel : BindableBase {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
+    public class CombinedWorkflowNodeModel : BindableBase
+    {
         private CombinedWorkflowNodeType _type;
         private string _name = string.Empty;
         private string _rule = string.Empty;
@@ -20,12 +22,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         private int _id;
         private int _parentId;
 
-        public int Id {
+        public int Id
+        {
             get => _id;
             set => SetProperty(ref _id, value);
         }
 
-        public int ParentId {
+        public int ParentId
+        {
             get => _parentId;
             set => SetProperty(ref _parentId, value);
         }
@@ -33,7 +37,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 节点类型
         /// </summary>
-        public CombinedWorkflowNodeType Type {
+        public CombinedWorkflowNodeType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
@@ -41,7 +46,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 节点名称
         /// </summary>
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -49,7 +55,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 规则内容
         /// </summary>
-        public string Rule {
+        public string Rule
+        {
             get => _rule;
             set => SetProperty(ref _rule, value);
         }
@@ -57,7 +64,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 查看规则
         /// </summary>
-        public ICommand? RuleCommand {
+        public ICommand? RuleCommand
+        {
             get => _ruleCommand;
             set => SetProperty(ref _ruleCommand, value);
         }
@@ -65,7 +73,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 查看指令
         /// </summary>
-        public ICommand? InstructionCommand {
+        public ICommand? InstructionCommand
+        {
             get => _instructionCommand;
             set => SetProperty(ref _instructionCommand, value);
         }
@@ -73,7 +82,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 左边位置
         /// </summary>
-        public double Left {
+        public double Left
+        {
             get => _left;
             set => SetProperty(ref _left, value);
         }
@@ -81,7 +91,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 上边位置
         /// </summary>
-        public double Top {
+        public double Top
+        {
             get => _top;
             set => SetProperty(ref _top, value);
         }
@@ -89,7 +100,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否在画布中显示
         /// </summary>
-        public bool IsInCanvas {
+        public bool IsInCanvas
+        {
             get => _isInCanvas;
             set => SetProperty(ref _isInCanvas, value);
         }
@@ -97,7 +109,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否连接到肯定结果(针对规则类型)
         /// </summary>
-        public bool ConnectPositiveResult {
+        public bool ConnectPositiveResult
+        {
             get => _connectPositiveResult;
             set => SetProperty(ref _connectPositiveResult, value);
         }
@@ -105,14 +118,16 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否连接到否定结果 (针对规则类型)
         /// </summary>
-        public bool ConnectNegativeResult {
+        public bool ConnectNegativeResult
+        {
             get => _connectNegativeResult;
             set => SetProperty(ref _connectNegativeResult, value);
         }
         /// <summary>
         /// 肯定连接点位置
         /// </summary>
-        public Point PositiveConnectionPoint {
+        public Point PositiveConnectionPoint
+        {
             get => _positiveConnectionPoint;
             set => SetProperty(ref _positiveConnectionPoint, value);
         }
@@ -120,7 +135,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 否定连接点位置
         /// </summary>
-        public Point NegativeConnectionPoint {
+        public Point NegativeConnectionPoint
+        {
             get => _negativeConnectionPoint;
             set => SetProperty(ref _negativeConnectionPoint, value);
         }
@@ -128,13 +144,15 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 接收连接到位置
         /// </summary>
-        public Point ReceiverConnectionPoint {
+        public Point ReceiverConnectionPoint
+        {
             get => _receiverConnectionPoint;
             set => SetProperty(ref _receiverConnectionPoint, value);
         }
     }
 
-    public enum CombinedWorkflowNodeType {
+    public enum CombinedWorkflowNodeType
+    {
 
         /// <summary>
         /// 出口节点
@@ -171,7 +189,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         ConnectionLine,
     }
 
-    public class ConnectionLine {
+    public class ConnectionLine
+    {
         public Point StartPoint { get; set; }
         public Point BendPoint { get; set; }
         public Point EndPoint { get; set; }

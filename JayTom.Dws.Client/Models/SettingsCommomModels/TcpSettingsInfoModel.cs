@@ -3,9 +3,11 @@ using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
-namespace JayTom.Dws.Client.Models.SettingsCommomModels {
+namespace JayTom.Dws.Client.Models.SettingsCommomModels
+{
 
-    public class TcpSettingsInfoModel : BindableBase {
+    public class TcpSettingsInfoModel : BindableBase
+    {
         private TcpConnectionMode? _connectionMode;
         private TcpInfoModel _clientConfig = new();
         private TcpInfoModel _serverConfig = new();
@@ -14,7 +16,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 连接模式(客户端、服务端)
         /// </summary>
-        public TcpConnectionMode? ConnectionMode {
+        public TcpConnectionMode? ConnectionMode
+        {
             get => _connectionMode;
             set => SetProperty(ref _connectionMode, value);
         }
@@ -22,7 +25,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 客户端配置
         /// </summary>
-        public TcpInfoModel ClientConfig {
+        public TcpInfoModel ClientConfig
+        {
             get => _clientConfig;
             set => SetProperty(ref _clientConfig, value);
         }
@@ -30,7 +34,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 服务端配置
         /// </summary>
-        public TcpInfoModel ServerConfig {
+        public TcpInfoModel ServerConfig
+        {
             get => _serverConfig;
             set => SetProperty(ref _serverConfig, value);
         }
@@ -38,7 +43,8 @@ namespace JayTom.Dws.Client.Models.SettingsCommomModels {
         /// <summary>
         /// 数据格式
         /// </summary>
-        public DataFormatType DataFormat {
+        public DataFormatType DataFormat
+        {
             get => _dataFormat;
             set => SetProperty(ref _dataFormat, value);
         }

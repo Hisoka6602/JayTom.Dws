@@ -20,9 +20,11 @@ using JayTom.Dws.Data.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
+{
 
-    public class CameraHomeViewModel : BindableBase {
+    public class CameraHomeViewModel : BindableBase
+    {
         private readonly IDeviceService _deviceService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
@@ -39,12 +41,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
         private ObservableCollection<CameraItemInfoModel> _hiddenCameraItems = new();
 
-        public ObservableCollection<CameraItemInfoModel> CameraItems {
+        public ObservableCollection<CameraItemInfoModel> CameraItems
+        {
             get => _cameraItems;
             set => SetProperty(ref _cameraItems, value);
         }
 
-        public ObservableCollection<CameraItemInfoModel> HiddenCameraItems {
+        public ObservableCollection<CameraItemInfoModel> HiddenCameraItems
+        {
             get => _hiddenCameraItems;
             set => SetProperty(ref _hiddenCameraItems, value);
         }
@@ -53,23 +57,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IUsbCameraConfigRepository usbCameraConfigRepository,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository) {
+            IVolumeCameraConfigRepository volumeCameraConfigRepository)
+        {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _usbCameraConfigRepository = usbCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
             //判断启停
-            _deviceService.CameraStarted += async (sender, args) => {
+            _deviceService.CameraStarted += async (sender, args) =>
+            {
                 await Task.Delay(500).ConfigureAwait(false);
                 if (_visibleCameraItems.TryGetValue(args.CameraInfo?.SerialNumber ?? string.Empty,
-                        out var model)) {
-                    await Application.Current.Dispatcher.BeginInvoke(() => {
+                        out var model))
+                {
+                    await Application.Current.Dispatcher.BeginInvoke(() =>
+                    {
                         model.IsRealtimeImageEnabled = args.Camera?.IsRealtimeImageEnabled ?? false;
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             };
-            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list) {
+            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list)
+            {
                 var barcodeCameraConfigs = await _barcodeScannerCameraConfigRepository.MemoryCacheData()
                     .ConfigureAwait(false);
                 var panoramaCameraConfigs = await _panoramaCameraConfigRepository.MemoryCacheData()
@@ -89,14 +98,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                     .ToDictionary(group => group.Key, group => group.First().CameraDisplayStatus,
                         StringComparer.Ordinal);
 
-                await Application.Current.Dispatcher.BeginInvoke(() => {
-                    foreach (var item in CameraItems.Concat(HiddenCameraItems).Distinct()) {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    foreach (var item in CameraItems.Concat(HiddenCameraItems).Distinct())
+                    {
                         item.Dispose();
                     }
                     _visibleCameraItems.Clear();
                     CameraItems.Clear();
                     HiddenCameraItems.Clear();
-                    var infoModels = list.Select(s => new CameraItemInfoModel {
+                    var infoModels = list.Select(s => new CameraItemInfoModel
+                    {
                         ConnectionType = (s?.Info?.ConnectionType ?? CameraConnectionType.Ethernet),
                         CameraName = $"{s?.Info?.Brand}:{s?.Info?.SerialNumber}" ?? string.Empty,
                         Type = s?.Info?.Type ?? JayTom.Dws.Camera.CameraType.IndustrialCamera,
@@ -119,41 +131,50 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
                         .Where(item => item.CameraDisplayStatus == CameraDisplayStatus.Visible)
                         .ToList() ?? new List<CameraItemInfoModel>();
                     CameraItems.AddRange(visibleItems);
-                    foreach (var visibleItem in visibleItems) {
+                    foreach (var visibleItem in visibleItems)
+                    {
                         _visibleCameraItems[visibleItem.SerialNumber] = visibleItem;
                     }
 
                     HiddenCameraItems.AddRange(infoModels?.Where(w => w.CameraDisplayStatus == CameraDisplayStatus.Hidden));
                 });
             };
-            _deviceService.CameraReleased += async delegate (object? sender, string s) {
+            _deviceService.CameraReleased += async delegate (object? sender, string s)
+            {
                 _visibleCameraItems.TryRemove(s, out _);
-                await Application.Current.Dispatcher.BeginInvoke(() => {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
                     var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(s));
-                    if (model != null) {
+                    if (model != null)
+                    {
                         CameraItems.Remove(model);
                         model.Dispose();
                     }
-                    else {
+                    else
+                    {
                         var cameraItemInfoModel = HiddenCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(s));
-                        if (cameraItemInfoModel != null) {
+                        if (cameraItemInfoModel != null)
+                        {
                             HiddenCameraItems.Remove(cameraItemInfoModel);
                             cameraItemInfoModel.Dispose();
                         }
                     }
                 });
             };
-            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args) {
+            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args)
+            {
                 if (_visibleCameraItems.TryGetValue(args.CameraSerialNumber, out var model) &&
                     model.Image is not null &&
-                    args.ThumbImage is not null) {
+                    args.ThumbImage is not null)
+                {
                     model.TryEnqueueImage(args.ThumbImage, args.Timestamp);
                 }
             };
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.RealTimeImage += DeviceServiceOnRealTimeImage;
             _deviceService.PanoramaCaptured += DeviceServiceOnPanoramaCaptured;
-            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list) {
+            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list)
+            {
                 //更新现有列表,例如删除相机成员
             };
             _deviceService.VolumeCaptured += DeviceServiceOnVolumeCaptured;
@@ -165,13 +186,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         public ICommand? StatusClickCommand => new DelegateCommand<CameraItemInfoModel>(StatusClickDelegate);
 
-        private async void StatusClickDelegate(CameraItemInfoModel obj) {
+        private async void StatusClickDelegate(CameraItemInfoModel obj)
+        {
             //先加载进度条
             //临时截图
-            if (obj.Camera is IIndustrialCamera industrialCamera) {
+            if (obj.Camera is IIndustrialCamera industrialCamera)
+            {
                 await industrialCamera.TakePhotoAsync(string.Empty, 0);
             }
-            else if (obj.Camera is ISecurityCamera securityCamera) {
+            else if (obj.Camera is ISecurityCamera securityCamera)
+            {
                 await securityCamera.TakePhotoAsync(string.Empty, 0);
             }
         }
@@ -181,8 +205,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         public ICommand? TakePhotoCommand => new DelegateCommand<CameraItemInfoModel>(TakePhotoDelegate);
 
-        private async void TakePhotoDelegate(CameraItemInfoModel obj) {
-            if (obj.Camera is { } camera) {
+        private async void TakePhotoDelegate(CameraItemInfoModel obj)
+        {
+            if (obj.Camera is { } camera)
+            {
                 camera.StopRealTimeImage();
                 obj.IsRealtimeImageEnabled = camera.IsRealtimeImageEnabled;
                 await camera.TakePhotoAsync(string.Empty, 0);
@@ -194,21 +220,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         public ICommand? SwitchRealtimeImageCommand => new DelegateCommand<CameraItemInfoModel>(SwitchRealtimeImageDelegate);
 
-        private async void SwitchRealtimeImageDelegate(CameraItemInfoModel obj) {
-            if (obj.Camera is { } camera) {
-                if (camera.IsRealtimeImageEnabled) {
+        private async void SwitchRealtimeImageDelegate(CameraItemInfoModel obj)
+        {
+            if (obj.Camera is { } camera)
+            {
+                if (camera.IsRealtimeImageEnabled)
+                {
                     camera.StopRealTimeImage();
                 }
-                else {
+                else
+                {
                     camera.StartRealTimeImage();
                 }
                 obj.IsRealtimeImageEnabled = camera.IsRealtimeImageEnabled;
 
                 //保存到数据库
-                if (camera.BindingType == CameraBindingType.ScannerCamera) {
+                if (camera.BindingType == CameraBindingType.ScannerCamera)
+                {
                     var configInfoModel = await _barcodeScannerCameraConfigRepository.FirstOrDefault(f =>
                         camera.Info != null && f.SerialNumber.Equals(camera.Info.SerialNumber));
-                    if (configInfoModel != null) {
+                    if (configInfoModel != null)
+                    {
                         configInfoModel.IsShowRealTimeImage = camera.IsRealtimeImageEnabled;
                         await _barcodeScannerCameraConfigRepository.InsertOrUpdate(configInfoModel);
                     }
@@ -221,7 +253,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         public ICommand ImageClickCommand => new DelegateCommand<CameraItemInfoModel>(ImageClickDelegate);
 
-        private async void ImageClickDelegate(CameraItemInfoModel obj) {
+        private async void ImageClickDelegate(CameraItemInfoModel obj)
+        {
             //放大图片(用另一个图像框显示、并重新绑定接收图像来源、过渡动画)
             /*await Application.Current.Dispatcher.BeginInvoke(() => {
                 AddNewRow(new BarCodeItemModel() {
@@ -232,7 +265,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
 
         public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
 
-        private async void LoadedDelegate(UserControl obj) {
+        private async void LoadedDelegate(UserControl obj)
+        {
             /*CameraItems = new ObservableCollection<CameraItemInfoModel>()
             {
                 new CameraItemInfoModel()
@@ -292,9 +326,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         public ICommand? HideCommand => new DelegateCommand<CameraItemInfoModel>(HideDelegate);
 
-        private async void HideDelegate(CameraItemInfoModel obj) {
+        private async void HideDelegate(CameraItemInfoModel obj)
+        {
             //加载到隐藏中
-            if (!CameraItems.Remove(obj)) {
+            if (!CameraItems.Remove(obj))
+            {
                 return;
             }
 
@@ -308,9 +344,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         public ICommand? ShowCommand => new DelegateCommand<CameraItemInfoModel>(ShowDelegate);
 
-        private async void ShowDelegate(CameraItemInfoModel obj) {
+        private async void ShowDelegate(CameraItemInfoModel obj)
+        {
             //加载到显示中
-            if (!HiddenCameraItems.Remove(obj)) {
+            if (!HiddenCameraItems.Remove(obj))
+            {
                 return;
             }
 
@@ -325,11 +363,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// <param name="serialNumber">相机序列号。</param>
         /// <param name="displayStatus">目标显示状态。</param>
         private async Task UpdateCameraDisplayStatusAsync(string serialNumber,
-            CameraDisplayStatus displayStatus) {
+            CameraDisplayStatus displayStatus)
+        {
             var barcodeCameraConfig = (await _barcodeScannerCameraConfigRepository.MemoryCacheData()
                     .ConfigureAwait(false))
                 .FirstOrDefault(item => item.SerialNumber.Equals(serialNumber));
-            if (barcodeCameraConfig is not null) {
+            if (barcodeCameraConfig is not null)
+            {
                 barcodeCameraConfig.CameraDisplayStatus = displayStatus;
                 await _barcodeScannerCameraConfigRepository.InsertOrUpdate(barcodeCameraConfig)
                     .ConfigureAwait(false);
@@ -339,7 +379,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
             var panoramaCameraConfig = (await _panoramaCameraConfigRepository.MemoryCacheData()
                     .ConfigureAwait(false))
                 .FirstOrDefault(item => item.SerialNumber.Equals(serialNumber));
-            if (panoramaCameraConfig is not null) {
+            if (panoramaCameraConfig is not null)
+            {
                 panoramaCameraConfig.CameraDisplayStatus = displayStatus;
                 await _panoramaCameraConfigRepository.InsertOrUpdate(panoramaCameraConfig)
                     .ConfigureAwait(false);
@@ -349,7 +390,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
             var usbCameraConfig = await _usbCameraConfigRepository
                 .FirstOrDefault(item => item.SerialNumber.Equals(serialNumber))
                 .ConfigureAwait(false);
-            if (usbCameraConfig is not null) {
+            if (usbCameraConfig is not null)
+            {
                 usbCameraConfig.CameraDisplayStatus = displayStatus;
                 await _usbCameraConfigRepository.InsertOrUpdate(usbCameraConfig)
                     .ConfigureAwait(false);
@@ -359,7 +401,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
             var volumeCameraConfig = (await _volumeCameraConfigRepository.MemoryCacheData()
                     .ConfigureAwait(false))
                 .FirstOrDefault(item => item.SerialNumber.Equals(serialNumber));
-            if (volumeCameraConfig is not null) {
+            if (volumeCameraConfig is not null)
+            {
                 volumeCameraConfig.CameraDisplayStatus = displayStatus;
                 await _volumeCameraConfigRepository.InsertOrUpdate(volumeCameraConfig)
                     .ConfigureAwait(false);
@@ -371,65 +414,83 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args) {
+        private void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args)
+        {
             //更新图片
 
             if (_visibleCameraItems.TryGetValue(args.CameraSerialNumber, out var model) &&
-                model.Type is CameraType.IndustrialCamera or CameraType.SmartCamera) {
+                model.Type is CameraType.IndustrialCamera or CameraType.SmartCamera)
+            {
                 //图片转换
                 if (args.Thumbnail is not null &&
-                    model.Image is not null) {
-                    if (!model.IsRealtimeImageEnabled) {
+                    model.Image is not null)
+                {
+                    if (!model.IsRealtimeImageEnabled)
+                    {
                         model.TryEnqueueImage(args.Thumbnail, args.RecognitionTimestamp);
                     }
                 }
             }
         }
 
-        private void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args) {
+        private void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args)
+        {
             if (_visibleCameraItems.TryGetValue(args.CameraSerialNumber, out var model) &&
-                args.Thumbnail is not null) {
-                if (!model.IsRealtimeImageEnabled) {
+                args.Thumbnail is not null)
+            {
+                if (!model.IsRealtimeImageEnabled)
+                {
                     model.EnqueueImage(args.Thumbnail);
                 }
             }
         }
 
-        private void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args) {
+        private void DeviceServiceOnPanoramaCaptured(object? sender, PanoramaCaptureEventArgs args)
+        {
             //全景相机
             if (_visibleCameraItems.TryGetValue(args.CameraSerialNumber, out var model) &&
                 model.BindingType is CameraBindingType.PanoramaCamera &&
-                model.Image is not null) {
+                model.Image is not null)
+            {
                 //图片转换
-                if (args.ThumbImage is not null) {
-                    if (!model.IsRealtimeImageEnabled) {
+                if (args.ThumbImage is not null)
+                {
+                    if (!model.IsRealtimeImageEnabled)
+                    {
                         model.TryEnqueueImage(args.ThumbImage, args.Timestamp);
                     }
                 }
             }
         }
 
-        private void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args) {
+        private void DeviceServiceOnRealTimeImage(object? sender, RealTimeImageEventArgs args)
+        {
             //实时画面
             if (_visibleCameraItems.TryGetValue(args.Camera?.Info?.SerialNumber ?? string.Empty,
                     out var model) &&
                 args.Image is not null &&
-                model.Image is not null) {
-                if (model.IsRealtimeImageEnabled) {
+                model.Image is not null)
+            {
+                if (model.IsRealtimeImageEnabled)
+                {
                     model.EnqueueImage(args.Image);
                 }
             }
         }
 
-        private void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args) {
+        private void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args)
+        {
             //更新图片
 
             if (_visibleCameraItems.TryGetValue(args.CameraSerialNumber, out var model) &&
-                model.BindingType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera) {
+                model.BindingType is CameraBindingType.ScannerCamera or CameraBindingType.OcrCamera)
+            {
                 //图片转换
                 if (args.ThumbImage is not null &&
-                    model.Image is not null) {
-                    if (!model.IsRealtimeImageEnabled) {
+                    model.Image is not null)
+                {
+                    if (!model.IsRealtimeImageEnabled)
+                    {
                         model.TryEnqueueImage(args.ThumbImage, args.Timestamp);
                     }
                 }

@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration
+{
     /// <summary>
     /// AlgorithmSettingsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class AlgorithmSettingsPage : Page {
-        public AlgorithmSettingsPage() {
+    public partial class AlgorithmSettingsPage : Page
+    {
+        public AlgorithmSettingsPage()
+        {
             InitializeComponent();
         }
     }

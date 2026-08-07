@@ -16,9 +16,11 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
-    public class SortingMethodViewModel : BindableBase {
+    public class SortingMethodViewModel : BindableBase
+    {
         private readonly IConfigRepository _configRepository;
 
         private ObservableCollection<SortModeInfoModel> _sortModeItems = new()
@@ -69,40 +71,50 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private SnackbarMessageQueue _sortingMethodMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public SortingMethodViewModel(IConfigRepository configRepository) {
+        public SortingMethodViewModel(IConfigRepository configRepository)
+        {
             _configRepository = configRepository;
         }
 
-        public ObservableCollection<SortModeInfoModel> SortModeItems {
+        public ObservableCollection<SortModeInfoModel> SortModeItems
+        {
             get => _sortModeItems;
             set => SetProperty(ref _sortModeItems, value);
         }
 
-        public SortModeInfoModel SelectSortMode {
+        public SortModeInfoModel SelectSortMode
+        {
             get => _selectSortMode;
             set => SetProperty(ref _selectSortMode, value);
         }
 
-        public SnackbarMessageQueue SortingMethodMessageQueue {
+        public SnackbarMessageQueue SortingMethodMessageQueue
+        {
             get => _sortingMethodMessageQueue;
             set => SetProperty(ref _sortingMethodMessageQueue, value);
         }
 
         public ICommand OptionSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(OptionSelectionChangedDelegate);
 
-        private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj) {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj)
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = "SortingMethodSettings",
-                Value = JsonConvert.SerializeObject(new SortingMethodDto() {
+                Value = JsonConvert.SerializeObject(new SortingMethodDto()
+                {
                     SortMode = SelectSortMode?.Value ?? SortMode.None
                 })
             });
-            if (!insertOrUpdate) {
+            if (!insertOrUpdate)
+            {
                 SelectSortMode = SortModeItems.FirstOrDefault(f => f.Value == SortMode.None) ?? new SortModeInfoModel();
                 SortingMethodMessageQueue.Enqueue($"切换分拣模式失败");
             }
-            else {
-                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+            else
+            {
+                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                {
                     SettingsName = "SortingMethodSettings"
                 });
             }
@@ -113,14 +125,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        private async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SortingMethodSettings"));
-                    if (configInfoModel is not null) {
+                    if (configInfoModel is not null)
+                    {
                         var settingsDto = JsonConvert.DeserializeObject<SortingMethodDto>(configInfoModel.Value);
-                        if (settingsDto is not null) {
+                        if (settingsDto is not null)
+                        {
                             SelectSortMode = SortModeItems.FirstOrDefault(f => f.Value == settingsDto.SortMode) ??
                                              new SortModeInfoModel();
                         }

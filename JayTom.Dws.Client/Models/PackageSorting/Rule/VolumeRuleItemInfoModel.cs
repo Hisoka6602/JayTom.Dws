@@ -1,13 +1,16 @@
-﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule
+{
 
-    public class VolumeRuleItemInfoModel : BasePackageSortingItemInfoModel {
+    public class VolumeRuleItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long _volumeSortingId;
         private string _formula = string.Empty;
 
         /// <summary>
         /// 体积分拣Id
         /// </summary>
-        public long VolumeSortingId {
+        public long VolumeSortingId
+        {
             get => _volumeSortingId;
             set => SetProperty(ref _volumeSortingId, value);
         }
@@ -15,7 +18,8 @@
         /// <summary>
         /// 规则
         /// </summary>
-        public string Formula {
+        public string Formula
+        {
             get => _formula;
             set => SetProperty(ref _formula, value);
         }

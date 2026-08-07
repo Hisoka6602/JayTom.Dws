@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
+namespace JayTom.Dws.Client.Models.ContentInputSettingsModels
+{
 
-    public class KeyboardDeviceItemInfoModel : BindableBase {
+    public class KeyboardDeviceItemInfoModel : BindableBase
+    {
         private int _vendorId;
         private int _productId;
         private string? _deviceName;
@@ -17,42 +19,50 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels {
         private int _num;
         private bool _hasBinding;
 
-        public int Num {
+        public int Num
+        {
             get => _num;
             set => SetProperty(ref _num, value);
         }
 
-        public int VendorId {
+        public int VendorId
+        {
             get => _vendorId;
             set => SetProperty(ref _vendorId, value);
         }
 
-        public int ProductId {
+        public int ProductId
+        {
             get => _productId;
             set => SetProperty(ref _productId, value);
         }
 
-        public string? DeviceName {
+        public string? DeviceName
+        {
             get => _deviceName;
             set => SetProperty(ref _deviceName, value);
         }
 
-        public string? DevicePath {
+        public string? DevicePath
+        {
             get => _devicePath;
             set => SetProperty(ref _devicePath, value);
         }
 
-        public string? ManufacturerName {
+        public string? ManufacturerName
+        {
             get => _manufacturerName;
             set => SetProperty(ref _manufacturerName, value);
         }
 
-        public bool IsConnected {
+        public bool IsConnected
+        {
             get => _isConnected;
             set => SetProperty(ref _isConnected, value);
         }
 
-        public bool HasBinding {
+        public bool HasBinding
+        {
             get => _hasBinding;
             set => SetProperty(ref _hasBinding, value);
         }

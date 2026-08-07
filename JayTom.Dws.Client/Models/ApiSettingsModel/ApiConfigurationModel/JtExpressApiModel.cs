@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
-    public class JtExpressApiModel : BindableBase {
+    public class JtExpressApiModel : BindableBase
+    {
         private string _url = "https://opa.jtexpress.com.cn";
         private string _userName = string.Empty;
         private string _password = string.Empty;
@@ -28,7 +30,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -36,7 +39,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 账号
         /// </summary>
-        public string UserName {
+        public string UserName
+        {
             get => _userName;
             set => SetProperty(ref _userName, value);
         }
@@ -44,7 +48,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 密码
         /// </summary>
-        public string Password {
+        public string Password
+        {
             get => _password;
             set => SetProperty(ref _password, value);
         }
@@ -52,7 +57,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// AppKey
         /// </summary>
-        public string AppKey {
+        public string AppKey
+        {
             get => _appKey;
             set => SetProperty(ref _appKey, value);
         }
@@ -60,7 +66,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// AppSecret
         /// </summary>
-        public string AppSecret {
+        public string AppSecret
+        {
             get => _appSecret;
             set => SetProperty(ref _appSecret, value);
         }
@@ -68,7 +75,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }
@@ -76,7 +84,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 条码类型
         /// </summary>
-        public StringItemModel ScanTypeCode {
+        public StringItemModel ScanTypeCode
+        {
             get => _scanTypeCode;
             set => SetProperty(ref _scanTypeCode, value);
         }
@@ -84,7 +93,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 运输方式id
         /// </summary>
-        public StringItemModel TransportTypeCode {
+        public StringItemModel TransportTypeCode
+        {
             get => _transportTypeCode;
             set => SetProperty(ref _transportTypeCode, value);
         }
@@ -92,7 +102,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备编号
         /// </summary>
-        public string ScanPda {
+        public string ScanPda
+        {
             get => _scanPda;
             set => SetProperty(ref _scanPda, value);
         }
@@ -100,7 +111,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 扫描类型
         /// </summary>
-        public IntegerItemModel ScanType {
+        public IntegerItemModel ScanType
+        {
             get => _scanType;
             set => SetProperty(ref _scanType, value);
         }
@@ -108,7 +120,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 重量标识
         /// </summary>
-        public StringItemModel WeightFlag {
+        public StringItemModel WeightFlag
+        {
             get => _weightFlag;
             set => SetProperty(ref _weightFlag, value);
         }
@@ -116,7 +129,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string SegmentCodeUrl {
+        public string SegmentCodeUrl
+        {
             get => _segmentCodeUrl;
             set => SetProperty(ref _segmentCodeUrl, value);
         }
@@ -124,7 +138,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int SegmentCodeTimeOut {
+        public int SegmentCodeTimeOut
+        {
             get => _segmentCodeTimeOut;
             set => SetProperty(ref _segmentCodeTimeOut, value);
         }
@@ -132,7 +147,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 业务类型
         /// </summary>
-        public IntegerItemModel BusinessType {
+        public IntegerItemModel BusinessType
+        {
             get => _businessType;
             set => SetProperty(ref _businessType, value);
         }
@@ -140,7 +156,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否三段码返回后上传
         /// </summary>
-        public bool IsUploadAfterReturn {
+        public bool IsUploadAfterReturn
+        {
             get => _isUploadAfterReturn;
             set => SetProperty(ref _isUploadAfterReturn, value);
         }
@@ -148,7 +165,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否启用拦截件
         /// </summary>
-        public bool InterceptorEnabled {
+        public bool InterceptorEnabled
+        {
             get => _interceptorEnabled;
             set => SetProperty(ref _interceptorEnabled, value);
         }

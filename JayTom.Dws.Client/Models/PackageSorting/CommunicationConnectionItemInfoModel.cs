@@ -10,13 +10,16 @@ using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class CommunicationConnectionItemInfoModel : BasePackageSortingItemInfoModel {
+    public class CommunicationConnectionItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private string _connectionName = string.Empty;
         private bool _isActive;
 
-        private CommunicationsTypeInfoModel _communicationType = new() {
+        private CommunicationsTypeInfoModel _communicationType = new()
+        {
             Name = "None",
             Value = CommunicationsType.None
         };
@@ -33,7 +36,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 连接名称
         /// </summary>
-        public string ConnectionName {
+        public string ConnectionName
+        {
             get => _connectionName;
             set => SetProperty(ref _connectionName, value);
         }
@@ -41,7 +45,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否生效
         /// </summary>
-        public bool IsActive {
+        public bool IsActive
+        {
             get => _isActive;
             set => SetProperty(ref _isActive, value);
         }
@@ -49,7 +54,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 通讯类型
         /// </summary>
-        public CommunicationsTypeInfoModel CommunicationType {
+        public CommunicationsTypeInfoModel CommunicationType
+        {
             get => _communicationType;
             set => SetProperty(ref _communicationType, value);
         }
@@ -57,7 +63,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 串口配置
         /// </summary>
-        public SerialPortConfigItemInfoModel? SerialPortConfigInfo {
+        public SerialPortConfigItemInfoModel? SerialPortConfigInfo
+        {
             get => _serialPortConfigInfo;
             set => SetProperty(ref _serialPortConfigInfo, value);
         }
@@ -65,7 +72,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// Tcp配置
         /// </summary>
-        public TcpConnectionConfigItemInfoModel? TcpConnectionConfigInfo {
+        public TcpConnectionConfigItemInfoModel? TcpConnectionConfigInfo
+        {
             get => _tcpConnectionConfigInfo;
             set => SetProperty(ref _tcpConnectionConfigInfo, value);
         }
@@ -83,7 +91,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 通讯协议
         /// </summary>
-        public CommunicationProtocolInfoModel CommunicationProtocol {
+        public CommunicationProtocolInfoModel CommunicationProtocol
+        {
             get => _communicationProtocol;
             set => SetProperty(ref _communicationProtocol, value);
         }
@@ -107,7 +116,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否自动重连
         /// </summary>
-        public bool IsAutoReconnect {
+        public bool IsAutoReconnect
+        {
             get => _isAutoReconnect;
             set => SetProperty(ref _isAutoReconnect, value);
         }
@@ -115,7 +125,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 重连最大重试次数
         /// </summary>
-        public int MaxReconnectAttempts {
+        public int MaxReconnectAttempts
+        {
             get => _maxReconnectAttempts;
             set => SetProperty(ref _maxReconnectAttempts, value);
         }
@@ -123,7 +134,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 下位机设置
         /// </summary>
-        public DeviceExtensionConfigItemInfoModel? DeviceExtensionConfigInfo {
+        public DeviceExtensionConfigItemInfoModel? DeviceExtensionConfigInfo
+        {
             get => _deviceExtensionConfigInfo;
             set => SetProperty(ref _deviceExtensionConfigInfo, value);
         }
@@ -131,7 +143,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 心跳包设置
         /// </summary>
-        public HeartbeatConfigItemInfoModel? HeartbeatConfigInfo {
+        public HeartbeatConfigItemInfoModel? HeartbeatConfigInfo
+        {
             get => _heartbeatConfigInfo;
             set => SetProperty(ref _heartbeatConfigInfo, value);
         }
@@ -139,7 +152,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 连接数
         /// </summary>
-        public int ConnectionCount {
+        public int ConnectionCount
+        {
             get => _connectionCount;
             set => SetProperty(ref _connectionCount, value);
         }

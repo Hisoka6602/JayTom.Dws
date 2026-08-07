@@ -24,9 +24,11 @@ using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages {
+namespace JayTom.Dws.Client.ViewModels.Pages
+{
 
-    public class SettingsViewModel : BindableBase {
+    public class SettingsViewModel : BindableBase
+    {
         private readonly IRegionManager _regionManager;
         private readonly IConfigRepository _configRepository;
         private Frame? _frame;
@@ -54,7 +56,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         private bool _isLoading;
 
-        public SettingsViewModel(IRegionManager regionManager, IConfigRepository configRepository) {
+        public SettingsViewModel(IRegionManager regionManager, IConfigRepository configRepository)
+        {
             _regionManager = regionManager;
             _configRepository = configRepository;
             _menuItems = new()
@@ -295,31 +298,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                     PageClassName = "CacheClearSettingsPage"
                 },
             };
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item => {
+            EventAggregator.Instance.Subscribe<WindowsAction>(async item =>
+            {
                 await Task.Delay(100);
-                if (item is WindowsAction info && _frame is not null) {
-                    if (info.Type == WindowsActionType.Maximize) {
+                if (item is WindowsAction info && _frame is not null)
+                {
+                    if (info.Type == WindowsActionType.Maximize)
+                    {
                         ListBoxMaxHeight = _frame.ActualHeight;
                     }
-                    else {
+                    else
+                    {
                         ListBoxMaxHeight = 900;
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
-                if (settings is SettingsChangedEvent { SettingsName: "PassWordSettings" }) {
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings =>
+            {
+                if (settings is SettingsChangedEvent { SettingsName: "PassWordSettings" })
+                {
                     _passWordSettingsDto = await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
                 }
             });
         }
 
         //MenuItems
-        public ObservableCollection<MenuItemInfoModel> MenuItems {
+        public ObservableCollection<MenuItemInfoModel> MenuItems
+        {
             get => _menuItems;
             set => SetProperty(ref _menuItems, value);
         }
 
-        public double ListBoxMaxHeight {
+        public double ListBoxMaxHeight
+        {
             get => _listBoxMaxHeight;
             set => SetProperty(ref _listBoxMaxHeight, value);
         }
@@ -327,14 +338,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// <summary>
         /// 获取加载动画使用的显示信息。
         /// </summary>
-        public LoadingDialogViewModel LoadingDialog { get; } = new() {
+        public LoadingDialogViewModel LoadingDialog { get; } = new()
+        {
             Description = "正在加载页面..."
         };
 
         /// <summary>
         /// 获取或设置设置页加载遮罩是否可见。
         /// </summary>
-        public bool IsLoading {
+        public bool IsLoading
+        {
             get => _isLoading;
             private set => SetProperty(ref _isLoading, value);
         }
@@ -349,10 +362,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<Frame>(LoadedDelegate);
 
-        private async void LoadedDelegate(Frame obj) {
+        private async void LoadedDelegate(Frame obj)
+        {
             _frame = obj;
             _passWordSettingsDto ??= await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
-            if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion")) {
+            if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion"))
+            {
                 // 创建区域，用于视觉树以外的控件。
                 RegionManager.SetRegionName(obj, "ContentRegion");
                 RegionManager.SetRegionManager(obj, _regionManager);
@@ -360,35 +375,42 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
             }
         }
 
-        private async void MenuClickDelegate(MenuItemInfoModel obj) {
+        private async void MenuClickDelegate(MenuItemInfoModel obj)
+        {
             if (_isNavigating ||
                 string.IsNullOrWhiteSpace(obj?.PageClassName) ||
                 string.Equals(
                     _currentPageClassName,
                     obj.PageClassName,
-                    StringComparison.Ordinal)) {
+                    StringComparison.Ordinal))
+            {
                 return;
             }
 
             _isNavigating = true;
-            try {
+            try
+            {
                 // 弹出密码框。
                 if (_passWordSettingsDto?.IsUsePasswordProtection == true && AppContext.GetData("IsValidationPassed") is not true &&
                     _passWordSettingsDto?.PasswordProtectionModuleItems
                         ?.Any(a => a.IsProtected && a.PageClassName.Equals(obj.PageClassName)) == true
-                    ) {
+                    )
+                {
                     var passwordValidationDialog = new PasswordValidationDialog();
-                    if (passwordValidationDialog.DataContext is PasswordValidationDialogViewModel viewModel) {
+                    if (passwordValidationDialog.DataContext is PasswordValidationDialogViewModel viewModel)
+                    {
                         viewModel.Identifier = "SettingDialog";
                         await DialogHost.Show(passwordValidationDialog, viewModel.Identifier);
 
-                        if (!viewModel.IsValidationPassed) {
+                        if (!viewModel.IsValidationPassed)
+                        {
                             return;
                         }
                     }
                 }
 
-                foreach (var item in MenuItems) {
+                foreach (var item in MenuItems)
+                {
                     item.IsSelected = false;
                     item.RadiusRight = new CornerRadius(0, 0, 0, 0);
                 }
@@ -396,25 +418,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 obj.IsSelected = true;
                 MenuItemInfoModel? previousItem = null, nextItem = null;
                 var selectedIndex = MenuItems.IndexOf(obj);
-                if (selectedIndex > 0) {
+                if (selectedIndex > 0)
+                {
                     previousItem = MenuItems[selectedIndex - 1];
                 }
 
-                if (selectedIndex < MenuItems.Count - 1) {
+                if (selectedIndex < MenuItems.Count - 1)
+                {
                     nextItem = MenuItems[selectedIndex + 1];
                 }
 
-                if (previousItem is not null) {
-                    previousItem.RadiusRight = new CornerRadius(0, 0, 10, 0);
-                }
+                previousItem?.RadiusRight = new CornerRadius(0, 0, 10, 0);
 
-                if (nextItem is not null) {
-                    nextItem.RadiusRight = new CornerRadius(0, 10, 0, 0);
-                }
+                nextItem?.RadiusRight = new CornerRadius(0, 10, 0, 0);
 
                 await NavigateWithLoadingAsync(obj.PageClassName);
             }
-            finally {
+            finally
+            {
                 _isNavigating = false;
             }
         }
@@ -423,10 +444,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// 在显示加载动画后导航，并在目标页面完成首帧渲染后关闭动画。
         /// </summary>
         /// <param name="pageClassName">目标页面注册名称。</param>
-        private async Task NavigateWithLoadingAsync(string pageClassName) {
+        private async Task NavigateWithLoadingAsync(string pageClassName)
+        {
             IsLoading = true;
             var minimumAnimationTask = Task.Delay(MinimumLoadingDurationMilliseconds);
-            try {
+            try
+            {
                 // 先让加载遮罩和等待圈完成首帧渲染，再创建目标页面。
                 await Dispatcher.Yield(DispatcherPriority.ContextIdle);
                 _regionManager.Regions["ContentRegion"]
@@ -437,7 +460,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
                 await Dispatcher.Yield(DispatcherPriority.ContextIdle);
                 await minimumAnimationTask;
             }
-            finally {
+            finally
+            {
                 IsLoading = false;
             }
         }

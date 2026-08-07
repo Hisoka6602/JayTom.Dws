@@ -70,7 +70,8 @@ namespace JayTom.Dws.Interface.geek_ {
             using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
                 var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
 
-                hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+                hashString = Convert.ToHexStringLower(hashBytes);
             }
 
             var requestTime = DateTime.Now;
@@ -161,7 +162,8 @@ namespace JayTom.Dws.Interface.geek_ {
             using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
                 var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
 
-                hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+                hashString = Convert.ToHexStringLower(hashBytes);
             }
 
             var requestTime = DateTime.Now;
@@ -291,7 +293,8 @@ namespace JayTom.Dws.Interface.geek_ {
                 using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Parameters?.Key ?? string.Empty))) {
                     var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{Parameters?.BaseUrl}{method}|{JsonConvert.SerializeObject(data)}"));
 
-                    hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                    // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+                    hashString = Convert.ToHexStringLower(hashBytes);
                 }
 
                 //using var httpClient = new HttpClient();

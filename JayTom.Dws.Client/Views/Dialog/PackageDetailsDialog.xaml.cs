@@ -13,14 +13,17 @@ using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Views.Dialog {
+namespace JayTom.Dws.Client.Views.Dialog
+{
 
     /// <summary>
     /// PackageDetailsDialog.xaml 的交互逻辑
     /// </summary>
-    public partial class PackageDetailsDialog : UserControl {
+    public partial class PackageDetailsDialog : UserControl
+    {
 
-        public PackageDetailsDialog() {
+        public PackageDetailsDialog()
+        {
             InitializeComponent();
         }
     }

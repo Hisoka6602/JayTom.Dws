@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class CameraSdkSelectorInfoModel : BindableBase {
+    public class CameraSdkSelectorInfoModel : BindableBase
+    {
         private bool _isUseHikvisionSmartCameraSdk;
         private bool _isUseHikvisionIndustrialCameraSdk;
         private bool _isUseDaHuaSmartCameraSdk;
@@ -17,7 +19,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用海康智能相机SDK
         /// </summary>
-        public bool IsUseHikvisionSmartCameraSdk {
+        public bool IsUseHikvisionSmartCameraSdk
+        {
             get => _isUseHikvisionSmartCameraSdk;
             set => SetProperty(ref _isUseHikvisionSmartCameraSdk, value);
         }
@@ -25,7 +28,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用海康工业相机SDK
         /// </summary>
-        public bool IsUseHikvisionIndustrialCameraSdk {
+        public bool IsUseHikvisionIndustrialCameraSdk
+        {
             get => _isUseHikvisionIndustrialCameraSdk;
             set => SetProperty(ref _isUseHikvisionIndustrialCameraSdk, value);
         }
@@ -33,7 +37,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用大华智能相机SDK
         /// </summary>
-        public bool IsUseDaHuaSmartCameraSdk {
+        public bool IsUseDaHuaSmartCameraSdk
+        {
             get => _isUseDaHuaSmartCameraSdk;
             set => SetProperty(ref _isUseDaHuaSmartCameraSdk, value);
         }
@@ -41,7 +46,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用大华安防相机SDK
         /// </summary>
-        public bool IsUseDaHuaSecurityCameraSdk {
+        public bool IsUseDaHuaSecurityCameraSdk
+        {
             get => _isUseDaHuaSecurityCameraSdk;
             set => SetProperty(ref _isUseDaHuaSecurityCameraSdk, value);
         }
@@ -49,7 +55,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用中科微至智能相机SDK
         /// </summary>
-        public bool IsUseWayzimSmartCameraSdk {
+        public bool IsUseWayzimSmartCameraSdk
+        {
             get => _isUseWayzimSmartCameraSdk;
             set => SetProperty(ref _isUseWayzimSmartCameraSdk, value);
         }
@@ -57,7 +64,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用中科微至工业相机SDK
         /// </summary>
-        public bool IsUseWayzimIndustrialCameraSdk {
+        public bool IsUseWayzimIndustrialCameraSdk
+        {
             get => _isUseWayzimIndustrialCameraSdk;
             set => SetProperty(ref _isUseWayzimIndustrialCameraSdk, value);
         }
@@ -65,7 +73,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用海康体积相机
         /// </summary>
-        public bool IsUseHikvisionVolumeCameraSdk {
+        public bool IsUseHikvisionVolumeCameraSdk
+        {
             get => _isUseHikvisionVolumeCameraSdk;
             set => SetProperty(ref _isUseHikvisionVolumeCameraSdk, value);
         }
@@ -73,7 +82,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用大华体积相机
         /// </summary>
-        public bool IsUseDaHuaVolumeCameraSdk {
+        public bool IsUseDaHuaVolumeCameraSdk
+        {
             get => _isUseDaHuaVolumeCameraSdk;
             set => SetProperty(ref _isUseDaHuaVolumeCameraSdk, value);
         }
@@ -81,7 +91,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用量房相机
         /// </summary>
-        public bool IsUseDimensionVolumeCameraSdk {
+        public bool IsUseDimensionVolumeCameraSdk
+        {
             get => _isUseDimensionVolumeCameraSdk;
             set => SetProperty(ref _isUseDimensionVolumeCameraSdk, value);
         }
@@ -89,7 +100,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否使用Usb相机
         /// </summary>
-        public bool IsUsbCameraSdk {
+        public bool IsUsbCameraSdk
+        {
             get => _isUsbCameraSdk;
             set => SetProperty(ref _isUsbCameraSdk, value);
         }

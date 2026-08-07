@@ -11,16 +11,20 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters
 {
 
-    public class UploadStatusNegatedToVisibilityConverter : IValueConverter {
+    public class UploadStatusNegatedToVisibilityConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is UploadStatus status) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is UploadStatus status)
+            {
                 return status != UploadStatus.NotUploaded ? Visibility.Collapsed : Visibility.Visible;
             }
             return Visibility.Collapsed;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

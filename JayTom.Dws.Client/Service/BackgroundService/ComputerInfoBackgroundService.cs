@@ -13,9 +13,11 @@ using NetworkType = JayTom.Dws.Client.Models.NetworkType;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 
-namespace JayTom.Dws.Client.Service.BackgroundService {
+namespace JayTom.Dws.Client.Service.BackgroundService
+{
 
-    public class ComputerInfoBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
+    public class ComputerInfoBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
+    {
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IComputer _computer;
         private static readonly TimeSpan WarningInterval = TimeSpan.FromMinutes(5);
@@ -25,23 +27,33 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
         private long _lastMemoryWarning;
         private long _lastCollectionError;
 
-        public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter, IComputer computer) {
+        public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter, IComputer computer)
+        {
             _computerInfoReporter = computerInfoReporter;
             _computer = computer;
-            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
-                if (item is { Type: WindowsActionType.Close }) {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            {
+                if (item is { Type: WindowsActionType.Close })
+                {
                     _isWindowsClose = true;
                 }
             });
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
             using var counter = new PerformanceCounter("System", "System Up Time");
             var systemInfo = _computer.GetSystemInfo();
             var systemInfoString = $"{systemInfo.OsVersion}-{systemInfo.SystemType}";
-            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                try {
-                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken).ConfigureAwait(false);
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose)
+            {
+                try
+                {
+                    if (!await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false))
+                    {
+                        break;
+                    }
 
                     // 这些采集操作彼此独立，并发执行即可，不需要再包一层 Task.Run。
                     var cpuInfoTask = _computer.GetCpuInfoAsync();
@@ -61,8 +73,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     var localNetworkInfos = await localNetworkInfosTask.ConfigureAwait(false);
                     var primaryGpu = gpuInfos?.FirstOrDefault();
 
-                    var computerInfoModel = new ComputerInfoModel {
-                        CpuInfo = new CpuInfoModel {
+                    var computerInfoModel = new ComputerInfoModel
+                    {
+                        CpuInfo = new CpuInfoModel
+                        {
                             ClockSpeed = cpuInfo.CpuBusSpeed,
                             CpuTemperature = cpuInfo.CpuPackageTemperature,
                             FanSpeed = fanSpeed,
@@ -70,23 +84,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                             NumberOfCores = cpuInfo.CpuCoreInfos?.Count ?? 0,
                             UsagePercentage = cpuInfo.CpuTotalUsedPercent,
                         },
-                        MemoryInfo = new MemoryInfoModel {
+                        MemoryInfo = new MemoryInfoModel
+                        {
                             AvailableSizeBytes = memoryInfo.AvailableMemory,
                             UsedPercentage = memoryInfo.UsedMemoryPercent,
                             MemoryRemaining = memoryInfo.AvailableMemoryPercentage,
                             TotalSizeBytes = memoryInfo.UsedMemory + memoryInfo.AvailableMemory
                         },
-                        GpuInfo = new GpuInfoModel {
+                        GpuInfo = new GpuInfoModel
+                        {
                             Name = primaryGpu?.Name,
                             UsagePercentage = primaryGpu?.Utilization ?? 0,
                         },
-                        NetworkInfo = new NetworkInfoModel {
+                        NetworkInfo = new NetworkInfoModel
+                        {
                             DownloadSpeed = networkInfo.NetworkDownloadSpeed,
                             UploadSpeed = networkInfo.NetworkUploadSpeed,
                             IpAddress = networkInfo.IpAddress,
                         },
                         LocalNetworkConnectionInfos = localNetworkInfos?.Select(s =>
-                            new LocalNetworkConnectionInfoModel {
+                            new LocalNetworkConnectionInfoModel
+                            {
                                 ConnectionName = s.ConnectionName,
                                 DownloadSpeed = s.DownloadSpeed,
                                 UploadSpeed = s.UploadSpeed,
@@ -100,43 +118,51 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                     _computerInfoReporter.OnComputerInfoReceived(computerInfoModel);
 
-                    if (computerInfoModel.CpuInfo.UsagePercentage >= 95) {
+                    if (computerInfoModel.CpuInfo.UsagePercentage >= 95)
+                    {
                         PublishThrottledLog(
                             $"Cpu占用过高:{computerInfoModel.CpuInfo.UsagePercentage}%",
                             LogType.Warning, ref _lastCpuUsageWarning);
                     }
 
-                    if (computerInfoModel.CpuInfo.CpuTemperature >= 85) {
+                    if (computerInfoModel.CpuInfo.CpuTemperature >= 85)
+                    {
                         PublishThrottledLog(
                             $"Cpu温度过高:{computerInfoModel.CpuInfo.CpuTemperature}°",
                             LogType.Warning, ref _lastCpuTemperatureWarning);
                     }
 
-                    if (computerInfoModel.MemoryInfo.UsedPercentage >= 90) {
+                    if (computerInfoModel.MemoryInfo.UsedPercentage >= 90)
+                    {
                         PublishThrottledLog(
                             $"内存占用过高:{computerInfoModel.MemoryInfo.UsedPercentage}%",
                             LogType.Warning, ref _lastMemoryWarning);
                     }
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
                     break;
                 }
-                catch (Exception exception) {
+                catch (Exception exception)
+                {
                     PublishThrottledLog($"电脑状态采集异常:{exception.Message}",
                         LogType.Exception, ref _lastCollectionError);
                 }
             }
         }
 
-        private static void PublishThrottledLog(string message, LogType type, ref long lastPublishedTimestamp) {
+        private static void PublishThrottledLog(string message, LogType type, ref long lastPublishedTimestamp)
+        {
             var now = Stopwatch.GetTimestamp();
             if (lastPublishedTimestamp != 0 &&
-                Stopwatch.GetElapsedTime(lastPublishedTimestamp, now) < WarningInterval) {
+                Stopwatch.GetElapsedTime(lastPublishedTimestamp, now) < WarningInterval)
+            {
                 return;
             }
 
             lastPublishedTimestamp = now;
-            EventAggregator.Instance.Publish(new AppLogInfoModel {
+            EventAggregator.Instance.Publish(new AppLogInfoModel
+            {
                 CreateTime = DateTime.Now,
                 Message = message,
                 Type = type

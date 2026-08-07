@@ -26,11 +26,14 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         public async Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackageOrderByDescending<TOrder>(Expression<Func<PackageInfoModel, bool>> where, Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token = default) {
             try {
+                pageIndex = Math.Max(0, pageIndex);
+                pageSize = Math.Clamp(pageSize, 1, 1000);
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .AsSplitQuery()
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -39,6 +42,10 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .Include(b => b.SortingInfo)
                     .ThenInclude(c => c.InstructionInfos)
                     .Include(b => b.ImageInfos)
+                    .Include(b => b.LogisticsInfo)
+                    .Include(b => b.OcrInfo)
+                    .ThenInclude(c => c.OcrDetailedInfos)
+                    .Include(b => b.CloudVideoUploadInfo)
                     .Where(where)
                     .OrderByDescending(order)
                     .Skip(pageIndex * pageSize)
@@ -55,11 +62,14 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         public async Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackage<TOrder>(Expression<Func<PackageInfoModel, bool>> where, Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token = default) {
             try {
+                pageIndex = Math.Max(0, pageIndex);
+                pageSize = Math.Clamp(pageSize, 1, 1000);
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .AsSplitQuery()
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
@@ -68,7 +78,12 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .Include(b => b.SortingInfo)
                     .ThenInclude(c => c.InstructionInfos)
                     .Include(b => b.ImageInfos)
+                    .Include(b => b.LogisticsInfo)
+                    .Include(b => b.OcrInfo)
+                    .ThenInclude(c => c.OcrDetailedInfos)
+                    .Include(b => b.CloudVideoUploadInfo)
                     .Where(where)
+                    .OrderBy(order)
                     .Skip(pageIndex * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken: token);
@@ -87,6 +102,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
+                    .AsSplitQuery()
                     .Where(where)
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
@@ -132,15 +148,22 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
             var lazyLoad = _packageLoads.GetOrAdd(packageTimestamped,
                 timestamp => new Lazy<Task<PackageInfoModel?>>(
-                    () => LoadPackageAsync(timestamp, token),
+                    () => LoadPackageAsync(timestamp, CancellationToken.None),
                     LazyThreadSafetyMode.ExecutionAndPublication));
             var loadTask = lazyLoad.Value;
             try {
-                return await loadTask;
+                return await loadTask.WaitAsync(token);
             }
             finally {
-                _packageLoads.TryRemove(
-                    new KeyValuePair<long, Lazy<Task<PackageInfoModel?>>>(packageTimestamped, lazyLoad));
+                if (loadTask.IsCompleted)
+                {
+                    _packageLoads.TryRemove(
+                        new KeyValuePair<long, Lazy<Task<PackageInfoModel?>>>(packageTimestamped, lazyLoad));
+                }
+                else
+                {
+                    _ = RemoveCompletedLoadAsync(packageTimestamped, lazyLoad, loadTask);
+                }
             }
         }
 
@@ -184,6 +207,29 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             _cache.Set(packageTimestamped, result.Value, new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
             return result.Value;
+        }
+
+        /// <summary>
+        /// 在共享加载任务完成后清理对应的并发合并项。
+        /// </summary>
+        private async Task RemoveCompletedLoadAsync(
+            long packageTimestamped,
+            Lazy<Task<PackageInfoModel?>> lazyLoad,
+            Task<PackageInfoModel?> loadTask)
+        {
+            try
+            {
+                await loadTask.ConfigureAwait(false);
+            }
+            catch
+            {
+                // 查询异常由仓储查询方法记录；这里只负责清理合并加载项。
+            }
+            finally
+            {
+                _packageLoads.TryRemove(
+                    new KeyValuePair<long, Lazy<Task<PackageInfoModel?>>>(packageTimestamped, lazyLoad));
+            }
         }
     }
 }

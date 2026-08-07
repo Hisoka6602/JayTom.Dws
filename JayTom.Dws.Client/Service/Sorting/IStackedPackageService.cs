@@ -7,9 +7,11 @@ using JayTom.Dws.Domain.Manager;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Service.BackgroundService;
 
-namespace JayTom.Dws.Client.Service.Sorting {
+namespace JayTom.Dws.Client.Service.Sorting
+{
 
-    public interface IStackedPackageService {
+    public interface IStackedPackageService
+    {
 
         /// <summary>
         /// 连接事件
@@ -55,7 +57,8 @@ namespace JayTom.Dws.Client.Service.Sorting {
         Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters);
     }
 
-    public class StackedPackageEventArgs : EventArgs {
+    public class StackedPackageEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 包裹时间

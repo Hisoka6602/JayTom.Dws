@@ -8,9 +8,11 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
+{
 
-    public class SortingInstructionBindingEditorViewModel : BindableBase {
+    public class SortingInstructionBindingEditorViewModel : BindableBase
+    {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private string _exceptionContent = string.Empty;
@@ -24,14 +26,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         private bool _isOk;
         private string _replyContent = string.Empty;
 
-        public SortingInstructionBindingEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public SortingInstructionBindingEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
         /// <summary>
         /// 窗口标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
@@ -39,7 +43,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 异常内容
         /// </summary>
-        public string ExceptionContent {
+        public string ExceptionContent
+        {
             get => _exceptionContent;
             set => SetProperty(ref _exceptionContent, value);
         }
@@ -47,12 +52,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 格口列表
         /// </summary>
-        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems
+        {
             get => _packageExitDefinitionItems;
             set => SetProperty(ref _packageExitDefinitionItems, value);
         }
 
-        public PackageExitDefinitionItemInfoModel SelectExitDefinitionInfo {
+        public PackageExitDefinitionItemInfoModel SelectExitDefinitionInfo
+        {
             get => _selectExitDefinitionInfo;
             set => SetProperty(ref _selectExitDefinitionInfo, value);
         }
@@ -60,17 +67,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 指令列表
         /// </summary>
-        public ObservableCollection<SortingInstructionItemInfoModel> SortingInstructionItems {
+        public ObservableCollection<SortingInstructionItemInfoModel> SortingInstructionItems
+        {
             get => _sortingInstructionItems;
             set => SetProperty(ref _sortingInstructionItems, value);
         }
 
-        public SortingInstructionBindingItemInfoModel SortingInstructionBindingItemInfo {
+        public SortingInstructionBindingItemInfoModel SortingInstructionBindingItemInfo
+        {
             get => _sortingInstructionBindingItemInfo;
             set => SetProperty(ref _sortingInstructionBindingItemInfo, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
@@ -78,7 +88,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 指令
         /// </summary>
-        public string Instruction {
+        public string Instruction
+        {
             get => _instruction;
             set => SetProperty(ref _instruction, value);
         }
@@ -86,7 +97,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 应答内容
         /// </summary>
-        public string ReplyContent {
+        public string ReplyContent
+        {
             get => _replyContent;
             set => SetProperty(ref _replyContent, value);
         }
@@ -96,12 +108,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// </summary>
         public ICommand DeleteInstructionCommand => new DelegateCommand<SortingInstructionItemInfoModel>(DeleteInstructionDelegate);
 
-        private async void DeleteInstructionDelegate(SortingInstructionItemInfoModel obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void DeleteInstructionDelegate(SortingInstructionItemInfoModel obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 SortingInstructionItems.Remove(obj);
                 //调整Num
-                if (SortingInstructionItems?.Any() == true) {
-                    for (int i = 0; i < SortingInstructionItems.Count; i++) {
+                if (SortingInstructionItems?.Any() == true)
+                {
+                    for (int i = 0; i < SortingInstructionItems.Count; i++)
+                    {
                         SortingInstructionItems[i].Num = i + 1;
                     }
                 }
@@ -111,15 +127,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 添加指令
         /// </summary>
-        public ICommand AddInstructionCommand {
+        public ICommand AddInstructionCommand
+        {
             get => new DelegateCommand<object>(AddInstructionDelegate);
         }
 
-        private async void AddInstructionDelegate(object obj) {
+        private async void AddInstructionDelegate(object obj)
+        {
             //添加指令
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (SortingInstructionItems?.Any(a => a.Instruction.Equals(Instruction)) != true) {
-                    SortingInstructionItems?.Add(new SortingInstructionItemInfoModel() {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (SortingInstructionItems?.Any(a => a.Instruction.Equals(Instruction)) != true)
+                {
+                    SortingInstructionItems?.Add(new SortingInstructionItemInfoModel()
+                    {
                         CreateTime = DateTime.Now,
                         Instruction = Instruction,
                         ReplyContent = ReplyContent,
@@ -135,17 +156,21 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 加载完成
         /// </summary>
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private async void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj)
+        {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 PackageExitDefinitionItems.Clear();
-                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel {
+                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel
+                {
                     CreateTime = s.CreateTime,
                     ExitName = $"{s.ExitName}{(s.IsActive ? "" : "(未生效)")}",
                     Id = s.Id,
@@ -156,7 +181,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
                     Type = s.Type
                 })?.ToList();
 
-                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                if (packageExitDefinitionItemInfoModels?.Any() == true)
+                {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
                         f.Id.Equals(SortingInstructionBindingItemInfo.ExitId));
@@ -168,23 +194,28 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 保存方法
         /// </summary>
-        public ICommand SaveCommand {
+        public ICommand SaveCommand
+        {
             get => new DelegateCommand(SaveDelegate);
         }
 
-        private void SaveDelegate() {
+        private void SaveDelegate()
+        {
             //保存方法
-            try {
+            try
+            {
                 IsOk = (SortingInstructionItems.Any() && SelectExitDefinitionInfo.Id > 0);
                 Pitcher.Throw.ArgumentNull.WhenNull(SortingInstructionBindingItemInfo, nameof(SortingInstructionBindingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNull(SelectExitDefinitionInfo.Type, nameof(SelectExitDefinitionInfo.Type));
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 IsOk = false;
                 ExceptionContent = e.Message;
             }
 
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
@@ -192,14 +223,17 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration {
         /// <summary>
         /// 取消方法
         /// </summary>
-        public ICommand CancelCommand {
+        public ICommand CancelCommand
+        {
             get => new DelegateCommand(CancelDelegate);
         }
 
-        private void CancelDelegate() {
+        private void CancelDelegate()
+        {
             //取消方法
             IsOk = false;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }

@@ -1,9 +1,11 @@
 ﻿using System;
 using JayTom.Dws.Client.Models;
 
-namespace JayTom.Dws.Client.Service {
+namespace JayTom.Dws.Client.Service
+{
 
-    public interface IComputerInfoReporter {
+    public interface IComputerInfoReporter
+    {
 
         /// <summary>
         /// 获取到电脑信息

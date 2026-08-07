@@ -1,5 +1,6 @@
 ﻿using NPOI.Util;
 using System.IO.Ports;
+using System.Globalization;
 using TouchSocket.Core;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -11,8 +12,12 @@ namespace JayTom.Dws.Plugin.WeighingScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private readonly Queue<float> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
+        /// <summary>
+        /// 串口数据到达信号，避免接收工作器空闲轮询。
+        /// </summary>
+        private readonly SemaphoreSlim _receiveSignal = new(0);
         private CancellationTokenSource _tokenSource = new();
-        private readonly object _receiveLock = new();
+        private readonly System.Threading.Lock _receiveLock = new();
         private Task? _receiveTask;
         //private string receivedDataBuffer = string.Empty;
 
@@ -72,6 +77,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                                     receivedData = port.ReadExisting();
                                 }
                                 _character.Enqueue(receivedData);
+                                _receiveSignal.Release();
                                 OnReceived(receivedData);
                             }
                             catch (Exception e) {
@@ -132,15 +138,38 @@ namespace JayTom.Dws.Plugin.WeighingScale {
             var dataBuffer = string.Empty;
             while (!token.IsCancellationRequested) {
                 //根据标识符取出指定长度的字符
+                await _receiveSignal.WaitAsync(token).ConfigureAwait(false);
                 var dequeue = _character.TryDequeue(out var buffResult);
                 if (dequeue) {
                     dataBuffer += buffResult;
-                    var indexOf = dataBuffer.IndexOf(WeightCalculationParameters.Identifier, StringComparison.Ordinal);
-                    int identifierPosition = indexOf - WeightCalculationParameters.IdentifierPosition;
-                    if (identifierPosition >= 0) {
-                        if (dataBuffer.Length >= (identifierPosition + WeightCalculationParameters.CharacterLength)) {
+                    var characterLength = WeightCalculationParameters.CharacterLength;
+                    var identifier = WeightCalculationParameters.Identifier;
+                    if (characterLength <= 0 || string.IsNullOrEmpty(identifier)) {
+                        dataBuffer = string.Empty;
+                        continue;
+                    }
+
+                    while (true) {
+                        var indexOf = dataBuffer.IndexOf(identifier, StringComparison.Ordinal);
+                        var identifierPosition = indexOf - WeightCalculationParameters.IdentifierPosition;
+                        if (indexOf < 0) {
+                            var retainedLength = Math.Min(
+                                dataBuffer.Length,
+                                Math.Max(characterLength * 2, 256));
+                            dataBuffer = dataBuffer[^retainedLength..];
+                            break;
+                        }
+                        if (identifierPosition < 0) {
+                            dataBuffer = dataBuffer[(indexOf + identifier.Length)..];
+                            continue;
+                        }
+                        if (dataBuffer.Length < identifierPosition + characterLength) {
+                            break;
+                        }
+
                             //取出完整一条
-                            var substring = dataBuffer.Substring(identifierPosition, WeightCalculationParameters.CharacterLength);
+                            var substring = dataBuffer.Substring(identifierPosition, characterLength);
+                            dataBuffer = dataBuffer[(identifierPosition + characterLength)..];
                             if (substring.Length <= WeightCalculationParameters.IntegerStartPosition ||
                                 substring.Length <= WeightCalculationParameters.IntegerEndPosition ||
                                 substring.Length <= WeightCalculationParameters.DecimalStartPosition ||
@@ -151,19 +180,15 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                             }
                             //取出整数
                             var _integer = substring.Substring(WeightCalculationParameters.IntegerStartPosition, WeightCalculationParameters.IntegerEndPosition - WeightCalculationParameters.IntegerStartPosition + 1);
-                            _integer = WeightCalculationParameters.IsReversed ? new string(_integer.Reverse().ToArray()) : _integer;
+                            _integer = WeightCalculationParameters.IsReversed ? new string([.. _integer.Reverse()]) : _integer;
                             //取出小数
                             var _decimal = substring.Substring(WeightCalculationParameters.DecimalStartPosition, WeightCalculationParameters.DecimalEndPosition - WeightCalculationParameters.DecimalStartPosition + 1);
-                            _decimal = WeightCalculationParameters.IsReversed ? new string(_decimal.Reverse().ToArray()) : _decimal;
+                            _decimal = WeightCalculationParameters.IsReversed ? new string([.. _decimal.Reverse()]) : _decimal;
                             //组合
                             string data = $"{_integer}.{_decimal}";
                             ProcessDataPackage(data);
-                            dataBuffer = string.Empty;
-                        }
                     }
                 }
-
-                await Task.Delay(1, token);
                 /*var indexOf = receivedDataBuffer.IndexOf(Identifier, StringComparison.Ordinal);
                 if (IsReversed) {
                     //如果反转
@@ -194,7 +219,11 @@ namespace JayTom.Dws.Plugin.WeighingScale {
 
         private void ProcessDataPackage(string data) {
             try {
-                if (float.TryParse(data, out var result)) {
+                if (float.TryParse(
+                        data,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var result)) {
                     /*lock (_weightCapacity) {
                         _weightCapacity.Add(result);
                         if (_weightCapacity.Count > info.BalanceCount) {
@@ -208,15 +237,21 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                         OnStabledWeight(_weightCapacity.Last());
                     }*/
                     _weightQueue.Enqueue(result);
-                    if (_weightQueue.Count > 0 && _weightQueue.Count > WeightCalculationParameters.BalanceCount) {
+                    var requiredBalanceCount = Math.Max(1, WeightCalculationParameters.BalanceCount);
+                    if (_weightQueue.Count > requiredBalanceCount) {
                         //删除一个
                         _weightQueue.Dequeue();
                     }
 
-                    if (_weightQueue.Max() - _weightQueue.Min() <= WeightCalculationParameters.BalanceQty &&
-                        _weightQueue.Max() <= WeightCalculationParameters.MaxWeight && _weightQueue.Min() >= WeightCalculationParameters.MinWeight) {
-                        _stabledTime = DateTime.Now;
-                        OnStabledWeight(_weightQueue.Last());
+                    if (_weightQueue.Count >= requiredBalanceCount) {
+                        var minimumWeight = _weightQueue.Min();
+                        var maximumWeight = _weightQueue.Max();
+                        if (maximumWeight - minimumWeight <= WeightCalculationParameters.BalanceQty &&
+                            maximumWeight <= WeightCalculationParameters.MaxWeight &&
+                            minimumWeight >= WeightCalculationParameters.MinWeight) {
+                            _stabledTime = DateTime.Now;
+                            OnStabledWeight(_weightQueue.Last());
+                        }
                     }
                     if (DateTime.Now.Subtract(_stabledTime).TotalMilliseconds > WeightCalculationParameters.Delay) {
                         _stabledTime = DateTime.Now;

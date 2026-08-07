@@ -7,15 +7,19 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class NullToVisibilityConverter : IValueConverter {
+    public class NullToVisibilityConverter : IValueConverter
+    {
 
-        public object Convert(object? value, Type targetType, object parameter, CultureInfo culture) {
+        public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
+        {
             return value is null ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

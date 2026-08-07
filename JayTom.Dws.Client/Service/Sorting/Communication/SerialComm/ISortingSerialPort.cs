@@ -3,9 +3,11 @@ using System.IO.Ports;
 using JayTom.Dws.Plugin.Tcp;
 using JayTom.Dws.Plugin.SerialPort;
 
-namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm {
+namespace JayTom.Dws.Client.Service.Sorting.Communication.SerialComm
+{
 
-    public interface ISortingSerialPort : ISerialPort {
+    public interface ISortingSerialPort : ISerialPort
+    {
 
         /// <summary>
         /// 心跳包异常事件

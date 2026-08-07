@@ -216,12 +216,4 @@
           Condition="'$(MSBuildProjectName)' == 'JayTom.Dws.Client' and '$(DesignTimeBuild)' != 'true'">
     <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)\..\eng\JayTom.Dws.CodeQualityGuard\bin\$(Configuration)\net10.0\JayTom.Dws.CodeQualityGuard.dll&quot; &quot;$(MSBuildProjectDirectory)\..&quot; &quot;$(MSBuildProjectDirectory)\..\eng\CodeQualityBaseline.json&quot;" />
   </Target>
-
-
-  <!--<Target Name="CopyDeviceLib" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <DeviceLibFiles Include="$(SolutionDir)JayTom.Dws.Device\DeviceLib\*\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(DeviceLibFiles)" DestinationFolder="$(TargetDir)" />
-  </Target>-->
 </Project>

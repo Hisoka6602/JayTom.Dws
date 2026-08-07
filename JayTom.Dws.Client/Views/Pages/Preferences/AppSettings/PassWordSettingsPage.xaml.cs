@@ -13,14 +13,17 @@ using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.AppSettings {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.AppSettings
+{
 
     /// <summary>
     /// PassWordSetting.xaml 的交互逻辑
     /// </summary>
-    public partial class PassWordSettingsPage : Page {
+    public partial class PassWordSettingsPage : Page
+    {
 
-        public PassWordSettingsPage() {
+        public PassWordSettingsPage()
+        {
             InitializeComponent();
         }
     }

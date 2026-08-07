@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration
+{
     /// <summary>
     /// CommunicationConnectionConfigEditor.xaml 的交互逻辑
     /// </summary>
-    public partial class CommunicationConnectionConfigEditor : UserControl {
-        public CommunicationConnectionConfigEditor() {
+    public partial class CommunicationConnectionConfigEditor : UserControl
+    {
+        public CommunicationConnectionConfigEditor()
+        {
             InitializeComponent();
         }
     }

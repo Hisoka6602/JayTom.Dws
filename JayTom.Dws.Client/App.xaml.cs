@@ -125,16 +125,19 @@ using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMe
 using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
 
-namespace JayTom.Dws.Client {
+namespace JayTom.Dws.Client
+{
 
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : PrismApplication {
+    public partial class App : PrismApplication
+    {
         private Mutex? _singleInstanceMutex;
         private const string PipeName = "DwsPipe";
 
-        protected override void RegisterTypes(IContainerRegistry containerRegistry) {
+        protected override void RegisterTypes(IContainerRegistry containerRegistry)
+        {
             var rules = containerRegistry.GetContainer().Rules;
             rules.WithoutThrowOnRegisteringDisposableTransient();
 
@@ -211,11 +214,14 @@ namespace JayTom.Dws.Client {
                 containerRegistry.RegisterForNavigation<NetworkVideoRecorderPage>();
             }
             //其他注册
-            containerRegistry.GetContainer().RegisterServices(services => {
-                services.AddPooledDbContextFactory<SqliteContext>(options => {
+            containerRegistry.GetContainer().RegisterServices(services =>
+            {
+                services.AddPooledDbContextFactory<SqliteContext>(options =>
+                {
                     options.UseSqlite(
                         CreateSqliteConnectionString("Data.db"),
-                        builder => {
+                        builder =>
+                        {
                             builder.CommandTimeout(100);
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         })
@@ -224,10 +230,12 @@ namespace JayTom.Dws.Client {
                         .EnableSensitiveDataLogging(false);
                 }, 300);
 
-                services.AddPooledDbContextFactory<SqliteConfContext>(options => {
+                services.AddPooledDbContextFactory<SqliteConfContext>(options =>
+                {
                     options.UseSqlite(
                         CreateSqliteConnectionString("Configuration.db"),
-                        builder => {
+                        builder =>
+                        {
                             builder.CommandTimeout(100);
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         })
@@ -235,10 +243,12 @@ namespace JayTom.Dws.Client {
                         .EnableDetailedErrors(false)
                         .EnableSensitiveDataLogging(false);
                 }, 300);
-                services.AddPooledDbContextFactory<SqliteLogsContext>(options => {
+                services.AddPooledDbContextFactory<SqliteLogsContext>(options =>
+                {
                     options.UseSqlite(
                         CreateSqliteConnectionString("ClientLogs.db"),
-                        builder => {
+                        builder =>
+                        {
                             builder.CommandTimeout(100);
                             builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                         })
@@ -248,10 +258,13 @@ namespace JayTom.Dws.Client {
                 }, 300);
 
                 //http
-                services.AddHttpClient("INSURANCE", httpClient => {
+                services.AddHttpClient("INSURANCE", httpClient =>
+                {
                     // httpClient.Timeout = TimeSpan.FromSeconds(10);
-                }).ConfigurePrimaryHttpMessageHandler(() => {
-                    var handler = new HttpClientHandler() {
+                }).ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    var handler = new HttpClientHandler()
+                    {
                         UseDefaultCredentials = true,
                         MaxConnectionsPerServer = 600,
                         ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
@@ -415,7 +428,8 @@ namespace JayTom.Dws.Client {
             });
         }
 
-        protected override Window CreateShell() {
+        protected override Window CreateShell()
+        {
             return Container.Resolve<MainWindow>();
         }
 
@@ -424,17 +438,21 @@ namespace JayTom.Dws.Client {
         /// </summary>
         /// <param name="databaseFileName">数据库文件名。</param>
         /// <returns>SQLite 连接字符串。</returns>
-        private static string CreateSqliteConnectionString(string databaseFileName) {
-            return new SqliteConnectionStringBuilder {
+        private static string CreateSqliteConnectionString(string databaseFileName)
+        {
+            return new SqliteConnectionStringBuilder
+            {
                 DataSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, databaseFileName),
                 Mode = SqliteOpenMode.ReadWriteCreate
             }.ToString();
         }
 
-        protected override void OnStartup(StartupEventArgs e) {
+        protected override void OnStartup(StartupEventArgs e)
+        {
             NLog.LogManager.GetCurrentClassLogger().Info("OnStartup开始");
             _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
-            if (!createdNew) {
+            if (!createdNew)
+            {
                 // 另一个实例已经在运行，尝试激活它的窗口
                 NotifyExistingInstance();
                 NLog.LogManager.GetCurrentClassLogger().Error("阻止多开");
@@ -442,28 +460,34 @@ namespace JayTom.Dws.Client {
             }
             ThreadPool.SetMinThreads(100, 200);
 
-            this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args) {
+            this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args)
+            {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
-                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
                     CreateTime = DateTime.Now,
                     Message = args.Exception.Message,
                     Type = LogType.Exception
                 });
             };
-            AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args) {
+            AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args)
+            {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.ExceptionObject)}");
-                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
                     CreateTime = DateTime.Now,
                     Message = args?.ExceptionObject?.ToString() ?? string.Empty,
                     Type = LogType.Exception
                 });
             };
-            TaskScheduler.UnobservedTaskException += (sender, args) => {
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
                 //异常触发
                 NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
-                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
                     CreateTime = DateTime.Now,
                     Message = args.Exception.Message,
                     Type = LogType.Exception
@@ -481,7 +505,8 @@ namespace JayTom.Dws.Client {
             var configRepository = container.Resolve<IConfigRepository>();
             var configInfoModel = configRepository?.FirstOrDefault(f =>
                 f.ConfigName.Equals("Language")).GetAwaiter().GetResult();
-            if (configInfoModel != null) {
+            if (configInfoModel != null)
+            {
                 var culture = new CultureInfo(configInfoModel.Value);
                 Thread.CurrentThread.CurrentCulture = culture;
                 Thread.CurrentThread.CurrentUICulture = culture;
@@ -490,9 +515,12 @@ namespace JayTom.Dws.Client {
             NLog.LogManager.GetCurrentClassLogger().Info("OnStartup结束");
         }
 
-        protected override async void OnExit(ExitEventArgs e) {
-            try {
-                EventAggregator.Instance.Publish(new AppLogInfoModel {
+        protected override async void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
                     CreateTime = DateTime.Now,
                     Message = "程序关闭",
                     Type = LogType.Information
@@ -500,29 +528,37 @@ namespace JayTom.Dws.Client {
 
                 var serviceProvider = Container.Resolve<IServiceProvider>();
                 var deviceService = serviceProvider.GetService<IDeviceService>();
-                if (deviceService?.RunningStatus == true) {
+                if (deviceService?.RunningStatus == true)
+                {
                     await deviceService.Stop();
                 }
 
                 var sortingService = serviceProvider.GetService<ISortingService>();
-                if (sortingService?.RunningStatus == true) {
+                if (sortingService?.RunningStatus == true)
+                {
                     await sortingService.Stop();
                 }
 
                 // 按注册顺序的逆序停止，避免有依赖关系的后台服务并发释放同一资源。
-                foreach (var service in serviceProvider.GetServices<IHostedService>().Reverse()) {
+                foreach (var service in serviceProvider.GetServices<IHostedService>().Reverse())
+                {
                     await service.StopAsync(CancellationToken.None);
                 }
             }
-            catch (Exception exception) {
+            catch (Exception exception)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error(exception, "程序关闭资源释放异常");
             }
-            finally {
-                if (_singleInstanceMutex is not null) {
-                    try {
+            finally
+            {
+                if (_singleInstanceMutex is not null)
+                {
+                    try
+                    {
                         _singleInstanceMutex.ReleaseMutex();
                     }
-                    catch (ApplicationException) {
+                    catch (ApplicationException)
+                    {
                         // 当前实例不再持有互斥锁时只需释放句柄。
                     }
                     _singleInstanceMutex.Dispose();
@@ -533,19 +569,23 @@ namespace JayTom.Dws.Client {
             }
         }
 
-        private void NotifyExistingInstance() {
-            try {
+        private void NotifyExistingInstance()
+        {
+            try
+            {
                 using var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
                 pipeClient.Connect(5000); // 连接到已存在的管道
                 using var sw = new StreamWriter(pipeClient);
                 sw.Write("ActivateWindow");
             }
-            catch (TimeoutException) {
+            catch (TimeoutException)
+            {
                 // 如果连接超时，可以处理错误情况
             }
         }
 
-        protected override void ConfigureViewModelLocator() {
+        protected override void ConfigureViewModelLocator()
+        {
             base.ConfigureViewModelLocator();
             //绑定页面
 
@@ -679,7 +719,8 @@ namespace JayTom.Dws.Client {
             }
         }
 
-        protected override async void OnInitialized() {
+        protected override async void OnInitialized()
+        {
             await Task.Yield();
             base.OnInitialized();
             // 获取 IServiceProvider
@@ -693,7 +734,8 @@ namespace JayTom.Dws.Client {
                 await service.StartAsync(default);
             });*/
 
-            foreach (var service in hostedServices) {
+            foreach (var service in hostedServices)
+            {
                 var serviceName = service.GetType().Name;
                 NLog.LogManager.GetCurrentClassLogger().Info($"服务名: {serviceName}");
                 await service.StartAsync(default);

@@ -2,9 +2,11 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace JayTom.Dws.Client.DataTemplateSelectors {
+namespace JayTom.Dws.Client.DataTemplateSelectors
+{
 
-    public class CombinedWorkflowNodeDataTemplateSelector : DataTemplateSelector {
+    public class CombinedWorkflowNodeDataTemplateSelector : DataTemplateSelector
+    {
 
         /// <summary>
         /// 出口节点模板
@@ -34,9 +36,11 @@ namespace JayTom.Dws.Client.DataTemplateSelectors {
         /// </summary>
         public DataTemplate? ApiRuleTemplate { get; set; }
 
-        public override DataTemplate? SelectTemplate(object item, DependencyObject container) {
+        public override DataTemplate? SelectTemplate(object item, DependencyObject container)
+        {
             if (item is not CombinedWorkflowNodeModel itemTyeItem) return null;
-            return itemTyeItem.Type switch {
+            return itemTyeItem.Type switch
+            {
                 CombinedWorkflowNodeType.ExitNode => ExitTemplate,
                 CombinedWorkflowNodeType.BarcodeNode => BarcodeRuleTemplate,
                 CombinedWorkflowNodeType.WeightNode => WeightRuleTemplate,

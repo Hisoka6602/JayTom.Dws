@@ -4,9 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Service.DefaultConfiguration {
+namespace JayTom.Dws.Client.Service.DefaultConfiguration
+{
 
-    public interface IDefaultConfigurationService {
+    public interface IDefaultConfigurationService
+    {
 
         /// <summary>
         /// 写默认配置

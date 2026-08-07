@@ -20,7 +20,7 @@ namespace JayTom.Dws.Utils {
 
         public static string ConvertImageToBase64(this Image image) {
             try {
-                using (MemoryStream memoryStream = new MemoryStream()) {
+                using (MemoryStream memoryStream = new()) {
                     image.Save(memoryStream, image.RawFormat);
 
                     var imageBytes = memoryStream.ToArray();
@@ -39,7 +39,7 @@ namespace JayTom.Dws.Utils {
             try {
                 var imageBytes = Convert.FromBase64String($"{base64String}");
 
-                using (MemoryStream memoryStream = new MemoryStream(imageBytes)) {
+                using (MemoryStream memoryStream = new(imageBytes)) {
                     // 将字节数组转换为Image对象
                     return Image.FromStream(memoryStream);
                 }

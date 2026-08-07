@@ -5,7 +5,8 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
 {
 
-    public class CommunicationsSettingsInfoModel : BindableBase {
+    public class CommunicationsSettingsInfoModel : BindableBase
+    {
         private TcpSettingsInfoModel _tcpSettingsInfo = new();
         private SerialPortSettingsInfoModel _serialPortSettingsInfo = new();
         private CommunicationProtocol _protocol = CommunicationProtocol.None;
@@ -16,7 +17,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         private bool _isUsePackageExpiry;
         private DeviceControlSettingsInfoModel _deviceControlSettingsInfo = new();
 
-        public TcpSettingsInfoModel TcpSettingsInfo {
+        public TcpSettingsInfoModel TcpSettingsInfo
+        {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
@@ -24,7 +26,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 串口通讯参数
         /// </summary>
-        public SerialPortSettingsInfoModel SerialPortSettingsInfo {
+        public SerialPortSettingsInfoModel SerialPortSettingsInfo
+        {
             get => _serialPortSettingsInfo;
             set => SetProperty(ref _serialPortSettingsInfo, value);
         }
@@ -32,7 +35,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 通讯协议
         /// </summary>
-        public CommunicationProtocol Protocol {
+        public CommunicationProtocol Protocol
+        {
             get => _protocol;
             set => SetProperty(ref _protocol, value);
         }
@@ -40,7 +44,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 通讯类型
         /// </summary>
-        public CommunicationsType Type {
+        public CommunicationsType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
@@ -48,7 +53,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 下位机回复
         /// </summary>
-        public MachineReplyInfoModel MachineReplyInfo {
+        public MachineReplyInfoModel MachineReplyInfo
+        {
             get => _machineReplyInfo;
             set => SetProperty(ref _machineReplyInfo, value);
         }
@@ -56,7 +62,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 心跳包
         /// </summary>
-        public HeartbeatInfoModel HeartbeatInfo {
+        public HeartbeatInfoModel HeartbeatInfo
+        {
             get => _heartbeatInfo;
             set => SetProperty(ref _heartbeatInfo, value);
         }
@@ -64,7 +71,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 下位机设置
         /// </summary>
-        public DeviceControlSettingsInfoModel DeviceControlSettingsInfo {
+        public DeviceControlSettingsInfoModel DeviceControlSettingsInfo
+        {
             get => _deviceControlSettingsInfo;
             set => SetProperty(ref _deviceControlSettingsInfo, value);
         }
@@ -72,7 +80,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 是否使用包裹过期
         /// </summary>
-        public bool IsUsePackageExpiry {
+        public bool IsUsePackageExpiry
+        {
             get => _isUsePackageExpiry;
             set => SetProperty(ref _isUsePackageExpiry, value);
         }
@@ -80,7 +89,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
         /// <summary>
         /// 包裹过期时间(设置为0则不验证)
         /// </summary>
-        public int PackageExpiryTime {
+        public int PackageExpiryTime
+        {
             get => _packageExpiryTime;
             set => SetProperty(ref _packageExpiryTime, value);
         }

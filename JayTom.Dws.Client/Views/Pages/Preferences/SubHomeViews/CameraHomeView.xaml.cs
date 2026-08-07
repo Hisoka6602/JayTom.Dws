@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.SubHomeViews {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.SubHomeViews
+{
     /// <summary>
     /// CameraHomeView.xaml 的交互逻辑
     /// </summary>
-    public partial class CameraHomeView : UserControl {
-        public CameraHomeView() {
+    public partial class CameraHomeView : UserControl
+    {
+        public CameraHomeView()
+        {
             InitializeComponent();
         }
     }

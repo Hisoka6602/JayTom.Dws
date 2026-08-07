@@ -184,7 +184,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             var resultArray = splitArray.Select(item => {
                 var startIndex = item.IndexOf(':') + 3;
                 var endIndex = item.Length - 1;
-                return item.Substring(startIndex, endIndex - startIndex);
+                return item[startIndex..endIndex];
             }).ToList();
 
             return resultArray;
@@ -206,7 +206,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             try {
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
-                var denseTensorInfo = GetDenseTensorInfo(bitmap, _inputDimensions ?? Array.Empty<int>(), _tensorWidth, _tensorHeight);
+                var denseTensorInfo = GetDenseTensorInfo(bitmap, _inputDimensions ?? [], _tensorWidth, _tensorHeight);
                 IReadOnlyCollection<NamedOnnxValue> container = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor(_inputName, denseTensorInfo) };
                 Tensor<float> output0;
                 Tensor<float>? output1;
@@ -276,26 +276,26 @@ namespace JayTom.Dws.Ocr.Yolo {
             nmsFilterArray.AddRange(bubbleSortConfidence.Where(element =>
                 nmsFilterArray.All(existingElement =>
                     (globalIoU || element?.BasicData?[5] == existingElement?.BasicData?[5]) &&
-                    CalculateIntersectionOverUnion(element?.BasicData ?? Array.Empty<float>(), existingElement?.BasicData ?? Array.Empty<float>()) <= iouThreshold)));
+                    CalculateIntersectionOverUnion(element?.BasicData ?? [], existingElement?.BasicData ?? []) <= iouThreshold)));
 
             return nmsFilterArray;
         }
 
         private float CalculateIntersectionOverUnion(IReadOnlyList<float> box1, IReadOnlyList<float> box2) {
             // 恢复传入参数的实际起点坐标和终点坐标，因为传进来的是中心点和宽高
-            float[] rect1 = {
+            float[] rect1 = [
                 box1[0] - box1[2] / 2,
                 box1[1] - box1[3] / 2,
                 box1[0] + box1[2] / 2,
                 box1[1] + box1[3] / 2
-            };
+            ];
 
-            float[] rect2 = {
+            float[] rect2 = [
                 box2[0] - box2[2] / 2,
                 box2[1] - box2[3] / 2,
                 box2[0] + box2[2] / 2,
                 box2[1] + box2[3] / 2
-            };
+            ];
 
             var intersectionArea = Enumerable.Range(0, 2)
                 .Select(i => Math.Max(rect1[i], rect2[i]))
@@ -317,7 +317,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             for (var i = 0; i < data.Dimensions[1]; i++) {
                 if (!(data[0, i] >= confidenceThreshold)) continue;
                 var temp = new YoloData {
-                    BasicData = new float[] { data[0, i], i }
+                    BasicData = [data[0, i], i]
                 };
                 resultList.Add(temp);
             }
@@ -397,12 +397,12 @@ namespace JayTom.Dws.Ocr.Yolo {
 
                     if (index == -1) return;
                     var temp = new YoloData {
-                        BasicData = new float[] { data[0, 0, i], data[0, 1, i], data[0, 2, i], data[0, 3, i], tempConfidence, index }
+                        BasicData = [data[0, 0, i], data[0, 1, i], data[0, 2, i], data[0, 3, i], tempConfidence, index]
                     };
                     resultList.Add(temp);
                 });
 
-                return resultList.ToList();
+                return [.. resultList];
             }
             else {
                 var resultList = new List<YoloData>();
@@ -424,7 +424,7 @@ namespace JayTom.Dws.Ocr.Yolo {
 
                     if (index == -1) continue;
                     var temp = new YoloData {
-                        BasicData = new float[] { data2[i], data2[i + 1], data2[i + 2], data2[i + 3], tempConfidence, index }
+                        BasicData = [data2[i], data2[i + 1], data2[i + 2], data2[i + 3], tempConfidence, index]
                     };
                     resultList.Add(temp);
                 }
@@ -462,7 +462,7 @@ namespace JayTom.Dws.Ocr.Yolo {
 
                 // If there are poses, restore the scale for them as well
                 if (dataList[0].Poses != null) {
-                    foreach (var t1 in dataList.SelectMany(t => t.Poses ?? Array.Empty<Pose>())) {
+                    foreach (var t1 in dataList.SelectMany(t => t.Poses ?? [])) {
                         t1.X /= scaleFactor;
                         t1.Y /= scaleFactor;
                     }

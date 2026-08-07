@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.AppSettings {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.AppSettings
+{
     /// <summary>
     /// LicensePage.xaml 的交互逻辑
     /// </summary>
-    public partial class LicensePage : Page {
-        public LicensePage() {
+    public partial class LicensePage : Page
+    {
+        public LicensePage()
+        {
             InitializeComponent();
         }
     }

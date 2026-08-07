@@ -2,9 +2,11 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace JayTom.Dws.Client.DataTemplateSelectors {
+namespace JayTom.Dws.Client.DataTemplateSelectors
+{
 
-    public class ImageSettingItemDataTemplateSelectors : DataTemplateSelector {
+    public class ImageSettingItemDataTemplateSelectors : DataTemplateSelector
+    {
 
         /// <summary>
         /// 按钮
@@ -41,9 +43,11 @@ namespace JayTom.Dws.Client.DataTemplateSelectors {
         /// </summary>
         public DataTemplate? StitchingTemplate { get; set; }
 
-        public override DataTemplate? SelectTemplate(object item, DependencyObject container) {
+        public override DataTemplate? SelectTemplate(object item, DependencyObject container)
+        {
             if (item is not ItemBaseTemplateModel itemTyeItem) return null;
-            return itemTyeItem.Type switch {
+            return itemTyeItem.Type switch
+            {
                 0 => TextBoxTemplate,
                 1 => ButtonTemplate,
                 2 => SeparatorTemplate,

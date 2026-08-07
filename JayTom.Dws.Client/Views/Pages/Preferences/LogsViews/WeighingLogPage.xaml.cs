@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.LogsViews {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.LogsViews
+{
     /// <summary>
     /// WeighingLogPage.xaml 的交互逻辑
     /// </summary>
-    public partial class WeighingLogPage : Page {
-        public WeighingLogPage() {
+    public partial class WeighingLogPage : Page
+    {
+        public WeighingLogPage()
+        {
             InitializeComponent();
         }
     }

@@ -20,20 +20,24 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class DefaultApiPageViewModel : SettingsPageTemplateViewModel {
+    public class DefaultApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private DefaultApiModel _defaultApiInfo = new();
         private string _jsonContent = string.Empty;
         private bool _isLoaded;
 
-        public DefaultApiPageViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public DefaultApiPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
         /// <summary>
         /// 数据
         /// </summary>
-        public DefaultApiModel DefaultApiInfo {
+        public DefaultApiModel DefaultApiInfo
+        {
             get => _defaultApiInfo;
             set => SetProperty(ref _defaultApiInfo, value);
         }
@@ -41,7 +45,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// Json模板内容
         /// </summary>
-        public string JsonContent {
+        public string JsonContent
+        {
             get => _jsonContent;
             set => SetProperty(ref _jsonContent, value);
         }
@@ -49,15 +54,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 添加数据模板
         /// </summary>
-        public ICommand AddDataItemCommand {
+        public ICommand AddDataItemCommand
+        {
             get => new DelegateCommand<string>(AddDataItemDelegate);
         }
 
-        private async void AddDataItemDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void AddDataItemDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 obj = obj.Replace("'", string.Empty);
-                if (!DefaultApiInfo.DataTemplate.Any(a => a.Content.Equals(obj))) {
-                    DefaultApiInfo.DataTemplate.Add(new ItemBaseTemplateModel {
+                if (!DefaultApiInfo.DataTemplate.Any(a => a.Content.Equals(obj)))
+                {
+                    DefaultApiInfo.DataTemplate.Add(new ItemBaseTemplateModel
+                    {
                         Content = obj,
                         Id = DefaultApiInfo.DataTemplate.Count,
                         Type = 1,
@@ -71,13 +81,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 添加数据模板(自定义)
         /// </summary>
-        public ICommand AddCustomItemCommand {
+        public ICommand AddCustomItemCommand
+        {
             get => new DelegateCommand<string>(AddCustomItemDelegate);
         }
 
-        private async void AddCustomItemDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                DefaultApiInfo.DataTemplate.Add(new ItemBaseTemplateModel {
+        private async void AddCustomItemDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                DefaultApiInfo.DataTemplate.Add(new ItemBaseTemplateModel
+                {
                     Content = obj,
                     Id = DefaultApiInfo.DataTemplate.Count,
                     Type = 3,
@@ -90,17 +104,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 移除标记
         /// </summary>
-        public ICommand RemoveTemplateItemCommand {
+        public ICommand RemoveTemplateItemCommand
+        {
             get => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
         }
 
-        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (model.ApplicationType == ItemApplicationType.ApiData) {
+        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (model.ApplicationType == ItemApplicationType.ApiData)
+                {
                     DefaultApiInfo.DataTemplate.Remove(model);
-                    foreach (var item in DefaultApiInfo.DataTemplate) {
+                    foreach (var item in DefaultApiInfo.DataTemplate)
+                    {
                         if (item.Type == 0 && string.IsNullOrEmpty(item.Content) &&
-                            DefaultApiInfo.DataTemplate.LastOrDefault() != item) {
+                            DefaultApiInfo.DataTemplate.LastOrDefault() != item)
+                        {
                             DefaultApiInfo.DataTemplate.Remove(item);
                         }
                     }
@@ -112,13 +132,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "DefaultApiParametersDialogHost";
         public override string SettingsName => "DefaultApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new DefaultApiDto {
+                Value = JsonConvert.SerializeObject(new DefaultApiDto
+                {
                     CompleteMatch = DefaultApiInfo.CompleteMatch,
                     DataTemplate = DefaultApiInfo.DataTemplate.Select(s =>
-                        new ItemTemplateInfo() {
+                        new ItemTemplateInfo()
+                        {
                             ApplicationType = s.ApplicationType,
                             Content = s.Content,
                             Type = s.Type
@@ -142,20 +166,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(SettingsName) ?? new DefaultApiDto();
 
-                    var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
+                    var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel()
+                    {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
                         Type = s.Type
                     })?.ToList();
 
-                    DefaultApiInfo = new DefaultApiModel() {
+                    DefaultApiInfo = new DefaultApiModel()
+                    {
                         CompleteMatch = settingsDto.CompleteMatch,
                         DataTemplate = new ObservableCollection<ItemBaseTemplateModel>(),
                         IsUseJsonUpload = settingsDto.IsUseJsonUpload,
@@ -174,13 +203,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             }
         }
 
-        private string ChangeJsonContent(ObservableCollection<ItemBaseTemplateModel> dataTemplate) {
+        private string ChangeJsonContent(ObservableCollection<ItemBaseTemplateModel> dataTemplate)
+        {
             var dictionary = new Dictionary<string, object>();
             var num = 1;
-            foreach (var templateModel in dataTemplate) {
-                if (templateModel.ApplicationType == ItemApplicationType.ApiData) {
-                    switch (templateModel.Type) {
-                        case 1: {
+            foreach (var templateModel in dataTemplate)
+            {
+                if (templateModel.ApplicationType == ItemApplicationType.ApiData)
+                {
+                    switch (templateModel.Type)
+                    {
+                        case 1:
+                            {
                                 var replace = templateModel.Content.Replace("{", string.Empty).Replace("}", string.Empty);
                                 dictionary.Add(replace, $"{replace}Value");
                                 break;
@@ -192,7 +226,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     }
                 }
             }
-            var options = new JsonSerializerOptions {
+            var options = new JsonSerializerOptions
+            {
                 WriteIndented = true,
                 Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
             };

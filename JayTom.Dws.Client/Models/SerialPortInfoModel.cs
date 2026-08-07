@@ -1,29 +1,35 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class SerialPortInfoModel : BindableBase {
+    public class SerialPortInfoModel : BindableBase
+    {
         private string _name = string.Empty;
         private SerialPortType _type = SerialPortType.Other;
         private SerialPortStatus _status;
 
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
 
-        public SerialPortType Type {
+        public SerialPortType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
 
-        public SerialPortStatus Status {
+        public SerialPortStatus Status
+        {
             get => _status;
             set => SetProperty(ref _status, value);
         }
     }
 
-    public enum SerialPortType {
+    public enum SerialPortType
+    {
 
         /// <summary>
         /// 磅秤
@@ -46,7 +52,8 @@ namespace JayTom.Dws.Client.Models {
         Other
     }
 
-    public enum SerialPortStatus {
+    public enum SerialPortStatus
+    {
 
         /// <summary>
         /// 运行中

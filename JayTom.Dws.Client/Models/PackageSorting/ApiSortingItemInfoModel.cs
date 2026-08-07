@@ -1,9 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class ApiSortingItemInfoModel : BasePackageSortingItemInfoModel {
+    public class ApiSortingItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long? _exitId;
         private string? _exitName;
         private string _sortingName = string.Empty;
@@ -13,7 +15,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 出口代码
         /// </summary>
-        public long? ExitId {
+        public long? ExitId
+        {
             get => _exitId;
             set => SetProperty(ref _exitId, value);
         }
@@ -21,7 +24,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 出口名称
         /// </summary>
-        public string? ExitName {
+        public string? ExitName
+        {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
         }
@@ -29,7 +33,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 规则名称
         /// </summary>
-        public string SortingName {
+        public string SortingName
+        {
             get => _sortingName;
             set => SetProperty(ref _sortingName, value);
         }
@@ -37,12 +42,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 规则组
         /// </summary>
-        public string SortingRuleGroup {
+        public string SortingRuleGroup
+        {
             get => _sortingRuleGroup;
             set => SetProperty(ref _sortingRuleGroup, value);
         }
 
-        public ObservableCollection<ApiRuleItemInfoModel>? ApiRuleItems {
+        public ObservableCollection<ApiRuleItemInfoModel>? ApiRuleItems
+        {
             get => _apiRuleItems;
             set => SetProperty(ref _apiRuleItems, value);
         }

@@ -5,16 +5,19 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
 
-    public class SortingLogItemModel : BaseLogItemModel {
+    public class SortingLogItemModel : BaseLogItemModel
+    {
         private CommunicationType? _communicationType;
         private DataFormatType? _dataFormatType;
 
         /// <summary>
         /// 通讯类型(收发类型)
         /// </summary>
-        public CommunicationType? CommunicationType {
+        public CommunicationType? CommunicationType
+        {
             get => _communicationType;
             set => SetProperty(ref _communicationType, value);
         }
@@ -22,7 +25,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 数据类型
         /// </summary>
-        public DataFormatType? DataFormatType {
+        public DataFormatType? DataFormatType
+        {
             get => _dataFormatType;
             set => SetProperty(ref _dataFormatType, value);
         }

@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
-    public class WdtFlagshipApiInfoModel : BindableBase {
+    public class WdtFlagshipApiInfoModel : BindableBase
+    {
         private string _url = string.Empty;
         private string _key = string.Empty;
         private string _appsecret = string.Empty;
@@ -19,7 +21,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -27,7 +30,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Key
         /// </summary>
-        public string Key {
+        public string Key
+        {
             get => _key;
             set => SetProperty(ref _key, value);
         }
@@ -35,7 +39,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// appsecret
         /// </summary>
-        public string Appsecret {
+        public string Appsecret
+        {
             get => _appsecret;
             set => SetProperty(ref _appsecret, value);
         }
@@ -43,7 +48,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// sid
         /// </summary>
-        public string Sid {
+        public string Sid
+        {
             get => _sid;
             set => SetProperty(ref _sid, value);
         }
@@ -51,7 +57,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// method
         /// </summary>
-        public string Method {
+        public string Method
+        {
             get => _method;
             set => SetProperty(ref _method, value);
         }
@@ -59,7 +66,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// v版本号
         /// </summary>
-        public string V {
+        public string V
+        {
             get => _v;
             set => SetProperty(ref _v, value);
         }
@@ -67,7 +75,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// salt(加密)
         /// </summary>
-        public string Salt {
+        public string Salt
+        {
             get => _salt;
             set => SetProperty(ref _salt, value);
         }
@@ -75,7 +84,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 打包员Id
         /// </summary>
-        public int PackagerId {
+        public int PackagerId
+        {
             get => _packagerId;
             set => SetProperty(ref _packagerId, value);
         }
@@ -83,7 +93,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 打包员编号
         /// </summary>
-        public string PackagerNo {
+        public string PackagerNo
+        {
             get => _packagerNo;
             set => SetProperty(ref _packagerNo, value);
         }
@@ -91,7 +102,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 打包台名称
         /// </summary>
-        public string OperateTableName {
+        public string OperateTableName
+        {
             get => _operateTableName;
             set => SetProperty(ref _operateTableName, value);
         }
@@ -99,7 +111,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 是否强制称重
         /// </summary>
-        public bool Force {
+        public bool Force
+        {
             get => _force;
             set => SetProperty(ref _force, value);
         }
@@ -107,7 +120,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }

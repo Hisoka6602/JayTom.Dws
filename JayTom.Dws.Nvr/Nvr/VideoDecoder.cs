@@ -93,7 +93,7 @@ namespace JayTom.Dws.Nvr.Nvr {
 
         private unsafe MemoryStream ConvertFrameToMemoryStream(AVFrame* frame) {
             // Create a Bitmap and copy the pixel data from the AVFrame
-            using (Bitmap bitmap = new Bitmap(frame->width, frame->height, frame->linesize[0], System.Drawing.Imaging.PixelFormat.Format24bppRgb, new IntPtr(frame->data[0]))) {
+            using (Bitmap bitmap = new(frame->width, frame->height, frame->linesize[0], System.Drawing.Imaging.PixelFormat.Format24bppRgb, new IntPtr(frame->data[0]))) {
                 // Use a JPEG encoder to encode the Bitmap to a MemoryStream
                 var memoryStream = new MemoryStream();
                 bitmap.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Jpeg);

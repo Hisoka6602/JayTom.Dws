@@ -1,7 +1,9 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class WorkflowSettingsViewModel : BindableBase {
+    public class WorkflowSettingsViewModel : BindableBase
+    {
     }
 }

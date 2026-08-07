@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using LibreHardwareMonitor.Hardware;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Diagnostics.Eventing.Reader;
 using System.Threading;
@@ -33,6 +34,42 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// 标记内存采集异常是否已经记录，避免周期采集失败时重复刷写日志。
         /// </summary>
         private static int _memoryInfoErrorLogged;
+
+        /// <summary>
+        /// 标记 CPU 采集异常是否已经记录。
+        /// </summary>
+        private static int _cpuInfoErrorLogged;
+
+        /// <summary>
+        /// 标记风扇采集异常是否已经记录。
+        /// </summary>
+        private static int _fanSpeedErrorLogged;
+
+        /// <summary>
+        /// 标记 GPU 采集异常是否已经记录。
+        /// </summary>
+        private static int _gpuInfoErrorLogged;
+
+        /// <summary>
+        /// 标记网络采集异常是否已经记录。
+        /// </summary>
+        private static int _networkInfoErrorLogged;
+
+        /// <summary>
+        /// 网络速率采样周期。
+        /// </summary>
+        private static readonly TimeSpan NetworkSampleInterval = TimeSpan.FromSeconds(1);
+
+        /// <summary>
+        /// 网络采样任务同步锁。
+        /// </summary>
+        private readonly System.Threading.Lock _networkSampleLock = new();
+
+        /// <summary>
+        /// 当前共享网络采样任务，使汇总网卡和主网卡查询复用同一次计数器采样。
+        /// </summary>
+        private Task<(NetworkInfo NetworkInfo, List<LocalNetworkConnectionInfo> ConnectionInfos)>?
+            _networkSampleTask;
 
         /// <summary>
         /// Windows 全局内存状态数据。
@@ -140,65 +177,40 @@ namespace JayTom.Dws.Infrastructure.IComputer {
 
         public List<DiskInfo> GetDiskInfo() {
             var diskInfoList = new List<DiskInfo>();
-            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
             try {
-                diskInfoList = DriveInfo.GetDrives()
+                diskInfoList = [.. DriveInfo.GetDrives()
                     .Where(drive => drive is { IsReady: true, DriveType: DriveType.Fixed })
                     .Select(drive => {
                         var availableSpace = drive.AvailableFreeSpace;
-                        var usedSpace = drive.TotalSize - drive.AvailableFreeSpace;
-                        var availableSpaceIndex = (int)Math.Floor(Math.Log(availableSpace, 1024));
-                        var usedSpaceIndex = (int)Math.Floor(Math.Log(usedSpace, 1024));
+                        var totalSpace = drive.TotalSize;
+                        var usedSpace = Math.Max(0, totalSpace - availableSpace);
+                        var availablePercentage = totalSpace > 0
+                            ? Math.Round(Convert.ToDecimal(availableSpace) / totalSpace * 100m, 2)
+                            : 0m;
+                        var usedPercentage = totalSpace > 0
+                            ? Math.Round(Convert.ToDecimal(usedSpace) / totalSpace * 100m, 2)
+                            : 0m;
                         return new DiskInfo {
                             Name = drive.Name?.Replace(":", string.Empty)?.Replace("\\", string.Empty) ?? string.Empty,
-                            AvailableDiskSpace = drive.AvailableFreeSpace,
-                            AvailableDiskSpaceFormat = $"{availableSpace / Math.Pow(1024, availableSpaceIndex):0.##} {sizes[availableSpaceIndex]}",
-                            AvailableDiskSpacePercentage = (float)drive.AvailableFreeSpace / drive.TotalSize * 100,
-                            UsedDiskSpacePercentage = (decimal)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize * 100,
-                            UsedDiskSpace = drive.TotalSize - drive.AvailableFreeSpace,
-                            UsedDiskSpaceFormat = $"{usedSpace / Math.Pow(1024, usedSpaceIndex):0.##} {sizes[usedSpaceIndex]}"
+                            AvailableDiskSpace = availableSpace,
+                            AvailableDiskSpaceFormat = FormatByteSize(availableSpace),
+                            AvailableDiskSpacePercentage = Convert.ToSingle(availablePercentage),
+                            UsedDiskSpacePercentage = usedPercentage,
+                            UsedDiskSpace = usedSpace,
+                            UsedDiskSpaceFormat = FormatByteSize(usedSpace)
                         };
-                    }).ToList();
+                    })];
             }
             catch (Exception ex) {
-                // 处理异常，例如记录日志或向用户显示错误消息
-                Console.WriteLine("获取磁盘信息时出现异常：" + ex.Message);
+                NLog.LogManager.GetCurrentClassLogger().Error(ex, "获取磁盘信息失败");
             }
 
             return diskInfoList;
         }
 
-        public async Task<List<DiskInfo>> GetDiskInfoAsync() {
-            var diskInfoList = new List<DiskInfo>();
-            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-
-            try {
-                await Task.Delay(0);
-
-                diskInfoList = DriveInfo.GetDrives()
-                    .Where(drive => drive is { IsReady: true, DriveType: DriveType.Fixed })
-                    .Select(drive => {
-                        var availableSpace = drive.AvailableFreeSpace;
-                        var usedSpace = drive.TotalSize - drive.AvailableFreeSpace;
-                        var availableSpaceIndex = (int)Math.Floor(Math.Log(availableSpace, 1024));
-                        var usedSpaceIndex = (int)Math.Floor(Math.Log(usedSpace, 1024));
-                        return new DiskInfo {
-                            Name = drive.Name?.Replace(":", string.Empty)?.Replace("\\", string.Empty) ?? string.Empty,
-                            AvailableDiskSpace = drive.AvailableFreeSpace,
-                            AvailableDiskSpaceFormat = $"{availableSpace / Math.Pow(1024, availableSpaceIndex):0.##} {sizes[availableSpaceIndex]}",
-                            AvailableDiskSpacePercentage = (float)drive.AvailableFreeSpace / drive.TotalSize * 100,
-                            UsedDiskSpacePercentage = (decimal)(drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize * 100,
-                            UsedDiskSpace = drive.TotalSize - drive.AvailableFreeSpace,
-                            UsedDiskSpaceFormat = $"{usedSpace / Math.Pow(1024, usedSpaceIndex):0.##} {sizes[usedSpaceIndex]}"
-                        };
-                    }).ToList();
-            }
-            catch (Exception ex) {
-                // 处理异常，例如记录日志或向用户显示错误消息
-                NLog.LogManager.GetCurrentClassLogger().Error($"获取磁盘信息时出现异常:{ex}");
-            }
-
-            return diskInfoList;
+        public Task<List<DiskInfo>> GetDiskInfoAsync() {
+            // 驱动器枚举可能触发系统调用，放到工作线程避免阻塞调用方。
+            return Task.Run(GetDiskInfo);
         }
 
         public int GetFanSpeed() {
@@ -212,110 +224,21 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                                 orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)
                     ?.Sensors?.FirstOrDefault(f => f.SensorType == SensorType.Fan && f.Value.HasValue);
 
+                Interlocked.Exchange(ref _fanSpeedErrorLogged, 0);
                 return (int)(fanSensor?.Value ?? 0);
             }
             catch (Exception e) {
+                if (Interlocked.Exchange(ref _fanSpeedErrorLogged, 1) == 0) {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Warn(e, "风扇转速采集失败，后续相同异常将不再重复写入日志。");
+                }
                 return 0;
             }
         }
 
         public Task<int> GetFanSpeedAsync() {
-            return Task.Run(() => {
-                try {
-                    var orDefault = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Motherboard);
-                    orDefault?.Update();
-                    orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)?.Update();
-                    var fanSensor = orDefault
-                        ?.Sensors
-                        ?.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Value is > 0) ?? orDefault?.SubHardware?.FirstOrDefault(f => f.HardwareType == HardwareType.SuperIO)
-                        ?.Sensors?.FirstOrDefault(f => f.SensorType == SensorType.Fan && f.Value is > 0);
-
-                    /*if (_computer?.Hardware is not null) {
-                        foreach (var hardware in _computer.Hardware) {
-                            File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                new[] { $"Hardware: {hardware.Name}--HardwareType:{hardware.HardwareType}" });
-
-                            foreach (var subhardware in hardware.SubHardware) {
-                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                    new[] { $"\tSubhardware: {subhardware.Name}--HardwareType:{subhardware.HardwareType}" });
-
-                                foreach (var sensor in subhardware.Sensors) {
-                                    File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                        new[] { $"\t\tSensor: {sensor.Name}, value: {sensor.Value}--SensorType:{sensor.SensorType}" });
-                                }
-                            }
-
-                            foreach (var sensor in hardware.Sensors) {
-                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                    new[] { $"\tSensor: {sensor.Name}, value: {sensor.Value}--SensorType:{sensor.SensorType}" });
-                            }
-                        }
-
-                        /*foreach (var hardware in _computer.Hardware) {
-                            var hardwareName = hardware.Name;
-                            var hardwareType = hardware.HardwareType;
-                            foreach (var hardware1 in hardware.SubHardware) {
-                                var hardware1Name = hardware1.Name;
-                                var hardware1HardwareType = hardware1.HardwareType;
-                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                    new[]
-                                    {
-                                        $"---------SubHardware----------",
-                                        $"hardware1Name:{hardware1Name}",
-                                        $"hardware1HardwareType:{hardware1HardwareType}",
-                                        $"hardware1.SubHardware.Length:{hardware1}",
-                                    });
-                                foreach (var hardware1Sensor in hardware1.Sensors) {
-                                    var sensorName = hardware1Sensor.Name;
-                                    var sensorType = hardware1Sensor.SensorType;
-                                    var sensorValue = hardware1Sensor.Value;
-                                    hardware1Sensor.Control.
-                                    File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                        new[]
-                                        {
-                                            $"sensorName:{sensorName}",
-                                            $"sensorType:{sensorType}",
-                                            $"sensorValue:{sensorValue}",
-                                        });
-                                }
-
-                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                    new[]
-                                    {
-                                        $"--------------------------------",
-                                    });
-                            }
-
-                            foreach (var hardwareSensor in hardware.Sensors) {
-                                var sensorName = hardwareSensor.Name;
-                                var sensorType = hardwareSensor.SensorType;
-                                var sensorValue = hardwareSensor.Value;
-
-                                File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                                    new[]
-                                    {
-                                        $"hardwareName:{hardwareName}",
-                                        $"hardwareType:{hardwareType}",
-                                        $"sensorName:{sensorName}",
-                                        $"sensorType:{sensorType}",
-                                        $"sensorValue:{sensorValue}",
-                                    });
-                            }
-                        }#1#
-                    }
-                    File.AppendAllLines($"{AppDomain.CurrentDomain.BaseDirectory}a.txt",
-                        new[]
-                        {
-                            $"-----------------------------"
-                        });*/
-                    return (int)(fanSensor?.Value ?? 0);
-                }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                }
-
-                return 0;
-            });
+            // 底层硬件更新是同步调用，使用独立工作线程保持与其他硬件采集并行。
+            return Task.Run(GetFanSpeed);
         }
 
         public CpuInfo GetCpuInfo() {
@@ -323,132 +246,70 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 var hardware = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Cpu);
                 if (hardware is not null) {
                     hardware.Update();
-                    return new CpuInfo() {
-                        CpuPackageTemperature = hardware.Sensors?.FirstOrDefault(f => f.Name.Equals("CPU Package"))
+                    var sensors = hardware.Sensors ?? [];
+                    var sensorLookup = new Dictionary<(string Name, SensorType Type), ISensor>(sensors.Length);
+                    var coreNames = new List<string>();
+                    foreach (var sensor in sensors) {
+                        sensorLookup.TryAdd((sensor.Name, sensor.SensorType), sensor);
+                        if (sensor.SensorType == SensorType.Clock &&
+                            sensor.Name.StartsWith("CPU Core ", StringComparison.Ordinal)) {
+                            coreNames.Add(sensor.Name);
+                        }
+                    }
+
+                    var coreInfos = new List<CpuCoreInfo>(coreNames.Count);
+                    foreach (var coreName in coreNames) {
+                        sensorLookup.TryGetValue((coreName, SensorType.Clock), out var clockSensor);
+                        sensorLookup.TryGetValue((coreName, SensorType.Temperature), out var temperatureSensor);
+                        sensorLookup.TryGetValue((coreName, SensorType.Voltage), out var voltageSensor);
+                        var loadSensor = sensors.FirstOrDefault(sensor =>
+                            sensor.SensorType == SensorType.Load &&
+                            sensor.Name.Contains(coreName, StringComparison.Ordinal));
+                        coreInfos.Add(new CpuCoreInfo {
+                            CpuCoreName = coreName,
+                            CpuCoreSpeed = clockSensor?.Value ?? 0,
+                            CpuTemperature = temperatureSensor?.Value ?? 0,
+                            CpuUsedPercent = loadSensor?.Value ?? 0,
+                            Voltage = voltageSensor?.Value ?? 0,
+                        });
+                    }
+
+                    var cpuInfo = new CpuInfo() {
+                        CpuPackageTemperature = sensors.FirstOrDefault(f => f.Name.Equals("CPU Package"))
                              ?.Value.GetValueOrDefault() ?? 0,
-                        CpuTotalUsedPercent = hardware.Sensors?.FirstOrDefault(f => f.Name.Equals("CPU Total"))?.Value
+                        CpuTotalUsedPercent = sensors.FirstOrDefault(f => f.Name.Equals("CPU Total"))?.Value
                              .GetValueOrDefault() ?? 0,
-                        CpuBusSpeed = hardware.Sensors?.FirstOrDefault(f => f.Name.Equals("Bus Speed"))?.Value
+                        CpuBusSpeed = sensors.FirstOrDefault(f => f.Name.Equals("Bus Speed"))?.Value
                              .GetValueOrDefault() ?? 0,
                         CpuName = $"{hardware.Name}",
-                        CpuCoreInfos = hardware.Sensors?.Where(w => w.Name.StartsWith("CPU Core ") && w.SensorType == SensorType.Clock).GroupBy(g => g.Name)
-                            .Select(s => new CpuCoreInfo {
-                                CpuCoreName = hardware.Sensors.FirstOrDefault(f => f.Name.Equals(s.Key))?.Name ?? string.Empty,
-                                CpuCoreSpeed = hardware.Sensors.FirstOrDefault(f =>
-                                    f.Name.Equals(s.Key) && f.SensorType == SensorType.Clock)?.Value ?? 0,
-                                CpuTemperature = hardware.Sensors.FirstOrDefault(f =>
-                                    f.Name.Equals(s.Key) && f.SensorType == SensorType.Temperature)?.Value ?? 0,
-                                CpuUsedPercent = hardware.Sensors.FirstOrDefault(f =>
-                                    f.Name.Contains(s.Key) && f.SensorType == SensorType.Load)?.Value ?? 0,
-                                Voltage = hardware.Sensors.FirstOrDefault(f =>
-                                    f.Name.Equals(s.Key) && f.SensorType == SensorType.Voltage)?.Value ?? 0,
-                            })?.ToList() ?? new List<CpuCoreInfo>()
+                        CpuCoreInfos = coreInfos
                     };
+                    Interlocked.Exchange(ref _cpuInfoErrorLogged, 0);
+                    return cpuInfo;
                 }
             }
             catch (Exception e) {
-                // ignored
+                if (Interlocked.Exchange(ref _cpuInfoErrorLogged, 1) == 0) {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Warn(e, "CPU 信息采集失败，后续相同异常将不再重复写入日志。");
+                }
             }
 
             return new CpuInfo();
         }
 
-        public async Task<CpuInfo> GetCpuInfoAsync() {
-            try {
-                await Task.Delay(0);
-
-                var hardware = _computer?.Hardware?.FirstOrDefault(f => f.HardwareType == HardwareType.Cpu);
-                if (hardware is not null) {
-                    hardware.Update();
-                    return new CpuInfo() {
-                        CpuPackageTemperature = hardware.Sensors?.FirstOrDefault(f => f.Name.Equals("CPU Package"))
-                             ?.Value.GetValueOrDefault() ?? 0,
-                        CpuTotalUsedPercent = hardware.Sensors?.FirstOrDefault(f => f.Name.Equals("CPU Total"))?.Value
-                             .GetValueOrDefault() ?? 0,
-                        CpuBusSpeed = hardware.Sensors?.FirstOrDefault(f => f.Name.Equals("Bus Speed"))?.Value
-                             .GetValueOrDefault() ?? 0,
-                        CpuName = $"{hardware.Name}",
-                        CpuCoreInfos = hardware.Sensors?.Where(w => w.Name.StartsWith("CPU Core ") && w.SensorType == SensorType.Clock).GroupBy(g => g.Name)
-                             .Select(s => new CpuCoreInfo {
-                                 CpuCoreName = hardware.Sensors.FirstOrDefault(f => f.Name.Equals(s.Key))?.Name ?? string.Empty,
-                                 CpuCoreSpeed = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Equals(s.Key) && f.SensorType == SensorType.Clock)?.Value ?? 0,
-                                 CpuTemperature = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Equals(s.Key) && f.SensorType == SensorType.Temperature)?.Value ?? 0,
-                                 CpuUsedPercent = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Contains(s.Key) && f.SensorType == SensorType.Load)?.Value ?? 0,
-                                 Voltage = hardware.Sensors.FirstOrDefault(f =>
-                                     f.Name.Equals(s.Key) && f.SensorType == SensorType.Voltage)?.Value ?? 0,
-                             })?.ToList() ?? new List<CpuCoreInfo>()
-                    };
-                }
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-            }
-
-            return new CpuInfo();
+        public Task<CpuInfo> GetCpuInfoAsync() {
+            // 底层硬件更新是同步调用，使用独立工作线程保持与其他硬件采集并行。
+            return Task.Run(GetCpuInfo);
         }
 
         public NetworkInfo GetNetworkInfo() {
-            try {
-                var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
-                    .FirstOrDefault(ni =>
-                        ni.OperationalStatus == OperationalStatus.Up &&
-                        ni.NetworkInterfaceType != NetworkInterfaceType.Loopback);
-                if (networkInterface != null) {
-                    var statsAtStart = networkInterface.GetIPv4Statistics();
-                    Thread.Sleep(1000);
-                    var statsAtEnd = networkInterface.GetIPv4Statistics();
-                    var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStart.BytesReceived);
-                    var uploadSpeed = (statsAtEnd.BytesSent - statsAtStart.BytesSent);
-                    string[] sizes = { "B/s", "KB/s", "MB/s", "GB/s", "TB/s" };
-                    var uploadSpeedIndex = (int)Math.Floor(Math.Log(uploadSpeed, 1024));
-                    var downloadSpeedIndex = (int)Math.Floor(Math.Log(downloadSpeed, 1024));
-                    return new NetworkInfo {
-                        NetworkDownloadSpeed = downloadSpeed,
-                        NetworkUploadSpeed = uploadSpeed,
-                        NetworkDownloadSpeedFormat = $"{downloadSpeed / Math.Pow(1024, downloadSpeedIndex):0.##} {sizes[downloadSpeedIndex]}",
-                        NetworkUploadSpeedFormat = $"{uploadSpeed / Math.Pow(1024, uploadSpeedIndex):0.##} {sizes[uploadSpeedIndex]}",
-                    };
-                }
-            }
-            catch (Exception) {
-                // ignored
-            }
-
-            return new NetworkInfo();
+            return GetNetworkInfoAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         public async Task<NetworkInfo> GetNetworkInfoAsync() {
-            try {
-                var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
-                    .FirstOrDefault(ni =>
-                        ni.OperationalStatus == OperationalStatus.Up &&
-                        ni.NetworkInterfaceType != NetworkInterfaceType.Loopback);
-                if (networkInterface != null) {
-                    var statsAtStart = networkInterface.GetIPv4Statistics();
-                    var startTime = DateTime.Now;
-                    await Task.Delay(1000);
-                    var statsAtEnd = networkInterface.GetIPv4Statistics();
-                    var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStart.BytesReceived);
-                    var uploadSpeed = (statsAtEnd.BytesSent - statsAtStart.BytesSent);
-                    string[] sizes = { "B/s", "KB/s", "MB/s", "GB/s", "TB/s" };
-                    var downloadSpeedIndex = Math.Clamp((int)Math.Floor(Math.Log(downloadSpeed, 1024)), 0, sizes.Length - 1);
-                    var uploadSpeedIndex = Math.Clamp((int)Math.Floor(Math.Log(uploadSpeed, 1024)), 0, sizes.Length - 1);
-                    return new NetworkInfo {
-                        NetworkDownloadSpeed = downloadSpeed,
-                        NetworkUploadSpeed = uploadSpeed,
-                        NetworkDownloadSpeedFormat = $"{downloadSpeed / Math.Pow(1024, downloadSpeedIndex):0.##} {sizes[downloadSpeedIndex]}",
-                        NetworkUploadSpeedFormat = $"{uploadSpeed / Math.Pow(1024, uploadSpeedIndex):0.##} {sizes[uploadSpeedIndex]}",
-                    };
-                }
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-            }
-
-            return new NetworkInfo();
+            var sample = await GetNetworkSampleTask().ConfigureAwait(false);
+            return sample.NetworkInfo;
         }
 
         public MemoryInfo GetMemoryInfo() {
@@ -561,11 +422,15 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                             gpu.Update();
                         }
 
+                        Interlocked.Exchange(ref _gpuInfoErrorLogged, 0);
                         return (from gpu in gpuHardwareList let utilizationSensor = gpu.Sensors?.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name == "D3D 3D") let memorySensor = gpu.Sensors?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory") let spaceSensor = gpu.Sensors?.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name == "GPU Memory Free") let gpuName = gpu.Name select new GpuInfo { Name = gpuName, Utilization = (int)(utilizationSensor?.Value ?? 0), TotalMemory = (long)(memorySensor?.Max ?? 0), FreeMemory = (long)(spaceSensor?.Value ?? 0) }).ToList();
                     }
                 }
                 catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    if (Interlocked.Exchange(ref _gpuInfoErrorLogged, 1) == 0) {
+                        NLog.LogManager.GetCurrentClassLogger()
+                            .Warn(e, "GPU 信息采集失败，后续相同异常将不再重复写入日志。");
+                    }
                 }
 
                 return null;
@@ -652,56 +517,155 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         }
 
         public async Task<List<LocalNetworkConnectionInfo>?> GetLocalNetworkConnectionInfosAsync() {
+            var sample = await GetNetworkSampleTask().ConfigureAwait(false);
+            return sample.ConnectionInfos;
+        }
+
+        /// <summary>
+        /// 获取当前共享网络采样任务。
+        /// </summary>
+        /// <returns>包含主网卡和全部网卡速率的共享采样任务。</returns>
+        private Task<(NetworkInfo NetworkInfo, List<LocalNetworkConnectionInfo> ConnectionInfos)>
+            GetNetworkSampleTask() {
+            lock (_networkSampleLock) {
+                if (_networkSampleTask is null || _networkSampleTask.IsCompleted) {
+                    _networkSampleTask = CollectNetworkSampleAsync();
+                }
+
+                return _networkSampleTask;
+            }
+        }
+
+        /// <summary>
+        /// 采集一次所有网卡计数器，并生成主网卡及本地连接结果。
+        /// </summary>
+        /// <returns>主网卡信息和本地连接信息。</returns>
+        private static async Task<(NetworkInfo NetworkInfo,
+            List<LocalNetworkConnectionInfo> ConnectionInfos)> CollectNetworkSampleAsync() {
+            var networkInfo = new NetworkInfo();
             var connectionInfos = new List<LocalNetworkConnectionInfo>();
-            await Task.Run(async () => {
-                try {
-                    var statsAtStarts = new List<IPv4InterfaceStatistics>();
-                    var interfaces = NetworkInterface.GetAllNetworkInterfaces()
-                        .Where(w =>
-                            w.NetworkInterfaceType != NetworkInterfaceType.Loopback)?.ToList();
-                    if (interfaces?.Any() == true) {
-                        statsAtStarts.AddRange(interfaces.Select(t => t.GetIPv4Statistics()));
+            try {
+                var samples =
+                    new List<(NetworkInterface Interface, long BytesReceived, long BytesSent)>();
+                foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces()) {
+                    if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback) {
+                        continue;
+                    }
 
-                        await Task.Delay(1000);
-                        for (var i = 0; i < interfaces.Count; i++) {
-                            var statsAtEnd = interfaces[i].GetIPv4Statistics();
-                            var downloadSpeed = (statsAtEnd.BytesReceived - statsAtStarts[i].BytesReceived);
-                            var uploadSpeed = (statsAtEnd.BytesSent - statsAtStarts[i].BytesSent);
-                            connectionInfos.Add(new LocalNetworkConnectionInfo() {
-                                IsConnection = interfaces[i].OperationalStatus == OperationalStatus.Up,
-                                ConnectionName = interfaces[i].Name,
-                                DownloadSpeed = downloadSpeed / 1024,
-                                UploadSpeed = uploadSpeed / 1024,
-                                Speed = interfaces[i].Speed,
-                                Type = interfaces[i].NetworkInterfaceType switch {
-                                    NetworkInterfaceType.Wireless80211 => NetworkType.Wifi,
-                                    var ethernetTypes when new[]
-                                    {
-                                    NetworkInterfaceType.Ethernet,
-                                    NetworkInterfaceType.Ethernet3Megabit,
-                                    NetworkInterfaceType.FastEthernetT,
-                                    NetworkInterfaceType.FastEthernetFx,
-                                    NetworkInterfaceType.GigabitEthernet
-                                }.Contains(ethernetTypes) => NetworkType.Ethernet,
-                                    NetworkInterfaceType.Tunnel => NetworkType.Tunnel,
-                                    var wmanTypes when new[]
-                                    {
-                                    NetworkInterfaceType.Wman,
-                                    NetworkInterfaceType.Wwanpp,
-                                    NetworkInterfaceType.Wwanpp2
-                                }.Contains(wmanTypes) => NetworkType.Wman,
-
-                                    _ => NetworkType.Unknown
-                                }
-                            });
-                        }
+                    try {
+                        var statistics = networkInterface.GetIPv4Statistics();
+                        samples.Add((networkInterface, statistics.BytesReceived, statistics.BytesSent));
+                    }
+                    catch (NetworkInformationException) {
+                        // 单个虚拟或瞬时失效网卡不可采样时跳过，不影响其他网卡。
                     }
                 }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+
+                if (samples.Count == 0) {
+                    return (networkInfo, connectionInfos);
                 }
-            });
-            return connectionInfos;
+
+                var startTimestamp = Stopwatch.GetTimestamp();
+                await Task.Delay(NetworkSampleInterval).ConfigureAwait(false);
+                var elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+                var primaryInterface = samples
+                    .Select(sample => sample.Interface)
+                    .FirstOrDefault(networkInterface =>
+                        networkInterface.OperationalStatus == OperationalStatus.Up);
+
+                foreach (var sample in samples) {
+                    try {
+                        var statistics = sample.Interface.GetIPv4Statistics();
+                        var downloadSpeed = CalculateBytesPerSecond(
+                            sample.BytesReceived, statistics.BytesReceived, elapsedTicks);
+                        var uploadSpeed = CalculateBytesPerSecond(
+                            sample.BytesSent, statistics.BytesSent, elapsedTicks);
+                        connectionInfos.Add(new LocalNetworkConnectionInfo {
+                            IsConnection = sample.Interface.OperationalStatus == OperationalStatus.Up,
+                            ConnectionName = sample.Interface.Name,
+                            DownloadSpeed = downloadSpeed / 1024,
+                            UploadSpeed = uploadSpeed / 1024,
+                            Speed = sample.Interface.Speed,
+                            Type = MapNetworkType(sample.Interface.NetworkInterfaceType)
+                        });
+
+                        if (!ReferenceEquals(sample.Interface, primaryInterface)) {
+                            continue;
+                        }
+
+                        networkInfo.NetworkDownloadSpeed = downloadSpeed;
+                        networkInfo.NetworkUploadSpeed = uploadSpeed;
+                        networkInfo.NetworkDownloadSpeedFormat = FormatByteRate(downloadSpeed);
+                        networkInfo.NetworkUploadSpeedFormat = FormatByteRate(uploadSpeed);
+                        networkInfo.MacAddress = sample.Interface.GetPhysicalAddress().ToString();
+                        networkInfo.IpAddress = sample.Interface.GetIPProperties()
+                            .UnicastAddresses
+                            .FirstOrDefault(address =>
+                                address.Address.AddressFamily == AddressFamily.InterNetwork)
+                            ?.Address.ToString() ?? string.Empty;
+                    }
+                    catch (NetworkInformationException) {
+                        // 采样期间失效的网卡仅跳过当前结果。
+                    }
+                }
+            }
+            catch (Exception exception) {
+                if (Interlocked.Exchange(ref _networkInfoErrorLogged, 1) == 0) {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Warn(exception, "网络信息采集失败，后续相同异常将不再重复写入日志。");
+                }
+                return (networkInfo, connectionInfos);
+            }
+
+            Interlocked.Exchange(ref _networkInfoErrorLogged, 0);
+            return (networkInfo, connectionInfos);
+        }
+
+        /// <summary>
+        /// 根据计数器差值和实际经过时间计算每秒字节数。
+        /// </summary>
+        /// <param name="startBytes">采样开始字节数。</param>
+        /// <param name="endBytes">采样结束字节数。</param>
+        /// <param name="elapsedTicks">采样经过的高精度计时刻度。</param>
+        /// <returns>每秒字节数。</returns>
+        private static long CalculateBytesPerSecond(long startBytes, long endBytes, long elapsedTicks) {
+            if (endBytes <= startBytes || elapsedTicks <= 0) {
+                return 0;
+            }
+
+            var bytes = Convert.ToDecimal(endBytes - startBytes);
+            var rate = bytes * Stopwatch.Frequency / elapsedTicks;
+            return decimal.ToInt64(decimal.Truncate(rate));
+        }
+
+        /// <summary>
+        /// 将网络接口类型转换为客户端连接类型。
+        /// </summary>
+        /// <param name="networkInterfaceType">系统网络接口类型。</param>
+        /// <returns>客户端连接类型。</returns>
+        private static NetworkType MapNetworkType(NetworkInterfaceType networkInterfaceType) {
+            return networkInterfaceType switch {
+                NetworkInterfaceType.Wireless80211 => NetworkType.Wifi,
+                NetworkInterfaceType.Ethernet or
+                    NetworkInterfaceType.Ethernet3Megabit or
+                    NetworkInterfaceType.FastEthernetT or
+                    NetworkInterfaceType.FastEthernetFx or
+                    NetworkInterfaceType.GigabitEthernet => NetworkType.Ethernet,
+                NetworkInterfaceType.Tunnel => NetworkType.Tunnel,
+                NetworkInterfaceType.Wman or
+                    NetworkInterfaceType.Wwanpp or
+                    NetworkInterfaceType.Wwanpp2 => NetworkType.Wman,
+                _ => NetworkType.Unknown
+            };
+        }
+
+        /// <summary>
+        /// 将每秒字节数格式化为可读速率。
+        /// </summary>
+        /// <param name="bytesPerSecond">每秒字节数。</param>
+        /// <returns>带速率单位的文本。</returns>
+        private static string FormatByteRate(long bytesPerSecond) {
+            return $"{FormatByteSize(bytesPerSecond)}/s";
         }
 
         public async Task<string> GenerateMachineCode() {
@@ -730,11 +694,9 @@ namespace JayTom.Dws.Infrastructure.IComputer {
 
                 machineCode = $"{cpuSerialNumber}{hardDiskId}{machineName}{versionString}";
 
-                using (var md5 = MD5.Create()) {
-                    var result = md5.ComputeHash(Encoding.UTF8.GetBytes($"{machineCode}Hisoka"));
-                    var strResult = BitConverter.ToString(result);
-                    machineCode = strResult.Replace("-", "");
-                }
+                // DWS-HEX-COMPACT: 许可证机器码必须保持既有的无分隔符格式。
+                machineCode = Convert.ToHexString(MD5.HashData(
+                    Encoding.UTF8.GetBytes($"{machineCode}Hisoka")));
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error(e);
@@ -752,7 +714,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 return "0 B";
             }
 
-            string[] units = { "B", "KB", "MB", "GB", "TB" };
+            string[] units = ["B", "KB", "MB", "GB", "TB"];
             var value = Convert.ToDecimal(byteCount);
             var unitIndex = 0;
             while (value >= 1024m && unitIndex < units.Length - 1) {

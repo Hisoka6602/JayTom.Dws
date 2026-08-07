@@ -22,9 +22,11 @@ using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class ResultOutputSettingsPageViewModel : SettingsPageTemplateViewModel {
+    public class ResultOutputSettingsPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly ISoundRepository _soundRepository;
 
         private ObservableCollection<ItemBaseTemplateModel> _outputItems = new()
@@ -230,14 +232,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private DataFormatTypeInfoModel _selectDataFormat = new();
 
         public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
-            IConfigRepository configRepository) : base(configRepository) {
+            IConfigRepository configRepository) : base(configRepository)
+        {
             _soundRepository = soundRepository;
         }
 
         /// <summary>
         /// 数据模板
         /// </summary>
-        public ObservableCollection<ItemBaseTemplateModel> OutputItems {
+        public ObservableCollection<ItemBaseTemplateModel> OutputItems
+        {
             get => _outputItems;
             set => SetProperty(ref _outputItems, value);
         }
@@ -245,7 +249,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 成功音频列表
         /// </summary>
-        public ObservableCollection<string> Sounds {
+        public ObservableCollection<string> Sounds
+        {
             get => _sounds;
             set => SetProperty(ref _sounds, value);
         }
@@ -253,7 +258,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 串口列表
         /// </summary>
-        public ObservableCollection<string> PortItems {
+        public ObservableCollection<string> PortItems
+        {
             get => _portItems;
             set => SetProperty(ref _portItems, value);
         }
@@ -261,77 +267,92 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 选中串口名称
         /// </summary>
-        public string SelectedPort {
+        public string SelectedPort
+        {
             get => _portName;
             set => SetProperty(ref _portName, value);
         }
 
-        public ParityInfoModel SelectedParity {
+        public ParityInfoModel SelectedParity
+        {
             get => _selectParity;
             set => SetProperty(ref _selectParity, value);
         }
 
-        public ObservableCollection<ParityInfoModel> ParityItems {
+        public ObservableCollection<ParityInfoModel> ParityItems
+        {
             get => _parityItems;
             set => SetProperty(ref _parityItems, value);
         }
 
-        public StopBitsInfoModel SelectedStopBits {
+        public StopBitsInfoModel SelectedStopBits
+        {
             get => _selectedStopBits;
             set => SetProperty(ref _selectedStopBits, value);
         }
 
-        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
+        public ObservableCollection<StopBitsInfoModel> StopBitsItems
+        {
             get => _stopBitsItems;
             set => SetProperty(ref _stopBitsItems, value);
         }
 
-        public int SelectBaudRate {
+        public int SelectBaudRate
+        {
             get => _selectBaudRate;
             set => SetProperty(ref _selectBaudRate, value);
         }
 
-        public ObservableCollection<int> BaudRateItems {
+        public ObservableCollection<int> BaudRateItems
+        {
             get => _baudRateItems;
             set => SetProperty(ref _baudRateItems, value);
         }
 
-        public int SelectedDataBits {
+        public int SelectedDataBits
+        {
             get => _selectedDataBits;
             set => SetProperty(ref _selectedDataBits, value);
         }
 
-        public ObservableCollection<int> DataBitsItems {
+        public ObservableCollection<int> DataBitsItems
+        {
             get => _dataBitsItems;
             set => SetProperty(ref _dataBitsItems, value);
         }
 
-        public ObservableCollection<TriggerPositionModel> TriggerPositionItems {
+        public ObservableCollection<TriggerPositionModel> TriggerPositionItems
+        {
             get => _triggerPositionItems;
             set => SetProperty(ref _triggerPositionItems, value);
         }
 
-        public TriggerPositionModel SelectedTriggerPosition {
+        public TriggerPositionModel SelectedTriggerPosition
+        {
             get => _selectedTriggerPosition;
             set => SetProperty(ref _selectedTriggerPosition, value);
         }
 
-        public ObservableCollection<TriggerPositionResultModel> TriggerPositionResultItems {
+        public ObservableCollection<TriggerPositionResultModel> TriggerPositionResultItems
+        {
             get => _triggerPositionResultItems;
             set => SetProperty(ref _triggerPositionResultItems, value);
         }
 
-        public TriggerPositionResultModel SelectedTriggerPositionResult {
+        public TriggerPositionResultModel SelectedTriggerPositionResult
+        {
             get => _selectedTriggerPositionResult;
             set => SetProperty(ref _selectedTriggerPositionResult, value);
         }
 
-        public DataFormatTypeInfoModel SelectDataFormat {
+        public DataFormatTypeInfoModel SelectDataFormat
+        {
             get => _selectDataFormat;
             set => SetProperty(ref _selectDataFormat, value);
         }
 
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems
+        {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
@@ -339,7 +360,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 串口内容
         /// </summary>
-        public SerialPortResultOutputModel SerialPortResultOutput {
+        public SerialPortResultOutputModel SerialPortResultOutput
+        {
             get => _serialPortResultOutput;
             set => SetProperty(ref _serialPortResultOutput, value);
         }
@@ -349,13 +371,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand RemoveTemplateItemCommand => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
 
-        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (model.ApplicationType == ItemApplicationType.ResultData) {
+        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (model.ApplicationType == ItemApplicationType.ResultData)
+                {
                     OutputItems.Remove(model);
-                    foreach (var item in OutputItems) {
+                    foreach (var item in OutputItems)
+                    {
                         if (item.Type == 0 && string.IsNullOrEmpty(item.Content) &&
-                            OutputItems.LastOrDefault() != item) {
+                            OutputItems.LastOrDefault() != item)
+                        {
                             OutputItems.Remove(item);
                         }
                     }
@@ -368,19 +395,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand AddOutputItemCommand => new DelegateCommand<string>(AddOutputItemDelegate);
 
-        private async void AddOutputItemDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void AddOutputItemDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 obj = obj.Replace("'", string.Empty);
                 var count = OutputItems.Count;
-                OutputItems.Insert(count - 1 < 0 ? 0 : count - 1, new ItemBaseTemplateModel() {
+                OutputItems.Insert(count - 1 < 0 ? 0 : count - 1, new ItemBaseTemplateModel()
+                {
                     Content = obj,
                     Id = count,
                     Type = 1,
                     ApplicationType = ItemApplicationType.ResultData
                 });
                 var model = OutputItems?.LastOrDefault();
-                if (model?.Type != 0) {
-                    OutputItems?.Add(new ItemBaseTemplateModel() {
+                if (model?.Type != 0)
+                {
+                    OutputItems?.Add(new ItemBaseTemplateModel()
+                    {
                         Content = string.Empty,
                         Id = OutputItems.Count,
                         ApplicationType = ItemApplicationType.ResultData
@@ -392,7 +424,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否使用Tcp输出
         /// </summary>
-        public bool IsUseTcpOutput {
+        public bool IsUseTcpOutput
+        {
             get => _isUseTcpOutput;
             set => SetProperty(ref _isUseTcpOutput, value);
         }
@@ -400,7 +433,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否使用串口输出
         /// </summary>
-        public bool IsUseSerialOutput {
+        public bool IsUseSerialOutput
+        {
             get => _isUseSerialOutput;
             set => SetProperty(ref _isUseSerialOutput, value);
         }
@@ -408,7 +442,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否使用音频输出
         /// </summary>
-        public bool IsUseAudioOutput {
+        public bool IsUseAudioOutput
+        {
             get => _isUseAudioOutput;
             set => SetProperty(ref _isUseAudioOutput, value);
         }
@@ -416,7 +451,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 是否使用位置输出
         /// </summary>
-        public bool IsUseLocationOutput {
+        public bool IsUseLocationOutput
+        {
             get => _isUseLocationOutput;
             set => SetProperty(ref _isUseLocationOutput, value);
         }
@@ -424,7 +460,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 上传设置
         /// </summary>
-        public UploadSettingsInfoModel UploadSettingsInfo {
+        public UploadSettingsInfoModel UploadSettingsInfo
+        {
             get => _uploadSettingsInfo;
             set => SetProperty(ref _uploadSettingsInfo, value);
         }
@@ -432,7 +469,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// Tcp输出设置
         /// </summary>
-        public TcpSettingsInfoModel TcpSettingsInfo {
+        public TcpSettingsInfoModel TcpSettingsInfo
+        {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
@@ -440,7 +478,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 串口输出
         /// </summary>
-        public SerialPortSettingsInfoModel SerialPortSettingsInfo {
+        public SerialPortSettingsInfoModel SerialPortSettingsInfo
+        {
             get => _serialPortSettingsInfo;
             set => SetProperty(ref _serialPortSettingsInfo, value);
         }
@@ -448,7 +487,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 位置输出
         /// </summary>
-        public LocationOutputSettingsInfoModel LocationOutputSettingsInfo {
+        public LocationOutputSettingsInfoModel LocationOutputSettingsInfo
+        {
             get => _locationOutputSettingsInfo;
             set => SetProperty(ref _locationOutputSettingsInfo, value);
         }
@@ -456,7 +496,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 声音输出
         /// </summary>
-        public AudioOutputSettingsInfoModel AudioOutputSettingsInfo {
+        public AudioOutputSettingsInfoModel AudioOutputSettingsInfo
+        {
             get => _audioOutputSettingsInfo;
             set => SetProperty(ref _audioOutputSettingsInfo, value);
         }
@@ -464,37 +505,46 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 声音文件路径
         /// </summary>
-        public string SoundFilePath {
+        public string SoundFilePath
+        {
             get => _soundFilePath;
             set => SetProperty(ref _soundFilePath, value);
         }
 
         public ICommand BarCodeKeyDownCommand => new DelegateCommand<System.Windows.Input.KeyEventArgs>(BarCodeKeyDownDelegate);
 
-        private async void BarCodeKeyDownDelegate(System.Windows.Input.KeyEventArgs obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void BarCodeKeyDownDelegate(System.Windows.Input.KeyEventArgs obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 LocationOutputSettingsInfo.BarcodeOutputKey = obj.Key.ToString();
             });
         }
 
         public ICommand WeightKeyDownCommand => new DelegateCommand<System.Windows.Input.KeyEventArgs>(WeightKeyDownDelegate);
 
-        private async void WeightKeyDownDelegate(System.Windows.Input.KeyEventArgs obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void WeightKeyDownDelegate(System.Windows.Input.KeyEventArgs obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 LocationOutputSettingsInfo.WeightOutputKey = obj.Key.ToString();
             });
         }
 
         public ICommand BrowseSoundFileCommand => new DelegateCommand<object>(BrowseSoundFileDelegate);
 
-        private async void BrowseSoundFileDelegate(object obj) {
-            var openFileDialog = new OpenFileDialog() {
+        private async void BrowseSoundFileDelegate(object obj)
+        {
+            var openFileDialog = new OpenFileDialog()
+            {
                 Filter = $@"{Languages.Language.ResourceManager.GetString("声音文件") ?? string.Empty}|*.wav;*.mp3",
                 Title = Languages.Language.ResourceManager.GetString("请选择声音文件"),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
             };
-            if (openFileDialog.ShowDialog() == DialogResult.OK) {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
                     SoundFilePath = openFileDialog.FileName;
                 });
             }
@@ -502,25 +552,32 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
 
         public ICommand AddSoundFileCommand => new DelegateCommand<object>(AddSoundFileDelegate);
 
-        private async void AddSoundFileDelegate(object obj) {
+        private async void AddSoundFileDelegate(object obj)
+        {
             if (!string.IsNullOrWhiteSpace(SoundFilePath) &&
-                File.Exists(SoundFilePath)) {
+                File.Exists(SoundFilePath))
+            {
                 //加载遮罩,加载锁
 
-                var update = await _soundRepository.InsertOrUpdate(new SoundInfoModel() {
+                var update = await _soundRepository.InsertOrUpdate(new SoundInfoModel()
+                {
                     SoundName = new FileInfo(SoundFilePath).Name,
                     SoundFile = await File.ReadAllBytesAsync(SoundFilePath)
                 });
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    if (update) {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
+                    if (update)
+                    {
                         Sounds.Clear();
                         var soundInfoModels = await _soundRepository.Select(w => w.Id > 0, o => o.Id);
-                        if (soundInfoModels?.Any() == true) {
+                        if (soundInfoModels?.Any() == true)
+                        {
                             Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
                         }
                         base.MessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加成功") ?? string.Empty);
                     }
-                    else {
+                    else
+                    {
                         base.MessageQueue.Enqueue(Languages.Language.ResourceManager.GetString("添加失败") ?? string.Empty);
                         //提示失败
                     }
@@ -531,34 +588,42 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public override string Identifier => "ResultOutputSettingsDialogHost";
         public override string SettingsName => "ResultOutputSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto {
-                    DataTemplate = OutputItems.Select(s => new ItemTemplateInfo {
+                Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto
+                {
+                    DataTemplate = [.. OutputItems.Select(s => new ItemTemplateInfo {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
                         Type = s.Type,
-                    }).ToList(),
-                    UploadSettingsInfo = new UploadSettingsInfo() {
+                    })],
+                    UploadSettingsInfo = new UploadSettingsInfo()
+                    {
                         IsAutoUploadOnRestart = UploadSettingsInfo.IsAutoUploadOnRestart,
                         RetryCount = UploadSettingsInfo.RetryCount,
                         SendDelay = UploadSettingsInfo.SendDelay,
                     },
                     IsUseTcpOutput = IsUseTcpOutput,
-                    TcpSettingsInfo = new TcpSettingsInfo() {
-                        ClientConfig = new TcpInfo() {
+                    TcpSettingsInfo = new TcpSettingsInfo()
+                    {
+                        ClientConfig = new TcpInfo()
+                        {
                             IpAddress = TcpSettingsInfo.ClientConfig.IpAddress,
                             Port = TcpSettingsInfo.ClientConfig.Port
                         },
-                        ServerConfig = new TcpInfo() {
+                        ServerConfig = new TcpInfo()
+                        {
                             IpAddress = TcpSettingsInfo.ServerConfig.IpAddress,
                             Port = TcpSettingsInfo.ServerConfig.Port
                         },
                         ConnectionMode = TcpSettingsInfo.ConnectionMode
                     },
                     IsUseSerialOutput = IsUseSerialOutput,
-                    SerialPortSettingsInfo = new SerialPortSettingsInfo() {
+                    SerialPortSettingsInfo = new SerialPortSettingsInfo()
+                    {
                         BaudRate = SelectBaudRate,
                         Parity = SelectedParity.Value,
                         PortName = SelectedPort,
@@ -566,20 +631,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         StopBits = SelectedStopBits.Value,
                         DataFormat = SelectDataFormat.Value,
                     },
-                    SerialPortResultOutputInfo = new SerialPortResultOutputInfo() {
+                    SerialPortResultOutputInfo = new SerialPortResultOutputInfo()
+                    {
                         CustomOutputContent = SerialPortResultOutput.CustomOutputContent,
                         IsUseCustomContentOutput = SerialPortResultOutput.IsUseCustomContentOutput,
                         IsUseDataTemplateOutput = SerialPortResultOutput.IsUseDataTemplateOutput
                     },
                     IsUseAudioOutput = IsUseAudioOutput,
-                    AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
+                    AudioOutputSettingsInfo = new AudioOutputSettingsInfo()
+                    {
                         FailureAudio = AudioOutputSettingsInfo.FailureAudio,
                         SuccessAudio = AudioOutputSettingsInfo.SuccessAudio,
                         TriggerPosition = SelectedTriggerPosition.TriggerPositionValue,
                         Result = SelectedTriggerPositionResult.ResultValue,
                     },
                     IsUseLocationOutput = IsUseLocationOutput,
-                    LocationOutputSettingsInfo = new LocationOutputSettingsInfo() {
+                    LocationOutputSettingsInfo = new LocationOutputSettingsInfo()
+                    {
                         BarcodeOutputKey = LocationOutputSettingsInfo.BarcodeOutputKey,
                         BarcodeOutputPosition = LocationOutputSettingsInfo.BarcodeOutputPosition,
                         IsOutputBarcode = LocationOutputSettingsInfo.IsOutputBarcode,
@@ -596,14 +664,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     //加载音频列表
                     Sounds.Clear();
                     var soundInfoModels = await _soundRepository.Select(w => w.Id > 0, o => o.Id);
-                    if (soundInfoModels?.Any() == true) {
+                    if (soundInfoModels?.Any() == true)
+                    {
                         Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
                     }
                     PortItems.Clear();
@@ -630,32 +702,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     SelectedPort = PortItems.FirstOrDefault(f =>
                         f.Equals(settingsDto.SerialPortSettingsInfo.PortName)) ?? string.Empty;
                     OutputItems.Clear();
-                    var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel() {
+                    var models = settingsDto.DataTemplate.Select((s, i) => new ItemBaseTemplateModel()
+                    {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
                         Type = s.Type,
                         Id = i + 1
                     }).ToList();
                     OutputItems.AddRange(models);
-                    UploadSettingsInfo = new UploadSettingsInfoModel() {
+                    UploadSettingsInfo = new UploadSettingsInfoModel()
+                    {
                         IsAutoUploadOnRestart = settingsDto.UploadSettingsInfo.IsAutoUploadOnRestart,
                         RetryCount = settingsDto.UploadSettingsInfo.RetryCount,
                         SendDelay = settingsDto.UploadSettingsInfo.SendDelay,
                     };
                     IsUseTcpOutput = settingsDto.IsUseTcpOutput;
-                    TcpSettingsInfo = new TcpSettingsInfoModel() {
-                        ClientConfig = new TcpInfoModel() {
+                    TcpSettingsInfo = new TcpSettingsInfoModel()
+                    {
+                        ClientConfig = new TcpInfoModel()
+                        {
                             IpAddress = settingsDto.TcpSettingsInfo.ClientConfig.IpAddress,
                             Port = settingsDto.TcpSettingsInfo.ClientConfig.Port,
                         },
-                        ServerConfig = new TcpInfoModel() {
+                        ServerConfig = new TcpInfoModel()
+                        {
                             IpAddress = settingsDto.TcpSettingsInfo.ServerConfig.IpAddress,
                             Port = settingsDto.TcpSettingsInfo.ServerConfig.Port,
                         },
                         ConnectionMode = settingsDto.TcpSettingsInfo.ConnectionMode,
                     };
                     IsUseSerialOutput = settingsDto.IsUseSerialOutput;
-                    SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
+                    SerialPortSettingsInfo = new SerialPortSettingsInfoModel()
+                    {
                         BaudRate = settingsDto.SerialPortSettingsInfo.BaudRate,
                         Parity = settingsDto.SerialPortSettingsInfo.Parity,
                         DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
@@ -663,7 +741,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         StopBits = settingsDto.SerialPortSettingsInfo.StopBits,
                         DataFormat = settingsDto.SerialPortSettingsInfo.DataFormat
                     };
-                    SerialPortResultOutput = new SerialPortResultOutputModel() {
+                    SerialPortResultOutput = new SerialPortResultOutputModel()
+                    {
                         CustomOutputContent = settingsDto.SerialPortResultOutputInfo.CustomOutputContent,
                         IsUseCustomContentOutput =
                             settingsDto.SerialPortResultOutputInfo.IsUseCustomContentOutput,
@@ -671,14 +750,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                             settingsDto.SerialPortResultOutputInfo.IsUseDataTemplateOutput
                     };
                     IsUseAudioOutput = settingsDto.IsUseAudioOutput;
-                    AudioOutputSettingsInfo = new AudioOutputSettingsInfoModel() {
+                    AudioOutputSettingsInfo = new AudioOutputSettingsInfoModel()
+                    {
                         FailureAudio = settingsDto.AudioOutputSettingsInfo.FailureAudio,
                         Result = settingsDto.AudioOutputSettingsInfo.Result,
                         SuccessAudio = settingsDto.AudioOutputSettingsInfo.SuccessAudio,
                         TriggerPosition = settingsDto.AudioOutputSettingsInfo.TriggerPosition,
                     };
                     IsUseLocationOutput = settingsDto.IsUseLocationOutput;
-                    LocationOutputSettingsInfo = new LocationOutputSettingsInfoModel() {
+                    LocationOutputSettingsInfo = new LocationOutputSettingsInfoModel()
+                    {
                         BarcodeOutputKey = settingsDto.LocationOutputSettingsInfo.BarcodeOutputKey,
                         BarcodeOutputPosition =
                             settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition,

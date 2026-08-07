@@ -47,20 +47,16 @@ namespace JayTom.Dws.Interface.Wdt {
 
             var pairs = dictionary.OrderBy(o => o.Key);
             var signString = ApiParameters.AppSecret +
-                             string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>())
+                             string.Join("", pairs?.Select(s => s.Key + s.Value) ?? [])
                              + JsonConvert.SerializeObject(data) + ApiParameters.AppSecret;
 
             //转MD5
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));
-                var strResult = BitConverter.ToString(result);
-                sign = strResult.Replace("-", "");
-            }
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+            var sign = Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(signString)));
             dictionary.Add("sign", sign);
             dictionary.Remove("body");
             //拼接url
-            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? Array.Empty<string>());
+            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? []);
 
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
@@ -161,19 +157,15 @@ namespace JayTom.Dws.Interface.Wdt {
             };
 
             var pairs = dictionary.OrderBy(o => o.Key);
-            var signString = ApiParameters.AppSecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + JsonConvert.SerializeObject(data) + ApiParameters.AppSecret;
+            var signString = ApiParameters.AppSecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? []) + JsonConvert.SerializeObject(data) + ApiParameters.AppSecret;
 
             //转MD5
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));
-                var strResult = BitConverter.ToString(result);
-                sign = strResult.Replace("-", "");
-            }
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+            var sign = Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(signString)));
             dictionary.Add("sign", sign);
             dictionary.Remove("body");
             //拼接url
-            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? Array.Empty<string>());
+            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? []);
 
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();

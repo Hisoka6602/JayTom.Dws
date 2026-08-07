@@ -7,16 +7,22 @@ using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters {
+namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters
+{
 
-    public class BarcodeQueueOrderConverter : IValueConverter {
+    public class BarcodeQueueOrderConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is BarcodeQueueOrderEnum method) {
-                if (parameter?.ToString()?.Equals("TimeAscending") == true && method == BarcodeQueueOrderEnum.TimeAscending) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is BarcodeQueueOrderEnum method)
+            {
+                if (parameter?.ToString()?.Equals("TimeAscending") == true && method == BarcodeQueueOrderEnum.TimeAscending)
+                {
                     return true;
                 }
-                else if (parameter?.ToString()?.Equals("TimeDescending") == true && method == BarcodeQueueOrderEnum.TimeDescending) {
+                else if (parameter?.ToString()?.Equals("TimeDescending") == true && method == BarcodeQueueOrderEnum.TimeDescending)
+                {
                     return true;
                 }
                 return false;
@@ -24,12 +30,16 @@ namespace JayTom.Dws.Client.Converters.CreatePackageSettingConverters {
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is bool boolValue) {
-                if (parameter?.ToString()?.Equals("TimeAscending") == true && boolValue) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                if (parameter?.ToString()?.Equals("TimeAscending") == true && boolValue)
+                {
                     return BarcodeQueueOrderEnum.TimeAscending;
                 }
-                else if (parameter?.ToString()?.Equals("TimeDescending") == true && boolValue) {
+                else if (parameter?.ToString()?.Equals("TimeDescending") == true && boolValue)
+                {
                     return BarcodeQueueOrderEnum.TimeDescending;
                 }
                 return BarcodeQueueOrderEnum.TimeAscending;

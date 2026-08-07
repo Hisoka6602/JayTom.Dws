@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration
+{
     /// <summary>
     /// GrayscaleDeviceSettingsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class GrayscaleDeviceSettingsPage : Page {
-        public GrayscaleDeviceSettingsPage() {
+    public partial class GrayscaleDeviceSettingsPage : Page
+    {
+        public GrayscaleDeviceSettingsPage()
+        {
             InitializeComponent();
         }
     }

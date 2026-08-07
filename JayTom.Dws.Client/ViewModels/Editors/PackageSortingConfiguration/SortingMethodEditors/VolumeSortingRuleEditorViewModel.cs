@@ -11,8 +11,10 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
-    public class VolumeSortingRuleEditorViewModel : BindableBase {
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
+{
+    public class VolumeSortingRuleEditorViewModel : BindableBase
+    {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private bool _isOk;
@@ -26,19 +28,22 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private ObservableCollection<VolumeRuleItemInfoModel> _volumeRuleItems = new();
         private VolumeSortingItemInfoModel _volumeSortingItemInfo = new();
 
-        public VolumeSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public VolumeSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
         /// <summary>
         /// 窗口标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
@@ -46,7 +51,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 异常内容
         /// </summary>
-        public string ExceptionContent {
+        public string ExceptionContent
+        {
             get => _exceptionContent;
             set => SetProperty(ref _exceptionContent, value);
         }
@@ -54,7 +60,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 公式
         /// </summary>
-        public string Formula {
+        public string Formula
+        {
             get => _formula;
             set => SetProperty(ref _formula, value);
         }
@@ -67,7 +74,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用模板公式
         /// </summary>
-        public bool IsUseTemplateFormula {
+        public bool IsUseTemplateFormula
+        {
             get => _isUseTemplateFormula;
             set => SetProperty(ref _isUseTemplateFormula, value);
         }
@@ -75,22 +83,26 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// /是否使用自定义公式
         /// </summary>
-        public bool IsUseCustomFormula {
+        public bool IsUseCustomFormula
+        {
             get => _isUseCustomFormula;
             set => SetProperty(ref _isUseCustomFormula, value);
         }
 
-        public ObservableCollection<ItemBaseTemplateModel> FormulaTemplate {
+        public ObservableCollection<ItemBaseTemplateModel> FormulaTemplate
+        {
             get => _formulaTemplate;
             set => SetProperty(ref _formulaTemplate, value);
         }
 
-        public ObservableCollection<VolumeRuleItemInfoModel> VolumeRuleItems {
+        public ObservableCollection<VolumeRuleItemInfoModel> VolumeRuleItems
+        {
             get => _volumeRuleItems;
             set => SetProperty(ref _volumeRuleItems, value);
         }
 
-        public VolumeSortingItemInfoModel VolumeSortingItemInfo {
+        public VolumeSortingItemInfoModel VolumeSortingItemInfo
+        {
             get => _volumeSortingItemInfo;
             set => SetProperty(ref _volumeSortingItemInfo, value);
         }
@@ -98,7 +110,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 格口列表
         /// </summary>
-        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems
+        {
             get => _packageExitDefinitionItems;
             set => SetProperty(ref _packageExitDefinitionItems, value);
         }
@@ -106,7 +119,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 绑定的格口
         /// </summary>
-        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo {
+        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo
+        {
             get => _selectPackageExitDefinitionInfo;
             set => SetProperty(ref _selectPackageExitDefinitionInfo, value);
         }
@@ -114,16 +128,21 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 添加数据模板
         /// </summary>
-        public ICommand AddDataItemCommand {
+        public ICommand AddDataItemCommand
+        {
             get => new DelegateCommand<string>(AddDataItemDelegate);
         }
 
-        private async void AddDataItemDelegate(string obj) {
+        private async void AddDataItemDelegate(string obj)
+        {
             //判断前面是空或者连接符
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (!FormulaTemplate.Any() || FormulaTemplate.LastOrDefault()?.Type == 6) {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (!FormulaTemplate.Any() || FormulaTemplate.LastOrDefault()?.Type == 6)
+                {
                     obj = obj.Replace("'", string.Empty);
-                    FormulaTemplate.Add(new ItemBaseTemplateModel {
+                    FormulaTemplate.Add(new ItemBaseTemplateModel
+                    {
                         Content = obj,
                         Id = FormulaTemplate.Count,
                         Type = 1,
@@ -137,16 +156,21 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 添加运算符
         /// </summary>
-        public ICommand AddOperatorCommand {
+        public ICommand AddOperatorCommand
+        {
             get => new DelegateCommand<string>(AddOperatorDelegate);
         }
 
-        private async void AddOperatorDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void AddOperatorDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 //添加之前判断前面是不是普通值
-                if (FormulaTemplate.LastOrDefault()?.Type == 1) {
+                if (FormulaTemplate.LastOrDefault()?.Type == 1)
+                {
                     obj = obj.Replace("'", string.Empty);
-                    FormulaTemplate.Add(new ItemBaseTemplateModel {
+                    FormulaTemplate.Add(new ItemBaseTemplateModel
+                    {
                         Content = obj,
                         Id = FormulaTemplate.Count,
                         Type = 4,
@@ -161,18 +185,24 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 添加参照值
         /// </summary>
-        public ICommand AddReferenceValueCommand {
+        public ICommand AddReferenceValueCommand
+        {
             get => new DelegateCommand<string>(AddReferenceValueDelegate);
         }
 
-        private async void AddReferenceValueDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void AddReferenceValueDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 //添加之前判断前面是不是普通值
-                if (FormulaTemplate.LastOrDefault()?.Type == 4) {
+                if (FormulaTemplate.LastOrDefault()?.Type == 4)
+                {
                     obj = obj.Replace("'", string.Empty);
                     var tryParse = float.TryParse(obj, out _);
-                    if (tryParse) {
-                        FormulaTemplate.Add(new ItemBaseTemplateModel {
+                    if (tryParse)
+                    {
+                        FormulaTemplate.Add(new ItemBaseTemplateModel
+                        {
                             Content = obj,
                             Id = FormulaTemplate.Count,
                             Type = 5,
@@ -188,17 +218,22 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 添加拼接函数
         /// </summary>
-        public ICommand AddStitchingCommand {
+        public ICommand AddStitchingCommand
+        {
             get => new DelegateCommand<string>(AddStitchingDelegate);
         }
 
-        private async void AddStitchingDelegate(string obj) {
+        private async void AddStitchingDelegate(string obj)
+        {
             //判断前面是不是参照值
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 //添加之前判断前面是不是普通值
-                if (FormulaTemplate.LastOrDefault()?.Type == 5) {
+                if (FormulaTemplate.LastOrDefault()?.Type == 5)
+                {
                     obj = obj.Replace("'", string.Empty);
-                    FormulaTemplate.Add(new ItemBaseTemplateModel {
+                    FormulaTemplate.Add(new ItemBaseTemplateModel
+                    {
                         Content = obj,
                         Id = FormulaTemplate.Count,
                         Type = 6,
@@ -213,24 +248,32 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 移除标记
         /// </summary>
-        public ICommand RemoveTemplateItemCommand {
+        public ICommand RemoveTemplateItemCommand
+        {
             get => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
         }
 
-        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (model.ApplicationType == ItemApplicationType.Formula) {
+        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (model.ApplicationType == ItemApplicationType.Formula)
+                {
                     var indexOf = FormulaTemplate.IndexOf(model);
 
-                    if (indexOf != -1) {
-                        for (int i = FormulaTemplate.Count - 1; i >= indexOf; i--) {
+                    if (indexOf != -1)
+                    {
+                        for (int i = FormulaTemplate.Count - 1; i >= indexOf; i--)
+                        {
                             FormulaTemplate.RemoveAt(i);
                         }
                     }
                     //FormulaTemplate.Remove(model);
-                    foreach (var item in FormulaTemplate) {
+                    foreach (var item in FormulaTemplate)
+                    {
                         if (item.Type == 0 && string.IsNullOrEmpty(item.Content) &&
-                            FormulaTemplate.LastOrDefault() != item) {
+                            FormulaTemplate.LastOrDefault() != item)
+                        {
                             FormulaTemplate.Remove(item);
                         }
                     }
@@ -240,12 +283,17 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        private string ChangeFormulaContent(ObservableCollection<ItemBaseTemplateModel> dataTemplate) {
+        private string ChangeFormulaContent(ObservableCollection<ItemBaseTemplateModel> dataTemplate)
+        {
             var formulaContent = string.Empty;
-            foreach (var templateModel in dataTemplate) {
-                if (templateModel.ApplicationType == ItemApplicationType.Formula) {
-                    switch (templateModel.Type) {
-                        case 1: {
+            foreach (var templateModel in dataTemplate)
+            {
+                if (templateModel.ApplicationType == ItemApplicationType.Formula)
+                {
+                    switch (templateModel.Type)
+                    {
+                        case 1:
+                            {
                                 var replace = templateModel.Content.Replace("{", string.Empty).Replace("}", string.Empty);
                                 formulaContent += $"{replace} ";
                                 break;
@@ -260,18 +308,22 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             return formulaContent;
         }
 
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private async void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj)
+        {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
-                    new PackageExitDefinitionItemInfoModel {
+                    new PackageExitDefinitionItemInfoModel
+                    {
                         CreateTime = s.CreateTime,
                         ExitName = $"{s.ExitName}{(s.IsActive ? "" : "(未生效)")}",
                         Id = s.Id,
@@ -282,7 +334,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                         Type = s.Type
                     })?.ToList();
 
-                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                if (packageExitDefinitionItemInfoModels?.Any() == true)
+                {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
                         f.Id.Equals(VolumeSortingItemInfo.ExitId));
@@ -292,31 +345,41 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand DeleteFormulaCommand {
+        public ICommand DeleteFormulaCommand
+        {
             get => new DelegateCommand<VolumeRuleItemInfoModel>(DeleteFormulaDelegate);
         }
 
-        private async void DeleteFormulaDelegate(VolumeRuleItemInfoModel obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void DeleteFormulaDelegate(VolumeRuleItemInfoModel obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 VolumeRuleItems.Remove(obj);
                 //调整Num
-                if (VolumeRuleItems?.Any() == true) {
-                    for (var i = 0; i < VolumeRuleItems.Count; i++) {
+                if (VolumeRuleItems?.Any() == true)
+                {
+                    for (var i = 0; i < VolumeRuleItems.Count; i++)
+                    {
                         VolumeRuleItems[i].Num = i + 1;
                     }
                 }
             });
         }
 
-        public ICommand SaveRuleCommand {
+        public ICommand SaveRuleCommand
+        {
             get => new DelegateCommand<object>(SaveRuleDelegate);
         }
 
-        private async void SaveRuleDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void SaveRuleDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 string formula = IsUseCustomFormula ? CustomFormula : Formula;
-                if (!string.IsNullOrEmpty(formula) && !VolumeRuleItems.Any(a => a.Formula.Equals(formula))) {
-                    VolumeRuleItems.Add(new VolumeRuleItemInfoModel() {
+                if (!string.IsNullOrEmpty(formula) && !VolumeRuleItems.Any(a => a.Formula.Equals(formula)))
+                {
+                    VolumeRuleItems.Add(new VolumeRuleItemInfoModel()
+                    {
                         CreateTime = DateTime.Now,
                         Formula = formula,
                         ModifyTime = DateTime.Now,
@@ -327,49 +390,61 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public ICommand ClearConditionsCommand {
+        public ICommand ClearConditionsCommand
+        {
             get => new DelegateCommand<object>(ClearConditionsDelegate);
         }
 
-        private void ClearConditionsDelegate(object obj) {
+        private void ClearConditionsDelegate(object obj)
+        {
             Formula = CustomFormula = string.Empty;
             FormulaTemplate.Clear();
         }
 
-        public ICommand SaveCommand {
+        public ICommand SaveCommand
+        {
             get => new DelegateCommand(SaveDelegate);
         }
 
-        private void SaveDelegate() {
-            try {
+        private void SaveDelegate()
+        {
+            try
+            {
                 IsOk = true;
                 VolumeSortingItemInfo.ModifyTime = DateTime.Now;
                 Pitcher.Throw.ArgumentNull.WhenNull(VolumeSortingItemInfo, nameof(VolumeSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(VolumeSortingItemInfo.SortingName, nameof(VolumeSortingItemInfo.SortingName));
-                if (!VolumeRuleItems.Any()) {
+                if (!VolumeRuleItems.Any())
+                {
                     throw new Exception("物流不能为空!");
                 }
-                if (SelectPackageExitDefinitionInfo.Id <= 0) {
+                if (SelectPackageExitDefinitionInfo.Id <= 0)
+                {
                     throw new Exception("格口未选择!");
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 IsOk = false;
                 ExceptionContent = e.Message;
             }
 
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
-        public ICommand CancelCommand {
+        public ICommand CancelCommand
+        {
             get => new DelegateCommand(CancelDelegate);
         }
 
-        private void CancelDelegate() {
+        private void CancelDelegate()
+        {
             IsOk = false;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }

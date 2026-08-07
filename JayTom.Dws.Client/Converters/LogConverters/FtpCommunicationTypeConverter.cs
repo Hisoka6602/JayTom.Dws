@@ -8,14 +8,20 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters.LogConverters {
+namespace JayTom.Dws.Client.Converters.LogConverters
+{
 
-    public class FtpCommunicationTypeConverter : IValueConverter {
+    public class FtpCommunicationTypeConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is FtpCommunicationType type) {
-                if (parameter?.ToString()?.Equals("Color") == true) {
-                    switch (type) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is FtpCommunicationType type)
+            {
+                if (parameter?.ToString()?.Equals("Color") == true)
+                {
+                    switch (type)
+                    {
                         case FtpCommunicationType.Connect:
                             return new SolidColorBrush(Colors.DodgerBlue);
 
@@ -29,8 +35,10 @@ namespace JayTom.Dws.Client.Converters.LogConverters {
                             return Binding.DoNothing;
                     }
                 }
-                else if (parameter?.ToString()?.Equals("Text") == true) {
-                    switch (type) {
+                else if (parameter?.ToString()?.Equals("Text") == true)
+                {
+                    switch (type)
+                    {
                         case FtpCommunicationType.Connect:
                             return "连接";
 
@@ -44,8 +52,10 @@ namespace JayTom.Dws.Client.Converters.LogConverters {
                             return Binding.DoNothing;
                     }
                 }
-                else if (parameter?.ToString()?.Equals("Font") == true) {
-                    switch (type) {
+                else if (parameter?.ToString()?.Equals("Font") == true)
+                {
+                    switch (type)
+                    {
                         case FtpCommunicationType.Connect:
                             return "\xe7f6";
 
@@ -63,7 +73,8 @@ namespace JayTom.Dws.Client.Converters.LogConverters {
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences {
+namespace JayTom.Dws.Client.Views.Pages.Preferences
+{
     /// <summary>
     /// CreatePackageSettingsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class CreatePackageSettingsPage : Page {
-        public CreatePackageSettingsPage() {
+    public partial class CreatePackageSettingsPage : Page
+    {
+        public CreatePackageSettingsPage()
+        {
             InitializeComponent();
         }
     }

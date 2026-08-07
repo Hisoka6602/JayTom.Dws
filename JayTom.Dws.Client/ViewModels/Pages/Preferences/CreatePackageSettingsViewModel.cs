@@ -20,28 +20,36 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class CreatePackageSettingsViewModel : SettingsPageTemplateViewModel {
+    public class CreatePackageSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IDeviceService _deviceService;
         private CreatePackageSettingsInfoModel _createPackageSettingsInfo = new();
         private bool _isLoaded;
 
-        public CreatePackageSettingsViewModel(IConfigRepository configRepository, IDeviceService deviceService) : base(configRepository) {
+        public CreatePackageSettingsViewModel(IConfigRepository configRepository, IDeviceService deviceService) : base(configRepository)
+        {
             _deviceService = deviceService;
         }
 
-        public CreatePackageSettingsInfoModel CreatePackageSettingsInfo {
+        public CreatePackageSettingsInfoModel CreatePackageSettingsInfo
+        {
             get => _createPackageSettingsInfo;
             set => SetProperty(ref _createPackageSettingsInfo, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var deserializeObject = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(SettingsName) ?? new CreatePackageSettingsDto();
-                    CreatePackageSettingsInfo = new CreatePackageSettingsInfoModel() {
+                    CreatePackageSettingsInfo = new CreatePackageSettingsInfoModel()
+                    {
                         IsUseEmptyPackageExpiry = deserializeObject.IsUseEmptyPackageExpiry,
                         EmptyPackageExpiryTime = deserializeObject.EmptyPackageExpiryTime,
                         IsUsePackageExpiry = deserializeObject.IsUsePackageExpiry,
@@ -60,7 +68,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         IsUseBarcodeAssignmentInterval = deserializeObject.IsUseBarcodeAssignmentInterval,
                         PackageCreationMethodItems = new ObservableCollection<PackageCreationMethodItemInfoModel>(Enum.GetValues(typeof(PackageCreationMethodsEnum))
                             .Cast<PackageCreationMethodsEnum>()
-                            .ToList().Select(s => new PackageCreationMethodItemInfoModel {
+                            .ToList().Select(s => new PackageCreationMethodItemInfoModel
+                            {
                                 DisplayName = s.GetDescription(),
                                 EnumValue = s,
                             })?.ToList() ?? new List<PackageCreationMethodItemInfoModel>())
@@ -70,7 +79,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                         .Where(e => deserializeObject.PackageCreationMethods.HasFlag(e))
                         .ToList();
                     foreach (var infoModel in includedEnums.Select(methodsEnum => CreatePackageSettingsInfo.PackageCreationMethodItems.FirstOrDefault(f =>
-                                 f.EnumValue.Equals(methodsEnum))).OfType<PackageCreationMethodItemInfoModel>()) {
+                                 f.EnumValue.Equals(methodsEnum))).OfType<PackageCreationMethodItemInfoModel>())
+                    {
                         infoModel.IsChecked = true;
                     }
                 });
@@ -80,19 +90,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public override string Identifier => "CreatePackageSettingsDialogHost";
         public override string SettingsName => "CreatePackageSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            if (_deviceService.RunningStatus) {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            if (_deviceService.RunningStatus)
+            {
                 IsSavingInProgress = false;
                 base.MessageQueue.Enqueue($"设备工作中,无法设置");
                 return false;
             }
             CreatePackageSettingsInfo.PackageCreationMethods = 0;
-            foreach (var item in CreatePackageSettingsInfo.PackageCreationMethodItems.Where(w => w.IsChecked).ToList()) {
+            foreach (var item in CreatePackageSettingsInfo.PackageCreationMethodItems.Where(w => w.IsChecked).ToList())
+            {
                 CreatePackageSettingsInfo.PackageCreationMethods |= item.EnumValue;
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto() {
+                Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto()
+                {
                     IsUseEmptyPackageExpiry = CreatePackageSettingsInfo.IsUseEmptyPackageExpiry,
                     EmptyPackageExpiryTime = CreatePackageSettingsInfo.EmptyPackageExpiryTime,
                     IsUsePackageExpiry = CreatePackageSettingsInfo.IsUsePackageExpiry,

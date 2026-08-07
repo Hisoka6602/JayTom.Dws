@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 
-namespace JayTom.Dws.Client.Service.Device {
+namespace JayTom.Dws.Client.Service.Device
+{
 
     /// <summary>
     /// 灰度仪管理器
     /// </summary>
-    public interface IGrayscaleService {
+    public interface IGrayscaleService
+    {
 
         /// <summary>
         /// 是否已连接

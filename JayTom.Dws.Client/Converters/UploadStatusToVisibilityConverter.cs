@@ -11,11 +11,15 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters
 {
 
-    public class UploadStatusToVisibilityConverter : IValueConverter {
+    public class UploadStatusToVisibilityConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is UploadStatus uploadStatus) {
-                return uploadStatus switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is UploadStatus uploadStatus)
+            {
+                return uploadStatus switch
+                {
                     UploadStatus.NotUploaded => Visibility.Collapsed,
                     _ => Visibility.Visible,
                 };
@@ -23,7 +27,8 @@ namespace JayTom.Dws.Client.Converters
             return Visibility.Visible;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

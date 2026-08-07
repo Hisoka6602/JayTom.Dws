@@ -94,7 +94,7 @@ namespace JayTom.Dws.Infrastructure {
             /// <summary>
             /// 获取数据库初始化过程使用的同步对象。
             /// </summary>
-            public object SyncRoot { get; } = new();
+            public System.Threading.Lock SyncRoot { get; } = new();
 
             /// <summary>
             /// 表示初始化是否已经成功完成。

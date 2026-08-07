@@ -1,61 +1,62 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.CacheClearSettings {
+namespace JayTom.Dws.Client.Models.CacheClearSettings
+{
 
-    public class FtpUsageInfo : BindableBase {
-        private long _usedBytes;
-        private double _dataUsagePercentage;
-        private double _scanImageUsagePercentage;
-        private double _panoramaImageUsagePercentage;
-        private double _otherUsagePercentage;
-        private double _diskUsagePercentage;
-
+    public class FtpUsageInfo : BindableBase
+    {
         /// <summary>
         /// 磁盘占用百分比
         /// </summary>
-        public double DiskUsagePercentage {
-            get => _diskUsagePercentage;
-            set => SetProperty(ref _diskUsagePercentage, value);
+        public double DiskUsagePercentage
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// FTP已使用字节数
         /// </summary>
-        public long UsedBytes {
-            get => _usedBytes;
-            set => SetProperty(ref _usedBytes, value);
+        public long UsedBytes
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// 数据占用百分比
         /// </summary>
-        public double DataUsagePercentage {
-            get => _dataUsagePercentage;
-            set => SetProperty(ref _dataUsagePercentage, value);
+        public double DataUsagePercentage
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// 扫码图片占用百分比
         /// </summary>
-        public double ScanImageUsagePercentage {
-            get => _scanImageUsagePercentage;
-            set => SetProperty(ref _scanImageUsagePercentage, value);
+        public double ScanImageUsagePercentage
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// 全景图片占用百分比
         /// </summary>
-        public double PanoramaImageUsagePercentage {
-            get => _panoramaImageUsagePercentage;
-            set => SetProperty(ref _panoramaImageUsagePercentage, value);
+        public double PanoramaImageUsagePercentage
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         /// <summary>
         /// 非程序占用百分比
         /// </summary>
-        public double OtherUsagePercentage {
-            get => _otherUsagePercentage;
-            set => SetProperty(ref _otherUsagePercentage, value);
+        public double OtherUsagePercentage
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.WeightSettingsModel {
-    public class AdditionalWeightPropertiesModel : BindableBase {
+namespace JayTom.Dws.Client.Models.WeightSettingsModel
+{
+    public class AdditionalWeightPropertiesModel : BindableBase
+    {
         private bool _isUseActualWeightConversionRate;
         private double _weightConversionRate;
         private bool _isUseAppendedWeight;
@@ -14,7 +16,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 是否使用实际重量转换率
         /// </summary>
-        public bool IsUseActualWeightConversionRate {
+        public bool IsUseActualWeightConversionRate
+        {
             get => _isUseActualWeightConversionRate;
             set => SetProperty(ref _isUseActualWeightConversionRate, value);
         }
@@ -22,7 +25,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 重量转换率
         /// </summary>
-        public double WeightConversionRate {
+        public double WeightConversionRate
+        {
             get => _weightConversionRate;
             set => SetProperty(ref _weightConversionRate, value);
         }
@@ -30,7 +34,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 是否使用追加重量
         /// </summary>
-        public bool IsUseAppendedWeight {
+        public bool IsUseAppendedWeight
+        {
             get => _isUseAppendedWeight;
             set => SetProperty(ref _isUseAppendedWeight, value);
         }
@@ -38,7 +43,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 追加重量的值
         /// </summary>
-        public double AppendedWeightValue {
+        public double AppendedWeightValue
+        {
             get => _appendedWeightValue;
             set => SetProperty(ref _appendedWeightValue, value);
         }
@@ -46,7 +52,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 是否使用固定重量
         /// </summary>
-        public bool IsUseFixedWeight {
+        public bool IsUseFixedWeight
+        {
             get => _isUseFixedWeight;
             set => SetProperty(ref _isUseFixedWeight, value);
         }
@@ -54,7 +61,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 固定重量的值
         /// </summary>
-        public double FixedWeightValue {
+        public double FixedWeightValue
+        {
             get => _fixedWeightValue;
             set => SetProperty(ref _fixedWeightValue, value);
         }
@@ -62,7 +70,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 是否使用融合重量超时
         /// </summary>
-        public bool IsUseMergedWeightTimeout {
+        public bool IsUseMergedWeightTimeout
+        {
             get => _isUseMergedWeightTimeout;
             set => SetProperty(ref _isUseMergedWeightTimeout, value);
         }
@@ -70,7 +79,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 融合重量超时时间
         /// </summary>
-        public int MergedWeightTimeout {
+        public int MergedWeightTimeout
+        {
             get => _mergedWeightTimeout;
             set => SetProperty(ref _mergedWeightTimeout, value);
         }

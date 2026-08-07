@@ -256,8 +256,8 @@ namespace JayTom.Dws.Interface.CaiNiao {
                         @params=new
                         {
                             barCode=barcode,
-                            chuteCode=new string(reportChuteInfo.ChuteCode.Where(char.IsDigit).ToArray()),
-                            chuteCodePhysical=new string(reportChuteInfo.ChuteCodePhysical.Where(char.IsDigit).ToArray()),
+                            chuteCode=new string([.. reportChuteInfo.ChuteCode.Where(char.IsDigit)]),
+                            chuteCodePhysical=new string([.. reportChuteInfo.ChuteCodePhysical.Where(char.IsDigit)]),
                             status=reportChuteInfo.Status,
                             errorReson=reportChuteInfo.ErrorReson,
                             bcrCode= Parameters.BcrCode,
@@ -307,14 +307,14 @@ namespace JayTom.Dws.Interface.CaiNiao {
                         @params=new
                         {
                             barCodeList=packageItems,
-                            chuteCode=new string(packageExit.Where(char.IsDigit).ToArray()) ,
+                            chuteCode=new string([.. packageExit.Where(char.IsDigit)]) ,
                             bcrCode= Parameters.BcrCode,
                             bcrName=Parameters.BcrName,
                         }
                     }
                 },
             };
-            NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:格口:{new string(packageExit.Where(char.IsDigit).ToArray())},包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
+            NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:格口:{new string([.. packageExit.Where(char.IsDigit)])},包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
 
             try {
                 using var httpClient = _httpClientFactory.CreateClient("INSURANCE");

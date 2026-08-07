@@ -13,13 +13,18 @@ using JayTom.Dws.Client.Attributes;
 using JayTom.Dws.Camera.Attributes;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace JayTom.Dws.Client.Converters.AttributeConverters {
+namespace JayTom.Dws.Client.Converters.AttributeConverters
+{
 
-    public class EnumAttributeConverter : IValueConverter {
+    public class EnumAttributeConverter : IValueConverter
+    {
 
-        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-            if (value is Enum enumValue && parameter is string parameterString) {
-                switch (parameterString.ToLowerInvariant()) {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (value is Enum enumValue && parameter is string parameterString)
+            {
+                switch (parameterString.ToLowerInvariant())
+                {
                     case "description":
                         return enumValue.GetDescription();
 
@@ -70,7 +75,8 @@ namespace JayTom.Dws.Client.Converters.AttributeConverters {
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

@@ -22,23 +22,28 @@ using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
+{
 
-    public class OtherSettingsViewModel : SettingsPageTemplateViewModel {
+    public class OtherSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private OtherSettingsModel _otherSettingsInfo = new();
         private ImageSource? _icon;
         private string _fileName = string.Empty;
         private bool _isLoaded;
 
-        public OtherSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public OtherSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
-        public OtherSettingsModel OtherSettingsInfo {
+        public OtherSettingsModel OtherSettingsInfo
+        {
             get => _otherSettingsInfo;
             set => SetProperty(ref _otherSettingsInfo, value);
         }
 
-        public string FileName {
+        public string FileName
+        {
             get => _fileName;
             set => SetProperty(ref _fileName, value);
         }
@@ -46,7 +51,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         /// <summary>
         /// 图标
         /// </summary>
-        public ImageSource? Icon {
+        public ImageSource? Icon
+        {
             get => _icon;
             set => SetProperty(ref _icon, value);
         }
@@ -54,21 +60,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
         public override string Identifier => "OtherSettingsDialogHost";
         public override string SettingsName => "OtherSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            try {
-                if (!Directory.Exists($"{AppContext.BaseDirectory}Logo")) {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            try
+            {
+                if (!Directory.Exists($"{AppContext.BaseDirectory}Logo"))
+                {
                     //创建图片路径
                     Directory.CreateDirectory($"{AppContext.BaseDirectory}Logo");
                 }
                 var dest = string.Empty;
-                if (!string.IsNullOrEmpty(FileName)) {
+                if (!string.IsNullOrEmpty(FileName))
+                {
                     dest = $"{AppContext.BaseDirectory}Logo\\{new FileInfo(FileName).Name}";
                     File.Copy(FileName, dest, true);
                 }
 
-                var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = SettingsName,
-                    Value = JsonConvert.SerializeObject(new OtherSettingsDto() {
+                    Value = JsonConvert.SerializeObject(new OtherSettingsDto()
+                    {
                         IsAutoMaximize = OtherSettingsInfo.IsAutoMaximize,
                         IsAutoStart = OtherSettingsInfo.IsAutoStart,
                         ProgramTitle = OtherSettingsInfo.ProgramTitle,
@@ -76,29 +88,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                         IsAutoRunEnabled = OtherSettingsInfo.IsAutoRunEnabled
                     })
                 });
-                if (insertOrUpdate) {
+                if (insertOrUpdate)
+                {
                     SetAutoRun(OtherSettingsInfo.IsAutoRunEnabled);
                     base.MessageQueue.Enqueue($"保存成功!");
                     return true;
                 }
-                else {
+                else
+                {
                     base.MessageQueue.Enqueue($"保存失败!");
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 base.MessageQueue.Enqueue(e.Message);
             }
 
             return false;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var otherSettingsDto = await _configRepository.FirstOrDefaultEntity<OtherSettingsDto>(SettingsName);
-                    if (otherSettingsDto is not null) {
-                        OtherSettingsInfo = new OtherSettingsModel() {
+                    if (otherSettingsDto is not null)
+                    {
+                        OtherSettingsInfo = new OtherSettingsModel()
+                        {
                             IsAutoMaximize = otherSettingsDto.IsAutoMaximize,
                             IsAutoStart = otherSettingsDto.IsAutoStart,
                             ProgramLogoPath = otherSettingsDto.ProgramLogoPath,
@@ -106,24 +126,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                             IsAutoRunEnabled = otherSettingsDto.IsAutoRunEnabled
                         };
                     }
-                    else {
+                    else
+                    {
                         base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("加载设置失败") ?? string.Empty}");
                     }
                     //检查图片是否存在
                     //加载图片
-                    if (File.Exists(OtherSettingsInfo.ProgramLogoPath)) {
+                    if (File.Exists(OtherSettingsInfo.ProgramLogoPath))
+                    {
                         Icon = CreateBitmapImage(new Uri(OtherSettingsInfo.ProgramLogoPath), 30, 30);
                     }
                 });
             }
         }
 
-        public ICommand LoadImageCommand {
+        public ICommand LoadImageCommand
+        {
             get => new DelegateCommand<object>(LoadImageDelegate);
         }
 
-        private async void LoadImageDelegate(object obj) {
-            var openFileDialog = new OpenFileDialog() {
+        private async void LoadImageDelegate(object obj)
+        {
+            var openFileDialog = new OpenFileDialog()
+            {
                 Filter = @"*.PNG|*.PNG",
                 InitialDirectory = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                 CheckFileExists = true,
@@ -132,9 +157,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                 RestoreDirectory = true,
             };
             var showDialog = openFileDialog.ShowDialog();
-            if (showDialog == DialogResult.OK) {
-                if (!string.IsNullOrEmpty(openFileDialog.FileName)) {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            if (showDialog == DialogResult.OK)
+            {
+                if (!string.IsNullOrEmpty(openFileDialog.FileName))
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
                         Icon = CreateBitmapImage(new Uri(openFileDialog.FileName), 30, 30);
                         FileName = openFileDialog.FileName;
                     });
@@ -142,8 +170,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             }
         }
 
-        public BitmapImage CreateBitmapImage(Uri uri, int width, int height) {
-            try {
+        public BitmapImage CreateBitmapImage(Uri uri, int width, int height)
+        {
+            try
+            {
                 var image = new BitmapImage();
                 image.BeginInit();
                 image.UriSource = uri;
@@ -153,23 +183,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
                 image.EndInit();
                 return image;
             }
-            catch {
+            catch
+            {
                 // ignored
             }
 
             return null;
         }
 
-        private void SetAutoRun(bool enable) {
+        private void SetAutoRun(bool enable)
+        {
             var isAdministrator = IsAdministrator();
             var mainModuleFileName = Process.GetCurrentProcess().MainModule?.FileName;
-            if (!string.IsNullOrEmpty(mainModuleFileName)) {
-                using (var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true)) {
-                    if (enable) {
+            if (!string.IsNullOrEmpty(mainModuleFileName))
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+                {
+                    if (enable)
+                    {
                         // 设置开机自动运行
                         key?.SetValue("Dws", System.Reflection.Assembly.GetExecutingAssembly().Location.Replace(".dll", ".exe"));
                     }
-                    else {
+                    else
+                    {
                         // 取消开机自动运行
                         key?.DeleteValue("Dws", false);
                     }
@@ -177,9 +213,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings {
             }
         }
 
-        public static bool IsAdministrator() {
+        public static bool IsAdministrator()
+        {
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            WindowsPrincipal principal = new(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
     }

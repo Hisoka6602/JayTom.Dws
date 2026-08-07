@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -23,7 +24,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <summary>
         /// 三段码与员工工号映射的异步缓存。
         /// </summary>
-        private static readonly Lazy<Task<IReadOnlyDictionary<string, string>>> DeliveryCodeCache =
+        private static readonly Lazy<Task<FrozenDictionary<string, string>>> DeliveryCodeCache =
             new(LoadDeliveryCodesAsync, LazyThreadSafetyMode.ExecutionAndPublication);
 
         /// <summary>
@@ -51,8 +52,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// </summary>
         /// <param name="httpClientFactory">HTTP 客户端工厂。</param>
         public JtExpressApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory ??
-                                 throw new ArgumentNullException(nameof(httpClientFactory));
+            ArgumentNullException.ThrowIfNull(httpClientFactory);
+            _httpClientFactory = httpClientFactory;
             _ = DeliveryCodeCache.Value;
         }
 
@@ -681,9 +682,9 @@ namespace JayTom.Dws.Interface.Jtexpress {
             CancellationToken token) {
             try {
                 var parameters = Volatile.Read(ref _parameters);
-                var passwordHash = Convert.ToHexString(
-                        MD5.HashData(Encoding.UTF8.GetBytes(passWord)))
-                    .ToLowerInvariant();
+                // DWS-HEX-COMPACT: 外部接口密码摘要要求使用无分隔符格式。
+                var passwordHash = Convert.ToHexStringLower(
+                    MD5.HashData(Encoding.UTF8.GetBytes(passWord)));
                 var request = new {
                     account = userName,
                     password = passwordHash,
@@ -800,17 +801,16 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// 在后台读取三段码与员工工号映射。
         /// </summary>
         /// <returns>只读映射。</returns>
-        private static Task<IReadOnlyDictionary<string, string>>
+        private static Task<FrozenDictionary<string, string>>
             LoadDeliveryCodesAsync() {
-            return Task.Run<IReadOnlyDictionary<string, string>>(async () => {
+            return Task.Run<FrozenDictionary<string, string>>(async () => {
                 try {
                     var directory = Path.Combine(
                         AppContext.BaseDirectory,
                         "ApiSettingJson",
                         "JtThreeSegmentCodeRout");
                     if (!Directory.Exists(directory)) {
-                        return new Dictionary<string, string>(
-                            StringComparer.OrdinalIgnoreCase);
+                        return FrozenDictionary<string, string>.Empty;
                     }
 
                     var excelFile = Directory
@@ -819,8 +819,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                         .OrderByDescending(file => file.LastWriteTime)
                         .FirstOrDefault();
                     if (excelFile is null) {
-                        return new Dictionary<string, string>(
-                            StringComparer.OrdinalIgnoreCase);
+                        return FrozenDictionary<string, string>.Empty;
                     }
 
                     var excel = new NpoiExport();
@@ -838,15 +837,14 @@ namespace JayTom.Dws.Interface.Jtexpress {
                         .GroupBy(
                             item => item.ThirdlyDispatchCode,
                             StringComparer.OrdinalIgnoreCase)
-                        .ToDictionary(
+                        .ToFrozenDictionary(
                             group => group.Key,
                             group => group.First().DeliveryCode,
                             StringComparer.OrdinalIgnoreCase);
                 }
                 catch (Exception exception) {
                     Logger.Error(exception, "加载极兔三段码路由表失败");
-                    return new Dictionary<string, string>(
-                        StringComparer.OrdinalIgnoreCase);
+                    return FrozenDictionary<string, string>.Empty;
                 }
             });
         }

@@ -12,50 +12,62 @@ using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.DataModels;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog {
+namespace JayTom.Dws.Client.ViewModels.Dialog
+{
 
-    public class PackageDetailsDialogViewModel : BindableBase, IDialogAware {
+    public class PackageDetailsDialogViewModel : BindableBase, IDialogAware
+    {
         private PackageItemModel _packageItem = new();
         private string _packageCreationInstruction = string.Empty;
         private string _sentInstruction = string.Empty;
         private string _receivedInstruction = string.Empty;
         private string _exceptionInstruction = string.Empty;
 
-        public string PackageCreationInstruction {
+        public string PackageCreationInstruction
+        {
             get => _packageCreationInstruction;
             set => SetProperty(ref _packageCreationInstruction, value);
         }
 
-        public string SentInstruction {
+        public string SentInstruction
+        {
             get => _sentInstruction;
             set => SetProperty(ref _sentInstruction, value);
         }
 
-        public string ReceivedInstruction {
+        public string ReceivedInstruction
+        {
             get => _receivedInstruction;
             set => SetProperty(ref _receivedInstruction, value);
         }
 
-        public string ExceptionInstruction {
+        public string ExceptionInstruction
+        {
             get => _exceptionInstruction;
             set => SetProperty(ref _exceptionInstruction, value);
         }
 
-        public PackageItemModel PackageItem {
+        public PackageItemModel PackageItem
+        {
             get => _packageItem;
             set => SetProperty(ref _packageItem, value);
         }
 
-        public bool CanCloseDialog() {
+        public bool CanCloseDialog()
+        {
             return true;
         }
 
-        public void OnDialogClosed() {
+        public void OnDialogClosed()
+        {
         }
 
-        public void OnDialogOpened(IDialogParameters parameters) {
-            foreach (Window window in Application.Current.Windows) {
-                if (window.Name.Equals("PackageDetailsDialog")) {
+        public void OnDialogOpened(IDialogParameters parameters)
+        {
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window.Name.Equals("PackageDetailsDialog"))
+                {
                     window.Close();
                 }
             }
@@ -64,7 +76,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                 ?.Select(s =>
                     $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
                 ?.ToList();
-            if (createPackageItems?.Any() == true) {
+            if (createPackageItems?.Any() == true)
+            {
                 PackageCreationInstruction = string.Join("\n", createPackageItems);
             }
 
@@ -72,7 +85,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                 ?.Select(s =>
                     $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
                 ?.ToList();
-            if (sendSortingItems?.Any() == true) {
+            if (sendSortingItems?.Any() == true)
+            {
                 SentInstruction = string.Join("\n", sendSortingItems);
             }
 
@@ -80,7 +94,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                 ?.Select(s =>
                     $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
                 ?.ToList();
-            if (signalCallbackItems?.Any() == true) {
+            if (signalCallbackItems?.Any() == true)
+            {
                 ReceivedInstruction = string.Join("\n", signalCallbackItems);
             }
 
@@ -89,7 +104,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
                 ?.Select(s =>
                     $"{s.InstructionGeneratedTime:yyyy-MM-dd HH:mm:ss.fff}->{s.InstructionContent}")
                 ?.ToList();
-            if (exceptionInstructionItems?.Any() == true) {
+            if (exceptionInstructionItems?.Any() == true)
+            {
                 ExceptionInstruction = string.Join("\n", exceptionInstructionItems);
             }
         }
@@ -100,21 +116,25 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public ICommand CloseWinCommand => new DelegateCommand<object>(CloseWinDelegate);
 
-        private void CloseWinDelegate(object obj) {
+        private void CloseWinDelegate(object obj)
+        {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
         }
 
         public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
 
-        private void LoadedDelegate(UserControl obj) {
+        private void LoadedDelegate(UserControl obj)
+        {
             var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
-            if (dialogWindow is not null) {
+            if (dialogWindow is not null)
+            {
                 dialogWindow.Owner = null;
                 dialogWindow.Name = "PackageDetailsDialog";
             }
         }
 
-        public class DetailsInstructionInfo {
+        public class DetailsInstructionInfo
+        {
             public DateTime? InstructionTime { get; set; }
             public string? Instruction { get; set; }
         }

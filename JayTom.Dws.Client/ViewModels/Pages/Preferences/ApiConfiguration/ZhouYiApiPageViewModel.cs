@@ -15,9 +15,11 @@ using JayTom.Dws.Interface.Jushuitan;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class ZhouYiApiPageViewModel : SettingsPageTemplateViewModel {
+    public class ZhouYiApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDialogService _dialogService;
         private ZhouYiApiModel _zhouYiApiInfo = new();
@@ -26,27 +28,32 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private double _weight;
 
         public ZhouYiApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory, IDialogService dialogService) : base(configRepository) {
+            IHttpClientFactory httpClientFactory, IDialogService dialogService) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
         }
 
-        public ZhouYiApiModel ZhouYiApiInfo {
+        public ZhouYiApiModel ZhouYiApiInfo
+        {
             get => _zhouYiApiInfo;
             set => SetProperty(ref _zhouYiApiInfo, value);
         }
 
-        public bool IsUploading {
+        public bool IsUploading
+        {
             get => _isUploading;
             set => SetProperty(ref _isUploading, value);
         }
 
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
 
-        public double Weight {
+        public double Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
@@ -54,10 +61,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "ZhouYiApiParametersDialogHost";
         public override string SettingsName => "ZhouYiApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new ZhouYiApiDto() {
+                Value = JsonConvert.SerializeObject(new ZhouYiApiDto()
+                {
                     AppKey = ZhouYiApiInfo.AppKey,
                     AppId = ZhouYiApiInfo.AppId,
                     NeedUpload = ZhouYiApiInfo.NeedUpload,
@@ -71,10 +81,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var settingsDto = await _configRepository.FirstOrDefaultEntity<ZhouYiApiDto>(SettingsName) ?? new ZhouYiApiDto();
-                ZhouYiApiInfo = new ZhouYiApiModel() {
+                ZhouYiApiInfo = new ZhouYiApiModel()
+                {
                     AppKey = settingsDto.AppKey,
                     AppId = settingsDto.AppId,
                     NeedUpload = settingsDto.NeedUpload,
@@ -87,15 +100,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public ICommand UploadCommand => new DelegateCommand<object>(UploadDelegate);
 
-        private async void UploadDelegate(object obj) {
+        private async void UploadDelegate(object obj)
+        {
             //上传测试
 
-            if (!IsUploading) {
+            if (!IsUploading)
+            {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     //上传
                     var zhouYiApi = new ZhouYiApi(_httpClientFactory);
-                    await zhouYiApi.SetParameters(new ZhouYiApi.ApiParameters() {
+                    await zhouYiApi.SetParameters(new ZhouYiApi.ApiParameters()
+                    {
                         AppKey = ZhouYiApiInfo.AppKey,
                         AppId = ZhouYiApiInfo.AppId,
                         NeedUpload = ZhouYiApiInfo.NeedUpload,

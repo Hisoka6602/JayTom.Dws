@@ -4,8 +4,10 @@ using System;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace JayTom.Dws.Client.Models {
-    public class PluginItemInfoModel : BindableBase {
+namespace JayTom.Dws.Client.Models
+{
+    public class PluginItemInfoModel : BindableBase
+    {
         private ICommand? _clickCommand;
         private ImageSource? _icon;
         private string _name = string.Empty;
@@ -22,7 +24,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 插件图标
         /// </summary>
-        public ImageSource? Icon {
+        public ImageSource? Icon
+        {
             get => _icon;
             set => SetProperty(ref _icon, value);
         }
@@ -30,7 +33,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 插件名称
         /// </summary>
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -38,7 +42,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 插件状态
         /// </summary>
-        public PluginStatus Status {
+        public PluginStatus Status
+        {
             get => _status;
             set => SetProperty(ref _status, value);
         }
@@ -46,7 +51,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 插件类型
         /// </summary>
-        public PluginType Type {
+        public PluginType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
@@ -54,7 +60,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 描述
         /// </summary>
-        public string Description {
+        public string Description
+        {
             get => _description;
             set => SetProperty(ref _description, value);
         }
@@ -63,7 +70,8 @@ namespace JayTom.Dws.Client.Models {
         /// 发行日期
         /// </summary>
 
-        public DateTime ReleaseDate {
+        public DateTime ReleaseDate
+        {
             get => _releaseDate;
             set => SetProperty(ref _releaseDate, value);
         }
@@ -71,14 +79,16 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 客户端依赖版本
         /// </summary>
-        public Version ClientVersionDependency {
+        public Version ClientVersionDependency
+        {
             get => _clientVersionDependency;
             set => SetProperty(ref _clientVersionDependency, value);
         }
         /// <summary>
         /// 版本
         /// </summary>
-        public Version Version {
+        public Version Version
+        {
             get => _version;
             set => SetProperty(ref _version, value);
         }
@@ -86,7 +96,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 作者
         /// </summary>
-        public string Author {
+        public string Author
+        {
             get => _author;
             set => SetProperty(ref _author, value);
         }
@@ -94,7 +105,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 是否选中
         /// </summary>
-        public bool IsSelected {
+        public bool IsSelected
+        {
             get => _isSelected;
             set => SetProperty(ref _isSelected, value);
         }
@@ -102,7 +114,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 是否可安装
         /// </summary>
-        public bool IsInstallable {
+        public bool IsInstallable
+        {
             get => _isInstallable;
             set => SetProperty(ref _isInstallable, value);
         }
@@ -110,7 +123,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 点击事件
         /// </summary>
-        public ICommand? ClickCommand {
+        public ICommand? ClickCommand
+        {
             get => _clickCommand;
             set => SetProperty(ref _clickCommand, value);
         }

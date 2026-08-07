@@ -5,9 +5,11 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.Enums {
+namespace JayTom.Dws.Client.ViewModels.Editors.Enums
+{
 
-    public enum EditorOperationType {
+    public enum EditorOperationType
+    {
 
         /// <summary>
         /// 新增

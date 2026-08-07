@@ -14,7 +14,7 @@ namespace JayTom.Dws.Nvr.Nvr {
 
     public class DaHuaNvr : INvrManager {
         private static bool _isLoad;
-        private static readonly object SdkInitializationLock = new();
+        private static readonly System.Threading.Lock SdkInitializationLock = new();
         private static readonly ConcurrentDictionary<IntPtr, WeakReference<DaHuaNvr>> LoginOwners = new();
         private readonly SemaphoreSlim _loginSlim = new(1, 1);
         private readonly SemaphoreSlim _remotePreviewSlim = new(1, 1);
@@ -120,7 +120,7 @@ namespace JayTom.Dws.Nvr.Nvr {
                 return Task.FromResult(new KeyValuePair<bool, List<int>>(false, new List<int>()));
             }
             return Task.FromResult(new KeyValuePair<bool, List<int>>(true,
-                Enumerable.Range(0, _mDeviceInfo.nChanNum).Select(s => s + 1).ToList()));
+                [.. Enumerable.Range(0, _mDeviceInfo.nChanNum).Select(s => s + 1)]));
         }
 
         public async Task<KeyValuePair<bool, string>> Login(string ip, int port, string username, string password, CancellationToken token = default) {

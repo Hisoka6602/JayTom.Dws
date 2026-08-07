@@ -16,12 +16,15 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
-    public class GrayscaleDeviceSettingsViewModel : SettingsPageTemplateViewModel {
+    public class GrayscaleDeviceSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private GrayscaleDeviceInfoModel _grayscaleDeviceInfo = new();
 
-        public GrayscaleDeviceSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public GrayscaleDeviceSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
         private ObservableCollection<DataFormatTypeInfoModel> _dataFormatTypeItems = new()
@@ -50,76 +53,92 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "GrayscaleDeviceSettings";
 
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems
+        {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
 
-        public GrayscaleDeviceInfoModel GrayscaleDeviceInfo {
+        public GrayscaleDeviceInfoModel GrayscaleDeviceInfo
+        {
             get => _grayscaleDeviceInfo;
             set => SetProperty(ref _grayscaleDeviceInfo, value);
         }
 
-        public int AdditionalFrameRegionX1 {
+        public int AdditionalFrameRegionX1
+        {
             get => _additionalFrameRegionX1;
             set => SetProperty(ref _additionalFrameRegionX1, value);
         }
 
-        public int AdditionalFrameRegionY1 {
+        public int AdditionalFrameRegionY1
+        {
             get => _additionalFrameRegionY1;
             set => SetProperty(ref _additionalFrameRegionY1, value);
         }
 
-        public int AdditionalFrameRegionX2 {
+        public int AdditionalFrameRegionX2
+        {
             get => _additionalFrameRegionX2;
             set => SetProperty(ref _additionalFrameRegionX2, value);
         }
 
-        public int AdditionalFrameRegionY2 {
+        public int AdditionalFrameRegionY2
+        {
             get => _additionalFrameRegionY2;
             set => SetProperty(ref _additionalFrameRegionY2, value);
         }
 
-        public int MainFrameRegionX1 {
+        public int MainFrameRegionX1
+        {
             get => _mainFrameRegionX1;
             set => SetProperty(ref _mainFrameRegionX1, value);
         }
 
-        public int MainFrameRegionY1 {
+        public int MainFrameRegionY1
+        {
             get => _mainFrameRegionY1;
             set => SetProperty(ref _mainFrameRegionY1, value);
         }
 
-        public int MainFrameRegionX2 {
+        public int MainFrameRegionX2
+        {
             get => _mainFrameRegionX2;
             set => SetProperty(ref _mainFrameRegionX2, value);
         }
 
-        public int MainFrameRegionY2 {
+        public int MainFrameRegionY2
+        {
             get => _mainFrameRegionY2;
             set => SetProperty(ref _mainFrameRegionY2, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var settingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>(SettingsName) ??
                                   new GrayscaleDeviceSettingsDto();
 
-                GrayscaleDeviceInfo = new GrayscaleDeviceInfoModel() {
+                GrayscaleDeviceInfo = new GrayscaleDeviceInfoModel()
+                {
                     IsCheckPackageOrientation = settingsDto.IsCheckPackageOrientation,
                     IsUseGrayscaleDetector = settingsDto.IsUseGrayscaleDetector,
-                    TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel() {
+                    TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel()
+                    {
                         ConnectionMode = settingsDto.TcpConnectionConfigInfo?.ConnectionMode ??
                                          TcpConnectionMode.Client,
                         DataFormat = DataFormatTypeItems.FirstOrDefault(f =>
                                          f.Value.Equals(settingsDto.TcpConnectionConfigInfo?.DataFormat)) ??
                                      new DataFormatTypeInfoModel(),
-                        ClientParameter = new TcpConfigItemInfoModel() {
+                        ClientParameter = new TcpConfigItemInfoModel()
+                        {
                             IpAddress = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.IpAddress ??
                                         string.Empty,
                             Port = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.Port ?? 0,
                         },
-                        ServerParameter = new TcpConfigItemInfoModel() {
+                        ServerParameter = new TcpConfigItemInfoModel()
+                        {
                             IpAddress = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.IpAddress ??
                                         string.Empty,
                             Port = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.Port ?? 0,
@@ -147,24 +166,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             });
         }
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var grayscaleDeviceSettingsDto = new GrayscaleDeviceSettingsDto() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var grayscaleDeviceSettingsDto = new GrayscaleDeviceSettingsDto()
+            {
                 IsCheckPackageOrientation = GrayscaleDeviceInfo.IsCheckPackageOrientation,
                 IsUseGrayscaleDetector = GrayscaleDeviceInfo.IsUseGrayscaleDetector,
-                TcpConnectionConfigInfo = new TcpSettingsInfo() {
+                TcpConnectionConfigInfo = new TcpSettingsInfo()
+                {
                     ConnectionMode = GrayscaleDeviceInfo.TcpConnectionConfigInfo?.ConnectionMode ??
                                      TcpConnectionMode.Client,
                     DataFormat = GrayscaleDeviceInfo.TcpConnectionConfigInfo?.DataFormat?.Value ??
                                  DataFormatType.Ascii,
 
-                    ClientConfig = new TcpInfo() {
+                    ClientConfig = new TcpInfo()
+                    {
                         IpAddress = GrayscaleDeviceInfo.TcpConnectionConfigInfo?.ClientParameter
                                         ?.IpAddress ??
                                     string.Empty,
                         Port = GrayscaleDeviceInfo.TcpConnectionConfigInfo?.ClientParameter?.Port ??
                                0,
                     },
-                    ServerConfig = new TcpInfo() {
+                    ServerConfig = new TcpInfo()
+                    {
                         IpAddress = GrayscaleDeviceInfo.TcpConnectionConfigInfo?.ServerParameter
                                         ?.IpAddress ??
                                     string.Empty,
@@ -185,7 +209,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 MinSendInterval = GrayscaleDeviceInfo.MinSendInterval
             };
 
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
                 Value = JsonConvert.SerializeObject(grayscaleDeviceSettingsDto)
             });

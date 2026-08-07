@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
-    public class CaiNiaoApiModel : BindableBase {
+    public class CaiNiaoApiModel : BindableBase
+    {
         private string _url = "http://10.220.64.463:10002/ucs/api";
         private int _timeOut = 1000;
         private string _source = "test";
@@ -18,7 +20,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
@@ -26,7 +29,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 超时
         /// </summary>
-        public int TimeOut {
+        public int TimeOut
+        {
             get => _timeOut;
             set => SetProperty(ref _timeOut, value);
         }
@@ -34,7 +38,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// SignKey
         /// </summary>
-        public string Source {
+        public string Source
+        {
             get => _source;
             set => SetProperty(ref _source, value);
         }
@@ -42,7 +47,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 版本
         /// </summary>
-        public int Version {
+        public int Version
+        {
             get => _version;
             set => SetProperty(ref _version, value);
         }
@@ -50,7 +56,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备代码
         /// </summary>
-        public string BcrCode {
+        public string BcrCode
+        {
             get => _bcrCode;
             set => SetProperty(ref _bcrCode, value);
         }
@@ -58,7 +65,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备名称
         /// </summary>
-        public string BcrName {
+        public string BcrName
+        {
             get => _bcrName;
             set => SetProperty(ref _bcrName, value);
         }

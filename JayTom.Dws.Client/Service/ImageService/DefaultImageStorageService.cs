@@ -18,9 +18,16 @@ using JayTom.Dws.Domain.Service.ImageService;
 using WatermarkPosition = JayTom.Dws.Plugin.SaveImage.WatermarkPosition;
 using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.Service.ImageService {
+namespace JayTom.Dws.Client.Service.ImageService
+{
 
-    public class DefaultImageStorageService : IImageStorageService {
+    public class DefaultImageStorageService : IImageStorageService
+    {
+        /// <summary>
+        /// 用于清除水印和文件名中控制字符的复用正则。
+        /// </summary>
+        private static readonly Regex ControlCharactersRegex =
+            new(@"[\u0000-\u001f\b]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private readonly ISaveImage _saveImage;
         private readonly IConfigRepository _configRepository;
         private readonly IFtp _ftp;
@@ -29,42 +36,53 @@ namespace JayTom.Dws.Client.Service.ImageService {
         private VolumeSettingsDto? _volumeSettingsDto;
 
         public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
-            IFtp ftp) {
+            IFtp ftp)
+        {
             _saveImage = saveImage;
             _configRepository = configRepository;
             _ftp = ftp;
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings => {
-                switch (settings) {
-                    case SettingsChangedEvent { SettingsName: "SaveImageSettings" } model: {
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings =>
+            {
+                switch (settings)
+                {
+                    case SettingsChangedEvent { SettingsName: "SaveImageSettings" } model:
+                        {
                             await _semaphore.WaitAsync();
-                            try {
+                            try
+                            {
                                 ImageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
-                                if (ImageSettingsDto.IsFtpUploadEnabled) {
+                                if (ImageSettingsDto.IsFtpUploadEnabled)
+                                {
                                     var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
                                         ImageSettingsDto.FtpInfo.Port,
                                         ImageSettingsDto.FtpInfo.Username,
                                         ImageSettingsDto.FtpInfo.Password);
-                                    if (!key) {
+                                    if (!key)
+                                    {
                                         OnImageSaveFailed(new Exception(value));
                                     }
                                 }
                             }
-                            catch (Exception exception) {
+                            catch (Exception exception)
+                            {
                                 NLog.LogManager.GetCurrentClassLogger()
                                     .Error(exception, "重新加载存图配置失败");
                             }
-                            finally {
+                            finally
+                            {
                                 _semaphore.Release();
                             }
                             break;
                         }
                     case SettingsChangedEvent { SettingsName: "VolumeSettings" } volumeSettings:
-                        try {
+                        try
+                        {
                             _volumeSettingsDto = await _configRepository
                                 .FirstOrDefaultEntity<VolumeSettingsDto>(volumeSettings.SettingsName)
                                 ?? new VolumeSettingsDto();
                         }
-                        catch (Exception exception) {
+                        catch (Exception exception)
+                        {
                             NLog.LogManager.GetCurrentClassLogger()
                                 .Error(exception, "重新加载体积配置失败");
                         }
@@ -80,185 +98,76 @@ namespace JayTom.Dws.Client.Service.ImageService {
         public event EventHandler<ImageSavedEventArgs>? ImageSaved;
 
         public async Task SaveImage(Image? image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default) {
+            float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default)
+        {
             if (image is null) return;
-            ImageSettingsDto ??= await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken) ?? new ImageSettingsDto();
-            await _semaphore.WaitAsync(cancellationToken);
-            try {
-                if (ImageSettingsDto.IsFtpUploadEnabled) {
-                    var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
-                        ImageSettingsDto.FtpInfo.Port,
-                        ImageSettingsDto.FtpInfo.Username,
-                        ImageSettingsDto.FtpInfo.Password, cancellationToken);
-                    if (!key) {
-                        OnImageSaveFailed(new Exception(value));
-                    }
-                }
-                _volumeSettingsDto ??= await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings", cancellationToken) ?? new VolumeSettingsDto();
-            }
-            finally {
-                _semaphore.Release();
-            }
-
-            //开始保存
-            //获取存图目录(根目录+模板子目录)
-            var saveLockTaken = false;
-            try {
-                await _saveSemaphore.WaitAsync(cancellationToken);
-                saveLockTaken = true;
-                var pathList = ImageSettingsDto.SubDirectoryTemplate?
-                    .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
-                    .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
-                        volume, cameraSerialNumber))?
-                    .ToList();
-                if (pathList?.Any() != true) {
-                    OnImageSaveFailed(new Exception("存图路径解析错误,未找到模板内容"));
-                    return;
-                }
-
-                var fullPath = $"{ImageSettingsDto.ImageRootDirectory}\\{string.Join("\\", pathList)}";
-                //解析图片命名模板
-                var imageNaminglist = ImageSettingsDto.ImageNamingTemplate
-                    ?.Where(w => w.ApplicationType == ItemApplicationType.ImageNaming)?
-                    .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
-                        volume, cameraSerialNumber))
-                    ?.ToList();
-                if (imageNaminglist?.Any() != true) {
-                    OnImageSaveFailed(new Exception("图片命名解析错误,未找到模板内容"));
-                    return;
-                }
-
-                var imageName = string.Join("_", imageNaminglist);
-                WatermarkParams? watermarkParams = null;
-                //判断是否需要水印
-                if (ImageSettingsDto.IsUseWatermark) {
-                    //解析水印模板(使用图片命名解析)
-                    var watermarkList = ImageSettingsDto.WatermarkInfo.ItemTemplate
-                        ?.Where(w => w.ApplicationType == ItemApplicationType.Watermark)?
-                        .Select(s => WatermarkParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
-                            volume, cameraSerialNumber, true))
-                        ?.ToList();
-                    if (watermarkList?.Any() != true) {
-                        OnImageSaveFailed(new Exception("图片命名解析错误,未找到模板内容"));
-                        return;
-                    }
-                    watermarkParams = new WatermarkParams() {
-                        FontSize = ImageSettingsDto.WatermarkInfo.WatermarkFontSize,
-                        WatermarkColor = ImageSettingsDto.WatermarkInfo.WatermarkColor,
-                        WatermarkPosition = (WatermarkPosition)ImageSettingsDto.WatermarkInfo.WatermarkPosition,
-                        WatermarkContent = watermarkList
-                    };
-                }
-
-                //判断是否保存原图
-                if (ImageSettingsDto.IsSaveOriginalImage) {
-                    var (key, value) = await _saveImage.SaveOriginalImage(image, imageName, fullPath, watermarkParams,
-                        cancellationToken);
-                    if (!key) {
-                        OnImageSaveFailed(new Exception(value));
-                    }
-                    else {
-                        OnImageSaved(new ImageSavedEventArgs() {
-                            BarCode = barCode,
-                            CameraSerialNumber = cameraSerialNumber,
-                            FilePath =
-                                $"{fullPath}\\{imageName}.{"jpg"}",
-                            ImageType = type,
-                            SaveDateTime = DateTime.Now,
-                            ScanTime = scanTime
-                        });
-                    }
-                }
-                else {
-                    var (key, value) = await _saveImage.SaveCompressedImage(image, imageName, fullPath, watermarkParams,
-                        cancellationToken);
-                    if (!key) {
-                        NLog.LogManager.GetCurrentClassLogger().Error(value);
-                        OnImageSaveFailed(new Exception(value));
-                    }
-                    else {
-                        OnImageSaved(new ImageSavedEventArgs() {
-                            BarCode = barCode,
-                            CameraSerialNumber = cameraSerialNumber,
-                            FilePath =
-                                $"{fullPath}\\{imageName}.{"jpg"}",
-                            ImageType = type,
-                            SaveDateTime = DateTime.Now,
-                            ScanTime = scanTime
-                        });
-                    }
-                }
-
-                //判断是否需要上传Ftp
-                if (ImageSettingsDto.IsFtpUploadEnabled) {
-                    var path = $"{fullPath}\\{imageName}.{"jpg"}";
-                    if (File.Exists(path)) {
-                        var (key, value) = await _ftp.UploadFile(path,
-                            path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty),
-                            cancellationToken);
-                        if (!key) {
-                            OnImageSaveFailed(new Exception(value));
-                        }
-                        else {
-                            EventAggregator.Instance.Publish(new FtpLogInfoModel() {
-                                Type = LogType.Information,
-                                CreateTime = DateTime.Now,
-                                Message = $"FTP上传:{path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty)}",
-                                FtpCommunicationType = FtpCommunicationType.Upload
-                            });
-                        }
-                    }
-                    else {
-                        OnImageSaveFailed(new Exception($"图片不存在"));
-                    }
-                }
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                OnImageSaveFailed(new Exception($"存图异常:{e.Message}"));
-            }
-            finally {
-                image?.Dispose();
-                if (saveLockTaken) {
-                    _saveSemaphore.Release();
-                }
-            }
+            await SaveImage(
+                0,
+                image,
+                type,
+                barCode,
+                weight,
+                scanTime,
+                length,
+                width,
+                height,
+                volume,
+                cameraSerialNumber,
+                cancellationToken);
         }
 
         public async Task SaveImage(long packageTimestamped, Image image, SaveImageType type, string barCode, float weight, DateTime scanTime,
             float length, float width, float height, float volume, string cameraSerialNumber,
-            CancellationToken cancellationToken = default) {
+            CancellationToken cancellationToken = default)
+        {
             if (image is null) return;
-            ImageSettingsDto ??= await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken) ?? new ImageSettingsDto();
-            await _semaphore.WaitAsync(cancellationToken);
-            try {
-                if (ImageSettingsDto.IsFtpUploadEnabled) {
-                    var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
-                        ImageSettingsDto.FtpInfo.Port,
-                        ImageSettingsDto.FtpInfo.Username,
-                        ImageSettingsDto.FtpInfo.Password, cancellationToken);
-                    if (!key) {
-                        OnImageSaveFailed(new Exception(value));
+            try
+            {
+                ImageSettingsDto ??= await _configRepository
+                    .FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken)
+                    ?? new ImageSettingsDto();
+                var configurationLockTaken = false;
+                try
+                {
+                    await _semaphore.WaitAsync(cancellationToken);
+                    configurationLockTaken = true;
+                    if (ImageSettingsDto.IsFtpUploadEnabled)
+                    {
+                        var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
+                            ImageSettingsDto.FtpInfo.Port,
+                            ImageSettingsDto.FtpInfo.Username,
+                            ImageSettingsDto.FtpInfo.Password, cancellationToken);
+                        if (!key)
+                        {
+                            OnImageSaveFailed(new Exception(value));
+                        }
+                    }
+                    _volumeSettingsDto ??= await _configRepository
+                        .FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings", cancellationToken)
+                        ?? new VolumeSettingsDto();
+                }
+                finally
+                {
+                    if (configurationLockTaken)
+                    {
+                        _semaphore.Release();
                     }
                 }
-                _volumeSettingsDto ??= await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings", cancellationToken) ?? new VolumeSettingsDto();
-            }
-            finally {
-                _semaphore.Release();
-            }
 
-            //开始保存
-            //获取存图目录(根目录+模板子目录)
-            var saveLockTaken = false;
-            try {
-                await _saveSemaphore.WaitAsync(cancellationToken);
-                saveLockTaken = true;
+                //开始保存
+                //获取存图目录(根目录+模板子目录)
+                var saveLockTaken = false;
+                try
+                {
+                    await _saveSemaphore.WaitAsync(cancellationToken);
+                    saveLockTaken = true;
                 var pathList = ImageSettingsDto.SubDirectoryTemplate?
                     .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                         volume, cameraSerialNumber))?
                     .ToList();
-                if (pathList?.Any() != true) {
+                if (pathList?.Any() != true)
+                {
                     OnImageSaveFailed(new Exception("存图路径解析错误,未找到模板内容"));
                     return;
                 }
@@ -270,7 +179,8 @@ namespace JayTom.Dws.Client.Service.ImageService {
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                         volume, cameraSerialNumber))
                     ?.ToList();
-                if (imageNaminglist?.Any() != true) {
+                if (imageNaminglist?.Any() != true)
+                {
                     OnImageSaveFailed(new Exception("图片命名解析错误,未找到模板内容"));
                     return;
                 }
@@ -278,18 +188,21 @@ namespace JayTom.Dws.Client.Service.ImageService {
                 var imageName = string.Join("_", imageNaminglist);
                 WatermarkParams? watermarkParams = null;
                 //判断是否需要水印
-                if (ImageSettingsDto.IsUseWatermark) {
+                if (ImageSettingsDto.IsUseWatermark)
+                {
                     //解析水印模板(使用图片命名解析)
                     var watermarkList = ImageSettingsDto.WatermarkInfo.ItemTemplate
                         ?.Where(w => w.ApplicationType == ItemApplicationType.Watermark)?
                         .Select(s => WatermarkParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                             volume, cameraSerialNumber, true))
                         ?.ToList();
-                    if (watermarkList?.Any() != true) {
+                    if (watermarkList?.Any() != true)
+                    {
                         OnImageSaveFailed(new Exception("图片命名解析错误,未找到模板内容"));
                         return;
                     }
-                    watermarkParams = new WatermarkParams() {
+                    watermarkParams = new WatermarkParams()
+                    {
                         FontSize = ImageSettingsDto.WatermarkInfo.WatermarkFontSize,
                         WatermarkColor = ImageSettingsDto.WatermarkInfo.WatermarkColor,
                         WatermarkPosition = (WatermarkPosition)ImageSettingsDto.WatermarkInfo.WatermarkPosition,
@@ -298,14 +211,18 @@ namespace JayTom.Dws.Client.Service.ImageService {
                 }
 
                 //判断是否保存原图
-                if (ImageSettingsDto.IsSaveOriginalImage) {
+                if (ImageSettingsDto.IsSaveOriginalImage)
+                {
                     var (key, value) = await _saveImage.SaveOriginalImage(image, imageName, fullPath, watermarkParams,
                         cancellationToken);
-                    if (!key) {
+                    if (!key)
+                    {
                         OnImageSaveFailed(new Exception(value));
                     }
-                    else {
-                        OnImageSaved(new ImageSavedEventArgs() {
+                    else
+                    {
+                        OnImageSaved(new ImageSavedEventArgs()
+                        {
                             BarCode = barCode,
                             CameraSerialNumber = cameraSerialNumber,
                             FilePath =
@@ -317,15 +234,19 @@ namespace JayTom.Dws.Client.Service.ImageService {
                         });
                     }
                 }
-                else {
+                else
+                {
                     var (key, value) = await _saveImage.SaveCompressedImage(image, imageName, fullPath, watermarkParams,
                         cancellationToken);
-                    if (!key) {
+                    if (!key)
+                    {
                         NLog.LogManager.GetCurrentClassLogger().Error(value);
                         OnImageSaveFailed(new Exception(value));
                     }
-                    else {
-                        OnImageSaved(new ImageSavedEventArgs() {
+                    else
+                    {
+                        OnImageSaved(new ImageSavedEventArgs()
+                        {
                             BarCode = barCode,
                             CameraSerialNumber = cameraSerialNumber,
                             FilePath =
@@ -339,17 +260,22 @@ namespace JayTom.Dws.Client.Service.ImageService {
                 }
 
                 //判断是否需要上传Ftp
-                if (ImageSettingsDto.IsFtpUploadEnabled) {
+                if (ImageSettingsDto.IsFtpUploadEnabled)
+                {
                     var path = $"{fullPath}\\{imageName}.{"jpg"}";
-                    if (File.Exists(path)) {
+                    if (File.Exists(path))
+                    {
                         var (key, value) = await _ftp.UploadFile(path,
                             path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty),
                             cancellationToken);
-                        if (!key) {
+                        if (!key)
+                        {
                             OnImageSaveFailed(new Exception(value));
                         }
-                        else {
-                            EventAggregator.Instance.Publish(new FtpLogInfoModel() {
+                        else
+                        {
+                            EventAggregator.Instance.Publish(new FtpLogInfoModel()
+                            {
                                 Type = LogType.Information,
                                 CreateTime = DateTime.Now,
                                 Message = $"FTP上传:{path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty)}",
@@ -357,50 +283,64 @@ namespace JayTom.Dws.Client.Service.ImageService {
                             });
                         }
                     }
-                    else {
+                    else
+                    {
                         OnImageSaveFailed(new Exception($"图片不存在"));
                     }
                 }
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                OnImageSaveFailed(new Exception($"存图异常:{e.Message}"));
-            }
-            finally {
-                image?.Dispose();
-                if (saveLockTaken) {
-                    _saveSemaphore.Release();
                 }
+                catch (Exception e)
+                {
+                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    OnImageSaveFailed(new Exception($"存图异常:{e.Message}"));
+                }
+                finally
+                {
+                    if (saveLockTaken)
+                    {
+                        _saveSemaphore.Release();
+                    }
+                }
+            }
+            finally
+            {
+                image.Dispose();
             }
         }
 
         public string ParseTemplate(string source, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
-            return source switch {
-                "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
+            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false)
+        {
+            return source switch
+            {
+                "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{(isWatermark ? RemoveControlCharacters(barCode) : SanitizeFileSystemSegment(barCode))}",
                 "{Weight}" => $"{(isWatermark ? "Weight:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
-                "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch {
+                "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => Math.Pow(10, 3),
                     VolumeUnit.Meter => Math.Pow(1000, 3),
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
-                "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch {
+                "{Length}" => $"{(isWatermark ? "Length:" : string.Empty)}{(length / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
-                "{Width}" => $"{(isWatermark ? "Width:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch {
+                "{Width}" => $"{(isWatermark ? "Width:" : string.Empty)}{(width / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
-                "{Height}" => $"{(isWatermark ? "Height:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch {
+                "{Height}" => $"{(isWatermark ? "Height:" : string.Empty)}{(height / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
@@ -409,7 +349,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
                     .ToString(CultureInfo.InvariantCulture)}",
                 "{ScanTime}" => $"{(isWatermark ? "ScanTime:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
                 "{TimestampedGuid}" => $"{(isWatermark ? "TimestampedGuid:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
-                "{CameraSerialNumber}" => $"{(isWatermark ? "CameraSerialNumber:" : string.Empty)}{cameraSerialNumber}",
+                "{CameraSerialNumber}" => $"{(isWatermark ? "CameraSerialNumber:" : string.Empty)}{(isWatermark ? RemoveControlCharacters(cameraSerialNumber) : SanitizeFileSystemSegment(cameraSerialNumber))}",
                 "{ImageType}" => $"{(isWatermark ? "ImageType:" : string.Empty)}{type}",
                 "{Year}" => $"{(isWatermark ? "Year:" : string.Empty)}{scanTime:yyyy}",
                 "{Month}" => $"{(isWatermark ? "Month:" : string.Empty)}{scanTime:MM}",
@@ -421,39 +361,46 @@ namespace JayTom.Dws.Client.Service.ImageService {
 
         public string WatermarkParseTemplate(string source, SaveImageType type, string barCode, float weight,
             DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false, string? language = default) {
+            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false, string? language = default)
+        {
             //默认中文
-            var vUnit = _volumeSettingsDto?.Unit switch {
+            var vUnit = _volumeSettingsDto?.Unit switch
+            {
                 VolumeUnit.Millimeter => "mm",
                 VolumeUnit.Centimeter => "cm",
                 VolumeUnit.Meter => "m",
                 _ => "mm"
             };
-            return source switch {
-                "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{Regex.Replace(barCode, @"[\u0000-\u001f\b]", "")}",
+            return source switch
+            {
+                "{BarCode}" => $"{(isWatermark ? "条码:" : string.Empty)}{RemoveControlCharacters(barCode)}",
                 "{Weight}" => $"{(isWatermark ? "重量:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)} kg",
-                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{Math.Round(volume / _volumeSettingsDto?.Unit switch {
+                "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{Math.Round(volume / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => Math.Pow(10, 3),
                     VolumeUnit.Meter => Math.Pow(1000, 3),
                     _ => 1
                 }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}³",
 
-                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{Math.Round(length / _volumeSettingsDto?.Unit switch {
+                "{Length}" => $"{(isWatermark ? "长度:" : string.Empty)}{Math.Round(length / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
                 }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}",
 
-                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{Math.Round(width / _volumeSettingsDto?.Unit switch {
+                "{Width}" => $"{(isWatermark ? "宽度:" : string.Empty)}{Math.Round(width / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
                     _ => 1
                 }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}",
 
-                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{Math.Round(height / _volumeSettingsDto?.Unit switch {
+                "{Height}" => $"{(isWatermark ? "高度:" : string.Empty)}{Math.Round(height / _volumeSettingsDto?.Unit switch
+                {
                     VolumeUnit.Millimeter => 1,
                     VolumeUnit.Centimeter => 10,
                     VolumeUnit.Meter => 1000,
@@ -462,7 +409,7 @@ namespace JayTom.Dws.Client.Service.ImageService {
 
                 "{ScanTime}" => $"{(isWatermark ? "扫码时间:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
                 "{TimestampedGuid}" => $"{(isWatermark ? "时间戳:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
-                "{CameraSerialNumber}" => $"{(isWatermark ? "相机序列号:" : string.Empty)}{cameraSerialNumber}",
+                "{CameraSerialNumber}" => $"{(isWatermark ? "相机序列号:" : string.Empty)}{RemoveControlCharacters(cameraSerialNumber)}",
                 "{ImageType}" => $"{(isWatermark ? "图片类型:" : string.Empty)}{type}",
                 "{Year}" => $"{(isWatermark ? "年:" : string.Empty)}{scanTime:yyyy}",
                 "{Month}" => $"{(isWatermark ? "月:" : string.Empty)}{scanTime:MM}",
@@ -472,12 +419,42 @@ namespace JayTom.Dws.Client.Service.ImageService {
             };
         }
 
-        protected virtual void OnImageSaveFailed(Exception e) {
+        protected virtual void OnImageSaveFailed(Exception e)
+        {
             ImageSaveFailed?.Invoke(this, e);
         }
 
-        protected virtual void OnImageSaved(ImageSavedEventArgs e) {
+        protected virtual void OnImageSaved(ImageSavedEventArgs e)
+        {
             ImageSaved?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 清除文本中的控制字符。
+        /// </summary>
+        private static string RemoveControlCharacters(string value)
+        {
+            return ControlCharactersRegex.Replace(value ?? string.Empty, string.Empty);
+        }
+
+        /// <summary>
+        /// 将外部文本转换为可安全用作文件系统路径段的内容。
+        /// </summary>
+        private static string SanitizeFileSystemSegment(string value)
+        {
+            var sanitized = RemoveControlCharacters(value);
+            var invalidCharacters = Path.GetInvalidFileNameChars();
+            var characters = sanitized.ToCharArray();
+            for (var index = 0; index < characters.Length; index++)
+            {
+                if (Array.IndexOf(invalidCharacters, characters[index]) >= 0)
+                {
+                    characters[index] = '_';
+                }
+            }
+
+            var result = new string(characters).Trim().TrimEnd('.');
+            return string.IsNullOrEmpty(result) ? "_" : result;
         }
     }
 }

@@ -12,9 +12,11 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
+{
 
-    public class ApiSortingRuleEditorViewModel : BindableBase {
+    public class ApiSortingRuleEditorViewModel : BindableBase
+    {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private bool _isOk;
@@ -33,19 +35,22 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private ApiSortingItemInfoModel _apiSortingItemInfo = new();
         private SearchDirection _searchDirection = SearchDirection.Forward;
 
-        public ApiSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public ApiSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
         /// <summary>
         /// 窗口标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
@@ -53,12 +58,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 异常内容
         /// </summary>
-        public string ExceptionContent {
+        public string ExceptionContent
+        {
             get => _exceptionContent;
             set => SetProperty(ref _exceptionContent, value);
         }
 
-        public ObservableCollection<ApiRuleItemInfoModel> ApiRuleItems {
+        public ObservableCollection<ApiRuleItemInfoModel> ApiRuleItems
+        {
             get => _apiRuleItems;
             set => SetProperty(ref _apiRuleItems, value);
         }
@@ -66,7 +73,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 格口列表
         /// </summary>
-        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems
+        {
             get => _packageExitDefinitionItems;
             set => SetProperty(ref _packageExitDefinitionItems, value);
         }
@@ -74,17 +82,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 绑定的格口
         /// </summary>
-        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo {
+        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo
+        {
             get => _selectPackageExitDefinitionInfo;
             set => SetProperty(ref _selectPackageExitDefinitionInfo, value);
         }
 
-        public ObservableCollection<UploadStatus> UploadStatusItems {
+        public ObservableCollection<UploadStatus> UploadStatusItems
+        {
             get => _uploadStatusItems;
             set => SetProperty(ref _uploadStatusItems, value);
         }
 
-        public ApiSortingItemInfoModel ApiSortingItemInfo {
+        public ApiSortingItemInfoModel ApiSortingItemInfo
+        {
             get => _apiSortingItemInfo;
             set => SetProperty(ref _apiSortingItemInfo, value);
         }
@@ -92,7 +103,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 上传状态
         /// </summary>
-        public UploadStatus ResponseStatus {
+        public UploadStatus ResponseStatus
+        {
             get => _responseStatus;
             set => SetProperty(ref _responseStatus, value);
         }
@@ -100,7 +112,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用字符串判断
         /// </summary>
-        public bool IsUseStringComparison {
+        public bool IsUseStringComparison
+        {
             get => _isUseStringComparison;
             set => SetProperty(ref _isUseStringComparison, value);
         }
@@ -108,7 +121,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用字符串查找
         /// </summary>
-        public bool IsUseStringSearch {
+        public bool IsUseStringSearch
+        {
             get => _isUseStringSearch;
             set => SetProperty(ref _isUseStringSearch, value);
         }
@@ -116,7 +130,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用字符串取值
         /// </summary>
-        public bool IsUseJsonField {
+        public bool IsUseJsonField
+        {
             get => _isUseJsonField;
             set => SetProperty(ref _isUseJsonField, value);
         }
@@ -124,7 +139,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 查找字符串内容
         /// </summary>
-        public string SearchStringContent {
+        public string SearchStringContent
+        {
             get => _searchStringContent;
             set => SetProperty(ref _searchStringContent, value);
         }
@@ -132,7 +148,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// Json字段
         /// </summary>
-        public string JsonField {
+        public string JsonField
+        {
             get => _jsonField;
             set => SetProperty(ref _jsonField, value);
         }
@@ -140,7 +157,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// Json字段值
         /// </summary>
-        public string JsonFieldValue {
+        public string JsonFieldValue
+        {
             get => _jsonFieldValue;
             set => SetProperty(ref _jsonFieldValue, value);
         }
@@ -148,19 +166,24 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 查找方向
         /// </summary>
-        public SearchDirection SearchDirection {
+        public SearchDirection SearchDirection
+        {
             get => _searchDirection;
             set => SetProperty(ref _searchDirection, value);
         }
 
         public ICommand DeleteJsonCommand => new DelegateCommand<ApiRuleItemInfoModel>(DeleteJsonDelegate);
 
-        private async void DeleteJsonDelegate(ApiRuleItemInfoModel obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void DeleteJsonDelegate(ApiRuleItemInfoModel obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 ApiRuleItems.Remove(obj);
                 //调整Num
-                if (ApiRuleItems?.Any() == true) {
-                    for (var i = 0; i < ApiRuleItems.Count; i++) {
+                if (ApiRuleItems?.Any() == true)
+                {
+                    for (var i = 0; i < ApiRuleItems.Count; i++)
+                    {
                         ApiRuleItems[i].Num = i + 1;
                     }
                 }
@@ -169,9 +192,12 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand AddJsonCommand => new DelegateCommand<object>(AddJsonDelegate);
 
-        private async void AddJsonDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                var apiRuleJsonDto = new ApiRuleJsonDto() {
+        private async void AddJsonDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var apiRuleJsonDto = new ApiRuleJsonDto()
+                {
                     JsonField = JsonField,
                     JsonFieldValue = JsonFieldValue,
                     ResponseStatus = ResponseStatus,
@@ -182,8 +208,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                     SearchDirection = SearchDirection
                 };
                 var serializeObject = JsonConvert.SerializeObject(apiRuleJsonDto);
-                if (ApiRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true) {
-                    ApiRuleItems.Add(new ApiRuleItemInfoModel() {
+                if (ApiRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true)
+                {
+                    ApiRuleItems.Add(new ApiRuleItemInfoModel()
+                    {
                         ApiSortingId = ApiSortingItemInfo.Id,
                         CreateTime = DateTime.Now,
                         JsonContent = serializeObject,
@@ -197,8 +225,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand ClearConditionsCommand => new DelegateCommand<object>(ClearConditionsDelegate);
 
-        private async void ClearConditionsDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void ClearConditionsDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 IsUseStringComparison = false;
 
                 SearchStringContent =
@@ -209,49 +239,60 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
-        private async void SaveDelegate() {
-            try {
+        private async void SaveDelegate()
+        {
+            try
+            {
                 IsOk = true;
                 ApiSortingItemInfo.ModifyTime = DateTime.Now;
 
                 Pitcher.Throw.ArgumentNull.WhenNull(ApiSortingItemInfo, nameof(ApiSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(ApiSortingItemInfo.SortingName, nameof(ApiSortingItemInfo.SortingName));
-                if (!ApiRuleItems.Any()) {
+                if (!ApiRuleItems.Any())
+                {
                     throw new Exception("规则不能为空!");
                 }
 
-                if (SelectPackageExitDefinitionInfo.Id <= 0) {
+                if (SelectPackageExitDefinitionInfo.Id <= 0)
+                {
                     throw new Exception("格口未选择!");
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 IsOk = false;
                 ExceptionContent = e.Message;
             }
 
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
-        private void CancelDelegate() {
+        private void CancelDelegate()
+        {
             IsOk = false;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj)
+        {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
-                    new PackageExitDefinitionItemInfoModel {
+                    new PackageExitDefinitionItemInfoModel
+                    {
                         CreateTime = s.CreateTime,
                         ExitName = $"{s.ExitName}{(s.IsActive ? "" : "(未生效)")}",
                         Id = s.Id,
@@ -262,7 +303,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                         Type = s.Type
                     })?.ToList();
 
-                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                if (packageExitDefinitionItemInfoModels?.Any() == true)
+                {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
                         f.Id.Equals(ApiSortingItemInfo.ExitId));
@@ -272,11 +314,15 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
             });
         }
 
-        public string FormatRule(string jsonContent) {
-            try {
+        public string FormatRule(string jsonContent)
+        {
+            try
+            {
                 var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(jsonContent);
-                if (apiRuleJsonDto is not null) {
-                    var status = apiRuleJsonDto.ResponseStatus switch {
+                if (apiRuleJsonDto is not null)
+                {
+                    var status = apiRuleJsonDto.ResponseStatus switch
+                    {
                         UploadStatus.Failed => "失败",
                         UploadStatus.NotUploaded => "未上传",
                         UploadStatus.Succeeded => "成功",
@@ -284,20 +330,24 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                     };
                     var content = string.Empty;
                     if (!apiRuleJsonDto.IsUseStringComparison) return $"响应状态:{status} {content}";
-                    if (apiRuleJsonDto.IsUseStringSearch) {
+                    if (apiRuleJsonDto.IsUseStringSearch)
+                    {
                         content += $"字符串查找:[{apiRuleJsonDto.SearchStringContent}] ";
                     }
-                    else if (apiRuleJsonDto.IsUseJsonField) {
+                    else if (apiRuleJsonDto.IsUseJsonField)
+                    {
                         content += $"Json字段:[{apiRuleJsonDto.JsonField}]  值:[{apiRuleJsonDto.JsonFieldValue}] ";
                     }
 
-                    if (apiRuleJsonDto.IsUseStringComparison) {
+                    if (apiRuleJsonDto.IsUseStringComparison)
+                    {
                         content += $"方向:[{(apiRuleJsonDto.SearchDirection == SearchDirection.Forward ? "正向" : "反向")}]";
                     }
                     return $"响应状态:{status} {content}";
                 }
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 return "解析错误";
             }
             return "解析错误";

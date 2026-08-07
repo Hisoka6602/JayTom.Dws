@@ -7,30 +7,36 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
 
-    public class BaseLogItemModel : BindableBase {
+    public class BaseLogItemModel : BindableBase
+    {
         private DateTime? _createTime;
         private LogType _type = LogType.Information;
         private string _message = string.Empty;
         private ICommand? _clickCommand;
 
-        public DateTime? CreateTime {
+        public DateTime? CreateTime
+        {
             get => _createTime;
             set => SetProperty(ref _createTime, value);
         }
 
-        public LogType Type {
+        public LogType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
 
-        public string Message {
+        public string Message
+        {
             get => _message;
             set => SetProperty(ref _message, value);
         }
 
-        public ICommand? ClickCommand {
+        public ICommand? ClickCommand
+        {
             get => _clickCommand;
             set => SetProperty(ref _clickCommand, value);
         }

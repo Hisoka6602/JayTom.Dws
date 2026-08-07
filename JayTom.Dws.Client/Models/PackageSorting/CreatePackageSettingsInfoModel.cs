@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class CreatePackageSettingsInfoModel : BindableBase {
+    public class CreatePackageSettingsInfoModel : BindableBase
+    {
         private bool _isUsePackageExpiry;
         private int _packageExpiryTime;
         private BarcodeHandlingMethodEnum _barcodeHandlingMethod = BarcodeHandlingMethodEnum.UseOneBarcode;
@@ -43,7 +45,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否使用包裹过期
         /// </summary>
-        public bool IsUsePackageExpiry {
+        public bool IsUsePackageExpiry
+        {
             get => _isUsePackageExpiry;
             set => SetProperty(ref _isUsePackageExpiry, value);
         }
@@ -51,7 +54,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 包裹过期时间(设置为0则不验证)
         /// </summary>
-        public int PackageExpiryTime {
+        public int PackageExpiryTime
+        {
             get => _packageExpiryTime;
             set => SetProperty(ref _packageExpiryTime, value);
         }
@@ -59,7 +63,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否使用空包裹过期
         /// </summary>
-        public bool IsUseEmptyPackageExpiry {
+        public bool IsUseEmptyPackageExpiry
+        {
             get => _isUseEmptyPackageExpiry;
             set => SetProperty(ref _isUseEmptyPackageExpiry, value);
         }
@@ -67,7 +72,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 空包裹过期时间(设置为0则不验证)
         /// </summary>
-        public int EmptyPackageExpiryTime {
+        public int EmptyPackageExpiryTime
+        {
             get => _emptyPackageExpiryTime;
             set => SetProperty(ref _emptyPackageExpiryTime, value);
         }
@@ -75,7 +81,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 多条码返回处理方式
         /// </summary>
-        public BarcodeHandlingMethodEnum BarcodeHandlingMethod {
+        public BarcodeHandlingMethodEnum BarcodeHandlingMethod
+        {
             get => _barcodeHandlingMethod;
             set => SetProperty(ref _barcodeHandlingMethod, value);
         }
@@ -83,7 +90,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 创建包裹方式
         /// </summary>
-        public PackageCreationMethodsEnum PackageCreationMethods {
+        public PackageCreationMethodsEnum PackageCreationMethods
+        {
             get => _packageCreationMethods;
             set => SetProperty(ref _packageCreationMethods, value);
         }
@@ -91,7 +99,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否使用NoRead
         /// </summary>
-        public bool IsUseNoRead {
+        public bool IsUseNoRead
+        {
             get => _isUseNoRead;
             set => SetProperty(ref _isUseNoRead, value);
         }
@@ -99,7 +108,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 填充条码队列
         /// </summary>
-        public BarcodeQueueOrderEnum BarcodeQueueOrder {
+        public BarcodeQueueOrderEnum BarcodeQueueOrder
+        {
             get => _barcodeQueueOrder;
             set => SetProperty(ref _barcodeQueueOrder, value);
         }
@@ -107,7 +117,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 移除包裹方式
         /// </summary>
-        public PackageRemoveMethodsEnum PackageRemoveMethods {
+        public PackageRemoveMethodsEnum PackageRemoveMethods
+        {
             get => _packageRemoveMethods;
             set => SetProperty(ref _packageRemoveMethods, value);
         }
@@ -115,7 +126,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 停止时是否清空包裹
         /// </summary>
-        public bool ClearPackageQueueOnStop {
+        public bool ClearPackageQueueOnStop
+        {
             get => _clearPackageQueueOnStop;
             set => SetProperty(ref _clearPackageQueueOnStop, value);
         }
@@ -123,7 +135,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 包裹创建方式
         /// </summary>
-        public ObservableCollection<PackageCreationMethodItemInfoModel> PackageCreationMethodItems {
+        public ObservableCollection<PackageCreationMethodItemInfoModel> PackageCreationMethodItems
+        {
             get => _packageCreationMethodItems;
             set => SetProperty(ref _packageCreationMethodItems, value);
         }
@@ -131,7 +144,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否使用NoRead过滤
         /// </summary>
-        public bool IsUseNoReadFilter {
+        public bool IsUseNoReadFilter
+        {
             get => _isUseNoReadFilter;
             set => SetProperty(ref _isUseNoReadFilter, value);
         }
@@ -139,7 +153,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// NoRead间隔时间
         /// </summary>
-        public int FilterInterval {
+        public int FilterInterval
+        {
             get => _filterInterval;
             set => SetProperty(ref _filterInterval, value);
         }
@@ -148,7 +163,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 是否多相机组码
         /// </summary>
 
-        public bool IsGroupBarCode {
+        public bool IsGroupBarCode
+        {
             get => _isGroupBarCode;
             set => SetProperty(ref _isGroupBarCode, value);
         }
@@ -156,7 +172,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 最小创建包裹间隔时间
         /// </summary>
-        public int PackageCreationInterval {
+        public int PackageCreationInterval
+        {
             get => _packageCreationInterval;
             set => SetProperty(ref _packageCreationInterval, value);
         }
@@ -164,7 +181,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 是否使用条码赋值间隔
         /// </summary>
-        public bool IsUseBarcodeAssignmentInterval {
+        public bool IsUseBarcodeAssignmentInterval
+        {
             get => _isUseBarcodeAssignmentInterval;
             set => SetProperty(ref _isUseBarcodeAssignmentInterval, value);
         }
@@ -172,7 +190,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 最小赋值间隔
         /// </summary>
-        public int MinimumAssignmentTime {
+        public int MinimumAssignmentTime
+        {
             get => _minimumAssignmentTime;
             set => SetProperty(ref _minimumAssignmentTime, value);
         }
@@ -180,13 +199,15 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 最大赋值间隔
         /// </summary>
-        public int MaximumAssignmentTime {
+        public int MaximumAssignmentTime
+        {
             get => _maximumAssignmentTime;
             set => SetProperty(ref _maximumAssignmentTime, value);
         }
     }
 
-    public class PackageCreationMethodItemInfoModel {
+    public class PackageCreationMethodItemInfoModel
+    {
         public string DisplayName { get; set; } = string.Empty;
         public PackageCreationMethodsEnum EnumValue { get; set; }
         public bool IsChecked { get; set; }

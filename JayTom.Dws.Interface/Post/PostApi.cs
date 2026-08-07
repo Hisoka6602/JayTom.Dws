@@ -12,11 +12,17 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 
 namespace JayTom.Dws.Interface.Post {
-    public class PostApi : IDataUploader {
+    public partial class PostApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters? Parameters { get; private set; }
         private static long _num = 1;
         public object SettingLock { get; private set; } = new();
+
+        /// <summary>
+        /// 获取解析邮政响应信封的源生成正则。
+        /// </summary>
+        [GeneratedRegex(@"#HEAD::(.*?)::\|\|#END")]
+        private static partial Regex ResponseEnvelopeRegex();
 
         public PostApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -110,12 +116,11 @@ namespace JayTom.Dws.Interface.Post {
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    var pattern = @"#HEAD::(.*?)::\|\|#END";
-                    var match = Regex.Match(resultContent, pattern);
+                    var match = ResponseEnvelopeRegex().Match(resultContent);
                     if (match.Success) {
                         // Extract the content and split by '::'
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 7 && parts[6].Length >= 8) {
                             var exit = $"格口:[{parts[6][..4]}]";
@@ -233,12 +238,11 @@ namespace JayTom.Dws.Interface.Post {
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    var pattern = @"#HEAD::(.*?)::\|\|#END";
-                    var match = Regex.Match(resultContent, pattern);
+                    var match = ResponseEnvelopeRegex().Match(resultContent);
                     if (match.Success) {
                         // Extract the content and split by '::'
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 7 && parts[6].Length >= 8) {
                             var exit = $"格口:[{parts[6][..4]}]";
@@ -306,12 +310,11 @@ namespace JayTom.Dws.Interface.Post {
                 var playId = "0";//2
                 var lcgk = "0";
                 if (!string.IsNullOrWhiteSpace(uploadResponse.ResponseContent)) {
-                    var pattern = @"#HEAD::(.*?)::\|\|#END";
-                    var match = Regex.Match(uploadResponse.ResponseContent, pattern);
+                    var match = ResponseEnvelopeRegex().Match(uploadResponse.ResponseContent);
                     if (match.Success) {
                         // Extract the content and split by '::'
                         var content = match.Groups[1].Value;
-                        var parts = content.Split(new string[] { "::" }, StringSplitOptions.None);
+                        var parts = content.Split(["::"], StringSplitOptions.None);
 
                         if (parts.Length > 6 && parts[6].Length >= 4) {
                             //格口

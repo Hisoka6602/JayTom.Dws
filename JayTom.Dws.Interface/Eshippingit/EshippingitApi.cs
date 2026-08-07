@@ -18,13 +18,19 @@ using System.Text.RegularExpressions;
 
 namespace JayTom.Dws.Interface.Eshippingit {
 
-    public class EshippingitApi : IDataUploader {
+    public partial class EshippingitApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
         public ApiParameters Parameters { get; private set; } = new();
         public static OssParameters? OssParam { get; private set; }
         private static OssClient? _ossClient;
         private SemaphoreSlim _semaphore = new(1);
         private SemaphoreSlim _uploadSemaphore = new(10);
+
+        /// <summary>
+        /// 获取清理条码控制字符的源生成正则。
+        /// </summary>
+        [GeneratedRegex(@"[\u0000-\u001f\b]")]
+        private static partial Regex BarcodeControlCharacterRegex();
 
         public EshippingitApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -39,7 +45,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var isSuccess = false;
             var requestTime = DateTime.Now;
             var data = new {
-                orderNo = Regex.Replace(barcode, @"[\u0000-\u001f\b]", ""),
+                orderNo = BarcodeControlCharacterRegex().Replace(barcode, string.Empty),
                 inboundWeight = Math.Round(Convert.ToDecimal(weight), 3),
                 inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
                 inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
@@ -121,7 +127,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var isSuccess = false;
             var requestTime = DateTime.Now;
             var data = new {
-                orderNo = Regex.Replace(barcode, @"[\u0000-\u001f\b]", ""),
+                orderNo = BarcodeControlCharacterRegex().Replace(barcode, string.Empty),
                 inboundWeight = Math.Round(Convert.ToDecimal(weight), 3),
                 inboundLength = Math.Round(Convert.ToDecimal(length / 10), 3),
                 inboundWidth = Math.Round(Convert.ToDecimal(width / 10), 3),
@@ -227,7 +233,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
         }
 
         public async Task<bool> PolicyPush(string barcode, DateTime scanTime, Image image, CancellationToken token = default) {
-            barcode = Regex.Replace(barcode, @"[\u0000-\u001f\b]", "");
+            barcode = BarcodeControlCharacterRegex().Replace(barcode, string.Empty);
             var waitAndRetryAsync = Policy.HandleResult<bool>(result => !result)
                 .Or<Exception>().WaitAndRetryAsync(Parameters.RetryCount, retryCount => TimeSpan.FromSeconds(Parameters.RetryInterval), // 重试间隔时间
                     (ex, timespan, retryCount, context) => {
@@ -252,7 +258,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
 
                 try {
                     await _uploadSemaphore.WaitAsync(token);
-                    using MemoryStream memoryStream = new MemoryStream();
+                    using MemoryStream memoryStream = new();
                     image.Save(memoryStream, image.RawFormat);
 
                     memoryStream.Seek(0, SeekOrigin.Begin);

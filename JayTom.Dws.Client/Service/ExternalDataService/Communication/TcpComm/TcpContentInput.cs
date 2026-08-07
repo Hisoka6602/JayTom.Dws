@@ -7,11 +7,14 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 
-namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm {
+namespace JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm
+{
 
-    public class TcpContentInput : BaseTcpOperations, ITcpContentInput {
+    public class TcpContentInput : BaseTcpOperations, ITcpContentInput
+    {
 
-        public TcpContentInput(ITcpCommClient tcpCommClient, ITcpCommServer tcpCommServer) : base(tcpCommClient, tcpCommServer) {
+        public TcpContentInput(ITcpCommClient tcpCommClient, ITcpCommServer tcpCommServer) : base(tcpCommClient, tcpCommServer)
+        {
         }
     }
 }

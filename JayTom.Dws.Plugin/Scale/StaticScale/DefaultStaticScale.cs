@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Plugin.SerialPort;
 using System.Runtime.Serialization;
 using System.Collections.Concurrent;
+using System.Globalization;
 using JayTom.Dws.Plugin.WeighingScale;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using static JayTom.Dws.Plugin.WeighingScale.WeighingScale;
@@ -17,11 +18,15 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private readonly Queue<float> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
+        /// <summary>
+        /// 串口数据到达信号，避免接收工作器空闲轮询。
+        /// </summary>
+        private readonly SemaphoreSlim _receiveSignal = new(0);
         private DateTime StabledTime { get; set; } = DateTime.Now;
         private CancellationTokenSource _tokenSource = new();
         private DefaultStaticScaleValueParameters _defaultStaticScaleValueParameters = new();
         private BaseScaleConnectParam _baseScaleConnectParam = new();
-        private readonly object _receiveLock = new();
+        private readonly System.Threading.Lock _receiveLock = new();
         private Task? _receiveTask;
         private Task? _sendTask;
 
@@ -59,6 +64,10 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             }
             _serialPort?.Dispose();
             _serialPort = null;
+            _character.Clear();
+            _weightQueue.Clear();
+            _oldStableWeight.Clear();
+            Status = ScaleStatus.Disconnected;
         }
 
         public WeightAdditionalProperties WeightAdditionalProperties { get; set; } = new();
@@ -116,13 +125,14 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                                         else {
                                             var buffer = new byte[port.BytesToRead];
                                             var bytesRead = port.Read(buffer, 0, buffer.Length);
-                                            receivedData = Convert.ToHexString(buffer.AsSpan(0, bytesRead));
+                                            receivedData = HexDataFormatter.Format(buffer.AsSpan(0, bytesRead));
                                         }
                                     }
                                 }
 
                                 if (!string.IsNullOrEmpty(receivedData)) {
                                     _character.Enqueue(receivedData);
+                                    _receiveSignal.Release();
                                     OnReceived(receivedData);
                                 }
                             }
@@ -169,46 +179,61 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         }
 
         private async Task ProcessReceivedData(CancellationToken token) {
+            if (!HasValidFrameConfiguration(out var configurationError)) {
+                OnExcepted(new InvalidOperationException(configurationError));
+                return;
+            }
+
             var dataBuffer = string.Empty;
             while (!token.IsCancellationRequested) {
                 //根据标识符取出指定长度的字符
+                await _receiveSignal.WaitAsync(token).ConfigureAwait(false);
                 var dequeue = _character.TryDequeue(out var buffResult);
                 if (dequeue) {
                     dataBuffer += buffResult;
-                    var indexOf = dataBuffer.IndexOf(_defaultStaticScaleValueParameters.Identifier, StringComparison.Ordinal);
-                    int identifierPosition = indexOf - _defaultStaticScaleValueParameters.IdentifierPosition;
-                    if (identifierPosition >= 0) {
-                        if (dataBuffer.Length >= (identifierPosition + _defaultStaticScaleValueParameters.CharacterLength)) {
+                    while (true) {
+                        var indexOf = dataBuffer.IndexOf(
+                            _defaultStaticScaleValueParameters.Identifier,
+                            StringComparison.Ordinal);
+                        var identifierPosition =
+                            indexOf - _defaultStaticScaleValueParameters.IdentifierPosition;
+                        if (indexOf < 0 || identifierPosition < 0 ||
+                            dataBuffer.Length < identifierPosition +
+                            _defaultStaticScaleValueParameters.CharacterLength) {
+                            var maximumBufferedCharacters = Math.Max(
+                                _defaultStaticScaleValueParameters.CharacterLength * 4,
+                                4096);
+                            if (dataBuffer.Length > maximumBufferedCharacters) {
+                                dataBuffer = dataBuffer[^maximumBufferedCharacters..];
+                            }
+                            break;
+                        }
+
                             //取出完整一条
                             var substring = dataBuffer.Substring(identifierPosition, _defaultStaticScaleValueParameters.CharacterLength);
-                            if (substring.Length <= _defaultStaticScaleValueParameters.IntegerStartPosition ||
-                                substring.Length <= _defaultStaticScaleValueParameters.IntegerEndPosition ||
-                                substring.Length <= _defaultStaticScaleValueParameters.DecimalStartPosition ||
-                                substring.Length <= _defaultStaticScaleValueParameters.DecimalEndPosition ||
-                                _defaultStaticScaleValueParameters.IntegerEndPosition - _defaultStaticScaleValueParameters.IntegerStartPosition < 0 ||
-                                _defaultStaticScaleValueParameters.DecimalEndPosition - _defaultStaticScaleValueParameters.DecimalStartPosition < 0) {
-                                continue;
-                            }
+                            dataBuffer = dataBuffer[
+                                (identifierPosition + _defaultStaticScaleValueParameters.CharacterLength)..];
                             //取出整数
                             var integer = substring.Substring(_defaultStaticScaleValueParameters.IntegerStartPosition, _defaultStaticScaleValueParameters.IntegerEndPosition - _defaultStaticScaleValueParameters.IntegerStartPosition + 1);
-                            integer = _defaultStaticScaleValueParameters.IsReversed ? new string(integer.Reverse().ToArray()) : integer;
+                            integer = _defaultStaticScaleValueParameters.IsReversed ? new string([.. integer.Reverse()]) : integer;
                             //取出小数
                             var _decimal = substring.Substring(_defaultStaticScaleValueParameters.DecimalStartPosition, _defaultStaticScaleValueParameters.DecimalEndPosition - _defaultStaticScaleValueParameters.DecimalStartPosition + 1);
-                            _decimal = _defaultStaticScaleValueParameters.IsReversed ? new string(_decimal.Reverse().ToArray()) : _decimal;
+                            _decimal = _defaultStaticScaleValueParameters.IsReversed ? new string([.. _decimal.Reverse()]) : _decimal;
                             //组合
                             var data = $"{integer}.{_decimal}";
                             ProcessDataPackage(data);
-                            dataBuffer = string.Empty;
                         }
-                    }
                 }
-                await Task.Delay(1, token);
             }
         }
 
         private void ProcessDataPackage(string data) {
             try {
-                if (float.TryParse(data.Replace(" ", string.Empty), out var result)) {
+                if (float.TryParse(
+                        data.Replace(" ", string.Empty),
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var result)) {
                     _weightQueue.Enqueue(result);
                     if (_weightQueue.Count > 0 && _weightQueue.Count > _defaultStaticScaleValueParameters.BalanceCount) {
                         //删除一个
@@ -216,9 +241,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                     }
 
                     if (_weightQueue.Count >= _defaultStaticScaleValueParameters.BalanceCount) {
-                        if (_weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
-                            _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight &&
-                            _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
+                        var maximumWeight = _weightQueue.Max();
+                        var minimumWeight = _weightQueue.Min();
+                        if (maximumWeight - minimumWeight <= _defaultStaticScaleValueParameters.BalanceQty &&
+                            maximumWeight <= _defaultStaticScaleValueParameters.MaxWeight &&
+                            minimumWeight >= _defaultStaticScaleValueParameters.MinWeight) {
                             StabledTime = DateTime.Now;
                             var weight = _weightQueue.GroupBy(x => x)
                                 .OrderByDescending(g => g.Count())
@@ -260,9 +287,9 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                             _weightQueue.Clear();
                         }
                         else if (!_isZeroed && (_weightQueue.All(item => item == 0) ||
-                                           _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight) ||
-                                           _weightQueue.Reverse().Take(3).All(w => w < _lastweight * 0.85) ||
-                                           _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight) ||
+                                           (_weightQueue.Count >= 2 && _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight)) ||
+                                           (_weightQueue.Count >= 3 && _weightQueue.Reverse().Take(3).All(w => w < _lastweight * 0.85)) ||
+                                           (_oldStableWeight.Count > 0 && _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight)) ||
                                            (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty))) {
                             OnWeightCleared(new WeightChangedEventArgs() {
                                 Format = WeightFormat,
@@ -277,7 +304,8 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         }
                     }
 
-                    if (WeightAdditionalProperties.IsUseMergedWeightTimeout) {
+                    if (WeightAdditionalProperties.IsUseMergedWeightTimeout &&
+                        _weightQueue.Count >= _defaultStaticScaleValueParameters.BalanceCount) {
                         if (DateTime.Now.Subtract(StabledTime).TotalMilliseconds > WeightAdditionalProperties.MergedWeightTimeout &&
                             _weightQueue.Max() - _weightQueue.Min() <= _defaultStaticScaleValueParameters.BalanceQty &&
                             _weightQueue.Max() <= _defaultStaticScaleValueParameters.MaxWeight && _weightQueue.Min() >= _defaultStaticScaleValueParameters.MinWeight) {
@@ -309,7 +337,10 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         private async Task ProcessSending(CancellationToken token) {
             while (!token.IsCancellationRequested) {
-                await Task.Delay(20, token);
+                var sendInterval = _defaultStaticScaleValueParameters.DataInterval;
+                await Task.Delay(
+                    sendInterval > TimeSpan.Zero ? sendInterval : TimeSpan.FromMilliseconds(1),
+                    token);
                 if (_serialPort?.IsOpen == true) {
                     if (_defaultStaticScaleValueParameters.SendingFormat == ScaleWeightFormat.Ascii) {
                         _serialPort?.WriteLine(_defaultStaticScaleValueParameters.SendingContent);
@@ -381,6 +412,32 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             }
 
             return bytes;
+        }
+
+        /// <summary>
+        /// 校验静态秤数据帧配置是否可用于安全解析。
+        /// </summary>
+        private bool HasValidFrameConfiguration(out string error) {
+            var parameters = _defaultStaticScaleValueParameters;
+            if (parameters.BalanceCount <= 0) {
+                error = "稳定重量采样数量必须大于0";
+                return false;
+            }
+            if (parameters.CharacterLength <= 0 ||
+                string.IsNullOrEmpty(parameters.Identifier) ||
+                parameters.IdentifierPosition < 0 ||
+                parameters.IntegerStartPosition < 0 ||
+                parameters.DecimalStartPosition < 0 ||
+                parameters.IntegerEndPosition < parameters.IntegerStartPosition ||
+                parameters.DecimalEndPosition < parameters.DecimalStartPosition ||
+                parameters.IntegerEndPosition >= parameters.CharacterLength ||
+                parameters.DecimalEndPosition >= parameters.CharacterLength) {
+                error = "静态秤数据帧配置无效";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         protected virtual void OnWeightStabilized(WeightChangedEventArgs e) {

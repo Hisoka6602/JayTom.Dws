@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
@@ -80,6 +81,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         public DeviceDecodeResult? DecodeData(string data) {
+            data = HexDataFormatter.Normalize(data);
             //判断是否8个字节
             var bytes = HexStringToByteArray(data);
             var type = FunctionType.None;
@@ -90,39 +92,29 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             var commandParsing = new CommandParsing();
             if (bytes.Length is 8) {
                 //不效验
-                string hexString;
                 int number;
                 switch (bytes[1]) {
                     case 0x12:
                         type = FunctionType.CreatePackage;
                         description = $"创建包裹";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                           .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         break;
 
                     case 0x02:
                         type = FunctionType.Heartbeat;
                         description = $"心跳包";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                           .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         break;
 
                     case 0x21:
                         type = FunctionType.RemovePackage;
                         description = $"移除包裹";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                            .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         break;
 
@@ -130,17 +122,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         sortingExceptionReturnType = SortingExceptionReturnTypeConvert(bytes[6]);
                         type = FunctionType.PackageException;
                         description = $"分拣异常";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                            .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         commandParsing = new CommandParsing() {
                             SequenceNumber = (uint)number,
                             ExceptionCode = bytes[7],
                             FunctionCode = bytes[1],
-                            CompartmentNumber = BitConverter.ToUInt32(new byte[] { bytes[5], bytes[4], 0, 0 }, 0)
+                            CompartmentNumber = BitConverter.ToUInt32([bytes[5], bytes[4], 0, 0], 0)
                         };
                         break;
 
@@ -148,17 +137,14 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         sortingExceptionReturnType = SortingExceptionReturnTypeConvert(bytes[6]);
                         type = FunctionType.PackageExceptionEx;
                         description = $"分拣异常";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                            .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         commandParsing = new CommandParsing() {
                             SequenceNumber = (uint)number,
                             ExceptionCode = bytes[7],
                             FunctionCode = bytes[1],
-                            CompartmentNumber = BitConverter.ToUInt32(new byte[] { bytes[5], bytes[4], 0, 0 }, 0)
+                            CompartmentNumber = BitConverter.ToUInt32([bytes[5], bytes[4], 0, 0], 0)
                         };
                         break;
 
@@ -166,33 +152,24 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         //前置信号回复
                         type = FunctionType.ReceivePreSignalReply;
                         description = $"前置信号";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                            .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         break;
 
                     case 0x16:
                         type = FunctionType.SequenceBindingReply;
                         description = $"序号回复绑定";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                            .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         break;
 
                     case 0x31:
                         type = FunctionType.ResetButtonTrigger;
                         description = $"复位按钮触发";
-                        hexString = BitConverter.ToString(new[] { bytes[2], bytes[3] })
-                            .Replace("-", string.Empty).Replace(" ", string.Empty);
-                        if (int.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out number)) {
-                            key = number.ToString();
-                        }
+                        number = bytes[2] << 8 | bytes[3];
+                        key = number.ToString();
                         keywordPosition = 2;
                         break;
                 }
@@ -245,8 +222,8 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             if (obj is byte[] { Length: 8 } bytes) {
                 return new CommandParsing() {
                     FunctionCode = bytes[1],
-                    SequenceNumber = BitConverter.ToUInt32(new byte[] { bytes[3], bytes[2], 0, 0 }, 0),
-                    CompartmentNumber = BitConverter.ToUInt32(new byte[] { bytes[5], bytes[4], 0, 0 }, 0),
+                    SequenceNumber = BitConverter.ToUInt32([bytes[3], bytes[2], 0, 0], 0),
+                    CompartmentNumber = BitConverter.ToUInt32([bytes[5], bytes[4], 0, 0], 0),
                     ExceptionCode = bytes[6],
                 };
             }
@@ -261,37 +238,20 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
         public string? ExitContentConvert(object data) {
             if (data is byte[] { Length: 8 } bytes) {
-                /*return BitConverter.ToString(new[] { bytes[4], bytes[5] })
-                    .Replace("-", " ");*/
-
-                var replace = BitConverter.ToString(new[] { bytes[4], bytes[5] })
-                    .Replace("-", " ");
-                return replace;
+                return HexDataFormatter.Format(bytes.AsSpan(4, 2));
             }
-            if (data is string { Length: 24 or 23 } hexString) {
-                var extracted = string.Join(" ", hexString.Trim().Split().Reverse().Skip(2).Take(2).Reverse());
-                return extracted;
-                /*var hexStringLength = hexString.Length;
-                var toByteArray = HexStringToByteArray(hexString);
-                return ExitContentConvert(toByteArray);*/
+            if (data is string hexString &&
+                HexDataFormatter.TryParse(hexString, out var parsedBytes) &&
+                parsedBytes.Length == 8) {
+                return ExitContentConvert(parsedBytes);
             }
             return null;
         }
 
         public static byte[] HexStringToByteArray(string hexString) {
-            try {
-                hexString = hexString.Replace(" ", ""); // 移除空格
-
-                var bytes = new byte[hexString.Length / 2];
-                for (var i = 0; i < hexString.Length; i += 2) {
-                    bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
-                }
-
-                return bytes;
-            }
-            catch (Exception e) {
-                return new byte[] { 0x00 };
-            }
+            return HexDataFormatter.TryParse(hexString, out var bytes)
+                ? bytes
+                : [0x00];
         }
 
         public static string HexWithDelimiter(string hexString, string delimiter) {

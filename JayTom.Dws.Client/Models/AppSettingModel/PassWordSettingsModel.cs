@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.AppDto;
 
-namespace JayTom.Dws.Client.Models.AppSettingModel {
+namespace JayTom.Dws.Client.Models.AppSettingModel
+{
 
-    public class PassWordSettingsModel : BindableBase {
+    public class PassWordSettingsModel : BindableBase
+    {
 
         private List<PasswordProtectionModuleItemInfoModel> _passwordProtectionModuleItems = new()
         {
@@ -104,7 +106,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 保护模块
         /// </summary>
-        public List<PasswordProtectionModuleItemInfoModel> PasswordProtectionModuleItems {
+        public List<PasswordProtectionModuleItemInfoModel> PasswordProtectionModuleItems
+        {
             get => _passwordProtectionModuleItems;
             set => SetProperty(ref _passwordProtectionModuleItems, value);
         }
@@ -112,7 +115,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 获取或设置一个值，该值指示是否使用密码保护。
         /// </summary>
-        public bool IsUsePasswordProtection {
+        public bool IsUsePasswordProtection
+        {
             get => _isUsePasswordProtection;
             set => SetProperty(ref _isUsePasswordProtection, value);
         }
@@ -120,7 +124,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 获取或设置密码。
         /// </summary>
-        public string Password {
+        public string Password
+        {
             get => _password;
             set => SetProperty(ref _password, value);
         }
@@ -128,7 +133,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 获取或设置确认密码。
         /// </summary>
-        public string ConfirmPassword {
+        public string ConfirmPassword
+        {
             get => _confirmPassword;
             set => SetProperty(ref _confirmPassword, value);
         }
@@ -136,7 +142,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 获取或设置密码提示。
         /// </summary>
-        public string PasswordHint {
+        public string PasswordHint
+        {
             get => _passwordHint;
             set => SetProperty(ref _passwordHint, value);
         }
@@ -144,13 +151,15 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 获取或设置一个值，该值指示是否验证密码后，在本次启动期间的其他操作中不重复验证。
         /// </summary>
-        public bool SkipPasswordValidationForThisSession {
+        public bool SkipPasswordValidationForThisSession
+        {
             get => _skipPasswordValidationForThisSession;
             set => SetProperty(ref _skipPasswordValidationForThisSession, value);
         }
     }
 
-    public class PasswordProtectionModuleItemInfoModel : BindableBase {
+    public class PasswordProtectionModuleItemInfoModel : BindableBase
+    {
         private bool _isProtected;
         private string _pageClassName = string.Empty;
         private string _description = string.Empty;
@@ -158,7 +167,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 是否使用密码保护
         /// </summary>
-        public bool IsProtected {
+        public bool IsProtected
+        {
             get => _isProtected;
             set => SetProperty(ref _isProtected, value);
         }
@@ -166,7 +176,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 页面类名
         /// </summary>
-        public string PageClassName {
+        public string PageClassName
+        {
             get => _pageClassName;
             set => SetProperty(ref _pageClassName, value);
         }
@@ -174,7 +185,8 @@ namespace JayTom.Dws.Client.Models.AppSettingModel {
         /// <summary>
         /// 描述信息
         /// </summary>
-        public string Description {
+        public string Description
+        {
             get => _description;
             set => SetProperty(ref _description, value);
         }

@@ -8,7 +8,7 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 极昼服务基础地址。
         /// </summary>
         public string BaseUrl { get; set; } =
-            "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
+            "https://sdsonline.jtexpress.com.cn/sdsOnlineApi";
 
         /// <summary>
         /// 应用标识。
@@ -21,14 +21,56 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         public string AppSecret { get; set; } = string.Empty;
 
         /// <summary>
+        /// 是否使用旧版小件回传；默认使用新版回传。
+        /// </summary>
+        public bool UseLegacyUpload { get; set; }
+
+        /// <summary>
+        /// 旧版小件回传地址。
+        /// </summary>
+        public string LegacyUploadUrl { get; set; } =
+            "https://assscan.jtexpress.com.cn/assscanface/face/" +
+            "assScanSmallUpper/smallUpperDataUpload";
+
+        /// <summary>
+        /// 旧版小件回传应用标识。
+        /// </summary>
+        public string LegacyAppKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 旧版小件回传应用密钥。
+        /// </summary>
+        public string LegacyAppSecret { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 新版回传场地编码。
+        /// </summary>
+        public string SiteCode { get; set; } = "6398155";
+
+        /// <summary>
+        /// 兼容旧配置的 networkCode；保存时与场地编码保持一致。
+        /// </summary>
+        public string NetworkCode { get; set; } = "6398155";
+
+        /// <summary>
+        /// 旧版小件回传交叉带 MAC 地址。
+        /// </summary>
+        public string CrossBeltMac { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 旧版小件回传供件台 MAC 地址。
+        /// </summary>
+        public string SupplyDeskMac { get; set; } = string.Empty;
+
+        /// <summary>
         /// 设备编号。
         /// </summary>
-        public string EquipmentCode { get; set; } = string.Empty;
+        public string EquipmentCode { get; set; } = "ZXJCD6398155001";
 
         /// <summary>
         /// 分拣计划编码。
         /// </summary>
-        public string SortingPlanCode { get; set; } = string.Empty;
+        public string SortingPlanCode { get; set; } = "6398155-001";
 
         /// <summary>
         /// 操作类型，1 出港、2 进港、3 进出港。
@@ -38,7 +80,7 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// <summary>
         /// 操作员 JMS 账号。
         /// </summary>
-        public string Operator { get; set; } = string.Empty;
+        public string Operator { get; set; } = "LS6398155001";
 
         /// <summary>
         /// 格口查询使用的可选主线编码。

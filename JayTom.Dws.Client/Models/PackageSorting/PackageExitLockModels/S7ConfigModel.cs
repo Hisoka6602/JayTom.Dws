@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
+namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels
+{
 
-    public class S7ConfigModel : BindableBase {
+    public class S7ConfigModel : BindableBase
+    {
         private string _ip = string.Empty;
         private int _db;
         private int _rack;
@@ -17,7 +19,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         /// <summary>
         /// IP 地址
         /// </summary>
-        public string Ip {
+        public string Ip
+        {
             get => _ip;
             set => SetProperty(ref _ip, value);
         }
@@ -25,7 +28,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         /// <summary>
         /// 数据库
         /// </summary>
-        public int Db {
+        public int Db
+        {
             get => _db;
             set => SetProperty(ref _db, value);
         }
@@ -33,7 +37,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         /// <summary>
         /// 机架号
         /// </summary>
-        public int Rack {
+        public int Rack
+        {
             get => _rack;
             set => SetProperty(ref _rack, value);
         }
@@ -41,7 +46,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         /// <summary>
         /// 插槽号
         /// </summary>
-        public int Slot {
+        public int Slot
+        {
             get => _slot;
             set => SetProperty(ref _slot, value);
         }
@@ -49,7 +55,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels {
         /// <summary>
         /// 超时时间
         /// </summary>
-        public int Timeout {
+        public int Timeout
+        {
             get => _timeout;
             set => SetProperty(ref _timeout, value);
         }

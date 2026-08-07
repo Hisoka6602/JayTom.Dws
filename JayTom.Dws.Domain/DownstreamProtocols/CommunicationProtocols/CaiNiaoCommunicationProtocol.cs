@@ -5,6 +5,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
+using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
@@ -18,16 +19,16 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             byte startDelimiter = 0x02;
 
             // 报文用途 默认0x30,0x31
-            byte[] messagePurpose = { 0x30, 0x31 };
+            byte[] messagePurpose = [0x30, 0x31];
 
             // 站号(默认1)
-            byte[] stationNumber = { 0x30, 0x30 };
+            byte[] stationNumber = [0x30, 0x30];
             //设备状态
-            byte[] deviceStatus = { 0x30, 0x30 };
+            byte[] deviceStatus = [0x30, 0x30];
             // 设备类型 默认 0x30, 0x31
-            byte[] deviceType = { 0x30, 0x30 };
+            byte[] deviceType = [0x30, 0x30];
             // 结束符
-            byte[] endDelimiter = { 0x0D, 0x0A };
+            byte[] endDelimiter = [0x0D, 0x0A];
 
             if (type == FunctionType.Heartbeat) {
                 var dataBytes = new List<byte>()
@@ -38,7 +39,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                 dataBytes.AddRange(stationNumber);
                 dataBytes.AddRange(deviceStatus);
                 dataBytes.AddRange(endDelimiter);
-                return BitConverter.ToString(dataBytes.ToArray()).Replace("-", "");
+                return HexDataFormatter.Format(dataBytes.ToArray());
             }
             else if (type == FunctionType.SendExit) {
                 if (other is InstructionsAttach attach) {
@@ -149,7 +150,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                     }
                     //结束
                     dataBytes.AddRange(endDelimiter);
-                    return BitConverter.ToString(dataBytes.ToArray()).Replace("-", "");
+                    return HexDataFormatter.Format(dataBytes.ToArray());
                 }
 
                 return string.Empty;
@@ -159,6 +160,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         public DeviceDecodeResult? DecodeData(string data) {
+            data = HexDataFormatter.Normalize(data);
             //心跳和触发
             var bytes = HexStringToByteArray(data);
             var subArray = GetSubArray(bytes, 0x02, 0x0D, 0x0A);
@@ -274,7 +276,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                 return bytes;
             }
             catch (Exception e) {
-                return new byte[] { 0x00 };
+                return [0x00];
             }
         }
 
@@ -293,7 +295,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
             // 如果未找到endPart2，或者endPart2不是跟在endPart1后面的，也处理异常或返回空数组，取决于实际需求
             if (endIndex == -1 || endIndex != lastPart1Index + 1) {
                 // 处理异常或返回空数组
-                return Array.Empty<byte>();
+                return [];
             }
 
             // 截取子数组

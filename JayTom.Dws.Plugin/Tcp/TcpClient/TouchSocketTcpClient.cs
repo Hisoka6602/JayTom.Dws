@@ -7,6 +7,7 @@ using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
@@ -21,7 +22,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         /// <summary>
         /// 自动重连同步锁。
         /// </summary>
-        private readonly object _reconnectSync = new();
+        private readonly System.Threading.Lock _reconnectSync = new();
 
         /// <summary>
         /// 发送同步锁。
@@ -52,6 +53,18 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         /// 是否至少成功连接过一次。
         /// </summary>
         private bool _hasConnectedOnce;
+        /// <summary>
+        /// 保护客户端分帧接收缓冲区。
+        /// </summary>
+        private readonly System.Threading.Lock _receiveSync = new();
+        /// <summary>
+        /// 保存尚未组成完整固定长度帧的接收字节。
+        /// </summary>
+        private readonly List<byte> _receiveBuffer = new();
+        /// <summary>
+        /// 接收缓冲区中下一帧的读取偏移。
+        /// </summary>
+        private int _receiveBufferOffset;
 
         public string IpAddress { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
@@ -59,7 +72,15 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         public int DataLen {
             get => _dataLen;
-            set => _dataLen = value;
+            set {
+                lock (_receiveSync) {
+                    if (_dataLen != value) {
+                        _receiveBuffer.Clear();
+                        _receiveBufferOffset = 0;
+                    }
+                    _dataLen = Math.Max(0, value);
+                }
+            }
         }
 
         public FormatType FormatType { get; set; }
@@ -112,15 +133,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     _tcpClient = new TouchSocket.Sockets.TcpClient();
                     _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
                         try {
-                            var length = DataLen > 0 ? Math.Min(DataLen, block.Len) : block.Len;
-                            var msg = Encoding.Default.GetString(block.Buffer, 0, length);
-                            OnCommunication(new CommunicationInfo() {
-                                Content = FormatType == FormatType.Ascii
-                                    ? msg
-                                    : Convert.ToHexString(block.Buffer.AsSpan(0, length)),
-                                Time = DateTime.Now,
-                                Type = CommunicationType.Receive
-                            });
+                            HandleReceivedBytes(block.Buffer, block.Len);
                             block.Clear();
                         }
                         catch (Exception e) {
@@ -203,15 +216,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                         _tcpClient = new TouchSocket.Sockets.TcpClient();
                         _tcpClient.Received += delegate (TouchSocket.Sockets.TcpClient client, ByteBlock block, IRequestInfo info) {
                             try {
-                                var length = DataLen > 0 ? Math.Min(DataLen, block.Len) : block.Len;
-                                var msg = Encoding.Default.GetString(block.Buffer, 0, length);
-                                OnCommunication(new CommunicationInfo() {
-                                    Content = FormatType == FormatType.Ascii
-                                        ? msg
-                                        : Convert.ToHexString(block.Buffer.AsSpan(0, length)),
-                                    Time = DateTime.Now,
-                                    Type = CommunicationType.Receive
-                                });
+                                HandleReceivedBytes(block.Buffer, block.Len);
                                 block.Clear();
                             }
                             catch (Exception e) {
@@ -288,7 +293,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
                     }
                     await _tcpClient.SendAsync(message);
                     OnCommunication(new CommunicationInfo() {
-                        Content = BitConverter.ToString(message).Replace("-", ", "),
+                        Content = HexDataFormatter.Format(message),
                         Time = DateTime.Now,
                         Type = CommunicationType.Send
                     });
@@ -409,6 +414,10 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
         }
 
         protected virtual void OnCommunication(CommunicationInfo e) {
+            e.FormatType = FormatType;
+            if (FormatType == FormatType.Hex) {
+                e.Content = HexDataFormatter.Normalize(e.Content);
+            }
             Communication?.Invoke(this, e);
         }
 
@@ -420,6 +429,53 @@ namespace JayTom.Dws.Plugin.Tcp.TcpClient {
 
         protected virtual void OnSendError(Exception e) {
             SendError?.Invoke(this, e);
+        }
+
+        /// <summary>
+        /// 处理 TCP 粘包和拆包，并发布完整消息帧。
+        /// </summary>
+        private void HandleReceivedBytes(byte[] buffer, int length) {
+            if (length <= 0) {
+                return;
+            }
+
+            var frames = new List<byte[]>();
+            lock (_receiveSync) {
+                if (DataLen <= 0) {
+                    frames.Add(buffer.AsSpan(0, length).ToArray());
+                }
+                else {
+                    for (var index = 0; index < length; index++) {
+                        _receiveBuffer.Add(buffer[index]);
+                    }
+
+                    while (_receiveBuffer.Count - _receiveBufferOffset >= DataLen) {
+                        var frame = new byte[DataLen];
+                        _receiveBuffer.CopyTo(_receiveBufferOffset, frame, 0, DataLen);
+                        _receiveBufferOffset += DataLen;
+                        frames.Add(frame);
+                    }
+
+                    if (_receiveBufferOffset == _receiveBuffer.Count) {
+                        _receiveBuffer.Clear();
+                        _receiveBufferOffset = 0;
+                    }
+                    else if (_receiveBufferOffset >= 4096) {
+                        _receiveBuffer.RemoveRange(0, _receiveBufferOffset);
+                        _receiveBufferOffset = 0;
+                    }
+                }
+            }
+
+            foreach (var frame in frames) {
+                OnCommunication(new CommunicationInfo {
+                    Content = FormatType == FormatType.Ascii
+                        ? Encoding.Default.GetString(frame)
+                        : HexDataFormatter.Format(frame),
+                    Time = DateTime.Now,
+                    Type = CommunicationType.Receive
+                });
+            }
         }
 
         public byte[] RemoveTrailingZeros(byte[] input) {

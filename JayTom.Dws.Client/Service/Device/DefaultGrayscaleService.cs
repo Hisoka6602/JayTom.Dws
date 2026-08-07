@@ -10,9 +10,11 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 
-namespace JayTom.Dws.Client.Service.Device {
+namespace JayTom.Dws.Client.Service.Device
+{
 
-    public class DefaultGrayscaleService : IGrayscaleService {
+    public class DefaultGrayscaleService : IGrayscaleService
+    {
         private readonly IConfigRepository _configRepository;
         private readonly IGrayscaleDevice _grayscaleDevice;
         private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
@@ -20,91 +22,108 @@ namespace JayTom.Dws.Client.Service.Device {
         private int _isConnected;
 
         public DefaultGrayscaleService(IConfigRepository configRepository,
-            IGrayscaleDevice grayscaleDevice) {
+            IGrayscaleDevice grayscaleDevice)
+        {
             _configRepository = configRepository;
             _grayscaleDevice = grayscaleDevice;
 
-            _grayscaleDevice.Connected += (sender, s) => {
+            _grayscaleDevice.Connected += (sender, s) =>
+            {
                 OnConnected(this);
             };
-            _grayscaleDevice.Disconnected += (sender, s) => {
+            _grayscaleDevice.Disconnected += (sender, s) =>
+            {
                 OnDisconnected(this);
             };
 
-            _grayscaleDevice.ParcelLocationReceived += (sender, result) => {
+            _grayscaleDevice.ParcelLocationReceived += (sender, result) =>
+            {
                 OnGrayscaleSensorResultReceived(result);
             };
-            _grayscaleDevice.ParcelLocationNotReceived += (sender, result) => {
+            _grayscaleDevice.ParcelLocationNotReceived += (sender, result) =>
+            {
                 OnParcelLocationNotReceived();
             };
         }
 
         public bool IsConnected => Volatile.Read(ref _isConnected) != 0;
 
-        public async Task<KeyValuePair<bool, string>> StartSensor() {
+        public async Task<KeyValuePair<bool, string>> StartSensor()
+        {
             await _lifecycleGate.WaitAsync();
-            try {
-                if (!IsConnected) {
-                //连接
+            try
+            {
+                if (!IsConnected)
+                {
+                    //连接
 
-                var grayscaleDeviceSettingsDto = await _configRepository
-                                                     .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
-                                                 new GrayscaleDeviceSettingsDto();
-                if (grayscaleDeviceSettingsDto is { IsUseGrayscaleDetector: true, TcpConnectionConfigInfo: not null }) {
-                    var isConnected = grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ConnectionMode switch {
-                        TcpConnectionMode.Client => await _grayscaleDevice.Connect(
-                            grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ClientConfig.IpAddress,
-                            grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ClientConfig.Port, ConnectionType.Client,
-                            1000, (FormatType)grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.DataFormat),
-                        TcpConnectionMode.Server => await _grayscaleDevice.Connect(
-                            grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ServerConfig.IpAddress,
-                            grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ServerConfig.Port, ConnectionType.Server,
-                            1000, (FormatType)grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.DataFormat),
-                        _ => false
-                    };
-                    Interlocked.Exchange(ref _isConnected, isConnected ? 1 : 0);
-                    _grayscaleDevice.SetCircularArrayCarCount(grayscaleDeviceSettingsDto.LineCarCount, grayscaleDeviceSettingsDto.CarNumberOffset);
-                    _grayscaleDevice.SetDirectionReversed(grayscaleDeviceSettingsDto.IsDirectionReversed);
-                    _grayscaleDevice.SetRegionCarCount(grayscaleDeviceSettingsDto.RegionCarCount);
-                    _grayscaleDevice.SetRectangleSizes(new Coordinates(grayscaleDeviceSettingsDto.AdditionalFrameRegion.X,
-                        grayscaleDeviceSettingsDto.AdditionalFrameRegion.Y, grayscaleDeviceSettingsDto.AdditionalFrameRegion.Width,
-                        grayscaleDeviceSettingsDto.AdditionalFrameRegion.Height),
-                        new Coordinates(grayscaleDeviceSettingsDto.MainFrameRegion.X,
-                            grayscaleDeviceSettingsDto.MainFrameRegion.Y, grayscaleDeviceSettingsDto.MainFrameRegion.Width,
-                            grayscaleDeviceSettingsDto.MainFrameRegion.Height), grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage,
-                        grayscaleDeviceSettingsDto.MinSendInterval);
-                    return new KeyValuePair<bool, string>(IsConnected, IsConnected ? "连接成功" : "连接失败");
+                    var grayscaleDeviceSettingsDto = await _configRepository
+                                                         .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
+                                                     new GrayscaleDeviceSettingsDto();
+                    if (grayscaleDeviceSettingsDto is { IsUseGrayscaleDetector: true, TcpConnectionConfigInfo: not null })
+                    {
+                        var isConnected = grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ConnectionMode switch
+                        {
+                            TcpConnectionMode.Client => await _grayscaleDevice.Connect(
+                                grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ClientConfig.IpAddress,
+                                grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ClientConfig.Port, ConnectionType.Client,
+                                1000, (FormatType)grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.DataFormat),
+                            TcpConnectionMode.Server => await _grayscaleDevice.Connect(
+                                grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ServerConfig.IpAddress,
+                                grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.ServerConfig.Port, ConnectionType.Server,
+                                1000, (FormatType)grayscaleDeviceSettingsDto.TcpConnectionConfigInfo.DataFormat),
+                            _ => false
+                        };
+                        Interlocked.Exchange(ref _isConnected, isConnected ? 1 : 0);
+                        _grayscaleDevice.SetCircularArrayCarCount(grayscaleDeviceSettingsDto.LineCarCount, grayscaleDeviceSettingsDto.CarNumberOffset);
+                        _grayscaleDevice.SetDirectionReversed(grayscaleDeviceSettingsDto.IsDirectionReversed);
+                        _grayscaleDevice.SetRegionCarCount(grayscaleDeviceSettingsDto.RegionCarCount);
+                        _grayscaleDevice.SetRectangleSizes(new Coordinates(grayscaleDeviceSettingsDto.AdditionalFrameRegion.X,
+                            grayscaleDeviceSettingsDto.AdditionalFrameRegion.Y, grayscaleDeviceSettingsDto.AdditionalFrameRegion.Width,
+                            grayscaleDeviceSettingsDto.AdditionalFrameRegion.Height),
+                            new Coordinates(grayscaleDeviceSettingsDto.MainFrameRegion.X,
+                                grayscaleDeviceSettingsDto.MainFrameRegion.Y, grayscaleDeviceSettingsDto.MainFrameRegion.Width,
+                                grayscaleDeviceSettingsDto.MainFrameRegion.Height), grayscaleDeviceSettingsDto.AdditionalBoxSpacePercentage,
+                            grayscaleDeviceSettingsDto.MinSendInterval);
+                        return new KeyValuePair<bool, string>(IsConnected, IsConnected ? "连接成功" : "连接失败");
+                    }
+
+                    return new KeyValuePair<bool, string>(true, string.Empty);
+                    //注册事件
                 }
-
-                return new KeyValuePair<bool, string>(true, string.Empty);
-                //注册事件
-            }
 
                 return new KeyValuePair<bool, string>(IsConnected, string.Empty);
             }
-            finally {
+            finally
+            {
                 _lifecycleGate.Release();
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> StopSensor() {
+        public async Task<KeyValuePair<bool, string>> StopSensor()
+        {
             await _lifecycleGate.WaitAsync();
-            try {
+            try
+            {
                 await _sendGate.WaitAsync();
-                try {
-                    if (IsConnected) {
+                try
+                {
+                    if (IsConnected)
+                    {
                         //断开
                         _grayscaleDevice.Close();
                         Interlocked.Exchange(ref _isConnected, 0);
                     }
                 }
-                finally {
+                finally
+                {
                     _sendGate.Release();
                 }
 
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
-            finally {
+            finally
+            {
                 _lifecycleGate.Release();
             }
         }
@@ -117,64 +136,81 @@ namespace JayTom.Dws.Client.Service.Device {
 
         public event EventHandler? ParcelLocationNotReceived;
 
-        public async Task<GrayscaleResult?> GetSingleGrayscaleSensorResult(object param, int timeOut, CancellationToken token) {
-            if (param is long carNum) {
+        public async Task<GrayscaleResult?> GetSingleGrayscaleSensorResult(object param, int timeOut, CancellationToken token)
+        {
+            if (param is long carNum)
+            {
                 await _sendGate.WaitAsync(token);
-                try {
+                try
+                {
                     return await _grayscaleDevice.SendCarNumber((int)carNum, timeOut, token);
                 }
-                finally {
+                finally
+                {
                     _sendGate.Release();
                 }
             }
             return null;
         }
 
-        public void ContinuousGrayscaleSensorReading(object param, CancellationToken token) {
-            if (param is int carNum) {
+        public void ContinuousGrayscaleSensorReading(object param, CancellationToken token)
+        {
+            if (param is int carNum)
+            {
                 _ = SendCarNumberAsync(carNum, token);
             }
         }
 
-        private async Task SendCarNumberAsync(int carNum, CancellationToken token) {
+        private async Task SendCarNumberAsync(int carNum, CancellationToken token)
+        {
             var lockTaken = false;
-            try {
+            try
+            {
                 await _sendGate.WaitAsync(token);
                 lockTaken = true;
                 await _grayscaleDevice.SendCarNumber(carNum, token);
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) {
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
                 // 调用方取消属于正常结束。
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error($"灰度仪连续读取异常:{e}");
             }
-            finally {
-                if (lockTaken) {
+            finally
+            {
+                if (lockTaken)
+                {
                     _sendGate.Release();
                 }
             }
         }
 
-        public int IncreaseCarCount(int carNum, int additionalCarCount) {
+        public int IncreaseCarCount(int carNum, int additionalCarCount)
+        {
             return _grayscaleDevice.IncreaseCarCount(carNum, additionalCarCount);
         }
 
-        protected virtual void OnConnected(IGrayscaleService e) {
+        protected virtual void OnConnected(IGrayscaleService e)
+        {
             Interlocked.Exchange(ref _isConnected, 1);
             Connected?.Invoke(this, e);
         }
 
-        protected virtual void OnDisconnected(IGrayscaleService e) {
+        protected virtual void OnDisconnected(IGrayscaleService e)
+        {
             Interlocked.Exchange(ref _isConnected, 0);
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual void OnGrayscaleSensorResultReceived(GrayscaleResult e) {
+        protected virtual void OnGrayscaleSensorResultReceived(GrayscaleResult e)
+        {
             GrayscaleSensorResultReceived?.Invoke(this, e);
         }
 
-        protected virtual void OnParcelLocationNotReceived() {
+        protected virtual void OnParcelLocationNotReceived()
+        {
             ParcelLocationNotReceived?.Invoke(this, EventArgs.Empty);
         }
     }

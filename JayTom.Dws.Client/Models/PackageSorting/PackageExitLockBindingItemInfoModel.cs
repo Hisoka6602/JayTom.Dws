@@ -9,9 +9,11 @@ using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class PackageExitLockBindingItemInfoModel : BasePackageSortingItemInfoModel {
+    public class PackageExitLockBindingItemInfoModel : BasePackageSortingItemInfoModel
+    {
         private long _exitId;
         private string _exitName = string.Empty;
         private string _address = string.Empty;
@@ -23,7 +25,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 格口Id
         /// </summary>
-        public long ExitId {
+        public long ExitId
+        {
             get => _exitId;
             set => SetProperty(ref _exitId, value);
         }
@@ -32,7 +35,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 格口名称
         /// </summary>
         [DisplayName("格口名称"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string ExitName {
+        public string ExitName
+        {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
         }
@@ -41,7 +45,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 地址
         /// </summary>
         [DisplayName("地址"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string Address {
+        public string Address
+        {
             get => _address;
             set => SetProperty(ref _address, value);
         }
@@ -50,7 +55,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 长度
         /// </summary>
         [DisplayName("长度"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public int Length {
+        public int Length
+        {
             get => _length;
             set => SetProperty(ref _length, value);
         }
@@ -59,7 +65,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 锁定标识
         /// </summary>
         [DisplayName("锁定标识"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string LockingFlag {
+        public string LockingFlag
+        {
             get => _lockingFlag;
             set => SetProperty(ref _lockingFlag, value);
         }
@@ -68,7 +75,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 解锁标识
         /// </summary>
         [DisplayName("解锁标识"), MemberNotNull, ExcelInfo(Width = 4000)]
-        public string UnlockingFlag {
+        public string UnlockingFlag
+        {
             get => _unlockingFlag;
             set => SetProperty(ref _unlockingFlag, value);
         }
@@ -76,7 +84,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// 当前状态
         /// </summary>
-        public ExitLockStatus CurrentStatus {
+        public ExitLockStatus CurrentStatus
+        {
             get => _currentStatus;
             set => SetProperty(ref _currentStatus, value);
         }

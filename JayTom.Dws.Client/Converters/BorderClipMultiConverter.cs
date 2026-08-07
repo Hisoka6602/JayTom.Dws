@@ -8,11 +8,14 @@ using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class BorderClipMultiConverter : IMultiValueConverter {
+    public class BorderClipMultiConverter : IMultiValueConverter
+    {
 
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
             if (values.Length < 3 || values[0] == DependencyProperty.UnsetValue
                                   || values[1] == DependencyProperty.UnsetValue || values[2] == DependencyProperty.UnsetValue)
                 return null;
@@ -24,7 +27,8 @@ namespace JayTom.Dws.Client.Converters {
             return new RectangleGeometry(new Rect(0, 0, width, height), cornerRadius.TopLeft, cornerRadius.TopLeft);
         }
 
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

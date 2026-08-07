@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.DataModels {
+namespace JayTom.Dws.Client.Models.DataModels
+{
 
-    public class InstructionInfoItemModel : BindableBase {
+    public class InstructionInfoItemModel : BindableBase
+    {
         private string _instructionContent = string.Empty;
         private DateTime _instructionGeneratedTime;
         private InstructionType _instructionType = InstructionType.None;
@@ -16,7 +18,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 指令内容
         /// </summary>
-        public string InstructionContent {
+        public string InstructionContent
+        {
             get => _instructionContent;
             set => SetProperty(ref _instructionContent, value);
         }
@@ -24,7 +27,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 指令产生时间
         /// </summary>
-        public DateTime InstructionGeneratedTime {
+        public DateTime InstructionGeneratedTime
+        {
             get => _instructionGeneratedTime;
             set => SetProperty(ref _instructionGeneratedTime, value);
         }
@@ -32,7 +36,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 指令类型
         /// </summary>
-        public InstructionType InstructionType {
+        public InstructionType InstructionType
+        {
             get => _instructionType;
             set => SetProperty(ref _instructionType, value);
         }

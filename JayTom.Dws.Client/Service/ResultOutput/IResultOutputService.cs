@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading;
 
-namespace JayTom.Dws.Client.Service.ResultOutput {
+namespace JayTom.Dws.Client.Service.ResultOutput
+{
 
-    public interface IResultOutputService {
+    public interface IResultOutputService
+    {
 
         /// <summary>
         /// 输出失败回调事件

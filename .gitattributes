@@ -3,6 +3,18 @@
 ###############################################################################
 * text=auto
 
+# 源码和配置文件固定按 UTF-8 解释，防止中文注释在检出、提交时被错误转码。
+*.cs text eol=crlf working-tree-encoding=UTF-8
+*.csproj text eol=crlf working-tree-encoding=UTF-8
+*.props text eol=crlf working-tree-encoding=UTF-8
+*.targets text eol=crlf working-tree-encoding=UTF-8
+*.json text eol=crlf working-tree-encoding=UTF-8
+*.xml text eol=crlf working-tree-encoding=UTF-8
+*.config text eol=crlf working-tree-encoding=UTF-8
+*.yml text eol=crlf working-tree-encoding=UTF-8
+*.yaml text eol=crlf working-tree-encoding=UTF-8
+*.toml text eol=crlf working-tree-encoding=UTF-8
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

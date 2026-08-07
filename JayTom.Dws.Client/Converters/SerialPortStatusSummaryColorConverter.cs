@@ -6,18 +6,22 @@ using System.Linq;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class SerialPortStatusSummaryColorConverter : IValueConverter {
+    public class SerialPortStatusSummaryColorConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             if (value is not ObservableCollection<SerialPortInfoModel> items)
                 return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#31C731"));
             return items.Any(a =>
                 a.Status is SerialPortStatus.NotConnected) ? new SolidColorBrush(Colors.Red) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#31C731"));
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             if (value is not ObservableCollection<SerialPortInfoModel> items)
                 return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#31C731"));
             return items.Any(a =>

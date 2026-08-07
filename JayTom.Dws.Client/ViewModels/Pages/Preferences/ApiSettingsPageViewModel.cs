@@ -15,9 +15,11 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class ApiSettingsPageViewModel : BindableBase {
+    public class ApiSettingsPageViewModel : BindableBase
+    {
         private readonly IConfigRepository _configRepository;
 
         private ObservableCollection<ApiTypeInfoModel> _apiTypeItems = new()
@@ -128,40 +130,50 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         private SnackbarMessageQueue _apiSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public ApiSettingsPageViewModel(IConfigRepository configRepository) {
+        public ApiSettingsPageViewModel(IConfigRepository configRepository)
+        {
             _configRepository = configRepository;
         }
 
-        public SnackbarMessageQueue ApiSettingsMessageQueue {
+        public SnackbarMessageQueue ApiSettingsMessageQueue
+        {
             get => _apiSettingsMessageQueue;
             set => SetProperty(ref _apiSettingsMessageQueue, value);
         }
 
-        public ObservableCollection<ApiTypeInfoModel> ApiTypeItems {
+        public ObservableCollection<ApiTypeInfoModel> ApiTypeItems
+        {
             get => _apiTypeItems;
             set => SetProperty(ref _apiTypeItems, value);
         }
 
-        public ApiTypeInfoModel? SelectApiType {
+        public ApiTypeInfoModel? SelectApiType
+        {
             get => _selectApiType;
             set => SetProperty(ref _selectApiType, value);
         }
 
         public ICommand OptionSelectionChangedCommand => new DelegateCommand<SelectionChangedEventArgs>(OptionSelectionChangedDelegate);
 
-        private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj) {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj)
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = "ApiSettings",
-                Value = JsonConvert.SerializeObject(new ApiSettingsDto() {
+                Value = JsonConvert.SerializeObject(new ApiSettingsDto()
+                {
                     Type = SelectApiType?.Value ?? ApiType.None
                 })
             });
-            if (!insertOrUpdate) {
+            if (!insertOrUpdate)
+            {
                 SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == ApiType.None);
                 ApiSettingsMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("切换Api接口失败") ?? string.Empty}");
             }
-            else {
-                EventAggregator.Instance.Publish(new SettingsChangedEvent {
+            else
+            {
+                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                {
                     SettingsName = "ApiSettings"
                 });
             }
@@ -172,11 +184,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        private async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
                     SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.Type);
                 });

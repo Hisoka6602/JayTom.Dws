@@ -12,11 +12,15 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters
 {
 
-    public class SortingModeConverter : IValueConverter {
+    public class SortingModeConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is SortMode sortMode) {
-                return sortMode switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is SortMode sortMode)
+            {
+                return sortMode switch
+                {
                     SortMode.None => "无",
                     SortMode.BarcodeSorting => "条码分拣",
                     SortMode.WeightSorting => "重量分拣",
@@ -31,7 +35,8 @@ namespace JayTom.Dws.Client.Converters
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

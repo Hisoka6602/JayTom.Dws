@@ -12,9 +12,11 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors {
+namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
+{
 
-    public class OcrSortingRuleEditorViewModel : BindableBase {
+    public class OcrSortingRuleEditorViewModel : BindableBase
+    {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private bool _isOk;
@@ -32,19 +34,22 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private bool _isUseSenderPhoneNumberValidation;
         private string _senderPhoneNumberEndsWith = string.Empty;
 
-        public OcrSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+        public OcrSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
         }
 
         /// <summary>
         /// 窗口标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public bool IsOk {
+        public bool IsOk
+        {
             get => _isOk;
             set => SetProperty(ref _isOk, value);
         }
@@ -52,12 +57,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 异常内容
         /// </summary>
-        public string ExceptionContent {
+        public string ExceptionContent
+        {
             get => _exceptionContent;
             set => SetProperty(ref _exceptionContent, value);
         }
 
-        public ObservableCollection<OcrRuleItemInfoModel> OcrRuleItems {
+        public ObservableCollection<OcrRuleItemInfoModel> OcrRuleItems
+        {
             get => _ocrRuleItems;
             set => SetProperty(ref _ocrRuleItems, value);
         }
@@ -65,7 +72,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 格口列表
         /// </summary>
-        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems {
+        public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems
+        {
             get => _packageExitDefinitionItems;
             set => SetProperty(ref _packageExitDefinitionItems, value);
         }
@@ -73,12 +81,14 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 绑定的格口
         /// </summary>
-        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo {
+        public PackageExitDefinitionItemInfoModel SelectPackageExitDefinitionInfo
+        {
             get => _selectPackageExitDefinitionInfo;
             set => SetProperty(ref _selectPackageExitDefinitionInfo, value);
         }
 
-        public OcrSortingItemInfoModel OcrSortingItemInfo {
+        public OcrSortingItemInfoModel OcrSortingItemInfo
+        {
             get => _ocrSortingItemInfo;
             set => SetProperty(ref _ocrSortingItemInfo, value);
         }
@@ -88,7 +98,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用三段码判断
         /// </summary>
-        public bool IsUseThreeSegmentCodeValidation {
+        public bool IsUseThreeSegmentCodeValidation
+        {
             get => _isUseThreeSegmentCodeValidation;
             set => SetProperty(ref _isUseThreeSegmentCodeValidation, value);
         }
@@ -96,7 +107,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 三段码包含字符
         /// </summary>
-        public string ThreeSegmentCodeContainsChars {
+        public string ThreeSegmentCodeContainsChars
+        {
             get => _threeSegmentCodeContainsChars;
             set => SetProperty(ref _threeSegmentCodeContainsChars, value);
         }
@@ -104,7 +116,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用收件人地址判断
         /// </summary>
-        public bool IsUseRecipientAddressValidation {
+        public bool IsUseRecipientAddressValidation
+        {
             get => _isUseRecipientAddressValidation;
             set => SetProperty(ref _isUseRecipientAddressValidation, value);
         }
@@ -112,7 +125,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 收件人地址包含字符
         /// </summary>
-        public string RecipientAddressContainsChars {
+        public string RecipientAddressContainsChars
+        {
             get => _recipientAddressContainsChars;
             set => SetProperty(ref _recipientAddressContainsChars, value);
         }
@@ -120,7 +134,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用发件人地址判断
         /// </summary>
-        public bool IsUseSenderAddressValidation {
+        public bool IsUseSenderAddressValidation
+        {
             get => _isUseSenderAddressValidation;
             set => SetProperty(ref _isUseSenderAddressValidation, value);
         }
@@ -128,7 +143,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 发件人地址包含字符
         /// </summary>
-        public string SenderAddressContainsChars {
+        public string SenderAddressContainsChars
+        {
             get => _senderAddressContainsChars;
             set => SetProperty(ref _senderAddressContainsChars, value);
         }
@@ -136,7 +152,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 是否使用发件人手机尾号判断
         /// </summary>
-        public bool IsUseSenderPhoneNumberValidation {
+        public bool IsUseSenderPhoneNumberValidation
+        {
             get => _isUseSenderPhoneNumberValidation;
             set => SetProperty(ref _isUseSenderPhoneNumberValidation, value);
         }
@@ -144,7 +161,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         /// <summary>
         /// 发件人手机尾号
         /// </summary>
-        public string SenderPhoneNumberEndsWith {
+        public string SenderPhoneNumberEndsWith
+        {
             get => _senderPhoneNumberEndsWith;
             set => SetProperty(ref _senderPhoneNumberEndsWith, value);
         }
@@ -153,12 +171,16 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand DeleteRegexCommand => new DelegateCommand<OcrRuleItemInfoModel>(DeleteRegexDelegate);
 
-        private async void DeleteRegexDelegate(OcrRuleItemInfoModel obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void DeleteRegexDelegate(OcrRuleItemInfoModel obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 OcrRuleItems.Remove(obj);
                 //调整Num
-                if (OcrRuleItems?.Any() == true) {
-                    for (var i = 0; i < OcrRuleItems.Count; i++) {
+                if (OcrRuleItems?.Any() == true)
+                {
+                    for (var i = 0; i < OcrRuleItems.Count; i++)
+                    {
                         OcrRuleItems[i].Num = i + 1;
                     }
                 }
@@ -167,16 +189,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand AddRegexCommand => new DelegateCommand<object>(AddRegexDelegate);
 
-        private async void AddRegexDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void AddRegexDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 if (!IsUseRecipientAddressValidation &&
                     !IsUseSenderAddressValidation &&
                     !IsUseSenderPhoneNumberValidation &&
-                    !IsUseThreeSegmentCodeValidation) {
+                    !IsUseThreeSegmentCodeValidation)
+                {
                     return;
                 }
 
-                var ocrRuleJsonDto = new OcrRuleJsonDto() {
+                var ocrRuleJsonDto = new OcrRuleJsonDto()
+                {
                     IsUseSenderPhoneNumberValidation = IsUseSenderPhoneNumberValidation,
                     IsUseRecipientAddressValidation = IsUseRecipientAddressValidation,
                     IsUseSenderAddressValidation = IsUseSenderAddressValidation,
@@ -188,8 +214,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 };
 
                 var serializeObject = JsonConvert.SerializeObject(ocrRuleJsonDto);
-                if (OcrRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true) {
-                    OcrRuleItems.Add(new OcrRuleItemInfoModel() {
+                if (OcrRuleItems.Any(a => a.JsonContent.Equals(serializeObject)) != true)
+                {
+                    OcrRuleItems.Add(new OcrRuleItemInfoModel()
+                    {
                         OcrSortingId = OcrSortingItemInfo.Id,
                         CreateTime = DateTime.Now,
                         JsonContent = serializeObject,
@@ -203,8 +231,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand ClearConditionsCommand => new DelegateCommand<object>(ClearConditionsDelegate);
 
-        private async void ClearConditionsDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void ClearConditionsDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 IsUseSenderPhoneNumberValidation =
                     IsUseRecipientAddressValidation =
                         IsUseRecipientAddressValidation =
@@ -218,49 +248,60 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
-        private async void SaveDelegate() {
-            try {
+        private async void SaveDelegate()
+        {
+            try
+            {
                 IsOk = true;
                 OcrSortingItemInfo.ModifyTime = DateTime.Now;
 
                 Pitcher.Throw.ArgumentNull.WhenNull(OcrSortingItemInfo, nameof(OcrSortingItemInfo));
                 Pitcher.Throw.ArgumentNull.WhenNullOrEmpty(OcrSortingItemInfo.SortingName, nameof(OcrSortingItemInfo.SortingName));
-                if (!OcrRuleItems.Any()) {
+                if (!OcrRuleItems.Any())
+                {
                     throw new Exception("规则不能为空!");
                 }
 
-                if (SelectPackageExitDefinitionInfo.Id <= 0) {
+                if (SelectPackageExitDefinitionInfo.Id <= 0)
+                {
                     throw new Exception("格口未选择!");
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 IsOk = false;
                 ExceptionContent = e.Message;
             }
 
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
-        private void CancelDelegate() {
+        private void CancelDelegate()
+        {
             IsOk = false;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj)
+        {
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
-                    new PackageExitDefinitionItemInfoModel {
+                    new PackageExitDefinitionItemInfoModel
+                    {
                         CreateTime = s.CreateTime,
                         ExitName = $"{s.ExitName}{(s.IsActive ? "" : "(未生效)")}",
                         Id = s.Id,
@@ -271,7 +312,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                         Type = s.Type
                     })?.ToList();
 
-                if (packageExitDefinitionItemInfoModels?.Any() == true) {
+                if (packageExitDefinitionItemInfoModels?.Any() == true)
+                {
                     PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
                     var packageExitDefinitionItemInfoModel = PackageExitDefinitionItems.FirstOrDefault(f =>
                         f.Id.Equals(OcrSortingItemInfo.ExitId));
@@ -283,42 +325,54 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         public ICommand StartPositionChangedCommand => new DelegateCommand<object>(StartPositionChangedDelegate);
 
-        private async void StartPositionChangedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void StartPositionChangedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 /*EndPosition = StartPosition + Content.Length;*/
             });
         }
 
         public ICommand ContentChangedCommand => new DelegateCommand<object>(ContentChangedDelegate);
 
-        private async void ContentChangedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void ContentChangedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 /*EndPosition = StartPosition + Content.Length;*/
             });
         }
 
-        public string FormatRule(string jsonContent) {
+        public string FormatRule(string jsonContent)
+        {
             var content = string.Empty;
-            try {
+            try
+            {
                 var ocrRuleJsonDto = JsonConvert.DeserializeObject<OcrRuleJsonDto>(jsonContent);
-                if (ocrRuleJsonDto is not null) {
-                    if (ocrRuleJsonDto.IsUseThreeSegmentCodeValidation) {
+                if (ocrRuleJsonDto is not null)
+                {
+                    if (ocrRuleJsonDto.IsUseThreeSegmentCodeValidation)
+                    {
                         content += $"三段码包含:[{ocrRuleJsonDto.ThreeSegmentCodeContainsChars}]  ";
                     }
-                    if (ocrRuleJsonDto.IsUseRecipientAddressValidation) {
+                    if (ocrRuleJsonDto.IsUseRecipientAddressValidation)
+                    {
                         content += $"收件人地址包含:[{ocrRuleJsonDto.RecipientAddressContainsChars}]  ";
                     }
-                    if (ocrRuleJsonDto.IsUseSenderAddressValidation) {
+                    if (ocrRuleJsonDto.IsUseSenderAddressValidation)
+                    {
                         content += $"发件人地址包含:[{ocrRuleJsonDto.SenderAddressContainsChars}]  ";
                     }
-                    if (ocrRuleJsonDto.IsUseSenderPhoneNumberValidation) {
+                    if (ocrRuleJsonDto.IsUseSenderPhoneNumberValidation)
+                    {
                         content += $"发件人手机尾号包含:[{ocrRuleJsonDto.SenderPhoneNumberEndsWith}]  ";
                     }
 
                     return content;
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 return "解析错误";
             }
             return "解析错误";

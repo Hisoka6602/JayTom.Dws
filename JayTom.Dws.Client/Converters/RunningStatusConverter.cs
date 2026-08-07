@@ -2,24 +2,33 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class RunningStatusConverter : IValueConverter {
+    public class RunningStatusConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is true) {
-                if (parameter.Equals("FontText")) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is true)
+            {
+                if (parameter.Equals("FontText"))
+                {
                     return "\xe693";
                 }
-                else if (parameter.Equals("Text")) {
+                else if (parameter.Equals("Text"))
+                {
                     return Languages.Language.ResourceManager.GetString("Stop") ?? string.Empty;// "Stop"
                 }
             }
-            else {
-                if (parameter.Equals("FontText")) {
+            else
+            {
+                if (parameter.Equals("FontText"))
+                {
                     return "\xea82";
                 }
-                else if (parameter.Equals("Text")) {
+                else if (parameter.Equals("Text"))
+                {
                     return Languages.Language.ResourceManager.GetString("Start") ?? string.Empty;//Start
                 }
             }
@@ -27,7 +36,8 @@ namespace JayTom.Dws.Client.Converters {
             return new object();
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

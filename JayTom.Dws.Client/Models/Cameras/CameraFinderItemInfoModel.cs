@@ -1,8 +1,10 @@
 ﻿using JayTom.Dws.Camera;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class CameraFinderItemInfoModel : BaseCameraItemInfoModel {
+    public class CameraFinderItemInfoModel : BaseCameraItemInfoModel
+    {
         private bool _hasBinding;
         private CameraBindingType _boundType;
         private bool _isOcrSupported;
@@ -10,7 +12,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否已被选择
         /// </summary>
-        public bool HasBinding {
+        public bool HasBinding
+        {
             get => _hasBinding;
             set => SetProperty(ref _hasBinding, value);
         }
@@ -18,7 +21,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 已绑定相机
         /// </summary>
-        public CameraBindingType BoundType {
+        public CameraBindingType BoundType
+        {
             get => _boundType;
             set => SetProperty(ref _boundType, value);
         }
@@ -26,7 +30,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否支持Ocr算法
         /// </summary>
-        public bool IsOcrSupported {
+        public bool IsOcrSupported
+        {
             get => _isOcrSupported;
             set => SetProperty(ref _isOcrSupported, value);
         }

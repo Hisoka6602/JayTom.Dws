@@ -16,9 +16,11 @@ using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
+{
 
-    public class NvrWatermarkConfigEditorViewModel : BindableBase {
+    public class NvrWatermarkConfigEditorViewModel : BindableBase
+    {
         private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
@@ -34,37 +36,44 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         private bool _isUseWatermark;
 
         public NvrWatermarkConfigEditorViewModel(INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
-            IIpcNvrConfigRepository ipcNvrConfigRepository) {
+            IIpcNvrConfigRepository ipcNvrConfigRepository)
+        {
             _nvrWatermarkConfigRepository = nvrWatermarkConfigRepository;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
         }
 
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
 
-        public string Message {
+        public string Message
+        {
             get => _message;
             set => SetProperty(ref _message, value);
         }
 
-        public bool IsUseWatermark {
+        public bool IsUseWatermark
+        {
             get => _isUseWatermark;
             set => SetProperty(ref _isUseWatermark, value);
         }
 
-        public IpcNvrItemInfoModel IpcNvrItemInfo {
+        public IpcNvrItemInfoModel IpcNvrItemInfo
+        {
             get => _ipcNvrItemInfo;
             set => SetProperty(ref _ipcNvrItemInfo, value);
         }
 
-        public ObservableCollection<int> ChannelIdItems {
+        public ObservableCollection<int> ChannelIdItems
+        {
             get => _channelIdItems;
             set => SetProperty(ref _channelIdItems, value);
         }
 
-        public SnackbarMessageQueue NvrWatermarkConfigEditorMessageQueue {
+        public SnackbarMessageQueue NvrWatermarkConfigEditorMessageQueue
+        {
             get => _nvrWatermarkConfigEditorMessageQueue;
             set => SetProperty(ref _nvrWatermarkConfigEditorMessageQueue, value);
         }
@@ -72,7 +81,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// <summary>
         /// 是否叠加
         /// </summary>
-        public bool IsOverlay {
+        public bool IsOverlay
+        {
             get => _isOverlay;
             set => SetProperty(ref _isOverlay, value);
         }
@@ -80,7 +90,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// <summary>
         /// 是否全部通道
         /// </summary>
-        public bool IsAllChannel {
+        public bool IsAllChannel
+        {
             get => _isAllChannel;
             set => SetProperty(ref _isAllChannel, value);
         }
@@ -88,7 +99,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// <summary>
         /// 选择的通道
         /// </summary>
-        public int SelectChannelId {
+        public int SelectChannelId
+        {
             get => _selectChannelId;
             set => SetProperty(ref _selectChannelId, value);
         }
@@ -96,7 +108,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// <summary>
         /// 水印颜色
         /// </summary>
-        public System.Windows.Media.Color WatermarkColor {
+        public System.Windows.Media.Color WatermarkColor
+        {
             get => _watermarkColor;
             set => SetProperty(ref _watermarkColor, value);
         }
@@ -104,7 +117,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// <summary>
         /// 持续时间
         /// </summary>
-        public int Duration {
+        public int Duration
+        {
             get => _duration;
             set => SetProperty(ref _duration, value);
         }
@@ -114,8 +128,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// </summary>
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 ChannelIdItems = new ObservableCollection<int>(
                     Enumerable.Range(1, IpcNvrItemInfo.ChannelCount)
                 );
@@ -124,17 +140,20 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 //暂时不应用分别取段道概念,只读写第一个
                 var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
                 var model = ipcNvrConfigInfoModels.FirstOrDefault(f => f.SerialNumber.Equals(IpcNvrItemInfo.SerialNumber));
-                if (model != null) {
+                if (model != null)
+                {
                     var infoModel = await _nvrWatermarkConfigRepository.FirstOrDefault(f =>
                         f.IpcNvrConfigId.Equals(model.Id));
 
-                    if (infoModel != null) {
+                    if (infoModel != null)
+                    {
                         Duration = infoModel.Duration;
                         IsOverlay = infoModel.DisplayMode == 0;
                         WatermarkColor = (Color)ColorConverter.ConvertFromString(infoModel.BackgroundColorHex);
                         IsUseWatermark = true;
                     }
-                    else {
+                    else
+                    {
                         IsUseWatermark = false;
                     }
                 }
@@ -146,22 +165,28 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// </summary>
         public ICommand SaveCommand => new DelegateCommand(SaveDelegate);
 
-        private async void SaveDelegate() {
+        private async void SaveDelegate()
+        {
             var isSuccess = false;
             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
             var model = ipcNvrConfigInfoModels.FirstOrDefault(f => f.SerialNumber.Equals(IpcNvrItemInfo.SerialNumber));
-            if (IsUseWatermark) {
-                if (model is not null) {
+            if (IsUseWatermark)
+            {
+                if (model is not null)
+                {
                     var infoModel = await _nvrWatermarkConfigRepository.FirstOrDefault(f =>
                         f.IpcNvrConfigId.Equals(model.Id));
-                    if (infoModel != null) {
+                    if (infoModel != null)
+                    {
                         infoModel.DisplayMode = IsOverlay ? 0 : 1;
                         infoModel.Duration = Duration;
                         infoModel.BackgroundColorHex = WatermarkColor.ToString();
                         isSuccess = await _nvrWatermarkConfigRepository.Update(infoModel);
                     }
-                    else {
-                        isSuccess = await _nvrWatermarkConfigRepository.Insert(new NvrWatermarkConfigInfoModel() {
+                    else
+                    {
+                        isSuccess = await _nvrWatermarkConfigRepository.Insert(new NvrWatermarkConfigInfoModel()
+                        {
                             IpcNvrConfigId = model.Id,
                             DisplayMode = IsOverlay ? 0 : 1,
                             Duration = Duration,
@@ -170,13 +195,15 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                     }
                     NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
                 }
-                else {
+                else
+                {
                     NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存失败,NVR未初始化或未登录");
                 }
             }
-            else {
+            else
+            {
                 var models = await _nvrWatermarkConfigRepository.MemoryCacheData();
-                isSuccess = await _nvrWatermarkConfigRepository.DeleteRange(models.Where(w => w.IpcNvrConfigId.Equals(model?.Id)).ToList());
+                isSuccess = await _nvrWatermarkConfigRepository.DeleteRange([.. models.Where(w => w.IpcNvrConfigId.Equals(model?.Id))]);
                 NvrWatermarkConfigEditorMessageQueue.Enqueue($"保存{(isSuccess ? "成功" : "失败")}");
             }
         }
@@ -186,8 +213,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
         /// </summary>
         public ICommand CancelCommand => new DelegateCommand(CancelDelegate);
 
-        private void CancelDelegate() {
-            if (DialogHost.IsDialogOpen(Identifier)) {
+        private void CancelDelegate()
+        {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }

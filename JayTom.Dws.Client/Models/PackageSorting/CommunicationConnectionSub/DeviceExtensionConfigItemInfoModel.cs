@@ -4,9 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
+namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub
+{
 
-    public class DeviceExtensionConfigItemInfoModel : BasePackageSortingItemInfoModel {
+    public class DeviceExtensionConfigItemInfoModel : BasePackageSortingItemInfoModel
+    {
         /*private bool _createPackageByDevice;
         private bool _removePackageByDevice;
         private bool _startRunningByDevice;
@@ -52,7 +54,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 是否验证下位机应答
         /// </summary>
-        public bool ValidateDeviceResponse {
+        public bool ValidateDeviceResponse
+        {
             get => _validateDeviceResponse;
             set => SetProperty(ref _validateDeviceResponse, value);
         }
@@ -60,7 +63,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 验证超时时间
         /// </summary>
-        public int ValidationTimeout {
+        public int ValidationTimeout
+        {
             get => _validationTimeout;
             set => SetProperty(ref _validationTimeout, value);
         }
@@ -68,7 +72,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub {
         /// <summary>
         /// 最大重试次数
         /// </summary>
-        public int MaxRetryCount {
+        public int MaxRetryCount
+        {
             get => _maxRetryCount;
             set => SetProperty(ref _maxRetryCount, value);
         }

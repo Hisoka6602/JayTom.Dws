@@ -14,9 +14,11 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
+{
 
-    public class PanoramaCameraConfigViewModel : BindableBase {
+    public class PanoramaCameraConfigViewModel : BindableBase
+    {
         private readonly IDeviceService _deviceService;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
 
@@ -24,42 +26,71 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
 
         private SnackbarMessageQueue _panoramaCameraMessageQueue = new(TimeSpan.FromSeconds(2));
         private int _captureDelayTime;
+        /// <summary>
+        /// 相机绑定事件处理器，保存实例以便页面卸载时退订。
+        /// </summary>
+        private readonly EventHandler<CameraFinderItemInfoModel> _cameraBoundHandler;
+        /// <summary>
+        /// 相机解绑事件处理器，保存实例以便页面卸载时退订。
+        /// </summary>
+        private readonly EventHandler<CameraFinderItemInfoModel> _cameraUnboundHandler;
+        /// <summary>
+        /// 页面事件是否已订阅。
+        /// </summary>
+        private bool _eventsSubscribed;
 
         public PanoramaCameraConfigViewModel(IDeviceService deviceService,
-            IPanoramaCameraConfigRepository panoramaCameraConfigRepository) {
+            IPanoramaCameraConfigRepository panoramaCameraConfigRepository)
+        {
             _deviceService = deviceService;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
-            _deviceService.CameraBound += async delegate (object? sender, CameraFinderItemInfoModel model) {
-                if (model.BoundType == CameraBindingType.PanoramaCamera) {
-                    await Application.Current.Dispatcher.InvokeAsync(async () => {
+            _cameraBoundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
+            {
+                if (model.BoundType == CameraBindingType.PanoramaCamera)
+                {
+                    try
+                    {
                         //增加到集合,从数据库获取
                         var infoModel = await _panoramaCameraConfigRepository.FirstOrDefault(f =>
                             f.SerialNumber.Equals(model.SerialNumber));
-                        if (infoModel is not null) {
-                            PanoramaCameraItems.Add(new PanoramaCameraItemInfoModel() {
-                                ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
-                                CameraType = (CameraType)infoModel.CameraType,
-                                IpAddress = infoModel.IpAddress,
-                                CaptureDelayTime = infoModel.CaptureDelayTime,
-                                Name = infoModel.Name,
-                                SerialNumber = infoModel.SerialNumber,
-                                Version = infoModel.Version,
-                                Model = infoModel.Model,
-                                Num = PanoramaCameraItems.Count + 1,
-                            });
+                        if (infoModel is not null)
+                        {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                                PanoramaCameraItems.Add(new PanoramaCameraItemInfoModel
+                                {
+                                    ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
+                                    CameraType = (CameraType)infoModel.CameraType,
+                                    IpAddress = infoModel.IpAddress,
+                                    CaptureDelayTime = infoModel.CaptureDelayTime,
+                                    Name = infoModel.Name,
+                                    SerialNumber = infoModel.SerialNumber,
+                                    Version = infoModel.Version,
+                                    Model = infoModel.Model,
+                                    Num = PanoramaCameraItems.Count + 1
+                                }));
                         }
-                    });
+                    }
+                    catch (Exception exception)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                            PanoramaCameraMessageQueue.Enqueue(
+                                $"加载新绑定全景相机失败:{exception.Message}"));
+                    }
                 }
             };
-            _deviceService.CameraUnbound += async delegate (object? sender, CameraFinderItemInfoModel model) {
+            _cameraUnboundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
+            {
                 //解绑相机,更新列表
-                await Application.Current.Dispatcher.InvokeAsync(() => {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
                     var infoModel =
                         PanoramaCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
-                    if (infoModel is not null) {
+                    if (infoModel is not null)
+                    {
                         PanoramaCameraItems.Remove(infoModel);
                         //重新排列
-                        for (var i = 0; i < PanoramaCameraItems.Count; i++) {
+                        for (var i = 0; i < PanoramaCameraItems.Count; i++)
+                        {
                             PanoramaCameraItems[i].Num = i + 1;
                         }
                     }
@@ -67,12 +98,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
             };
         }
 
-        public SnackbarMessageQueue PanoramaCameraMessageQueue {
+        public SnackbarMessageQueue PanoramaCameraMessageQueue
+        {
             get => _panoramaCameraMessageQueue;
             set => SetProperty(ref _panoramaCameraMessageQueue, value);
         }
 
-        public ObservableCollection<PanoramaCameraItemInfoModel> PanoramaCameraItems {
+        public ObservableCollection<PanoramaCameraItemInfoModel> PanoramaCameraItems
+        {
             get => _panoramaCameraItems;
             set => SetProperty(ref _panoramaCameraItems, value);
         }
@@ -80,37 +113,73 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
         /// <summary>
         /// 延迟时间拍照时间（单位：秒）
         /// </summary>
-        public int CaptureDelayTime {
+        public int CaptureDelayTime
+        {
             get => _captureDelayTime;
             set => SetProperty(ref _captureDelayTime, value);
         }
 
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(object obj) {
-            LoadCameraItems();
+        /// <summary>
+        /// 页面卸载命令。
+        /// </summary>
+        public ICommand UnloadedCommand => new DelegateCommand<object>(UnloadedDelegate);
+
+        private void LoadedDelegate(object obj)
+        {
+            if (!_eventsSubscribed)
+            {
+                _deviceService.CameraBound += _cameraBoundHandler;
+                _deviceService.CameraUnbound += _cameraUnboundHandler;
+                _eventsSubscribed = true;
+            }
+
+            _ = LoadCameraItemsAsync();
+        }
+
+        /// <summary>
+        /// 页面卸载时解除设备事件订阅。
+        /// </summary>
+        private void UnloadedDelegate(object obj)
+        {
+            if (!_eventsSubscribed)
+            {
+                return;
+            }
+
+            _deviceService.CameraBound -= _cameraBoundHandler;
+            _deviceService.CameraUnbound -= _cameraUnboundHandler;
+            _eventsSubscribed = false;
         }
 
         /// <summary>
         /// 解绑
         /// </summary>
-        public ICommand UnbindCameraCommand {
+        public ICommand UnbindCameraCommand
+        {
             get => new DelegateCommand<PanoramaCameraItemInfoModel>(UnbindCameraDelegate);
         }
 
-        private async void UnbindCameraDelegate(PanoramaCameraItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void UnbindCameraDelegate(PanoramaCameraItemInfoModel obj)
+        {
+            try
+            {
                 var isSuccess = false;
                 var model = await _panoramaCameraConfigRepository.
                     FirstOrDefault(s =>
                         s.SerialNumber.Equals(obj.SerialNumber));
-                if (model is not null) {
+                if (model is not null)
+                {
                     var delete = await _panoramaCameraConfigRepository.Delete(model);
-                    if (delete) {
-                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel() {
-                            BoundType = CameraBindingType.ScannerCamera,
+                    if (delete)
+                    {
+                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel()
+                        {
+                            BoundType = CameraBindingType.PanoramaCamera,
                             ConnectionType = obj.ConnectionType,
                             HasBinding = false,
                             IpAddress = obj.IpAddress,
@@ -126,26 +195,35 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 }
                 PanoramaCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Unbind")}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
-            });
+            }
+            catch (Exception exception)
+            {
+                PanoramaCameraMessageQueue.Enqueue($"解绑全景相机失败:{exception.Message}");
+            }
         }
 
         /// <summary>
         /// 保存选择项修改
         /// </summary>
-        public ICommand ApplyChangesCommand {
+        public ICommand ApplyChangesCommand
+        {
             get => new DelegateCommand<PanoramaCameraItemInfoModel>(ApplyChangesDelegate);
         }
 
-        private async void ApplyChangesDelegate(PanoramaCameraItemInfoModel obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ApplyChangesDelegate(PanoramaCameraItemInfoModel obj)
+        {
+            try
+            {
                 var isSuccess = false;
                 var infoModel = await _panoramaCameraConfigRepository.
                     FirstOrDefault(f =>
                         f.SerialNumber.Equals(obj.SerialNumber));
-                if (infoModel is not null) {
+                if (infoModel is not null)
+                {
                     infoModel.CaptureDelayTime = obj.CaptureDelayTime;
                     var update = await _panoramaCameraConfigRepository.Update(infoModel);
-                    if (update) {
+                    if (update)
+                    {
                         var (key, value) = await _deviceService.OnCameraParametersModified(new List<CameraParametersModifiedEventArgs>()
                         {
                             new()
@@ -159,36 +237,48 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 }
                 PanoramaCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Camera")}:{obj.Name},{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
-            });
+            }
+            catch (Exception exception)
+            {
+                PanoramaCameraMessageQueue.Enqueue($"保存全景相机失败:{exception.Message}");
+            }
         }
 
         /// <summary>
         /// 应用全部更改
         /// </summary>
-        public ICommand ApplyAllChangesCommand {
+        public ICommand ApplyAllChangesCommand
+        {
             get => new DelegateCommand<object>(ApplyAllChangesDelegate);
         }
 
-        private async void ApplyAllChangesDelegate(object obj) {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ApplyAllChangesDelegate(object obj)
+        {
+            try
+            {
                 var isSuccess = false;
                 var infoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                if (infoModels?.Any() == true) {
-                    foreach (var model in infoModels) {
+                if (infoModels?.Any() == true)
+                {
+                    foreach (var model in infoModels)
+                    {
                         model.CaptureDelayTime = CaptureDelayTime;
                     }
 
                     var updateRange = await _panoramaCameraConfigRepository.UpdateRange(infoModels);
-                    if (updateRange) {
-                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs {
+                    if (updateRange)
+                    {
+                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs
+                        {
                             Type = CameraBindingType.PanoramaCamera,
-                            Parameters = infoModels
+                            Parameters = s
                         })?.ToList();
 
                         var (key, value) = await _deviceService.OnCameraParametersModified(list ?? new List<CameraParametersModifiedEventArgs>());
                         isSuccess = key;
-                        if (isSuccess) {
-                            LoadCameraItems();
+                        if (isSuccess)
+                        {
+                            await LoadCameraItemsAsync();
                         }
                     }
                 }
@@ -197,15 +287,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 //触发修改事件
                 PanoramaCameraMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(isSuccess ?
                     Languages.Language.ResourceManager.GetString("Success") : Languages.Language.ResourceManager.GetString("Failure"))}");
-            });
+            }
+            catch (Exception exception)
+            {
+                PanoramaCameraMessageQueue.Enqueue($"批量保存全景相机失败:{exception.Message}");
+            }
         }
 
-        private async void LoadCameraItems() {
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
-                PanoramaCameraItems.Clear();
-                await Task.Delay(100);
-                var infoModels = await _panoramaCameraConfigRepository.Select(s => s.Id > 0, o => o.Id);
-                var itemInfoModels = infoModels.Select((s, i) => new PanoramaCameraItemInfoModel() {
+        /// <summary>
+        /// 加载全景相机配置列表。
+        /// </summary>
+        private async Task LoadCameraItemsAsync()
+        {
+            try
+            {
+                var infoModels = await _panoramaCameraConfigRepository.Select(
+                    static camera => camera.Id > 0,
+                    static camera => camera.Id);
+                var itemInfoModels = infoModels.Select((s, i) => new PanoramaCameraItemInfoModel
+                {
                     ConnectionType = (CameraConnectionType)s.ConnectionType,
                     CameraType = (CameraType)s.CameraType,
                     IpAddress = s.IpAddress,
@@ -215,9 +315,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                     Num = i + 1,
                     SerialNumber = s.SerialNumber,
                     Version = s.Version
-                })?.ToList();
+                }).ToList();
+                PanoramaCameraItems.Clear();
                 PanoramaCameraItems.AddRange(itemInfoModels);
-            });
+            }
+            catch (Exception exception)
+            {
+                PanoramaCameraMessageQueue.Enqueue($"加载全景相机失败:{exception.Message}");
+            }
         }
     }
 }

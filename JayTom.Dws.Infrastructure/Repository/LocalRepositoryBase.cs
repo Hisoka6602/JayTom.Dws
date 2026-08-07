@@ -15,17 +15,26 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Infrastructure.Repository {
 
+    internal static class LocalDatabaseWriteCoordinator {
+        /// <summary>
+        /// 跨实体仓储共享的 SQLite 写入门。
+        /// </summary>
+        internal static readonly SemaphoreSlim Gate = new(1, 1);
+    }
+
     public class LocalRepositoryBase<T> : IRepository<T> where T : class {
         protected IDbContextFactory<DbContext> _contextFactory;
         protected IMemoryCache _cache;
-        private static readonly SemaphoreSlim _changeSlim = new(5);
-        private static readonly SemaphoreSlim _transactionSlim = new(1);
+        private static readonly SemaphoreSlim _changeSlim = LocalDatabaseWriteCoordinator.Gate;
+        private static readonly SemaphoreSlim _transactionSlim = LocalDatabaseWriteCoordinator.Gate;
         private static readonly PropertyInfo[] EntityProperties =
             typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
         public LocalRepositoryBase(IDbContextFactory<DbContext> contextFactory, IMemoryCache cache) {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            ArgumentNullException.ThrowIfNull(contextFactory);
+            ArgumentNullException.ThrowIfNull(cache);
+            _contextFactory = contextFactory;
+            _cache = cache;
         }
 
         public async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
@@ -137,10 +146,10 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
@@ -177,10 +186,10 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
@@ -192,7 +201,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var exclude = new List<string>();
                 var memberInfos = ((NewExpression)excludeColumns.Body).Members;
                 if (memberInfos is not null) {
-                    exclude = memberInfos.Select(p => p.Name).ToList();
+                    exclude = [.. memberInfos.Select(p => p.Name)];
                 }
 
                 var propertyInfos = EntityProperties;
@@ -218,11 +227,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TransactionException e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
@@ -230,7 +239,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
@@ -243,7 +252,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var exclude = new List<string>();
                 var memberInfos = ((NewExpression)excludeColumns.Body).Members;
                 if (memberInfos is not null) {
-                    exclude = memberInfos.Select(p => p.Name).ToList();
+                    exclude = [.. memberInfos.Select(p => p.Name)];
                 }
                 using var semaphoreLease =
                     await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
@@ -270,11 +279,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TransactionException e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
@@ -282,7 +291,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
@@ -342,19 +351,19 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
             return false;
@@ -366,7 +375,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 var exclude = new List<string>();
                 var memberInfos = ((NewExpression)excludeColumns.Body).Members;
                 if (memberInfos is not null) {
-                    exclude = memberInfos.Select(p => p.Name).ToList();
+                    exclude = [.. memberInfos.Select(p => p.Name)];
                 }
 
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -384,19 +393,19 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
 
@@ -408,18 +417,12 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 using var semaphoreLease =
                     await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_changeSlim, token);
                 await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    var propertyInfos = EntityProperties;
-                    var info = propertyInfos?.FirstOrDefault(f =>
-                        f.GetCustomAttribute<DatabaseGeneratedAttribute>() != null);
-                    if (string.IsNullOrEmpty(name) ||
-                        info is null) return false;
-                    var sql = @$" DELETE FROM {name} WHERE {info.Name}={info?.GetValue(entity, null)}";
-                    var executeSqlRawAsync = await concardContext.Database.ExecuteSqlRawAsync(sql, token);
-
-                    return executeSqlRawAsync > 0;
+                var entry = concardContext.Entry(entity);
+                if (entry.State == EntityState.Detached) {
+                    concardContext.Set<T>().Attach(entity);
                 }
+                concardContext.Set<T>().Remove(entity);
+                return await concardContext.SaveChangesAsync(token) > 0;
             }
             catch (Win32Exception) { }
             catch (TaskCanceledException) { }
@@ -446,19 +449,22 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
         }
 
         public async Task<int> DeleteCount(int count, CancellationToken token) {
+            if (count <= 0) {
+                return 0;
+            }
             try {
                 using var semaphoreLease =
                     await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_changeSlim, token);
@@ -683,23 +689,40 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await TryRollbackAsync(contextTransaction);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 尽力回滚事务并记录回滚阶段的异常。
+        /// </summary>
+        private static async Task TryRollbackAsync(IDbContextTransaction? transaction) {
+            if (transaction is null) {
+                return;
+            }
+
+            try {
+                await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception exception) {
+                LogManager.GetCurrentClassLogger()
+                    .Log(LogLevel.Error, $"回滚本地事务失败:{exception}");
+            }
         }
     }
 }

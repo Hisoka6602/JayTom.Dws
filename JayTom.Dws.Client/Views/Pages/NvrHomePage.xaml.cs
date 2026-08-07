@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages {
+namespace JayTom.Dws.Client.Views.Pages
+{
     /// <summary>
     /// NvrHomePage.xaml 的交互逻辑
     /// </summary>
-    public partial class NvrHomePage : Page {
-        public NvrHomePage() {
+    public partial class NvrHomePage : Page
+    {
+        public NvrHomePage()
+        {
             InitializeComponent();
         }
     }

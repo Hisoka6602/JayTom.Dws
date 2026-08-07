@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.LogsViews {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.LogsViews
+{
     /// <summary>
     /// OutputLogPage.xaml 的交互逻辑
     /// </summary>
-    public partial class OutputLogPage : Page {
-        public OutputLogPage() {
+    public partial class OutputLogPage : Page
+    {
+        public OutputLogPage()
+        {
             InitializeComponent();
         }
     }

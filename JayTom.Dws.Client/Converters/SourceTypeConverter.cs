@@ -10,11 +10,15 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters
 {
 
-    public class SourceTypeConverter : IValueConverter {
+    public class SourceTypeConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is SourceType sourceType) {
-                return sourceType switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is SourceType sourceType)
+            {
+                return sourceType switch
+                {
                     SourceType.SerialPort => "串口",
                     SourceType.Tcp => "Tcp",
                     SourceType.Input => "输入",
@@ -25,7 +29,8 @@ namespace JayTom.Dws.Client.Converters
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

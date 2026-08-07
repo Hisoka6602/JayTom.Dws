@@ -6,14 +6,15 @@ using System.Threading;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Plugin.SerialPort {
 
     public class BaseSerialPort : ISerialPort {
         private readonly System.IO.Ports.SerialPort _serialPort;
         private SerialPortFormat _formatType;
-        private readonly object _receiveLock = new();
-        private readonly object _sendLock = new();
+        private readonly System.Threading.Lock _receiveLock = new();
+        private readonly System.Threading.Lock _sendLock = new();
         private bool _eventHandlersRegistered;
 
         public BaseSerialPort(System.IO.Ports.SerialPort serialPort) {
@@ -67,7 +68,7 @@ namespace JayTom.Dws.Plugin.SerialPort {
                                 if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port &&
                                     _serialPort.IsOpen) {
                                     if (FormatType == SerialPortFormat.Ascii) {
-                                        var receivedData = port.ReadExisting().Trim().Replace(" ", string.Empty);
+                                        var receivedData = port.ReadExisting();
                                         message = new MessageEventArgs {
                                             AsciiMessage = receivedData
                                         };
@@ -80,7 +81,7 @@ namespace JayTom.Dws.Plugin.SerialPort {
                                         }
 
                                         message = new MessageEventArgs {
-                                            AsciiMessage = Convert.ToHexString(buffer),
+                                            AsciiMessage = HexDataFormatter.Format(buffer),
                                             HexMessage = buffer
                                         };
                                     }
@@ -116,6 +117,8 @@ namespace JayTom.Dws.Plugin.SerialPort {
             try {
                 lock (_sendLock) {
                     if (!_serialPort.IsOpen) {
+                        OnSendError(new ExceptionEventArgs(
+                            new InvalidOperationException("串口未连接，无法发送数据")));
                         return;
                     }
 
@@ -145,10 +148,12 @@ namespace JayTom.Dws.Plugin.SerialPort {
                 string formattedMessage;
                 lock (_sendLock) {
                     if (!_serialPort.IsOpen) {
+                        OnSendError(new ExceptionEventArgs(
+                            new InvalidOperationException("串口未连接，无法发送数据")));
                         return;
                     }
 
-                    formattedMessage = BitConverter.ToString(message).Replace("-", " ");
+                    formattedMessage = HexDataFormatter.Format(message);
                     if (FormatType == SerialPortFormat.Ascii) {
                         _serialPort.WriteLine(formattedMessage);
                     }
@@ -210,6 +215,9 @@ namespace JayTom.Dws.Plugin.SerialPort {
         }
 
         protected virtual void OnCommunication(CommunicationInfo e) {
+            if (FormatType == SerialPortFormat.Hex) {
+                e.Content = HexDataFormatter.Normalize(e.Content);
+            }
             Communication?.Invoke(this, e);
         }
 
@@ -218,7 +226,7 @@ namespace JayTom.Dws.Plugin.SerialPort {
                 return HexStringToByteArray(hexString);
             }
             catch (Exception) {
-                return Array.Empty<byte>();
+                return [];
             }
         }
     }

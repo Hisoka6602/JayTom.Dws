@@ -1,0 +1,12 @@
+{
+  "$comment": "数据库编译守卫策略：统一使用 EF Core、Code First、自动迁移和自动建库，并以查询性能、自动调优及自动分表为优先目标。",
+  "requireEfCore": true,
+  "requireCodeFirst": true,
+  "requireAutomaticMigration": true,
+  "requireAutomaticDatabaseCreation": true,
+  "requireAutomaticPartitioning": true,
+  "requireAutomaticTuning": true,
+  "forbidImageAndFileContentStorage": true,
+  "preferZeroRawSql": true,
+  "preferQueryPerformance": true
+}

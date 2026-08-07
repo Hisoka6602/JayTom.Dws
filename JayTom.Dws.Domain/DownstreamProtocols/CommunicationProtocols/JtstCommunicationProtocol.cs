@@ -4,6 +4,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 
@@ -40,12 +41,12 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         {"endByteByte",new byte[] { 0xFD }},
                     };
                     var sum = bytesDictionary.Values.Sum(byteArray => byteArray.Length) - 1;
-                    bytesDictionary["bitLengthByte"] = new[] { BitConverter.GetBytes(sum)[0] };
+                    bytesDictionary["bitLengthByte"] = [BitConverter.GetBytes(sum)[0]];
 
                     //var bytes = bytesDictionary.SelectMany(kv => kv.Value).ToArray();
                     //发送指令
                     var list = bytesDictionary.Select(s =>
-                            BitConverter.ToString(s.Value).Replace("-", " "))
+                            HexDataFormatter.Format(s.Value))
                         .ToList();
                     return string.Join(" ", list);
                 }
@@ -55,6 +56,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
         }
 
         public DeviceDecodeResult? DecodeData(string data) {
+            data = HexDataFormatter.Normalize(data);
             var bytes = HexStringToByteArray(data);
             if (bytes.Length == 43) {
                 return bytes[3] switch {
@@ -63,7 +65,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                         new DeviceDecodeResult {
                             IsException = bytes[42] != 0,
                             ExceptionMessage = ExceptionToString(bytes[42]),
-                            Keyword = Encoding.UTF8.GetString(bytes.Skip(7).Take(bytes[6]).ToArray()),
+                            Keyword = Encoding.UTF8.GetString([.. bytes.Skip(7).Take(bytes[6])]),
                             Description = "分拣完成指令",
                             KeywordPosition = 7,
                             ProtocolName = "JT-ST",
@@ -174,7 +176,7 @@ namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
                 return bytes;
             }
             catch (Exception e) {
-                return new byte[] { 0x00 };
+                return [0x00];
             }
         }
 

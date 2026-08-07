@@ -3,9 +3,11 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Models {
+namespace JayTom.Dws.Client.Models
+{
 
-    public class MenuItemInfoModel : BindableBase {
+    public class MenuItemInfoModel : BindableBase
+    {
         private ICommand? _clickCommand;
         private IconInfoModel? _iconFont;
         private BitmapImage? _icon;
@@ -18,7 +20,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 字体图标
         /// </summary>
-        public IconInfoModel? IconFont {
+        public IconInfoModel? IconFont
+        {
             get => _iconFont;
             set => SetProperty(ref _iconFont, value);
         }
@@ -26,7 +29,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 图片图标
         /// </summary>
-        public BitmapImage? Icon {
+        public BitmapImage? Icon
+        {
             get => _icon;
             set => SetProperty(ref _icon, value);
         }
@@ -34,7 +38,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 标题
         /// </summary>
-        public string Title {
+        public string Title
+        {
             get => _title;
             set => SetProperty(ref _title, value);
         }
@@ -42,7 +47,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 说明
         /// </summary>
-        public string Description {
+        public string Description
+        {
             get => _description;
             set => SetProperty(ref _description, value);
         }
@@ -50,7 +56,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 页面类名
         /// </summary>
-        public string PageClassName {
+        public string PageClassName
+        {
             get => _pageClassName;
             set => SetProperty(ref _pageClassName, value);
         }
@@ -58,7 +65,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 是否选中
         /// </summary>
-        public bool IsSelected {
+        public bool IsSelected
+        {
             get => _isSelected;
             set => SetProperty(ref _isSelected, value);
         }
@@ -66,7 +74,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 点击事件
         /// </summary>
-        public ICommand? ClickCommand {
+        public ICommand? ClickCommand
+        {
             get => _clickCommand;
             set => SetProperty(ref _clickCommand, value);
         }
@@ -74,7 +83,8 @@ namespace JayTom.Dws.Client.Models {
         /// <summary>
         /// 圆角角度
         /// </summary>
-        public CornerRadius RadiusRight {
+        public CornerRadius RadiusRight
+        {
             get => _radiusRight;
             set => SetProperty(ref _radiusRight, value);
         }

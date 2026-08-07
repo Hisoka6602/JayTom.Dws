@@ -32,31 +32,27 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IDialogService _dialogService;
 
-        private ObservableCollection<NvrBindingItemModel> _nvrBindingItems = new();
-
         private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
-        private NvrBindingParamInfoModel _nvrBindingParamInfoModel = new();
-        private SnackbarMessageQueue _nvrBindingEditorViewMessageQueue = new(TimeSpan.FromSeconds(1));
 
         public SnackbarMessageQueue NvrBindingEditorViewMessageQueue
         {
-            get => _nvrBindingEditorViewMessageQueue;
-            set => SetProperty(ref _nvrBindingEditorViewMessageQueue, value);
-        }
+            get;
+            set => SetProperty(ref field, value);
+        } = new(TimeSpan.FromSeconds(1));
 
         public string Identifier { get; set; } = string.Empty;
 
         public ObservableCollection<NvrBindingItemModel> NvrBindingItems
         {
-            get => _nvrBindingItems;
-            set => SetProperty(ref _nvrBindingItems, value);
-        }
+            get;
+            set => SetProperty(ref field, value);
+        } = new();
 
         public NvrBindingParamInfoModel NvrBindingParamInfoModel
         {
-            get => _nvrBindingParamInfoModel;
-            set => SetProperty(ref _nvrBindingParamInfoModel, value);
-        }
+            get;
+            set => SetProperty(ref field, value);
+        } = new();
 
         public NvrBindingEditorViewModel(IIpcNvrConfigRepository ipcNvrConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,

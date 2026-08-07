@@ -2,9 +2,11 @@
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.LocalLog;
 
-namespace JayTom.Dws.Client.Models.WeightSettingsModel {
+namespace JayTom.Dws.Client.Models.WeightSettingsModel
+{
 
-    public class StaticWeightParamsModel : BindableBase {
+    public class StaticWeightParamsModel : BindableBase
+    {
         private int _dataInterval = 50;
         private bool _isReversed;
         private WeightAccessMode _accessMode = WeightAccessMode.Readonly;
@@ -23,7 +25,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 每条数据间隔时间(采样频率)
         /// </summary>
-        public int DataInterval {
+        public int DataInterval
+        {
             get => _dataInterval;
             set => SetProperty(ref _dataInterval, value);
         }
@@ -31,7 +34,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 是否反转
         /// </summary>
-        public bool IsReversed {
+        public bool IsReversed
+        {
             get => _isReversed;
             set => SetProperty(ref _isReversed, value);
         }
@@ -39,7 +43,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 获取方式
         /// </summary>
-        public WeightAccessMode AccessMode {
+        public WeightAccessMode AccessMode
+        {
             get => _accessMode;
             set => SetProperty(ref _accessMode, value);
         }
@@ -47,7 +52,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 稳定个数
         /// </summary>
-        public int BalanceCount {
+        public int BalanceCount
+        {
             get => _balanceCount;
             set => SetProperty(ref _balanceCount, value);
         }
@@ -55,7 +61,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 稳定精度(误差范围)
         /// </summary>
-        public float BalanceQty {
+        public float BalanceQty
+        {
             get => _balanceQty;
             set => SetProperty(ref _balanceQty, value);
         }
@@ -63,7 +70,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 标识符
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
@@ -71,7 +79,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 字符长度
         /// </summary>
-        public int CharacterLength {
+        public int CharacterLength
+        {
             get => _characterLength;
             set => SetProperty(ref _characterLength, value);
         }
@@ -79,7 +88,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 标识符位置
         /// </summary>
-        public int IdentifierPosition {
+        public int IdentifierPosition
+        {
             get => _identifierPosition;
             set => SetProperty(ref _identifierPosition, value);
         }
@@ -87,7 +97,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 整数起始位置
         /// </summary>
-        public int IntegerStartPosition {
+        public int IntegerStartPosition
+        {
             get => _integerStartPosition;
             set => SetProperty(ref _integerStartPosition, value);
         }
@@ -95,7 +106,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 整数结束位置
         /// </summary>
-        public int IntegerEndPosition {
+        public int IntegerEndPosition
+        {
             get => _integerEndPosition;
             set => SetProperty(ref _integerEndPosition, value);
         }
@@ -103,7 +115,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 小数起始位置
         /// </summary>
-        public int DecimalStartPosition {
+        public int DecimalStartPosition
+        {
             get => _decimalStartPosition;
             set => SetProperty(ref _decimalStartPosition, value);
         }
@@ -111,7 +124,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 小数结束位置
         /// </summary>
-        public int DecimalEndPosition {
+        public int DecimalEndPosition
+        {
             get => _decimalEndPosition;
             set => SetProperty(ref _decimalEndPosition, value);
         }
@@ -119,7 +133,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 发送内容
         /// </summary>
-        public string SendingContent {
+        public string SendingContent
+        {
             get => _sendingContent;
             set => SetProperty(ref _sendingContent, value);
         }
@@ -127,7 +142,8 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel {
         /// <summary>
         /// 发送格式
         /// </summary>
-        public DataFormatType SendingFormat {
+        public DataFormatType SendingFormat
+        {
             get => _sendingFormat;
             set => SetProperty(ref _sendingFormat, value);
         }

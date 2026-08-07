@@ -10,39 +10,47 @@ using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
+{
 
-    public class AlgorithmSettingsViewModel : SettingsPageTemplateViewModel {
+    public class AlgorithmSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private BarcodeReaderSettingsInfoModel _barcodeReaderSettingsInfo = new();
-        private ObservableCollection<int> _deblurLevelItems = new(Enumerable.Range(0, 10).ToList());
-        private ObservableCollection<int> _textureDetectionSensitivityItems = new(Enumerable.Range(0, 10).ToList());
+        private ObservableCollection<int> _deblurLevelItems = new([.. Enumerable.Range(0, 10)]);
+        private ObservableCollection<int> _textureDetectionSensitivityItems = new([.. Enumerable.Range(0, 10)]);
 
-        public AlgorithmSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public AlgorithmSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
         public override string Identifier => "AlgorithmSettingsDialogHost";
         public override string SettingsName => "AlgorithmSettings";
 
-        public BarcodeReaderSettingsInfoModel BarcodeReaderSettingsInfo {
+        public BarcodeReaderSettingsInfoModel BarcodeReaderSettingsInfo
+        {
             get => _barcodeReaderSettingsInfo;
             set => SetProperty(ref _barcodeReaderSettingsInfo, value);
         }
 
-        public ObservableCollection<int> DeblurLevelItems {
+        public ObservableCollection<int> DeblurLevelItems
+        {
             get => _deblurLevelItems;
             set => SetProperty(ref _deblurLevelItems, value);
         }
 
-        public ObservableCollection<int> TextureDetectionSensitivityItems {
+        public ObservableCollection<int> TextureDetectionSensitivityItems
+        {
             get => _textureDetectionSensitivityItems;
             set => SetProperty(ref _textureDetectionSensitivityItems, value);
         }
 
-        public override async void LoadedDelegate(object obj) {
+        public override async void LoadedDelegate(object obj)
+        {
             //加载设置
             var usbBarcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(SettingsName) ??
                                       new UsbBarcodeReaderDto();
-            BarcodeReaderSettingsInfo = new BarcodeReaderSettingsInfoModel() {
+            BarcodeReaderSettingsInfo = new BarcodeReaderSettingsInfoModel()
+            {
                 LocalizationMode = usbBarcodeReaderDto.LocalizationMode,
                 DeblurLevel = usbBarcodeReaderDto.DeblurLevel,
                 ExpectedBarcodesCount = usbBarcodeReaderDto.ExpectedBarcodesCount,
@@ -64,19 +72,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration {
                 .Where(e => usbBarcodeReaderDto.BarcodeType.HasFlag(e))
                 .ToList();
             foreach (var infoModel in includedEnums.Select(methodsEnum => BarcodeReaderSettingsInfo.BarcodeTypeItems.FirstOrDefault(f =>
-                         f.EnumValue.Equals(methodsEnum))).OfType<BarcodeTypeItemInfoModel>()) {
+                         f.EnumValue.Equals(methodsEnum))).OfType<BarcodeTypeItemInfoModel>())
+            {
                 infoModel.IsChecked = true;
             }
         }
 
-        protected override async Task<bool> SaveSettingsProcess() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
             BarcodeReaderSettingsInfo.BarcodeType = BarcodeType.None;
-            foreach (var item in BarcodeReaderSettingsInfo.BarcodeTypeItems.Where(w => w.IsChecked).ToList()) {
+            foreach (var item in BarcodeReaderSettingsInfo.BarcodeTypeItems.Where(w => w.IsChecked).ToList())
+            {
                 BarcodeReaderSettingsInfo.BarcodeType |= item.EnumValue;
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new UsbBarcodeReaderDto {
+                Value = JsonConvert.SerializeObject(new UsbBarcodeReaderDto
+                {
                     /*IsUseOrCode = BarcodeReaderSettingsInfo.IsUseOrCode,
                     IsUseMicroQr = BarcodeReaderSettingsInfo.IsUseMicroQr,
                     IsUseCode39 = BarcodeReaderSettingsInfo.IsUseCode39,

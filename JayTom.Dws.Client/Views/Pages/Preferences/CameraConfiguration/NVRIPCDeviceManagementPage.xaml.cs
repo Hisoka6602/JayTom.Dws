@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration
+{
     /// <summary>
     /// NVRIPCDeviceManagementPage.xaml 的交互逻辑
     /// </summary>
-    public partial class NVRIPCDeviceManagementPage : Page {
-        public NVRIPCDeviceManagementPage() {
+    public partial class NVRIPCDeviceManagementPage : Page
+    {
+        public NVRIPCDeviceManagementPage()
+        {
             InitializeComponent();
         }
     }

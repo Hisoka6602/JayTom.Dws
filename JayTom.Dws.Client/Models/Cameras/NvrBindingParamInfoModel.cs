@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class NvrBindingParamInfoModel : BindableBase {
+    public class NvrBindingParamInfoModel : BindableBase
+    {
         private string _serialNumber = string.Empty;
         private string _displayIdentifier = string.Empty;
         private SourceType _bindingSource = SourceType.None;
@@ -17,7 +19,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 唯一标识
         /// </summary>
-        public string SerialNumber {
+        public string SerialNumber
+        {
             get => _serialNumber;
             set => SetProperty(ref _serialNumber, value);
         }
@@ -26,7 +29,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// 显示标识
         /// </summary>
 
-        public string DisplayIdentifier {
+        public string DisplayIdentifier
+        {
             get => _displayIdentifier;
             set => SetProperty(ref _displayIdentifier, value);
         }
@@ -34,7 +38,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 绑定源
         /// </summary>
-        public SourceType BindingSource {
+        public SourceType BindingSource
+        {
             get => _bindingSource;
             set => SetProperty(ref _bindingSource, value);
         }
@@ -42,7 +47,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 备注
         /// </summary>
-        public string Remarks {
+        public string Remarks
+        {
             get => _remarks;
             set => SetProperty(ref _remarks, value);
         }

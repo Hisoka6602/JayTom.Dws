@@ -829,7 +829,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                     ScanTime = scanTime,
                                     ThumbImage = (Bitmap?)thumbnailImage,
                                     Image = bitmap,
-                                    AreaCoords = Enumerable.Range(0, 4).Select(s => {
+                                    AreaCoords = [.. Enumerable.Range(0, 4).Select(s => {
                                         if (bitmap != null)
                                             return new System.Drawing.Point {
                                                 X = (int)(stOutput.stCodeList.stCodeInfo[i].stCornerPt[s].nX *
@@ -839,7 +839,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                                           stOutput.stImage.nHeight)
                                             };
                                         return default;
-                                    }).ToList(),
+                                    })],
                                     FrameNo = Interlocked.Read(ref _frameNo)
                                 });
                             }
@@ -961,9 +961,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         private List<Point> ConvertPoint(List<double>? coord) {
             var points = new List<Point>();
             if (coord?.Count == 8) {
-                points = Enumerable.Range(0, coord.Count / 2)
-                    .Select(i => new Point((int)coord[i * 2], (int)coord[i * 2 + 1]))
-                    .ToList();
+                points = [.. Enumerable.Range(0, coord.Count / 2).Select(i => new Point((int)coord[i * 2], (int)coord[i * 2 + 1]))];
 
                 return SortPointsInCounterClockwiseOrder(points);
             }

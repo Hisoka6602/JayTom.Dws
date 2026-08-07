@@ -37,10 +37,10 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
                     dataStatistics.YesterdayBarcodeTotal = yesterdayBarcodeTotal;
                 }
 
-                await _hubContext.Clients.All.SendCoreAsync("DataStatistics", new object?[]
-                {
+                await _hubContext.Clients.All.SendCoreAsync("DataStatistics",
+                [
                     dataStatistics
-                });
+                ]);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -54,10 +54,10 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
 
         public async Task MessageItem(MessageBarCodeItemInfo info) {
             try {
-                await _hubContext.Clients.All.SendCoreAsync("MessageItem", new object?[]
-                {
+                await _hubContext.Clients.All.SendCoreAsync("MessageItem",
+                [
                     info
-                });
+                ]);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -69,10 +69,10 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
         /// </summary>
         public async Task UpDateItem(MessageBarCodeItemInfo info) {
             try {
-                await _hubContext.Clients.All.SendCoreAsync("UpDateItem", new object?[]
-                {
+                await _hubContext.Clients.All.SendCoreAsync("UpDateItem",
+                [
                     info
-                });
+                ]);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -83,10 +83,10 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
             try {
                 var (key, value) = await _videoBarCodeService.GroupedNodeNames();
                 if (key && value is List<string> nodeNames) {
-                    await _hubContext.Clients.All.SendCoreAsync("NodeNames", new object?[]
-                    {
+                    await _hubContext.Clients.All.SendCoreAsync("NodeNames",
+                    [
                         nodeNames
-                    });
+                    ]);
                 }
             }
             catch (Exception e) {

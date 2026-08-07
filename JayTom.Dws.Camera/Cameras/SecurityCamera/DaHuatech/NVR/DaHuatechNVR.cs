@@ -526,8 +526,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
             }).Select(s => new RealTimeWatermarkInfo() {
                 LoginId = s.Key.LoginId,
                 ChannelId = s.Key.ChannelId,
-                CustomInfo = GetNET_OSD_CUSTOM_TITLE(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
-                CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN(historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId)).ToList(), 8),
+                CustomInfo = GetNET_OSD_CUSTOM_TITLE([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId))], 8),
+                CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId))], 8),
             }).Select(ac => new Action(() => {
                 var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
                 if (!osdConfig) {
@@ -916,9 +916,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
                     .Where(nvrDevInfo => nvrDevInfo.IpAddress == ipAddress)
                     .SelectMany(nvrDevInfo => nvrDevInfo.DevPlayInfos)
                     .FirstOrDefault(devPlayInfo => devPlayInfo.PlayChannelId == channelId);
-                if (playInfo is not null) {
-                    playInfo.NvrPreviewSize = new Size(width, height);
-                }
+                playInfo?.NvrPreviewSize = new Size(width, height);
 
                 _isChangingViewSize = false;
             }

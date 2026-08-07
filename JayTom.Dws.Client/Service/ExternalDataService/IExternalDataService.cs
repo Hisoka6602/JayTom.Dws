@@ -3,9 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Service.ExternalDataService {
+namespace JayTom.Dws.Client.Service.ExternalDataService
+{
 
-    public interface IExternalDataService : IDisposable {
+    public interface IExternalDataService : IDisposable
+    {
 
         /// <summary>
         /// 输出失败回调事件
@@ -88,7 +90,8 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
     /// <summary>
     /// 外部体积输入类型
     /// </summary>
-    public class ExternalVolumeInputEventArgs : EventArgs {
+    public class ExternalVolumeInputEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 条码
@@ -129,7 +132,8 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
     /// <summary>
     /// 外部输入源
     /// </summary>
-    public class ExternalDataSourceEventArgs : EventArgs {
+    public class ExternalDataSourceEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 是否输入体积
@@ -152,7 +156,8 @@ namespace JayTom.Dws.Client.Service.ExternalDataService {
         public bool IsImagePathInput { get; set; }
     }
 
-    public class ExternalContentInputEventArgs : EventArgs {
+    public class ExternalContentInputEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 条码

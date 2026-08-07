@@ -1,8 +1,10 @@
 ﻿using System;
 using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.DataModels {
-    public class OcrItemInfo : BindableBase {
+namespace JayTom.Dws.Client.Models.DataModels
+{
+    public class OcrItemInfo : BindableBase
+    {
         private string _originalContent = string.Empty;
         private string _ocrInterfaceName = string.Empty;
         private string _parsedContent = string.Empty;
@@ -12,7 +14,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 原始内容
         /// </summary>
-        public string OriginalContent {
+        public string OriginalContent
+        {
             get => _originalContent;
             set => SetProperty(ref _originalContent, value);
         }
@@ -20,7 +23,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 接口名称
         /// </summary>
-        public string OcrInterfaceName {
+        public string OcrInterfaceName
+        {
             get => _ocrInterfaceName;
             set => SetProperty(ref _ocrInterfaceName, value);
         }
@@ -28,7 +32,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 解析后名称
         /// </summary>
-        public string ParsedContent {
+        public string ParsedContent
+        {
             get => _parsedContent;
             set => SetProperty(ref _parsedContent, value);
         }
@@ -36,7 +41,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreateTime {
+        public DateTime? CreateTime
+        {
             get => _createTime;
             set => SetProperty(ref _createTime, value);
         }
@@ -44,7 +50,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否使用Ocr
         /// </summary>
-        public bool IsUseOcr {
+        public bool IsUseOcr
+        {
             get => _isUseOcr;
             set => SetProperty(ref _isUseOcr, value);
         }

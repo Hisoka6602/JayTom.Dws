@@ -9,9 +9,11 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
 
-namespace JayTom.Dws.Client.Service.Device {
+namespace JayTom.Dws.Client.Service.Device
+{
 
-    public interface IDeviceService {
+    public interface IDeviceService
+    {
 
         /// <summary>
         /// 设备运行状态
@@ -222,7 +224,8 @@ namespace JayTom.Dws.Client.Service.Device {
         void Dispose();
     }
 
-    public class StableWeightEventArgs : EventArgs {
+    public class StableWeightEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 磅秤
@@ -235,7 +238,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public float Weight { get; set; }
     }
 
-    public class RealTimeWeightEventArgs : EventArgs {
+    public class RealTimeWeightEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 磅秤
@@ -248,7 +252,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public float RealTimeWeight { get; set; }
     }
 
-    public class ScaleDisconnectedEventArgs : EventArgs {
+    public class ScaleDisconnectedEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 磅秤
@@ -261,7 +266,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public Exception? Exception { get; set; }
     }
 
-    public class ScaleConnectedEventArgs : EventArgs {
+    public class ScaleConnectedEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 磅秤类型
@@ -274,7 +280,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public BaseScaleConnectParam ConnectionParameters { get; set; } = new();
     }
 
-    public enum ScaleType {
+    public enum ScaleType
+    {
 
         /// <summary>
         /// 静态磅秤
@@ -292,7 +299,8 @@ namespace JayTom.Dws.Client.Service.Device {
         None
     }
 
-    public class DeviceExceptionEventArgs {
+    public class DeviceExceptionEventArgs
+    {
         /*/// <summary>
         /// 设备
         /// </summary>
@@ -304,7 +312,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public Exception? ExceptionMessage;
     }
 
-    public class RealTimeImageEventArgs {
+    public class RealTimeImageEventArgs
+    {
 
         /// <summary>
         /// 图像
@@ -322,7 +331,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public float RealTimeFrameRate { get; set; }
     }
 
-    public class CameraParametersModifiedEventArgs : EventArgs {
+    public class CameraParametersModifiedEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 已绑定类型
@@ -335,7 +345,8 @@ namespace JayTom.Dws.Client.Service.Device {
         public object? Parameters { get; set; }
     }
 
-    public class PanoramaCaptureEventArgs : EventArgs {
+    public class PanoramaCaptureEventArgs : EventArgs
+    {
 
         /// <summary>
         /// 图片

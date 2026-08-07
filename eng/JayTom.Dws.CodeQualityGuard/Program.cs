@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
@@ -8,21 +10,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 const string PrintBaselineArgument = "--print-baseline";
 const string WriteBaselineArgument = "--write-baseline";
 
-var runtimeProjectDirectories = new[] {
-    "JayTom.Dws.Camera",
-    "JayTom.Dws.Client",
-    "JayTom.Dws.Data",
-    "JayTom.Dws.Domain",
-    "JayTom.Dws.Infrastructure",
-    "JayTom.Dws.Interface",
-    "JayTom.Dws.License",
-    "JayTom.Dws.Nvr",
-    "JayTom.Dws.Ocr",
-    "JayTom.Dws.Plugin",
-    "JayTom.Dws.PluginInterface",
-    "JayTom.Dws.Utils"
-};
-
 if (args.Length < 2) {
     Console.Error.WriteLine(
         "用法：CodeQualityGuard <工作区路径> <基线路径> [--print-baseline|--write-baseline]");
@@ -31,6 +18,22 @@ if (args.Length < 2) {
 
 var workspacePath = Path.GetFullPath(args[0]);
 var baselinePath = Path.GetFullPath(args[1]);
+var runtimeProjectDirectories = Directory.EnumerateDirectories(
+        workspacePath,
+        "JayTom.Dws.*",
+        SearchOption.TopDirectoryOnly)
+    .Where(directory => Directory.EnumerateFiles(
+        directory,
+        "*.csproj",
+        SearchOption.TopDirectoryOnly).Any())
+    .Append(Path.Combine(
+        workspacePath,
+        "eng",
+        "JayTom.Dws.CodeQualityGuard"))
+    .Where(Directory.Exists)
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .OrderBy(directory => directory, StringComparer.Ordinal)
+    .ToArray();
 var printBaseline = args.Contains(PrintBaselineArgument, StringComparer.Ordinal);
 var writeBaseline = args.Contains(WriteBaselineArgument, StringComparer.Ordinal);
 var utf8 = new UTF8Encoding(false, true);
@@ -39,24 +42,46 @@ var chineseCharacter = new Regex(
     RegexOptions.Compiled | RegexOptions.CultureInvariant);
 var forbiddenMojibake = new[] {
     "\uFFFD",
-    "锟斤拷",
-    "閿熸枻鎷",
-    "銆",
-    "鏁版嵁",
-    "鐨勪",
-    "涓€",
-    "鍙樺寲"
+    "\u951F\u65A4\u62F7",
+    "\u95BF\u71B8\u67BB\u93B7",
+    "\u9286",
+    "\u93C1\u7248\u5D41",
+    "\u9428\u52EA",
+    "\u6D93\u20AC",
+    "\u9359\u6A3A\u5BF2"
 };
 var floatingPointViolations =
     new Dictionary<string, int>(StringComparer.Ordinal);
 var documentationViolations =
     new Dictionary<string, int>(StringComparer.Ordinal);
+var typeIsolationViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var invalidIdTypeViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var hotPathIoViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var rawSqlViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var databasePolicyViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var databaseQueryViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var databaseBinaryContentViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var performanceViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var configurationDocumentationViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
+var legacyTargetFrameworkViolations =
+    new Dictionary<string, int>(StringComparer.Ordinal);
 var strictErrors = new List<string>();
+ValidateHexFormattingRule(strictErrors);
+ValidateGuardRules(chineseCharacter, strictErrors);
+ValidateDatabasePolicyConfiguration(workspacePath, utf8, strictErrors);
 
 foreach (var projectDirectory in runtimeProjectDirectories) {
-    var absoluteProjectDirectory = Path.Combine(workspacePath, projectDirectory);
     foreach (var sourcePath in Directory.EnumerateFiles(
-                 absoluteProjectDirectory,
+                 projectDirectory,
                  "*.cs",
                  SearchOption.AllDirectories)) {
         if (IsGeneratedBuildFile(sourcePath)) {
@@ -99,15 +124,72 @@ foreach (var projectDirectory in runtimeProjectDirectories) {
             relativePath,
             chineseCharacter,
             documentationViolations);
+        CountTypeIsolationViolations(
+            root,
+            relativePath,
+            typeIsolationViolations);
+        CountInvalidIdTypes(root, relativePath, invalidIdTypeViolations);
+        CountHotPathIo(root, relativePath, hotPathIoViolations);
+        CountRawSqlUsage(root, relativePath, rawSqlViolations);
+        CountDatabasePolicyViolations(
+            root,
+            source,
+            relativePath,
+            databasePolicyViolations);
+        CountDatabaseQueryViolations(
+            root,
+            relativePath,
+            databaseQueryViolations);
+        CountDatabaseBinaryContent(
+            root,
+            relativePath,
+            databaseBinaryContentViolations);
+        CountPerformanceViolations(
+            root,
+            relativePath,
+            performanceViolations);
+        DetectUnsafeHexFormatting(root, relativePath, strictErrors);
     }
 }
 
-var currentBaseline = new GuardBaseline(
-    floatingPointViolations,
-    documentationViolations);
+ValidateConfigurationFiles(
+    workspacePath,
+    runtimeProjectDirectories,
+    utf8,
+    chineseCharacter,
+    forbiddenMojibake,
+    configurationDocumentationViolations,
+    legacyTargetFrameworkViolations,
+    strictErrors);
+var efModelSignature = BuildEfModelSignature(
+    workspacePath,
+    runtimeProjectDirectories,
+    utf8,
+    out var efMigrationCount);
+
+var currentBaseline = new GuardBaseline {
+    FloatingPoint = floatingPointViolations,
+    MissingChineseDocumentation = documentationViolations,
+    TypeIsolation = typeIsolationViolations,
+    InvalidIdType = invalidIdTypeViolations,
+    HotPathIo = hotPathIoViolations,
+    RawSql = rawSqlViolations,
+    DatabasePolicy = databasePolicyViolations,
+    DatabaseQuery = databaseQueryViolations,
+    DatabaseBinaryContent = databaseBinaryContentViolations,
+    Performance = performanceViolations,
+    MissingChineseConfigurationDocumentation =
+        configurationDocumentationViolations,
+    LegacyTargetFramework = legacyTargetFrameworkViolations,
+    EfModelSignature = efModelSignature,
+    EfMigrationCount = efMigrationCount
+};
 var baselineJson = JsonSerializer.Serialize(
     currentBaseline,
-    new JsonSerializerOptions { WriteIndented = true });
+    new JsonSerializerOptions {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        WriteIndented = true
+    });
 
 if (printBaseline) {
     Console.WriteLine(baselineJson);
@@ -116,6 +198,12 @@ if (printBaseline) {
 
 if (writeBaseline) {
     if (strictErrors.Count > 0) {
+        return PrintErrors(strictErrors);
+    }
+
+    if (TryReadBaseline(baselinePath, utf8, out var previousBaseline, out var error) &&
+        !CanUpdateEfModelBaseline(previousBaseline!, currentBaseline, out error)) {
+        strictErrors.Add(error!);
         return PrintErrors(strictErrors);
     }
 
@@ -146,6 +234,60 @@ else {
                 expectedBaseline.MissingChineseDocumentation,
                 currentBaseline.MissingChineseDocumentation,
                 strictErrors);
+            CompareCounts(
+                "类型未独占文件",
+                expectedBaseline.TypeIsolation,
+                currentBaseline.TypeIsolation,
+                strictErrors);
+            CompareCounts(
+                "ID 未使用 long",
+                expectedBaseline.InvalidIdType,
+                currentBaseline.InvalidIdType,
+                strictErrors);
+            CompareCounts(
+                "热路径数据库或文件 I/O",
+                expectedBaseline.HotPathIo,
+                currentBaseline.HotPathIo,
+                strictErrors);
+            CompareCounts(
+                "原始 SQL",
+                expectedBaseline.RawSql,
+                currentBaseline.RawSql,
+                strictErrors);
+            CompareCounts(
+                "数据库工程策略",
+                expectedBaseline.DatabasePolicy,
+                currentBaseline.DatabasePolicy,
+                strictErrors);
+            CompareCounts(
+                "数据库查询性能",
+                expectedBaseline.DatabaseQuery,
+                currentBaseline.DatabaseQuery,
+                strictErrors);
+            CompareCounts(
+                "数据库保存图片或文件内容",
+                expectedBaseline.DatabaseBinaryContent,
+                currentBaseline.DatabaseBinaryContent,
+                strictErrors);
+            CompareCounts(
+                "通用性能反模式",
+                expectedBaseline.Performance,
+                currentBaseline.Performance,
+                strictErrors);
+            CompareCounts(
+                "配置文件缺少中文说明",
+                expectedBaseline.MissingChineseConfigurationDocumentation,
+                currentBaseline.MissingChineseConfigurationDocumentation,
+                strictErrors);
+            CompareCounts(
+                "未使用 .NET 10",
+                expectedBaseline.LegacyTargetFramework,
+                currentBaseline.LegacyTargetFramework,
+                strictErrors);
+            ValidateEfModelBaseline(
+                expectedBaseline,
+                currentBaseline,
+                strictErrors);
         }
     }
     catch (Exception exception) when (
@@ -159,7 +301,7 @@ if (strictErrors.Count > 0) {
 }
 
 Console.WriteLine(
-    "代码质量守卫通过：未新增 UTC、浮点数、缺少中文注释或中文乱码。");
+    "代码质量守卫通过：未新增 UTC、浮点数、注释、类型隔离、ID、热路径 I/O、数据库图片/文件内容、EF Core、数据库性能、.NET 10、中文乱码或十六进制格式违规。");
 return 0;
 
 static bool IsGeneratedBuildFile(string sourcePath) {
@@ -183,14 +325,399 @@ static void DetectUtcUsage(
     foreach (var memberAccess in root.DescendantNodes()
                  .OfType<MemberAccessExpressionSyntax>()) {
         var expression = memberAccess.ToString();
-        if (expression is "DateTime.UtcNow" or "DateTimeOffset.UtcNow" or
-            "DateTimeKind.Utc" ||
-            memberAccess.Name.Identifier.ValueText == "ToUniversalTime") {
+        var normalizedExpression = expression.Replace(
+            "global::",
+            string.Empty,
+            StringComparison.Ordinal);
+        var memberName = memberAccess.Name.Identifier.ValueText;
+        if (normalizedExpression.EndsWith(
+                "DateTime.UtcNow",
+                StringComparison.Ordinal) ||
+            normalizedExpression.EndsWith(
+                "DateTimeOffset.UtcNow",
+                StringComparison.Ordinal) ||
+            normalizedExpression.EndsWith(
+                "DateTimeOffset.UtcDateTime",
+                StringComparison.Ordinal) ||
+            normalizedExpression.EndsWith(
+                "DateTimeKind.Utc",
+                StringComparison.Ordinal) ||
+            normalizedExpression.EndsWith(
+                "DateTimeZoneHandling.Utc",
+                StringComparison.Ordinal) ||
+            normalizedExpression.EndsWith(
+                "TimeZoneInfo.Utc",
+                StringComparison.Ordinal) ||
+            memberName is "ToUniversalTime" or "ConvertTimeToUtc") {
             var line =
                 memberAccess.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
             errors.Add(
                 $"{relativePath}({line}): 禁止使用 UTC 时间 API“{expression}”，请使用本地时间。");
         }
+    }
+}
+
+static void DetectUnsafeHexFormatting(
+    SyntaxNode root,
+    string relativePath,
+    ICollection<string> errors) {
+    const string formatterPath = "JayTom.Dws.Plugin/HexDataFormatter.cs";
+    if (relativePath.Equals(formatterPath, StringComparison.Ordinal)) {
+        return;
+    }
+
+    foreach (var invocation in root.DescendantNodes()
+                 .OfType<InvocationExpressionSyntax>()
+                 .Where(IsUnsafeHexFormattingInvocation)) {
+        if (HasCompactHexExemption(invocation)) {
+            continue;
+        }
+
+        AddUnsafeHexFormattingError(invocation, relativePath, errors);
+    }
+
+    foreach (var interpolatedString in root.DescendantNodes()
+                 .OfType<InterpolatedStringExpressionSyntax>()
+                 .Where(IsCompactHexInterpolation)) {
+        if (HasCompactHexExemption(interpolatedString)) {
+            continue;
+        }
+
+        AddUnsafeHexFormattingError(interpolatedString, relativePath, errors);
+    }
+}
+
+static bool IsUnsafeHexFormattingInvocation(
+    InvocationExpressionSyntax invocation) {
+    if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) {
+        return false;
+    }
+
+    var target = memberAccess.Expression.ToString();
+    var methodName = memberAccess.Name.Identifier.ValueText;
+    if (methodName.Contains("ToHexString", StringComparison.Ordinal) &&
+        IsTypeName(target, "Convert")) {
+        return true;
+    }
+
+    if (methodName == "ToString" &&
+        IsTypeName(target, "BitConverter")) {
+        return true;
+    }
+
+    if (methodName == "Concat" &&
+        IsTypeName(target, "string") &&
+        ContainsHexByteFormatting(invocation.ArgumentList)) {
+        return true;
+    }
+
+    return methodName == "Join" &&
+           IsTypeName(target, "string") &&
+           HasEmptySeparator(invocation.ArgumentList) &&
+           ContainsHexByteFormatting(invocation.ArgumentList);
+}
+
+static bool IsTypeName(string expression, string typeName) {
+    return expression.Equals(typeName, StringComparison.Ordinal) ||
+           expression.EndsWith($".{typeName}", StringComparison.Ordinal) ||
+           typeName == "string" &&
+           (expression.Equals("String", StringComparison.Ordinal) ||
+            expression.EndsWith(".String", StringComparison.Ordinal));
+}
+
+static bool HasEmptySeparator(ArgumentListSyntax arguments) {
+    if (arguments.Arguments.Count == 0) {
+        return false;
+    }
+
+    var separator = arguments.Arguments[0].Expression;
+    return separator.IsKind(SyntaxKind.StringLiteralExpression) &&
+           separator.ToString() == "\"\"" ||
+           separator.ToString() is "string.Empty" or "String.Empty";
+}
+
+static bool ContainsHexByteFormatting(SyntaxNode node) {
+    return node.DescendantNodes()
+        .OfType<InvocationExpressionSyntax>()
+        .Any(IsHexByteToStringInvocation);
+}
+
+static bool IsHexByteToStringInvocation(
+    InvocationExpressionSyntax invocation) {
+    if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
+        memberAccess.Name.Identifier.ValueText != "ToString" ||
+        invocation.ArgumentList.Arguments.Count != 1) {
+        return false;
+    }
+
+    return invocation.ArgumentList.Arguments[0].Expression
+               is LiteralExpressionSyntax literal &&
+           literal.IsKind(SyntaxKind.StringLiteralExpression) &&
+           Regex.IsMatch(
+               literal.Token.ValueText,
+               @"^[xX][0-9]+$",
+               RegexOptions.CultureInvariant);
+}
+
+static bool IsCompactHexInterpolation(
+    InterpolatedStringExpressionSyntax interpolatedString) {
+    for (var index = 0; index < interpolatedString.Contents.Count - 1; index++) {
+        if (IsHexByteInterpolation(interpolatedString.Contents[index]) &&
+            IsHexByteInterpolation(interpolatedString.Contents[index + 1])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool IsHexByteInterpolation(InterpolatedStringContentSyntax content) {
+    return content is InterpolationSyntax {
+        FormatClause.FormatStringToken.ValueText: var format
+    } && Regex.IsMatch(
+        format,
+        @"^[xX][0-9]+$",
+        RegexOptions.CultureInvariant);
+}
+
+static bool HasCompactHexExemption(SyntaxNode node) {
+    const string exemptionMarker = "DWS-HEX-COMPACT:";
+    var statement = node.FirstAncestorOrSelf<StatementSyntax>();
+    if (statement is null) {
+        return false;
+    }
+
+    var leadingTrivia = statement.GetLeadingTrivia().ToFullString();
+    var markerIndex = leadingTrivia.LastIndexOf(
+        exemptionMarker,
+        StringComparison.Ordinal);
+    if (markerIndex < 0) {
+        return false;
+    }
+
+    var reason = leadingTrivia[
+        (markerIndex + exemptionMarker.Length)..]
+        .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+        .FirstOrDefault() ?? string.Empty;
+    return Regex.IsMatch(
+        reason,
+        @"\p{IsCJKUnifiedIdeographs}",
+        RegexOptions.CultureInvariant);
+}
+
+static void AddUnsafeHexFormattingError(
+    SyntaxNode node,
+    string relativePath,
+    ICollection<string> errors) {
+    var line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+    errors.Add(
+        $"{relativePath}({line}): 禁止直接生成无空格或非空格分隔的十六进制文本；" +
+        "显示和日志请使用 HexDataFormatter.Format/Normalize。" +
+        "协议签名等必须紧凑的兼容场景，需在语句前添加“// DWS-HEX-COMPACT: 中文原因”。");
+}
+
+static void ValidateHexFormattingRule(ICollection<string> errors) {
+    var samples = new[] {
+        new HexFormattingGuardSample(
+            "class C { string M(byte[] value) => Convert.ToHexString(value); }",
+            1),
+        new HexFormattingGuardSample(
+            "class C { string M(byte[] value) => Convert.ToHexStringLower(value); }",
+            1),
+        new HexFormattingGuardSample(
+            "class C { bool M(byte[] value, Span<char> destination) => Convert.TryToHexString(value, destination, out _); }",
+            1),
+        new HexFormattingGuardSample(
+            "class C { bool M(byte[] value, Span<char> destination) => Convert.TryToHexStringLower(value, destination, out _); }",
+            1),
+        new HexFormattingGuardSample(
+            "class C { string M(byte[] value) => BitConverter.ToString(value).Replace(\"-\", \" \"); }",
+            1),
+        new HexFormattingGuardSample(
+            "class C { string M(byte a, byte b) => $\"{a:X2}{b:X2}\"; }",
+            1),
+        new HexFormattingGuardSample(
+            """
+            class C {
+                string M(byte[] value) {
+                    // DWS-HEX-COMPACT: 外部协议签名要求使用紧凑格式。
+                    return Convert.ToHexString(value);
+                }
+            }
+            """,
+            0),
+        new HexFormattingGuardSample(
+            "class C { string M(byte[] value) => HexDataFormatter.Format(value); }",
+            0)
+    };
+
+    foreach (var (source, expectedViolationCount) in samples) {
+        var sampleErrors = new List<string>();
+        var root = CSharpSyntaxTree.ParseText(
+                source,
+                new CSharpParseOptions(LanguageVersion.Latest))
+            .GetRoot();
+        DetectUnsafeHexFormatting(
+            root,
+            "GuardSelfTest/Sample.cs",
+            sampleErrors);
+        if (sampleErrors.Count != expectedViolationCount) {
+            errors.Add(
+                "十六进制输出守卫自检失败：" +
+                $"期望 {expectedViolationCount} 个违规，实际 {sampleErrors.Count} 个。");
+        }
+    }
+}
+
+static void ValidateGuardRules(
+    Regex chineseCharacter,
+    ICollection<string> errors) {
+    static SyntaxNode Parse(string source) {
+        return CSharpSyntaxTree.ParseText(
+                source,
+                new CSharpParseOptions(LanguageVersion.CSharp14))
+            .GetRoot();
+    }
+
+    static void RequireViolation(
+        string ruleName,
+        Action<IDictionary<string, int>> detector,
+        ICollection<string> targetErrors) {
+        var findings = new Dictionary<string, int>(StringComparer.Ordinal);
+        detector(findings);
+        if (findings.Values.Sum() == 0) {
+            targetErrors.Add($"代码质量守卫自检失败：{ruleName} 未检出测试违规。");
+        }
+    }
+
+    var utcErrors = new List<string>();
+    DetectUtcUsage(
+        Parse("class Sample { DateTime Value => System.DateTime.UtcNow; }"),
+        "SelfTest/Utc.cs",
+        utcErrors);
+    if (utcErrors.Count != 1) {
+        errors.Add("代码质量守卫自检失败：UTC 时间规则异常。");
+    }
+
+    RequireViolation(
+        "浮点数规则",
+        findings => CountFloatingPointUsage(
+            Parse("class Sample { double Value => Convert.ToDouble(1); }"),
+            "SelfTest/FloatingPoint.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "中文文档规则",
+        findings => CountMissingChineseDocumentation(
+            Parse("class Sample { int Value { get; set; } void Run() { } }"),
+            "SelfTest/Documentation.cs",
+            chineseCharacter,
+            findings),
+        errors);
+    RequireViolation(
+        "类型单文件规则",
+        findings => CountTypeIsolationViolations(
+            Parse("class First { } enum Second { Value }"),
+            "SelfTest/First.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "ID long 规则",
+        findings => CountInvalidIdTypes(
+            Parse("class Sample { void Run(int id) { } }"),
+            "SelfTest/Identifier.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "热路径 I/O 规则",
+        findings => CountHotPathIo(
+            Parse("class Sample { void ProcessPackage() { File.ReadAllText(\"a\"); } }"),
+            "SelfTest/HotPath.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "原始 SQL 规则",
+        findings => CountRawSqlUsage(
+            Parse("class Sample { void Run() { db.Database.ExecuteSqlRaw(\"x\"); } }"),
+            "SelfTest/RawSql.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "数据库工程策略规则",
+        findings => CountDatabasePolicyViolations(
+            Parse("class SampleContext : DbContext { }"),
+            "class SampleContext : DbContext { }",
+            "SelfTest/SampleContext.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "数据库查询性能规则",
+        findings => CountDatabaseQueryViolations(
+            Parse("class Sample { async Task Run() { var data = query.ToList(); } }"),
+            "SelfTest/Repository/SampleRepository.cs",
+            findings),
+        errors);
+    RequireViolation(
+        "数据库禁止图片和文件内容规则",
+        findings => CountDatabaseBinaryContent(
+            Parse(
+                "class Sample { public byte[] ImageBytes { get; set; } public string FileBase64 { get; set; } }"),
+            "JayTom.Dws.Data/SelfTest/Sample.cs",
+            findings),
+        errors);
+    var allowedImageMetadata = new Dictionary<string, int>(StringComparer.Ordinal);
+    CountDatabaseBinaryContent(
+        Parse(
+            "class Sample { [Column(\"ImageUrl\")] public string ImageUrl { get; set; } }"),
+        "JayTom.Dws.Data/SelfTest/ImageInfoModel.cs",
+        allowedImageMetadata);
+    if (allowedImageMetadata.Values.Sum() != 0) {
+        errors.Add("代码质量守卫自检失败：图片路径或 URL 被错误识别为二进制内容。");
+    }
+    RequireViolation(
+        "通用性能规则",
+        findings => CountPerformanceViolations(
+            Parse("class Sample { void Run() { task.Wait(); } }"),
+            "SelfTest/Performance.cs",
+            findings),
+        errors);
+
+    if (!HasChineseConfigurationDocumentation(
+            "sample.json",
+            "{\"$comment\":\"中文配置说明\"}",
+            chineseCharacter) ||
+        HasChineseConfigurationDocumentation(
+            "sample.json",
+            "{\"value\":true}",
+            chineseCharacter)) {
+        errors.Add("代码质量守卫自检失败：配置文件中文说明规则异常。");
+    }
+
+    if (!HasLegacyTargetFramework(
+            "<Project><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>") ||
+        HasLegacyTargetFramework(
+            "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>")) {
+        errors.Add("代码质量守卫自检失败：.NET 10 目标框架规则异常。");
+    }
+
+    var oldModel = new GuardBaseline {
+        EfModelSignature = "OLD",
+        EfMigrationCount = 2
+    };
+    var changedWithoutMigration = new GuardBaseline {
+        EfModelSignature = "NEW",
+        EfMigrationCount = 2
+    };
+    var changedWithMigration = new GuardBaseline {
+        EfModelSignature = "NEW",
+        EfMigrationCount = 3
+    };
+    if (CanUpdateEfModelBaseline(
+            oldModel,
+            changedWithoutMigration,
+            out _) ||
+        !CanUpdateEfModelBaseline(oldModel, changedWithMigration, out _)) {
+        errors.Add("代码质量守卫自检失败：EF Core 模型迁移联动规则异常。");
     }
 }
 
@@ -206,12 +733,32 @@ static void CountFloatingPointUsage(
             identifier.Identifier.ValueText is "Half" or "Single" or "Double" => true,
         LiteralExpressionSyntax literal when
             literal.Token.Value is float or double => true,
+        InvocationExpressionSyntax invocation when
+            IsFloatingPointFactory(invocation) => true,
+        MemberAccessExpressionSyntax memberAccess when
+            memberAccess.Expression.ToString() is "MathF" or "System.MathF" => true,
         _ => false
     });
 
     if (count > 0) {
         violations[relativePath] = count;
     }
+}
+
+static bool IsFloatingPointFactory(InvocationExpressionSyntax invocation) {
+    if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) {
+        return false;
+    }
+
+    var target = memberAccess.Expression.ToString();
+    var method = memberAccess.Name.Identifier.ValueText;
+    return target is "Convert" or "System.Convert" &&
+           method is "ToDouble" or "ToSingle" ||
+           target is "BitConverter" or "System.BitConverter" &&
+           method is "ToDouble" or "ToSingle" ||
+           target is "double" or "float" or "Double" or "Single" or
+               "System.Double" or "System.Single" &&
+           method is "Parse" or "TryParse";
 }
 
 static void CountMissingChineseDocumentation(
@@ -237,10 +784,1072 @@ static void CountMissingChineseDocumentation(
 }
 
 static bool IsDocumentableDeclaration(SyntaxNode node) {
-    return node is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or
+    return node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax or
+        BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or
         PropertyDeclarationSyntax or IndexerDeclarationSyntax or
-        FieldDeclarationSyntax or EventFieldDeclarationSyntax or
+        FieldDeclarationSyntax or EventFieldDeclarationSyntax or EventDeclarationSyntax or
         EnumMemberDeclarationSyntax;
+}
+
+static void CountTypeIsolationViolations(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var declarations = root.DescendantNodes()
+        .Where(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
+        .ToArray();
+    var topLevelDeclarations = declarations
+        .Where(IsTopLevelTypeDeclaration)
+        .ToArray();
+    var count = declarations.Length - topLevelDeclarations.Length;
+    if (topLevelDeclarations.Length > 1) {
+        count += topLevelDeclarations.Length - 1;
+    }
+
+    var expectedFileName = Path.GetFileNameWithoutExtension(relativePath);
+    if (expectedFileName.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase)) {
+        expectedFileName = Path.GetFileNameWithoutExtension(expectedFileName);
+    }
+
+    count += topLevelDeclarations.Count(declaration =>
+        !GetTypeIdentifier(declaration).Equals(
+            expectedFileName,
+            StringComparison.Ordinal));
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static bool IsTopLevelTypeDeclaration(SyntaxNode declaration) {
+    return declaration.Parent is CompilationUnitSyntax or
+        NamespaceDeclarationSyntax or FileScopedNamespaceDeclarationSyntax;
+}
+
+static string GetTypeIdentifier(SyntaxNode declaration) {
+    return declaration switch {
+        BaseTypeDeclarationSyntax type => type.Identifier.ValueText,
+        DelegateDeclarationSyntax type => type.Identifier.ValueText,
+        _ => string.Empty
+    };
+}
+
+static void CountInvalidIdTypes(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var count = 0;
+    foreach (var property in root.DescendantNodes().OfType<PropertyDeclarationSyntax>()) {
+        if (IsIdName(property.Identifier.ValueText) &&
+            !IsLongType(property.Type)) {
+            count++;
+        }
+    }
+
+    foreach (var field in root.DescendantNodes().OfType<FieldDeclarationSyntax>()) {
+        count += field.Declaration.Variables.Count(variable =>
+            IsIdName(variable.Identifier.ValueText) &&
+            !IsLongType(field.Declaration.Type));
+    }
+
+    foreach (var parameter in root.DescendantNodes().OfType<ParameterSyntax>()) {
+        if (IsIdName(parameter.Identifier.ValueText) &&
+            (parameter.Type is null || !IsLongType(parameter.Type))) {
+            count++;
+        }
+    }
+
+    foreach (var local in root.DescendantNodes().OfType<LocalDeclarationStatementSyntax>()) {
+        count += local.Declaration.Variables.Count(variable =>
+            IsIdName(variable.Identifier.ValueText) &&
+            !IsLongType(local.Declaration.Type));
+    }
+
+    foreach (var loop in root.DescendantNodes().OfType<ForEachStatementSyntax>()) {
+        if (IsIdName(loop.Identifier.ValueText) && !IsLongType(loop.Type)) {
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static bool IsIdName(string name) {
+    return !name.Equals("Guid", StringComparison.Ordinal) &&
+           (name.Equals("id", StringComparison.OrdinalIgnoreCase) ||
+            name.EndsWith("Id", StringComparison.Ordinal) ||
+            name.EndsWith("ID", StringComparison.Ordinal) ||
+            Regex.IsMatch(
+                name,
+                "_id$",
+                RegexOptions.CultureInvariant | RegexOptions.IgnoreCase));
+}
+
+static bool IsLongType(TypeSyntax type) {
+    var typeName = type.WithoutTrivia().ToString();
+    if (typeName.EndsWith('?')) {
+        typeName = typeName[..^1];
+    }
+
+    return typeName is "long" or "Int64" or "System.Int64" or
+        "global::System.Int64";
+}
+
+static void CountHotPathIo(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var count = 0;
+    foreach (var method in root.DescendantNodes()
+                 .OfType<BaseMethodDeclarationSyntax>()
+                 .Where(IsHotPathMethod)) {
+        count += method.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(IsDatabaseOrFileIoInvocation);
+        count += method.DescendantNodes()
+            .OfType<ObjectCreationExpressionSyntax>()
+            .Count(IsFileIoObjectCreation);
+    }
+
+    foreach (var localFunction in root.DescendantNodes()
+                 .OfType<LocalFunctionStatementSyntax>()
+                 .Where(IsHotPathLocalFunction)) {
+        count += localFunction.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(IsDatabaseOrFileIoInvocation);
+        count += localFunction.DescendantNodes()
+            .OfType<ObjectCreationExpressionSyntax>()
+            .Count(IsFileIoObjectCreation);
+    }
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static bool IsHotPathMethod(BaseMethodDeclarationSyntax method) {
+    var name = method switch {
+        MethodDeclarationSyntax declaration => declaration.Identifier.ValueText,
+        ConstructorDeclarationSyntax declaration => declaration.Identifier.ValueText,
+        DestructorDeclarationSyntax declaration => declaration.Identifier.ValueText,
+        OperatorDeclarationSyntax declaration => declaration.OperatorToken.ValueText,
+        ConversionOperatorDeclarationSyntax declaration =>
+            declaration.Type.WithoutTrivia().ToString(),
+        _ => string.Empty
+    };
+    return HasHotPathMarker(method) || IsHotPathName(name);
+}
+
+static bool IsHotPathLocalFunction(LocalFunctionStatementSyntax method) {
+    return HasHotPathMarker(method) ||
+           IsHotPathName(method.Identifier.ValueText);
+}
+
+static bool HasHotPathMarker(SyntaxNode node) {
+    return node.GetLeadingTrivia().ToFullString()
+               .Contains("DWS-HOT-PATH", StringComparison.Ordinal) ||
+           node.ChildNodes().OfType<AttributeListSyntax>()
+               .Any(attributes => attributes.ToString()
+                   .Contains("HotPath", StringComparison.Ordinal));
+}
+
+static bool IsHotPathName(string name) {
+    string[] fragments = [
+        "Callback",
+        "CallBack",
+        "Received",
+        "Receive",
+        "Frame",
+        "Image",
+        "Package",
+        "Sorting",
+        "Decode",
+        "Encode",
+        "Parse",
+        "Process"
+    ];
+    return fragments.Any(fragment =>
+        name.Contains(fragment, StringComparison.Ordinal));
+}
+
+static bool IsDatabaseOrFileIoInvocation(InvocationExpressionSyntax invocation) {
+    var expression = invocation.Expression.ToString();
+    if (expression.StartsWith("File.", StringComparison.Ordinal) ||
+        expression.StartsWith("System.IO.File.", StringComparison.Ordinal) ||
+        expression.StartsWith("Directory.", StringComparison.Ordinal) ||
+        expression.StartsWith("System.IO.Directory.", StringComparison.Ordinal) ||
+        expression.StartsWith("RandomAccess.", StringComparison.Ordinal) ||
+        expression.Contains(".Database.", StringComparison.Ordinal)) {
+        return true;
+    }
+
+    if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) {
+        return false;
+    }
+
+    var method = memberAccess.Name.Identifier.ValueText;
+    if (method is "SaveChanges" or "SaveChangesAsync" or
+        "ExecuteSqlRaw" or "ExecuteSqlRawAsync" or
+        "ExecuteSqlInterpolated" or "ExecuteSqlInterpolatedAsync" or
+        "FromSqlRaw" or "FromSqlInterpolated" or
+        "CreateDbContext" or "CreateDbContextAsync") {
+        return true;
+    }
+
+    var target = memberAccess.Expression.ToString();
+    string[] repositoryMethodPrefixes = [
+        "Get",
+        "Find",
+        "Select",
+        "Insert",
+        "Update",
+        "Delete",
+        "Save",
+        "Count",
+        "Any"
+    ];
+    return (target.Contains("Repository", StringComparison.OrdinalIgnoreCase) ||
+            target.Contains("_repository", StringComparison.OrdinalIgnoreCase) ||
+            target.Contains("DbContext", StringComparison.OrdinalIgnoreCase) ||
+            target.Contains("_context", StringComparison.OrdinalIgnoreCase)) &&
+           repositoryMethodPrefixes.Any(prefix =>
+               method.StartsWith(prefix, StringComparison.Ordinal));
+}
+
+static bool IsFileIoObjectCreation(ObjectCreationExpressionSyntax creation) {
+    var type = creation.Type.WithoutTrivia().ToString();
+    return type is "FileStream" or "System.IO.FileStream" or
+        "StreamReader" or "System.IO.StreamReader" or
+        "StreamWriter" or "System.IO.StreamWriter" or
+        "FileInfo" or "System.IO.FileInfo" or
+        "DirectoryInfo" or "System.IO.DirectoryInfo";
+}
+
+static void CountRawSqlUsage(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var rawSqlMethods = new HashSet<string>(StringComparer.Ordinal) {
+        "ExecuteSql",
+        "ExecuteSqlAsync",
+        "ExecuteSqlRaw",
+        "ExecuteSqlRawAsync",
+        "ExecuteSqlInterpolated",
+        "ExecuteSqlInterpolatedAsync",
+        "FromSql",
+        "FromSqlRaw",
+        "FromSqlInterpolated",
+        "SqlQuery",
+        "SqlQueryRaw"
+    };
+    var count = root.DescendantNodes()
+        .OfType<InvocationExpressionSyntax>()
+        .Count(invocation => invocation.Expression switch {
+            MemberAccessExpressionSyntax memberAccess =>
+                rawSqlMethods.Contains(memberAccess.Name.Identifier.ValueText),
+            IdentifierNameSyntax identifier =>
+                rawSqlMethods.Contains(identifier.Identifier.ValueText),
+            _ => false
+        });
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static void CountDatabasePolicyViolations(
+    SyntaxNode root,
+    string source,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var count = root.DescendantNodes()
+        .OfType<ObjectCreationExpressionSyntax>()
+        .Count(creation => IsDirectDatabaseClientType(
+            creation.Type.WithoutTrivia().ToString()));
+    count += root.DescendantNodes()
+        .OfType<InvocationExpressionSyntax>()
+        .Count(invocation => invocation.Expression is MemberAccessExpressionSyntax access &&
+            access.Name.Identifier.ValueText is "EnsureCreated" or
+                "EnsureCreatedAsync" or "EnsureDeleted" or "EnsureDeletedAsync");
+
+    foreach (var context in root.DescendantNodes()
+                 .OfType<ClassDeclarationSyntax>()
+                 .Where(IsDbContextDeclaration)) {
+        if (!context.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                .Any(invocation => invocation.Expression.ToString()
+                    .Contains("EnsureInitialized", StringComparison.Ordinal)) &&
+            !source.Contains(".Migrate(", StringComparison.Ordinal) &&
+            !source.Contains(".MigrateAsync(", StringComparison.Ordinal)) {
+            count++;
+        }
+
+        if (!source.Contains("HasIndex", StringComparison.Ordinal)) {
+            count++;
+        }
+
+        if (!source.Contains(
+                "DWS-DATABASE-PARTITION:",
+                StringComparison.Ordinal)) {
+            count++;
+        }
+
+        if (!source.Contains(
+                "DWS-DATABASE-TUNING:",
+                StringComparison.Ordinal)) {
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static bool IsDirectDatabaseClientType(string typeName) {
+    string[] names = [
+        "SqlConnection",
+        "SqlCommand",
+        "SqliteConnection",
+        "SqliteCommand",
+        "SQLiteConnection",
+        "SQLiteCommand",
+        "MySqlConnection",
+        "MySqlCommand",
+        "NpgsqlConnection",
+        "NpgsqlCommand"
+    ];
+    return names.Any(name =>
+        typeName.Equals(name, StringComparison.Ordinal) ||
+        typeName.EndsWith($".{name}", StringComparison.Ordinal));
+}
+
+static bool IsDbContextDeclaration(ClassDeclarationSyntax declaration) {
+    return declaration.BaseList?.Types.Any(type =>
+        type.Type.WithoutTrivia().ToString() is "DbContext" or
+            "Microsoft.EntityFrameworkCore.DbContext") == true;
+}
+
+static void CountDatabaseQueryViolations(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    if (!relativePath.Contains("/Repository/", StringComparison.OrdinalIgnoreCase)) {
+        return;
+    }
+
+    string[] materializers = [
+        "ToList",
+        "ToListAsync",
+        "ToArray",
+        "ToArrayAsync",
+        "First",
+        "FirstAsync",
+        "FirstOrDefault",
+        "FirstOrDefaultAsync",
+        "Single",
+        "SingleAsync",
+        "SingleOrDefault",
+        "SingleOrDefaultAsync"
+    ];
+    var count = 0;
+    foreach (var invocation in root.DescendantNodes()
+                 .OfType<InvocationExpressionSyntax>()) {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) {
+            continue;
+        }
+
+        var method = memberAccess.Name.Identifier.ValueText;
+        var expression = invocation.ToString();
+        if (materializers.Contains(method, StringComparer.Ordinal) &&
+            !expression.Contains("AsNoTracking", StringComparison.Ordinal) &&
+            !expression.Contains("AsTracking", StringComparison.Ordinal)) {
+            count++;
+        }
+
+        if (method == "AsEnumerable") {
+            count++;
+        }
+
+        if (method is "ToList" or "ToArray" or "First" or
+                "FirstOrDefault" or "Single" or "SingleOrDefault" &&
+            invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>()
+                ?.Modifiers.Any(SyntaxKind.AsyncKeyword) == true) {
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static void CountDatabaseBinaryContent(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var count = 0;
+    if (relativePath.StartsWith("JayTom.Dws.Data/", StringComparison.Ordinal)) {
+        foreach (var property in root.DescendantNodes()
+                     .OfType<PropertyDeclarationSyntax>()) {
+            if (!HasNotMappedAttribute(property.AttributeLists) &&
+                IsForbiddenDatabaseContent(
+                    property.Type,
+                    property.Identifier.ValueText,
+                    property.AttributeLists)) {
+                count++;
+            }
+        }
+
+        foreach (var field in root.DescendantNodes()
+                     .OfType<FieldDeclarationSyntax>()) {
+            if (HasNotMappedAttribute(field.AttributeLists)) {
+                continue;
+            }
+
+            count += field.Declaration.Variables.Count(variable =>
+                IsForbiddenDatabaseContent(
+                    field.Declaration.Type,
+                    variable.Identifier.ValueText,
+                    field.AttributeLists));
+        }
+    }
+
+    count += root.DescendantNodes()
+        .OfType<InvocationExpressionSyntax>()
+        .Count(IsForbiddenBinaryColumnMapping);
+    if (relativePath.StartsWith("JayTom.Dws.Data/", StringComparison.Ordinal) ||
+        relativePath.Contains(
+            "/Repository/",
+            StringComparison.OrdinalIgnoreCase)) {
+        count += root.DescendantNodes()
+            .OfType<AssignmentExpressionSyntax>()
+            .Count(assignment =>
+                IsEncodedContentAssignment(assignment.Left, assignment.Right));
+    }
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static bool HasNotMappedAttribute(
+    SyntaxList<AttributeListSyntax> attributeLists) {
+    return attributeLists.SelectMany(list => list.Attributes)
+        .Any(attribute => attribute.Name.ToString() is
+            "NotMapped" or "NotMappedAttribute" or
+            "System.ComponentModel.DataAnnotations.Schema.NotMapped" or
+            "System.ComponentModel.DataAnnotations.Schema.NotMappedAttribute");
+}
+
+static bool IsForbiddenDatabaseContent(
+    TypeSyntax type,
+    string memberName,
+    SyntaxList<AttributeListSyntax> attributeLists) {
+    var typeName = type.WithoutTrivia().ToString().TrimEnd('?');
+    if (IsFileOrImageObjectType(typeName)) {
+        return true;
+    }
+
+    if (IsByteBufferType(typeName) && IsFileOrImageContentName(memberName)) {
+        return true;
+    }
+
+    if (IsTextType(typeName) && IsEncodedFileOrImageContentName(memberName)) {
+        return true;
+    }
+
+    return HasBinaryColumnAttribute(attributeLists);
+}
+
+static bool IsFileOrImageObjectType(string typeName) {
+    string[] forbiddenTypes = [
+        "Stream",
+        "System.IO.Stream",
+        "FileStream",
+        "System.IO.FileStream",
+        "FileInfo",
+        "System.IO.FileInfo",
+        "Image",
+        "System.Drawing.Image",
+        "Bitmap",
+        "System.Drawing.Bitmap",
+        "IFormFile",
+        "Microsoft.AspNetCore.Http.IFormFile"
+    ];
+    return forbiddenTypes.Contains(typeName, StringComparer.Ordinal);
+}
+
+static bool IsByteBufferType(string typeName) {
+    return typeName is "byte[]" or "Byte[]" or "System.Byte[]" or
+        "Memory<byte>" or "System.Memory<byte>" or
+        "ReadOnlyMemory<byte>" or "System.ReadOnlyMemory<byte>" or
+        "ArraySegment<byte>" or "System.ArraySegment<byte>" or
+        "ReadOnlySequence<byte>" or "System.Buffers.ReadOnlySequence<byte>" or
+        "ImmutableArray<byte>" or
+        "System.Collections.Immutable.ImmutableArray<byte>";
+}
+
+static bool IsTextType(string typeName) {
+    return typeName is "string" or "String" or "System.String" or
+        "char[]" or "Char[]" or "System.Char[]" or
+        "Memory<char>" or "System.Memory<char>" or
+        "ReadOnlyMemory<char>" or "System.ReadOnlyMemory<char>";
+}
+
+static bool IsFileOrImageContentName(string memberName) {
+    string[] fragments = [
+        "Image",
+        "Picture",
+        "Photo",
+        "Icon",
+        "Thumbnail",
+        "File",
+        "Attachment",
+        "Document",
+        "Sound",
+        "Audio",
+        "Video",
+        "Content",
+        "Blob",
+        "Bytes",
+        "Base64"
+    ];
+    return fragments.Any(fragment =>
+        memberName.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+}
+
+static bool IsEncodedFileOrImageContentName(string memberName) {
+    if (!IsMediaOrFileSubjectName(memberName)) {
+        return false;
+    }
+
+    if (memberName.Contains("Base64", StringComparison.OrdinalIgnoreCase) ||
+        memberName.Contains("DataUri", StringComparison.OrdinalIgnoreCase)) {
+        return true;
+    }
+
+    string[] contentSuffixes = [
+        "Content",
+        "Data",
+        "Payload",
+        "Body"
+    ];
+    return contentSuffixes.Any(suffix =>
+        memberName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+}
+
+static bool IsMediaOrFileSubjectName(string memberName) {
+    string[] subjects = [
+        "Image",
+        "Picture",
+        "Photo",
+        "Icon",
+        "Thumbnail",
+        "File",
+        "Attachment",
+        "Document",
+        "Sound",
+        "Audio",
+        "Video"
+    ];
+    return subjects.Any(subject =>
+        memberName.Contains(subject, StringComparison.OrdinalIgnoreCase));
+}
+
+static bool IsEncodedContentAssignment(
+    ExpressionSyntax left,
+    ExpressionSyntax right) {
+    var rightText = right.ToString();
+    return IsFileOrImageContentName(left.ToString()) &&
+           (rightText.Contains(
+                "Convert.ToBase64String",
+                StringComparison.Ordinal) ||
+            rightText.Contains(
+                "System.Convert.ToBase64String",
+                StringComparison.Ordinal));
+}
+
+static bool HasBinaryColumnAttribute(
+    SyntaxList<AttributeListSyntax> attributeLists) {
+    return attributeLists.SelectMany(list => list.Attributes)
+        .Where(attribute => attribute.Name.ToString() is
+            "Column" or "ColumnAttribute" or
+            "System.ComponentModel.DataAnnotations.Schema.Column" or
+            "System.ComponentModel.DataAnnotations.Schema.ColumnAttribute")
+        .SelectMany(attribute => attribute.ArgumentList?.Arguments ?? [])
+        .Any(argument =>
+            argument.NameEquals?.Name.Identifier.ValueText == "TypeName" &&
+            IsBinaryDatabaseTypeName(argument.Expression.ToString()));
+}
+
+static bool IsForbiddenBinaryColumnMapping(
+    InvocationExpressionSyntax invocation) {
+    if (invocation.Expression is MemberAccessExpressionSyntax {
+            Name: GenericNameSyntax genericName
+        } &&
+        genericName.Identifier.ValueText == "Column" &&
+        genericName.TypeArgumentList.Arguments.Count == 1 &&
+        IsByteBufferType(
+            genericName.TypeArgumentList.Arguments[0]
+                .WithoutTrivia()
+                .ToString())) {
+        var member = invocation
+            .FirstAncestorOrSelf<AnonymousObjectMemberDeclaratorSyntax>();
+        return member?.NameEquals is { Name.Identifier.ValueText: var name } &&
+               IsFileOrImageContentName(name);
+    }
+
+    if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
+        memberAccess.Name.Identifier.ValueText != "HasColumnType" ||
+        invocation.ArgumentList.Arguments.Count == 0 ||
+        !IsBinaryDatabaseTypeName(
+            invocation.ArgumentList.Arguments[0].Expression.ToString())) {
+        return false;
+    }
+
+    return IsFileOrImageContentName(memberAccess.Expression.ToString());
+}
+
+static bool IsBinaryDatabaseTypeName(string expression) {
+    var value = expression.Trim().Trim('"', '\'');
+    string[] databaseTypes = [
+        "blob",
+        "longblob",
+        "mediumblob",
+        "tinyblob",
+        "binary",
+        "varbinary",
+        "image",
+        "bytea"
+    ];
+    return databaseTypes.Any(type =>
+        value.Contains(type, StringComparison.OrdinalIgnoreCase));
+}
+
+static void CountPerformanceViolations(
+    SyntaxNode root,
+    string relativePath,
+    IDictionary<string, int> violations) {
+    var count = root.DescendantNodes()
+        .OfType<MemberAccessExpressionSyntax>()
+        .Count(access =>
+            access.Name.Identifier.ValueText == "Result" &&
+            access.Expression.ToString()
+                .Contains("task", StringComparison.OrdinalIgnoreCase));
+    count += root.DescendantNodes()
+        .OfType<InvocationExpressionSyntax>()
+        .Count(invocation => IsBlockingOrForcedRuntimeInvocation(invocation) ||
+            IsHotPathAllocationInvocation(invocation));
+    count += root.DescendantNodes()
+        .OfType<MethodDeclarationSyntax>()
+        .Count(method => method.Modifiers.Any(SyntaxKind.AsyncKeyword) &&
+                         method.ReturnType.WithoutTrivia().ToString() == "void" &&
+                         !LooksLikeEventHandler(method));
+
+    if (count > 0) {
+        violations[relativePath] = count;
+    }
+}
+
+static bool IsBlockingOrForcedRuntimeInvocation(
+    InvocationExpressionSyntax invocation) {
+    var expression = invocation.Expression.ToString();
+    return expression.EndsWith(".Wait", StringComparison.Ordinal) ||
+           expression.EndsWith(".GetAwaiter().GetResult", StringComparison.Ordinal) ||
+           expression is "Thread.Sleep" or "System.Threading.Thread.Sleep" or
+               "GC.Collect" or "System.GC.Collect";
+}
+
+static bool IsHotPathAllocationInvocation(
+    InvocationExpressionSyntax invocation) {
+    var method = invocation.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>();
+    if (method is null || !IsHotPathMethod(method) ||
+        invocation.Expression is not MemberAccessExpressionSyntax memberAccess) {
+        return false;
+    }
+
+    var name = memberAccess.Name.Identifier.ValueText;
+    return name is "ToList" or "ToArray" or "OrderBy" or "OrderByDescending" or
+        "GroupBy" or "ToDictionary" or "Task.Run" ||
+        invocation.Expression.ToString().StartsWith(
+            "Task.Run",
+            StringComparison.Ordinal);
+}
+
+static bool LooksLikeEventHandler(MethodDeclarationSyntax method) {
+    return method.ParameterList.Parameters.Count == 2 &&
+           method.ParameterList.Parameters[0].Type?.ToString() == "object" &&
+           method.ParameterList.Parameters[1].Type?.ToString()
+               .EndsWith("EventArgs", StringComparison.Ordinal) == true;
+}
+
+static void ValidateConfigurationFiles(
+    string workspacePath,
+    IReadOnlyCollection<string> projectDirectories,
+    Encoding utf8,
+    Regex chineseCharacter,
+    IReadOnlyCollection<string> forbiddenMojibake,
+    IDictionary<string, int> documentationViolations,
+    IDictionary<string, int> targetFrameworkViolations,
+    ICollection<string> errors) {
+    var configurationPaths = EnumerateConfigurationFiles(
+            workspacePath,
+            projectDirectories)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(path => path, StringComparer.Ordinal);
+    foreach (var path in configurationPaths) {
+        var relativePath = Path.GetRelativePath(workspacePath, path)
+            .Replace('\\', '/');
+        string source;
+        try {
+            source = utf8.GetString(File.ReadAllBytes(path));
+        }
+        catch (DecoderFallbackException exception) {
+            errors.Add(
+                $"{relativePath}: 配置文件不是有效的 UTF-8 编码：{exception.Message}");
+            continue;
+        }
+
+        foreach (var mojibake in forbiddenMojibake) {
+            if (source.Contains(mojibake, StringComparison.Ordinal)) {
+                errors.Add($"{relativePath}: 配置文件存在疑似中文乱码“{mojibake}”。");
+            }
+        }
+
+        if (!HasChineseConfigurationDocumentation(
+                path,
+                source,
+                chineseCharacter)) {
+            documentationViolations[relativePath] = 1;
+        }
+
+        if (Path.GetExtension(path).Equals(
+                ".csproj",
+                StringComparison.OrdinalIgnoreCase) &&
+            HasLegacyTargetFramework(source)) {
+            targetFrameworkViolations[relativePath] = 1;
+        }
+    }
+}
+
+static IEnumerable<string> EnumerateConfigurationFiles(
+    string workspacePath,
+    IReadOnlyCollection<string> projectDirectories) {
+    string[] rootFiles = [
+        ".editorconfig",
+        ".gitattributes",
+        "Directory.Build.props",
+        "Directory.Build.targets",
+        "global.json",
+        "NuGet.config",
+        "nuget.config",
+        "eng/CodeQualityBaseline.json",
+        "eng/DatabaseQualityPolicy.json"
+    ];
+    foreach (var relativePath in rootFiles) {
+        var path = Path.Combine(
+            workspacePath,
+            relativePath.Replace('/', Path.DirectorySeparatorChar));
+        if (File.Exists(path)) {
+            yield return path;
+        }
+    }
+
+    var extensions = new HashSet<string>(
+        [
+            ".csproj",
+            ".props",
+            ".targets",
+            ".json",
+            ".xml",
+            ".config",
+            ".yml",
+            ".yaml",
+            ".toml",
+            ".editorconfig"
+        ],
+        StringComparer.OrdinalIgnoreCase);
+    foreach (var directory in projectDirectories) {
+        foreach (var path in Directory.EnumerateFiles(
+                     directory,
+                     "*",
+                     SearchOption.AllDirectories)) {
+            if (!IsGeneratedBuildFile(path) &&
+                extensions.Contains(Path.GetExtension(path))) {
+                yield return path;
+            }
+        }
+    }
+}
+
+static bool HasChineseConfigurationDocumentation(
+    string path,
+    string source,
+    Regex chineseCharacter) {
+    var extension = Path.GetExtension(path).ToLowerInvariant();
+    if (extension == ".json") {
+        try {
+            using var document = JsonDocument.Parse(
+                source,
+                new JsonDocumentOptions {
+                    AllowTrailingCommas = true,
+                    CommentHandling = JsonCommentHandling.Skip
+                });
+            return HasChineseJsonDocumentation(
+                document.RootElement,
+                chineseCharacter);
+        }
+        catch (JsonException) {
+            return Regex.IsMatch(
+                source,
+                "\"(?:\\$comment|_comment|description)\"\\s*:\\s*\"[^\"]*\\p{IsCJKUnifiedIdeographs}",
+                RegexOptions.CultureInvariant);
+        }
+    }
+
+    if (extension is ".csproj" or ".props" or ".targets" or ".xml" or ".config") {
+        return Regex.IsMatch(
+            source,
+            "<!--(?:(?!-->).)*\\p{IsCJKUnifiedIdeographs}(?:(?!-->).)*-->",
+            RegexOptions.CultureInvariant | RegexOptions.Singleline);
+    }
+
+    return source.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+        .Any(line => {
+            var trimmed = line.TrimStart();
+            return (trimmed.StartsWith('#') ||
+                    trimmed.StartsWith(';') ||
+                    trimmed.StartsWith("//", StringComparison.Ordinal)) &&
+                   chineseCharacter.IsMatch(trimmed);
+        });
+}
+
+static bool HasChineseJsonDocumentation(
+    JsonElement element,
+    Regex chineseCharacter) {
+    if (element.ValueKind == JsonValueKind.Object) {
+        foreach (var property in element.EnumerateObject()) {
+            if (property.Name is "$comment" or "_comment" or "description" &&
+                property.Value.ValueKind == JsonValueKind.String &&
+                chineseCharacter.IsMatch(property.Value.GetString() ?? string.Empty)) {
+                return true;
+            }
+
+            if (HasChineseJsonDocumentation(property.Value, chineseCharacter)) {
+                return true;
+            }
+        }
+    }
+    else if (element.ValueKind == JsonValueKind.Array) {
+        foreach (var item in element.EnumerateArray()) {
+            if (HasChineseJsonDocumentation(item, chineseCharacter)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static bool HasLegacyTargetFramework(string source) {
+    var matches = Regex.Matches(
+        source,
+        "<TargetFrameworks?>([^<]+)</TargetFrameworks?>",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    return matches.Count == 0 || matches
+        .SelectMany(match => match.Groups[1].Value.Split(';'))
+        .Any(framework => !framework.Trim()
+            .StartsWith("net10.0", StringComparison.OrdinalIgnoreCase));
+}
+
+static string BuildEfModelSignature(
+    string workspacePath,
+    IReadOnlyCollection<string> projectDirectories,
+    Encoding utf8,
+    out int migrationCount) {
+    var modelSources = new List<string>();
+    migrationCount = 0;
+    foreach (var projectDirectory in projectDirectories) {
+        foreach (var path in Directory.EnumerateFiles(
+                     projectDirectory,
+                     "*.cs",
+                     SearchOption.AllDirectories)) {
+            if (IsGeneratedBuildFile(path)) {
+                continue;
+            }
+
+            var relativePath = Path.GetRelativePath(workspacePath, path)
+                .Replace('\\', '/');
+            string source;
+            try {
+                source = utf8.GetString(File.ReadAllBytes(path));
+            }
+            catch (DecoderFallbackException) {
+                // 编码错误已经由主扫描流程报告，模型签名阶段只跳过该文件。
+                continue;
+            }
+            var root = CSharpSyntaxTree.ParseText(
+                    source,
+                    new CSharpParseOptions(LanguageVersion.CSharp14),
+                    path,
+                    utf8)
+                .GetRoot();
+            if (IsMigrationSource(root, relativePath)) {
+                migrationCount++;
+                continue;
+            }
+
+            if (!relativePath.StartsWith(
+                    "JayTom.Dws.Data/",
+                    StringComparison.Ordinal) &&
+                !relativePath.StartsWith(
+                    "JayTom.Dws.Infrastructure/",
+                    StringComparison.Ordinal) ||
+                relativePath.Contains(
+                    "/Repository/",
+                    StringComparison.OrdinalIgnoreCase)) {
+                continue;
+            }
+
+            if (relativePath.StartsWith(
+                    "JayTom.Dws.Infrastructure/",
+                    StringComparison.Ordinal) &&
+                !root.DescendantNodes().OfType<ClassDeclarationSyntax>()
+                    .Any(IsDbContextDeclaration)) {
+                continue;
+            }
+
+            modelSources.Add(
+                relativePath + "\n" +
+                root.WithoutTrivia().NormalizeWhitespace().ToFullString());
+        }
+    }
+
+    var payload = utf8.GetBytes(string.Join(
+        "\n---\n",
+        modelSources.OrderBy(item => item, StringComparer.Ordinal)));
+    // DWS-HEX-COMPACT: 模型签名必须使用无分隔符的稳定十六进制文本。
+    return Convert.ToHexString(SHA256.HashData(payload));
+}
+
+static bool IsMigrationSource(SyntaxNode root, string relativePath) {
+    return relativePath.Contains(
+               "/Migrations/",
+               StringComparison.OrdinalIgnoreCase) &&
+           root.DescendantNodes().OfType<ClassDeclarationSyntax>().Any(type =>
+               type.BaseList?.Types.Any(baseType =>
+                   baseType.Type.ToString().EndsWith(
+                       "Migration",
+                       StringComparison.Ordinal)) == true);
+}
+
+static void ValidateDatabasePolicyConfiguration(
+    string workspacePath,
+    Encoding utf8,
+    ICollection<string> errors) {
+    var path = Path.Combine(
+        workspacePath,
+        "eng",
+        "DatabaseQualityPolicy.json");
+    if (!File.Exists(path)) {
+        errors.Add("缺少数据库质量策略文件：eng/DatabaseQualityPolicy.json。");
+        return;
+    }
+
+    try {
+        using var document = JsonDocument.Parse(File.ReadAllText(path, utf8));
+        string[] requiredFlags = [
+            "requireEfCore",
+            "requireCodeFirst",
+            "requireAutomaticMigration",
+            "requireAutomaticDatabaseCreation",
+            "requireAutomaticPartitioning",
+            "requireAutomaticTuning",
+            "forbidImageAndFileContentStorage",
+            "preferZeroRawSql",
+            "preferQueryPerformance"
+        ];
+        foreach (var flag in requiredFlags) {
+            if (!document.RootElement.TryGetProperty(flag, out var value) ||
+                value.ValueKind != JsonValueKind.True) {
+                errors.Add($"数据库质量策略“{flag}”必须设置为 true。");
+            }
+        }
+    }
+    catch (Exception exception) when (
+        exception is IOException or JsonException or DecoderFallbackException) {
+        errors.Add($"无法读取数据库质量策略：{exception.Message}");
+    }
+}
+
+static bool TryReadBaseline(
+    string baselinePath,
+    Encoding utf8,
+    out GuardBaseline? baseline,
+    out string? error) {
+    baseline = null;
+    error = null;
+    if (!File.Exists(baselinePath)) {
+        return false;
+    }
+
+    try {
+        baseline = JsonSerializer.Deserialize<GuardBaseline>(
+            File.ReadAllText(baselinePath, utf8),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        return baseline is not null;
+    }
+    catch (Exception exception) when (
+        exception is IOException or JsonException or DecoderFallbackException) {
+        error = $"无法读取代码质量基线：{exception.Message}";
+        return false;
+    }
+}
+
+static bool CanUpdateEfModelBaseline(
+    GuardBaseline previous,
+    GuardBaseline current,
+    out string? error) {
+    error = null;
+    if (string.IsNullOrWhiteSpace(previous.EfModelSignature) ||
+        previous.EfModelSignature.Equals(
+            current.EfModelSignature,
+            StringComparison.Ordinal)) {
+        return true;
+    }
+
+    if (current.EfMigrationCount <= previous.EfMigrationCount) {
+        error =
+            "EF Core 数据模型已变化，但没有新增 Code First 迁移；请先生成迁移，再更新质量基线。";
+        return false;
+    }
+
+    return true;
+}
+
+static void ValidateEfModelBaseline(
+    GuardBaseline expected,
+    GuardBaseline actual,
+    ICollection<string> errors) {
+    if (string.IsNullOrWhiteSpace(expected.EfModelSignature)) {
+        errors.Add("EF Core 模型签名尚未建立，请审核现有模型后更新质量基线。");
+        return;
+    }
+
+    if (expected.EfMigrationCount > actual.EfMigrationCount) {
+        errors.Add("检测到 EF Core Code First 迁移被删除。");
+    }
+
+    if (expected.EfModelSignature.Equals(
+            actual.EfModelSignature,
+            StringComparison.Ordinal)) {
+        return;
+    }
+
+    errors.Add(actual.EfMigrationCount > expected.EfMigrationCount
+        ? "检测到 EF Core 模型和迁移同步变化；请审核迁移后更新质量基线。"
+        : "EF Core 数据模型已变化但未新增迁移，禁止继续编译。");
 }
 
 static void CompareCounts(
@@ -266,7 +1875,3 @@ static int PrintErrors(IEnumerable<string> errors) {
 
     return 1;
 }
-
-internal sealed record GuardBaseline(
-    Dictionary<string, int> FloatingPoint,
-    Dictionary<string, int> MissingChineseDocumentation);

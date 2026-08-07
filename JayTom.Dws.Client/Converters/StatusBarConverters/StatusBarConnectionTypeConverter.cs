@@ -7,14 +7,20 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.StatusBarModels;
 
-namespace JayTom.Dws.Client.Converters.StatusBarConverters {
+namespace JayTom.Dws.Client.Converters.StatusBarConverters
+{
 
-    public class StatusBarConnectionTypeConverter : IValueConverter {
+    public class StatusBarConnectionTypeConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is ConnectionType type) {
-                if (parameter?.ToString()?.ToLower()?.Equals("font") == true) {
-                    switch (type) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is ConnectionType type)
+            {
+                if (parameter?.ToString()?.ToLower()?.Equals("font") == true)
+                {
+                    switch (type)
+                    {
                         case ConnectionType.TCP:
                             return "\xe62f";
 
@@ -34,8 +40,10 @@ namespace JayTom.Dws.Client.Converters.StatusBarConverters {
                             return "\xe6dd";
                     }
                 }
-                else if (parameter?.ToString()?.ToLower()?.Equals("text") == true) {
-                    switch (type) {
+                else if (parameter?.ToString()?.ToLower()?.Equals("text") == true)
+                {
+                    switch (type)
+                    {
                         case ConnectionType.TCP:
                             return "Tcp连接";
 
@@ -60,7 +68,8 @@ namespace JayTom.Dws.Client.Converters.StatusBarConverters {
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

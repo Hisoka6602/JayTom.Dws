@@ -1,16 +1,19 @@
 ﻿using JayTom.Dws.Domain.Dto;
 using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
+namespace JayTom.Dws.Client.Models.VolumeSettingsModel
+{
 
-    public class VolumeTriggerPositionModel : BindableBase {
+    public class VolumeTriggerPositionModel : BindableBase
+    {
         private string _name = Languages.Language.ResourceManager.GetString("AfterScanning") ?? string.Empty;
         private VolumeTriggerPosition _value = VolumeTriggerPosition.BarcodeDetected;
 
         /// <summary>
         /// 名称
         /// </summary>
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -18,7 +21,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 实际内容
         /// </summary>
-        public VolumeTriggerPosition Value {
+        public VolumeTriggerPosition Value
+        {
             get => _value;
             set => SetProperty(ref _value, value);
         }

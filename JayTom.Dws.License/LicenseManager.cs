@@ -220,10 +220,9 @@ namespace JayTom.Dws.License {
 
                 machineCode = $"{cpuSerialNumber}{hardDiskId}{machineName}{versionString}";
 
-                using var md5 = MD5.Create();
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes($"{machineCode}Hisoka"));
-                var strResult = BitConverter.ToString(result);
-                machineCode = strResult.Replace("-", "");
+                // DWS-HEX-COMPACT: 许可证机器码必须保持既有的无分隔符格式。
+                machineCode = Convert.ToHexString(MD5.HashData(
+                    Encoding.UTF8.GetBytes($"{machineCode}Hisoka")));
             }
             catch (Exception e) {
                 Console.WriteLine(e);
@@ -413,7 +412,7 @@ namespace JayTom.Dws.License {
                                 decryptedData.AddRange(decryptedBlock);
                             }
 
-                            var decryptedString = Encoding.UTF8.GetString(decryptedData.ToArray());
+                            var decryptedString = Encoding.UTF8.GetString([.. decryptedData]);
                             //var decryptedString = Encoding.UTF8.GetString(decryptedData);
 
                             data = JsonConvert.DeserializeObject<LicenseData>(decryptedString);

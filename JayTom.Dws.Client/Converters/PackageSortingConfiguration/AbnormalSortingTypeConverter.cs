@@ -9,18 +9,23 @@ using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 
-namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
+{
 
-    public class AbnormalSortingTypeConverter : IValueConverter {
+    public class AbnormalSortingTypeConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is AbnormalSortingType type) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is AbnormalSortingType type)
+            {
                 return type.GetDescription();
             }
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

@@ -10,9 +10,11 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Client.Models.DataModels;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog {
+namespace JayTom.Dws.Client.ViewModels.Dialog
+{
 
-    public class ApiAccessViewModel : BindableBase, IDialogAware {
+    public class ApiAccessViewModel : BindableBase, IDialogAware
+    {
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private DateTime? _requestTime;
         private string _requestContent = string.Empty;
@@ -25,7 +27,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 上传状态
         /// </summary>
-        public UploadStatus RequestStatus {
+        public UploadStatus RequestStatus
+        {
             get => _requestStatus;
             set => SetProperty(ref _requestStatus, value);
         }
@@ -33,7 +36,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 上传时间
         /// </summary>
-        public DateTime? RequestTime {
+        public DateTime? RequestTime
+        {
             get => _requestTime;
             set => SetProperty(ref _requestTime, value);
         }
@@ -41,7 +45,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 上传内容
         /// </summary>
-        public string RequestContent {
+        public string RequestContent
+        {
             get => _requestContent;
             set => SetProperty(ref _requestContent, value);
         }
@@ -49,7 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 接口响应时间
         /// </summary>
-        public DateTime? ResponseTime {
+        public DateTime? ResponseTime
+        {
             get => _responseTime;
             set => SetProperty(ref _responseTime, value);
         }
@@ -57,7 +63,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 接口响应内容
         /// </summary>
-        public string ResponseContent {
+        public string ResponseContent
+        {
             get => _responseContent;
             set => SetProperty(ref _responseContent, value);
         }
@@ -65,7 +72,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 条码
         /// </summary>
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
@@ -73,7 +81,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 耗时
         /// </summary>
-        public float Duration {
+        public float Duration
+        {
             get => _duration;
             set => SetProperty(ref _duration, value);
         }
@@ -81,22 +90,26 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// Url
         /// </summary>
-        public string Url {
+        public string Url
+        {
             get => _url;
             set => SetProperty(ref _url, value);
         }
 
         public ICommand CloseWinCommand => new DelegateCommand<object>(CloseWinDelegate);
 
-        private void CloseWinDelegate(object obj) {
+        private void CloseWinDelegate(object obj)
+        {
             RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
         }
 
-        public bool CanCloseDialog() {
+        public bool CanCloseDialog()
+        {
             return true;
         }
 
-        public void OnDialogClosed() {
+        public void OnDialogClosed()
+        {
             Barcode = string.Empty;
             RequestStatus = UploadStatus.NotUploaded;
             RequestTime = null;
@@ -105,15 +118,19 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
             ResponseContent = string.Empty;
         }
 
-        public void OnDialogOpened(IDialogParameters parameters) {
-            foreach (Window window in Application.Current.Windows) {
-                if (window.Name.Equals("ApiAccessWindows")) {
+        public void OnDialogOpened(IDialogParameters parameters)
+        {
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window.Name.Equals("ApiAccessWindows"))
+                {
                     window.Close();
                 }
             }
 
             var itemModel = parameters.GetValue<PackageItemModel>("PackageItem");
-            if (itemModel is not null) {
+            if (itemModel is not null)
+            {
                 Barcode = itemModel.Barcode;
                 RequestStatus = itemModel.RequestStatus;
                 Duration = (float)itemModel.UploadInfo.DurationInSeconds * 1000;
@@ -131,9 +148,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
 
         public ICommand LoadedCommand => new DelegateCommand<UserControl>(LoadedDelegate);
 
-        private void LoadedDelegate(UserControl obj) {
+        private void LoadedDelegate(UserControl obj)
+        {
             var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
-            if (dialogWindow is not null) {
+            if (dialogWindow is not null)
+            {
                 dialogWindow.Owner = null;
                 dialogWindow.Name = "ApiAccessWindows";
             }

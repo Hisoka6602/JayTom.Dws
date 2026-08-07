@@ -18,9 +18,11 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class JtExpressApiPageViewModel : SettingsPageTemplateViewModel {
+    public class JtExpressApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private JtExpressApiModel _jtExpressApiInfo = new();
         private bool _isLoaded;
@@ -113,36 +115,43 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private bool _isLoggingIn;
 
         public JtExpressApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory) : base(configRepository) {
+            IHttpClientFactory httpClientFactory) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
         }
 
-        public JtExpressApiModel JtExpressApiInfo {
+        public JtExpressApiModel JtExpressApiInfo
+        {
             get => _jtExpressApiInfo;
             set => SetProperty(ref _jtExpressApiInfo, value);
         }
 
-        public ObservableCollection<StringItemModel> ScanTypeCodeItems {
+        public ObservableCollection<StringItemModel> ScanTypeCodeItems
+        {
             get => _scanTypeCodeItems;
             set => SetProperty(ref _scanTypeCodeItems, value);
         }
 
-        public ObservableCollection<StringItemModel> TransportTypeCodeItems {
+        public ObservableCollection<StringItemModel> TransportTypeCodeItems
+        {
             get => _transportTypeCodeItems;
             set => SetProperty(ref _transportTypeCodeItems, value);
         }
 
-        public ObservableCollection<IntegerItemModel> ScanTypeItems {
+        public ObservableCollection<IntegerItemModel> ScanTypeItems
+        {
             get => _scanTypeItems;
             set => SetProperty(ref _scanTypeItems, value);
         }
 
-        public ObservableCollection<StringItemModel> WeightFlagItems {
+        public ObservableCollection<StringItemModel> WeightFlagItems
+        {
             get => _weightFlagItems;
             set => SetProperty(ref _weightFlagItems, value);
         }
 
-        public ObservableCollection<IntegerItemModel> TypeItems {
+        public ObservableCollection<IntegerItemModel> TypeItems
+        {
             get => _typeItems;
             set => SetProperty(ref _typeItems, value);
         }
@@ -150,7 +159,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 登录人的网点编码
         /// </summary>
-        public string NetworkId {
+        public string NetworkId
+        {
             get => _networkId;
             set => SetProperty(ref _networkId, value);
         }
@@ -158,7 +168,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 网点代码
         /// </summary>
-        public string NetworkCode {
+        public string NetworkCode
+        {
             get => _networkCode;
             set => SetProperty(ref _networkCode, value);
         }
@@ -166,7 +177,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 登录人的网点名称
         /// </summary>
-        public string NetworkName {
+        public string NetworkName
+        {
             get => _networkName;
             set => SetProperty(ref _networkName, value);
         }
@@ -174,7 +186,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 用户名
         /// </summary>
-        public string Name {
+        public string Name
+        {
             get => _name;
             set => SetProperty(ref _name, value);
         }
@@ -182,7 +195,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 是否成功登录
         /// </summary>
-        public bool IsLoginSuccessful {
+        public bool IsLoginSuccessful
+        {
             get => _isLoginSuccessful;
             set => SetProperty(ref _isLoginSuccessful, value);
         }
@@ -190,24 +204,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         /// <summary>
         /// 是否登录中
         /// </summary>
-        public bool IsLoggingIn {
+        public bool IsLoggingIn
+        {
             get => _isLoggingIn;
             set => SetProperty(ref _isLoggingIn, value);
         }
 
         public ICommand LogInCommand => new DelegateCommand<object>(LogInDelegate);
 
-        private async void LogInDelegate(object obj) {
-            if (IsLoggingIn) {
+        private async void LogInDelegate(object obj)
+        {
+            if (IsLoggingIn)
+            {
                 return;
             }
 
             IsLoggingIn = true;
             IsLoginSuccessful = false;
-            try {
+            try
+            {
                 var api = new JtExpressApi(_httpClientFactory);
                 var parameterResult = await api.SetParameters(
-                    new JtExpressApi.ApiParameter {
+                    new JtExpressApi.ApiParameter
+                    {
                         AppKey = JtExpressApiInfo.AppKey,
                         AppSecret = JtExpressApiInfo.AppSecret,
                         BusinessType = (JtExpressApi.BusinessType)JtExpressApiInfo.BusinessType.Value,
@@ -225,7 +244,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                         InterceptorEnabled =
                             JtExpressApiInfo.InterceptorEnabled
                     });
-                if (!parameterResult.Key) {
+                if (!parameterResult.Key)
+                {
                     MessageQueue.Enqueue(parameterResult.Value);
                     return;
                 }
@@ -235,31 +255,38 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     JtExpressApiInfo.Password,
                     JtExpressApiInfo.AppKey,
                     JtExpressApiInfo.AppSecret);
-                if (key) {
+                if (key)
+                {
                     Name = value.Name;
                     NetworkId = value.NetworkId;
                     NetworkCode = value.NetworkCode;
                     NetworkName = value.NetworkName;
                     MessageQueue.Enqueue("登录成功");
                 }
-                else {
+                else
+                {
                     MessageQueue.Enqueue($"登录失败,{value.ExceptionMsg}");
                 }
 
                 IsLoginSuccessful = key;
             }
-            finally {
+            finally
+            {
                 IsLoggingIn = false;
             }
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(SettingsName) ?? new JtExpressDto();
 
-                    JtExpressApiInfo = new JtExpressApiModel() {
+                    JtExpressApiInfo = new JtExpressApiModel()
+                    {
                         AppKey = settingsDto.AppKey,
                         AppSecret = settingsDto.AppSecret,
                         Url = settingsDto.Url,
@@ -293,10 +320,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "JtExpressApiParametersDialogHost";
         public override string SettingsName => "JtExpressApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new JtExpressDto() {
+                Value = JsonConvert.SerializeObject(new JtExpressDto()
+                {
                     AppKey = JtExpressApiInfo.AppKey,
                     AppSecret = JtExpressApiInfo.AppSecret,
                     Url = JtExpressApiInfo.Url,

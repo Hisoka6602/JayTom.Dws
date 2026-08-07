@@ -3,12 +3,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 
-namespace JayTom.Dws.Client.Controls {
+namespace JayTom.Dws.Client.Controls
+{
 
     /// <summary>
     /// 在控件首次显示时才导航到目标页面，避免选项卡一次性创建全部页面。
     /// </summary>
-    public sealed class DeferredFrame : Frame {
+    public sealed class DeferredFrame : Frame
+    {
 
         /// <summary>
         /// 延迟导航地址依赖属性。
@@ -28,14 +30,16 @@ namespace JayTom.Dws.Client.Controls {
         /// <summary>
         /// 初始化延迟加载页面容器。
         /// </summary>
-        public DeferredFrame() {
+        public DeferredFrame()
+        {
             Loaded += OnLoaded;
         }
 
         /// <summary>
         /// 获取或设置首次显示时需要导航的页面地址。
         /// </summary>
-        public Uri? DeferredSource {
+        public Uri? DeferredSource
+        {
             get => (Uri?)GetValue(DeferredSourceProperty);
             set => SetValue(DeferredSourceProperty, value);
         }
@@ -45,8 +49,10 @@ namespace JayTom.Dws.Client.Controls {
         /// </summary>
         /// <param name="sender">触发加载事件的控件。</param>
         /// <param name="eventArgs">加载事件参数。</param>
-        private void OnLoaded(object sender, RoutedEventArgs eventArgs) {
-            if (_isSourceLoaded || DeferredSource is null) {
+        private void OnLoaded(object sender, RoutedEventArgs eventArgs)
+        {
+            if (_isSourceLoaded || DeferredSource is null)
+            {
                 return;
             }
 

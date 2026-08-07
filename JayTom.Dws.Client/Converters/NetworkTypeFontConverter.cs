@@ -3,12 +3,16 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class NetworkTypeFontConverter : IValueConverter {
+    public class NetworkTypeFontConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            return value switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value switch
+            {
                 NetworkType.Bluetooth => "\xec4a",
                 NetworkType.Ethernet => "\xe631",
                 NetworkType.Tunnel => "\xe683",
@@ -18,8 +22,10 @@ namespace JayTom.Dws.Client.Converters {
             };
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            return value switch {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value switch
+            {
                 NetworkType.Bluetooth => "\xec4a",
                 NetworkType.Ethernet => "\xe631",
                 NetworkType.Tunnel => "\xe683",

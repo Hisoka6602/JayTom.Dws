@@ -8,9 +8,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 
-namespace JayTom.Dws.Client.Models.Cameras {
+namespace JayTom.Dws.Client.Models.Cameras
+{
 
-    public class IpcNvrItemInfoModel : BaseCameraItemInfoModel {
+    public class IpcNvrItemInfoModel : BaseCameraItemInfoModel
+    {
         private int _port;
         private string _username = string.Empty;
         private string _password = string.Empty;
@@ -24,12 +26,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         private string _deviceName = string.Empty;
         private long _id;
 
-        public bool IsSelect {
+        public bool IsSelect
+        {
             get => _isSelect;
             set => SetProperty(ref _isSelect, value);
         }
 
-        public long Id {
+        public long Id
+        {
             get => _id;
             set => SetProperty(ref _id, value);
         }
@@ -37,7 +41,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 端口
         /// </summary>
-        public int Port {
+        public int Port
+        {
             get => _port;
             set => SetProperty(ref _port, value);
         }
@@ -45,7 +50,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 用户名
         /// </summary>
-        public string Username {
+        public string Username
+        {
             get => _username;
             set => SetProperty(ref _username, value);
         }
@@ -53,7 +59,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 密码
         /// </summary>
-        public string Password {
+        public string Password
+        {
             get => _password;
             set => SetProperty(ref _password, value);
         }
@@ -61,7 +68,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 取流通道
         /// </summary>
-        public int Channel {
+        public int Channel
+        {
             get => _channel;
             set => SetProperty(ref _channel, value);
         }
@@ -69,7 +77,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 类型
         /// </summary>
-        public DeviceType Type {
+        public DeviceType Type
+        {
             get => _type;
             set => SetProperty(ref _type, value);
         }
@@ -77,7 +86,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 通道数
         /// </summary>
-        public int ChannelCount {
+        public int ChannelCount
+        {
             get => _channelCount;
             set => SetProperty(ref _channelCount, value);
         }
@@ -85,7 +95,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 状态
         /// </summary>
-        public NvrStatus Status {
+        public NvrStatus Status
+        {
             get => _status;
             set => SetProperty(ref _status, value);
         }
@@ -93,7 +104,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 是否存在配置中
         /// </summary>
-        public bool IsConfigured {
+        public bool IsConfigured
+        {
             get => _isConfigured;
             set => SetProperty(ref _isConfigured, value);
         }
@@ -101,7 +113,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 设备名称
         /// </summary>
-        public string DeviceName {
+        public string DeviceName
+        {
             get => _deviceName;
             set => SetProperty(ref _deviceName, value);
         }
@@ -109,12 +122,14 @@ namespace JayTom.Dws.Client.Models.Cameras {
         /// <summary>
         /// 已绑定相机列表
         /// </summary>
-        public ObservableCollection<BarcodeScannerCameraItemInfoModel> BindingCameraSerialNumbers {
+        public ObservableCollection<BarcodeScannerCameraItemInfoModel> BindingCameraSerialNumbers
+        {
             get => _bindingCameraSerialNumbers;
             set => SetProperty(ref _bindingCameraSerialNumbers, value);
         }
 
-        public override bool Equals(object? obj) {
+        public override bool Equals(object? obj)
+        {
             if (obj == null || GetType() != obj.GetType())
                 return false;
 
@@ -128,7 +143,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
                 Model == otherInfo.Model*/;
         }
 
-        public override int GetHashCode() {
+        public override int GetHashCode()
+        {
             return IpAddress.GetHashCode();
             /*return Name.GetHashCode()
                                     //^ Brand.GetHashCode()
@@ -140,7 +156,8 @@ namespace JayTom.Dws.Client.Models.Cameras {
         }
     }
 
-    public enum NvrStatus {
+    public enum NvrStatus
+    {
 
         /// <summary>
         /// 离线状态

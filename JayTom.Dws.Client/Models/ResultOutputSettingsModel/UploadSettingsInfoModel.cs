@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
+namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel
+{
 
-    public class UploadSettingsInfoModel : BindableBase {
+    public class UploadSettingsInfoModel : BindableBase
+    {
         private int _retryCount;
         private int _sendDelay;
         private bool _isAutoUploadOnRestart;
@@ -10,7 +12,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 重试次数
         /// </summary>
-        public int RetryCount {
+        public int RetryCount
+        {
             get => _retryCount;
             set => SetProperty(ref _retryCount, value);
         }
@@ -18,7 +21,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 发送延迟
         /// </summary>
-        public int SendDelay {
+        public int SendDelay
+        {
             get => _sendDelay;
             set => SetProperty(ref _sendDelay, value);
         }
@@ -26,7 +30,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 是否程序重启后自动上传未成功数据
         /// </summary>
-        public bool IsAutoUploadOnRestart {
+        public bool IsAutoUploadOnRestart
+        {
             get => _isAutoUploadOnRestart;
             set => SetProperty(ref _isAutoUploadOnRestart, value);
         }

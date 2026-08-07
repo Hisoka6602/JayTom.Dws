@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
+namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
+{
 
-    public class HeartbeatInfoModel : BindableBase {
+    public class HeartbeatInfoModel : BindableBase
+    {
         private bool _isHeartbeatEnabled;
         private string _heartbeatData = string.Empty;
         private int _heartbeatInterval;
@@ -12,7 +14,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         /// <summary>
         /// 获取或设置一个值，指示是否启用心跳包功能。
         /// </summary>
-        public bool IsHeartbeatEnabled {
+        public bool IsHeartbeatEnabled
+        {
             get => _isHeartbeatEnabled;
             set => SetProperty(ref _isHeartbeatEnabled, value);
         }
@@ -20,7 +23,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         /// <summary>
         /// 获取或设置心跳包内容。
         /// </summary>
-        public string HeartbeatData {
+        public string HeartbeatData
+        {
             get => _heartbeatData;
             set => SetProperty(ref _heartbeatData, value);
         }
@@ -28,7 +32,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         /// <summary>
         /// 获取或设置心跳包的发送间隔。
         /// </summary>
-        public int HeartbeatInterval {
+        public int HeartbeatInterval
+        {
             get => _heartbeatInterval;
             set => SetProperty(ref _heartbeatInterval, value);
         }
@@ -36,7 +41,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         /// <summary>
         /// 是否主动发送心跳包
         /// </summary>
-        public bool IsHeartbeatActive {
+        public bool IsHeartbeatActive
+        {
             get => _isHeartbeatActive;
             set => SetProperty(ref _isHeartbeatActive, value);
         }
@@ -44,7 +50,8 @@ namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel {
         /// <summary>
         /// 是否使用固定心跳包内容
         /// </summary>
-        public bool IsFixedHeartbeatContent {
+        public bool IsFixedHeartbeatContent
+        {
             get => _isFixedHeartbeatContent;
             set => SetProperty(ref _isFixedHeartbeatContent, value);
         }

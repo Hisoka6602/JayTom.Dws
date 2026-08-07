@@ -35,17 +35,17 @@ namespace JayTom.Dws.Interface.Wdt {
                 {
                     barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force
                 },
-                "wms.stockout.Sales.onceWeighing" => new object[]
-                {
+                "wms.stockout.Sales.onceWeighing" =>
+                [
                     barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName,
                     ApiParameters.Force
-                },
-                "wms.stockout.Sales.onceWeighingByNo" => new object[]
-                {
+                ],
+                "wms.stockout.Sales.onceWeighingByNo" =>
+                [
                     barcode, string.Empty, roundedWeight, ApiParameters.PackagerNo, ApiParameters.OperateTableName,
                     ApiParameters.Force
-                },
-                _ => new object[] { }
+                ],
+                _ => []
             };
 
             var dictionary = new Dictionary<string, object>()
@@ -59,19 +59,15 @@ namespace JayTom.Dws.Interface.Wdt {
                 {"timestamp",DateTimeOffset.Now.ToUnixTimeSeconds()- 1325347200},
             };
             var pairs = dictionary.OrderBy(o => o.Key);
-            var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + ApiParameters.Appsecret;
+            var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? []) + ApiParameters.Appsecret;
 
             //转MD5
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));
-                var strResult = BitConverter.ToString(result);
-                sign = strResult.Replace("-", "");
-            }
-            dictionary.Add("sign", sign.ToLower());
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+            var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signString)));
+            dictionary.Add("sign", sign);
             dictionary.Remove("body");
             //拼接url
-            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? Array.Empty<string>());
+            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? []);
 
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();
@@ -149,17 +145,17 @@ namespace JayTom.Dws.Interface.Wdt {
                 {
                     barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.Force
                 },
-                "wms.stockout.Sales.onceWeighing" => new object[]
-                {
+                "wms.stockout.Sales.onceWeighing" =>
+                [
                     barcode, string.Empty, roundedWeight, ApiParameters.PackagerId, ApiParameters.OperateTableName,
                     ApiParameters.Force
-                },
-                "wms.stockout.Sales.onceWeighingByNo" => new object[]
-                {
+                ],
+                "wms.stockout.Sales.onceWeighingByNo" =>
+                [
                     barcode, string.Empty, roundedWeight, ApiParameters.PackagerNo, ApiParameters.OperateTableName,
                     ApiParameters.Force
-                },
-                _ => new object[] { }
+                ],
+                _ => []
             };
 
             var dictionary = new Dictionary<string, object>()
@@ -173,18 +169,14 @@ namespace JayTom.Dws.Interface.Wdt {
                 {"timestamp",DateTimeOffset.Now.ToUnixTimeSeconds()- 1325347200},
             };
             var pairs = dictionary.OrderBy(o => o.Key);
-            var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? Array.Empty<string>()) + ApiParameters.Appsecret;
+            var signString = ApiParameters.Appsecret + string.Join("", pairs?.Select(s => s.Key + s.Value) ?? []) + ApiParameters.Appsecret;
 
-            string sign;
-            using (var md5 = MD5.Create()) {
-                var result = md5.ComputeHash(Encoding.UTF8.GetBytes(signString));
-                var strResult = BitConverter.ToString(result);
-                sign = strResult.Replace("-", "");
-            }
-            dictionary.Add("sign", sign.ToLower());
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符摘要。
+            var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signString)));
+            dictionary.Add("sign", sign);
             dictionary.Remove("body");
             //拼接url
-            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? Array.Empty<string>());
+            var param = string.Join("&", dictionary?.OrderBy(o => o.Key)?.Select(s => s.Key + "=" + s.Value) ?? []);
 
             var requestTime = DateTime.Now;
             var stopwatch = new Stopwatch();

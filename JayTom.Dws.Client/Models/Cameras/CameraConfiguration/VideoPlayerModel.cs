@@ -11,9 +11,11 @@ using System.Windows.Media.Imaging;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 
-namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
+namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
+{
 
-    public class VideoPlayerModel : BindableBase {
+    public class VideoPlayerModel : BindableBase
+    {
         private WriteableBitmap? _videoFrame;
         private int _num;
         private int _port;
@@ -35,17 +37,25 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         private string _ipAddress = string.Empty;
         private bool _isStopRead = false;
 
-        public VideoPlayerModel() {
-            RealtimePreviewCallback = async info => {
-                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead) {
-                    if (Application.Current is not null) {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            try {
-                                if (VideoFrame is not null) {
+        public VideoPlayerModel()
+        {
+            RealtimePreviewCallback = async info =>
+            {
+                if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead)
+                {
+                    if (Application.Current is not null)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            try
+                            {
+                                if (VideoFrame is not null)
+                                {
                                     VideoFrame.Lock();
                                     var rect = new Int32Rect(0, 0, info.Width, info.Height);
                                     // 检查数据缓冲区大小
-                                    if (info.RgbData.Length >= info.Width * info.Height * 3) {
+                                    if (info.RgbData.Length >= info.Width * info.Height * 3)
+                                    {
                                         VideoFrame.WritePixels(rect, info.RgbData, info.Width * 3, 0);
                                         VideoFrame.AddDirtyRect(rect);
                                     }
@@ -53,7 +63,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
                                     VideoFrame.Unlock();
                                 }
                             }
-                            catch (Exception e) {
+                            catch (Exception e)
+                            {
                                 Console.WriteLine(e);
                             }
                         }, System.Windows.Threading.DispatcherPriority.Background);
@@ -65,12 +76,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置编号。
         /// </summary>
-        public int Num {
+        public int Num
+        {
             get => _num;
             set => SetProperty(ref _num, value);
         }
 
-        public WriteableBitmap? VideoFrame {
+        public WriteableBitmap? VideoFrame
+        {
             get => _videoFrame;
             set => SetProperty(ref _videoFrame, value);
         }
@@ -78,7 +91,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// Ip地址
         /// </summary>
-        public string IpAddress {
+        public string IpAddress
+        {
             get => _ipAddress;
             set => SetProperty(ref _ipAddress, value);
         }
@@ -86,7 +100,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置端口号。
         /// </summary>
-        public int Port {
+        public int Port
+        {
             get => _port;
             set => SetProperty(ref _port, value);
         }
@@ -94,7 +109,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置用户名。
         /// </summary>
-        public string Username {
+        public string Username
+        {
             get => _username;
             set => SetProperty(ref _username, value);
         }
@@ -102,7 +118,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置密码。
         /// </summary>
-        public string Password {
+        public string Password
+        {
             get => _password;
             set => SetProperty(ref _password, value);
         }
@@ -110,7 +127,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置通道号。
         /// </summary>
-        public int Channel {
+        public int Channel
+        {
             get => _channel;
             set => SetProperty(ref _channel, value);
         }
@@ -118,12 +136,14 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置下载进度（百分比）。
         /// </summary>
-        public double DownloadProgress {
+        public double DownloadProgress
+        {
             get => _downloadProgress;
             set => SetProperty(ref _downloadProgress, value);
         }
 
-        public ScreenState ScreenState {
+        public ScreenState ScreenState
+        {
             get => _screenState;
             set => SetProperty(ref _screenState, value);
         }
@@ -131,7 +151,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 播放异常状态
         /// </summary>
-        public PlaybackError PlaybackError {
+        public PlaybackError PlaybackError
+        {
             get => _playbackError;
             set => SetProperty(ref _playbackError, value);
         }
@@ -139,7 +160,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 下载状态
         /// </summary>
-        public DownloadState DownloadState {
+        public DownloadState DownloadState
+        {
             get => _downloadState;
             set => SetProperty(ref _downloadState, value);
         }
@@ -147,7 +169,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置播放速度。
         /// </summary>
-        public double PlaybackSpeed {
+        public double PlaybackSpeed
+        {
             get => _playbackSpeed;
             set => SetProperty(ref _playbackSpeed, value);
         }
@@ -155,7 +178,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置一个值，该值指示视频是否倒放。
         /// </summary>
-        public bool IsReversed {
+        public bool IsReversed
+        {
             get => _isReversed;
             set => SetProperty(ref _isReversed, value);
         }
@@ -163,7 +187,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 截图状态
         /// </summary>
-        public ScreenshotState ScreenshotState {
+        public ScreenshotState ScreenshotState
+        {
             get => _screenshotState;
             set => SetProperty(ref _screenshotState, value);
         }
@@ -171,7 +196,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置视频截图命令。
         /// </summary>
-        public ICommand? VideoScreenShotCommand {
+        public ICommand? VideoScreenShotCommand
+        {
             get => _videoScreenShotCommand;
             set => SetProperty(ref _videoScreenShotCommand, value);
         }
@@ -179,7 +205,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置下载命令。
         /// </summary>
-        public ICommand? DownloadCommand {
+        public ICommand? DownloadCommand
+        {
             get => _downloadCommand;
             set => SetProperty(ref _downloadCommand, value);
         }
@@ -187,7 +214,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置最大化窗口命令。
         /// </summary>
-        public ICommand? ToggleImageSizeCommand {
+        public ICommand? ToggleImageSizeCommand
+        {
             get => _toggleImageSizeCommand;
             set => SetProperty(ref _toggleImageSizeCommand, value);
         }
@@ -200,33 +228,40 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         /// <summary>
         /// 获取或设置一个值，该值指示是否缓冲中。
         /// </summary>
-        public bool IsBuffering {
+        public bool IsBuffering
+        {
             get => _isBuffering;
             set => SetProperty(ref _isBuffering, value);
         }
 
-        public Size MaxSize {
+        public Size MaxSize
+        {
             get => _maxSize;
             set => SetProperty(ref _maxSize, value);
         }
 
-        public void Dispose() {
-            Action releaseResources = () => {
+        public void Dispose()
+        {
+            Action releaseResources = () =>
+            {
                 _isStopRead = true;
                 VideoFrame?.Freeze();
                 VideoFrame = null;
                 RealtimePreviewCallback = null;
             };
-            if (Application.Current.Dispatcher.CheckAccess()) {
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
                 releaseResources();
             }
-            else {
+            else
+            {
                 Application.Current.Dispatcher.Invoke(releaseResources);
             }
         }
     }
 
-    public enum ScreenState {
+    public enum ScreenState
+    {
 
         [Description("设置最大化画面"), FontIcon("\xea02")]
         Normal,
@@ -238,7 +273,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         Hidden
     }
 
-    public enum ScreenshotState {
+    public enum ScreenshotState
+    {
 
         [Description("截图准备就绪"), FontIcon("\xea03")]
         Ready,
@@ -247,7 +283,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         Screenshotting
     }
 
-    public enum DownloadState {
+    public enum DownloadState
+    {
 
         [Description("视频下载准备就绪"), FontIcon("\xe9fc")]
         Ready,
@@ -259,7 +296,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration {
         Transcoding
     }
 
-    public enum PlaybackError {
+    public enum PlaybackError
+    {
 
         [Description("正常播放"), FontIcon("\xea28")]
         None,

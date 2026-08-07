@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
-    public class OutputLogItemModel : BaseLogItemModel {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
+    public class OutputLogItemModel : BaseLogItemModel
+    {
         private OutputType _outputType;
         private string _outputContent = string.Empty;
         private string _destination = string.Empty;
@@ -14,7 +16,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 输出类型
         /// </summary>
-        public OutputType OutputType {
+        public OutputType OutputType
+        {
             get => _outputType;
             set => SetProperty(ref _outputType, value);
         }
@@ -22,7 +25,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 输出内容
         /// </summary>
-        public string OutputContent {
+        public string OutputContent
+        {
             get => _outputContent;
             set => SetProperty(ref _outputContent, value);
         }
@@ -30,7 +34,8 @@ namespace JayTom.Dws.Client.Models.LogsItemModels {
         /// <summary>
         /// 目的地
         /// </summary>
-        public string Destination {
+        public string Destination
+        {
             get => _destination;
             set => SetProperty(ref _destination, value);
         }

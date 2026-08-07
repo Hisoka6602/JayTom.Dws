@@ -3,8 +3,10 @@ using Prism.Commands;
 using Prism.Mvvm;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.ViewModels.Dialog {
-    public class ResolutionConstraintViewModel : BindableBase {
+namespace JayTom.Dws.Client.ViewModels.Dialog
+{
+    public class ResolutionConstraintViewModel : BindableBase
+    {
         private string _identifier = string.Empty;
         private int _currentWidth;
         private int _currentHeight;
@@ -15,7 +17,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 标识
         /// </summary>
-        public string Identifier {
+        public string Identifier
+        {
             get => _identifier;
             set => SetProperty(ref _identifier, value);
         }
@@ -23,7 +26,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 当前宽度
         /// </summary>
-        public int CurrentWidth {
+        public int CurrentWidth
+        {
             get => _currentWidth;
             set => SetProperty(ref _currentWidth, value);
         }
@@ -31,7 +35,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 当前高度
         /// </summary>
-        public int CurrentHeight {
+        public int CurrentHeight
+        {
             get => _currentHeight;
             set => SetProperty(ref _currentHeight, value);
         }
@@ -39,7 +44,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 最小宽度
         /// </summary>
-        public int MinimumWidth {
+        public int MinimumWidth
+        {
             get => _minimumWidth;
             set => SetProperty(ref _minimumWidth, value);
         }
@@ -47,7 +53,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 最小高度
         /// </summary>
-        public int MinimumHeight {
+        public int MinimumHeight
+        {
             get => _minimumHeight;
             set => SetProperty(ref _minimumHeight, value);
         }
@@ -55,28 +62,35 @@ namespace JayTom.Dws.Client.ViewModels.Dialog {
         /// <summary>
         /// 是否继续运行
         /// </summary>
-        public bool ContinueRunning {
+        public bool ContinueRunning
+        {
             get => _continueRunning;
             set => SetProperty(ref _continueRunning, value);
         }
-        public ICommand ContinueCommand {
+        public ICommand ContinueCommand
+        {
             get => new DelegateCommand<object>(ContinueDelegate);
         }
 
-        private void ContinueDelegate(object obj) {
+        private void ContinueDelegate(object obj)
+        {
             ContinueRunning = true;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
-        public ICommand ExitCommand {
+        public ICommand ExitCommand
+        {
             get => new DelegateCommand<object>(ExitDelegate);
         }
 
-        private void ExitDelegate(object obj) {
+        private void ExitDelegate(object obj)
+        {
             ContinueRunning = false;
-            if (DialogHost.IsDialogOpen(Identifier)) {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }

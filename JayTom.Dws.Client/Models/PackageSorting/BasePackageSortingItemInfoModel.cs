@@ -4,9 +4,11 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
-namespace JayTom.Dws.Client.Models.PackageSorting {
+namespace JayTom.Dws.Client.Models.PackageSorting
+{
 
-    public class BasePackageSortingItemInfoModel : BindableBase {
+    public class BasePackageSortingItemInfoModel : BindableBase
+    {
         private long _id;
         private int _num;
         private string _remarks = string.Empty;
@@ -17,12 +19,14 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// <summary>
         /// Id
         /// </summary>
-        public long Id {
+        public long Id
+        {
             get => _id;
             set => SetProperty(ref _id, value);
         }
 
-        public bool IsSelect {
+        public bool IsSelect
+        {
             get => _isSelect;
             set => SetProperty(ref _isSelect, value);
         }
@@ -31,7 +35,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 备注
         /// </summary>
         [DisplayName("备注"), MemberNotNull, ExcelInfo(Width = 6000)]
-        public string Remarks {
+        public string Remarks
+        {
             get => _remarks;
             set => SetProperty(ref _remarks, value);
         }
@@ -40,7 +45,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 序号
         /// </summary>
         [DisplayName("序号"), ExcelInfo(Width = 2800)]
-        public int Num {
+        public int Num
+        {
             get => _num;
             set => SetProperty(ref _num, value);
         }
@@ -49,7 +55,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 创建时间
         /// </summary>
         [DisplayName("创建时间"), ExcelInfo(Width = 5000)]
-        public DateTime CreateTime {
+        public DateTime CreateTime
+        {
             get => _createTime;
             set => SetProperty(ref _createTime, value);
         }
@@ -58,7 +65,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting {
         /// 修改时间
         /// </summary>
         [DisplayName("修改时间"), ExcelInfo(Width = 5000)]
-        public DateTime ModifyTime {
+        public DateTime ModifyTime
+        {
             get => _modifyTime;
             set => SetProperty(ref _modifyTime, value);
         }

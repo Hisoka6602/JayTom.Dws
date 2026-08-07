@@ -3,8 +3,10 @@ using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
-    public class VolumeInformationRequesterInfoModel : BindableBase {
+namespace JayTom.Dws.Client.Models.VolumeSettingsModel
+{
+    public class VolumeInformationRequesterInfoModel : BindableBase
+    {
         private VolumeTriggerPosition _volumeTriggerPosition = VolumeTriggerPosition.None;
         private int _sendDelay;
         private string _sendContent = string.Empty;
@@ -17,7 +19,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 触发位置
         /// </summary>
-        public VolumeTriggerPosition VolumeTriggerPosition {
+        public VolumeTriggerPosition VolumeTriggerPosition
+        {
             get => _volumeTriggerPosition;
             set => SetProperty(ref _volumeTriggerPosition, value);
         }
@@ -25,7 +28,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 发送延迟（单位：毫秒）
         /// </summary>
-        public int SendDelay {
+        public int SendDelay
+        {
             get => _sendDelay;
             set => SetProperty(ref _sendDelay, value);
         }
@@ -33,7 +37,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 发送内容
         /// </summary>
-        public string SendContent {
+        public string SendContent
+        {
             get => _sendContent;
             set => SetProperty(ref _sendContent, value);
         }
@@ -41,7 +46,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 发送次数
         /// </summary>
-        public int SendCount {
+        public int SendCount
+        {
             get => _sendCount;
             set => SetProperty(ref _sendCount, value);
         }
@@ -49,7 +55,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 发送间隔
         /// </summary>
-        public int SendInterval {
+        public int SendInterval
+        {
             get => _sendInterval;
             set => SetProperty(ref _sendInterval, value);
         }
@@ -57,7 +64,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 发送模式
         /// </summary>
-        public VolumeRequesterType VolumeRequesterType {
+        public VolumeRequesterType VolumeRequesterType
+        {
             get => _volumeRequesterType;
             set => SetProperty(ref _volumeRequesterType, value);
         }
@@ -65,7 +73,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// Tcp设置
         /// </summary>
-        public TcpSettingsInfo TcpSettingsInfo {
+        public TcpSettingsInfo TcpSettingsInfo
+        {
             get => _tcpSettingsInfo;
             set => SetProperty(ref _tcpSettingsInfo, value);
         }
@@ -73,7 +82,8 @@ namespace JayTom.Dws.Client.Models.VolumeSettingsModel {
         /// <summary>
         /// 串口设置
         /// </summary>
-        public SerialPortSettingsInfoModel SerialPortSettingsInfo {
+        public SerialPortSettingsInfoModel SerialPortSettingsInfo
+        {
             get => _serialPortSettingsInfo;
             set => SetProperty(ref _serialPortSettingsInfo, value);
         }

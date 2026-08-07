@@ -264,12 +264,8 @@ namespace JayTom.Dws.Interface.Jushuitan {
             var signStr = appSecret + paramStr;
 
             // 4. 计算 MD5 并转小写
-            using var md5 = MD5.Create();
-            var hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(signStr));
-            var sb = new StringBuilder();
-            foreach (var b in hashBytes)
-                sb.Append(b.ToString("x2")); // x2 = 小写
-            return sb.ToString();
+            // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
+            return Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signStr)));
         }
 
         /// <summary>

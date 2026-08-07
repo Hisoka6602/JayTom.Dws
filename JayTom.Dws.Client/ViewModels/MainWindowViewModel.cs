@@ -38,9 +38,11 @@ using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels {
+namespace JayTom.Dws.Client.ViewModels
+{
 
-    public class MainWindowViewModel : BindableBase {
+    public class MainWindowViewModel : BindableBase
+    {
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
         private readonly IConfigRepository _configRepository;
@@ -57,9 +59,11 @@ namespace JayTom.Dws.Client.ViewModels {
         private SyncSettingsDto _syncSettingsDto = new();
         private ObservableCollection<HomeToolInfoModel> _homeToolItems = new();
 
-        private LanguageInfoModel? _selectedLanguage = new() {
+        private LanguageInfoModel? _selectedLanguage = new()
+        {
             DisplayName = "中文",
-            NationalFlag = new BitmapImage() {
+            NationalFlag = new BitmapImage()
+            {
                 UriSource = new Uri("pack://application:,,,/Image/NationalFlag/Chinese national flag.png"),
                 DecodePixelHeight = 25,
                 DecodePixelWidth = 25,
@@ -72,7 +76,8 @@ namespace JayTom.Dws.Client.ViewModels {
         public MainWindowViewModel(IRegionManager regionManager,
             IDialogService dialogService,
             IConfigRepository configRepository,
-            ISyncSettingsService syncSettingsService) {
+            ISyncSettingsService syncSettingsService)
+        {
             _regionManager = regionManager;
             _dialogService = dialogService;
             _configRepository = configRepository;
@@ -95,53 +100,66 @@ namespace JayTom.Dws.Client.ViewModels {
                     OpenCommand = OpenHomeToolCommand
                 }
             };
-            EventAggregator.Instance.Subscribe<RemoteAction>(async item => {
-                if (item is RemoteAction remoteAction) {
-                    switch (remoteAction.Command) {
+            EventAggregator.Instance.Subscribe<RemoteAction>(async item =>
+            {
+                if (item is RemoteAction remoteAction)
+                {
+                    switch (remoteAction.Command)
+                    {
                         case RemoteCommand.Exit:
                             CloseWinDelegate(null);
                             break;
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item => {
-                if (item is SettingsChangedEvent { SettingsName: "SyncSettingsSettings" } syncSettingsSettings) {
+            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            {
+                if (item is SettingsChangedEvent { SettingsName: "SyncSettingsSettings" } syncSettingsSettings)
+                {
                     _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
-                    if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url)) {
+                    if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url))
+                    {
                         //连接
-                        if (!_syncSettingsService.IsConnected) {
+                        if (!_syncSettingsService.IsConnected)
+                        {
                             var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url);
                             MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
                         }
                     }
-                    else {
+                    else
+                    {
                         await _syncSettingsService.Disconnect();
                     }
                 }
             });
         }
 
-        public ObservableCollection<HomeToolInfoModel> HomeToolItems {
+        public ObservableCollection<HomeToolInfoModel> HomeToolItems
+        {
             get => _homeToolItems;
             set => SetProperty(ref _homeToolItems, value);
         }
 
-        public LanguageInfoModel? SelectedLanguage {
+        public LanguageInfoModel? SelectedLanguage
+        {
             get => _selectedLanguage;
             set => SetProperty(ref _selectedLanguage, value);
         }
 
-        public double UniformCornerRadius {
+        public double UniformCornerRadius
+        {
             get => _uniformCornerRadius;
             set => SetProperty(ref _uniformCornerRadius, value);
         }
 
-        public string ProgramTitle {
+        public string ProgramTitle
+        {
             get => _programTitle;
             set => SetProperty(ref _programTitle, value);
         }
 
-        public ImageSource? LogoSource {
+        public ImageSource? LogoSource
+        {
             get => _logoSource;
             set => SetProperty(ref _logoSource, value);
         }
@@ -149,7 +167,8 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <summary>
         /// 最大化按钮图标
         /// </summary>
-        public string MaxBtnIcon {
+        public string MaxBtnIcon
+        {
             get => _maxBtnIcon;
             set => SetProperty(ref _maxBtnIcon, value);
         }
@@ -157,12 +176,14 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <summary>
         /// 最大化按钮提示内容
         /// </summary>
-        public string MaxBtnToolTip {
+        public string MaxBtnToolTip
+        {
             get => _maxBtnToolTip;
             set => SetProperty(ref _maxBtnToolTip, value);
         }
 
-        public Point ButtonTranslateTransform {
+        public Point ButtonTranslateTransform
+        {
             get => _buttonTranslateTransform;
             set => SetProperty(ref _buttonTranslateTransform, value);
         }
@@ -170,7 +191,8 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <summary>
         /// 是否加载完成
         /// </summary>
-        public bool IsLoaded {
+        public bool IsLoaded
+        {
             get => _isLoaded;
             set => SetProperty(ref _isLoaded, value);
         }
@@ -178,7 +200,8 @@ namespace JayTom.Dws.Client.ViewModels {
         /// <summary>
         /// 提示内容
         /// </summary>
-        public SnackbarMessageQueue MainMessageQueue {
+        public SnackbarMessageQueue MainMessageQueue
+        {
             get => _mainMessageQueue;
             set => SetProperty(ref _mainMessageQueue, value);
         }
@@ -193,19 +216,24 @@ namespace JayTom.Dws.Client.ViewModels {
 
         public ICommand HomeToolSelectionChangedCommand => new DelegateCommand<ComboBox>(HomeToolSelectionChangedDelegate);
 
-        private void HomeToolSelectionChangedDelegate(ComboBox obj) {
+        private void HomeToolSelectionChangedDelegate(ComboBox obj)
+        {
             obj.SelectedIndex = 0;
         }
 
         public ICommand OpenHomeToolCommand => new DelegateCommand<HomeToolInfoModel>(OpenHomeToolDelegate);
 
-        private void OpenHomeToolDelegate(HomeToolInfoModel obj) {
+        private void OpenHomeToolDelegate(HomeToolInfoModel obj)
+        {
             //判断是否模态窗口
-            if (!string.IsNullOrEmpty(obj.ControlClassName)) {
-                if (obj.IsModal) {
+            if (!string.IsNullOrEmpty(obj.ControlClassName))
+            {
+                if (obj.IsModal)
+                {
                     _dialogService.ShowDialog(obj.ControlClassName);
                 }
-                else {
+                else
+                {
                     _dialogService.Show(obj.ControlClassName);
                 }
             }
@@ -215,42 +243,54 @@ namespace JayTom.Dws.Client.ViewModels {
         /// 页面切换
         /// </summary>
         /// <param name="obj"></param>
-        private async void PageSwitchingDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void PageSwitchingDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 _regionManager.Regions["ContentRegion"].RequestNavigate(obj.ToString());
             });
         }
 
-        private async void CloseWinDelegate(object obj) {
-            EventAggregator.Instance.Publish(new WindowsAction {
+        private async void CloseWinDelegate(object obj)
+        {
+            EventAggregator.Instance.Publish(new WindowsAction
+            {
                 Type = WindowsActionType.Close
             });
             await Task.Delay(500);
             System.Windows.Application.Current.Shutdown();//关闭
         }
 
-        private void MaxWinDelegate(object obj) {
-            if (obj is Window window) {
-                if (window.WindowState == WindowState.Maximized) {
-                    EventAggregator.Instance.Publish(new WindowsAction {
+        private void MaxWinDelegate(object obj)
+        {
+            if (obj is Window window)
+            {
+                if (window.WindowState == WindowState.Maximized)
+                {
+                    EventAggregator.Instance.Publish(new WindowsAction
+                    {
                         Type = WindowsActionType.Restore
                     });
                     window.WindowState = WindowState.Normal;
                     return;
                 }
-                EventAggregator.Instance.Publish(new WindowsAction {
+                EventAggregator.Instance.Publish(new WindowsAction
+                {
                     Type = WindowsActionType.Maximize
                 });
                 window.WindowState = WindowState.Maximized;
             }
         }
 
-        private async void LoadedDelegate(object obj) {
-            if (obj is Window window) {
+        private async void LoadedDelegate(object obj)
+        {
+            if (obj is Window window)
+            {
                 window.SizeChanged += SizeChangeDelegate;
 
                 var visualChild = PluginInterface.Utils.Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
-                if (visualChild is not null) {
+                if (visualChild is not null)
+                {
                     //设置变化值
                     _menuButtonSizeize = new Size(visualChild.ActualWidth, visualChild.ActualHeight);
                     ButtonTranslateTransform =
@@ -258,7 +298,8 @@ namespace JayTom.Dws.Client.ViewModels {
                             (window.ActualHeight - _menuButtonSizeize.Height) / 2);
                     visualChild.Visibility = Visibility.Visible;
                 }
-                EventAggregator.Instance.Publish(new WindowsAction {
+                EventAggregator.Instance.Publish(new WindowsAction
+                {
                     Type = WindowsActionType.Activate
                 });
             }
@@ -273,18 +314,24 @@ namespace JayTom.Dws.Client.ViewModels {
                 .ConfigureAwait(false);
             OtherSettingsDto? otherSettings = null;
             ImageSource? logoSource = null;
-            if (configInfoModel is not null) {
-                try {
+            if (configInfoModel is not null)
+            {
+                try
+                {
                     otherSettings = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                    if (otherSettings is not null) {
-                        if (File.Exists(otherSettings.ProgramLogoPath)) {
+                    if (otherSettings is not null)
+                    {
+                        if (File.Exists(otherSettings.ProgramLogoPath))
+                        {
                             logoSource = JayTom.Dws.PluginInterface.Utils.Utils.CreateBitmapImage(
                                 new Uri(otherSettings.ProgramLogoPath), 148, 148);
                         }
                     }
                 }
-                catch (Exception e) {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel {
+                catch (Exception e)
+                {
+                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    {
                         CreateTime = DateTime.Now,
                         Message = $"加载程序配置错误:{e.Message}",
                         Type = LogType.Exception
@@ -292,12 +339,15 @@ namespace JayTom.Dws.Client.ViewModels {
                 }
             }
 
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 NLog.LogManager.GetCurrentClassLogger().Info("进入主页加载");
-                if (otherSettings is not null) {
+                if (otherSettings is not null)
+                {
                     LogoSource = logoSource;
                     ProgramTitle = otherSettings.ProgramTitle;
-                    if (obj is Window windows && otherSettings.IsAutoMaximize) {
+                    if (obj is Window windows && otherSettings.IsAutoMaximize)
+                    {
                         windows.WindowState = WindowState.Maximized;
                     }
                 }
@@ -306,12 +356,14 @@ namespace JayTom.Dws.Client.ViewModels {
                 //加载重量配置
                 var models = (LanguageInfoModel[])Application.Current.Resources["LanguageInfoArray"];
                 var languageInfoModel = models.FirstOrDefault(f => f.DisplayName.Equals(language));
-                if (languageInfoModel is not null) {
+                if (languageInfoModel is not null)
+                {
                     SelectedLanguage = languageInfoModel;
                 }
 
                 if (System.Windows.Forms.Screen.PrimaryScreen != null &&
-                    System.Windows.Forms.Screen.PrimaryScreen?.Bounds is not null) {
+                    System.Windows.Forms.Screen.PrimaryScreen?.Bounds is not null)
+                {
                     var screenWidth = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width;
                     var screenHeight = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
 
@@ -319,7 +371,8 @@ namespace JayTom.Dws.Client.ViewModels {
                     var hdc = GetDC(IntPtr.Zero);
                     var dpiX = 96;
                     var dpiY = 96;
-                    if (hdc != IntPtr.Zero) {
+                    if (hdc != IntPtr.Zero)
+                    {
                         dpiX = Math.Max(1, GetDeviceCaps(hdc, LOGPIXELSX));
                         dpiY = Math.Max(1, GetDeviceCaps(hdc, LOGPIXELSY));
                         ReleaseDC(IntPtr.Zero, hdc);
@@ -328,9 +381,11 @@ namespace JayTom.Dws.Client.ViewModels {
                     var adjustedScreenWidth = screenWidth * 96 / dpiX;
                     var adjustedScreenHeight = screenHeight * 96 / dpiY;
                     if (adjustedScreenWidth < 1820 ||
-                        adjustedScreenHeight < 900) {
+                        adjustedScreenHeight < 900)
+                    {
                         var resolutionConstraintDialog = new ResolutionConstraintDialog();
-                        if (resolutionConstraintDialog.DataContext is ResolutionConstraintViewModel model) {
+                        if (resolutionConstraintDialog.DataContext is ResolutionConstraintViewModel model)
+                        {
                             model.Identifier = "MainDialog";
                             model.MinimumWidth = 1820;
                             model.MinimumHeight = 900;
@@ -339,7 +394,8 @@ namespace JayTom.Dws.Client.ViewModels {
                             if (!model.ContinueRunning) {
                                 System.Windows.Application.Current.Shutdown();//关闭
                             }*/
-                            if (obj is Window windows) {
+                            if (obj is Window windows)
+                            {
                                 windows.WindowState = WindowState.Maximized;
                             }
                         }
@@ -353,17 +409,21 @@ namespace JayTom.Dws.Client.ViewModels {
                 () => { },
                 System.Windows.Threading.DispatcherPriority.ContextIdle);
             await Task.Delay(300).ConfigureAwait(false);
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 IsLoaded = true;
             });
 
             _syncSettingsDto = await _configRepository
                 .FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings")
                 .ConfigureAwait(false) ?? new SyncSettingsDto();
-            if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url)) {
-                if (!_syncSettingsService.IsConnected) {
+            if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url))
+            {
+                if (!_syncSettingsService.IsConnected)
+                {
                     var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url).ConfigureAwait(false);
-                    await Application.Current.Dispatcher.InvokeAsync(() => {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
                         MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 }
@@ -373,34 +433,42 @@ namespace JayTom.Dws.Client.ViewModels {
             //连接同步配置
         }
 
-        private void SizeChangeDelegate(object sender, SizeChangedEventArgs e) {
-            if (sender is Window window) {
+        private void SizeChangeDelegate(object sender, SizeChangedEventArgs e)
+        {
+            if (sender is Window window)
+            {
                 window.MaxHeight = SystemParameters.WorkArea.Width;
                 window.MaxHeight = SystemParameters.WorkArea.Height;
                 /*window.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight - 5;
                 window.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;*/
                 if (window.WindowState == WindowState.Maximized ||
                     (window.Height >= SystemParameters.WorkArea.Height &&
-                     window.Width >= SystemParameters.WorkArea.Width)) {
+                     window.Width >= SystemParameters.WorkArea.Width))
+                {
                     //直角
                     UniformCornerRadius = 0;
                 }
-                else {
+                else
+                {
                     UniformCornerRadius = 5;
                     //圆角
                 }
-                if (window.WindowState == WindowState.Maximized) {
+                if (window.WindowState == WindowState.Maximized)
+                {
                     MaxBtnIcon = "\xe72c";
                     MaxBtnToolTip = "Restore";
                 }
-                else {
+                else
+                {
                     MaxBtnIcon = "\xe600";
                     MaxBtnToolTip = "Maximize";
                 }
 
-                if (!IsLoaded) {
+                if (!IsLoaded)
+                {
                     var visualChild = PluginInterface.Utils.Utils.GetVisualChild<Button>(window, b => b.Name.Equals("MenuButton"));
-                    if (visualChild is not null) {
+                    if (visualChild is not null)
+                    {
                         //设置变化值
                         ButtonTranslateTransform =
                             new Point((window.ActualWidth - _menuButtonSizeize.Width) / 2,
@@ -410,9 +478,12 @@ namespace JayTom.Dws.Client.ViewModels {
             }
         }
 
-        private void MinWinDelegate(object obj) {
-            if (obj is Window window) {
-                EventAggregator.Instance.Publish(new WindowsAction {
+        private void MinWinDelegate(object obj)
+        {
+            if (obj is Window window)
+            {
+                EventAggregator.Instance.Publish(new WindowsAction
+                {
                     Type = WindowsActionType.Minimize
                 });
                 window.WindowState = WindowState.Minimized;
@@ -421,28 +492,36 @@ namespace JayTom.Dws.Client.ViewModels {
 
         public ICommand LanguageSwitchCommand => new DelegateCommand<object>(LanguageSwitchDelegate);
 
-        private async void LanguageSwitchDelegate(object obj) {
+        private async void LanguageSwitchDelegate(object obj)
+        {
             CultureInfo? culture = null;
             /*在代码中引用资源文件中的翻译文本。使用资源绑定来访问文本值，或者直接通过代码访问。
             示例：string translatedText = Strings.ResourceManager.GetString("Hello");*/
-            if (obj is LanguageInfoModel model && IsLoaded) {
-                if (model.DisplayName.Equals("中文")) {
+            if (obj is LanguageInfoModel model && IsLoaded)
+            {
+                if (model.DisplayName.Equals("中文"))
+                {
                     culture = new CultureInfo("zh-CN");
                 }
-                else if (model.DisplayName.Equals("English")) {
+                else if (model.DisplayName.Equals("English"))
+                {
                     culture = new CultureInfo("en-US");
                 }
 
-                if (culture is not null) {
+                if (culture is not null)
+                {
                     Thread.CurrentThread.CurrentCulture = culture;
                     Thread.CurrentThread.CurrentUICulture = culture;
 
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                    {
                         ConfigName = "Language",
                         Value = culture.Name,
                     });
-                    if (insertOrUpdate) {
-                        await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                    if (insertOrUpdate)
+                    {
+                        await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                        {
                             ConfigName = "SelectedLanguage",
                             Value = SelectedLanguage?.DisplayName ?? string.Empty,
                         });
@@ -450,7 +529,8 @@ namespace JayTom.Dws.Client.ViewModels {
                     MainMessageQueue.Enqueue(insertOrUpdate ? Languages.Language.ResourceManager.GetString("切换语言成功提示") : Languages.Language.ResourceManager.GetString("切换语言失败提示"));
                 }
 
-                EventAggregator.Instance.Publish(new AppLogInfoModel {
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
                     CreateTime = DateTime.Now,
                     Message = $"切换语言:{model.DisplayName}",
                     Type = LogType.Information

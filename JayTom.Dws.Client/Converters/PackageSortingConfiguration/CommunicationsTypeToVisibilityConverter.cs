@@ -8,11 +8,15 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
 {
 
-    public class CommunicationsTypeToVisibilityConverter : IValueConverter {
+    public class CommunicationsTypeToVisibilityConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if (value is CommunicationsTypeInfoModel model) {
-                if (model is not null && model.Value != CommunicationsType.None) {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is CommunicationsTypeInfoModel model)
+            {
+                if (model is not null && model.Value != CommunicationsType.None)
+                {
                     return Visibility.Visible;
                 }
                 return Visibility.Collapsed;
@@ -20,7 +24,8 @@ namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
             return Binding.DoNothing;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             throw new NotImplementedException();
         }
     }

@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration
+{
     /// <summary>
     /// StackedPackageDetectionSettingsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class StackedPackageDetectionSettingsPage : Page {
-        public StackedPackageDetectionSettingsPage() {
+    public partial class StackedPackageDetectionSettingsPage : Page
+    {
+        public StackedPackageDetectionSettingsPage()
+        {
             InitializeComponent();
         }
     }

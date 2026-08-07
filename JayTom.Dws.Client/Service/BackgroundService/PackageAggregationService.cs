@@ -21,23 +21,26 @@ using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
 using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
 
-namespace JayTom.Dws.Client.Service.BackgroundService {
+namespace JayTom.Dws.Client.Service.BackgroundService
+{
 
     /// <summary>
     /// 集包服务
     /// </summary>
-    public class PackageAggregationService : Microsoft.Extensions.Hosting.BackgroundService {
+    public class PackageAggregationService : Microsoft.Extensions.Hosting.BackgroundService
+    {
         private readonly IPackageRepository _packageRepository;
         private readonly IExitMonitor _exitMonitor;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
 
-        private ConcurrentDictionary<long, PackageAggregationInfo> _exitPackageAggregationItems = new();
-        private ConcurrentQueue<PushPackageInfo> _packageInfoItems = new();
-        private ConcurrentDictionary<DateTime, PackageAggregationInfo> _overexitPackageAggregationItems = new();
-        private SemaphoreSlim _createPackageSlim = new(1);
+        private readonly ConcurrentDictionary<long, PackageAggregationInfo> _exitPackageAggregationItems = new();
+        private readonly ConcurrentQueue<PushPackageInfo> _packageInfoItems = new();
+        private readonly ConcurrentDictionary<DateTime, PackageAggregationInfo> _overexitPackageAggregationItems = new();
+        private readonly SemaphoreSlim _createPackageSlim = new(1);
 
         public PackageAggregationService(IPackageRepository packageRepository,
-            IExitMonitor exitMonitor, IPackageExitDefinitionRepository packageExitDefinitionRepository) {
+            IExitMonitor exitMonitor, IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        {
             _packageRepository = packageRepository;
             _exitMonitor = exitMonitor;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -50,42 +53,55 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                 }
             });*/
-            EventAggregator.Instance.Subscribe<PushPackageInfo>(async item => {
-                if (item is PushPackageInfo model) {
+            EventAggregator.Instance.Subscribe<PushPackageInfo>(async item =>
+            {
+                if (item is PushPackageInfo model)
+                {
                     //判断加入历史包还是当前包
-                    try {
+                    try
+                    {
                         await _createPackageSlim.WaitAsync();
-                        if (model.SignalCallbackTime is not null) {
+                        if (model.SignalCallbackTime is not null)
+                        {
                             var packageAggregationInfo = _overexitPackageAggregationItems.OrderBy(o => o.Key).FirstOrDefault(f =>
                                 f.Value.ExitId.Equals(model.PackageExitUpdateEvent.ExitId) &&
                                 f.Key.AddMilliseconds(200) >= model.SignalCallbackTime).Value;
-                            if (packageAggregationInfo is not null) {
-                                packageAggregationInfo.PackageItems.Add(new PackageInfoModel() {
-                                    BarCodeInfo = new BarCodeInfoModel() {
+                            if (packageAggregationInfo is not null)
+                            {
+                                packageAggregationInfo.PackageItems.Add(new PackageInfoModel()
+                                {
+                                    BarCodeInfo = new BarCodeInfoModel()
+                                    {
                                         Barcode = model?.PackageInfo?.BarCodeInfo?.Barcode ?? string.Empty
                                     },
                                     PackageTimestamped = model?.PackageInfo?.Timestamp ?? 0
                                 });
                                 NLog.LogManager.GetCurrentClassLogger().Error($"集包:加入历史包:{model?.PackageInfo?.BarCodeInfo?.Barcode}-格口:{packageAggregationInfo.ExitId + 1}-{packageAggregationInfo.AggregatePackageCode}");
                             }
-                            else {
+                            else
+                            {
                                 NLog.LogManager.GetCurrentClassLogger().Error($"集包:加入实时包:{model.PackageInfo?.BarCodeInfo?.Barcode}-格口:{model.PackageExitUpdateEvent.ExitName}");
                                 _packageInfoItems.Enqueue(model);
                             }
                         }
-                        else {
+                        else
+                        {
                             NLog.LogManager.GetCurrentClassLogger().Error($"集包:未获取到落格指令时间");
                         }
                     }
-                    finally {
+                    finally
+                    {
                         _createPackageSlim.Release();
                     }
                 }
             });
 
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item => {
-                if (item is ApplicationStatusChanged info) {
-                    if (info.Status == ApplicationStatus.Stop) {
+            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            {
+                if (item is ApplicationStatusChanged info)
+                {
+                    if (info.Status == ApplicationStatus.Stop)
+                    {
                         _exitPackageAggregationItems.Clear();
                         _overexitPackageAggregationItems.Clear();
                         _packageInfoItems.Clear();
@@ -93,21 +109,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 }
             });
 
-            _exitMonitor.LockExitEvent += async (sender, model) => {
+            _exitMonitor.LockExitEvent += async (sender, model) =>
+            {
                 /*var (key, value) = _exitPackageAggregationItems
                     .FirstOrDefault(f => f.Key.Equals(model.Id));*/
                 NLog.LogManager.GetCurrentClassLogger().Error($"硬件锁格");
-                try {
+                try
+                {
                     await _createPackageSlim.WaitAsync();
                     //从原包裹分离数据
                     var packageItems = new List<PackageInfoModel>();
                     var (key, value) = _exitPackageAggregationItems.
                         FirstOrDefault(f =>
                         f.Key.Equals(model.Id));
-                    if (value is not null) {
+                    if (value is not null)
+                    {
                         //取出数据
 
-                        packageItems = value.PackageItems.Select(s => new PackageInfoModel {
+                        packageItems = value.PackageItems.Select(s => new PackageInfoModel
+                        {
                             PackageTimestamped = s.PackageTimestamped,
                             PackageCreateTime = s.PackageCreateTime,
                             Other = s.Other,
@@ -125,7 +145,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                     }
                     //锁格后创建历史包
                     var packagingTime = DateTime.Now;
-                    var packageAggregationInfo = new PackageAggregationInfo() {
+                    var packageAggregationInfo = new PackageAggregationInfo()
+                    {
                         PackageExitDefinitionInfo = model,
                         PackagingTime = packagingTime,
                         ExitId = model.Id,
@@ -137,11 +158,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
 
                     NLog.LogManager.GetCurrentClassLogger().Error($"创建历史包-{packageAggregationInfo.AggregatePackageCode}");
                 }
-                finally {
+                finally
+                {
                     _createPackageSlim.Release();
                 }
             };
-            _exitMonitor.UnLockExitEvent += (sender, model) => {
+            _exitMonitor.UnLockExitEvent += (sender, model) =>
+            {
                 /*
                 var packageAggregationInfo = _exitPackageAggregationItems
                     .FirstOrDefault(f => f.Key.Equals(model.Id)).Value;
@@ -152,14 +175,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
             };
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
             //遍历格口
 
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.IsActive &&
                 s.Type != ExitType.AbnormalExit,
                 o => o.Id, stoppingToken);
-            packageExitDefinitionInfoModels.ForEach(s => {
-                var packageAggregationInfo = new PackageAggregationInfo {
+            packageExitDefinitionInfoModels.ForEach(s =>
+            {
+                var packageAggregationInfo = new PackageAggregationInfo
+                {
                     PackageExitDefinitionInfo = s,
                     PackageItems = new List<PackageInfoModel>(),
                     AggregatePackageCode =
@@ -168,45 +194,65 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                 _exitPackageAggregationItems.TryAdd(s.Id, packageAggregationInfo);
             });
 
-            while (!stoppingToken.IsCancellationRequested) {
-                try {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(30));
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    if (!await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false))
+                    {
+                        break;
+                    }
+
                     var tryDequeue = _packageInfoItems.TryDequeue(out var packageInfo);
-                    if (tryDequeue && packageInfo is not null) {
+                    if (tryDequeue && packageInfo is not null)
+                    {
                         //检查所有格口有没有对应的包裹
 
                         var packageAggregationInfo = _exitPackageAggregationItems
                             .FirstOrDefault(f => f.Key.Equals(packageInfo.PackageExitUpdateEvent?.ExitId ?? 0)).Value;
-                        if (packageAggregationInfo is not null) {
-                            packageAggregationInfo.PackageItems.Add(new PackageInfoModel() {
-                                BarCodeInfo = new BarCodeInfoModel() {
+                        if (packageAggregationInfo is not null)
+                        {
+                            packageAggregationInfo.PackageItems.Add(new PackageInfoModel()
+                            {
+                                BarCodeInfo = new BarCodeInfoModel()
+                                {
                                     Barcode = packageInfo?.PackageInfo?.BarCodeInfo?.Barcode ?? string.Empty
                                 },
                                 PackageTimestamped = packageInfo?.PackageInfo?.Timestamp ?? 0
                             });
                         }
-                        else {
+                        else
+                        {
                             _packageInfoItems.Enqueue(packageInfo);
                         }
                     }
                     var keyValuePairs = _overexitPackageAggregationItems.Where(w =>
                         DateTime.Now.Subtract(w.Value.PackagingTime).TotalSeconds >= 23)?.ToList();
-                    if (keyValuePairs?.Any() == true) {
+                    if (keyValuePairs?.Any() == true)
+                    {
                         NLog.LogManager.GetCurrentClassLogger().Error("推送集包");
-                        Parallel.ForEach(keyValuePairs, svalue => {
+                        Parallel.ForEach(keyValuePairs, svalue =>
+                        {
                             _overexitPackageAggregationItems.TryRemove(svalue.Key, out var info);
                             EventAggregator.Instance.Publish(info);
                         });
                     }
-                    await Task.Delay(30, stoppingToken);
                 }
-                catch (Exception e) {
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception e)
+                {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
             }
         }
     }
 
-    public class PackageAggregationInfo {
+    public class PackageAggregationInfo
+    {
         public PackageExitDefinitionInfoModel PackageExitDefinitionInfo { get; set; } = new();
 
         public List<PackageInfoModel> PackageItems { get; set; } = new();

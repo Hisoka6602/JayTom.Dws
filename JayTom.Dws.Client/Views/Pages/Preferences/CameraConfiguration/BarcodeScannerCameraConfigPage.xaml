@@ -22,6 +22,9 @@
         <b:EventTrigger EventName="Loaded" SourceName="BarcodeScannerCameraConfigView">
             <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
+        <b:EventTrigger EventName="Unloaded" SourceName="BarcodeScannerCameraConfigView">
+            <b:InvokeCommandAction Command="{Binding UnloadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
     </b:Interaction.Triggers>
     <Page.Resources>
         <cameraConverter:CameraTypeConverter x:Key="CameraTypeConverter" />

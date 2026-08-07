@@ -5,9 +5,11 @@ using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.Excel.Attributes;
 
-namespace JayTom.Dws.Client.Models.DataModels {
+namespace JayTom.Dws.Client.Models.DataModels
+{
 
-    public class PackageItemModel : BindableBase {
+    public class PackageItemModel : BindableBase
+    {
         private float _volume;
         private bool _isInserting;
         private bool _isRemoving;
@@ -34,7 +36,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         private PackageExitStatus _packageExitStatus = PackageExitStatus.None;
 
         [DisplayName("No."), ExcelInfo(Width = 3000)]
-        public int Num {
+        public int Num
+        {
             get => _num;
             set => SetProperty(ref _num, value);
         }
@@ -43,7 +46,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 时间戳Id
         /// </summary>
         [DisplayName("TimestampedGuid"), ExcelInfo(Width = 5000)]
-        public long TimestampedGuid {
+        public long TimestampedGuid
+        {
             get => _timestampedGuid;
             set => SetProperty(ref _timestampedGuid, value);
         }
@@ -52,7 +56,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 条码
         /// </summary>
         [DisplayName("Barcode"), ExcelInfo(Width = 4000)]
-        public string Barcode {
+        public string Barcode
+        {
             get => _barcode;
             set => SetProperty(ref _barcode, value);
         }
@@ -61,7 +66,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 重量
         /// </summary>
         [DisplayName("Weight"), ExcelInfo(Width = 2000)]
-        public float Weight {
+        public float Weight
+        {
             get => _weight;
             set => SetProperty(ref _weight, value);
         }
@@ -70,7 +76,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 长度
         /// </summary>
         [DisplayName("Length"), ExcelInfo(Width = 2000)]
-        public float Length {
+        public float Length
+        {
             get => _length;
             set => SetProperty(ref _length, value);
         }
@@ -79,7 +86,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 宽度
         /// </summary>
         [DisplayName("Width"), ExcelInfo(Width = 2000)]
-        public float Width {
+        public float Width
+        {
             get => _width;
             set => SetProperty(ref _width, value);
         }
@@ -88,7 +96,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 高度
         /// </summary>
         [DisplayName("Height"), ExcelInfo(Width = 2000)]
-        public float Height {
+        public float Height
+        {
             get => _height;
             set => SetProperty(ref _height, value);
         }
@@ -97,7 +106,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 体积
         /// </summary>
         [DisplayName("Volume"), ExcelInfo(Width = 2000)]
-        public float Volume {
+        public float Volume
+        {
             get => _volume;
             set => SetProperty(ref _volume, value);
         }
@@ -106,7 +116,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 扫码时间
         /// </summary>
         [DisplayName("ScanTime"), ExcelInfo(Width = 4000)]
-        public DateTime ScanTime {
+        public DateTime ScanTime
+        {
             get => _scanTime;
             set => SetProperty(ref _scanTime, value);
         }
@@ -115,7 +126,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 上传状态(1成功、2失败、0未上传)
         /// </summary>
         [DisplayName("RequestStatus"), ExcelInfo(Width = 4000)]
-        public UploadStatus RequestStatus {
+        public UploadStatus RequestStatus
+        {
             get => _requestStatus;
             set => SetProperty(ref _requestStatus, value);
         }
@@ -124,7 +136,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 格口名称
         /// </summary>
         [DisplayName("ExitName"), ExcelInfo(Width = 3000)]
-        public string ExitName {
+        public string ExitName
+        {
             get => _exitName;
             set => SetProperty(ref _exitName, value);
         }
@@ -133,7 +146,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 条码图片保存路径
         /// </summary>
         [DisplayName("BarcodeImagePath"), ExcelInfo(Width = 8000)]
-        public string? BarcodeImagePath {
+        public string? BarcodeImagePath
+        {
             get => _barcodeImagePath;
             set => SetProperty(ref _barcodeImagePath, value);
         }
@@ -141,7 +155,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 全景图信息
         /// </summary>
-        public List<PanoramaImageItemModel> PanoramaImageItems {
+        public List<PanoramaImageItemModel> PanoramaImageItems
+        {
             get => _panoramaImageItems;
             set => SetProperty(ref _panoramaImageItems, value);
         }
@@ -155,7 +170,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 体积信息
         /// </summary>
-        public VolumeItemModel VolumeInfo {
+        public VolumeItemModel VolumeInfo
+        {
             get => _volumeInfo;
             set => SetProperty(ref _volumeInfo, value);
         }
@@ -163,7 +179,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 重量信息
         /// </summary>
-        public WeightItemModel WeightInfo {
+        public WeightItemModel WeightInfo
+        {
             get => _weightInfo;
             set => SetProperty(ref _weightInfo, value);
         }
@@ -171,7 +188,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 上传信息
         /// </summary>
-        public UploadItemModel UploadInfo {
+        public UploadItemModel UploadInfo
+        {
             get => _uploadInfo;
             set => SetProperty(ref _uploadInfo, value);
         }
@@ -180,7 +198,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// 分拣信息
         /// </summary>
 
-        public SortingItemModel SortingInfo {
+        public SortingItemModel SortingInfo
+        {
             get => _sortingInfo;
             set => SetProperty(ref _sortingInfo, value);
         }
@@ -188,7 +207,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// Ocr信息
         /// </summary>
-        public OcrItemInfo OcrInfo {
+        public OcrItemInfo OcrInfo
+        {
             get => _ocrInfo;
             set => SetProperty(ref _ocrInfo, value);
         }
@@ -196,7 +216,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 格口信息
         /// </summary>
-        public ExitInfoItemModel ExitInfo {
+        public ExitInfoItemModel ExitInfo
+        {
             get => _exitInfo;
             set => SetProperty(ref _exitInfo, value);
         }
@@ -204,7 +225,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否插入
         /// </summary>
-        public bool IsInserting {
+        public bool IsInserting
+        {
             get => _isInserting;
             set => SetProperty(ref _isInserting, value);
         }
@@ -212,7 +234,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否移除
         /// </summary>
-        public bool IsRemoving {
+        public bool IsRemoving
+        {
             get => _isRemoving;
             set => SetProperty(ref _isRemoving, value);
         }
@@ -220,7 +243,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 条码图片是否存在
         /// </summary>
-        public bool IsBarcodeImageExists {
+        public bool IsBarcodeImageExists
+        {
             get => _isBarcodeImageExists;
             set => SetProperty(ref _isBarcodeImageExists, value);
         }
@@ -228,18 +252,21 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否已上传云视频
         /// </summary>
-        public bool IsUploadedToCloudVideo {
+        public bool IsUploadedToCloudVideo
+        {
             get => _isUploadedToCloudVideo;
             set => SetProperty(ref _isUploadedToCloudVideo, value);
         }
 
-        public PackageExitStatus PackageExitStatus {
+        public PackageExitStatus PackageExitStatus
+        {
             get => _packageExitStatus;
             set => SetProperty(ref _packageExitStatus, value);
         }
     }
 
-    public class PanoramaImageItemModel : BindableBase {
+    public class PanoramaImageItemModel : BindableBase
+    {
         private bool _isPanoramaImageExists;
 
         /// <summary>
@@ -250,13 +277,15 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 全景图片是否存在
         /// </summary>
-        public bool IsPanoramaImageExists {
+        public bool IsPanoramaImageExists
+        {
             get => _isPanoramaImageExists;
             set => SetProperty(ref _isPanoramaImageExists, value);
         }
     }
 
-    public enum PackageExitStatus {
+    public enum PackageExitStatus
+    {
 
         /// <summary>
         /// 无

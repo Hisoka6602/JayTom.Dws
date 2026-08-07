@@ -13,14 +13,17 @@ using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.AppSettings {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.AppSettings
+{
 
     /// <summary>
     /// SyncSettingsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class SyncSettingsPage : Page {
+    public partial class SyncSettingsPage : Page
+    {
 
-        public SyncSettingsPage() {
+        public SyncSettingsPage()
+        {
             InitializeComponent();
         }
     }

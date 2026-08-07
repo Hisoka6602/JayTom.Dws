@@ -27,9 +27,11 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
+{
 
-    public class EshippingitApiPageViewModel : SettingsPageTemplateViewModel {
+    public class EshippingitApiPageViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IDeviceService _deviceService;
         private readonly IPackageRepository _packageRepository;
@@ -44,42 +46,50 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         private int _failedUploads;
         private SemaphoreSlim _uploadSemaphore = new(7);
 
-        public EshippingitApiModel EshippingitApiInfo {
+        public EshippingitApiModel EshippingitApiInfo
+        {
             get => _eshippingitApiInfo;
             set => SetProperty(ref _eshippingitApiInfo, value);
         }
 
-        public string ProgressText {
+        public string ProgressText
+        {
             get => _progressText;
             set => SetProperty(ref _progressText, value);
         }
 
-        public bool IsUploadProgress {
+        public bool IsUploadProgress
+        {
             get => _isUploadProgress;
             set => SetProperty(ref _isUploadProgress, value);
         }
 
-        public double Progress {
+        public double Progress
+        {
             get => _progress;
             set => SetProperty(ref _progress, value);
         }
 
-        public double MaxProgress {
+        public double MaxProgress
+        {
             get => _maxProgress;
             set => SetProperty(ref _maxProgress, value);
         }
 
-        public string ImageRootDirectory {
+        public string ImageRootDirectory
+        {
             get => _imageRootDirectory;
             set => SetProperty(ref _imageRootDirectory, value);
         }
 
-        public int SuccessfulUploads {
+        public int SuccessfulUploads
+        {
             get => _successfulUploads;
             set => SetProperty(ref _successfulUploads, value);
         }
 
-        public int FailedUploads {
+        public int FailedUploads
+        {
             get => _failedUploads;
             set => SetProperty(ref _failedUploads, value);
         }
@@ -88,7 +98,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             IHttpClientFactory httpClientFactory,
             IDeviceService deviceService,
             IPackageRepository packageRepository,
-            IBarCodeRepository barCodeRepository) : base(configRepository) {
+            IBarCodeRepository barCodeRepository) : base(configRepository)
+        {
             _httpClientFactory = httpClientFactory;
             _deviceService = deviceService;
             _packageRepository = packageRepository;
@@ -98,10 +109,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
         public override string Identifier => "EshippingitApiParametersDialogHost";
         public override string SettingsName => "EshippingitApiParameters";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new EshippingitApiDto() {
+                Value = JsonConvert.SerializeObject(new EshippingitApiDto()
+                {
                     Domain = EshippingitApiInfo.Domain,
                     TimeOut = EshippingitApiInfo.TimeOut,
                     Authorization = EshippingitApiInfo.Authorization,
@@ -117,10 +131,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        public override async void LoadedDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var settingsDto = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(SettingsName) ?? new EshippingitApiDto();
-                EshippingitApiInfo = new EshippingitApiModel() {
+                EshippingitApiInfo = new EshippingitApiModel()
+                {
                     Domain = settingsDto.Domain,
                     TimeOut = settingsDto.TimeOut,
                     Authorization = settingsDto.Authorization,
@@ -131,7 +148,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     Machine = settingsDto.Machine
                 };
                 var imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
-                if (!string.IsNullOrEmpty(imageSettingsDto.ImageRootDirectory)) {
+                if (!string.IsNullOrEmpty(imageSettingsDto.ImageRootDirectory))
+                {
                     ImageRootDirectory = imageSettingsDto.ImageRootDirectory;
                 }
             });
@@ -139,35 +157,44 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
         public ICommand OpenFolderCommand => new DelegateCommand<object>(OpenFolderDelegate);
 
-        private void OpenFolderDelegate(object obj) {
-            var folderBrowserDialog = new FolderBrowserDialog() {
+        private void OpenFolderDelegate(object obj)
+        {
+            var folderBrowserDialog = new FolderBrowserDialog()
+            {
                 SelectedPath = string.IsNullOrEmpty(ImageRootDirectory) ? Environment.GetFolderPath(Environment.SpecialFolder.Desktop) : ImageRootDirectory
             };
-            if (folderBrowserDialog.ShowDialog() == DialogResult.OK) {
+            if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            {
                 ImageRootDirectory = folderBrowserDialog.SelectedPath;
             }
         }
 
         public ICommand UploadImageCommand => new DelegateCommand<object>(UploadImageDelegate);
 
-        private async void UploadImageDelegate(object obj) {
-            if (IsUploadProgress) {
+        private async void UploadImageDelegate(object obj)
+        {
+            if (IsUploadProgress)
+            {
                 return;
             }
             IsUploadProgress = true;
-            if (_deviceService.RunningStatus) {
+            if (_deviceService.RunningStatus)
+            {
                 base.MessageQueue.Enqueue($"设备工作中,为避免文件冲突无法手动上传");
                 await Task.Delay(600);
                 IsUploadProgress = false;
                 return;
             }
 
-            Task.Run(async () => {
-                if (!string.IsNullOrEmpty(ImageRootDirectory)) {
+            Task.Run(async () =>
+            {
+                if (!string.IsNullOrEmpty(ImageRootDirectory))
+                {
                     List<string> uploadedList = new();
 
                     var jsonFilePath = Path.Combine(ImageRootDirectory, "uploadedList.json");
-                    if (File.Exists(jsonFilePath)) {
+                    if (File.Exists(jsonFilePath))
+                    {
                         await using var fsa = File.OpenRead(jsonFilePath);
                         uploadedList = await System.Text.Json.JsonSerializer.DeserializeAsync<List<string>>(fsa) ?? new List<string>();
                     }
@@ -178,7 +205,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
 
                     var difference = imageFiles.Except(uploadedList).ToList();
 
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
                         MaxProgress = imageFiles.Count;
                         Progress = 0;
                         SuccessfulUploads = 0;
@@ -186,14 +214,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                     });
 
                     //MaxProgress
-                    var process = await UploadImageProcess(difference.ToList());
+                    var process = await UploadImageProcess([.. difference]);
 
                     //写出Json文件
 
                     await using var fs = File.Create(jsonFilePath);
                     await System.Text.Json.JsonSerializer.SerializeAsync(fs, process);
                 }
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
                     //恢复按钮
                     IsUploadProgress = false;
                     return Task.CompletedTask;
@@ -201,10 +230,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             });
         }
 
-        public async Task<List<string>> UploadImageProcess(List<string> imagesPath) {
+        public async Task<List<string>> UploadImageProcess(List<string> imagesPath)
+        {
             var uploadedList = new ConcurrentBag<string>();
             var eshippingitApi = new EshippingitApi(_httpClientFactory);
-            var (key, value) = await eshippingitApi.SetParameters(new EshippingitApi.ApiParameters() {
+            var (key, value) = await eshippingitApi.SetParameters(new EshippingitApi.ApiParameters()
+            {
                 Authorization = EshippingitApiInfo.Authorization,
                 BucketName = EshippingitApiInfo.BucketName,
                 Domain = EshippingitApiInfo.Domain,
@@ -215,20 +246,26 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
                 TimeOut = EshippingitApiInfo.TimeOut
             });
 
-            if (!key) {
+            if (!key)
+            {
                 MessageQueue.Enqueue("参数错误!");
-                return uploadedList.ToList();
+                return [.. uploadedList];
             }
 
-            var progress = new Progress<(int, bool)>(async valueTuple => {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    lock (uploadedList) {
+            var progress = new Progress<(int, bool)>(async valueTuple =>
+            {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    lock (uploadedList)
+                    {
                         Progress += 1;
                         ProgressText = $"{(Progress / imagesPath.Count):P2}";
-                        if (valueTuple.Item2) {
+                        if (valueTuple.Item2)
+                        {
                             SuccessfulUploads++;
                         }
-                        else {
+                        else
+                        {
                             FailedUploads++;
                         }
                     }
@@ -244,7 +281,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             uploadedList, progress,
             barCodeInfoModels.FirstOrDefault(f => f.Barcode.Equals(path))?.ScanTime ?? File.GetLastWriteTime(path),
                 i));*/
-            var tasks = imagesPath.Select(async (path, i) => {
+            var tasks = imagesPath.Select(async (path, i) =>
+            {
                 await Task.Delay(TimeSpan.FromMilliseconds(5)); // 添加时间间隔
                 await UploadImageAsync(path, eshippingitApi,
                      uploadedList, progress,
@@ -253,35 +291,41 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration {
             });
             await Task.WhenAll(tasks);
 
-            return uploadedList.ToList();
+            return [.. uploadedList];
         }
 
-        private async Task UploadImageAsync(string path, EshippingitApi eshippingitApi, ConcurrentBag<string> uploadedList, IProgress<(int, bool)> progress, DateTime scanTime, int num) {
-            try {
+        private async Task UploadImageAsync(string path, EshippingitApi eshippingitApi, ConcurrentBag<string> uploadedList, IProgress<(int, bool)> progress, DateTime scanTime, int num)
+        {
+            try
+            {
                 await _uploadSemaphore.WaitAsync();
                 using var image = Image.FromFile(path);
                 var policyPush = await eshippingitApi.PolicyPush(Path.GetFileNameWithoutExtension(path),
                     scanTime,
                     image);
 
-                if (policyPush) {
+                if (policyPush)
+                {
                     uploadedList.Add(path);
                 }
                 // 报告进度和更新成功和失败上传数
                 progress.Report((num, policyPush));
             }
-            finally {
+            finally
+            {
                 _uploadSemaphore.Release();
             }
         }
 
-        private IEnumerable<string> GetImageFiles(string folderPath, Regex regex) {
+        private IEnumerable<string> GetImageFiles(string folderPath, Regex regex)
+        {
             var files = Directory.GetFiles(folderPath);
             var subFolders = Directory.GetDirectories(folderPath);
 
             var imageFiles = files?.Where(fileName => regex.IsMatch(Path.GetExtension(fileName)))?.ToList() ?? new List<string>();
 
-            foreach (var subFolder in subFolders) {
+            foreach (var subFolder in subFolders)
+            {
                 var subFolderImageFiles = GetImageFiles(subFolder, regex);
                 imageFiles.AddRange(subFolderImageFiles);
             }

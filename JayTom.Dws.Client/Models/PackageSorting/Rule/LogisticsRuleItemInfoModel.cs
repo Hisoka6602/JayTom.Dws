@@ -1,6 +1,8 @@
-﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule {
+﻿namespace JayTom.Dws.Client.Models.PackageSorting.Rule
+{
 
-    public class LogisticsRuleItemInfoModel : BasePackageSortingItemInfoModel {
+    public class LogisticsRuleItemInfoModel : BasePackageSortingItemInfoModel
+    {
 
         /// <summary>
         /// 物流分拣Id

@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Dialog.CameraConfiguration {
+namespace JayTom.Dws.Client.Views.Dialog.CameraConfiguration
+{
     /// <summary>
     /// IpcPreviewDialog.xaml 的交互逻辑
     /// </summary>
-    public partial class IpcPreviewDialog : UserControl {
-        public IpcPreviewDialog() {
+    public partial class IpcPreviewDialog : UserControl
+    {
+        public IpcPreviewDialog()
+        {
             InitializeComponent();
         }
     }

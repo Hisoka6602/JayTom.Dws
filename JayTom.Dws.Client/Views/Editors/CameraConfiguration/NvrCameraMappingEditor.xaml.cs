@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Editors.CameraConfiguration {
+namespace JayTom.Dws.Client.Views.Editors.CameraConfiguration
+{
     /// <summary>
     /// NvrCameraMappingEditor.xaml 的交互逻辑
     /// </summary>
-    public partial class NvrCameraMappingEditor : UserControl {
-        public NvrCameraMappingEditor() {
+    public partial class NvrCameraMappingEditor : UserControl
+    {
+        public NvrCameraMappingEditor()
+        {
             InitializeComponent();
         }
     }

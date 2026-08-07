@@ -3,12 +3,16 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace JayTom.Dws.Client.Converters {
+namespace JayTom.Dws.Client.Converters
+{
 
-    public class SerialPortTypeFontConverter : IValueConverter {
+    public class SerialPortTypeFontConverter : IValueConverter
+    {
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            return value switch {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value switch
+            {
                 SerialPortType.Camera => "\xe9f5",
                 SerialPortType.Controller => "\xe606",
                 SerialPortType.Scale => "\xe6ba",
@@ -17,8 +21,10 @@ namespace JayTom.Dws.Client.Converters {
             };
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            return value switch {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value switch
+            {
                 SerialPortType.Camera => "\xe9f5",
                 SerialPortType.Controller => "\xe606",
                 SerialPortType.Scale => "\xe6ba",

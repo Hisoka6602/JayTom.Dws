@@ -4,9 +4,11 @@ using JayTom.Dws.Data.Package;
 using Newtonsoft.Json.Serialization;
 using System.Collections.ObjectModel;
 
-namespace JayTom.Dws.Client.Models.DataModels {
+namespace JayTom.Dws.Client.Models.DataModels
+{
 
-    public class SortingItemModel : BindableBase {
+    public class SortingItemModel : BindableBase
+    {
         private bool _isSortingUsed;
         private SortMode _sortingMode;
         private bool _isCreatedByLowerMachine;
@@ -21,7 +23,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否使用分拣
         /// </summary>
-        public bool IsSortingUsed {
+        public bool IsSortingUsed
+        {
             get => _isSortingUsed;
             set => SetProperty(ref _isSortingUsed, value);
         }
@@ -29,7 +32,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 分拣流水号
         /// </summary>
-        public string SortingCode {
+        public string SortingCode
+        {
             get => _sortingCode;
             set => SetProperty(ref _sortingCode, value);
         }
@@ -37,7 +41,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 分拣模式
         /// </summary>
-        public SortMode SortingMode {
+        public SortMode SortingMode
+        {
             get => _sortingMode;
             set => SetProperty(ref _sortingMode, value);
         }
@@ -45,7 +50,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否有下位机创建
         /// </summary>
-        public bool IsCreatedByLowerMachine {
+        public bool IsCreatedByLowerMachine
+        {
             get => _isCreatedByLowerMachine;
             set => SetProperty(ref _isCreatedByLowerMachine, value);
         }
@@ -53,7 +59,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 通讯方式
         /// </summary>
-        public CommunicationsType CommunicationMethod {
+        public CommunicationsType CommunicationMethod
+        {
             get => _communicationMethod;
             set => SetProperty(ref _communicationMethod, value);
         }
@@ -61,7 +68,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 效验协议名称
         /// </summary>
-        public string ChecksumProtocolName {
+        public string ChecksumProtocolName
+        {
             get => _checksumProtocolName;
             set => SetProperty(ref _checksumProtocolName, value);
         }
@@ -69,7 +77,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 连接名称
         /// </summary>
-        public string ConnectionName {
+        public string ConnectionName
+        {
             get => _connectionName;
             set => SetProperty(ref _connectionName, value);
         }
@@ -77,7 +86,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 是否异常分拣
         /// </summary>
-        public bool IsAbnormalSorting {
+        public bool IsAbnormalSorting
+        {
             get => _isAbnormalSorting;
             set => SetProperty(ref _isAbnormalSorting, value);
         }
@@ -85,7 +95,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 异常分拣类型
         /// </summary>
-        public AbnormalSortingType AbnormalSortingType {
+        public AbnormalSortingType AbnormalSortingType
+        {
             get => _abnormalSortingType;
             set => SetProperty(ref _abnormalSortingType, value);
         }
@@ -93,7 +104,8 @@ namespace JayTom.Dws.Client.Models.DataModels {
         /// <summary>
         /// 指令信息
         /// </summary>
-        public ObservableCollection<InstructionInfoItemModel> InstructionInfoItems {
+        public ObservableCollection<InstructionInfoItemModel> InstructionInfoItems
+        {
             get => _instructionInfoItems;
             set => SetProperty(ref _instructionInfoItems, value);
         }

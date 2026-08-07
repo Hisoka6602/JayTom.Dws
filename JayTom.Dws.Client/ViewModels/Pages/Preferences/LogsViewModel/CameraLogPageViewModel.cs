@@ -17,9 +17,11 @@ using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
+{
 
-    public class CameraLogPageViewModel : BindableBase {
+    public class CameraLogPageViewModel : BindableBase
+    {
         private readonly ICameraLogRepository _cameraLogRepository;
         private string _details = string.Empty;
         private bool _isLoaded;
@@ -36,32 +38,39 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         private string? _cameraSerialNumber;
 
-        public CameraLogPageViewModel(ICameraLogRepository cameraLogRepository) {
+        public CameraLogPageViewModel(ICameraLogRepository cameraLogRepository)
+        {
             _cameraLogRepository = cameraLogRepository;
         }
 
-        public SnackbarMessageQueue CameraLogMessageQueue {
+        public SnackbarMessageQueue CameraLogMessageQueue
+        {
             get => _cameraLogMessageQueue;
             set => SetProperty(ref _cameraLogMessageQueue, value);
         }
 
-        public ObservableCollection<CameraLogItemModel> CameraLogItems {
+        public ObservableCollection<CameraLogItemModel> CameraLogItems
+        {
             get => _cameraLogItems;
             set => SetProperty(ref _cameraLogItems, value);
         }
 
-        public string Details {
+        public string Details
+        {
             get => _details;
             set => SetProperty(ref _details, value);
         }
 
-        public ICommand ClickCommand {
+        public ICommand ClickCommand
+        {
             get => new DelegateCommand<CameraLogItemModel>(ClickDelegate);
         }
 
-        private async void ClickDelegate(CameraLogItemModel obj) {
+        private async void ClickDelegate(CameraLogItemModel obj)
+        {
             //显示详细信息
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 Details = string.Join("\n", new List<string>()
                 {
                     $"时间:{obj.CreateTime:yyyy-MM-dd HH:mm:ss.fff}",
@@ -73,12 +82,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
 
         #region 搜索工具栏条件
 
-        public DateTime? StartTime {
+        public DateTime? StartTime
+        {
             get => _startTime;
             set => SetProperty(ref _startTime, value);
         }
 
-        public DateTime? EndTime {
+        public DateTime? EndTime
+        {
             get => _endTime;
             set => SetProperty(ref _endTime, value);
         }
@@ -86,7 +97,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 类型
         /// </summary>
-        public LogType? SelectLogType {
+        public LogType? SelectLogType
+        {
             get => _selectLogType;
             set => SetProperty(ref _selectLogType, value);
         }
@@ -94,17 +106,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 信息
         /// </summary>
-        public string? Message {
+        public string? Message
+        {
             get => _message;
             set => SetProperty(ref _message, value);
         }
 
-        public string? CameraSerialNumber {
+        public string? CameraSerialNumber
+        {
             get => _cameraSerialNumber;
             set => SetProperty(ref _cameraSerialNumber, value);
         }
 
-        public ObservableCollection<LogType> LogTypeItems {
+        public ObservableCollection<LogType> LogTypeItems
+        {
             get => _logTypeItems;
             set => SetProperty(ref _logTypeItems, value);
         }
@@ -116,7 +131,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 页数
         /// </summary>
-        public int PageCount {
+        public int PageCount
+        {
             get => _pageCount;
             set => SetProperty(ref _pageCount, value);
         }
@@ -124,7 +140,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 页码
         /// </summary>
-        public int PageIndex {
+        public int PageIndex
+        {
             get => _pageIndex;
             set => SetProperty(ref _pageIndex, value);
         }
@@ -136,11 +153,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 上一页
         /// </summary>
-        public ICommand PreviousPageCommand {
+        public ICommand PreviousPageCommand
+        {
             get => new DelegateCommand<object>(PreviousPageDelegate);
         }
 
-        private void PreviousPageDelegate(object obj) {
+        private void PreviousPageDelegate(object obj)
+        {
             if (PageIndex <= 1) return;
             PageIndex--;
             LoadData(PageIndex);
@@ -149,11 +168,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 下一页
         /// </summary>
-        public ICommand NextPageCommand {
+        public ICommand NextPageCommand
+        {
             get => new DelegateCommand<object>(NextPageDelegate);
         }
 
-        private void NextPageDelegate(object obj) {
+        private void NextPageDelegate(object obj)
+        {
             if (PageIndex >= PageCount) return;
             PageIndex++;
             LoadData(PageIndex);
@@ -162,11 +183,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 首页
         /// </summary>
-        public ICommand FirstPageCommand {
+        public ICommand FirstPageCommand
+        {
             get => new DelegateCommand<object>(FirstPageDelegate);
         }
 
-        private void FirstPageDelegate(object obj) {
+        private void FirstPageDelegate(object obj)
+        {
             PageIndex = 1;
             LoadData(PageIndex);
         }
@@ -174,39 +197,49 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 尾页
         /// </summary>
-        public ICommand LastPageCommand {
+        public ICommand LastPageCommand
+        {
             get => new DelegateCommand<object>(LastPageDelegate);
         }
 
-        private void LastPageDelegate(object obj) {
-            if (PageCount > 0) {
+        private void LastPageDelegate(object obj)
+        {
+            if (PageCount > 0)
+            {
                 PageIndex = PageCount;
                 LoadData(PageIndex);
             }
         }
 
         //跳转
-        public ICommand JumpPageCommand {
+        public ICommand JumpPageCommand
+        {
             get => new DelegateCommand<object>(JumpPageDelegate);
         }
 
-        private void JumpPageDelegate(object obj) {
-            if (PageIndex >= 0 && PageIndex <= PageCount) {
+        private void JumpPageDelegate(object obj)
+        {
+            if (PageIndex >= 0 && PageIndex <= PageCount)
+            {
                 LoadData(PageIndex);
             }
-            else {
+            else
+            {
                 PageIndex = 1;
             }
         }
 
         #endregion 翻页执行方法
 
-        public ICommand ClearSearchCriteriaCommand {
+        public ICommand ClearSearchCriteriaCommand
+        {
             get => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
         }
 
-        private async void ClearSearchCriteriaDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void ClearSearchCriteriaDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 StartTime =
                     EndTime = null;
                 SelectLogType = null;
@@ -218,23 +251,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 查询数据
         /// </summary>
-        public ICommand SearchDataCommand {
+        public ICommand SearchDataCommand
+        {
             get => new DelegateCommand<object>(SearchDataDelegate);
         }
 
-        private void SearchDataDelegate(object obj) {
+        private void SearchDataDelegate(object obj)
+        {
             PageIndex = 1;
             LoadData(PageIndex);
         }
 
-        public ICommand ClearMessageCommand {
+        public ICommand ClearMessageCommand
+        {
             get => new DelegateCommand<object>(ClearMessageDelegate);
         }
 
-        private async void ClearMessageDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void ClearMessageDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                if (loadingDialog.DataContext is LoadingDialogViewModel model)
+                {
                     model.Identifier = "AppLogDialog";
                     DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
                     await Task.Delay(500);
@@ -243,40 +282,51 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                     CameraLogItems.Clear();
                     Details = string.Empty;
                     PageIndex = PageCount = 0;
-                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    if (DialogHost.IsDialogOpen(model.Identifier))
+                    {
                         DialogHost.Close(model.Identifier);
                     }
                 }
             });
         }
 
-        public ICommand OpenDateTimeDialogCommand {
+        public ICommand OpenDateTimeDialogCommand
+        {
             get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
         }
 
-        private async void OpenDateTimeDialogDelegate(object obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+        private async void OpenDateTimeDialogDelegate(object obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var dataTimeEditor = new DataTimeEditor();
-                if (dataTimeEditor.DataContext is DataTimeEditorViewModel model) {
+                if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
+                {
                     model.Identifier = "CameraLogDialog";
-                    if (obj?.ToString()?.Equals("StartTime") == true) {
+                    if (obj?.ToString()?.Equals("StartTime") == true)
+                    {
                         model.SelectedDataTime = StartTime;
                         model.SelectedDate = StartTime;
                         model.SelectedTime = StartTime;
                     }
-                    else {
+                    else
+                    {
                         model.SelectedDataTime = EndTime;
                         model.SelectedDate = EndTime;
                         model.SelectedTime = EndTime;
                     }
 
                     await DialogHost.Show(dataTimeEditor, model.Identifier);
-                    if (model.IsOk) {
-                        if (obj?.ToString()?.Equals("StartTime") == true) {
+                    if (model.IsOk)
+                    {
+                        if (obj?.ToString()?.Equals("StartTime") == true)
+                        {
                             StartTime = model.SelectedDataTime.Value;
                         }
-                        else if (obj?.ToString()?.Equals("EndTime") == true) {
-                            if (DateTime.Now.CompareTo(model.SelectedDataTime.Value) < 0) {
+                        else if (obj?.ToString()?.Equals("EndTime") == true)
+                        {
+                            if (DateTime.Now.CompareTo(model.SelectedDataTime.Value) < 0)
+                            {
                                 //DataListMessageQueue.Enqueue("截止时间不能超过当前时间!");
                                 EndTime = DateTime.Now;
                                 return;
@@ -291,23 +341,29 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
         /// <summary>
         /// 页面加载完成
         /// </summary>
-        public ICommand LoadedCommand {
+        public ICommand LoadedCommand
+        {
             get => new DelegateCommand<object>(LoadedDelegate);
         }
 
-        private void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        private void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
                 FirstPageDelegate(obj);
             }
         }
 
-        private async void LoadData(int pageIndex) {
+        private async void LoadData(int pageIndex)
+        {
             const int pageSize = 500;
             //这里的查询要分开锁，不然显示有卡顿
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model) {
+                if (loadingDialog.DataContext is LoadingDialogViewModel model)
+                {
                     model.Identifier = "CameraLogDialog";
                     DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
                     await Task.Delay(500);
@@ -320,7 +376,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                         (SelectLogType == null || s.Type == SelectLogType) &&
                         (string.IsNullOrEmpty(CameraSerialNumber) || s.CameraSerialNumber.Contains(CameraSerialNumber)) &&
                         (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
-                    if (total > 0) {
+                    if (total > 0)
+                    {
                         PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
                         var selectOrderByDescending = await _cameraLogRepository.SelectOrderByDescending(s =>
                                 (StartTime == null || s.CreateTime >= StartTime.Value) &&
@@ -330,8 +387,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                                 (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
                             pageIndex - 1, pageSize);
 
-                        if (selectOrderByDescending?.Any() == true) {
-                            var cameraLogItemModels = selectOrderByDescending.Select(s => new CameraLogItemModel() {
+                        if (selectOrderByDescending?.Any() == true)
+                        {
+                            var cameraLogItemModels = selectOrderByDescending.Select(s => new CameraLogItemModel()
+                            {
                                 ClickCommand = ClickCommand,
                                 CreateTime = s.CreateTime,
                                 Message = s.Message,
@@ -341,15 +400,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel {
                             await Task.Delay(100);
                             CameraLogItems.AddRange(cameraLogItemModels);
                         }
-                        else {
+                        else
+                        {
                             CameraLogMessageQueue?.Enqueue("Error loading data. Please try again.");
                         }
                     }
-                    else {
+                    else
+                    {
                         CameraLogMessageQueue?.Enqueue("No data matching the criteria found.");
                     }
 
-                    if (DialogHost.IsDialogOpen(model.Identifier)) {
+                    if (DialogHost.IsDialogOpen(model.Identifier))
+                    {
                         DialogHost.Close(model.Identifier);
                     }
                 }

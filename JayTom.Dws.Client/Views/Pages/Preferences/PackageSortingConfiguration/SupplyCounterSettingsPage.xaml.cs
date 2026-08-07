@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration
+{
     /// <summary>
     /// SupplyCounterSettingsPage.xaml 的交互逻辑
     /// </summary>
-    public partial class SupplyCounterSettingsPage : Page {
-        public SupplyCounterSettingsPage() {
+    public partial class SupplyCounterSettingsPage : Page
+    {
+        public SupplyCounterSettingsPage()
+        {
             InitializeComponent();
         }
     }

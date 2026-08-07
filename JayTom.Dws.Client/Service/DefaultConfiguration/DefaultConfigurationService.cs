@@ -22,66 +22,81 @@ using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
-namespace JayTom.Dws.Client.Service.DefaultConfiguration {
+namespace JayTom.Dws.Client.Service.DefaultConfiguration
+{
 
-    public class DefaultConfigurationService : IDefaultConfigurationService {
+    public class DefaultConfigurationService : IDefaultConfigurationService
+    {
         private readonly IConfigRepository _configRepository;
         private readonly ISoundRepository _soundRepository;
 
         public DefaultConfigurationService(IConfigRepository configRepository,
-            ISoundRepository soundRepository) {
+            ISoundRepository soundRepository)
+        {
             _configRepository = configRepository;
             _soundRepository = soundRepository;
         }
 
-        public async Task WriteDefaultConfiguration() {
-            try {
+        public async Task WriteDefaultConfiguration()
+        {
+            try
+            {
                 var configInfoModels = await _configRepository.Select(s => s.Id > 0, o => o.Id);
-                if (configInfoModels?.Any() == true) {
+                if (configInfoModels?.Any() == true)
+                {
                     return;
                 }
 
-                var fail = new SoundInfoModel() {
+                var fail = new SoundInfoModel()
+                {
                     SoundName = new FileInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\fail.wav")
                         .Name,
                     SoundFile = File.ReadAllBytes(
                         $"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\fail.wav")
                 };
-                var success = new SoundInfoModel() {
+                var success = new SoundInfoModel()
+                {
                     SoundName = new FileInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\success.wav")
                         .Name,
                     SoundFile = File.ReadAllBytes(
                         $"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\success.wav")
                 };
                 //重量
-                var task1 = _configRepository.InsertOrUpdate(new() {
+                var task1 = _configRepository.InsertOrUpdate(new()
+                {
                     ConfigName = "WeightSettings",
-                    Value = JsonConvert.SerializeObject(new WeightSettingsDto {
+                    Value = JsonConvert.SerializeObject(new WeightSettingsDto
+                    {
                         Mode = WeightMode.None,
-                        Connection = new SerialPortSettingsInfo {
+                        Connection = new SerialPortSettingsInfo
+                        {
                             BaudRate = 9600,
                             DataBits = 8,
                             DataFormat = DataFormatType.Ascii,
                             Parity = Parity.None,
                             StopBits = StopBits.One
                         },
-                        CommonWeight = new CommonWeightParams {
+                        CommonWeight = new CommonWeightParams
+                        {
                             MaxWeight = 50,
                             MinWeight = 0
                         },
                     })
                 });
                 //存图
-                var task2 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task2 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "SaveImageSettings",
-                    Value = JsonConvert.SerializeObject(new ImageSettingsDto {
+                    Value = JsonConvert.SerializeObject(new ImageSettingsDto
+                    {
                         ImageRootDirectory = $"{GetMaxFreeSpaceDrive()}Images",
                         IsSaveBarcodeImage = true,
                         IsSavePanoramaImage = false,
                         IsSaveVolumeImage = false,
                         IsSaveOriginalImage = true,
                         IsUseWatermark = false,
-                        WatermarkInfo = new WatermarkInfo {
+                        WatermarkInfo = new WatermarkInfo
+                        {
                             WatermarkColor = Color.DodgerBlue,
                             WatermarkFontSize = 10,
                             WatermarkPosition = WatermarkPosition.TopLeft
@@ -128,7 +143,8 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                             },
                         },
                         IsFtpUploadEnabled = false,
-                        FtpInfo = new FtpInfo() {
+                        FtpInfo = new FtpInfo()
+                        {
                             IpAddress = "127.0.0.1",
                             Password = "123",
                             Port = 21,
@@ -139,9 +155,11 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                 });
 
                 //体积
-                var task4 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task4 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "VolumeSettings",
-                    Value = JsonConvert.SerializeObject(new VolumeSettingsDto {
+                    Value = JsonConvert.SerializeObject(new VolumeSettingsDto
+                    {
                         Unit = VolumeUnit.Millimeter,
                     })
                 });
@@ -151,37 +169,45 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                 var task9 = _soundRepository.InsertOrUpdate(success);
 
                 //声音
-                var task6 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task6 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "ResultOutputSettings",
-                    Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto {
+                    Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto
+                    {
                         DataTemplate = new List<ItemTemplateInfo>(),
                         UploadSettingsInfo = new UploadSettingsInfo(),
                         IsUseTcpOutput = false,
-                        TcpSettingsInfo = new TcpSettingsInfo() {
-                            ClientConfig = new TcpInfo() {
+                        TcpSettingsInfo = new TcpSettingsInfo()
+                        {
+                            ClientConfig = new TcpInfo()
+                            {
                                 IpAddress = "127.0.0.1",
                                 Port = 2000
                             },
-                            ServerConfig = new TcpInfo() {
+                            ServerConfig = new TcpInfo()
+                            {
                                 IpAddress = "127.0.0.1",
                                 Port = 2000
                             },
                             ConnectionMode = TcpConnectionMode.Client
                         },
                         IsUseSerialOutput = false,
-                        SerialPortSettingsInfo = new SerialPortSettingsInfo() {
+                        SerialPortSettingsInfo = new SerialPortSettingsInfo()
+                        {
                             BaudRate = 9600,
                             DataBits = 8,
                             DataFormat = DataFormatType.Ascii,
                             Parity = Parity.None,
                             StopBits = StopBits.One
                         },
-                        SerialPortResultOutputInfo = new SerialPortResultOutputInfo() {
+                        SerialPortResultOutputInfo = new SerialPortResultOutputInfo()
+                        {
                             IsUseCustomContentOutput = false,
                             IsUseDataTemplateOutput = true
                         },
                         IsUseAudioOutput = true,
-                        AudioOutputSettingsInfo = new AudioOutputSettingsInfo() {
+                        AudioOutputSettingsInfo = new AudioOutputSettingsInfo()
+                        {
                             FailureAudio = "fail.wav",
                             SuccessAudio = "success.wav",
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -191,9 +217,11 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     })
                 });
                 //空间清理
-                var task8 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task8 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "CacheClearSettings",
-                    Value = JsonConvert.SerializeObject(new CacheClearSettingsDto() {
+                    Value = JsonConvert.SerializeObject(new CacheClearSettingsDto()
+                    {
                         BarcodeDataAgoDays = 60,
                         FtpImageAgoDays = 60,
                         LogDataAgoDays = 60,
@@ -203,25 +231,33 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     })
                 });
                 //Api
-                var task10 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task10 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "ApiSettings",
-                    Value = JsonConvert.SerializeObject(new ApiSettingsDto() {
+                    Value = JsonConvert.SerializeObject(new ApiSettingsDto()
+                    {
                         Type = ApiType.None
                     })
                 });
-                var task11 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task11 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "CreatePackageSettings",
-                    Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto() {
+                    Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto()
+                    {
                     })
                 });
-                var task12 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task12 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "PackageExitLockSettings",
-                    Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto() {
+                    Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto()
+                    {
                     })
                 });
-                var task13 = _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+                var task13 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
+                {
                     ConfigName = "StackedPackageDetectionSettings",
-                    Value = JsonConvert.SerializeObject(new StackedPackageDetectionSettingsDto() {
+                    Value = JsonConvert.SerializeObject(new StackedPackageDetectionSettingsDto()
+                    {
                     })
                 });
                 await Task.WhenAll(task1,
@@ -236,13 +272,16 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     task12,
                     task13);
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 NLog.LogManager.GetCurrentClassLogger().Error($"写默认配置失败!");
             }
         }
 
-        public string GetMaxFreeSpaceDrive() {
-            try {
+        public string GetMaxFreeSpaceDrive()
+        {
+            try
+            {
                 var drives = DriveInfo.GetDrives();
 
                 // 使用 LINQ 查询找到剩余容量最大的磁盘
@@ -253,7 +292,8 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration {
                     // 没有可用的磁盘
                     "C:\\";
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 return "C:\\";
             }
         }

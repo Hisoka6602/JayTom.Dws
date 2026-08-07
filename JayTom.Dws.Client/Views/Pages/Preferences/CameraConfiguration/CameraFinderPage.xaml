@@ -33,6 +33,9 @@
         <b:EventTrigger EventName="Loaded" SourceName="CameraFinderView">
             <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
+        <b:EventTrigger EventName="Unloaded" SourceName="CameraFinderView">
+            <b:InvokeCommandAction Command="{Binding UnloadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
+        </b:EventTrigger>
     </b:Interaction.Triggers>
     <Grid>
         <Grid.RowDefinitions>

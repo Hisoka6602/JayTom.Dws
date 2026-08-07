@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 
-namespace JayTom.Dws.Client.Models.LogsItemModels {
+namespace JayTom.Dws.Client.Models.LogsItemModels
+{
 
-    public class AppLogItemModel : BaseLogItemModel {
+    public class AppLogItemModel : BaseLogItemModel
+    {
     }
 }

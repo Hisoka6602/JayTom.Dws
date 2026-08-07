@@ -9,33 +9,45 @@ using JayTom.Dws.Domain.EventMediators;
 using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
 using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
 
-namespace JayTom.Dws.Client.Service.BackgroundService {
+namespace JayTom.Dws.Client.Service.BackgroundService
+{
 
-    public class SingleInstanceBackgroundService : Microsoft.Extensions.Hosting.BackgroundService {
+    public class SingleInstanceBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
+    {
         private static volatile bool _isWindowsClose;
         private const string PipeName = "DwsPipe";
 
-        public SingleInstanceBackgroundService() {
-            EventAggregator.Instance.Subscribe<WindowsAction>(item => {
-                if (item is { Type: WindowsActionType.Close }) {
+        public SingleInstanceBackgroundService()
+        {
+            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            {
+                if (item is { Type: WindowsActionType.Close })
+                {
                     _isWindowsClose = true;
                 }
             });
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose) {
-                try {
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            while (!stoppingToken.IsCancellationRequested && !_isWindowsClose)
+            {
+                try
+                {
                     await using var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1,
                         PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
                     await pipeServer.WaitForConnectionAsync(stoppingToken).ConfigureAwait(false);
 
                     using var reader = new StreamReader(pipeServer);
                     var message = await reader.ReadToEndAsync(stoppingToken).ConfigureAwait(false);
-                    if (message == "ActivateWindow") {
-                        await Application.Current.Dispatcher.InvokeAsync(() => {
-                            if (Application.Current.MainWindow is { } mainWindow) {
-                                if (mainWindow.WindowState == WindowState.Minimized) {
+                    if (message == "ActivateWindow")
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (Application.Current.MainWindow is { } mainWindow)
+                            {
+                                if (mainWindow.WindowState == WindowState.Minimized)
+                                {
                                     mainWindow.WindowState = WindowState.Normal;
                                 }
                                 mainWindow.Activate();
@@ -43,13 +55,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService {
                         });
                     }
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
                     break;
                 }
-                catch (IOException) {
+                catch (IOException)
+                {
                     //客户端提前断开时继续等待下一次激活请求。
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
             }

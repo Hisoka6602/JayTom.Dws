@@ -17,38 +17,46 @@ using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
-namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
+{
 
-    public class NvrCameraMappingEditorViewModel : BindableBase {
+    public class NvrCameraMappingEditorViewModel : BindableBase
+    {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
 
-        private ObservableCollection<NvrCameraMappingItemInfoModel> _nvrCameraMappingItemInfos = new() {
+        private ObservableCollection<NvrCameraMappingItemInfoModel> _nvrCameraMappingItemInfos = new()
+        {
         };
 
         private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
 
         public string Identifier { get; set; } = string.Empty;
 
-        public IpcNvrItemInfoModel IpcNvrItemInfo {
+        public IpcNvrItemInfoModel IpcNvrItemInfo
+        {
             get => _ipcNvrItemInfo;
             set => SetProperty(ref _ipcNvrItemInfo, value);
         }
 
-        public ObservableCollection<NvrCameraMappingItemInfoModel> NvrCameraMappingItemInfos {
+        public ObservableCollection<NvrCameraMappingItemInfoModel> NvrCameraMappingItemInfos
+        {
             get => _nvrCameraMappingItemInfos;
             set => SetProperty(ref _nvrCameraMappingItemInfos, value);
         }
 
-        public NvrCameraMappingEditorViewModel(INvrCameraBindingRepository nvrCameraBindingRepository) {
+        public NvrCameraMappingEditorViewModel(INvrCameraBindingRepository nvrCameraBindingRepository)
+        {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        private async void LoadedDelegate(object obj) {
+        private async void LoadedDelegate(object obj)
+        {
             var nvrCameraBindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
 
-            var cameraMappingItemInfoModels = nvrCameraBindingInfoModels.Select((s, i) => new NvrCameraMappingItemInfoModel {
+            var cameraMappingItemInfoModels = nvrCameraBindingInfoModels.Select((s, i) => new NvrCameraMappingItemInfoModel
+            {
                 Num = i + 1,
                 DisplayIdentifier = s.DisplayIdentifier,
                 Channel = s.Channel,
@@ -60,7 +68,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
                 Port = s.Port,
             })?.ToList();
 
-            await Application.Current.Dispatcher.InvokeAsync(async () => {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
                 NvrCameraMappingItemInfos.Clear();
                 await Task.Delay(200);
                 NvrCameraMappingItemInfos.AddRange(cameraMappingItemInfoModels);
@@ -69,22 +78,28 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration {
 
         public ICommand CloseDialogCommand => new DelegateCommand<object>(CloseDialogDelegate);
 
-        private void CloseDialogDelegate(object obj) {
-            if (DialogHost.IsDialogOpen(Identifier)) {
+        private void CloseDialogDelegate(object obj)
+        {
+            if (DialogHost.IsDialogOpen(Identifier))
+            {
                 DialogHost.Close(Identifier);
             }
         }
 
         public ICommand UnbindCameraCommand => new DelegateCommand<object>(UnbindCameraDelegate);
 
-        private async void UnbindCameraDelegate(object obj) {
-            if (obj is NvrCameraMappingItemInfoModel info) {
+        private async void UnbindCameraDelegate(object obj)
+        {
+            if (obj is NvrCameraMappingItemInfoModel info)
+            {
                 var infoModel = await _nvrCameraBindingRepository.FirstOrDefault(f => f.IpAddress.Equals(info.IpAddress) &&
                     f.Channel.Equals(info.Channel) &&
                     f.SerialNumber.Equals(info.SerialNumber));
-                if (infoModel is not null) {
+                if (infoModel is not null)
+                {
                     var delete = await _nvrCameraBindingRepository.Delete(infoModel);
-                    if (delete) {
+                    if (delete)
+                    {
                         LoadedDelegate(obj);
                     }
                 }

@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Editors {
+namespace JayTom.Dws.Client.Views.Editors
+{
     /// <summary>
     /// RegularExpressionEditor.xaml 的交互逻辑
     /// </summary>
-    public partial class RegularExpressionEditor : UserControl {
-        public RegularExpressionEditor() {
+    public partial class RegularExpressionEditor : UserControl
+    {
+        public RegularExpressionEditor()
+        {
             InitializeComponent();
         }
     }

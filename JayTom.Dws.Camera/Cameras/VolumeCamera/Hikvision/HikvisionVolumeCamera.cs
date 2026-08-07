@@ -2,6 +2,7 @@
 using System.Net;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using ThridLibray;
 using System.Drawing;
 using Newtonsoft.Json;
@@ -78,7 +79,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             for (var i = 0; i < _mStDeviceList.nDeviceNum; i++) {
                 var device = (MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO)(Marshal.PtrToStructure(_mStDeviceList.pDeviceInfo[i], typeof(MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO)) ?? new MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO());
                 if (device.nReserved != null && (uint)(VOLM_CAMERA_TYPE.VOLM_CAMERA_3D) == device.nReserved[0]) {
-                    var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(device.SpecialInfo.stGigEInfo ?? Array.Empty<byte>(), 0);
+                    var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(device.SpecialInfo.stGigEInfo ?? [], 0);
                     var gigeInfo = (MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_NET_INFO)(Marshal.PtrToStructure(buffer, typeof(MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_NET_INFO)) ?? new MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_NET_INFO());
 
                     var cameraInfo = new CameraInfo() {
@@ -149,12 +150,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     var device = (MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO)(Marshal.PtrToStructure(deviceInfo, typeof(MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO)) ?? new MvVolmeasure.NET.MvVolmeasure.VOLM_DEVICE_INFO());
                     _mCsVolMeasure ??= new MvVolmeasure.NET.MvVolmeasure();
                     if (MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_DEVICE == device.nTLayerType) {
-                        var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(device.SpecialInfo.stGigEInfo ?? Array.Empty<byte>(), 0);
+                        var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(device.SpecialInfo.stGigEInfo ?? [], 0);
                         var gigeInfo = (MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_NET_INFO)(Marshal.PtrToStructure(buffer, typeof(MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_NET_INFO)) ?? new MvVolmeasure.NET.MvVolmeasure.MV_VOLM_GIGE_NET_INFO());
                         strSerial = gigeInfo.chSerialNumber;
                     }
                     else if (MvVolmeasure.NET.MvVolmeasure.MV_VOLM_USB_DEVICE == device.nTLayerType) {
-                        var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(device.SpecialInfo.stGigEInfo ?? Array.Empty<byte>(), 0);
+                        var buffer = Marshal.UnsafeAddrOfPinnedArrayElement(device.SpecialInfo.stGigEInfo ?? [], 0);
                         var usbInfoTmp = (MvVolmeasure.NET.MvVolmeasure.VOLM_USB3_DEVICE_INFO)(Marshal.PtrToStructure(buffer, typeof(MvVolmeasure.NET.MvVolmeasure.VOLM_USB3_DEVICE_INFO)) ?? new MvVolmeasure.NET.MvVolmeasure.VOLM_USB3_DEVICE_INFO());
                         strSerial = usbInfoTmp.chSerialNumber;
                     }
@@ -361,20 +362,18 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         public async Task GetSingleVolumeInfo() {
             var stResultInfo = new MvVolmeasure.NET.VOLM_RESULT_INFO();
             stResultInfo.stImage.pData = (IntPtr)Marshal.AllocHGlobal(_bufForDriver.Length);
-            stResultInfo.nVolumeFlag = 0;
-            stResultInfo.nImgFlag = 0;
-            var dateTime = DateTime.Now;
-            var timeOut = 1000;
-            var isResult = false;
-            VolumeCapturedEventArgs? volumeCapturedEventArgs = null;
-            while (DateTime.Now.Subtract(dateTime).TotalMilliseconds < timeOut &&
-                   !isResult) {
-                Bitmap? bitmap = null;
-                Bitmap? thumbnailImage = null;
-                var localTime = DateTimeOffset.Now.ToLocalTime();
-                var timestamp = localTime.ToUnixTimeMilliseconds();
-                var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
-                if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
+            try {
+                stResultInfo.nVolumeFlag = 0;
+                stResultInfo.nImgFlag = 0;
+                var stopwatch = Stopwatch.StartNew();
+                const int timeOut = 1000;
+                var isResult = false;
+                VolumeCapturedEventArgs? volumeCapturedEventArgs = null;
+                while (stopwatch.ElapsedMilliseconds < timeOut && !isResult) {
+                    Bitmap? bitmap = null;
+                    Bitmap? thumbnailImage = null;
+                    var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
+                    if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
                     /*//检测图像标记位
                     if (1 == stResultInfo.nImgFlag) {
                         //实时画面
@@ -387,35 +386,39 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                         Exception = new Exception($"stResultInfo.nVolumeFlag:{stResultInfo.nVolumeFlag}")
                     });*/
                     //判断体积标记位，是否有体积信息
-                    if (1 == stResultInfo.nVolumeFlag) {
-                        //在界面显示体积信息
-                        volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
-                            Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
-                            Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
-                            Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
-                            Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
-                            Image = bitmap,
-                            Thumbnail = thumbnailImage,
-                            Timestamp = DateTime.Now
-                        };
-                        OnVolumeCaptured(volumeCapturedEventArgs);
-                        isResult = true;
+                        if (1 == stResultInfo.nVolumeFlag) {
+                            //在界面显示体积信息
+                            volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+                                Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
+                                Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
+                                Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
+                                Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
+                                Image = bitmap,
+                                Thumbnail = thumbnailImage,
+                                Timestamp = DateTime.Now
+                            };
+                            OnVolumeCaptured(volumeCapturedEventArgs);
+                            isResult = true;
+                        }
                     }
+
+                    await Task.Delay(50);
                 }
 
-                await Task.Delay(50);
+                if (volumeCapturedEventArgs is null) {
+                    OnVolumeCaptured(new VolumeCapturedEventArgs() {
+                        Length = 0,
+                        Width = 0,
+                        Height = 0,
+                        Volume = 0,
+                        Timestamp = DateTime.Now,
+                    });
+                }
             }
-
-            if (volumeCapturedEventArgs is null) {
-                OnVolumeCaptured(new VolumeCapturedEventArgs() {
-                    Length = 0,
-                    Width = 0,
-                    Height = 0,
-                    Volume = 0,
-                    Timestamp = DateTime.Now,
-                });
+            finally {
+                Marshal.FreeHGlobal(stResultInfo.stImage.pData);
+                stResultInfo.stImage.pData = IntPtr.Zero;
             }
-            Marshal.FreeHGlobal(stResultInfo.stImage.pData);
         }
 
         public async Task VolumeThread(CancellationToken token) {
@@ -423,16 +426,17 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             var stResultInfo = new MvVolmeasure.NET.VOLM_RESULT_INFO();
 
             stResultInfo.stImage.pData = (IntPtr)Marshal.AllocHGlobal(_bufForDriver.Length);
-            stResultInfo.nVolumeFlag = 0;
-            stResultInfo.nImgFlag = 0;
-            while (!token.IsCancellationRequested) {
-                Bitmap? bitmap = null;
-                Bitmap? thumbnailImage = null;
-                var localTime = DateTimeOffset.Now.ToLocalTime();
-                var timestamp = localTime.ToUnixTimeMilliseconds();
-                var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
+            try {
+                stResultInfo.nVolumeFlag = 0;
+                stResultInfo.nImgFlag = 0;
+                while (!token.IsCancellationRequested) {
+                    Bitmap? bitmap = null;
+                    Bitmap? thumbnailImage = null;
+                    var localTime = DateTimeOffset.Now.ToLocalTime();
+                    var timestamp = localTime.ToUnixTimeMilliseconds();
+                    var nRet = _mCsVolMeasure?.GetResult(ref stResultInfo) ?? -1;
 
-                if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
+                    if (ERROR_DEFINE.MV_VOLM_OK == (ERROR_DEFINE)nRet) {
                     /*//检测图像标记位
                     if (1 == stResultInfo.nImgFlag) {
                         //实时画面
@@ -445,31 +449,35 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                         Exception = new Exception($"stResultInfo.nVolumeFlag:{stResultInfo.nVolumeFlag}")
                     });*/
                     //判断体积标记位，是否有体积信息
-                    if (1 == stResultInfo.nVolumeFlag) {
-                        //在界面显示体积信息
-                        var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
-                            Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
-                            Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
-                            Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
-                            Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
-                            Image = bitmap,
-                            Thumbnail = thumbnailImage,
-                            Timestamp = DateTime.Now
-                        };
-                        OnVolumeCaptured(volumeCapturedEventArgs);
+                        if (1 == stResultInfo.nVolumeFlag) {
+                            //在界面显示体积信息
+                            var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+                                Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
+                                Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
+                                Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
+                                Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
+                                Image = bitmap,
+                                Thumbnail = thumbnailImage,
+                                Timestamp = DateTime.Now
+                            };
+                            OnVolumeCaptured(volumeCapturedEventArgs);
+                        }
+
+                        if (IsRealtimeImageEnabled) {
+                            OnRealtimeImage(new RealtimeImageEventArgs() {
+                                ThumbImage = thumbnailImage,
+                                Timestamp = timestamp
+                            });
+                        }
                     }
 
-                    if (IsRealtimeImageEnabled) {
-                        OnRealtimeImage(new RealtimeImageEventArgs() {
-                            ThumbImage = thumbnailImage,
-                            Timestamp = timestamp
-                        });
-                    }
+                    await Task.Delay(50, token);
                 }
-
-                await Task.Delay(50, token);
             }
-            Marshal.FreeHGlobal(stResultInfo.stImage.pData);
+            finally {
+                Marshal.FreeHGlobal(stResultInfo.stImage.pData);
+                stResultInfo.stImage.pData = IntPtr.Zero;
+            }
         }
 
         /// <summary>

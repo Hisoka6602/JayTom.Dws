@@ -21,9 +21,11 @@ using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class VolumeSettingsViewModel : SettingsPageTemplateViewModel {
+    public class VolumeSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private VolumeSettingsInfoModel _volumeSettingsInfo = new();
         private ParityInfoModel _selectParity = new();
         private StopBitsInfoModel _selectStopBits = new();
@@ -144,20 +146,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             },
         };
 
-        private VolumeUnitInfoModel _selectVolumeUnitInfo = new() {
+        private VolumeUnitInfoModel _selectVolumeUnitInfo = new()
+        {
             Name = "mm",
             Value = VolumeUnit.Millimeter
         };
 
-        public VolumeSettingsViewModel(IConfigRepository configRepository) : base(configRepository) {
+        public VolumeSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        {
         }
 
-        public VolumeSettingsInfoModel VolumeSettingsInfo {
+        public VolumeSettingsInfoModel VolumeSettingsInfo
+        {
             get => _volumeSettingsInfo;
             set => SetProperty(ref _volumeSettingsInfo, value);
         }
 
-        public DataFormatTypeInfoModel SelectDataFormat {
+        public DataFormatTypeInfoModel SelectDataFormat
+        {
             get => _selectDataFormat;
             set => SetProperty(ref _selectDataFormat, value);
         }
@@ -165,17 +171,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 发送格式
         /// </summary>
-        public DataFormatTypeInfoModel SendDataFormat {
+        public DataFormatTypeInfoModel SendDataFormat
+        {
             get => _sendDataFormat;
             set => SetProperty(ref _sendDataFormat, value);
         }
 
-        public ObservableCollection<VolumeUnitInfoModel> VolumeUnitInfoItem {
+        public ObservableCollection<VolumeUnitInfoModel> VolumeUnitInfoItem
+        {
             get => _volumeUnitInfoItem;
             set => SetProperty(ref _volumeUnitInfoItem, value);
         }
 
-        public VolumeUnitInfoModel SelectVolumeUnitInfo {
+        public VolumeUnitInfoModel SelectVolumeUnitInfo
+        {
             get => _selectVolumeUnitInfo;
             set => SetProperty(ref _selectVolumeUnitInfo, value);
         }
@@ -183,7 +192,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 串口列表
         /// </summary>
-        public ObservableCollection<string> PortItems {
+        public ObservableCollection<string> PortItems
+        {
             get => _portItems;
             set => SetProperty(ref _portItems, value);
         }
@@ -191,7 +201,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 效验位下拉选项
         /// </summary>
-        public ObservableCollection<ParityInfoModel> ParityItems {
+        public ObservableCollection<ParityInfoModel> ParityItems
+        {
             get => _parityItems;
             set => SetProperty(ref _parityItems, value);
         }
@@ -199,7 +210,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 效验位
         /// </summary>
-        public ParityInfoModel SelectParity {
+        public ParityInfoModel SelectParity
+        {
             get => _selectParity;
             set => SetProperty(ref _selectParity, value);
         }
@@ -207,7 +219,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 停止位下拉选项
         /// </summary>
-        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
+        public ObservableCollection<StopBitsInfoModel> StopBitsItems
+        {
             get => _stopBitsItems;
             set => SetProperty(ref _stopBitsItems, value);
         }
@@ -215,7 +228,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 停止位
         /// </summary>
-        public StopBitsInfoModel SelectStopBits {
+        public StopBitsInfoModel SelectStopBits
+        {
             get => _selectStopBits;
             set => SetProperty(ref _selectStopBits, value);
         }
@@ -223,7 +237,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 波特率
         /// </summary>
-        public ObservableCollection<int> BaudRateItems {
+        public ObservableCollection<int> BaudRateItems
+        {
             get => _baudRateItems;
             set => SetProperty(ref _baudRateItems, value);
         }
@@ -231,7 +246,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 数据位
         /// </summary>
-        public ObservableCollection<int> DataBitsItems {
+        public ObservableCollection<int> DataBitsItems
+        {
             get => _dataBitsItems;
             set => SetProperty(ref _dataBitsItems, value);
         }
@@ -239,7 +255,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 数据格式
         /// </summary>
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems
+        {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
@@ -247,12 +264,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// <summary>
         /// 触发体积类型
         /// </summary>
-        public ObservableCollection<VolumeTriggerPositionModel> VolumeTriggerPositionItems {
+        public ObservableCollection<VolumeTriggerPositionModel> VolumeTriggerPositionItems
+        {
             get => _volumeTriggerPositionItems;
             set => SetProperty(ref _volumeTriggerPositionItems, value);
         }
 
-        public VolumeTriggerPositionModel SelectTriggerPosition {
+        public VolumeTriggerPositionModel SelectTriggerPosition
+        {
             get => _selectTriggerPosition;
             set => SetProperty(ref _selectTriggerPosition, value);
         }
@@ -262,9 +281,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand PortUpdateCommand => new DelegateCommand(PortUpdateDelegate);
 
-        private async void PortUpdateDelegate() {
+        private async void PortUpdateDelegate()
+        {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
             });
@@ -275,13 +296,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand RemoveTemplateItemCommand => new DelegateCommand<ItemBaseTemplateModel>(RemoveTemplateItemDelegate);
 
-        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                if (model.ApplicationType == ItemApplicationType.VolumeInput) {
+        private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (model.ApplicationType == ItemApplicationType.VolumeInput)
+                {
                     VolumeSettingsInfo.DataTemplate.Remove(model);
-                    foreach (var item in VolumeSettingsInfo.DataTemplate) {
+                    foreach (var item in VolumeSettingsInfo.DataTemplate)
+                    {
                         if (item.Type == 0 && string.IsNullOrEmpty(item.Content) &&
-                            VolumeSettingsInfo.DataTemplate.LastOrDefault() != item) {
+                            VolumeSettingsInfo.DataTemplate.LastOrDefault() != item)
+                        {
                             VolumeSettingsInfo.DataTemplate.Remove(item);
                         }
                     }
@@ -294,10 +320,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand AddOutputItemCommand => new DelegateCommand<string>(AddOutputItemDelegate);
 
-        private async void AddOutputItemDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+        private async void AddOutputItemDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 obj = obj.Replace("'", string.Empty);
-                VolumeSettingsInfo.DataTemplate.Add(new ItemBaseTemplateModel() {
+                VolumeSettingsInfo.DataTemplate.Add(new ItemBaseTemplateModel()
+                {
                     Content = obj,
                     Id = VolumeSettingsInfo.DataTemplate.Count,
                     Type = 1,
@@ -311,9 +340,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         /// </summary>
         public ICommand AddSeparatorItemCommand => new DelegateCommand<string>(AddSeparatorItemDelegate);
 
-        private async void AddSeparatorItemDelegate(string obj) {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                VolumeSettingsInfo.DataTemplate.Add(new ItemBaseTemplateModel() {
+        private async void AddSeparatorItemDelegate(string obj)
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                VolumeSettingsInfo.DataTemplate.Add(new ItemBaseTemplateModel()
+                {
                     Content = obj,
                     Id = VolumeSettingsInfo.DataTemplate.Count,
                     Type = 2,
@@ -325,12 +357,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
         public override string Identifier => "VolumeSettingsDialogHost";
         public override string SettingsName => "VolumeSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new VolumeSettingsDto {
+                Value = JsonConvert.SerializeObject(new VolumeSettingsDto
+                {
                     Unit = SelectVolumeUnitInfo.Value,
-                    DataTemplate = VolumeSettingsInfo.DataTemplate.Select(s => new ItemTemplateInfo() {
+                    DataTemplate = VolumeSettingsInfo.DataTemplate.Select(s => new ItemTemplateInfo()
+                    {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
                         Type = s.Type
@@ -340,25 +376,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
                     IsTriggerVolumeRequest = VolumeSettingsInfo.IsTriggerVolumeRequest,
                     IsUseFusionTimeout = VolumeSettingsInfo.IsUseFusionTimeout,
                     FusionTimeout = VolumeSettingsInfo.FusionTimeout,
-                    VolumeInformationRequesterInfo = new VolumeInformationRequesterInfo() {
+                    VolumeInformationRequesterInfo = new VolumeInformationRequesterInfo()
+                    {
                         VolumeTriggerPosition = SelectTriggerPosition.Value,
                         SendContent = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendContent,
                         SendDelay = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendDelay,
                         SendCount = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendCount,
                         SendInterval = VolumeSettingsInfo.VolumeInformationRequesterInfo.SendInterval,
                         VolumeRequesterType = VolumeSettingsInfo.VolumeInformationRequesterInfo.VolumeRequesterType,
-                        TcpSettingsInfo = new TcpSettingsInfo() {
+                        TcpSettingsInfo = new TcpSettingsInfo()
+                        {
                             ConnectionMode = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ConnectionMode,
-                            ServerConfig = new TcpInfo() {
+                            ServerConfig = new TcpInfo()
+                            {
                                 IpAddress = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.IpAddress,
                                 Port = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ServerConfig.Port,
                             },
-                            ClientConfig = new TcpInfo() {
+                            ClientConfig = new TcpInfo()
+                            {
                                 IpAddress = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.IpAddress,
                                 Port = VolumeSettingsInfo.VolumeInformationRequesterInfo.TcpSettingsInfo.ClientConfig.Port,
                             }
                         },
-                        SerialPortSettingsInfo = new SerialPortSettingsInfo() {
+                        SerialPortSettingsInfo = new SerialPortSettingsInfo()
+                        {
                             BaudRate = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.BaudRate,
                             DataBits = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.DataBits,
                             DataFormat = SelectDataFormat.Value,
@@ -375,52 +416,62 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(SettingsName) ??
                                       new VolumeSettingsDto();
-                    var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel() {
+                    var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel()
+                    {
                         ApplicationType = s.ApplicationType,
                         Content = s.Content,
                         Type = s.Type
                     })?.ToList();
 
-                    VolumeSettingsInfo = new VolumeSettingsInfoModel() {
+                    VolumeSettingsInfo = new VolumeSettingsInfoModel()
+                    {
                         Unit = settingsDto.Unit,
                         Separator = settingsDto.Separator,
                         IsUseExternalVolumeInput = settingsDto.IsUseExternalVolumeInput,
                         IsTriggerVolumeRequest = settingsDto.IsTriggerVolumeRequest,
                         FusionTimeout = settingsDto.FusionTimeout,
                         IsUseFusionTimeout = settingsDto.IsUseFusionTimeout,
-                        VolumeInformationRequesterInfo = new VolumeInformationRequesterInfoModel() {
+                        VolumeInformationRequesterInfo = new VolumeInformationRequesterInfoModel()
+                        {
                             VolumeTriggerPosition = settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition,
                             SendContent = settingsDto.VolumeInformationRequesterInfo.SendContent,
                             SendDelay = settingsDto.VolumeInformationRequesterInfo.SendDelay,
                             SendCount = settingsDto.VolumeInformationRequesterInfo.SendCount,
                             SendInterval = settingsDto.VolumeInformationRequesterInfo.SendInterval,
                             VolumeRequesterType = settingsDto.VolumeInformationRequesterInfo.VolumeRequesterType,
-                            TcpSettingsInfo = new TcpSettingsInfo() {
+                            TcpSettingsInfo = new TcpSettingsInfo()
+                            {
                                 ConnectionMode = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
                                     .ConnectionMode,
-                                ServerConfig = new TcpInfo() {
+                                ServerConfig = new TcpInfo()
+                                {
                                     IpAddress = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
                                         .ServerConfig.IpAddress,
                                     Port = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
                                         .ServerConfig.Port,
                                 },
-                                ClientConfig = new TcpInfo() {
+                                ClientConfig = new TcpInfo()
+                                {
                                     IpAddress = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
                                         .ClientConfig.IpAddress,
                                     Port = settingsDto.VolumeInformationRequesterInfo.TcpSettingsInfo
                                         .ClientConfig.Port,
                                 }
                             },
-                            SerialPortSettingsInfo = new SerialPortSettingsInfoModel() {
+                            SerialPortSettingsInfo = new SerialPortSettingsInfoModel()
+                            {
                                 BaudRate = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                                     .BaudRate,
                                 DataBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo

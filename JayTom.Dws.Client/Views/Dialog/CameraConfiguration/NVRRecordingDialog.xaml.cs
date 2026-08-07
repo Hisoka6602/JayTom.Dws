@@ -13,14 +13,17 @@ using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Views.Dialog.CameraConfiguration {
+namespace JayTom.Dws.Client.Views.Dialog.CameraConfiguration
+{
 
     /// <summary>
     /// NVRRecordingDialog.xaml 的交互逻辑
     /// </summary>
-    public partial class NvrRecordingDialog : UserControl {
+    public partial class NvrRecordingDialog : UserControl
+    {
 
-        public NvrRecordingDialog() {
+        public NvrRecordingDialog()
+        {
             InitializeComponent();
         }
     }

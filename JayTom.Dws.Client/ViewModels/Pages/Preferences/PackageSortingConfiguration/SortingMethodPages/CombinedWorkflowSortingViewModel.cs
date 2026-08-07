@@ -13,8 +13,10 @@ using IDropTarget = GongSolutions.Wpf.DragDrop.IDropTarget;
 using ListView = System.Windows.Controls.ListView;
 using Panel = System.Windows.Controls.Panel;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages {
-    public class CombinedWorkflowSortingViewModel : BindableBase, IDropTarget {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages
+{
+    public class CombinedWorkflowSortingViewModel : BindableBase, IDropTarget
+    {
 
         private ObservableCollection<CombinedWorkflowNodeModel> _combinedWorkflowNodes = new()
         {
@@ -52,70 +54,87 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private ObservableCollection<CombinedWorkflowNodeModel> _canvasNodes = new();
 
-        public ObservableCollection<CombinedWorkflowNodeModel> CombinedWorkflowNodes {
+        public ObservableCollection<CombinedWorkflowNodeModel> CombinedWorkflowNodes
+        {
             get => _combinedWorkflowNodes;
             set => SetProperty(ref _combinedWorkflowNodes, value);
         }
 
-        public ObservableCollection<CombinedWorkflowNodeModel> CanvasNodes {
+        public ObservableCollection<CombinedWorkflowNodeModel> CanvasNodes
+        {
             get => _canvasNodes;
             set => SetProperty(ref _canvasNodes, value);
         }
 
-        public ICommand PreviewMouseMoveDragCommand {
+        public ICommand PreviewMouseMoveDragCommand
+        {
             get => new DelegateCommand<object>(PreviewMouseMoveDragDelegate);
         }
 
-        private void PreviewMouseMoveDragDelegate(object obj) {
+        private void PreviewMouseMoveDragDelegate(object obj)
+        {
         }
 
-        public ICommand PreviewMouseDownDragCommand {
+        public ICommand PreviewMouseDownDragCommand
+        {
             get => new DelegateCommand<object>(PreviewMouseDownDragDelegate);
         }
 
-        private void PreviewMouseDownDragDelegate(object obj) {
+        private void PreviewMouseDownDragDelegate(object obj)
+        {
             // 将鼠标捕获到 ListBoxItem 上，以便在鼠标移出 ListBoxItem 范围时仍然能够接收鼠标事件
         }
 
-        public ICommand DropCommand {
+        public ICommand DropCommand
+        {
             get => new DelegateCommand<DropInfo>(ExecuteDrop);
         }
 
-        private void ExecuteDrop(DropInfo dropInfo) {
-            if (dropInfo.Data is CombinedWorkflowNodeModel item) {
+        private void ExecuteDrop(DropInfo dropInfo)
+        {
+            if (dropInfo.Data is CombinedWorkflowNodeModel item)
+            {
                 item.Left = (int)dropInfo.DropPosition.X;
                 item.Top = (int)dropInfo.DropPosition.Y;
                 Debug.WriteLine($"{item.Left},{item.Top}");
             }
         }
 
-        public void DragOver(IDropInfo dropInfo) {
-            if (dropInfo.TargetItem == dropInfo.DragInfo.SourceItem) {
+        public void DragOver(IDropInfo dropInfo)
+        {
+            if (dropInfo.TargetItem == dropInfo.DragInfo.SourceItem)
+            {
                 dropInfo.Effects = DragDropEffects.None;
                 return;
             }
-            if (dropInfo.VisualTarget is ItemsControl) {
+            if (dropInfo.VisualTarget is ItemsControl)
+            {
                 dropInfo.DropTargetAdorner = DropTargetAdorners.Highlight;
                 dropInfo.Effects = DragDropEffects.Move;
                 var model = CanvasNodes.FirstOrDefault(f => !f.ConnectPositiveResult
                     || !f.ConnectPositiveResult);
-                if (model != null) {
+                if (model != null)
+                {
                     //获取长度宽度
-                    if (dropInfo.DropPosition.Y > model.PositiveConnectionPoint.Y) {
+                    if (dropInfo.DropPosition.Y > model.PositiveConnectionPoint.Y)
+                    {
                         //在连接对象下面
                         //取出中心点
                         var element = dropInfo.DragInfo.VisualSourceItem;
-                        if (element is FrameworkElement frameworkElement) {
+                        if (element is FrameworkElement frameworkElement)
+                        {
                             var actualWidth = frameworkElement.ActualWidth;
                             var centerPoint = actualWidth / 2;
                             if (!model.ConnectPositiveResult &&
-                                dropInfo.DropPosition.X < model.Left + centerPoint) {
+                                dropInfo.DropPosition.X < model.Left + centerPoint)
+                            {
                                 //左边
                                 //画线
                                 Debug.WriteLine($"在左边");
                             }
                             else if (!model.ConnectNegativeResult &&
-                                   dropInfo.DropPosition.X > model.Left + centerPoint) {
+                                   dropInfo.DropPosition.X > model.Left + centerPoint)
+                            {
                                 Debug.WriteLine($"在右边");
                                 //画线
                             }
@@ -131,30 +150,37 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
         }
 
-        public void Drop(IDropInfo dropInfo) {
-            if (dropInfo.VisualTarget is ItemsControl) {
+        public void Drop(IDropInfo dropInfo)
+        {
+            if (dropInfo.VisualTarget is ItemsControl)
+            {
                 var item = (CombinedWorkflowNodeModel)dropInfo.Data;
                 item.Left = (int)dropInfo.DropPosition.X;
                 item.Top = (int)dropInfo.DropPosition.Y;
                 if (dropInfo.VisualTargetItem is not null &&
                     dropInfo.DragInfo.VisualSourceItem is not null &&
-                    dropInfo.VisualTargetItem.GetType() == dropInfo.DragInfo.VisualSourceItem.GetType()) {
+                    dropInfo.VisualTargetItem.GetType() == dropInfo.DragInfo.VisualSourceItem.GetType())
+                {
                     Panel.SetZIndex(dropInfo.VisualTargetItem, 29);
                     Panel.SetZIndex(dropInfo.DragInfo.VisualSourceItem, 30);
                 }
 
-                if (dropInfo.DragInfo.VisualSourceItem is FrameworkElement frameworkElement) {
-                    item.PositiveConnectionPoint = new Point() {
+                if (dropInfo.DragInfo.VisualSourceItem is FrameworkElement frameworkElement)
+                {
+                    item.PositiveConnectionPoint = new Point()
+                    {
                         X = dropInfo.DropPosition.X + 10,
                         Y = dropInfo.DropPosition.Y + frameworkElement.ActualHeight
                     };
-                    item.NegativeConnectionPoint = new Point() {
+                    item.NegativeConnectionPoint = new Point()
+                    {
                         X = dropInfo.DropPosition.X + frameworkElement.ActualWidth - 10,
                         Y = dropInfo.DropPosition.Y + frameworkElement.ActualHeight
                     };
                 }
 
-                if (dropInfo.DragInfo.VisualSource is ListView) {
+                if (dropInfo.DragInfo.VisualSource is ListView)
+                {
                     CanvasNodes.Add(item);
                     CombinedWorkflowNodes.Remove(item);
                 }

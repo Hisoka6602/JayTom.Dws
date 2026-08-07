@@ -8,16 +8,20 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using System.Globalization;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 
 namespace JayTom.Dws.Plugin.Scale.DynamicScale {
 
-    public class DefaultDynamicScale : IDynamicScale {
-        private static readonly Regex WeightPattern = new(
-            @"-?\b\d+(?:\.\d+)?\b",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    public partial class DefaultDynamicScale : IDynamicScale {
+        /// <summary>
+        /// 获取解析动态秤重量的源生成正则。
+        /// </summary>
+        [GeneratedRegex(@"-?\b\d+(?:\.\d+)?\b", RegexOptions.CultureInvariant)]
+        private static partial Regex WeightPattern();
+
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
         private BaseTcpOperations? TcpOperations { get; set; }
         private DefaultDynamicScaleValueParameters _defaultDynamicScaleValueParameters = new();
@@ -28,10 +32,11 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             if (_serialPort?.IsOpen == true) {
                 _serialPort?.Close();
             }
-            // _serialPort?.Dispose();
+            _serialPort?.Dispose();
             _serialPort = null;
             TcpOperations?.Close();
             TcpOperations = null;
+            Status = ScaleStatus.Disconnected;
         }
 
         public WeightAdditionalProperties WeightAdditionalProperties { get; set; } = new();
@@ -80,20 +85,25 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                             _serialPort.DataReceived += async delegate (object sender, SerialDataReceivedEventArgs args) {
                                 //读数据
 
+                                var lockTaken = false;
                                 try {
-                                    await Task.Delay(150);
                                     await _semaphore.WaitAsync();
+                                    lockTaken = true;
                                     if (sender is System.IO.Ports.SerialPort { IsOpen: true, BytesToRead: > 0 } port && _serialPort.IsOpen) {
                                         string receivedData;
                                         if (WeightFormat == ScaleWeightFormat.Ascii) {
                                             // 读取接收到的数据
                                             receivedData = port.ReadExisting() /*.Trim().Replace(" ", string.Empty)*/;
 
-                                            var match = WeightPattern.Match(receivedData);
+                                            var match = WeightPattern().Match(receivedData);
                                             // 提取重量值
                                             if (match.Success) {
                                                 var weight = match.Value;
-                                                var tryParse = float.TryParse(weight, out var result);
+                                                var tryParse = float.TryParse(
+                                                    weight,
+                                                    NumberStyles.Float,
+                                                    CultureInfo.InvariantCulture,
+                                                    out var result);
                                                 if (tryParse) {
                                                     //输出重量
                                                     OnStabledWeight(result);
@@ -102,7 +112,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                                         Format = WeightFormat,
                                                         FormattedWeight = result,
                                                         OriginalContent = receivedData,
-                                                        Type = WeightType.Static
+                                                        Type = WeightType.Dynamic
                                                     });
                                                 }
                                             }
@@ -114,7 +124,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                             // 读取数据到字节数组
                                             port.Read(buffer, 0, buffer.Length);
                                             // 将字节数组转换为十六进制表示
-                                            receivedData = BitConverter.ToString(buffer).Replace("-", " ");
+                                            receivedData = HexDataFormatter.Format(buffer);
                                             if (!string.IsNullOrEmpty(receivedData)) {
                                                 var weightFromHex = ExtractWeightFromHex(receivedData);
                                                 //输出重量
@@ -124,7 +134,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                                     Format = WeightFormat,
                                                     FormattedWeight = weightFromHex,
                                                     OriginalContent = receivedData,
-                                                    Type = WeightType.Static
+                                                    Type = WeightType.Dynamic
                                                 });
                                             }
                                         }
@@ -136,7 +146,9 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                     OnExcepted(e);
                                 }
                                 finally {
-                                    _semaphore.Release();
+                                    if (lockTaken) {
+                                        _semaphore.Release();
+                                    }
                                 }
                             };
                             _serialPort.Disposed += delegate {
@@ -177,11 +189,15 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                     // 读取接收到的数据
                                     receivedData = info.Content /*.Trim().Replace(" ", string.Empty)*/;
 
-                                    var match = WeightPattern.Match(receivedData);
+                                    var match = WeightPattern().Match(receivedData);
                                     // 提取重量值
                                     if (match.Success) {
                                         var weight = match.Value;
-                                        var tryParse = float.TryParse(weight, out var result);
+                                        var tryParse = float.TryParse(
+                                            weight,
+                                            NumberStyles.Float,
+                                            CultureInfo.InvariantCulture,
+                                            out var result);
                                         if (!weight.Contains(".")) {
                                             result = result / 1000;
                                         }
@@ -193,7 +209,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                                 Format = WeightFormat,
                                                 FormattedWeight = result,
                                                 OriginalContent = receivedData,
-                                                Type = WeightType.Static
+                                                Type = WeightType.Dynamic
                                             });
                                         }
                                     }
@@ -209,7 +225,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                             Format = WeightFormat,
                                             FormattedWeight = weightFromHex,
                                             OriginalContent = receivedData,
-                                            Type = WeightType.Static
+                                            Type = WeightType.Dynamic
                                         });
                                     }
                                 }
@@ -285,7 +301,9 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                 //追加重量
                 e = (float)(e + WeightAdditionalProperties.AppendedWeightValue);
             }
-            e = (float)Math.Round(e, _defaultDynamicScaleValueParameters.DecimalPlaces);
+            e = (float)Math.Round(
+                e,
+                Math.Clamp(_defaultDynamicScaleValueParameters.DecimalPlaces, 0, 6));
             if (WeightAdditionalProperties.IsUseFixedWeight) {
                 //固定重量输出
                 e = (float)WeightAdditionalProperties.FixedWeightValue;

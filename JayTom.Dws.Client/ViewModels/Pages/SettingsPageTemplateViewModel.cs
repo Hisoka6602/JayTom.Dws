@@ -20,32 +20,38 @@ using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
 
-namespace JayTom.Dws.Client.ViewModels.Pages {
+namespace JayTom.Dws.Client.ViewModels.Pages
+{
 
-    public abstract class SettingsPageTemplateViewModel : BindableBase {
+    public abstract class SettingsPageTemplateViewModel : BindableBase
+    {
         protected readonly IConfigRepository _configRepository;
 
         private bool _isSavingInProgress;
         private SnackbarMessageQueue _messageQueue = new(TimeSpan.FromSeconds(2));
 
-        protected SettingsPageTemplateViewModel(IConfigRepository configRepository) {
+        protected SettingsPageTemplateViewModel(IConfigRepository configRepository)
+        {
             _configRepository = configRepository;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
 
-        public virtual void LoadedDelegate(object obj) {
+        public virtual void LoadedDelegate(object obj)
+        {
         }
 
         /// <summary>
         /// 是否保存中
         /// </summary>
-        public bool IsSavingInProgress {
+        public bool IsSavingInProgress
+        {
             get => _isSavingInProgress;
             set => SetProperty(ref _isSavingInProgress, value);
         }
 
-        public SnackbarMessageQueue MessageQueue {
+        public SnackbarMessageQueue MessageQueue
+        {
             get => _messageQueue;
             set => SetProperty(ref _messageQueue, value);
         }
@@ -58,21 +64,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages {
         /// </summary>
         public ICommand SaveSettingsCommand => new DelegateCommand(SaveDelegate);
 
-        public virtual async void SaveDelegate() {
-            if (!IsSavingInProgress) {
-                IsSavingInProgress = true;
+        public virtual async void SaveDelegate()
+        {
+            if (IsSavingInProgress)
+            {
+                return;
+            }
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
-                    var settingsProcess = await SaveSettingsProcess();
-                    if (settingsProcess) {
-                        //通知事件
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent {
-                            SettingsName = SettingsName,
-                            IsLocallySaved = true
-                        });
-                    }
-                    IsSavingInProgress = false;
-                });
+            IsSavingInProgress = true;
+            try
+            {
+                var settingsProcess = await SaveSettingsProcess();
+                if (settingsProcess)
+                {
+                    //通知事件
+                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    {
+                        SettingsName = SettingsName,
+                        IsLocallySaved = true
+                    });
+                }
+            }
+            catch (Exception exception)
+            {
+                MessageQueue.Enqueue($"保存配置失败:{exception.Message}");
+            }
+            finally
+            {
+                IsSavingInProgress = false;
             }
         }
 

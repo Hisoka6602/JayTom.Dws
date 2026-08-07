@@ -13,14 +13,17 @@ using System.Windows.Navigation;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration
+{
 
     /// <summary>
     /// PackageExitLockSettings.xaml 的交互逻辑
     /// </summary>
-    public partial class PackageExitLockSettingsPage : Page {
+    public partial class PackageExitLockSettingsPage : Page
+    {
 
-        public PackageExitLockSettingsPage() {
+        public PackageExitLockSettingsPage()
+        {
             InitializeComponent();
         }
     }

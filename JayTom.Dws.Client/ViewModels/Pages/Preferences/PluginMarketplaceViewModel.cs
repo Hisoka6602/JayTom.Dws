@@ -6,14 +6,17 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
+{
 
-    public class PluginMarketplaceViewModel : BindableBase {
+    public class PluginMarketplaceViewModel : BindableBase
+    {
         private ObservableCollection<PluginItemInfoModel> _pluginItems;
         private ObservableCollection<PluginTypeItemInfoModel> _pluginTypeItems;
         private PluginItemInfoModel _selectPluginItem = new();
 
-        public PluginMarketplaceViewModel() {
+        public PluginMarketplaceViewModel()
+        {
             _pluginTypeItems = new ObservableCollection<PluginTypeItemInfoModel>()
             {
                 new()
@@ -117,26 +120,31 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences {
             };
         }
 
-        public ObservableCollection<PluginItemInfoModel> PluginItems {
+        public ObservableCollection<PluginItemInfoModel> PluginItems
+        {
             get => _pluginItems;
             set => SetProperty(ref _pluginItems, value);
         }
 
-        public ObservableCollection<PluginTypeItemInfoModel> PluginTypeItems {
+        public ObservableCollection<PluginTypeItemInfoModel> PluginTypeItems
+        {
             get => _pluginTypeItems;
             set => SetProperty(ref _pluginTypeItems, value);
         }
 
-        public PluginItemInfoModel SelectPluginItem {
+        public PluginItemInfoModel SelectPluginItem
+        {
             get => _selectPluginItem;
             set => SetProperty(ref _selectPluginItem, value);
         }
 
-        public ICommand ClickCommand {
+        public ICommand ClickCommand
+        {
             get => new DelegateCommand<PluginItemInfoModel>(ClickDelegate);
         }
 
-        private async void ClickDelegate(PluginItemInfoModel obj) {
+        private async void ClickDelegate(PluginItemInfoModel obj)
+        {
             this.SelectPluginItem = obj;
         }
     }

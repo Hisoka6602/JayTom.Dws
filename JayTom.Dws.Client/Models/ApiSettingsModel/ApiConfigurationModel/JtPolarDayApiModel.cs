@@ -1,16 +1,19 @@
 using Prism.Mvvm;
+using JayTom.Dws.Interface.Jtexpress;
 
-namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
+namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
+{
 
     /// <summary>
     /// 极兔极昼接口配置模型。
     /// </summary>
-    public sealed class JtPolarDayApiModel : BindableBase {
+    public sealed class JtPolarDayApiModel : BindableBase
+    {
         /// <summary>
         /// 极昼服务基础地址。
         /// </summary>
         private string _baseUrl =
-            "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
+            JtPolarDayApi.ProductionBaseUrl;
 
         /// <summary>
         /// 应用标识。
@@ -23,14 +26,51 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         private string _appSecret = string.Empty;
 
         /// <summary>
+        /// 是否使用旧版小件回传。
+        /// </summary>
+        private bool _useLegacyUpload;
+
+        /// <summary>
+        /// 旧版小件回传地址。
+        /// </summary>
+        private string _legacyUploadUrl =
+            JtPolarDayApi.LegacySmallItemProductionUrl;
+
+        /// <summary>
+        /// 旧版小件回传应用标识。
+        /// </summary>
+        private string _legacyAppKey = string.Empty;
+
+        /// <summary>
+        /// 旧版小件回传应用密钥。
+        /// </summary>
+        private string _legacyAppSecret = string.Empty;
+
+        /// <summary>
+        /// 新版回传场地编码。
+        /// </summary>
+        private string _siteCode = JtPolarDayApi.DefaultSiteCode;
+
+        /// <summary>
+        /// 旧版小件回传交叉带 MAC 地址。
+        /// </summary>
+        private string _crossBeltMac = string.Empty;
+
+        /// <summary>
+        /// 旧版小件回传供件台 MAC 地址。
+        /// </summary>
+        private string _supplyDeskMac = string.Empty;
+
+        /// <summary>
         /// 设备编号。
         /// </summary>
-        private string _equipmentCode = string.Empty;
+        private string _equipmentCode = JtPolarDayApi.DefaultEquipmentCode;
 
         /// <summary>
         /// 分拣计划编码。
         /// </summary>
-        private string _sortingPlanCode = string.Empty;
+        private string _sortingPlanCode =
+            JtPolarDayApi.DefaultSortingPlanCode;
 
         /// <summary>
         /// 操作类型。
@@ -40,7 +80,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 操作员。
         /// </summary>
-        private string _operator = string.Empty;
+        private string _operator = JtPolarDayApi.DefaultOperator;
 
         /// <summary>
         /// 格口查询使用的可选主线编码。
@@ -125,7 +165,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 极昼服务基础地址。
         /// </summary>
-        public string BaseUrl {
+        public string BaseUrl
+        {
             get => _baseUrl;
             set => SetProperty(ref _baseUrl, value);
         }
@@ -133,7 +174,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 应用标识。
         /// </summary>
-        public string AppKey {
+        public string AppKey
+        {
             get => _appKey;
             set => SetProperty(ref _appKey, value);
         }
@@ -141,15 +183,101 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 应用密钥。
         /// </summary>
-        public string AppSecret {
+        public string AppSecret
+        {
             get => _appSecret;
             set => SetProperty(ref _appSecret, value);
         }
 
         /// <summary>
+        /// 是否使用旧版小件回传。
+        /// </summary>
+        public bool UseLegacyUpload
+        {
+            get => _useLegacyUpload;
+            set
+            {
+                if (SetProperty(ref _useLegacyUpload, value))
+                {
+                    RaisePropertyChanged(nameof(UseCurrentUpload));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 是否使用新版回传。
+        /// </summary>
+        public bool UseCurrentUpload
+        {
+            get => !UseLegacyUpload;
+            set
+            {
+                if (value)
+                {
+                    UseLegacyUpload = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 旧版小件回传地址。
+        /// </summary>
+        public string LegacyUploadUrl
+        {
+            get => _legacyUploadUrl;
+            set => SetProperty(ref _legacyUploadUrl, value);
+        }
+
+        /// <summary>
+        /// 旧版小件回传应用标识。
+        /// </summary>
+        public string LegacyAppKey
+        {
+            get => _legacyAppKey;
+            set => SetProperty(ref _legacyAppKey, value);
+        }
+
+        /// <summary>
+        /// 旧版小件回传应用密钥。
+        /// </summary>
+        public string LegacyAppSecret
+        {
+            get => _legacyAppSecret;
+            set => SetProperty(ref _legacyAppSecret, value);
+        }
+
+        /// <summary>
+        /// 新版回传场地编码。
+        /// </summary>
+        public string SiteCode
+        {
+            get => _siteCode;
+            set => SetProperty(ref _siteCode, value);
+        }
+
+        /// <summary>
+        /// 旧版小件回传交叉带 MAC 地址。
+        /// </summary>
+        public string CrossBeltMac
+        {
+            get => _crossBeltMac;
+            set => SetProperty(ref _crossBeltMac, value);
+        }
+
+        /// <summary>
+        /// 旧版小件回传供件台 MAC 地址。
+        /// </summary>
+        public string SupplyDeskMac
+        {
+            get => _supplyDeskMac;
+            set => SetProperty(ref _supplyDeskMac, value);
+        }
+
+        /// <summary>
         /// 设备编号。
         /// </summary>
-        public string EquipmentCode {
+        public string EquipmentCode
+        {
             get => _equipmentCode;
             set => SetProperty(ref _equipmentCode, value);
         }
@@ -157,7 +285,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 分拣计划编码。
         /// </summary>
-        public string SortingPlanCode {
+        public string SortingPlanCode
+        {
             get => _sortingPlanCode;
             set => SetProperty(ref _sortingPlanCode, value);
         }
@@ -165,7 +294,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 操作类型，1 出港、2 进港、3 进出港。
         /// </summary>
-        public int OperateType {
+        public int OperateType
+        {
             get => _operateType;
             set => SetProperty(ref _operateType, value);
         }
@@ -173,7 +303,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 操作员 JMS 账号。
         /// </summary>
-        public string Operator {
+        public string Operator
+        {
             get => _operator;
             set => SetProperty(ref _operator, value);
         }
@@ -181,7 +312,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 格口查询使用的可选主线编码。
         /// </summary>
-        public string MainLineCode {
+        public string MainLineCode
+        {
             get => _mainLineCode;
             set => SetProperty(ref _mainLineCode, value);
         }
@@ -189,7 +321,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备实际层数。
         /// </summary>
-        public int EquipmentLayer {
+        public int EquipmentLayer
+        {
             get => _equipmentLayer;
             set => SetProperty(ref _equipmentLayer, value);
         }
@@ -197,7 +330,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备实际供件区数量。
         /// </summary>
-        public int AreaNum {
+        public int AreaNum
+        {
             get => _areaNum;
             set => SetProperty(ref _areaNum, value);
         }
@@ -205,7 +339,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 设备允许的最大循环圈数。
         /// </summary>
-        public int MaxCircleNum {
+        public int MaxCircleNum
+        {
             get => _maxCircleNum;
             set => SetProperty(ref _maxCircleNum, value);
         }
@@ -213,7 +348,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 供件台编号；无供件台时填写供件区编号。
         /// </summary>
-        public string SupplyDeskCode {
+        public string SupplyDeskCode
+        {
             get => _supplyDeskCode;
             set => SetProperty(ref _supplyDeskCode, value);
         }
@@ -221,7 +357,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 供件台在当前供件区内的连续序号。
         /// </summary>
-        public string SupplyDeskSerialNo {
+        public string SupplyDeskSerialNo
+        {
             get => _supplyDeskSerialNo;
             set => SetProperty(ref _supplyDeskSerialNo, value);
         }
@@ -229,7 +366,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 供件方式，1 供包台、2 补码台、3 自动供包、4 人工供包、5 快手供件。
         /// </summary>
-        public string SupplyDeskMethod {
+        public string SupplyDeskMethod
+        {
             get => _supplyDeskMethod;
             set => SetProperty(ref _supplyDeskMethod, value);
         }
@@ -237,7 +375,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 供件台所属供件区。
         /// </summary>
-        public string SupplyDeskArea {
+        public string SupplyDeskArea
+        {
             get => _supplyDeskArea;
             set => SetProperty(ref _supplyDeskArea, value);
         }
@@ -245,7 +384,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 供件台所在层数。
         /// </summary>
-        public int LayerNum {
+        public int LayerNum
+        {
             get => _layerNum;
             set => SetProperty(ref _layerNum, value);
         }
@@ -253,7 +393,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 落格模式，1 就近、2 循环、3 瀑布、4 随机。
         /// </summary>
-        public string ChuteModel {
+        public string ChuteModel
+        {
             get => _chuteModel;
             set => SetProperty(ref _chuteModel, value);
         }
@@ -261,7 +402,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 默认实际落格供件区编号。
         /// </summary>
-        public int FallArea {
+        public int FallArea
+        {
             get => _fallArea;
             set => SetProperty(ref _fallArea, value);
         }
@@ -269,7 +411,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 重量来源，0 秤、1 系统或默认值。
         /// </summary>
-        public string WeightSource {
+        public string WeightSource
+        {
             get => _weightSource;
             set => SetProperty(ref _weightSource, value);
         }
@@ -277,7 +420,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 格口查询超时毫秒数。
         /// </summary>
-        public int QueryTimeoutMilliseconds {
+        public int QueryTimeoutMilliseconds
+        {
             get => _queryTimeoutMilliseconds;
             set => SetProperty(ref _queryTimeoutMilliseconds, value);
         }
@@ -285,7 +429,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 数据上报超时毫秒数。
         /// </summary>
-        public int TimeoutMilliseconds {
+        public int TimeoutMilliseconds
+        {
             get => _timeoutMilliseconds;
             set => SetProperty(ref _timeoutMilliseconds, value);
         }
@@ -293,7 +438,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 最大请求次数。
         /// </summary>
-        public int RetryCount {
+        public int RetryCount
+        {
             get => _retryCount;
             set => SetProperty(ref _retryCount, value);
         }
@@ -301,7 +447,8 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel {
         /// <summary>
         /// 重试间隔毫秒数。
         /// </summary>
-        public int RetryIntervalMilliseconds {
+        public int RetryIntervalMilliseconds
+        {
             get => _retryIntervalMilliseconds;
             set => SetProperty(ref _retryIntervalMilliseconds, value);
         }

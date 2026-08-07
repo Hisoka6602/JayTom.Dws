@@ -1,8 +1,10 @@
 ﻿using Prism.Mvvm;
 
-namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
+namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel
+{
 
-    public class LocationOutputSettingsInfoModel : BindableBase {
+    public class LocationOutputSettingsInfoModel : BindableBase
+    {
         private System.Drawing.Point _barcodeOutputPosition;
         private System.Drawing.Point _weightOutputPosition;
         private string? _barcodeOutputKey;
@@ -15,7 +17,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 条码输出位置
         /// </summary>
-        public System.Drawing.Point BarcodeOutputPosition {
+        public System.Drawing.Point BarcodeOutputPosition
+        {
             get => _barcodeOutputPosition;
             set => SetProperty(ref _barcodeOutputPosition, value);
         }
@@ -23,7 +26,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 重量输出位置
         /// </summary>
-        public System.Drawing.Point WeightOutputPosition {
+        public System.Drawing.Point WeightOutputPosition
+        {
             get => _weightOutputPosition;
             set => SetProperty(ref _weightOutputPosition, value);
         }
@@ -31,7 +35,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 条码输出后按键
         /// </summary>
-        public string? BarcodeOutputKey {
+        public string? BarcodeOutputKey
+        {
             get => _barcodeOutputKey;
             set => SetProperty(ref _barcodeOutputKey, value);
         }
@@ -39,7 +44,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 重量输出后按键
         /// </summary>
-        public string? WeightOutputKey {
+        public string? WeightOutputKey
+        {
             get => _weightOutputKey;
             set => SetProperty(ref _weightOutputKey, value);
         }
@@ -47,7 +53,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 操作延迟
         /// </summary>
-        public int OperationDelay {
+        public int OperationDelay
+        {
             get => _operationDelay;
             set => SetProperty(ref _operationDelay, value);
         }
@@ -55,7 +62,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 是否先输出重量
         /// </summary>
-        public bool IsOutputWeightFirst {
+        public bool IsOutputWeightFirst
+        {
             get => _isOutputWeightFirst;
             set => SetProperty(ref _isOutputWeightFirst, value);
         }
@@ -63,7 +71,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 是否输出条码
         /// </summary>
-        public bool IsOutputBarcode {
+        public bool IsOutputBarcode
+        {
             get => _isOutputBarcode;
             set => SetProperty(ref _isOutputBarcode, value);
         }
@@ -71,7 +80,8 @@ namespace JayTom.Dws.Client.Models.ResultOutputSettingsModel {
         /// <summary>
         /// 是否输出重量
         /// </summary>
-        public bool IsOutputWeight {
+        public bool IsOutputWeight
+        {
             get => _isOutputWeight;
             set => SetProperty(ref _isOutputWeight, value);
         }

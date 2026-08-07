@@ -10,7 +10,7 @@ namespace JayTom.Dws.Plugin.Speech {
     public class Speech : ISpeech {
         private static SpeechSynthesizer? _synthesizer;
         private static readonly ConcurrentDictionary<string, byte[]> SoundDictionary = new();
-        private static readonly object SynthesizerLock = new();
+        private static readonly System.Threading.Lock SynthesizerLock = new();
 
         public Speech() {
             _synthesizer ??= new() {

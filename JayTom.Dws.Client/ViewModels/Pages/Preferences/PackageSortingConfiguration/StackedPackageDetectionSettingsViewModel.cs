@@ -24,9 +24,11 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
-namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration {
+namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
+{
 
-    public class StackedPackageDetectionSettingsViewModel : SettingsPageTemplateViewModel {
+    public class StackedPackageDetectionSettingsViewModel : SettingsPageTemplateViewModel
+    {
         private readonly IDeviceService _deviceService;
 
         private ObservableCollection<string> _portItems = new();
@@ -128,21 +130,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private bool _isLoaded;
 
         public StackedPackageDetectionSettingsViewModel(IConfigRepository configRepository,
-            IDeviceService deviceService) : base(configRepository) {
+            IDeviceService deviceService) : base(configRepository)
+        {
             _deviceService = deviceService;
         }
 
-        public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems {
+        public ObservableCollection<CommunicationsTypeInfoModel> CommunicationsTypeItems
+        {
             get => _communicationsTypeItems;
             set => SetProperty(ref _communicationsTypeItems, value);
         }
 
-        public CommunicationsTypeInfoModel SelectCommunicationsType {
+        public CommunicationsTypeInfoModel SelectCommunicationsType
+        {
             get => _selectCommunicationsType;
             set => SetProperty(ref _selectCommunicationsType, value);
         }
 
-        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems {
+        public ObservableCollection<DataFormatTypeInfoModel> DataFormatTypeItems
+        {
             get => _dataFormatTypeItems;
             set => SetProperty(ref _dataFormatTypeItems, value);
         }
@@ -150,7 +156,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 串口列表
         /// </summary>
-        public ObservableCollection<string> PortItems {
+        public ObservableCollection<string> PortItems
+        {
             get => _portItems;
             set => SetProperty(ref _portItems, value);
         }
@@ -158,7 +165,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 效验位下拉选项
         /// </summary>
-        public ObservableCollection<ParityInfoModel> ParityItems {
+        public ObservableCollection<ParityInfoModel> ParityItems
+        {
             get => _parityItems;
             set => SetProperty(ref _parityItems, value);
         }
@@ -166,7 +174,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 停止位下拉选项
         /// </summary>
-        public ObservableCollection<StopBitsInfoModel> StopBitsItems {
+        public ObservableCollection<StopBitsInfoModel> StopBitsItems
+        {
             get => _stopBitsItems;
             set => SetProperty(ref _stopBitsItems, value);
         }
@@ -174,7 +183,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 波特率
         /// </summary>
-        public ObservableCollection<int> BaudRateItems {
+        public ObservableCollection<int> BaudRateItems
+        {
             get => _baudRateItems;
             set => SetProperty(ref _baudRateItems, value);
         }
@@ -182,12 +192,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// <summary>
         /// 数据位
         /// </summary>
-        public ObservableCollection<int> DataBitsItems {
+        public ObservableCollection<int> DataBitsItems
+        {
             get => _dataBitsItems;
             set => SetProperty(ref _dataBitsItems, value);
         }
 
-        public StackedPackageDetectionItemInfoModel StackedPackageDetectionItemInfo {
+        public StackedPackageDetectionItemInfoModel StackedPackageDetectionItemInfo
+        {
             get => _stackedPackageDetectionItemInfo;
             set => SetProperty(ref _stackedPackageDetectionItemInfo, value);
         }
@@ -197,9 +209,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         /// </summary>
         public ICommand PortUpdateCommand => new DelegateCommand(PortUpdateDelegate);
 
-        private async void PortUpdateDelegate() {
+        private async void PortUpdateDelegate()
+        {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
             });
@@ -208,25 +222,30 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         public override string Identifier => "PackageSortingSettingsDialog";
         public override string SettingsName => "StackedPackageDetectionSettings";
 
-        protected override async Task<bool> SaveSettingsProcess() {
-            if (_deviceService.RunningStatus) {
+        protected override async Task<bool> SaveSettingsProcess()
+        {
+            if (_deviceService.RunningStatus)
+            {
                 IsSavingInProgress = false;
                 base.MessageQueue.Enqueue($"设备工作中,无法设置");
                 return false;
             }
             string regularExpression = string.Empty;
-            if (!string.IsNullOrEmpty(StackedPackageDetectionItemInfo.CheckerContent)) {
+            if (!string.IsNullOrEmpty(StackedPackageDetectionItemInfo.CheckerContent))
+            {
                 var strings = StackedPackageDetectionItemInfo.CheckerContent.Split(";");
                 var patterns = strings.Select(s => $"(?=.*{s})").ToList();
                 regularExpression = string.Join("|", patterns);
             }
 
-            var stackedPackageDetectionSettingsDto = new StackedPackageDetectionSettingsDto() {
+            var stackedPackageDetectionSettingsDto = new StackedPackageDetectionSettingsDto()
+            {
                 CheckerContent = StackedPackageDetectionItemInfo.CheckerContent,
                 CommunicationType = StackedPackageDetectionItemInfo.CommunicationsType.Value,
                 IsStackedPackageDetection = StackedPackageDetectionItemInfo.IsStackedPackageDetection,
                 RegularExpression = regularExpression,
-                SerialPortConfigInfo = new SerialPortSettingsInfo() {
+                SerialPortConfigInfo = new SerialPortSettingsInfo()
+                {
                     BaudRate = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.BaudRate ?? 0,
                     DataBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataBits ?? 0,
                     DataFormat = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataFormat?.Value ??
@@ -235,20 +254,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     Parity = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.Parity?.Value ?? Parity.None,
                     StopBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.StopBits?.Value ?? StopBits.None
                 },
-                TcpConnectionConfigInfo = new TcpSettingsInfo() {
+                TcpConnectionConfigInfo = new TcpSettingsInfo()
+                {
                     ConnectionMode = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ConnectionMode ??
                                      TcpConnectionMode.Client,
                     DataFormat = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.DataFormat?.Value ??
                                  DataFormatType.Ascii,
 
-                    ClientConfig = new TcpInfo() {
+                    ClientConfig = new TcpInfo()
+                    {
                         IpAddress = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ClientParameter
                                         ?.IpAddress ??
                                     string.Empty,
                         Port = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ClientParameter?.Port ??
                                0,
                     },
-                    ServerConfig = new TcpInfo() {
+                    ServerConfig = new TcpInfo()
+                    {
                         IpAddress = StackedPackageDetectionItemInfo.TcpConnectionConfigInfo?.ServerParameter
                                         ?.IpAddress ??
                                     string.Empty,
@@ -259,7 +281,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 Timeout = StackedPackageDetectionItemInfo.Timeout,
                 IsAutoExceptionSorting = StackedPackageDetectionItemInfo.IsAutoExceptionSorting,
             };
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel() {
+            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
+            {
                 ConfigName = SettingsName,
                 Value = JsonConvert.SerializeObject(stackedPackageDetectionSettingsDto)
             });
@@ -269,17 +292,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             return insertOrUpdate;
         }
 
-        public override async void LoadedDelegate(object obj) {
-            if (!_isLoaded) {
+        public override async void LoadedDelegate(object obj)
+        {
+            if (!_isLoaded)
+            {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
                     //读配置
 
                     var settingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(SettingsName) ?? new StackedPackageDetectionSettingsDto();
 
-                    StackedPackageDetectionItemInfo = new StackedPackageDetectionItemInfoModel {
+                    StackedPackageDetectionItemInfo = new StackedPackageDetectionItemInfoModel
+                    {
                         CheckerContent = settingsDto.CheckerContent,
                         CommunicationsType =
                                CommunicationsTypeItems.FirstOrDefault(f =>
@@ -287,7 +314,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                new CommunicationsTypeInfoModel(),
                         IsStackedPackageDetection = settingsDto.IsStackedPackageDetection,
                         RegularExpression = settingsDto.RegularExpression,
-                        SerialPortConfigInfo = new SerialPortConfigItemInfoModel() {
+                        SerialPortConfigInfo = new SerialPortConfigItemInfoModel()
+                        {
                             BaudRate = settingsDto.SerialPortConfigInfo?.BaudRate ?? 0,
                             DataBits = settingsDto.SerialPortConfigInfo?.DataBits ?? 0,
                             DataFormat =
@@ -301,18 +329,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             StopBits = StopBitsItems.FirstOrDefault(f =>
                                 f.Value.Equals(settingsDto.SerialPortConfigInfo?.StopBits)) ?? new StopBitsInfoModel()
                         },
-                        TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel() {
+                        TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel()
+                        {
                             ConnectionMode = settingsDto.TcpConnectionConfigInfo?.ConnectionMode ??
                                                 TcpConnectionMode.Client,
                             DataFormat = DataFormatTypeItems.FirstOrDefault(f =>
                                              f.Value.Equals(settingsDto.TcpConnectionConfigInfo?.DataFormat)) ??
                                             new DataFormatTypeInfoModel(),
-                            ClientParameter = new TcpConfigItemInfoModel() {
+                            ClientParameter = new TcpConfigItemInfoModel()
+                            {
                                 IpAddress = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.IpAddress ??
                                                string.Empty,
                                 Port = settingsDto.TcpConnectionConfigInfo?.ClientConfig?.Port ?? 0,
                             },
-                            ServerParameter = new TcpConfigItemInfoModel() {
+                            ServerParameter = new TcpConfigItemInfoModel()
+                            {
                                 IpAddress = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.IpAddress ??
                                                string.Empty,
                                 Port = settingsDto.TcpConnectionConfigInfo?.ServerConfig?.Port ?? 0,

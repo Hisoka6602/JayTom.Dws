@@ -13,12 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JayTom.Dws.Client.Views.Pages.Preferences.CloudService {
+namespace JayTom.Dws.Client.Views.Pages.Preferences.CloudService
+{
     /// <summary>
     /// CloudVideoPage.xaml 的交互逻辑
     /// </summary>
-    public partial class CloudVideoPage : Page {
-        public CloudVideoPage() {
+    public partial class CloudVideoPage : Page
+    {
+        public CloudVideoPage()
+        {
             InitializeComponent();
         }
     }

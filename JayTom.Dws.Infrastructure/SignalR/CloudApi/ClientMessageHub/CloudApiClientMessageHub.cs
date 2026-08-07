@@ -116,11 +116,11 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         public async Task<KeyValuePair<bool, string>> SendMessage<T>(string messageType, T message) {
             try {
                 if (IsConnected && _hubConnection is not null) {
-                    await _hubConnection.SendCoreAsync("Message", new object?[]
-                    {
+                    await _hubConnection.SendCoreAsync("Message",
+                    [
                         messageType,
                         message
-                    });
+                    ]);
                     return new KeyValuePair<bool, string>(true, "发送成功");
                 }
             }
@@ -134,12 +134,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         public async Task<KeyValuePair<bool, string>> SendMessage<T>(string client, string messageType, T message) {
             try {
                 if (IsConnected && _hubConnection is not null) {
-                    await _hubConnection.SendCoreAsync("Message", new object?[]
-                    {
+                    await _hubConnection.SendCoreAsync("Message",
+                    [
                         client,
                         messageType,
                         message
-                    });
+                    ]);
                     return new KeyValuePair<bool, string>(true, "发送成功");
                 }
             }
@@ -153,12 +153,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         public async Task<KeyValuePair<bool, string>> SendMessage<T>(List<string> clients, string messageType, T message) {
             try {
                 if (IsConnected && _hubConnection is not null) {
-                    await _hubConnection.SendCoreAsync("Message", new object?[]
-                    {
+                    await _hubConnection.SendCoreAsync("Message",
+                    [
                         clients,
                         messageType,
                         message
-                    });
+                    ]);
                     return new KeyValuePair<bool, string>(true, "发送成功");
                 }
             }
@@ -172,12 +172,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         public async Task<KeyValuePair<bool, string>> SendMessageToGroup<T>(string clientGroup, string messageType, T message) {
             try {
                 if (IsConnected && _hubConnection is not null) {
-                    await _hubConnection.SendCoreAsync("Message", new object?[]
-                    {
+                    await _hubConnection.SendCoreAsync("Message",
+                    [
                         clientGroup,
                         messageType,
                         message
-                    });
+                    ]);
                     return new KeyValuePair<bool, string>(true, "发送成功");
                 }
             }
@@ -191,12 +191,12 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         public async Task<bool> SyncSettingsInfo<T>(string settingsName, T message) {
             try {
                 if (IsConnected && _hubConnection is not null) {
-                    await _hubConnection.SendCoreAsync("SyncSettingsInfo", new object?[]
-                     {
+                    await _hubConnection.SendCoreAsync("SyncSettingsInfo",
+                     [
                          ConnectionId,
                         settingsName,
                         message
-                     });
+                     ]);
                     return true;
                 }
             }
