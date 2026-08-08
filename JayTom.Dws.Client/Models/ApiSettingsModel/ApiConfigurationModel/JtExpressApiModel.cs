@@ -16,6 +16,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         private string _appKey = "default";
         private string _appSecret = "default";
         private int _timeOut = 1000;
+
         private StringItemModel _scanTypeCode = new();
         private StringItemModel _transportTypeCode = new();
         private string _scanPda = string.Empty;

@@ -21,26 +21,40 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         public string AppSecret { get; set; } = string.Empty;
 
         /// <summary>
-        /// 是否使用旧版小件回传；默认使用新版回传。
+        /// 极昼图片服务基础地址。
         /// </summary>
-        public bool UseLegacyUpload { get; set; }
+        public string ImageServiceBaseUrl { get; set; } =
+            "https://opa.jtexpress.com.cn";
 
         /// <summary>
-        /// 旧版小件回传地址。
+        /// 极昼图片服务登录账号。
         /// </summary>
-        public string LegacyUploadUrl { get; set; } =
-            "https://assscan.jtexpress.com.cn/assscanface/face/" +
-            "assScanSmallUpper/smallUpperDataUpload";
+        public string ImageAccount { get; set; } = string.Empty;
 
         /// <summary>
-        /// 旧版小件回传应用标识。
+        /// 极昼图片服务登录密码（保存原文，调用时按文档计算 MD5）。
         /// </summary>
-        public string LegacyAppKey { get; set; } = string.Empty;
+        public string ImagePassword { get; set; } = string.Empty;
 
         /// <summary>
-        /// 旧版小件回传应用密钥。
+        /// 极昼图片服务应用标识。
         /// </summary>
-        public string LegacyAppSecret { get; set; } = string.Empty;
+        public string ImageAppKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 极昼图片服务应用密钥。
+        /// </summary>
+        public string ImageAppSecret { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 图片关联的扫描类型，默认 104（出仓）。
+        /// </summary>
+        public int ImageScanType { get; set; } = 104;
+
+        /// <summary>
+        /// 图片登录、链接申请和二进制上传超时毫秒数。
+        /// </summary>
+        public int ImageUploadTimeoutMilliseconds { get; set; } = 10000;
 
         /// <summary>
         /// 新版回传场地编码。
@@ -51,16 +65,6 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// 兼容旧配置的 networkCode；保存时与场地编码保持一致。
         /// </summary>
         public string NetworkCode { get; set; } = "6398155";
-
-        /// <summary>
-        /// 旧版小件回传交叉带 MAC 地址。
-        /// </summary>
-        public string CrossBeltMac { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 旧版小件回传供件台 MAC 地址。
-        /// </summary>
-        public string SupplyDeskMac { get; set; } = string.Empty;
 
         /// <summary>
         /// 设备编号。

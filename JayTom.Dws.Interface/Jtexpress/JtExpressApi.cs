@@ -133,7 +133,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     new KeyValuePair<bool, string>(false, "接口地址不能为空"));
             }
 
-            if (parameter.TimeOut <= 0 || parameter.SegmentCodeTimeOut <= 0) {
+            if (parameter.TimeOut <= 0 ||
+                parameter.SegmentCodeTimeOut <= 0) {
                 return Task.FromResult(
                     new KeyValuePair<bool, string>(false, "接口超时必须大于零"));
             }
@@ -180,39 +181,52 @@ namespace JayTom.Dws.Interface.Jtexpress {
             var parameters = Volatile.Read(ref _parameters);
             var deliveryCode = await ResolveDeliveryCodeAsync(uploadResponse)
                 .ConfigureAwait(false);
+            var decimalWeight = Convert.ToDecimal(weight);
 
             switch (parameters.BusinessType) {
                 case BusinessType.ArrivalScan:
-                    await ArrivalScanAsync(
+                    var arrivalResponse = await ArrivalScanAsync(
                             barcode,
-                            Convert.ToDecimal(weight),
+                            decimalWeight,
                             scanTime,
                             Convert.ToDecimal(length),
                             Convert.ToDecimal(width),
                             Convert.ToDecimal(height),
                             token)
                         .ConfigureAwait(false);
+                    EnsureScanSucceeded(arrivalResponse);
                     break;
 
                 case BusinessType.DepartureScan:
-                    await DepartureScanAsync(barcode, deliveryCode, scanTime, token)
+                    var departureResponse = await DepartureScanAsync(
+                            barcode,
+                            deliveryCode,
+                            scanTime,
+                            token)
                         .ConfigureAwait(false);
+                    EnsureScanSucceeded(departureResponse);
                     break;
 
                 case BusinessType.ArrivalScanAndDepartureScan:
-                    await ArrivalScanAsync(
+                    var combinedArrivalResponse = await ArrivalScanAsync(
                             barcode,
-                            Convert.ToDecimal(weight),
+                            decimalWeight,
                             scanTime,
                             Convert.ToDecimal(length),
                             Convert.ToDecimal(width),
                             Convert.ToDecimal(height),
                             token)
                         .ConfigureAwait(false);
+                    EnsureScanSucceeded(combinedArrivalResponse);
                     await Task.Delay(TimeSpan.FromSeconds(10), token)
                         .ConfigureAwait(false);
-                    await DepartureScanAsync(barcode, deliveryCode, scanTime, token)
+                    var combinedDepartureResponse = await DepartureScanAsync(
+                            barcode,
+                            deliveryCode,
+                            scanTime,
+                            token)
                         .ConfigureAwait(false);
+                    EnsureScanSucceeded(combinedDepartureResponse);
                     break;
             }
         }
@@ -541,6 +555,20 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     userInfo.Token,
                     token)
                 .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 确保扫描上报成功，失败时交由后台队列按策略重试。
+        /// </summary>
+        /// <param name="response">扫描上报响应。</param>
+        /// <exception cref="InvalidOperationException">扫描上报失败。</exception>
+        private static void EnsureScanSucceeded(UploadResponse response) {
+            if (!response.IsSuccess) {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(response.ExceptionMsg)
+                        ? "极兔扫描上报失败"
+                        : response.ExceptionMsg);
+            }
         }
 
         /// <summary>

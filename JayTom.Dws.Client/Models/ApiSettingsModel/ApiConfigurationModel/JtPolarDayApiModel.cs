@@ -26,40 +26,45 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         private string _appSecret = string.Empty;
 
         /// <summary>
-        /// 是否使用旧版小件回传。
+        /// 极昼图片服务基础地址。
         /// </summary>
-        private bool _useLegacyUpload;
+        private string _imageServiceBaseUrl =
+            JtPolarDayApi.DefaultImageServiceBaseUrl;
 
         /// <summary>
-        /// 旧版小件回传地址。
+        /// 极昼图片服务登录账号。
         /// </summary>
-        private string _legacyUploadUrl =
-            JtPolarDayApi.LegacySmallItemProductionUrl;
+        private string _imageAccount = string.Empty;
 
         /// <summary>
-        /// 旧版小件回传应用标识。
+        /// 极昼图片服务登录密码。
         /// </summary>
-        private string _legacyAppKey = string.Empty;
+        private string _imagePassword = string.Empty;
 
         /// <summary>
-        /// 旧版小件回传应用密钥。
+        /// 极昼图片服务应用标识。
         /// </summary>
-        private string _legacyAppSecret = string.Empty;
+        private string _imageAppKey = string.Empty;
 
         /// <summary>
-        /// 新版回传场地编码。
+        /// 极昼图片服务应用密钥。
+        /// </summary>
+        private string _imageAppSecret = string.Empty;
+
+        /// <summary>
+        /// 图片关联的扫描类型。
+        /// </summary>
+        private int _imageScanType = JtPolarDayApi.DefaultImageScanType;
+
+        /// <summary>
+        /// 图片服务超时毫秒数。
+        /// </summary>
+        private int _imageUploadTimeoutMilliseconds = 10000;
+
+        /// <summary>
+        /// 回传场地编码。
         /// </summary>
         private string _siteCode = JtPolarDayApi.DefaultSiteCode;
-
-        /// <summary>
-        /// 旧版小件回传交叉带 MAC 地址。
-        /// </summary>
-        private string _crossBeltMac = string.Empty;
-
-        /// <summary>
-        /// 旧版小件回传供件台 MAC 地址。
-        /// </summary>
-        private string _supplyDeskMac = string.Empty;
 
         /// <summary>
         /// 设备编号。
@@ -190,87 +195,75 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         }
 
         /// <summary>
-        /// 是否使用旧版小件回传。
+        /// 极昼图片服务基础地址。
         /// </summary>
-        public bool UseLegacyUpload
+        public string ImageServiceBaseUrl
         {
-            get => _useLegacyUpload;
-            set
-            {
-                if (SetProperty(ref _useLegacyUpload, value))
-                {
-                    RaisePropertyChanged(nameof(UseCurrentUpload));
-                }
-            }
+            get => _imageServiceBaseUrl;
+            set => SetProperty(ref _imageServiceBaseUrl, value);
         }
 
         /// <summary>
-        /// 是否使用新版回传。
+        /// 极昼图片服务登录账号。
         /// </summary>
-        public bool UseCurrentUpload
+        public string ImageAccount
         {
-            get => !UseLegacyUpload;
-            set
-            {
-                if (value)
-                {
-                    UseLegacyUpload = false;
-                }
-            }
+            get => _imageAccount;
+            set => SetProperty(ref _imageAccount, value);
         }
 
         /// <summary>
-        /// 旧版小件回传地址。
+        /// 极昼图片服务登录密码。
         /// </summary>
-        public string LegacyUploadUrl
+        public string ImagePassword
         {
-            get => _legacyUploadUrl;
-            set => SetProperty(ref _legacyUploadUrl, value);
+            get => _imagePassword;
+            set => SetProperty(ref _imagePassword, value);
         }
 
         /// <summary>
-        /// 旧版小件回传应用标识。
+        /// 极昼图片服务应用标识。
         /// </summary>
-        public string LegacyAppKey
+        public string ImageAppKey
         {
-            get => _legacyAppKey;
-            set => SetProperty(ref _legacyAppKey, value);
+            get => _imageAppKey;
+            set => SetProperty(ref _imageAppKey, value);
         }
 
         /// <summary>
-        /// 旧版小件回传应用密钥。
+        /// 极昼图片服务应用密钥。
         /// </summary>
-        public string LegacyAppSecret
+        public string ImageAppSecret
         {
-            get => _legacyAppSecret;
-            set => SetProperty(ref _legacyAppSecret, value);
+            get => _imageAppSecret;
+            set => SetProperty(ref _imageAppSecret, value);
         }
 
         /// <summary>
-        /// 新版回传场地编码。
+        /// 图片关联的扫描类型。
+        /// </summary>
+        public int ImageScanType
+        {
+            get => _imageScanType;
+            set => SetProperty(ref _imageScanType, value);
+        }
+
+        /// <summary>
+        /// 图片登录、链接申请和二进制上传超时毫秒数。
+        /// </summary>
+        public int ImageUploadTimeoutMilliseconds
+        {
+            get => _imageUploadTimeoutMilliseconds;
+            set => SetProperty(ref _imageUploadTimeoutMilliseconds, value);
+        }
+
+        /// <summary>
+        /// 回传场地编码。
         /// </summary>
         public string SiteCode
         {
             get => _siteCode;
             set => SetProperty(ref _siteCode, value);
-        }
-
-        /// <summary>
-        /// 旧版小件回传交叉带 MAC 地址。
-        /// </summary>
-        public string CrossBeltMac
-        {
-            get => _crossBeltMac;
-            set => SetProperty(ref _crossBeltMac, value);
-        }
-
-        /// <summary>
-        /// 旧版小件回传供件台 MAC 地址。
-        /// </summary>
-        public string SupplyDeskMac
-        {
-            get => _supplyDeskMac;
-            set => SetProperty(ref _supplyDeskMac, value);
         }
 
         /// <summary>

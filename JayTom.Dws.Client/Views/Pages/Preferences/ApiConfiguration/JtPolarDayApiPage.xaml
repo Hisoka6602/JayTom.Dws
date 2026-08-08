@@ -136,16 +136,16 @@
                     </Border>
                 </StackPanel>
 
-                <!--  新版接口 AppKey、AppSecret。  -->
+                <!--  统一接口 AppKey、AppSecret。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="新版AppKey:" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="AppKey:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
                             Width="220"
                             Style="{StaticResource ParameterTextBoxStyle}"
                             Text="{Binding PolarDayApiInfo.AppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="新版AppSecret:" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="AppSecret:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
                             Width="220"
@@ -154,202 +154,76 @@
                     </Border>
                 </StackPanel>
 
-                <!--  回传协议仅控制分拣数据回传，其他极昼接口始终使用新版。  -->
-                <StackPanel Margin="50,8,0,0" Orientation="Horizontal">
-                    <TextBlock
-                        Style="{StaticResource ParameterLabelStyle}"
-                        Text="数据回传协议:" />
-                    <RadioButton
-                        Margin="8,0,18,0"
-                        VerticalAlignment="Center"
-                        Content="新版回传（默认）"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        GroupName="PolarDayUploadProtocol"
-                        IsChecked="{Binding PolarDayApiInfo.UseCurrentUpload, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Template="{StaticResource CustomRadioButtonTemplate}" />
-                    <RadioButton
-                        VerticalAlignment="Center"
-                        Content="旧版小件回传（兼容）"
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        GroupName="PolarDayUploadProtocol"
-                        IsChecked="{Binding PolarDayApiInfo.UseLegacyUpload, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        Template="{StaticResource CustomRadioButtonTemplate}" />
+                <!--  极昼图片服务使用文档规定的独立 OPA 登录参数。  -->
+                <StackPanel Margin="50,4,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片服务地址:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="280"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageServiceBaseUrl, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片账号:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="150"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageAccount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片密码:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="140"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImagePassword, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
                 </StackPanel>
+
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片 AppKey:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="170"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageAppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片 AppSecret:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="170"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageAppSecret, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="扫描类型:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="55"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageScanType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片超时:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="70"
+                            materialDesign:HintAssist.Hint="ms"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageUploadTimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
+                <TextBlock
+                    Margin="55,0,0,5"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="DarkGray"
+                    Text="图片账号、密码、AppKey、AppSecret 全部填写后启用；图片直接使用存图阶段已经生成的水印。" />
+
                 <TextBlock
                     Margin="55,4,0,5"
                     FontSize="12"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="该选项仅切换自动分拣数据回传；目标格口查询等接口始终使用新版。" />
-
-                <!--  旧版小件回传专属参数。  -->
-                <StackPanel Margin="0,0,0,5">
-                    <StackPanel.Style>
-                        <Style TargetType="{x:Type StackPanel}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger
-                                    Binding="{Binding PolarDayApiInfo.UseLegacyUpload}"
-                                    Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-
-                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                        <TextBlock
-                            Style="{StaticResource ParameterLabelStyle}"
-                            Text="旧版回传地址:" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="500"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                                Text="{Binding PolarDayApiInfo.LegacyUploadUrl, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                    </StackPanel>
-
-                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                        <TextBlock
-                            Style="{StaticResource ParameterLabelStyle}"
-                            Text="旧版AppKey:" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="220"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                                Text="{Binding PolarDayApiInfo.LegacyAppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Style="{StaticResource ParameterLabelStyle}"
-                            Text="旧版AppSecret:" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="220"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                                Text="{Binding PolarDayApiInfo.LegacyAppSecret, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                    </StackPanel>
-                    <TextBlock
-                        Margin="55,2,0,0"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="旧版凭证仅用于小件回传；正式与测试环境的 AppKey/AppSecret 不可混用。" />
-
-                    <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
-                        <TextBlock
-                            Style="{StaticResource ParameterLabelStyle}"
-                            Text="交叉带MAC:" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="170"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                                Text="{Binding PolarDayApiInfo.CrossBeltMac, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock
-                            Style="{StaticResource ParameterLabelStyle}"
-                            Text="供件台MAC:" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="170"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                            Text="{Binding PolarDayApiInfo.SupplyDeskMac, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                    </StackPanel>
-                    <TextBlock
-                        Margin="55,2,0,0"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="请填写真实交叉带及供件台 MAC；旧版操作类型仅支持：1出港、2进港。" />
-
-                    <!--  旧版真实回传测试。  -->
-                    <StackPanel Margin="50,12,0,0" Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="测试运单号:" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="280"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                                Text="{Binding LegacyTestBarcode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="重量(kg):" />
-                        <Border Style="{StaticResource ParameterContainerStyle}">
-                            <TextBox
-                                Width="100"
-                                Style="{StaticResource ParameterTextBoxStyle}"
-                                Text="{Binding LegacyTestWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                        <Button
-                            MinWidth="120"
-                            MinHeight="30"
-                            Margin="10,0"
-                            materialDesign:ButtonAssist.CornerRadius="5"
-                            Background="#2E2E2E"
-                            BorderThickness="0"
-                            Command="{Binding LegacyTestUploadCommand}"
-                            FocusVisualStyle="{x:Null}"
-                            Style="{StaticResource MaterialDesignFlatAccentBgButton}">
-                            <Grid>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource IconFontFamily}"
-                                        FontSize="18"
-                                        Foreground="DarkGray"
-                                        Text="&#xe6d4;" />
-                                    <TextBlock
-                                        Margin="2,1,0,0"
-                                        VerticalAlignment="Center"
-                                        FontFamily="{StaticResource CustomFontFamily}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Foreground="DarkGray"
-                                        Text="测试回传" />
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsLegacyTesting}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                </StackPanel>
-                                <ProgressBar
-                                    Width="25"
-                                    Height="25"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    IsIndeterminate="True"
-                                    Value="0">
-                                    <ProgressBar.Style>
-                                        <Style
-                                            BasedOn="{StaticResource MaterialDesignCircularProgressBar}"
-                                            TargetType="ProgressBar">
-                                            <Setter Property="Visibility" Value="Hidden" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsLegacyTesting}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ProgressBar.Style>
-                                </ProgressBar>
-                            </Grid>
-                        </Button>
-                    </StackPanel>
-                    <TextBlock
-                        Margin="55,3,0,0"
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Foreground="DarkGray"
-                        Text="测试会向当前旧版地址提交真实记录，重量必须大于 0；测试小车号和格口号为 1，格口编码为 111。" />
-                </StackPanel>
+                    Text="切换极昼新旧环境时只修改服务地址；本地兼容服务与极兔官方使用相同调用路径。" />
 
                 <!--  设备编号、分拣计划。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">

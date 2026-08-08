@@ -9,8 +9,6 @@ using Prism.Commands;
 using Prism.Services.Dialogs;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,11 +44,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private int _uploadingGate;
 
         /// <summary>
-        /// 旧版回传测试并发门闩。
-        /// </summary>
-        private int _legacyTestingGate;
-
-        /// <summary>
         /// 当前配置模型。
         /// </summary>
         private JtPolarDayApiModel _polarDayApiInfo = new();
@@ -71,11 +64,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             _httpClientFactory = httpClientFactory;
             _dialogService = dialogService;
             UploadCommand = new DelegateCommand(UploadDelegate);
-            LegacyTestUploadCommand =
-                new DelegateCommand(
-                    () => _ = LegacyTestUploadAsync());
-            _polarDayApiInfo.PropertyChanged +=
-                PolarDayApiInfoPropertyChanged;
             RefreshOperateTypeItems();
         }
 
@@ -92,14 +80,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     return;
                 }
 
-                _polarDayApiInfo.PropertyChanged -=
-                    PolarDayApiInfoPropertyChanged;
-                if (SetProperty(ref _polarDayApiInfo, value))
-                {
-                    _polarDayApiInfo.PropertyChanged +=
-                        PolarDayApiInfoPropertyChanged;
-                    RefreshOperateTypeItems();
-                }
+                SetProperty(ref _polarDayApiInfo, value);
             }
         }
 
@@ -162,15 +143,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         }
 
         /// <summary>
-        /// 是否正在执行旧版测试回传。
-        /// </summary>
-        public bool IsLegacyTesting
-        {
-            get;
-            private set => SetProperty(ref field, value);
-        }
-
-        /// <summary>
         /// 测试条码。
         /// </summary>
         public string Barcode
@@ -189,32 +161,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         }
 
         /// <summary>
-        /// 旧版回传测试运单号。
-        /// </summary>
-        public string LegacyTestBarcode
-        {
-            get;
-            set => SetProperty(ref field, value);
-        } = string.Empty;
-
-        /// <summary>
-        /// 旧版回传测试重量，单位千克。
-        /// </summary>
-        public decimal LegacyTestWeight
-        {
-            get;
-            set => SetProperty(ref field, value);
-        } = 1m;
-
-        /// <summary>
         /// 执行目标格口查询测试的命令。
         /// </summary>
         public ICommand UploadCommand { get; }
-
-        /// <summary>
-        /// 执行旧版小件测试回传的命令。
-        /// </summary>
-        public ICommand LegacyTestUploadCommand { get; }
 
         /// <summary>
         /// 对话框标识。
@@ -248,17 +197,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     settings.BaseUrl),
                 AppKey = settings.AppKey,
                 AppSecret = settings.AppSecret,
-                UseLegacyUpload = settings.UseLegacyUpload,
-                LegacyUploadUrl = JtPolarDayApi
-                    .NormalizeLegacyProductionUrl(
-                        settings.LegacyUploadUrl),
-                LegacyAppKey = settings.LegacyAppKey,
-                LegacyAppSecret = settings.LegacyAppSecret,
+                ImageServiceBaseUrl = DefaultIfBlank(
+                    settings.ImageServiceBaseUrl,
+                    JtPolarDayApi.DefaultImageServiceBaseUrl),
+                ImageAccount = settings.ImageAccount,
+                ImagePassword = settings.ImagePassword,
+                ImageAppKey = settings.ImageAppKey,
+                ImageAppSecret = settings.ImageAppSecret,
+                ImageScanType = settings.ImageScanType,
+                ImageUploadTimeoutMilliseconds =
+                    settings.ImageUploadTimeoutMilliseconds,
                 SiteCode = DefaultIfBlank(
                     settings.SiteCode,
                     JtPolarDayApi.DefaultSiteCode),
-                CrossBeltMac = settings.CrossBeltMac,
-                SupplyDeskMac = settings.SupplyDeskMac,
                 EquipmentCode = DefaultIfBlank(
                     settings.EquipmentCode,
                     JtPolarDayApi.DefaultEquipmentCode),
@@ -301,14 +252,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 BaseUrl = PolarDayApiInfo.BaseUrl,
                 AppKey = PolarDayApiInfo.AppKey,
                 AppSecret = PolarDayApiInfo.AppSecret,
-                UseLegacyUpload = PolarDayApiInfo.UseLegacyUpload,
-                LegacyUploadUrl = PolarDayApiInfo.LegacyUploadUrl,
-                LegacyAppKey = PolarDayApiInfo.LegacyAppKey,
-                LegacyAppSecret = PolarDayApiInfo.LegacyAppSecret,
+                ImageServiceBaseUrl =
+                    PolarDayApiInfo.ImageServiceBaseUrl,
+                ImageAccount = PolarDayApiInfo.ImageAccount,
+                ImagePassword = PolarDayApiInfo.ImagePassword,
+                ImageAppKey = PolarDayApiInfo.ImageAppKey,
+                ImageAppSecret = PolarDayApiInfo.ImageAppSecret,
+                ImageScanType = PolarDayApiInfo.ImageScanType,
+                ImageUploadTimeoutMilliseconds =
+                    PolarDayApiInfo.ImageUploadTimeoutMilliseconds,
                 SiteCode = PolarDayApiInfo.SiteCode,
                 NetworkCode = PolarDayApiInfo.SiteCode,
-                CrossBeltMac = PolarDayApiInfo.CrossBeltMac,
-                SupplyDeskMac = PolarDayApiInfo.SupplyDeskMac,
                 EquipmentCode = PolarDayApiInfo.EquipmentCode,
                 SortingPlanCode = PolarDayApiInfo.SortingPlanCode,
                 OperateType = PolarDayApiInfo.OperateType,
@@ -409,73 +363,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         }
 
         /// <summary>
-        /// 使用页面中的即时配置执行一次旧版小件真实回传。
-        /// </summary>
-        private async Task LegacyTestUploadAsync()
-        {
-            if (Interlocked.CompareExchange(
-                    ref _legacyTestingGate,
-                    1,
-                    0) != 0)
-            {
-                return;
-            }
-
-            IsLegacyTesting = true;
-            try
-            {
-                if (!PolarDayApiInfo.UseLegacyUpload)
-                {
-                    MessageQueue.Enqueue("请先选择旧版小件回传");
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(LegacyTestBarcode))
-                {
-                    MessageQueue.Enqueue("请输入旧版测试运单号");
-                    return;
-                }
-
-                if (LegacyTestWeight <= 0)
-                {
-                    MessageQueue.Enqueue("旧版测试重量必须大于零");
-                    return;
-                }
-
-                var polarDayApi =
-                    new JtPolarDayApi(_httpClientFactory);
-                var parameterResult = await polarDayApi.SetParameters(
-                    CreateApiParameter());
-                if (!parameterResult.Key)
-                {
-                    MessageQueue.Enqueue(parameterResult.Value);
-                    return;
-                }
-
-                var uploadResponse = await polarDayApi
-                    .TestLegacySmallItemUploadAsync(
-                        LegacyTestBarcode.Trim(),
-                        LegacyTestWeight);
-                _dialogService.ShowDialog(
-                    "ApiTestDialog",
-                    new DialogParameters {
-                        { "UploadResponse", uploadResponse }
-                    },
-                    null);
-            }
-            catch (Exception exception)
-            {
-                MessageQueue.Enqueue(
-                    $"极昼旧版测试回传失败：{exception.Message}");
-            }
-            finally
-            {
-                IsLegacyTesting = false;
-                Volatile.Write(ref _legacyTestingGate, 0);
-            }
-        }
-
-        /// <summary>
         /// 根据页面当前输入创建极昼接口参数。
         /// </summary>
         /// <returns>极昼接口参数。</returns>
@@ -486,13 +373,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 BaseUrl = PolarDayApiInfo.BaseUrl,
                 AppKey = PolarDayApiInfo.AppKey,
                 AppSecret = PolarDayApiInfo.AppSecret,
-                UseLegacyUpload = PolarDayApiInfo.UseLegacyUpload,
-                LegacyUploadUrl = PolarDayApiInfo.LegacyUploadUrl,
-                LegacyAppKey = PolarDayApiInfo.LegacyAppKey,
-                LegacyAppSecret = PolarDayApiInfo.LegacyAppSecret,
+                ImageServiceBaseUrl =
+                    PolarDayApiInfo.ImageServiceBaseUrl,
+                ImageAccount = PolarDayApiInfo.ImageAccount,
+                ImagePassword = PolarDayApiInfo.ImagePassword,
+                ImageAppKey = PolarDayApiInfo.ImageAppKey,
+                ImageAppSecret = PolarDayApiInfo.ImageAppSecret,
+                ImageScanType = PolarDayApiInfo.ImageScanType,
+                ImageUploadTimeoutMilliseconds =
+                    PolarDayApiInfo.ImageUploadTimeoutMilliseconds,
                 SiteCode = PolarDayApiInfo.SiteCode,
-                CrossBeltMac = PolarDayApiInfo.CrossBeltMac,
-                SupplyDeskMac = PolarDayApiInfo.SupplyDeskMac,
                 EquipmentCode = PolarDayApiInfo.EquipmentCode,
                 SortingPlanCode = PolarDayApiInfo.SortingPlanCode,
                 OperateType = PolarDayApiInfo.OperateType,
@@ -521,63 +411,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         }
 
         /// <summary>
-        /// 配置模型属性变化时同步协议相关选项。
-        /// </summary>
-        private void PolarDayApiInfoPropertyChanged(
-            object? sender,
-            PropertyChangedEventArgs eventArgs)
-        {
-            if (eventArgs.PropertyName ==
-                nameof(JtPolarDayApiModel.UseLegacyUpload))
-            {
-                RefreshOperateTypeItems();
-            }
-        }
-
-        /// <summary>
-        /// 根据新旧回传协议刷新可选操作类型。
+        /// 初始化极昼支持的操作类型。
         /// </summary>
         private void RefreshOperateTypeItems()
         {
-            if (OperateTypeItems.Count == 0)
+            if (OperateTypeItems.Count > 0)
             {
-                OperateTypeItems.Add(
-                    new IntegerItemModel {
-                        Name = "1：出港",
-                        Value = 1
-                    });
-                OperateTypeItems.Add(
-                    new IntegerItemModel {
-                        Name = "2：进港",
-                        Value = 2
-                    });
-            }
-
-            var combinedType = OperateTypeItems
-                .FirstOrDefault(item => item.Value == 3);
-            if (PolarDayApiInfo.UseLegacyUpload)
-            {
-                if (PolarDayApiInfo.OperateType == 3)
-                {
-                    PolarDayApiInfo.OperateType = 1;
-                }
-
-                if (combinedType is not null)
-                {
-                    OperateTypeItems.Remove(combinedType);
-                }
-
                 return;
             }
 
-            if (combinedType is null)
-            {
-                OperateTypeItems.Add(
-                    new IntegerItemModel {
-                        Name = "3：进出港",
-                        Value = 3
-                    });
-            }
+            OperateTypeItems.Add(
+                new IntegerItemModel { Name = "1：出港", Value = 1 });
+            OperateTypeItems.Add(
+                new IntegerItemModel { Name = "2：进港", Value = 2 });
+            OperateTypeItems.Add(
+                new IntegerItemModel { Name = "3：进出港", Value = 3 });
         }
 
         /// <summary>

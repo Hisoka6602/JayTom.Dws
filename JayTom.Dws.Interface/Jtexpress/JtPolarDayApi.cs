@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using NLog;
 
@@ -45,18 +47,15 @@ namespace JayTom.Dws.Interface.Jtexpress {
             "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
 
         /// <summary>
-        /// 旧版小件回传正式地址。
+        /// 极昼扫描图片服务正式地址。
         /// </summary>
-        public const string LegacySmallItemProductionUrl =
-            "https://assscan.jtexpress.com.cn/assscanface/face/" +
-            "assScanSmallUpper/smallUpperDataUpload";
+        public const string DefaultImageServiceBaseUrl =
+            "https://opa.jtexpress.com.cn";
 
         /// <summary>
-        /// 旧版小件回传测试地址。
+        /// 图片默认关联出仓扫描。
         /// </summary>
-        public const string LegacySmallItemTestUrl =
-            "https://uat-assscan.jtexpress.com.cn/assscanface/face/" +
-            "assScanSmallUpper/smallUpperDataUpload";
+        public const int DefaultImageScanType = 104;
 
         /// <summary>
         /// 默认场地编码。
@@ -98,9 +97,24 @@ namespace JayTom.Dws.Interface.Jtexpress {
         private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>
+        /// 图片服务登录互斥锁，避免并发重复刷新 Token。
+        /// </summary>
+        private readonly SemaphoreSlim _imageLoginGate = new(1, 1);
+
+        /// <summary>
         /// 当前参数快照。
         /// </summary>
         private ApiParameter _parameters = new();
+
+        /// <summary>
+        /// 当前图片服务登录信息。
+        /// </summary>
+        private string _imageAuthToken = string.Empty;
+
+        /// <summary>
+        /// 图片服务 Token 获取时间的 Unix 毫秒时间戳。
+        /// </summary>
+        private long _imageLoginTimestamp;
 
         /// <summary>
         /// 初始化极昼接口。
@@ -188,43 +202,14 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     new KeyValuePair<bool, string>(false, validationMessage));
             }
 
-            Interlocked.Exchange(ref _parameters, parameter.Clone());
+            var snapshot = parameter.Clone();
+            var previous = Interlocked.Exchange(ref _parameters, snapshot);
+            if (!HasSameImageLoginSettings(previous, snapshot)) {
+                Interlocked.Exchange(ref _imageAuthToken, string.Empty);
+                Interlocked.Exchange(ref _imageLoginTimestamp, 0);
+            }
             return Task.FromResult(
                 new KeyValuePair<bool, string>(true, string.Empty));
-        }
-
-        /// <summary>
-        /// 使用当前旧版配置回传一条测试运单。
-        /// </summary>
-        /// <param name="barcode">测试运单号。</param>
-        /// <param name="weight">测试重量，单位千克。</param>
-        /// <param name="token">取消令牌。</param>
-        /// <returns>包含请求和响应详情的测试结果。</returns>
-        public Task<UploadResponse> TestLegacySmallItemUploadAsync(
-            string barcode,
-            decimal weight,
-            CancellationToken token = default) {
-            ArgumentException.ThrowIfNullOrWhiteSpace(barcode);
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(weight);
-            var parameters = Volatile.Read(ref _parameters);
-            var now = DateTime.Now;
-            var context = new UploadContext {
-                CarNum = "1",
-                GridNo = "1",
-                GridCode = "111",
-                CyclesNum = 0,
-                FallTime = now
-            };
-            return SendLegacySmallItemAsync(
-                barcode.Trim(),
-                weight,
-                0,
-                0,
-                0,
-                now,
-                context,
-                parameters,
-                token);
         }
 
         /// <summary>
@@ -256,19 +241,18 @@ namespace JayTom.Dws.Interface.Jtexpress {
             CancellationToken token) {
             var context = other as UploadContext ?? new UploadContext();
             var parameters = Volatile.Read(ref _parameters);
-            if (parameters.UseLegacyUpload) {
-                await UploadLegacySmallItemAsync(
+            var imagePath = EmptyToNull(context.HalfPath);
+            if (imageInfo?.Image is { } image &&
+                HasCompleteImageUploadConfiguration(parameters)) {
+                var imageContent =
+                    JtPolarDayScanImageProcessor.CreateUploadContent(image);
+                imagePath = await UploadScanImageAsync(
                         barcode,
-                        weight,
-                        length,
-                        width,
-                        height,
                         scanTime,
-                        context,
+                        imageContent,
                         parameters,
                         token)
                     .ConfigureAwait(false);
-                return;
             }
 
             var scanRequest = CreateRequest(
@@ -277,7 +261,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 weight,
                 scanTime,
                 imageInfo,
-                context);
+                context,
+                imagePath);
             var scanResponse = await UploadDeviceInfoAsync(scanRequest, token)
                 .ConfigureAwait(false);
             if (scanResponse.IsSuccess) {
@@ -286,21 +271,23 @@ namespace JayTom.Dws.Interface.Jtexpress {
             else {
                 Logger.Error(
                     $"极昼小件扫码上报失败:{barcode},{scanResponse.ExceptionMsg}");
+                throw new InvalidOperationException(
+                    $"极昼小件扫码上报失败:{scanResponse.ExceptionMsg}");
             }
 
             if (string.IsNullOrWhiteSpace(context.CarNum) ||
                 string.IsNullOrWhiteSpace(context.GridNo) ||
                 string.IsNullOrWhiteSpace(context.GridCode)) {
-                Logger.Error("极昼小件落格上报缺少小车号、格口或格口分类码");
-                return;
+                throw new InvalidOperationException(
+                    "极昼小件落格上报缺少小车号、格口或格口分类码");
             }
 
             if (context.CyclesNum < 0 ||
                 context.OverAreaNum < 0 ||
                 context.FallArea is <= 0 ||
                 !IsValidChuteModel(context.ChuteModel)) {
-                Logger.Error("极昼小件落格上报的圈数、超区数、落格区域或落格模式无效");
-                return;
+                throw new InvalidOperationException(
+                    "极昼小件落格上报的圈数、超区数、落格区域或落格模式无效");
             }
 
             var request = CreateRequest(
@@ -309,7 +296,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 weight,
                 scanTime,
                 imageInfo,
-                context);
+                context,
+                imagePath);
             var response = await UploadDeviceInfoAsync(request, token)
                 .ConfigureAwait(false);
             if (response.IsSuccess) {
@@ -318,133 +306,9 @@ namespace JayTom.Dws.Interface.Jtexpress {
             else {
                 Logger.Error(
                     $"极昼落格上报失败:{barcode},{context.GridNo},{response.ExceptionMsg}");
+                throw new InvalidOperationException(
+                    $"极昼落格上报失败:{response.ExceptionMsg}");
             }
-        }
-
-        /// <summary>
-        /// 按旧版小件协议回传一条完整分拣记录。
-        /// </summary>
-        private async Task UploadLegacySmallItemAsync(
-            string barcode,
-            decimal weight,
-            decimal length,
-            decimal width,
-            decimal height,
-            DateTime scanTime,
-            UploadContext context,
-            ApiParameter parameters,
-            CancellationToken token) {
-            if (string.IsNullOrWhiteSpace(context.CarNum) ||
-                string.IsNullOrWhiteSpace(context.GridNo) ||
-                string.IsNullOrWhiteSpace(context.GridCode)) {
-                Logger.Error("极昼旧版小件回传缺少小车号、格口或格口分类码");
-                return;
-            }
-
-            if (context.CyclesNum < 0) {
-                Logger.Error("极昼旧版小件回传的循环圈数不能小于零");
-                return;
-            }
-
-            var response = await SendLegacySmallItemAsync(
-                    barcode,
-                    weight,
-                    length,
-                    width,
-                    height,
-                    scanTime,
-                    context,
-                    parameters,
-                    token)
-                .ConfigureAwait(false);
-            if (response.IsSuccess) {
-                Logger.Info(
-                    $"极昼旧版小件回传成功:{barcode},{context.GridNo}");
-            }
-            else {
-                Logger.Error(
-                    $"极昼旧版小件回传失败:{barcode},{context.GridNo}," +
-                    response.ExceptionMsg);
-            }
-        }
-
-        /// <summary>
-        /// 发送一条旧版小件回传请求并返回完整结果。
-        /// </summary>
-        private Task<UploadResponse> SendLegacySmallItemAsync(
-            string barcode,
-            decimal weight,
-            decimal length,
-            decimal width,
-            decimal height,
-            DateTime scanTime,
-            UploadContext context,
-            ApiParameter parameters,
-            CancellationToken token) {
-            var request = CreateLegacySmallItemRequest(
-                barcode,
-                weight,
-                length,
-                width,
-                height,
-                scanTime,
-                context,
-                parameters);
-            return ExecuteRequestAsync(
-                string.Empty,
-                new[] { request },
-                parameters,
-                parameters.TimeoutMilliseconds,
-                EvaluateLegacyUploadResponse,
-                token,
-                parameters.LegacyUploadUrl,
-                true);
-        }
-
-        /// <summary>
-        /// 创建旧版小件回传报文。
-        /// </summary>
-        private static LegacySmallItemRequest CreateLegacySmallItemRequest(
-            string barcode,
-            decimal weight,
-            decimal length,
-            decimal width,
-            decimal height,
-            DateTime scanTime,
-            UploadContext context,
-            ApiParameter parameters) {
-            var uploadTime = DateTime.Now;
-            return new LegacySmallItemRequest {
-                WaybillNo = NormalizeBarcode(barcode),
-                // 旧协议字段名为 networkCode，业务含义实际是场地编码。
-                NetworkCode = parameters.SiteCode,
-                ScanTime = scanTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                UserNum = parameters.Operator,
-                Weight = PositiveMeasurementOrNull(weight),
-                Length = PositiveMeasurementOrNull(length),
-                Wide = PositiveMeasurementOrNull(width),
-                High = PositiveMeasurementOrNull(height),
-                UploadResult = IsNoReadBarcode(barcode) ? 2 : 1,
-                CrossBeltMac = parameters.CrossBeltMac,
-                SupplyDeskCode = parameters.SupplyDeskCode,
-                SupplyDeskMac = parameters.SupplyDeskMac,
-                UploadTime = uploadTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                SortingPlanCode = parameters.SortingPlanCode,
-                OperateType = parameters.OperateType,
-                EquipmentCode = parameters.EquipmentCode,
-                EquipmentLayer = parameters.EquipmentLayer,
-                GridNo = context.GridNo,
-                PackageNo = EmptyToNull(context.PackageNo),
-                FallTime = (context.FallTime ?? uploadTime)
-                    .ToString("yyyy-MM-dd HH:mm:ss"),
-                NextStation = EmptyToNull(context.NextStation),
-                CyclesNum = RoundMeasurement(context.CyclesNum),
-                CarNum = context.CarNum,
-                GridCode = context.GridCode,
-                Rfid = EmptyToNull(context.Rfid),
-                ThirdCode = EmptyToNull(context.ThirdCode),
-                BagUserCode = EmptyToNull(context.BagUserCode)
-            };
         }
 
         /// <summary>
@@ -483,7 +347,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
             decimal weight,
             DateTime scanTime,
             UploadImageInfo? imageInfo,
-            UploadContext context) {
+            UploadContext context,
+            string? imagePath) {
             var parameters = Volatile.Read(ref _parameters);
             var isPackageEvent = eventType == PackageEventType;
             return new DeviceInfoRequest {
@@ -510,7 +375,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 Weight = RoundMeasurement(weight),
                 WeightSource = parameters.WeightSource,
                 SortingPlanCode = parameters.SortingPlanCode,
-                HalfPath = EmptyToNull(context.HalfPath),
+                HalfPath = EmptyToNull(imagePath) ??
+                           EmptyToNull(context.HalfPath),
                 LandOnCarTime = isPackageEvent
                     ? (context.LandOnCarTime ?? scanTime)
                     .ToString("yyyy-MM-dd HH:mm:ss.fff")
@@ -583,6 +449,327 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
+        /// 申请极昼图片上传链接、上传图片并返回短链接。
+        /// </summary>
+        private async Task<string> UploadScanImageAsync(
+            string barcode,
+            DateTime scanTime,
+            byte[] imageContent,
+            ApiParameter parameters,
+            CancellationToken token) {
+            if (imageContent.Length >
+                JtPolarDayScanImageProcessor.MaxImageSizeBytes) {
+                throw new InvalidOperationException(
+                    "极昼扫描图片超过接口允许的最大大小");
+            }
+
+            var authToken = await EnsureImageLoggedInAsync(
+                    parameters,
+                    token)
+                .ConfigureAwait(false);
+            var requestData = new[] {
+                new {
+                    size = imageContent.Length,
+                    fileName = CreateImageFileName(
+                        barcode,
+                        scanTime,
+                        parameters.ImageScanType),
+                    scanType = parameters.ImageScanType,
+                    waybillNo = NormalizeBarcode(barcode)
+                }
+            };
+            var responseContent = await PostImageServiceJsonAsync(
+                    CombineUrl(
+                        parameters.ImageServiceBaseUrl,
+                        "/opa/smart/scan/getUploadUrl"),
+                    requestData,
+                    parameters.ImageUploadTimeoutMilliseconds,
+                    authToken,
+                    token)
+                .ConfigureAwait(false);
+            var response = ParseSuccessfulOpaResponse(
+                responseContent,
+                "获取极昼图片上传链接失败");
+            var data = GetOpaData(response);
+            var link = data is JsonArray array
+                ? array.FirstOrDefault() as JsonObject
+                : data as JsonObject;
+            var uploadUrl = GetJsonString(link, "uploadUrl");
+            var shortUrl = GetJsonString(link, "shortUrl");
+            var contentType = GetJsonString(link, "contentType");
+            if (string.IsNullOrWhiteSpace(uploadUrl) ||
+                string.IsNullOrWhiteSpace(shortUrl) ||
+                string.IsNullOrWhiteSpace(contentType)) {
+                throw new InvalidOperationException(
+                    "极昼图片上传链接响应缺少 uploadUrl、shortUrl 或 contentType");
+            }
+
+            await PutImageContentAsync(
+                    uploadUrl,
+                    contentType,
+                    imageContent,
+                    parameters.ImageUploadTimeoutMilliseconds,
+                    token)
+                .ConfigureAwait(false);
+            return shortUrl;
+        }
+
+        /// <summary>
+        /// 获取有效的极昼图片服务登录 Token。
+        /// </summary>
+        private async Task<string> EnsureImageLoggedInAsync(
+            ApiParameter parameters,
+            CancellationToken token) {
+            var currentToken = Volatile.Read(ref _imageAuthToken);
+            if (IsImageLoginValid(
+                    currentToken,
+                    Volatile.Read(ref _imageLoginTimestamp))) {
+                return currentToken;
+            }
+
+            var entered = await _imageLoginGate.WaitAsync(
+                    TimeSpan.FromSeconds(30),
+                    token)
+                .ConfigureAwait(false);
+            if (!entered) {
+                throw new TimeoutException("等待极昼图片服务登录超时");
+            }
+
+            try {
+                currentToken = Volatile.Read(ref _imageAuthToken);
+                if (IsImageLoginValid(
+                        currentToken,
+                        Volatile.Read(ref _imageLoginTimestamp))) {
+                    return currentToken;
+                }
+
+                // DWS-HEX-COMPACT: 极昼 OPA 登录协议要求使用无分隔符的小写 MD5 密码摘要。
+                var passwordHash = Convert.ToHexStringLower(
+                    MD5.HashData(
+                        Encoding.UTF8.GetBytes(parameters.ImagePassword)));
+                var loginRequest = new {
+                    account = parameters.ImageAccount,
+                    password = passwordHash,
+                    appKey = parameters.ImageAppKey,
+                    appSecret = parameters.ImageAppSecret
+                };
+                var responseContent = await PostImageServiceJsonAsync(
+                        CombineUrl(
+                            parameters.ImageServiceBaseUrl,
+                            "/opa/smartLogin"),
+                        loginRequest,
+                        parameters.ImageUploadTimeoutMilliseconds,
+                        null,
+                        token)
+                    .ConfigureAwait(false);
+                var response = ParseSuccessfulOpaResponse(
+                    responseContent,
+                    "极昼图片服务登录失败");
+                var loginData = GetOpaData(response) as JsonObject;
+                currentToken = GetJsonString(loginData, "token");
+                if (string.IsNullOrWhiteSpace(currentToken)) {
+                    throw new InvalidOperationException(
+                        "极昼图片服务登录响应缺少 Token");
+                }
+
+                if (!HasSameImageLoginSettings(
+                        Volatile.Read(ref _parameters),
+                        parameters)) {
+                    throw new InvalidOperationException(
+                        "极昼图片服务配置已更新，本次登录结果已丢弃");
+                }
+
+                Interlocked.Exchange(
+                    ref _imageLoginTimestamp,
+                    DateTimeOffset.Now.ToUnixTimeMilliseconds());
+                Interlocked.Exchange(ref _imageAuthToken, currentToken);
+                return currentToken;
+            }
+            finally {
+                _imageLoginGate.Release();
+            }
+        }
+
+        /// <summary>
+        /// 发送极昼图片服务 JSON 请求。
+        /// </summary>
+        private async Task<string> PostImageServiceJsonAsync<TRequest>(
+            string requestUrl,
+            TRequest requestData,
+            int timeoutMilliseconds,
+            string? authToken,
+            CancellationToken token) {
+            var requestBytes = JsonSerializer.SerializeToUtf8Bytes(
+                requestData,
+                JsonOptions);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                requestUrl) {
+                Content = new ByteArrayContent(requestBytes)
+            };
+            request.Content.Headers.ContentType =
+                new MediaTypeHeaderValue("application/json");
+            if (!string.IsNullOrWhiteSpace(authToken)) {
+                request.Content.Headers.TryAddWithoutValidation(
+                    "authToken",
+                    authToken);
+            }
+
+            using var timeoutSource =
+                CancellationTokenSource.CreateLinkedTokenSource(token);
+            timeoutSource.CancelAfter(timeoutMilliseconds);
+            using var client =
+                _httpClientFactory.CreateClient("INSURANCE");
+            using var response = await client.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    timeoutSource.Token)
+                .ConfigureAwait(false);
+            var responseContent = await response.Content
+                .ReadAsStringAsync(timeoutSource.Token)
+                .ConfigureAwait(false);
+            if (response.StatusCode is < HttpStatusCode.OK or
+                >= HttpStatusCode.MultipleChoices) {
+                throw new HttpRequestException(
+                    $"极昼图片服务 HTTP {(int)response.StatusCode}:{responseContent}",
+                    null,
+                    response.StatusCode);
+            }
+
+            return responseContent;
+        }
+
+        /// <summary>
+        /// 将图片二进制内容写入极昼返回的预签名地址。
+        /// </summary>
+        private async Task PutImageContentAsync(
+            string uploadUrl,
+            string contentType,
+            byte[] imageContent,
+            int timeoutMilliseconds,
+            CancellationToken token) {
+            if (!MediaTypeHeaderValue.TryParse(
+                    contentType,
+                    out var mediaTypeHeader)) {
+                throw new InvalidOperationException(
+                    $"极昼返回了无效的图片内容类型:{contentType}");
+            }
+
+            using var timeoutSource =
+                CancellationTokenSource.CreateLinkedTokenSource(token);
+            timeoutSource.CancelAfter(timeoutMilliseconds);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                uploadUrl) {
+                Content = new ByteArrayContent(imageContent)
+            };
+            request.Content.Headers.ContentType = mediaTypeHeader;
+            using var client =
+                _httpClientFactory.CreateClient("INSURANCE");
+            using var response = await client.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    timeoutSource.Token)
+                .ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.OK) {
+                return;
+            }
+
+            var responseContent = await response.Content
+                .ReadAsStringAsync(timeoutSource.Token)
+                .ConfigureAwait(false);
+            throw new HttpRequestException(
+                $"极昼图片上传失败，HTTP {(int)response.StatusCode}:{responseContent}",
+                null,
+                response.StatusCode);
+        }
+
+        /// <summary>
+        /// 创建长度不超过协议限制的唯一 JPEG 文件名。
+        /// </summary>
+        private static string CreateImageFileName(
+            string barcode,
+            DateTime scanTime,
+            int scanType) {
+            var barcodePart = new StringBuilder(32);
+            foreach (var character in barcode) {
+                if (char.IsLetterOrDigit(character) ||
+                    character is '-' or '_') {
+                    barcodePart.Append(character);
+                }
+
+                if (barcodePart.Length == barcodePart.Capacity) {
+                    break;
+                }
+            }
+
+            if (barcodePart.Length == 0) {
+                barcodePart.Append("waybill");
+            }
+
+            return $"{barcodePart}_{scanTime:yyyyMMddHHmmssfff}_{scanType}_{Guid.NewGuid():N}.jpg";
+        }
+
+        /// <summary>
+        /// 解析成功的 OPA 应答，业务失败时抛出明确异常。
+        /// </summary>
+        private static JsonObject ParseSuccessfulOpaResponse(
+            string responseContent,
+            string defaultMessage) {
+            var response = JsonNode.Parse(responseContent) as JsonObject ??
+                           throw new JsonException("极昼图片服务应答不是 JSON 对象");
+            var isSuccess = response["succ"] is JsonValue successValue &&
+                            successValue.TryGetValue<bool>(out var success) &&
+                            success;
+            if (!isSuccess) {
+                throw new InvalidOperationException(
+                    GetJsonString(response, "msg") ?? defaultMessage);
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// 获取 OPA data 节点，兼容对象和 JSON 字符串两种返回格式。
+        /// </summary>
+        private static JsonNode? GetOpaData(JsonObject response) {
+            var data = response["data"];
+            if (data is not JsonValue value ||
+                !value.TryGetValue<string>(out var json) ||
+                string.IsNullOrWhiteSpace(json)) {
+                return data;
+            }
+
+            return JsonNode.Parse(json);
+        }
+
+        /// <summary>
+        /// 安全读取 JSON 字符串字段。
+        /// </summary>
+        private static string? GetJsonString(
+            JsonObject? value,
+            string propertyName) {
+            return value?[propertyName] is JsonValue propertyValue &&
+                   propertyValue.TryGetValue<string>(out var text)
+                ? text
+                : null;
+        }
+
+        /// <summary>
+        /// 判断图片 Token 是否仍在安全有效期内。
+        /// </summary>
+        private static bool IsImageLoginValid(
+            string token,
+            long loginTimestamp) {
+            var elapsedMilliseconds =
+                DateTimeOffset.Now.ToUnixTimeMilliseconds() - loginTimestamp;
+            return !string.IsNullOrWhiteSpace(token) &&
+                   loginTimestamp > 0 &&
+                   elapsedMilliseconds >= 0 &&
+                   elapsedMilliseconds < TimeSpan.FromHours(20).TotalMilliseconds;
+        }
+
+        /// <summary>
         /// 查询运单对应的目标格口。
         /// </summary>
         /// <param name="barcode">运单号。</param>
@@ -629,12 +816,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
             int timeoutMilliseconds,
             Func<string, (bool IsSuccess, string ExceptionMessage,
                 ApiExceptionType ExceptionType)> evaluateResponse,
-            CancellationToken token,
-            string? absoluteUrl = null,
-            bool useLegacyCredentials = false) {
-            var requestUrl = string.IsNullOrWhiteSpace(absoluteUrl)
-                ? CombineUrl(parameters.BaseUrl, relativePath)
-                : absoluteUrl;
+            CancellationToken token) {
+            var requestUrl = CombineUrl(parameters.BaseUrl, relativePath);
             var requestTime = DateTime.Now;
             var requestBytes = JsonSerializer.SerializeToUtf8Bytes(
                 request,
@@ -656,7 +839,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
                             requestBytes,
                             parameters,
                             timeoutMilliseconds,
-                            useLegacyCredentials,
                             token)
                         .ConfigureAwait(false);
                     var evaluation = evaluateResponse(responseContent);
@@ -741,170 +923,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
-        /// 判定旧版小件回传响应。
-        /// </summary>
-        private static (bool IsSuccess, string ExceptionMessage,
-            ApiExceptionType ExceptionType) EvaluateLegacyUploadResponse(
-            string responseContent) {
-            if (string.IsNullOrWhiteSpace(responseContent)) {
-                return (
-                    false,
-                    "极昼旧版小件回传响应为空",
-                    ApiExceptionType.ContentParsingException);
-            }
-
-            try {
-                using var document = JsonDocument.Parse(responseContent);
-                var root = document.RootElement;
-                if (root.ValueKind == JsonValueKind.String) {
-                    var text = root.GetString() ?? string.Empty;
-                    return IsLegacySuccessText(text)
-                        ? (true, string.Empty, ApiExceptionType.None)
-                        : (
-                            false,
-                            text,
-                            ApiExceptionType.LogicValidationFailed);
-                }
-
-                if (root.ValueKind != JsonValueKind.Object) {
-                    return (
-                        false,
-                        "极昼旧版小件回传响应格式无效",
-                        ApiExceptionType.ContentParsingException);
-                }
-
-                if (TryGetJsonProperty(root, "fail", out var fail) &&
-                    fail.ValueKind == JsonValueKind.True) {
-                    return (
-                        false,
-                        GetLegacyResponseMessage(root),
-                        ApiExceptionType.LogicValidationFailed);
-                }
-
-                if (TryGetJsonProperty(root, "succ", out var succeeded)) {
-                    var isSuccess = IsLegacySuccessValue(succeeded);
-                    return isSuccess
-                        ? (true, string.Empty, ApiExceptionType.None)
-                        : (
-                            false,
-                            GetLegacyResponseMessage(root),
-                            ApiExceptionType.LogicValidationFailed);
-                }
-
-                if (TryGetJsonProperty(root, "success", out var success) ||
-                    TryGetJsonProperty(root, "result", out success)) {
-                    var isSuccess = IsLegacySuccessValue(success);
-                    return isSuccess
-                        ? (true, string.Empty, ApiExceptionType.None)
-                        : (
-                            false,
-                            GetLegacyResponseMessage(root),
-                            ApiExceptionType.LogicValidationFailed);
-                }
-
-                if (TryGetJsonProperty(root, "code", out var code)) {
-                    var isSuccess = IsLegacySuccessValue(code);
-                    return isSuccess
-                        ? (true, string.Empty, ApiExceptionType.None)
-                        : (
-                            false,
-                            GetLegacyResponseMessage(root),
-                            ApiExceptionType.LogicValidationFailed);
-                }
-
-                var message = GetLegacyResponseMessage(root);
-                if (!string.IsNullOrWhiteSpace(message)) {
-                    return IsLegacySuccessText(message)
-                        ? (true, string.Empty, ApiExceptionType.None)
-                        : (
-                            false,
-                            message,
-                            ApiExceptionType.LogicValidationFailed);
-                }
-
-                return (true, string.Empty, ApiExceptionType.None);
-            }
-            catch (JsonException) {
-                var text = responseContent.Trim();
-                return IsLegacySuccessText(text)
-                    ? (true, string.Empty, ApiExceptionType.None)
-                    : (
-                        false,
-                        text,
-                        ApiExceptionType.ContentParsingException);
-            }
-        }
-
-        /// <summary>
-        /// 判断旧版响应值是否表示成功。
-        /// </summary>
-        private static bool IsLegacySuccessValue(JsonElement value) {
-            if (value.ValueKind is JsonValueKind.True) {
-                return true;
-            }
-
-            if (value.ValueKind is JsonValueKind.Number &&
-                value.TryGetInt32(out var number)) {
-                return number is 0 or 1 or 200;
-            }
-
-            return value.ValueKind == JsonValueKind.String &&
-                   IsLegacySuccessText(value.GetString() ?? string.Empty);
-        }
-
-        /// <summary>
-        /// 判断旧版响应文本是否表示成功。
-        /// </summary>
-        private static bool IsLegacySuccessText(string value) {
-            var normalized = value.Trim();
-            return normalized is "0" or "1" or "200" ||
-                   normalized.Equals(
-                       "success",
-                       StringComparison.OrdinalIgnoreCase) ||
-                   normalized.Equals(
-                       "ok",
-                       StringComparison.OrdinalIgnoreCase) ||
-                   normalized.Contains(
-                       "成功",
-                       StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// 读取旧版响应中的提示信息。
-        /// </summary>
-        private static string GetLegacyResponseMessage(JsonElement root) {
-            if (TryGetJsonProperty(root, "msg", out var message) ||
-                TryGetJsonProperty(root, "message", out message) ||
-                TryGetJsonProperty(root, "errorMsg", out message)) {
-                return message.ValueKind == JsonValueKind.String
-                    ? message.GetString() ?? string.Empty
-                    : message.ToString();
-            }
-
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// 不区分大小写读取 JSON 字段。
-        /// </summary>
-        private static bool TryGetJsonProperty(
-            JsonElement element,
-            string name,
-            out JsonElement value) {
-            foreach (var property in element.EnumerateObject()) {
-                if (property.Name.Equals(
-                        name,
-                        StringComparison.OrdinalIgnoreCase)) {
-                    value = property.Value;
-                    return true;
-                }
-            }
-
-            value = default;
-            return false;
-        }
-
-        /// <summary>
         /// 判定目标格口查询响应。
         /// </summary>
         /// <param name="responseContent">响应正文。</param>
@@ -939,7 +957,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <param name="requestBytes">请求正文。</param>
         /// <param name="parameters">参数快照。</param>
         /// <param name="timeoutMilliseconds">请求超时毫秒数。</param>
-        /// <param name="useLegacyCredentials">是否使用旧版回传凭证。</param>
         /// <param name="token">取消令牌。</param>
         /// <returns>响应正文。</returns>
         private async Task<string> SendAsync(
@@ -947,18 +964,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
             byte[] requestBytes,
             ApiParameter parameters,
             int timeoutMilliseconds,
-            bool useLegacyCredentials,
             CancellationToken token) {
-            var appKey = useLegacyCredentials
-                ? parameters.LegacyAppKey
-                : parameters.AppKey;
-            var appSecret = useLegacyCredentials
-                ? parameters.LegacyAppSecret
-                : parameters.AppSecret;
             var timestamp =
                 DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
             var signature = CreateSignature(
-                appSecret,
+                parameters.AppSecret,
                 timestamp,
                 requestBytes);
             using var request = new HttpRequestMessage(
@@ -972,7 +982,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 signature);
             request.Headers.TryAddWithoutValidation(
                 "appKey",
-                appKey);
+                parameters.AppKey);
             request.Headers.TryAddWithoutValidation(
                 "X-Trace-Id",
                 Guid.NewGuid().ToString());
@@ -1048,53 +1058,28 @@ namespace JayTom.Dws.Interface.Jtexpress {
 
             if (parameters.QueryTimeoutMilliseconds <= 0 ||
                 parameters.TimeoutMilliseconds <= 0 ||
+                parameters.ImageUploadTimeoutMilliseconds <= 0 ||
                 parameters.RetryCount <= 0 ||
                 parameters.RetryIntervalMilliseconds < 0) {
                 return "极昼超时和重试参数无效";
             }
 
-            if (parameters.OperateType is < 1 or > 3) {
-                return "极昼操作类型只能为 1、2 或 3";
+            var imageCredentialCount = CountImageCredentials(parameters);
+            if (imageCredentialCount is > 0 and < 4) {
+                return "极昼图片账号、密码、AppKey 和 AppSecret 必须同时填写";
             }
 
-            if (parameters.UseLegacyUpload) {
-                if (string.IsNullOrWhiteSpace(parameters.LegacyAppKey) ||
-                    string.IsNullOrWhiteSpace(parameters.LegacyAppSecret)) {
-                    return "极昼旧版回传 AppKey 和 AppSecret 不能为空";
-                }
+            if (imageCredentialCount == 4 &&
+                string.IsNullOrWhiteSpace(parameters.ImageServiceBaseUrl)) {
+                return "极昼图片服务地址不能为空";
+            }
 
-                if (parameters.OperateType > 2) {
-                    return "极昼旧版回传的操作类型只能为 1 或 2";
-                }
+            if (parameters.ImageScanType is < 101 or > 107) {
+                return "极昼图片扫描类型只能为 101 到 107";
+            }
 
-                if (!Uri.TryCreate(
-                        parameters.LegacyUploadUrl,
-                        UriKind.Absolute,
-                        out var legacyUploadUri) ||
-                    legacyUploadUri.Scheme is not "http" and not "https") {
-                    return "极昼旧版回传地址无效";
-                }
-
-                if (string.IsNullOrWhiteSpace(parameters.SiteCode) ||
-                    string.IsNullOrWhiteSpace(parameters.CrossBeltMac) ||
-                    string.IsNullOrWhiteSpace(parameters.SupplyDeskMac)) {
-                    return "极昼旧版回传的场地编码、交叉带 MAC 和供件台 MAC 不能为空";
-                }
-
-                if (!IsMacAddress(parameters.CrossBeltMac) ||
-                    !IsMacAddress(parameters.SupplyDeskMac)) {
-                    return "极昼旧版回传 MAC 格式无效，应填写 12 位十六进制 MAC 地址";
-                }
-
-                if (parameters.EquipmentLayer <= 0) {
-                    return "极昼旧版回传的设备层数必须大于零";
-                }
-
-                if (string.IsNullOrWhiteSpace(parameters.SupplyDeskCode)) {
-                    return "极昼旧版回传的供件台编号不能为空";
-                }
-
-                return string.Empty;
+            if (parameters.OperateType is < 1 or > 3) {
+                return "极昼操作类型只能为 1、2 或 3";
             }
 
             if (string.IsNullOrWhiteSpace(parameters.SiteCode)) {
@@ -1143,23 +1128,65 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
-        /// 判断文本是否为常见的 12 位十六进制 MAC 地址。
+        /// 统计已填写的图片服务凭据数量。
         /// </summary>
-        private static bool IsMacAddress(string value) {
-            var hexCount = 0;
-            foreach (var character in value.Trim()) {
-                if (character is ':' or '-' or '.') {
-                    continue;
-                }
-
-                if (!Uri.IsHexDigit(character)) {
-                    return false;
-                }
-
-                hexCount++;
+        private static int CountImageCredentials(ApiParameter parameters) {
+            var count = 0;
+            if (!string.IsNullOrWhiteSpace(parameters.ImageAccount)) {
+                count++;
             }
 
-            return hexCount == 12;
+            if (!string.IsNullOrWhiteSpace(parameters.ImagePassword)) {
+                count++;
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.ImageAppKey)) {
+                count++;
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.ImageAppSecret)) {
+                count++;
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// 判断图片上传所需参数是否完整。
+        /// </summary>
+        private static bool HasCompleteImageUploadConfiguration(
+            ApiParameter parameters) {
+            return CountImageCredentials(parameters) == 4 &&
+                   !string.IsNullOrWhiteSpace(
+                       parameters.ImageServiceBaseUrl);
+        }
+
+        /// <summary>
+        /// 判断两份参数是否使用同一组图片登录信息。
+        /// </summary>
+        private static bool HasSameImageLoginSettings(
+            ApiParameter left,
+            ApiParameter right) {
+            return string.Equals(
+                       left.ImageServiceBaseUrl,
+                       right.ImageServiceBaseUrl,
+                       StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(
+                       left.ImageAccount,
+                       right.ImageAccount,
+                       StringComparison.Ordinal) &&
+                   string.Equals(
+                       left.ImagePassword,
+                       right.ImagePassword,
+                       StringComparison.Ordinal) &&
+                   string.Equals(
+                       left.ImageAppKey,
+                       right.ImageAppKey,
+                       StringComparison.Ordinal) &&
+                   string.Equals(
+                       left.ImageAppSecret,
+                       right.ImageAppSecret,
+                       StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1204,13 +1231,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
-        /// 将有效测量值保留两位小数，否则省略该可选字段。
-        /// </summary>
-        private static decimal? PositiveMeasurementOrNull(decimal value) {
-            return value > 0 ? RoundMeasurement(value) : null;
-        }
-
-        /// <summary>
         /// 将空字符串转换为空值。
         /// </summary>
         /// <param name="value">原始字符串。</param>
@@ -1232,17 +1252,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
-        /// 根据新版服务环境取得默认旧版小件回传地址。
-        /// </summary>
-        public static string GetDefaultLegacyUploadUrl(string baseUrl) {
-            return baseUrl.Contains(
-                "uat",
-                StringComparison.OrdinalIgnoreCase)
-                ? LegacySmallItemTestUrl
-                : LegacySmallItemProductionUrl;
-        }
-
-        /// <summary>
         /// 将空地址或内置测试地址切换为新版正式环境地址。
         /// </summary>
         /// <param name="baseUrl">当前保存的新版服务地址。</param>
@@ -1258,22 +1267,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
-        /// 将空地址或内置测试地址切换为旧版正式回传地址。
-        /// </summary>
-        /// <param name="legacyUploadUrl">当前保存的旧版回传地址。</param>
-        /// <returns>可继续使用的正式或自定义回传地址。</returns>
-        public static string NormalizeLegacyProductionUrl(
-            string? legacyUploadUrl) {
-            return string.IsNullOrWhiteSpace(legacyUploadUrl) ||
-                   string.Equals(
-                       legacyUploadUrl,
-                       LegacySmallItemTestUrl,
-                       StringComparison.OrdinalIgnoreCase)
-                ? LegacySmallItemProductionUrl
-                : legacyUploadUrl;
-        }
-
-        /// <summary>
         /// 创建脱敏参数日志。
         /// </summary>
         /// <param name="parameters">接口参数。</param>
@@ -1284,12 +1277,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 new {
                     parameters.BaseUrl,
                     parameters.AppKey,
-                    parameters.UseLegacyUpload,
-                    parameters.LegacyUploadUrl,
-                    parameters.LegacyAppKey,
+                    parameters.ImageServiceBaseUrl,
+                    parameters.ImageAccount,
+                    parameters.ImageAppKey,
+                    parameters.ImageScanType,
+                    parameters.ImageUploadTimeoutMilliseconds,
                     parameters.SiteCode,
-                    parameters.CrossBeltMac,
-                    parameters.SupplyDeskMac,
                     parameters.EquipmentCode,
                     parameters.SortingPlanCode,
                     parameters.OperateType,
@@ -1335,40 +1328,47 @@ namespace JayTom.Dws.Interface.Jtexpress {
             public string AppSecret { get; set; } = string.Empty;
 
             /// <summary>
-            /// 是否使用旧版小件回传；默认使用新版回传。
+            /// 极昼图片服务基础地址。
             /// </summary>
-            public bool UseLegacyUpload { get; set; }
+            public string ImageServiceBaseUrl { get; set; } =
+                DefaultImageServiceBaseUrl;
 
             /// <summary>
-            /// 旧版小件回传地址。
+            /// 极昼图片服务登录账号。
             /// </summary>
-            public string LegacyUploadUrl { get; set; } =
-                LegacySmallItemProductionUrl;
+            public string ImageAccount { get; set; } = string.Empty;
 
             /// <summary>
-            /// 旧版小件回传应用标识。
+            /// 极昼图片服务登录密码。
             /// </summary>
-            public string LegacyAppKey { get; set; } = string.Empty;
+            public string ImagePassword { get; set; } = string.Empty;
 
             /// <summary>
-            /// 旧版小件回传应用密钥。
+            /// 极昼图片服务应用标识。
             /// </summary>
-            public string LegacyAppSecret { get; set; } = string.Empty;
+            public string ImageAppKey { get; set; } = string.Empty;
 
             /// <summary>
-            /// 新版回传场地编码。
+            /// 极昼图片服务应用密钥。
+            /// </summary>
+            public string ImageAppSecret { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 图片关联的扫描类型。
+            /// </summary>
+            public int ImageScanType { get; set; } =
+                DefaultImageScanType;
+
+            /// <summary>
+            /// 图片登录、链接申请和二进制上传超时毫秒数。
+            /// </summary>
+            public int ImageUploadTimeoutMilliseconds { get; set; } =
+                10000;
+
+            /// <summary>
+            /// 回传场地编码。
             /// </summary>
             public string SiteCode { get; set; } = DefaultSiteCode;
-
-            /// <summary>
-            /// 旧版小件回传交叉带 MAC 地址。
-            /// </summary>
-            public string CrossBeltMac { get; set; } = string.Empty;
-
-            /// <summary>
-            /// 旧版小件回传供件台 MAC 地址。
-            /// </summary>
-            public string SupplyDeskMac { get; set; } = string.Empty;
 
             /// <summary>
             /// 设备编号。
@@ -1481,13 +1481,15 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     BaseUrl = BaseUrl,
                     AppKey = AppKey,
                     AppSecret = AppSecret,
-                    UseLegacyUpload = UseLegacyUpload,
-                    LegacyUploadUrl = LegacyUploadUrl,
-                    LegacyAppKey = LegacyAppKey,
-                    LegacyAppSecret = LegacyAppSecret,
+                    ImageServiceBaseUrl = ImageServiceBaseUrl,
+                    ImageAccount = ImageAccount,
+                    ImagePassword = ImagePassword,
+                    ImageAppKey = ImageAppKey,
+                    ImageAppSecret = ImageAppSecret,
+                    ImageScanType = ImageScanType,
+                    ImageUploadTimeoutMilliseconds =
+                        ImageUploadTimeoutMilliseconds,
                     SiteCode = SiteCode,
-                    CrossBeltMac = CrossBeltMac,
-                    SupplyDeskMac = SupplyDeskMac,
                     EquipmentCode = EquipmentCode,
                     SortingPlanCode = SortingPlanCode,
                     OperateType = OperateType,
@@ -1555,16 +1557,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// RFID 标签。
             /// </summary>
             public string Rfid { get; set; } = string.Empty;
-
-            /// <summary>
-            /// 旧版小件回传使用的格口下一站或目的地。
-            /// </summary>
-            public string NextStation { get; set; } = string.Empty;
-
-            /// <summary>
-            /// 旧版小件回传使用的三段码。
-            /// </summary>
-            public string ThirdCode { get; set; } = string.Empty;
 
             /// <summary>
             /// 落格模式；为空时使用接口配置值。
