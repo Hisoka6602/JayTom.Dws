@@ -17,7 +17,7 @@ namespace JayTom.Dws.Interface {
 
         public async Task<DateTime> GetTime() {
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
                 var resultContent = await httpClient.GetStringAsync("http://worldtimeapi.org/api/ip");
 

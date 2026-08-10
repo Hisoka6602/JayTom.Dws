@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Infrastructure.Repository.LocalData
 {
 
-    public class ImageRepository : LocalRepositoryBase<ImageInfoModel>, IImageRepository {
+    public class ImageRepository : LocalRepositoryBase<ImageInfoModel, SqliteContext>, IImageRepository {
 
         public ImageRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

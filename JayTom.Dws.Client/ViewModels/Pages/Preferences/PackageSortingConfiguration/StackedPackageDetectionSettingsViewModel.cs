@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -129,8 +130,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private StackedPackageDetectionItemInfoModel _stackedPackageDetectionItemInfo = new();
         private bool _isLoaded;
 
-        public StackedPackageDetectionSettingsViewModel(IConfigRepository configRepository,
-            IDeviceService deviceService) : base(configRepository)
+        public StackedPackageDetectionSettingsViewModel(ISettingsStore settingsStore,
+            IDeviceService deviceService) : base(settingsStore)
         {
             _deviceService = deviceService;
         }
@@ -281,11 +282,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 Timeout = StackedPackageDetectionItemInfo.Timeout,
                 IsAutoExceptionSorting = StackedPackageDetectionItemInfo.IsAutoExceptionSorting,
             };
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(stackedPackageDetectionSettingsDto)
-            });
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,stackedPackageDetectionSettingsDto);
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
                 Languages.Language.ResourceManager.GetString("Success") :
                 Languages.Language.ResourceManager.GetString("Failure"))}");
@@ -297,13 +294,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
                     //读配置
 
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(SettingsName) ?? new StackedPackageDetectionSettingsDto();
+                    var settingsDto = await _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>(SettingsName) ?? new StackedPackageDetectionSettingsDto();
 
                     StackedPackageDetectionItemInfo = new StackedPackageDetectionItemInfoModel
                     {

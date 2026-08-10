@@ -775,7 +775,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 content.Headers.Add("authToken", authToken);
             }
 
-            using var client = _httpClientFactory.CreateClient("INSURANCE");
+            using var client = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             using var message = await client.PostAsync(
                     requestUrl,
                     content,

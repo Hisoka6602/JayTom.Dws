@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using Dynamsoft;
 using System.IO;
 using System.Linq;
@@ -19,7 +20,6 @@ using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Windows.Media.Animation;
 using JayTom.Dws.Camera.BarCodeReader;
 
 namespace JayTom.Dws.Camera {
@@ -42,7 +42,10 @@ namespace JayTom.Dws.Camera {
 
         private CancellationTokenSource _stopCancellationTokenSource = new();
         private Task? _frameProcessingTask;
-        private int _isFrameProcessing;
+        /// <summary>通知常驻读码线程已有新帧。</summary>
+        private readonly SemaphoreSlim _frameSignal = new(0, 1);
+        /// <summary>只保留等待处理的最新一帧。</summary>
+        private Bitmap? _pendingFrame;
 
         //图片缩放百分比
         private int _scalePercentage = 0;
@@ -559,7 +562,7 @@ namespace JayTom.Dws.Camera {
                         }
                     }
                     mBarcodeReader.UpdateRuntimeSettings(runtimeSettings);
-                    return new KeyValuePair<bool, string>(false, "读码器设置成功");
+                return new KeyValuePair<bool, string>(true, "读码器设置成功");
                 }
                 else {
                     return new KeyValuePair<bool, string>(false, "运行中不能设置");
@@ -576,7 +579,7 @@ namespace JayTom.Dws.Camera {
         /// <param name="info"></param>
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> BindCamera(UsbCameraInfo info) {
-            await Task.Delay(2000);
+            await Task.Yield();
             NLog.LogManager.GetCurrentClassLogger().Error($"调用绑定");
             var (key, value) = _cameraDictionary.FirstOrDefault(f => f.Key.Equals(info.CameraSerialNumber));
             if (!string.IsNullOrEmpty(key)) {
@@ -610,12 +613,15 @@ namespace JayTom.Dws.Camera {
         /// 开始
         /// </summary>
         public async Task<KeyValuePair<bool, string>> Start() {
-            await Task.Delay(1000);
+            await Task.Yield();
             try {
                 NLog.LogManager.GetCurrentClassLogger().Error($"调用启动");
                 if (_selectCamera is not null && !_isOpend) {
                     //注册事件
                     _stopCancellationTokenSource = new CancellationTokenSource();
+                    _frameProcessingTask = Task.Run(
+                        () => ProcessFramesAsync(_stopCancellationTokenSource.Token),
+                        _stopCancellationTokenSource.Token);
                     _selectCamera.OnFrameCaptrue += SelectCameraOnOnFrameCaptrue;
                     _selectCamera.Open();
                     _isOpend = true;
@@ -628,6 +634,20 @@ namespace JayTom.Dws.Camera {
                 }
             }
             catch (Exception e) {
+                _stopCancellationTokenSource.Cancel();
+                try {
+                    _frameSignal.Release();
+                }
+                catch (SemaphoreFullException) {
+                }
+                if (_frameProcessingTask is not null) {
+                    try {
+                        await _frameProcessingTask.ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) {
+                    }
+                    _frameProcessingTask = null;
+                }
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, string>(false, $"{e}");
             }
@@ -639,23 +659,26 @@ namespace JayTom.Dws.Camera {
         /// <param name="bitmap"></param>
         /// <exception cref="NotImplementedException"></exception>
         private void SelectCameraOnOnFrameCaptrue(Bitmap bitmap) {
-            if (Interlocked.CompareExchange(ref _isFrameProcessing, 1, 0) != 0) {
-                return;
+            var previous = Interlocked.Exchange(ref _pendingFrame, FastClone(bitmap));
+            previous?.Dispose();
+            try {
+                _frameSignal.Release();
             }
+            catch (SemaphoreFullException) {
+            }
+        }
 
-            var fastClone = FastClone(bitmap);
-            Bitmap frame = fastClone;
-            if (_scalePercentage > 0) {
-                var generateThumbnail = GenerateThumbnail(fastClone, (int)(fastClone.Width * ((float)_scalePercentage / 100)),
-                    (int)(fastClone.Height * ((float)_scalePercentage / 100)));
-                if (generateThumbnail is not null) {
-                    frame = generateThumbnail;
-                    fastClone.Dispose();
+        /// <summary>
+        /// 在单个常驻任务中处理最新 USB 帧，避免逐帧创建任务。
+        /// </summary>
+        private async Task ProcessFramesAsync(CancellationToken token) {
+            while (!token.IsCancellationRequested) {
+                await _frameSignal.WaitAsync(token).ConfigureAwait(false);
+                var frame = Interlocked.Exchange(ref _pendingFrame, null);
+                if (frame is not null) {
+                    ReadFromFrame(frame, token);
                 }
             }
-
-            var token = _stopCancellationTokenSource.Token;
-            _frameProcessingTask = Task.Run(() => ReadFromFrame(frame, token));
         }
 
         /// <summary>
@@ -670,12 +693,17 @@ namespace JayTom.Dws.Camera {
                     _framenum = 0;
                     long elapsedMilliseconds = 0;
                     TextResult[]? bars = null;
-                    var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
+                    using var scaledBitmap = _scalePercentage is > 0 and < 100
+                        ? GenerateThumbnail(
+                            bitmap,
+                            Math.Max(1, bitmap.Width * _scalePercentage / 100),
+                            Math.Max(1, bitmap.Height * _scalePercentage / 100))
+                        : null;
+                    var decodeBitmap = scaledBitmap ?? bitmap;
                     if (mBarcodeReader is not null) {
                         var stopwatch = new Stopwatch();
                         stopwatch.Start();
-                        bars = mBarcodeReader?.DecodeBuffer(buffer, bitmap.Width, bitmap.Height, stride, pixelFormat,
-                            "");
+                        bars = DecodeBitmap(mBarcodeReader, decodeBitmap);
                         stopwatch.Stop();
                         elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                     }
@@ -712,9 +740,6 @@ namespace JayTom.Dws.Camera {
                 bitmap.Dispose();
                 NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
             }
-            finally {
-                Volatile.Write(ref _isFrameProcessing, 0);
-            }
         }
 
         /// <summary>
@@ -727,6 +752,11 @@ namespace JayTom.Dws.Camera {
                 if (_selectCamera is not null && _isOpend) {
                     _selectCamera.OnFrameCaptrue -= SelectCameraOnOnFrameCaptrue;
                     _stopCancellationTokenSource.Cancel();
+                    try {
+                        _frameSignal.Release();
+                    }
+                    catch (SemaphoreFullException) {
+                    }
                     if (_frameProcessingTask is not null) {
                         try {
                             await _frameProcessingTask;
@@ -735,6 +765,7 @@ namespace JayTom.Dws.Camera {
                         }
                         _frameProcessingTask = null;
                     }
+                    Interlocked.Exchange(ref _pendingFrame, null)?.Dispose();
                     _selectCamera?.Close();
                     _selectCamera?.Dispose();
                     _selectCamera = null;
@@ -808,6 +839,36 @@ namespace JayTom.Dws.Camera {
             }
         }
 
+        private static TextResult[]? DecodeBitmap(BarcodeReader reader, Bitmap bitmap) {
+            var bitmapData = bitmap.LockBits(
+                new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly,
+                bitmap.PixelFormat);
+            var stride = Math.Abs(bitmapData.Stride);
+            var bufferLength = checked(bitmapData.Height * stride);
+            var buffer = ArrayPool<byte>.Shared.Rent(bufferLength);
+            try {
+                for (var row = 0; row < bitmapData.Height; row++) {
+                    Marshal.Copy(
+                        IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride),
+                        buffer,
+                        row * stride,
+                        stride);
+                }
+                return reader.DecodeBuffer(
+                    buffer,
+                    bitmap.Width,
+                    bitmap.Height,
+                    stride,
+                    GetImagePixelFormat(bitmap.PixelFormat),
+                    string.Empty);
+            }
+            finally {
+                bitmap.UnlockBits(bitmapData);
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
         // 获取位图的步长（stride）
         private static int GetStride(Bitmap bitmap) {
             BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
@@ -873,23 +934,8 @@ namespace JayTom.Dws.Camera {
                 sourceBitmap.PixelFormat);
         }
 
-        public static unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null || thumbnailWidth <= 0 || thumbnailHeight <= 0) {
-                return null;
-            }
-
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppArgb);
-            using var graphics = Graphics.FromImage(thumbnail);
-            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
-            graphics.DrawImage(
-                sourceImage,
-                new Rectangle(0, 0, thumbnailWidth, thumbnailHeight),
-                new Rectangle(0, 0, sourceImage.Width, sourceImage.Height),
-                GraphicsUnit.Pixel);
-            return thumbnail;
+        public static Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
     }
 }

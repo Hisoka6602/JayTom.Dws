@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
     {
         private CaiNiaoApiModel _caiNiaoApiInfo = new();
 
-        public CaiNiaoApiPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        public CaiNiaoApiPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -32,9 +33,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(SettingsName) ?? new CaiNiaoApiDto();
+                var settingsDto = await _settingsStore.GetAsync<CaiNiaoApiDto>(SettingsName) ?? new CaiNiaoApiDto();
                 CaiNiaoApiInfo = new CaiNiaoApiModel()
                 {
                     BcrCode = settingsDto.BcrCode,
@@ -52,10 +53,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CaiNiaoApiDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new CaiNiaoApiDto()
                 {
                     BcrCode = CaiNiaoApiInfo.BcrCode,
                     BcrName = CaiNiaoApiInfo.BcrName,
@@ -63,8 +61,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     TimeOut = CaiNiaoApiInfo.TimeOut,
                     Url = CaiNiaoApiInfo.Url,
                     Version = CaiNiaoApiInfo.Version
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 

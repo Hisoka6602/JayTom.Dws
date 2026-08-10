@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -318,7 +318,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         public void LoadDataToView(int currentPage)
         {
-            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
@@ -345,7 +345,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         DialogHost.Close(model.Identifier);
                     }
                 }
-            });
+            }).Forget("加载列表数据");
         }
     }
 }

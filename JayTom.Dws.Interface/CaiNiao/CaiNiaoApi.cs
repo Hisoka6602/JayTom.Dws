@@ -3,13 +3,11 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
-using TouchSocket.Core;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Security.Policy;
 using System.Collections.Generic;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
@@ -61,7 +59,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -158,7 +156,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -267,7 +265,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     },
                 };
                 try {
-                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -317,7 +315,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:格口:{new string([.. packageExit.Where(char.IsDigit)])},包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
 
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
                 HttpResponseMessage message;
                 await using (Stream dataStream =

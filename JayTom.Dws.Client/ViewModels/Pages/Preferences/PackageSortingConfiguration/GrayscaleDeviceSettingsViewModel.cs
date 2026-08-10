@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -23,7 +24,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     {
         private GrayscaleDeviceInfoModel _grayscaleDeviceInfo = new();
 
-        public GrayscaleDeviceSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public GrayscaleDeviceSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -115,9 +116,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>(SettingsName) ??
+                var settingsDto = await _settingsStore.GetAsync<GrayscaleDeviceSettingsDto>(SettingsName) ??
                                   new GrayscaleDeviceSettingsDto();
 
                 GrayscaleDeviceInfo = new GrayscaleDeviceInfoModel()
@@ -209,11 +210,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 MinSendInterval = GrayscaleDeviceInfo.MinSendInterval
             };
 
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(grayscaleDeviceSettingsDto)
-            });
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,grayscaleDeviceSettingsDto);
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
                 Languages.Language.ResourceManager.GetString("Success") :
                 Languages.Language.ResourceManager.GetString("Failure"))}");

@@ -129,38 +129,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
                 }
 
                 var runEx = Volume3DSdk.vslbVolume3DRun(_handle.Value, _resultCb);
-
-                Volume3DSdk.VslbVolumeResultCBEx cbx = resultPtr => {
-                    try {
-                        if (resultPtr != IntPtr.Zero) {
-                            var obj = Marshal.PtrToStructure(resultPtr, typeof(Volume3DSdk.SVolumeResult));
-                            if (obj is not null) {
-                                var ret = (Volume3DSdk.SVolumeResult)obj;
-                                if (ret.state == 1) {
-                                    OnVolumeCaptured(new VolumeCapturedEventArgs() {
-                                        Timestamp = DateTime.Now,
-                                        Length = ret.length,
-                                        Volume = ret.volume,
-                                        Width = ret.width,
-                                        Height = ret.height,
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception e) {
-                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                            Exception = e
-                        });
-                    }
-                };
-
-                //var runEx = Volume3DSdk.vslbVolume3DRunEx(_handle.Value, cbx);
                 if (runEx != 0) {
                     return new KeyValuePair<bool, string>(false, "启动失败!");
                 }
-                OnCameraStopped(new CameraStoppedEventArgs() {
-                    CameraInfo = this.Info
+                OnCameraStarted(new CameraStartedEventArgs() {
+                    CameraInfo = this.Info,
+                    Camera = this
                 });
                 return new KeyValuePair<bool, string>(true, "启动成功!");
             }
@@ -182,9 +156,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             }
             else {
                 Volume3DSdk.vslbVolume3DStop(_handle.Value);
-                OnCameraStarted(new CameraStartedEventArgs() {
-                    CameraInfo = this.Info,
-                    Camera = this
+                OnCameraStopped(new CameraStoppedEventArgs() {
+                    CameraInfo = this.Info
                 });
                 return new KeyValuePair<bool, string>(true, "停止成功");
             }

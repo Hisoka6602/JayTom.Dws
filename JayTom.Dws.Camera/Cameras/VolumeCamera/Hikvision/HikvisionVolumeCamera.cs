@@ -316,7 +316,14 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         }
 
         public void SetParameters(Dictionary<string, object> parameters) {
-            throw new NotImplementedException();
+            ArgumentNullException.ThrowIfNull(parameters);
+            if (parameters.TryGetValue(nameof(TakePhotoDelay), out var delayValue)) {
+                TakePhotoDelay = Math.Max(0, Convert.ToInt32(delayValue));
+            }
+            if (parameters.TryGetValue(nameof(MeasurementTriggerMode), out var triggerValue) &&
+                Enum.TryParse<MeasurementTriggerMode>(triggerValue?.ToString(), true, out var triggerMode)) {
+                MeasurementTriggerMode = triggerMode;
+            }
         }
 
         public bool IsRealtimeImageEnabled { get; private set; } = true;
@@ -332,11 +339,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
         public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            return Task.CompletedTask;
+            return TriggerMeasurementPhotoAsync(barcode, barcodeTimestamp, TakePhotoDelay, cancellation);
         }
 
         public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
-            return Task.CompletedTask;
+            var delayMilliseconds = (int)Math.Clamp(delay.TotalMilliseconds, 0, int.MaxValue);
+            return TriggerMeasurementPhotoAsync(barcode, barcodeTimestamp, delayMilliseconds, cancellation);
         }
 
         public int TakePhotoDelay { get; set; }
@@ -503,33 +511,36 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                 thumbnailImage = GenerateThumbnail(bitmap);
             }
 
-            //判断体积标记位，是否有体积信息
-            if (1 == stResultInfo.nVolumeFlag) {
-                //在界面显示体积信息
-                //画框
-                if (thumbnailImage is not null) {
-                    using var g = Graphics.FromImage(thumbnailImage);
-                    if (stResultInfo.stVolumeInfo.rgbvertex_pnts.Length > 0) {
-                        var stPointList = new Point[4];
-                        for (var i = 0; i < 4; i++) {
-                            stPointList[i].X =
-                                (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fX *
-                                    (float)(thumbnailImage.Size.Width) / stResultInfo.stExtendImage.nWidth);
-                            stPointList[i].Y =
-                                (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[i].fY *
-                                      (float)(thumbnailImage.Size.Height) /
-                                      stResultInfo.stExtendImage.nHeight);
-                        }
-                        using var pen = new System.Drawing.Pen(Color.Yellow, 7);
-                        g.DrawPolygon(pen, stPointList);
+            if (thumbnailImage is not null) {
+                using var graphics = Graphics.FromImage(thumbnailImage);
+                if (1 == stResultInfo.nVolumeFlag &&
+                    stResultInfo.stVolumeInfo.rgbvertex_pnts.Length >= 4) {
+                    var points = new Point[4];
+                    for (var index = 0; index < points.Length; index++) {
+                        points[index].X = (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[index].fX *
+                            thumbnailImage.Width / Math.Max(1, stResultInfo.stExtendImage.nWidth));
+                        points[index].Y = (int)(stResultInfo.stVolumeInfo.rgbvertex_pnts[index].fY *
+                            thumbnailImage.Height / Math.Max(1, stResultInfo.stExtendImage.nHeight));
                     }
+                    using var pen = new Pen(Color.Yellow, 7);
+                    graphics.DrawPolygon(pen, points);
                 }
+                var text = $"Length: {Math.Round(stResultInfo.stVolumeInfo.length, 2)}\nWidth: {Math.Round(stResultInfo.stVolumeInfo.width, 2)}\nHeight: {Math.Round(stResultInfo.stVolumeInfo.height, 2)}";
+                using var font = new Font("Arial", 20);
+                using var brush = new SolidBrush(Color.LawnGreen);
+                graphics.DrawString(text, font, brush, new Point(10, 20));
+            }
 
-                var volumeCapturedEventArgs = new VolumeCapturedEventArgs() {
+            var volumeConsumer = 1 == stResultInfo.nVolumeFlag && VolumeCaptured is not null;
+            var realtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
+            var realtimeThumbnail = realtimeConsumer && volumeConsumer && thumbnailImage is not null
+                ? new Bitmap(thumbnailImage)
+                : thumbnailImage;
+            if (volumeConsumer) {
+                OnVolumeCaptured(new VolumeCapturedEventArgs {
                     Length = Math.Round(stResultInfo.stVolumeInfo.length, 2),
                     Width = Math.Round(stResultInfo.stVolumeInfo.width, 2),
                     Height = Math.Round(stResultInfo.stVolumeInfo.height, 2),
-                    //Volume = Math.Round(stResultInfo.stVolumeInfo.volume, 2),
                     Volume = Math.Round(Math.Round(stResultInfo.stVolumeInfo.length, 2) *
                                         Math.Round(stResultInfo.stVolumeInfo.width, 2) *
                                         Math.Round(stResultInfo.stVolumeInfo.height, 2), 2),
@@ -538,22 +549,19 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
                     Timestamp = dateTime,
                     CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
                     MeasurementTriggerMode = MeasurementTriggerMode
-                };
-                OnVolumeCaptured(volumeCapturedEventArgs);
+                });
             }
-            if (thumbnailImage is not null) {
-                using var g = Graphics.FromImage(thumbnailImage);
-                var text = $"Length: {Math.Round(stResultInfo.stVolumeInfo.length, 2)}\nWidth: {Math.Round(stResultInfo.stVolumeInfo.width, 2)}\nHeight: {Math.Round(stResultInfo.stVolumeInfo.height, 2)}";
-                using var font = new System.Drawing.Font("Arial", 20);
-                using var brush = new System.Drawing.SolidBrush(Color.LawnGreen);
-                var point = new Point(10, 20); // 左上角位置
-                g.DrawString(text, font, brush, point);
+            else {
+                bitmap?.Dispose();
             }
-            if (IsRealtimeImageEnabled) {
+            if (realtimeConsumer) {
                 OnRealtimeImage(new RealtimeImageEventArgs() {
-                    ThumbImage = thumbnailImage,
+                    ThumbImage = realtimeThumbnail,
                     Timestamp = new DateTimeOffset(dateTime).ToUnixTimeMilliseconds()
                 });
+            }
+            else if (!volumeConsumer) {
+                thumbnailImage?.Dispose();
             }
         }
 
@@ -567,33 +575,13 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         private Bitmap? GetBitmap(nint pData, int width, int height) {
             Bitmap? bitmap = null;
             try {
-                bitmap = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
-                var palette = bitmap.Palette;
-                for (var i = 0; i < 256; i++) {
-                    palette.Entries[i] = Color.FromArgb(i, i, i);
-                }
-                bitmap.Palette = palette;
-
-                var bitmapData = bitmap.LockBits(
-                    new Rectangle(0, 0, width, height),
-                    ImageLockMode.WriteOnly,
-                    PixelFormat.Format8bppIndexed);
-                try {
-                    for (var row = 0; row < height; row++) {
-                        var source = IntPtr.Add(pData, row * width);
-                        var destination = IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride);
-                        unsafe {
-                            Buffer.MemoryCopy(
-                                source.ToPointer(),
-                                destination.ToPointer(),
-                                bitmapData.Stride,
-                                width);
-                        }
-                    }
-                }
-                finally {
-                    bitmap.UnlockBits(bitmapData);
-                }
+                bitmap = CameraImageProcessing.CopyPackedFrame(
+                    pData,
+                    checked(width * height),
+                    width,
+                    height,
+                    PixelFormat.Format8bppIndexed,
+                    width);
             }
             catch (Exception e) {
                 bitmap?.Dispose();
@@ -632,14 +620,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         }
 
         public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppPArgb);
-            using var graphics = Graphics.FromImage(thumbnail);
-            graphics.DrawImage(sourceImage, 0, 0, thumbnailWidth, thumbnailHeight);
-            return thumbnail;
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
@@ -672,11 +653,22 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         }
 
         protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
-            RealtimeImage?.Invoke(this, e);
+            var handler = RealtimeImage;
+            if (handler is null) {
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         protected virtual void OnVolumeCaptured(VolumeCapturedEventArgs e) {
-            VolumeCaptured?.Invoke(this, e);
+            var handler = VolumeCaptured;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.Thumbnail?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
     }
 }

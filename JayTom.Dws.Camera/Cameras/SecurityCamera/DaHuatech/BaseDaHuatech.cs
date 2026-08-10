@@ -45,7 +45,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         // private static ConcurrentDictionary<string, IntPtr> _realPlayInfo = new();
         private static SemaphoreSlim _snapRevPhotoSlim = new(1);
 
-        private static byte[] _imageBytes = [];
         private static SemaphoreSlim _takePhotoSlim = new(1);
         private static SemaphoreSlim _switchRealtimeFrameSlim = new(1);
         private static Channel<(Func<Bitmap, Task> Callback, Bitmap Image)> _channel;
@@ -69,21 +68,20 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 if (_instance is null) {
                     _instance ??= new BaseDaHuatech();
                     _channel = Channel.CreateBounded<(Func<Bitmap, Task>, Bitmap)>(
-                        new BoundedChannelOptions(8) {
+                        new BoundedChannelOptions(3) {
                             SingleReader = true,
                             FullMode = BoundedChannelFullMode.Wait
                         });
                     _fcbChannel = Channel.CreateBounded<(Func<RealtimePreviewInfo, Task>, RealtimePreviewInfo)>(
-                        new BoundedChannelOptions(8) {
+                        new BoundedChannelOptions(3) {
                             SingleReader = true,
                             FullMode = BoundedChannelFullMode.Wait
                         });
                     _channelProcessor = ProcessChannel();
                     _visibleDecodeProcessor = ProcessVisibleDecodeChannel();
-                    _mSearchDevicesCbEx += async delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
+                    _mSearchDevicesCbEx += delegate (IntPtr handle, IntPtr intPtr, IntPtr user) {
                         var info = (NET_DEVICE_NET_INFO_EX2)(Marshal.PtrToStructure(intPtr, typeof(NET_DEVICE_NET_INFO_EX2)) ?? IntPtr.Zero);
                         if (info.stuDevInfo is { iIPVersion: 4, }) {
-                            await _enumerateSlim.WaitAsync();
                             _devInfo.AddOrUpdate(info.stuDevInfo.szSerialNo, key => info.stuDevInfo,
                                 (key, oldValue) => {
                                     oldValue.verifyData = info.stuDevInfo.verifyData;
@@ -94,8 +92,6 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                     }
                                     return oldValue;
                                 });
-
-                            _enumerateSlim.Release();
                         }
                     };
                     _mDisConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
@@ -139,34 +135,24 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             }));
                         }
                     };
-                    _mSnapRevCallBack += async delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
-                        if (len > 0) {
-                            try {
-                                await _snapRevPhotoSlim.WaitAsync();
-                                await Task.Delay(50);
-                                var (key, value) = _loginDev.FirstOrDefault(f => f.Value.Handle == id);
-                                if (key != null && _imageEvent.TryGetValue(key, out var callback)) {
-                                    if (type == 10) //.jpg
-                                    {
-                                        _imageBytes = new byte[len];
-                                        Marshal.Copy(buf, _imageBytes, 0, (int)len);
+                    _mSnapRevCallBack += delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
+                        if (len == 0 || type != 10 || buf == IntPtr.Zero) {
+                            return;
+                        }
 
-                                        using var stream = new MemoryStream(_imageBytes);
-                                        var valid = IsImageDataValid(stream);
-                                        if (valid) {
-                                            using var imageBitmap = Image.FromStream(stream);
-                                            using var thumbnail = imageBitmap.GetThumbnailImage(imageBitmap.Width, imageBitmap.Height, () => false, IntPtr.Zero);
-                                            callback?.Invoke(new Bitmap(thumbnail));
-                                        }
-                                    }
-                                }
+                        try {
+                            var key = _loginDev.FirstOrDefault(pair => pair.Value.Handle == id).Key;
+                            if (key is null || !_imageEvent.TryGetValue(key, out var callback)) {
+                                return;
                             }
-                            catch (Exception e) {
-                                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+
+                            var bitmap = CameraImageProcessing.DecodeCompressedFrame(buf, checked((int)len));
+                            if (bitmap is not null) {
+                                callback.Invoke(bitmap);
                             }
-                            finally {
-                                _snapRevPhotoSlim.Release();
-                            }
+                        }
+                        catch (Exception e) {
+                            NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                         }
                     };
                     NETClient.SetNetworkParam(new NET_PARAM() {

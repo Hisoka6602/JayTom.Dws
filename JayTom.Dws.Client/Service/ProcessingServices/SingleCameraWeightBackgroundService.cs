@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using JayTom.Dws.Application.Configuration;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -25,7 +26,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
     {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
         private readonly IExternalDataService _externalDataService;
         private CreatePackageSettingsDto _createPackageSettingsDto = new();
@@ -39,13 +40,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
 
         public SingleCameraWeightBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             ISortingService sortingService,
             IExternalDataService externalDataService)
         {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _sortingService = sortingService;
             _externalDataService = externalDataService;
 
@@ -415,19 +416,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     switch (model.SettingsName)
                     {
                         case "CreatePackageSettings":
-                            _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
+                            _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>(model.SettingsName) ??
                                                         new CreatePackageSettingsDto();
 
                             break;
 
                         case "WeightSettings":
-                            _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(model.SettingsName) ??
+                            _weightSettingsDto = await _settingsStore.GetAsync<WeightSettingsDto>(model.SettingsName) ??
                                                  new WeightSettingsDto();
 
                             break;
 
                         case "WdtWmsApiParameters":
-                            _wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ??
+                            _wdtWmsApiDto = await _settingsStore.GetAsync<WdtWmsApiDto>(model.SettingsName) ??
                                             new WdtWmsApiDto();
                             break;
                     }
@@ -531,9 +532,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             {
                 //读配置
 
-                _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
-                _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
-                _wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>("WdtWmsApiParameters", stoppingToken) ?? new WdtWmsApiDto();
+                _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+                _weightSettingsDto = await _settingsStore.GetAsync<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
+                _wdtWmsApiDto = await _settingsStore.GetAsync<WdtWmsApiDto>("WdtWmsApiParameters", stoppingToken) ?? new WdtWmsApiDto();
             }
             catch (Exception e)
             {

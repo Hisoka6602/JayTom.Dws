@@ -7,13 +7,10 @@ using System.ComponentModel;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using NPOI.XSSF.Streaming.Values;
-using Org.BouncyCastle.Utilities;
 using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
-using SixLabors.ImageSharp.Metadata.Profiles.Iptc;
 
 namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
 

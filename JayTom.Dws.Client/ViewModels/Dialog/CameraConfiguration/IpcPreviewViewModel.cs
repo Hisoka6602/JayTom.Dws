@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -65,7 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 {
                     info.Dispose();
                 }
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select(s =>
                         new PreviewViewChannelInfo
@@ -155,7 +155,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                     {
                         _baseDaHuatech.RegisterRealtimePreviewCallback(IpcNvrItemInfo.SerialNumber, obj.ChannelId, previewViewItemInfo.RealtimePreviewCallback);
 
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             NvrPreviewViewItems.Add(previewViewItemInfo);
                         });

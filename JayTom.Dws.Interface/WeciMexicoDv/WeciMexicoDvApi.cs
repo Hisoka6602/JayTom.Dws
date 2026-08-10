@@ -49,10 +49,12 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             UploadResponse response;
-            imageInfo.Image = imageInfo.Image?.AddTextWatermark(
-                $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+            var effectiveScanTime = other is DateTime specifiedScanTime ? specifiedScanTime : DateTime.Now;
+            using var watermarkedImage = imageInfo?.Image is null ? null : new Bitmap(imageInfo.Image);
+            watermarkedImage?.AddTextWatermark(
+                $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{effectiveScanTime:yyyy-MM-dd HH:mm:ss}",
                 Color.Red, 30);
-            var imageBase64 = imageInfo.Image?.ConvertImageToBase64() ?? string.Empty;
+            var imageBase64 = watermarkedImage?.ConvertImageToBase64() ?? string.Empty;
             //image?.Save($"{AppDomain.CurrentDomain.BaseDirectory}watermark.jpg", ImageFormat.Jpeg);
             //var base64String = Convert.ToBase64String(Encoding.Default.GetBytes(imageBase64));
             var data = new {
@@ -61,8 +63,8 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 size_long = length,
                 size_heigth = height,
                 weigth_kg = Math.Round(Convert.ToDecimal(weight), 3),
-                date_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-                time_tran = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                date_tran = $"{effectiveScanTime:yyyy-MM-dd HH:mm:ss}",
+                time_tran = $"{effectiveScanTime:yyyy-MM-dd HH:mm:ss}",
                 machine_no = MachineNo,
                 imagebase64 = imageBase64
             };
@@ -70,21 +72,14 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
-                    httpClient.DefaultRequestHeaders.Add("Access-Control-Allow-Origin", "www.invenova.mx");
-                    HttpResponseMessage message;
-                    using (Stream dataStream =
-                           new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync(Url, content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
+                    using var content = new StringContent(
+                        JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+                    using var message = await httpClient.PostAsync(Url, content, token)
+                        .ConfigureAwait(false);
 
                     resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    resultContent = Regex.Unescape(resultContent);
                     if (!string.IsNullOrWhiteSpace(resultContent)) {
                         //判断
                         var jObject = JObject.Parse(resultContent);
@@ -136,7 +131,8 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
         public Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
             double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
-            throw new NotImplementedException();
+            return UploadData(barcode, weight, length, width, height, volume, imageInfo, panoramaImageInfos,
+                scanTime, token);
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {
@@ -147,14 +143,15 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功!"));
             }
             else {
-                return Task.FromResult(new KeyValuePair<bool, string>(true, "参数类型不匹配"));
+                return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
             }
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
+        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            return Task.CompletedTask;
+            await UploadData(barcode, weight, scanTime, length, width, height, volume, imageInfo,
+                panoramaImageInfos, other, token).ConfigureAwait(false);
         }
 
         public Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,

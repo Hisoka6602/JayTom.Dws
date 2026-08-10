@@ -2,14 +2,12 @@
 using System.Linq;
 using System.Drawing;
 using System.Diagnostics;
-using JayTom.Dws.Interface;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Model;
 using System.Collections.Concurrent;
 using System.Threading;
 using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 
 namespace JayTom.Dws.Domain.Manager {
 
@@ -396,8 +394,6 @@ namespace JayTom.Dws.Domain.Manager {
         /// <summary>
         /// 接口返回内容
         /// </summary>
-        public List<UploadResponse> UploadResponses { get; set; } = new();
-
         /// <summary>
         /// 灰度仪信息
         /// </summary>

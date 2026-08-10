@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -232,7 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private DataFormatTypeInfoModel _selectDataFormat = new();
 
         public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
-            IConfigRepository configRepository) : base(configRepository)
+            ISettingsStore settingsStore) : base(settingsStore)
         {
             _soundRepository = soundRepository;
         }
@@ -564,7 +565,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     SoundName = new FileInfo(SoundFilePath).Name,
                     SoundFile = await File.ReadAllBytesAsync(SoundFilePath)
                 });
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     if (update)
                     {
@@ -590,10 +591,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new ResultOutputSettingsDto
                 {
                     DataTemplate = [.. OutputItems.Select(s => new ItemTemplateInfo {
                         ApplicationType = s.ApplicationType,
@@ -657,8 +655,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         WeightOutputKey = LocationOutputSettingsInfo.WeightOutputKey,
                         WeightOutputPosition = LocationOutputSettingsInfo.WeightOutputPosition
                     },
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -669,7 +666,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //加载音频列表
                     Sounds.Clear();
@@ -681,7 +678,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     PortItems.Clear();
                     //加载串口列表
                     PortItems.AddRange(SerialPort.GetPortNames()?.ToList());
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ResultOutputSettingsDto>(SettingsName) ??
+                    var settingsDto = await _settingsStore.GetAsync<ResultOutputSettingsDto>(SettingsName) ??
                           new ResultOutputSettingsDto();
                     //加载停止位的值
                     SelectedStopBits = StopBitsItems.FirstOrDefault(f =>

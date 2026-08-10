@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -20,8 +21,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
     public class CleanupService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>磁盘及保留期清理的执行间隔。</summary>
+        private static readonly TimeSpan CleanupInterval = TimeSpan.FromMinutes(5);
+        /// <summary>单次低磁盘清理允许删除的最大图片日期批次数。</summary>
+        private const int MaxImageReclamationPasses = 10;
+        /// <summary>后台清理日志记录器。</summary>
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly ICacheCleanupService _cacheCleanupService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IComputer _computer;
         private CacheClearSettingsDto? _cacheClearSettingsDto;
         private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -34,10 +41,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
         //获取设置
         public CleanupService(ICacheCleanupService cacheCleanupService,
-            IConfigRepository configRepository, IComputer computer)
+            ISettingsStore settingsStore, IComputer computer)
         {
             _cacheCleanupService = cacheCleanupService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _computer = computer;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(settings =>
             {
@@ -60,86 +67,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _stoppingToken = stoppingToken;
             await ReloadSettingsAsync("SaveImageSettings", stoppingToken).ConfigureAwait(false);
             await ReloadSettingsAsync("CacheClearSettings", stoppingToken).ConfigureAwait(false);
-            CleanupExpiredLogFiles();
             while (!stoppingToken.IsCancellationRequested &&
                    Volatile.Read(ref _isWindowsClose) == 0)
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken).ConfigureAwait(false);
-                    if (Volatile.Read(ref _isWindowsClose) != 0)
-                    {
-                        break;
-                    }
-
-                    var cacheSettings = Volatile.Read(ref _cacheClearSettingsDto);
-                    //数据盘
-                    if (cacheSettings?.MinimumSpaceRetention > 0)
-                    {
-                        var diskInfos = await _computer.GetDiskInfoAsync().ConfigureAwait(false);
-                        var minimumSpaceBytes = cacheSettings.MinimumSpaceRetention >
-                                                long.MaxValue / (1024L * 1024L)
-                            ? long.MaxValue
-                            : cacheSettings.MinimumSpaceRetention * 1024L * 1024L;
-                        var dataDriveName = Path.GetPathRoot(Directory.GetCurrentDirectory())
-                            ?.Replace(":\\", string.Empty);
-                        var diskInfo = diskInfos.FirstOrDefault(w =>
-                            string.Equals(w.Name, dataDriveName, StringComparison.OrdinalIgnoreCase));
-
-                        if (diskInfo is { UsedDiskSpace: > 0 } &&
-                            diskInfo.AvailableDiskSpace <= minimumSpaceBytes)
-                        {
-                            //清除
-                            await _cacheCleanupService.DeleteEarliestBarcodeData().ConfigureAwait(false);
-                            await _cacheCleanupService.DeleteEarliestLogData().ConfigureAwait(false);
-                        }
-
-                        //图片盘
-                        var imageDriveName = Volatile.Read(ref _imagePathRoot)
-                            .Replace(":\\", string.Empty);
-                        var imageDiskInfo = diskInfos.FirstOrDefault(w =>
-                            string.Equals(w.Name, imageDriveName, StringComparison.OrdinalIgnoreCase));
-
-                        if (imageDiskInfo is { UsedDiskSpace: > 0 } &&
-                            imageDiskInfo.AvailableDiskSpace <= minimumSpaceBytes)
-                        {
-                            //清除
-                            await _cacheCleanupService.DeleteEarliestPanoramaImages().ConfigureAwait(false);
-                            await _cacheCleanupService.DeleteEarliestScanImages().ConfigureAwait(false);
-                        }
-                    }
-
-                    //删除指定日期前数据(小于等于0则不删除)
-                    if (cacheSettings?.BarcodeDataAgoDays > 0)
-                    {
-                        _ = await _cacheCleanupService
-                            .DeleteBarcodeDataOlderThanDays(cacheSettings.BarcodeDataAgoDays)
-                            .ConfigureAwait(false);
-                    }
-                    if (cacheSettings?.ScanImageAgoDays > 0)
-                    {
-                        await _cacheCleanupService
-                            .DeleteScanImagesOlderThanDays(cacheSettings.ScanImageAgoDays)
-                            .ConfigureAwait(false);
-                    }
-                    if (cacheSettings?.PanoramaImageAgoDays > 0)
-                    {
-                        await _cacheCleanupService
-                            .DeletePanoramaImagesOlderThanDays(cacheSettings.PanoramaImageAgoDays)
-                            .ConfigureAwait(false);
-                    }
-                    if (cacheSettings?.FtpImageAgoDays > 0)
-                    {
-                        //await _cacheCleanupService.DeleteFtpImagesOlderThanDays(cacheSettings.FtpImageAgoDays);
-                    }
-
-                    if (cacheSettings?.LogDataAgoDays > 0)
-                    {
-                        await _cacheCleanupService
-                            .DeleteLogDataOlderThanDays(cacheSettings.LogDataAgoDays)
-                            .ConfigureAwait(false);
-                    }
-                    CleanupExpiredLogFiles();
+                    await RunCleanupCycleAsync(stoppingToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -147,10 +80,200 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
                 catch (Exception e)
                 {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"定时清理异常:{e}");
+                    Logger.Error(e, "定时清理异常");
+                }
+
+                try
+                {
+                    await Task.Delay(CleanupInterval, stoppingToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
                 }
             }
         }
+
+        /// <summary>
+        /// 执行一次磁盘水位保护和按保留期清理。
+        /// </summary>
+        /// <param name="stoppingToken">服务停止令牌。</param>
+        private async Task RunCleanupCycleAsync(CancellationToken stoppingToken)
+        {
+            stoppingToken.ThrowIfCancellationRequested();
+            var cacheSettings = Volatile.Read(ref _cacheClearSettingsDto);
+            if (cacheSettings is null)
+            {
+                CleanupExpiredLogFiles();
+                return;
+            }
+
+            if (cacheSettings.MinimumSpaceRetention > 0)
+            {
+                var minimumSpaceBytes = cacheSettings.MinimumSpaceRetention >
+                                        long.MaxValue / (1024L * 1024L)
+                    ? long.MaxValue
+                    : cacheSettings.MinimumSpaceRetention * 1024L * 1024L;
+                var dataDriveName = NormalizeDriveName(
+                    Path.GetPathRoot(AppDomain.CurrentDomain.BaseDirectory));
+                if (await IsDiskSpaceLowAsync(dataDriveName, minimumSpaceBytes).ConfigureAwait(false))
+                {
+                    Logger.Warn($"数据盘剩余空间低于保留水位，开始清理最早数据。盘符:{dataDriveName}");
+                    await ExecuteCleanupOperationAsync(
+                            "最早条码数据",
+                            _cacheCleanupService.DeleteEarliestBarcodeData)
+                        .ConfigureAwait(false);
+                    await ExecuteCleanupOperationAsync(
+                            "最早数据库日志",
+                            _cacheCleanupService.DeleteEarliestLogData)
+                        .ConfigureAwait(false);
+                }
+
+                var imageDriveName = NormalizeDriveName(Volatile.Read(ref _imagePathRoot));
+                await ReclaimImageDiskSpaceAsync(
+                        imageDriveName,
+                        minimumSpaceBytes,
+                        stoppingToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (cacheSettings.BarcodeDataAgoDays > 0)
+            {
+                await ExecuteCleanupOperationAsync(
+                        "过期条码数据",
+                        () => _cacheCleanupService.DeleteBarcodeDataOlderThanDays(
+                            cacheSettings.BarcodeDataAgoDays))
+                    .ConfigureAwait(false);
+            }
+            if (cacheSettings.ScanImageAgoDays > 0)
+            {
+                await ExecuteCleanupOperationAsync(
+                        "过期扫码图片",
+                        () => _cacheCleanupService.DeleteScanImagesOlderThanDays(
+                            cacheSettings.ScanImageAgoDays))
+                    .ConfigureAwait(false);
+            }
+            if (cacheSettings.PanoramaImageAgoDays > 0)
+            {
+                await ExecuteCleanupOperationAsync(
+                        "过期全景图片",
+                        () => _cacheCleanupService.DeletePanoramaImagesOlderThanDays(
+                            cacheSettings.PanoramaImageAgoDays))
+                    .ConfigureAwait(false);
+            }
+            if (cacheSettings.FtpImageAgoDays > 0)
+            {
+                await ExecuteCleanupOperationAsync(
+                        "过期 FTP 图片",
+                        () => _cacheCleanupService.DeleteFtpImagesOlderThanDays(
+                            cacheSettings.FtpImageAgoDays))
+                    .ConfigureAwait(false);
+            }
+            if (cacheSettings.LogDataAgoDays > 0)
+            {
+                await ExecuteCleanupOperationAsync(
+                        "过期数据库日志",
+                        () => _cacheCleanupService.DeleteLogDataOlderThanDays(
+                            cacheSettings.LogDataAgoDays))
+                    .ConfigureAwait(false);
+            }
+
+            CleanupExpiredLogFiles();
+        }
+
+        /// <summary>
+        /// 在图片盘空间不足时按最早日期分批删除，达到水位或没有可删文件后停止。
+        /// </summary>
+        /// <param name="driveName">图片盘盘符。</param>
+        /// <param name="minimumSpaceBytes">最低保留空间。</param>
+        /// <param name="stoppingToken">服务停止令牌。</param>
+        private async Task ReclaimImageDiskSpaceAsync(
+            string driveName,
+            long minimumSpaceBytes,
+            CancellationToken stoppingToken)
+        {
+            if (string.IsNullOrWhiteSpace(driveName))
+            {
+                return;
+            }
+
+            for (var pass = 1; pass <= MaxImageReclamationPasses; pass++)
+            {
+                stoppingToken.ThrowIfCancellationRequested();
+                if (!await IsDiskSpaceLowAsync(driveName, minimumSpaceBytes).ConfigureAwait(false))
+                {
+                    return;
+                }
+
+                Logger.Warn($"图片盘剩余空间低于保留水位，执行第 {pass} 批清理。盘符:{driveName}");
+                var panoramaRemoved = await ExecuteCleanupOperationAsync(
+                        "最早全景图片",
+                        _cacheCleanupService.DeleteEarliestPanoramaImages)
+                    .ConfigureAwait(false);
+                var scanRemoved = await ExecuteCleanupOperationAsync(
+                        "最早扫码图片",
+                        _cacheCleanupService.DeleteEarliestScanImages)
+                    .ConfigureAwait(false);
+                if (!panoramaRemoved && !scanRemoved)
+                {
+                    Logger.Error($"图片盘空间不足且已没有可清理图片。盘符:{driveName}");
+                    return;
+                }
+            }
+
+            if (await IsDiskSpaceLowAsync(driveName, minimumSpaceBytes).ConfigureAwait(false))
+            {
+                Logger.Error($"图片盘完成最大批次清理后仍低于保留水位。盘符:{driveName}");
+            }
+        }
+
+        /// <summary>
+        /// 判断指定固定磁盘的剩余空间是否不高于安全水位。
+        /// </summary>
+        /// <param name="driveName">不含分隔符的盘符。</param>
+        /// <param name="minimumSpaceBytes">最低保留空间。</param>
+        /// <returns>磁盘存在且剩余空间不足时为 <see langword="true"/>。</returns>
+        private async Task<bool> IsDiskSpaceLowAsync(string driveName, long minimumSpaceBytes)
+        {
+            if (string.IsNullOrWhiteSpace(driveName))
+            {
+                return false;
+            }
+
+            var diskInfos = await _computer.GetDiskInfoAsync().ConfigureAwait(false);
+            var diskInfo = diskInfos.FirstOrDefault(item =>
+                string.Equals(item.Name, driveName, StringComparison.OrdinalIgnoreCase));
+            return diskInfo is { UsedDiskSpace: > 0 } &&
+                   diskInfo.AvailableDiskSpace <= minimumSpaceBytes;
+        }
+
+        /// <summary>
+        /// 执行清理操作并统一记录失败原因。
+        /// </summary>
+        /// <param name="operationName">便于诊断的操作名称。</param>
+        /// <param name="operation">清理操作。</param>
+        /// <returns>清理操作是否成功。</returns>
+        private static async Task<bool> ExecuteCleanupOperationAsync(
+            string operationName,
+            Func<Task<KeyValuePair<bool, string>>> operation)
+        {
+            var result = await operation().ConfigureAwait(false);
+            if (!result.Key)
+            {
+                Logger.Warn($"{operationName}清理未完成:{result.Value}");
+            }
+
+            return result.Key;
+        }
+
+        /// <summary>
+        /// 将路径根目录转换成硬盘监控使用的不含冒号和分隔符的盘符。
+        /// </summary>
+        /// <param name="pathRoot">路径根目录。</param>
+        /// <returns>标准化盘符。</returns>
+        private static string NormalizeDriveName(string? pathRoot) =>
+            pathRoot?.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                .TrimEnd(':') ?? string.Empty;
 
         /// <summary>
         /// 按当前配置清理超过保留天数的物理日志文件。
@@ -194,8 +317,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 lockTaken = true;
                 if (settingsName == "SaveImageSettings")
                 {
-                    var imageSettings = await _configRepository
-                        .FirstOrDefaultEntity<ImageSettingsDto>(settingsName, cancellationToken)
+                    var imageSettings = await _settingsStore
+                        .GetAsync<ImageSettingsDto>(settingsName, cancellationToken)
                         .ConfigureAwait(false) ?? new ImageSettingsDto();
                     var imagePathRoot = string.IsNullOrWhiteSpace(imageSettings.ImageRootDirectory)
                         ? string.Empty
@@ -204,8 +327,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
                 else
                 {
-                    var cacheSettings = await _configRepository
-                        .FirstOrDefaultEntity<CacheClearSettingsDto>(settingsName, cancellationToken)
+                    var cacheSettings = await _settingsStore
+                        .GetAsync<CacheClearSettingsDto>(settingsName, cancellationToken)
                         .ConfigureAwait(false);
                     Volatile.Write(ref _cacheClearSettingsDto, cacheSettings);
                 }

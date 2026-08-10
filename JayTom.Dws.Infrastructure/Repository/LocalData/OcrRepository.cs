@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Infrastructure.Repository.LocalData
 {
 
-    public class OcrRepository : LocalRepositoryBase<OcrInfoModel>, IOcrRepository {
+    public class OcrRepository : LocalRepositoryBase<OcrInfoModel, SqliteContext>, IOcrRepository {
 
         public OcrRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

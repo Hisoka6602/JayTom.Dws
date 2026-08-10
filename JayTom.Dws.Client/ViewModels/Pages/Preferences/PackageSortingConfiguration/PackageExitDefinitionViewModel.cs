@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -14,7 +14,6 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
-using Application = System.Windows.Application;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
@@ -50,7 +49,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
                 if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model)
@@ -203,7 +202,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is PackageExitDefinitionItemInfoModel item)
             {
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
                     if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model)

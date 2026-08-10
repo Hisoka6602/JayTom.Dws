@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +15,7 @@ using JayTom.Dws.Domain.Repository.VideoApiData;
 namespace JayTom.Dws.Infrastructure.Repository.License {
 
     public class LicenseApplicationRepository :
-        MemoryCacheRepositoryBase<LicenseApplicationInfo>, ILicenseApplicationRepository {
+        MemoryCacheRepositoryBase<LicenseApplicationInfo, LicenseApiContext>, ILicenseApplicationRepository {
 
         public LicenseApplicationRepository(IDbContextFactory<LicenseApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

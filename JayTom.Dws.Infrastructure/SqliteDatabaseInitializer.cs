@@ -1,15 +1,20 @@
 using System.Data;
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {
 
     /// <summary>
-    /// 负责对 SQLite 数据库执行一次性初始化和持久化性能设置。
+    /// 负责对 SQLite 数据库执行一次性初始化和持久化性能配置。
     /// </summary>
     internal static class SqliteDatabaseInitializer {
+        /// <summary>
+        /// 按上下文类型和数据库绝对路径分别保存初始化状态。
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, InitializationState> InitializationStates = new();
 
         /// <summary>
-        /// 确保指定类型的数据库只初始化一次。
+        /// 确保指定类型和路径的数据库只初始化一次。
         /// </summary>
         /// <typeparam name="TContext">数据库上下文类型。</typeparam>
         /// <param name="context">用于初始化数据库的上下文。</param>
@@ -20,7 +25,8 @@ namespace JayTom.Dws.Infrastructure {
             ArgumentNullException.ThrowIfNull(context);
             ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
 
-            var state = InitializationStateCache<TContext>.Value;
+            var stateKey = $"{typeof(TContext).AssemblyQualifiedName}|{Path.GetFullPath(databasePath)}";
+            var state = InitializationStates.GetOrAdd(stateKey, _ => new InitializationState());
             if (Volatile.Read(ref state.IsInitialized) == 1) {
                 return;
             }
@@ -30,8 +36,13 @@ namespace JayTom.Dws.Infrastructure {
                     return;
                 }
 
-                // 当前项目没有 EF 迁移，EnsureCreated 会直接按模型创建缺失的数据库。
-                context.Database.EnsureCreated();
+                // 存在迁移时应用迁移；没有迁移时按当前模型创建数据库。
+                if (context.Database.GetMigrations().Any()) {
+                    context.Database.Migrate();
+                }
+                else {
+                    context.Database.EnsureCreated();
+                }
                 ConfigurePersistentSettings(context, databasePath);
                 Volatile.Write(ref state.IsInitialized, 1);
             }
@@ -87,7 +98,7 @@ namespace JayTom.Dws.Infrastructure {
         }
 
         /// <summary>
-        /// 表示单个数据库类型的一次性初始化状态。
+        /// 表示单个数据库类型和路径的一次性初始化状态。
         /// </summary>
         private sealed class InitializationState {
 
@@ -100,18 +111,6 @@ namespace JayTom.Dws.Infrastructure {
             /// 表示初始化是否已经成功完成。
             /// </summary>
             public int IsInitialized;
-        }
-
-        /// <summary>
-        /// 为每种数据库上下文保存独立的一次性初始化状态。
-        /// </summary>
-        /// <typeparam name="TContext">数据库上下文类型。</typeparam>
-        private static class InitializationStateCache<TContext> where TContext : DbContext {
-
-            /// <summary>
-            /// 获取当前上下文类型共享的初始化状态。
-            /// </summary>
-            public static readonly InitializationState Value = new();
         }
     }
 }

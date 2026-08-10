@@ -88,7 +88,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     var stringAsync = await httpClient.GetStringAsync($"{ApiParameters.Url}{method}?{urlJoin}", token);
 
@@ -199,7 +199,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     var stringAsync = await httpClient.GetStringAsync($"{ApiParameters.Url}{method}?{urlJoin}", token);
 
@@ -291,7 +291,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 password = passWord,
             };
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =

@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -21,7 +21,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
-    public class VideoScanNodeRepository : RepositoryBase<VideoScanNodeInfoModel>, IVideoScanNodeRepository {
+    public class VideoScanNodeRepository : RepositoryBase<VideoScanNodeInfoModel, VideoApiContext>, IVideoScanNodeRepository {
 
         public VideoScanNodeRepository(IDbContextFactory<VideoApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

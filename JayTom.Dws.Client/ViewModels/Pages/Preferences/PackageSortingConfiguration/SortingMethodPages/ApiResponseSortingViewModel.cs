@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -71,7 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 }
                 if (model.IsOk)
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(async () =>
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                     {
                         var apiSortingInfoModel = new ApiSortingInfoModel()
                         {
@@ -129,7 +129,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is ApiSortingItemInfoModel item)
             {
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var apiSortingRuleEditor = new ApiSortingRuleEditor();
                     if (apiSortingRuleEditor.DataContext is ApiSortingRuleEditorViewModel model)

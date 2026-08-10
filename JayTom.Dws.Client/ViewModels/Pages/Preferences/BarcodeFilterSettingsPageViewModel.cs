@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using ImTools;
 using Prism.Mvvm;
 using System.Linq;
@@ -37,8 +38,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private string _customRegexReplacementTestBarcode = string.Empty;
         private string _replacedBarcode = string.Empty;
 
-        public BarcodeFilterSettingsPageViewModel(IConfigRepository configRepository,
-            IExcel excel) : base(configRepository)
+        public BarcodeFilterSettingsPageViewModel(ISettingsStore settingsStore,
+            IExcel excel) : base(settingsStore)
         {
             _excel = excel;
         }
@@ -414,10 +415,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new BarcodeFilterSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new BarcodeFilterSettingsDto
                 {
                     BasicFilterInfo = new BasicFilterInfo
                     {
@@ -454,8 +452,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             ReplaceContent = s.ReplaceContent,
                             Remarks = s.Remarks
                         })?.ToList() ?? new List<CustomRegexReplacementInfo>()
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
                 Languages.Language.ResourceManager.GetString("Success") :
                 Languages.Language.ResourceManager.GetString("Failure"))}");
@@ -467,9 +464,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(SettingsName) ??
+                    var settingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>(SettingsName) ??
                                       new BarcodeFilterSettingsDto();
 
                     BarcodeFilterSettingsInfo = new BarcodeFilterSettingsInfoModel
@@ -708,7 +705,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -718,7 +715,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         }
                     }, async e =>
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             if (DialogHost.IsDialogOpen(model.Identifier))
                             {

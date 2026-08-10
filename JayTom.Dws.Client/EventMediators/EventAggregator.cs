@@ -2,6 +2,7 @@
 using Prism.Events;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Domain.Manager;
@@ -20,6 +21,14 @@ namespace JayTom.Dws.Client.EventMediators
 
         private readonly IEventAggregator _eventAggregator = new Prism.Events.EventAggregator();
         private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
+        /// <summary>
+        /// 让异步订阅包装器与其真实订阅目标具有相同生命周期。
+        /// </summary>
+        private readonly ConditionalWeakTable<object, List<object>> _asyncSubscriptions = new();
+        /// <summary>
+        /// 保存没有实例目标的静态异步订阅包装器。
+        /// </summary>
+        private readonly List<object> _staticAsyncSubscriptions = new();
 
         public void Publish<TEventType>(TEventType eventData)
         {
@@ -29,7 +38,7 @@ namespace JayTom.Dws.Client.EventMediators
         public void Subscribe<TEventType>(Action<TEventType> action)
         {
             _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
-                .Subscribe(action, ThreadOption.PublisherThread, true);
+                .Subscribe(action, ThreadOption.PublisherThread, false);
         }
 
         /// <summary>
@@ -37,35 +46,27 @@ namespace JayTom.Dws.Client.EventMediators
         /// </summary>
         /// <typeparam name="TEventType">事件数据类型。</typeparam>
         /// <param name="action">异步事件处理器。</param>
-        public void Subscribe<TEventType>(Func<TEventType, Task> action)
+        /// <returns>可用于精确取消订阅的令牌。</returns>
+        public SubscriptionToken Subscribe<TEventType>(Func<TEventType, Task> action)
         {
             ArgumentNullException.ThrowIfNull(action);
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
-                .Subscribe(eventData =>
-                {
-                    _ = InvokeAsyncSubscriber(action, eventData);
-                }, ThreadOption.PublisherThread, true);
-        }
+            var subscription = new SequentialAsyncEventHandler<TEventType>(action);
+            if (action.Target is { } target) {
+                var subscriptions = _asyncSubscriptions.GetValue(
+                    target,
+                    static _ => new List<object>());
+                lock (subscriptions) {
+                    subscriptions.Add(subscription);
+                }
+            }
+            else {
+                lock (_staticAsyncSubscriptions) {
+                    _staticAsyncSubscriptions.Add(subscription);
+                }
+            }
 
-        /// <summary>
-        /// 执行异步订阅并记录未处理异常，防止异常越过事件发布边界。
-        /// </summary>
-        /// <typeparam name="TEventType">事件数据类型。</typeparam>
-        /// <param name="action">异步事件处理器。</param>
-        /// <param name="eventData">事件数据。</param>
-        private static async Task InvokeAsyncSubscriber<TEventType>(
-            Func<TEventType, Task> action,
-            TEventType eventData)
-        {
-            try
-            {
-                await action(eventData);
-            }
-            catch (Exception exception)
-            {
-                NLog.LogManager.GetCurrentClassLogger()
-                    .Error(exception, "异步事件订阅处理失败");
-            }
+            return _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
+                .Subscribe(subscription.Enqueue, ThreadOption.PublisherThread, false);
         }
 
         public void PublishPackage<TEventType>(TEventType eventData)
@@ -75,12 +76,29 @@ namespace JayTom.Dws.Client.EventMediators
 
         public void SubscribePackage<TEventType>(Action<TEventType> action)
         {
-            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, true);
+            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, false);
         }
 
         public void Unsubscribe<TEventType>(Action<TEventType> action)
         {
             _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(action);
+        }
+
+        /// <summary>
+        /// 使用订阅令牌取消指定事件类型的订阅。
+        /// </summary>
+        public void Unsubscribe<TEventType>(SubscriptionToken token)
+        {
+            ArgumentNullException.ThrowIfNull(token);
+            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(token);
+        }
+
+        /// <summary>
+        /// 取消包裹事件订阅，供具有明确生命周期的订阅者释放资源。
+        /// </summary>
+        public void UnsubscribePackage<TEventType>(Action<TEventType> action)
+        {
+            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(action);
         }
     }
 

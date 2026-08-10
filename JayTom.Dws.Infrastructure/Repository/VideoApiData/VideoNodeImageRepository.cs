@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using JayTom.Dws.Domain.Repository.VideoApiData;
 
 namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
-    public class VideoNodeImageRepository : RepositoryBase<VideoNodeImageInfoModel>, IVideoNodeImageRepository {
+    public class VideoNodeImageRepository : RepositoryBase<VideoNodeImageInfoModel, VideoApiContext>, IVideoNodeImageRepository {
 
         public VideoNodeImageRepository(IDbContextFactory<VideoApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

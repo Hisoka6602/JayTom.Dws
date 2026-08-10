@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -29,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
     public class NvrPreviewHomeViewModel : BindableBase
     {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private ObservableCollection<NvrPreviewViewItemInfo> _nvrPreviewViewItems = new();
         private BaseDaHuatech? _baseDaHuatech;
@@ -42,11 +43,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
         }
 
         public NvrPreviewHomeViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             IIpcNvrConfigRepository ipcNvrConfigRepository)
         {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
 
@@ -61,14 +62,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                             await _runningSemaphoreSlim.WaitAsync();
                             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
                             await BaseDaHuatech.EnumDevices();
-                            var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
+                            var settingsDto = await _settingsStore.GetAsync<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
 
                             var bindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
                             var infoModels = bindingInfoModels.Where(w => w.SerialNumber.Equals(settingsDto.KeyboardDevice.DevicePath))
                                 .ToList();
                             foreach (var model in infoModels)
                             {
-                                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                                 {
                                     var serialNumber = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
                                             f.IpAddress.Equals(model.IpAddress) &&
@@ -150,7 +151,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                         {
                             await _runningSemaphoreSlim.WaitAsync();
                             await Task.Delay(300);
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 var itemInfos = NvrPreviewViewItems.Where(w => w.VideoFrame != null).ToList();
                                 foreach (var itemInfo in itemInfos)

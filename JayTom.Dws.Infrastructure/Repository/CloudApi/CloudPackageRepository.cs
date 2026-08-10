@@ -1,15 +1,12 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
-using RTools_NTS.Util;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Linq.Expressions;
-using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using JayTom.Dws.Data.CloudApiData;
 using Microsoft.EntityFrameworkCore;
-using MathNet.Numerics.Distributions;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
 using Microsoft.Extensions.Caching.Memory;
@@ -17,7 +14,7 @@ using JayTom.Dws.Domain.Repository.CloudApi;
 
 namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
 
-    public class CloudPackageRepository : RepositoryBase<PackageInfoModel>, ICloudPackageRepository {
+    public class CloudPackageRepository : RepositoryBase<PackageInfoModel, CloudApiContext>, ICloudPackageRepository {
 
         public CloudPackageRepository(IDbContextFactory<CloudApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
@@ -138,19 +135,11 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 var exceptionTypeSet = concardContext?.Set<ExceptionTypeInfoModel>();
                 var matchSet = concardContext?.Set<ExceptionMatchInfoModel>();
                 if (dbSet is null || matchSet is null || exceptionTypeSet is null) return new KeyValuePair<bool, object>(false, "查询失败");
+                if (startDateTime.HasValue && endDateTime.HasValue && startDateTime > endDateTime) {
+                    return new KeyValuePair<bool, object>(false, "开始时间不能晚于结束时间");
+                }
+
                 var queryable = dbSet.AsNoTracking()
-                    .OrderByDescending(o => o.PackageCreateTime)
-                    .Include(b => b.BarCodeInfo)
-                    .Include(b => b.WeightInfo)
-                    .Include(b => b.VolumeInfo)
-                    .Include(b => b.UploadInfo)
-                    .Include(b => b.ExitInfo)
-                    .Include(b => b.SortingInfo)
-                    .Include(b => b.LogisticsInfo)
-                    .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
-                    .Include(b => b.ImageInfos)
-                    .Include(b => b.CloudVideoUploadInfo)
                     .Where(w => w.BarCodeInfo != null &&
                                 (startDateTime == null ||
                                  w.BarCodeInfo.ScanTime >= startDateTime) &&
@@ -171,13 +160,17 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                              w.SortingInfo != null && w.SortingInfo.AbnormalSortingType != AbnormalSortingType.None)
                          .CountAsync(cancellationToken: cancellationToken);
                     //平均重量
-                    var averageWeight = await queryable.Where(w =>
-                            w.WeightInfo != null && w.WeightInfo.FormattedWeight >= 0)
-                        .AverageAsync(a => a.WeightInfo.FormattedWeight,
-                            cancellationToken: cancellationToken);
+                    var weightQuery = queryable.Where(w =>
+                        w.WeightInfo != null && w.WeightInfo.FormattedWeight >= 0);
+                    var averageWeight = await weightQuery.AnyAsync(cancellationToken)
+                        ? await weightQuery.AverageAsync(
+                            w => w.WeightInfo!.FormattedWeight,
+                            cancellationToken)
+                        : 0;
                     //识别数
                     var recognitionCount = await queryable.Where(w =>
-                             w.BarCodeInfo != null && !w.BarCodeInfo.Barcode.ToLower().Equals("noread"))
+                             w.BarCodeInfo != null &&
+                             EF.Functions.Collate(w.BarCodeInfo.Barcode, "NOCASE") != "noread")
                          .CountAsync(cancellationToken: cancellationToken);
                     //小时数
                     /*var hour = await queryable.Where(w => w.BarCodeInfo != null).GroupBy(g => g.BarCodeInfo.ScanTime.Hour)
@@ -201,19 +194,11 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
 
                     //取中位数时间差
 
-                    double packages = 0;
-                    var packageInfoModels = queryable
-                        .Where(w => w.SortingInfo != null && w.BarCodeInfo != null)
-                        .OrderBy(o => o.BarCodeInfo.ScanTime);
-
-                    var firstOrDefaultAsync = await packageInfoModels.FirstOrDefaultAsync(cancellationToken: cancellationToken);
-                    var lastOrDefaultAsync = await packageInfoModels.LastOrDefaultAsync(cancellationToken: cancellationToken);
-                    if (firstOrDefaultAsync?.BarCodeInfo is not null &&
-                        lastOrDefaultAsync?.BarCodeInfo is not null) {
-                        var totalSeconds = firstOrDefaultAsync.BarCodeInfo.ScanTime.Subtract(lastOrDefaultAsync.BarCodeInfo.ScanTime)
-                            .TotalSeconds;
-                        packages = totalPackages / totalSeconds;
-                    }
+                    var scanTimes = queryable.Where(w => w.BarCodeInfo != null)
+                        .Select(w => w.BarCodeInfo!.ScanTime);
+                    var firstScanTime = await scanTimes.MinAsync(cancellationToken);
+                    var lastScanTime = await scanTimes.MaxAsync(cancellationToken);
+                    var elapsedTicks = (lastScanTime - firstScanTime).Ticks;
 
                     // 现在，firstTimeDifference 包含了时间间隔最短的两个数据之间的时间差
 
@@ -257,6 +242,9 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
 
                     var infoModels = await queryable.Where(w => w.SortingInfo != null &&
                                                                 w.SortingInfo.AbnormalSortingType != AbnormalSortingType.None)
+                        .Include(w => w.BarCodeInfo)
+                        .Include(w => w.UploadInfo)
+                        .Include(w => w.SortingInfo)
                         ?.ToListAsync(cancellationToken: cancellationToken)! ?? new List<PackageInfoModel>();
 
                     var errorStatistics = infoModels.Select(s =>
@@ -282,7 +270,12 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                             Quantity = s.Count()
                         }).ToListAsync(cancellationToken: cancellationToken);
                     //整合走势图,如果不需要则回填trendDataInfos
-                    var timeSpan = endDateTime.Value - startDateTime.Value;
+                    var effectiveStartTime = startDateTime ?? firstScanTime;
+                    var effectiveEndTime = endDateTime ?? lastScanTime;
+                    if (effectiveEndTime <= effectiveStartTime) {
+                        effectiveEndTime = effectiveStartTime.AddMinutes(1);
+                    }
+                    var timeSpan = effectiveEndTime - effectiveStartTime;
                     var nodeCount = 30;
                     var unit = "";
 
@@ -308,8 +301,8 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
 
                             default:
                                 // 计算开始和结束日期之间的完整月份差异
-                                var monthsApart = 12 * (endDateTime.Value.Year - startDateTime.Value.Year) + endDateTime.Value.Month - startDateTime.Value.Month;
-                                if (startDateTime.Value.AddMonths(monthsApart) < endDateTime.Value) {
+                                var monthsApart = 12 * (effectiveEndTime.Year - effectiveStartTime.Year) + effectiveEndTime.Month - effectiveStartTime.Month;
+                                if (effectiveStartTime.AddMonths(monthsApart) < effectiveEndTime) {
                                     // 如果增加月份后的日期仍旧小于结束日期，表示有额外的日子需要被覆盖
                                     monthsApart++;
                                 }
@@ -319,14 +312,15 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         }
 
                     List<TrendDataInfo> result = new();
-                    var currentStartTime = startDateTime.Value;
+                    nodeCount = Math.Clamp(nodeCount, 1, 1000);
+                    var currentStartTime = effectiveStartTime;
 
                     for (var i = 0; i < nodeCount; i++) {
                         var startTime = currentStartTime;
                         var endTime = AddTime(currentStartTime, unit);
 
-                        if (endTime > endDateTime) {
-                            endTime = endDateTime.Value;
+                        if (endTime > effectiveEndTime) {
+                            endTime = effectiveEndTime;
                         }
 
                         var quantity = trendDataInfos.Where(t => t.Time >= startTime && t.Time < endTime).Sum(t => t.Quantity);
@@ -347,7 +341,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         AbnormalSortingRate = Math.Round((double)abnormalSortingCount / totalPackages, 3),
                         AverageWeight = Math.Round(averageWeight, 3),
                         RecognitionRate = Math.Round((double)recognitionCount / totalPackages, 3),
-                        SortingEfficiency = (int)(3600 * Math.Abs(packages)),
+                        SortingEfficiency = CalculateHourlyEfficiency(totalPackages, elapsedTicks),
                         ExitStatisticsInfo = statisticsDtos,
                         ErrorStatistics = errorStatistics,
                         TrendDataItems = result
@@ -361,6 +355,21 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, object>(false, "查询失败");
             }
+        }
+
+        /// <summary>
+        /// 根据包裹数和有效时间跨度安全换算每小时分拣量。
+        /// </summary>
+        private static int CalculateHourlyEfficiency(int packageCount, long elapsedTicks) {
+            if (packageCount <= 0 || elapsedTicks <= 0) {
+                return 0;
+            }
+
+            var hourlyRate = decimal.Round(
+                (decimal)packageCount * TimeSpan.TicksPerHour / elapsedTicks,
+                0,
+                MidpointRounding.AwayFromZero);
+            return hourlyRate >= int.MaxValue ? int.MaxValue : decimal.ToInt32(hourlyRate);
         }
 
         private DateTime AddTime(DateTime time, string unit) {

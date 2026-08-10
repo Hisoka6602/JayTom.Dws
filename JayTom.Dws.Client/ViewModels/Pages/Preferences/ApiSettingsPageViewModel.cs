@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -20,7 +21,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
     public class ApiSettingsPageViewModel : BindableBase
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
 
         private ObservableCollection<ApiTypeInfoModel> _apiTypeItems = new()
         {
@@ -130,9 +131,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private SnackbarMessageQueue _apiSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public ApiSettingsPageViewModel(IConfigRepository configRepository)
+        public ApiSettingsPageViewModel(ISettingsStore settingsStore)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
         }
 
         public SnackbarMessageQueue ApiSettingsMessageQueue
@@ -157,14 +158,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj)
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = "ApiSettings",
-                Value = JsonConvert.SerializeObject(new ApiSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync("ApiSettings",new ApiSettingsDto()
                 {
                     Type = SelectApiType?.Value ?? ApiType.None
-                })
-            });
+                });
             if (!insertOrUpdate)
             {
                 SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == ApiType.None);
@@ -190,9 +187,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
+                    var settingsDto = await _settingsStore.GetAsync<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
                     SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.Type);
                 });
             }

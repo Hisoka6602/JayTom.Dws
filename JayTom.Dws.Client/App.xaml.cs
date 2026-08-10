@@ -1,4 +1,5 @@
-﻿using DryIoc;
+using JayTom.Dws.Application.Configuration;
+using DryIoc;
 using System;
 using System.Linq;
 using Example;
@@ -9,7 +10,6 @@ using Prism.DryIoc;
 using System.Windows;
 using JayTom.Dws.Ocr;
 using JayTom.Dws.Nvr;
-using Newtonsoft.Json;
 using System.IO.Pipes;
 using System.Net.Http;
 using System.IO.Ports;
@@ -35,7 +35,6 @@ using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Interface.Cloud;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
-using Microsoft.Extensions.Hosting;
 using JayTom.Dws.Interface.License;
 using JayTom.Dws.Client.Views.Pages;
 using Microsoft.Data.Sqlite;
@@ -72,6 +71,7 @@ using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Views.Pages.Preferences;
 using JayTom.Dws.Client.Service.BackgroundService;
+using JayTom.Dws.Client.Service.Runtime;
 using JayTom.Dws.Client.Views.Editors.CloudService;
 using JayTom.Dws.Client.Service.ProcessingServices;
 using JayTom.Dws.Client.Service.ExternalDataService;
@@ -135,297 +135,12 @@ namespace JayTom.Dws.Client
     {
         private Mutex? _singleInstanceMutex;
         private const string PipeName = "DwsPipe";
+        /// <summary>单个设备或分拣组件在停机阶段允许占用的最长时间。</summary>
+        private static readonly TimeSpan ComponentStopTimeout = TimeSpan.FromSeconds(5);
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
-            var rules = containerRegistry.GetContainer().Rules;
-            rules.WithoutThrowOnRegisteringDisposableTransient();
-
-            //注册窗口
-            containerRegistry.RegisterDialog<ApiAccessDialog>();
-            containerRegistry.RegisterDialog<ApiTestDialog>();
-            containerRegistry.RegisterDialog<PackageDetailsDialog>();
-            containerRegistry.RegisterDialog<NvrBindingPreviewViewDialog>();
-            //插件窗口
-            {
-                containerRegistry.RegisterDialog<SunnenInputBarcodeControl>();
-            }
-            //设置窗口
-            {
-                containerRegistry.RegisterDialog<VideoCameraSettingsDialog>();
-            }
-            //海康软硬触发
-            {
-                containerRegistry.RegisterDialog<TriggerModeSelectionPage>();
-            }
-            //全景指定触发
-            {
-                containerRegistry.RegisterDialog<ScanCameraSelectionDialog>();
-            }
-            //跳转注册
-            {
-                containerRegistry.RegisterForNavigation<PluginMarketplacePage>();
-                containerRegistry.RegisterForNavigation<DataManagementPage>();
-                containerRegistry.RegisterForNavigation<CameraConfigurationPage>();
-                containerRegistry.RegisterForNavigation<APISettingsPage>();
-                containerRegistry.RegisterForNavigation<SaveImageSettingsPage>();
-                containerRegistry.RegisterForNavigation<BarcodeFilterSettingsPage>();
-                containerRegistry.RegisterForNavigation<ResultOutputSettingsPage>();
-                containerRegistry.RegisterForNavigation<ContentInputSettingsPage>();
-                containerRegistry.RegisterForNavigation<CacheClearSettingsPage>();
-                containerRegistry.RegisterForNavigation<WeightSettingPages>();
-                containerRegistry.RegisterForNavigation<VolumeSettingsPage>();
-                containerRegistry.RegisterForNavigation<LogManagerPage>();
-                containerRegistry.RegisterForNavigation<PackageSortingSettingsPage>();
-                containerRegistry.RegisterForNavigation<OcrSettingsPage>();
-                containerRegistry.RegisterForNavigation<WorkflowSettingsPage>();
-                containerRegistry.RegisterForNavigation<AppSettingsPage>();
-                containerRegistry.RegisterForNavigation<CloudServicePage>();
-                containerRegistry.RegisterForNavigation<CreatePackageSettingsPage>();
-                //LogManagerPage
-                //相机
-                containerRegistry.RegisterForNavigation<BarcodeScannerCameraConfigPage>();
-                containerRegistry.RegisterForNavigation<CameraFinderPage>();
-                containerRegistry.RegisterForNavigation<PanoramaCameraConfigPage>();
-                containerRegistry.RegisterForNavigation<VolumeCameraConfigPage>();
-                containerRegistry.RegisterForNavigation<UsbCameraSettingsPage>();
-                containerRegistry.RegisterForNavigation<AlgorithmSettingsPage>();
-                containerRegistry.RegisterForNavigation<NVRIPCDeviceManagementPage>();
-                //分拣设置
-                containerRegistry.RegisterForNavigation<LogisticsCodeRecognitionPage>();
-                containerRegistry.RegisterForNavigation<PackageExitDefinitionPage>();
-                containerRegistry.RegisterForNavigation<SortingInstructionBindingPage>();
-                containerRegistry.RegisterForNavigation<SortingSchemeSettingsPage>();
-                containerRegistry.RegisterForNavigation<CommunicationsSettingsPage>();
-                containerRegistry.RegisterForNavigation<SortingMethodPage>();
-                containerRegistry.RegisterForNavigation<PackageExitLockSettingsPage>();
-                containerRegistry.RegisterForNavigation<StackedPackageDetectionSettingsPage>();
-                containerRegistry.RegisterForNavigation<SupplyCounterSettingsPage>();
-                containerRegistry.RegisterForNavigation<GrayscaleDeviceSettingsPage>();
-                //程序设置
-                containerRegistry.RegisterForNavigation<GridSettingsPage>();
-                containerRegistry.RegisterForNavigation<OtherSettingsPage>();
-                containerRegistry.RegisterForNavigation<LicensePage>();
-                containerRegistry.RegisterForNavigation<SyncSettingsPage>();
-                containerRegistry.RegisterForNavigation<PassWordSettingsPage>();
-                //云端服务
-                containerRegistry.RegisterForNavigation<CloudDataPage>();
-                containerRegistry.RegisterForNavigation<CloudVideoPage>();
-                containerRegistry.RegisterForNavigation<NetworkVideoRecorderPage>();
-            }
-            //其他注册
-            containerRegistry.GetContainer().RegisterServices(services =>
-            {
-                services.AddPooledDbContextFactory<SqliteContext>(options =>
-                {
-                    options.UseSqlite(
-                        CreateSqliteConnectionString("Data.db"),
-                        builder =>
-                        {
-                            builder.CommandTimeout(100);
-                            builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        })
-                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-                        .EnableDetailedErrors(false)
-                        .EnableSensitiveDataLogging(false);
-                }, 300);
-
-                services.AddPooledDbContextFactory<SqliteConfContext>(options =>
-                {
-                    options.UseSqlite(
-                        CreateSqliteConnectionString("Configuration.db"),
-                        builder =>
-                        {
-                            builder.CommandTimeout(100);
-                            builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        })
-                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-                        .EnableDetailedErrors(false)
-                        .EnableSensitiveDataLogging(false);
-                }, 300);
-                services.AddPooledDbContextFactory<SqliteLogsContext>(options =>
-                {
-                    options.UseSqlite(
-                        CreateSqliteConnectionString("ClientLogs.db"),
-                        builder =>
-                        {
-                            builder.CommandTimeout(100);
-                            builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        })
-                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-                        .EnableDetailedErrors(false)
-                        .EnableSensitiveDataLogging(false);
-                }, 300);
-
-                //http
-                services.AddHttpClient("INSURANCE", httpClient =>
-                {
-                    // httpClient.Timeout = TimeSpan.FromSeconds(10);
-                }).ConfigurePrimaryHttpMessageHandler(() =>
-                {
-                    var handler = new HttpClientHandler()
-                    {
-                        UseDefaultCredentials = true,
-                        MaxConnectionsPerServer = 600,
-                        ServerCertificateCustomValidationCallback = (m, c, ch, _) => true,
-                        //UseProxy = false
-                    };
-
-                    return handler;
-                });
-
-                //配置内存缓存
-                services.AddMemoryCache();
-                //本地数据表注册
-                //data
-                // 注册 IConfiguration
-                services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .Build());
-                services.AddSingleton<IPackageRepository, PackageRepository>();
-                services.AddSingleton<IBarCodeRepository, BarCodeRepository>();
-                services.AddSingleton<ISoundRepository, SoundRepository>();
-                services.AddSingleton<IVolumeRepository, VolumeRepository>();
-                services.AddSingleton<IWeightRepository, WeightRepository>();
-                services.AddSingleton<IUploadRepository, UploadRepository>();
-                services.AddSingleton<ISortingRepository, SortingRepository>();
-                services.AddSingleton<IOcrRepository, OcrRepository>();
-                services.AddSingleton<IImageRepository, ImageRepository>();
-                services.AddSingleton<ICloudVideoUploadRepository, CloudVideoUploadRepository>();
-                services.AddSingleton<IExitInfoRepository, ExitInfoRepository>();
-
-                //config
-                services.AddSingleton<IBarcodeScannerCameraConfigRepository, BarcodeScannerCameraConfigRepository>();
-                services.AddSingleton<IPanoramaCameraConfigRepository, PanoramaCameraConfigRepository>();
-                services.AddSingleton<IVolumeCameraConfigRepository, VolumeCameraConfigRepository>();
-
-                services.AddSingleton<IUsbCameraConfigRepository, UsbCameraConfigRepository>();
-                services.AddSingleton<IConfigRepository, ConfigRepository>();
-                services.AddSingleton<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
-                services.AddSingleton<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
-                services.AddSingleton<ISortingInstructionBindingRepository, SortingInstructionBindingRepository>();
-                services.AddSingleton<ILogisticsRegexRepository, LogisticsRegexRepository>();
-                services.AddSingleton<ISortingInstructionRepository, SortingInstructionRepository>();
-                services.AddSingleton<IPackageExitLockBindingRepository, PackageExitLockBindingRepository>();
-
-                services.AddSingleton<IBarCodeSortingRepository, BarCodeSortingRepository>();
-                services.AddSingleton<IBarCodeRegexRepository, BarCodeRegexRepository>();
-
-                services.AddSingleton<IWeightSortingRepository, WeightSortingRepository>();
-                services.AddSingleton<IWeightRuleRepository, WeightRuleRepository>();
-
-                services.AddSingleton<IVolumeSortingRepository, VolumeSortingRepository>();
-                services.AddSingleton<IVolumeRuleRepository, VolumeRuleRepository>();
-
-                services.AddSingleton<ILogisticsSortingRepository, LogisticsSortingRepository>();
-                services.AddSingleton<ILogisticsRuleRepository, LogisticsRuleRepository>();
-
-                services.AddSingleton<IOcrSortingRepository, OcrSortingRepository>();
-                services.AddSingleton<IOcrRuleRepository, OcrRuleRepository>();
-
-                services.AddSingleton<IApiSortingRepository, ApiSortingRepository>();
-                services.AddSingleton<IApiRuleRepository, ApiRuleRepository>();
-
-                services.AddSingleton<ICommunicationConnectionConfigRepository, CommunicationConnectionConfigRepository>();
-                services.AddSingleton<IDeviceExtensionConfigRepository, DeviceExtensionConfigRepository>();
-                services.AddSingleton<IHeartbeatConfigRepository, HeartbeatConfigRepository>();
-                services.AddSingleton<ISerialPortConfigRepository, SerialPortConfigRepository>();
-                services.AddSingleton<ITcpConfigRepository, TcpConfigRepository>();
-                services.AddSingleton<ITcpConnectionConfigRepository, TcpConnectionConfigRepository>();
-                services.AddSingleton<INvrCameraBindingRepository, NvrCameraBindingRepository>();
-
-                services.AddSingleton<IIpcNvrConfigRepository, IpcNvrConfigRepository>();
-                services.AddSingleton<INvrWatermarkConfigRepository, NvrWatermarkConfigRepository>();
-                //logs
-                services.AddSingleton<IAppLogRepository, AppLogRepository>();
-                services.AddSingleton<ICameraLogRepository, CameraLogRepository>();
-                services.AddSingleton<ISortingLogRepository, SortingLogRepository>();
-                services.AddSingleton<IWeighingLogRepository, WeighingLogRepository>();
-                services.AddSingleton<IVolumeLogRepository, VolumeLogRepository>();
-                services.AddSingleton<IApiLogRepository, ApiLogRepository>();
-                services.AddSingleton<IOutputLogRepository, OutputLogRepository>();
-                services.AddSingleton<IInputLogRepository, InputLogRepository>();
-                services.AddSingleton<IOcrLogRepository, OcrLogRepository>();
-                services.AddSingleton<IFtpLogRepository, FtpLogRepository>();
-                services.AddSingleton<ICleanupLogRepository, CleanupLogRepository>();
-                services.AddSingleton<IExceptionLogRepository, ExceptionLogRepository>();
-                //插件注册
-                services.AddSingleton<IExcel, NpoiExport>();
-                services.AddSingleton<IFtp, FluentFtpClient>();
-                services.AddSingleton<ISaveImage, SaveImage>();
-                services.AddSingleton<ISpeech, Speech>();
-                services.AddSingleton<ITcpCommClient, TouchSocketTcpClient>();
-                services.AddSingleton<ITcpCommServer, TouchSocketTcpServer>();
-                services.AddSingleton<ITcpContentOutput>(provider => new TcpContentOutput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                services.AddSingleton<ITcpVolumeInput>(provider => new TcpVolumeInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                services.AddSingleton<ITcpContentInput>(provider => new TcpContentInput(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                services.AddSingleton<ISortingSerialPort>(serialPort => new SortingSerialPort(new SerialPort()));
-                services.AddSingleton<ISortingTcp>(provider => new SortingTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                services.AddSingleton<IKeyboardDeviceManager, KeyboardDeviceManager>();
-
-                //叠包监控通讯注册
-                services.AddSingleton<IPackageDetectionSerialPort>(serialPort => new PackageDetectionSerialPort(new SerialPort()));
-                services.AddSingleton<IPackageDetectionTcp>(provider => new PackageDetectionTcp(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-                //效验注册
-                services.AddSingleton<INetworkTime, NetworkTime>();
-                services.AddSingleton<ICertificateValidationService, CertificateValidationService>();
-                //电脑注册
-                services.AddSingleton<IComputer, Infrastructure.IComputer.Computer>();
-                //电脑信息上报
-                services.AddSingleton<IComputerInfoReporter, ComputerInfoReporter>();
-                //写默认配置
-                services.AddSingleton<IDefaultConfigurationService, DefaultConfigurationService>();
-                //设备注册
-                services.AddSingleton<ICamera, HikvisionSmartCamera>();
-                //Ocr
-                services.AddSingleton<IOcr, ExpressBillOcr>();
-                //读码器
-                //services.AddSingleton<IBarCodeReader, DynamsoftBarCodeReader>();
-                //磅秤
-                services.AddSingleton<IDynamicScale, DefaultDynamicScale>();
-                services.AddSingleton<IStaticScale, DefaultStaticScale>();
-                services.AddSingleton<IDeviceService, DefaultDeviceService>();
-                services.AddSingleton<IImageStorageService, DefaultImageStorageService>();
-                services.AddSingleton<IResultOutputService, DefaultResultOutputService>();
-                services.AddSingleton<IExternalDataService, ExternalDataService>();
-                //基础服务注册
-                services.AddSingleton<ICacheCleanupService, CacheCleanupService>();
-                //分拣注册
-                services.AddSingleton<ISortingService, DefaultSortingService>();
-                //锁格监控注册
-                services.AddSingleton<IExitMonitor, DefaultExitMonitor>();
-                //叠包监控注册
-                services.AddSingleton<IStackedPackageService, DefaultStackedPackageService>();
-                services.AddSingleton<ISortingConnectionService, DefaultSortingConnectionService>();
-                //灰度仪服务注册
-                services.AddSingleton<IGrayscaleService, DefaultGrayscaleService>();
-                services.AddSingleton<IGrayscaleDevice>(provider => new GwGrayscaleDevice(new TouchSocketTcpClient(), new TouchSocketTcpServer()));
-
-                //云视频云端
-                services.AddSingleton<ICloud, CloudVideoUploadApi>();
-                //Nvr
-                services.AddSingleton<INvrManager, DaHuaNvr>();
-                //授权接口
-                services.AddSingleton<IClientLicenseApi, DefaultClientLicenseApi>();
-                //SignalR
-                services.AddSingleton<ICloudApiClientMessageHub, CloudApiClientMessageHub>();
-                //同步配置
-                services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
-                //把后台注册服务写在这里
-                services.AddHostedService<YunShanPackageBackgroundService>(); // 注册后组包服务
-                services.AddHostedService<SaveImageBackgroundService>();//注册存图服务
-                services.AddHostedService<SubmitApiBackgroundService>();//提交Api
-                services.AddHostedService<DataProcessingBackgroundService>();//数据处理
-                services.AddHostedService<CleanupService>();//清理
-                services.AddHostedService<ComputerInfoBackgroundService>(); // 注册后台服务
-                services.AddHostedService<SingleInstanceBackgroundService>(); // 注册单开激活服务
-                services.AddHostedService<LogProcessingService>();//日志管理器
-                services.AddHostedService<TimerBackgroundService>();//计时
-                services.AddHostedService<CloudBackgroundService>();//上传云端
-                //services.AddHostedService<PackageAggregationService>();//集包服务
-                services.AddHostedService<PackageExitUpdateBackgroundService>();//格口更新
-            });
+            Composition.ApplicationComposition.Register(containerRegistry);
         }
 
         protected override Window CreateShell()
@@ -456,66 +171,62 @@ namespace JayTom.Dws.Client
                 // 另一个实例已经在运行，尝试激活它的窗口
                 NotifyExistingInstance();
                 NLog.LogManager.GetCurrentClassLogger().Error("阻止多开");
-                Environment.Exit(0);
+                Shutdown(0);
+                return;
             }
-            ThreadPool.SetMinThreads(100, 200);
 
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args)
             {
-                //异常触发
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
-                EventAggregator.Instance.Publish(new AppLogInfoModel
+                ReportUnhandledException(args.Exception, "UI线程未处理异常");
+                args.Handled = !IsFatalException(args.Exception);
+                if (!args.Handled)
                 {
-                    CreateTime = DateTime.Now,
-                    Message = args.Exception.Message,
-                    Type = LogType.Exception
-                });
+                    Shutdown(-2);
+                }
             };
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args)
             {
-                //异常触发
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.ExceptionObject)}");
-                EventAggregator.Instance.Publish(new AppLogInfoModel
-                {
-                    CreateTime = DateTime.Now,
-                    Message = args?.ExceptionObject?.ToString() ?? string.Empty,
-                    Type = LogType.Exception
-                });
+                var exception = args.ExceptionObject as Exception ??
+                                new InvalidOperationException(args.ExceptionObject?.ToString());
+                ReportUnhandledException(exception, "应用域未处理异常");
+                NLog.LogManager.Flush(TimeSpan.FromSeconds(5));
             };
             TaskScheduler.UnobservedTaskException += (sender, args) =>
             {
-                //异常触发
-                NLog.LogManager.GetCurrentClassLogger().Error($"{JsonConvert.SerializeObject(args.Exception)}");
-                EventAggregator.Instance.Publish(new AppLogInfoModel
-                {
-                    CreateTime = DateTime.Now,
-                    Message = args.Exception.Message,
-                    Type = LogType.Exception
-                });
+                ReportUnhandledException(args.Exception, "未观察任务异常");
+                args.SetObserved();
             };
             base.OnStartup(e);
-
-            var container = Container.GetContainer();
-            {
-                //在这里写默认配置
-                var service = container.GetService<IDefaultConfigurationService>();
-                service?.WriteDefaultConfiguration().ConfigureAwait(false).GetAwaiter().GetResult();
-            }
-            //加载语言
-            var configRepository = container.Resolve<IConfigRepository>();
-            var configInfoModel = configRepository?.FirstOrDefault(f =>
-                f.ConfigName.Equals("Language")).GetAwaiter().GetResult();
-            if (configInfoModel != null)
-            {
-                var culture = new CultureInfo(configInfoModel.Value);
-                Thread.CurrentThread.CurrentCulture = culture;
-                Thread.CurrentThread.CurrentUICulture = culture;
-            }
 
             NLog.LogManager.GetCurrentClassLogger().Info("OnStartup结束");
         }
 
-        protected override async void OnExit(ExitEventArgs e)
+        /// <summary>
+        /// 记录未处理异常并尽力发布到应用日志，不让日志链路中的二次异常覆盖原始故障。
+        /// </summary>
+        private static void ReportUnhandledException(Exception exception, string source)
+        {
+            try
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, source);
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
+                    CreateTime = DateTime.Now,
+                    Message = $"{source}:{exception.Message}",
+                    Type = LogType.Exception
+                });
+            }
+            catch (Exception loggingException)
+            {
+                Debug.WriteLine($"记录未处理异常失败:{loggingException};原始异常:{exception}");
+            }
+        }
+
+        /// <summary>判断异常是否已经不适合在当前进程中继续运行。</summary>
+        private static bool IsFatalException(Exception exception) =>
+            exception is OutOfMemoryException or AccessViolationException;
+
+        protected override void OnExit(ExitEventArgs e)
         {
             try
             {
@@ -526,23 +237,15 @@ namespace JayTom.Dws.Client
                     Type = LogType.Information
                 });
 
-                var serviceProvider = Container.Resolve<IServiceProvider>();
-                var deviceService = serviceProvider.GetService<IDeviceService>();
-                if (deviceService?.RunningStatus == true)
+                using var shutdownCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+                var shutdownTask = Task.Run(() => StopApplicationServicesAsync(shutdownCancellation.Token));
+                if (!shutdownTask.Wait(TimeSpan.FromSeconds(20)))
                 {
-                    await deviceService.Stop();
+                    NLog.LogManager.GetCurrentClassLogger().Warn("程序关闭资源释放超过 20 秒，继续退出");
                 }
-
-                var sortingService = serviceProvider.GetService<ISortingService>();
-                if (sortingService?.RunningStatus == true)
+                else
                 {
-                    await sortingService.Stop();
-                }
-
-                // 按注册顺序的逆序停止，避免有依赖关系的后台服务并发释放同一资源。
-                foreach (var service in serviceProvider.GetServices<IHostedService>().Reverse())
-                {
-                    await service.StopAsync(CancellationToken.None);
+                    shutdownTask.GetAwaiter().GetResult();
                 }
             }
             catch (Exception exception)
@@ -565,8 +268,53 @@ namespace JayTom.Dws.Client
                     _singleInstanceMutex = null;
                 }
 
+                NLog.LogManager.Flush(TimeSpan.FromSeconds(5));
+                NLog.LogManager.Shutdown();
                 base.OnExit(e);
             }
+        }
+
+        /// <summary>
+        /// 按依赖顺序停止设备、分拣和后台服务。
+        /// </summary>
+        private async Task StopApplicationServicesAsync(CancellationToken token)
+        {
+            var serviceProvider = Container.Resolve<IServiceProvider>();
+            var deviceService = serviceProvider.GetRequiredService<IDeviceService>();
+            if (deviceService.RunningStatus)
+            {
+                try
+                {
+                    await deviceService.Stop()
+                        .WaitAsync(ComponentStopTimeout, token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(exception, "停止设备服务失败或超时，继续执行其余停机步骤");
+                }
+            }
+
+            var sortingService = serviceProvider.GetRequiredService<ISortingService>();
+            if (sortingService.RunningStatus)
+            {
+                try
+                {
+                    await sortingService.Stop()
+                        .WaitAsync(ComponentStopTimeout, token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(exception, "停止分拣服务失败或超时，继续执行其余停机步骤");
+                }
+            }
+
+            // 先停止设备和分拣生产者，再停止并刷新后台消费者，避免停机窗口继续产生新工作。
+            var hostedServiceSupervisor = serviceProvider.GetRequiredService<IHostedServiceSupervisor>();
+            await hostedServiceSupervisor.StopAsync(token).ConfigureAwait(false);
         }
 
         private void NotifyExistingInstance()
@@ -582,165 +330,63 @@ namespace JayTom.Dws.Client
             {
                 // 如果连接超时，可以处理错误情况
             }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Warn(exception, "通知已运行实例激活窗口失败");
+            }
         }
 
         protected override void ConfigureViewModelLocator()
         {
             base.ConfigureViewModelLocator();
-            //绑定页面
-
-            ViewModelLocationProvider.Register<ExportDialog, ExportDialogViewModel>();
-            ViewModelLocationProvider.Register<LoadingDialog, LoadingDialogViewModel>();
-            ViewModelLocationProvider.Register<DataTimeEditor, DataTimeEditorViewModel>();
-            ViewModelLocationProvider.Register<BulkDeleteAccessDialog, BulkDeleteAccessViewModel>();
-            ViewModelLocationProvider.Register<PackageExitLockEditor, PackageExitLockEditorViewModel>();
-            ViewModelLocationProvider.Register<PackageExitDefinitionEditor, PackageExitDefinitionEditorViewModel>();
-            ViewModelLocationProvider.Register<LogisticsCodeRecognitionEditor, LogisticsCodeRecognitionEditorViewModel>();
-            ViewModelLocationProvider.Register<SortingInstructionBindingEditor, SortingInstructionBindingEditorViewModel>();
-            ViewModelLocationProvider.Register<BarcodeSortingRuleEditor, BarcodeSortingRuleEditorViewModel>();
-            ViewModelLocationProvider.Register<WeightSortingRuleEditor, WeightSortingRuleEditorViewModel>();
-            ViewModelLocationProvider.Register<VolumeSortingRuleEditor, VolumeSortingRuleEditorViewModel>();
-            ViewModelLocationProvider.Register<LogisticsSortingRuleEditor, LogisticsSortingRuleEditorViewModel>();
-            ViewModelLocationProvider.Register<OcrSortingRuleEditor, OcrSortingRuleEditorViewModel>();
-            ViewModelLocationProvider.Register<ApiSortingRuleEditor, ApiSortingRuleEditorViewModel>();
-            ViewModelLocationProvider.Register<CommunicationConnectionConfigEditor, CommunicationConnectionConfigEditorViewModel>();
-            ViewModelLocationProvider.Register<RegularExpressionEditor, RegularExpressionEditorViewModel>();
-
-            //Ipc/Nvr编辑
-            ViewModelLocationProvider.Register<NvrIpcDeviceEditor, NvrIpcDeviceEditorViewModel>();
-            ViewModelLocationProvider.Register<NvrCameraMappingEditor, NvrCameraMappingEditorViewModel>();
-            ViewModelLocationProvider.Register<NvrBindingEditor, NvrBindingEditorViewModel>();
-            ViewModelLocationProvider.Register<NvrWatermarkConfigEditor, NvrWatermarkConfigEditorViewModel>();
-
-            ViewModelLocationProvider.Register<MainWindow, MainWindowViewModel>();
-            ViewModelLocationProvider.Register<SettingsPage, SettingsViewModel>();
-            ViewModelLocationProvider.Register<PluginMarketplacePage, PluginMarketplaceViewModel>();
-            ViewModelLocationProvider.Register<HomePage, HomeViewModel>();
-            ViewModelLocationProvider.Register<StatusBarPage, StatusBarViewModel>();
-            ViewModelLocationProvider.Register<ApiAccessDialog, ApiAccessViewModel>();
-            ViewModelLocationProvider.Register<PackageDetailsDialog, PackageDetailsDialogViewModel>();
-            ViewModelLocationProvider.Register<IpcPreviewDialog, IpcPreviewViewModel>();
-            ViewModelLocationProvider.Register<NvrBindingPreviewViewDialog, NvrBindingPreviewViewDialogViewModel>();
-            ViewModelLocationProvider.Register<NvrRecordingDialog, NvrRecordingViewModel>();
-
-            ViewModelLocationProvider.Register<ApiTestDialog, ApiTestViewModel>();
-            ViewModelLocationProvider.Register<DataManagementPage, DataManagementViewModel>();
-            ViewModelLocationProvider.Register<CameraConfigurationPage, CameraConfigurationViewModel>();
-            ViewModelLocationProvider.Register<BarcodeScannerCameraConfigPage, BarcodeScannerCameraConfigViewModel>();
-            ViewModelLocationProvider.Register<PanoramaCameraConfigPage, PanoramaCameraConfigViewModel>();
-            ViewModelLocationProvider.Register<VolumeCameraConfigPage, VolumeCameraConfigViewModel>();
-            ViewModelLocationProvider.Register<CameraFinderPage, CameraFinderViewModel>();
-            ViewModelLocationProvider.Register<UsbCameraSettingsPage, UsbCameraSettingsViewModel>();
-            ViewModelLocationProvider.Register<AlgorithmSettingsPage, AlgorithmSettingsViewModel>();
-            ViewModelLocationProvider.Register<NVRIPCDeviceManagementPage, NvrIpcDeviceManagementViewModel>();
-
-            ViewModelLocationProvider.Register<APISettingsPage, ApiSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<SaveImageSettingsPage, SaveImageSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<ResultOutputSettingsPage, ResultOutputSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<ContentInputSettingsPage, ContentInputSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<CacheClearSettingsPage, CacheClearSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<BarcodeFilterSettingsPage, BarcodeFilterSettingsPageViewModel>();
-            ViewModelLocationProvider.Register<WeightSettingPages, WeightSettingViewModel>();
-            ViewModelLocationProvider.Register<VolumeSettingsPage, VolumeSettingsViewModel>();
-            ViewModelLocationProvider.Register<AppSettingsPage, AppSettingsViewModel>();
-            ViewModelLocationProvider.Register<LogManagerPage, LogManagerViewModel>();
-            ViewModelLocationProvider.Register<VideoCameraSettingsDialog, VideoCameraSettingsViewModel>();
-            ViewModelLocationProvider.Register<TriggerModeSelectionPage, TriggerModeSelectionViewModel>();
-            ViewModelLocationProvider.Register<ScanCameraSelectionDialog, ScanCameraSelectionDialogViewModel>();
-            ViewModelLocationProvider.Register<ResolutionConstraintDialog, ResolutionConstraintViewModel>();
-            ViewModelLocationProvider.Register<CloudServicePage, CloudServicePageViewModel>();
-            ViewModelLocationProvider.Register<PasswordValidationDialog, PasswordValidationDialogViewModel>();
-
-            ViewModelLocationProvider.Register<NetworkVideoRecorderPage, NetworkVideoRecorderPageViewModel>();
-            ViewModelLocationProvider.Register<PackageSortingSettingsPage, PackageSortingSettingsViewModel>();
-            ViewModelLocationProvider.Register<OcrSettingsPage, OcrSettingsViewModel>();
-            ViewModelLocationProvider.Register<WorkflowSettingsPage, WorkflowSettingsViewModel>();
-
-            ViewModelLocationProvider.Register<LogisticsCodeRecognitionPage, LogisticsCodeRecognitionViewModel>();
-            ViewModelLocationProvider.Register<PackageExitDefinitionPage, PackageExitDefinitionViewModel>();
-            ViewModelLocationProvider.Register<SortingInstructionBindingPage, SortingInstructionBindingViewModel>();
-            ViewModelLocationProvider.Register<SortingSchemeSettingsPage, SortingSchemeSettingsViewModel>();
-            ViewModelLocationProvider.Register<CommunicationsSettingsPage, CommunicationsSettingsViewModel>();
-            ViewModelLocationProvider.Register<SortingMethodPage, SortingMethodViewModel>();
-            ViewModelLocationProvider.Register<PackageExitLockSettingsPage, PackageExitLockSettingsViewModel>();
-            ViewModelLocationProvider.Register<StackedPackageDetectionSettingsPage, StackedPackageDetectionSettingsViewModel>();
-            ViewModelLocationProvider.Register<SupplyCounterSettingsPage, SupplyCounterSettingsViewModel>();
-            ViewModelLocationProvider.Register<GrayscaleDeviceSettingsPage, GrayscaleDeviceSettingsViewModel>();
-            //分拣模式
-            ViewModelLocationProvider.Register<BarcodeSortingPage, BarcodeSortingViewModel>();
-            ViewModelLocationProvider.Register<WeightSortingPage, WeightSortingViewModel>();
-
-            ViewModelLocationProvider.Register<VolumeSortingPage, VolumeSortingViewModel>();
-            ViewModelLocationProvider.Register<LogisticsSortingPage, LogisticsSortingViewModel>();
-            ViewModelLocationProvider.Register<OcrSortingPage, OcrSortingViewModel>();
-            ViewModelLocationProvider.Register<ApiResponseSortingPage, ApiResponseSortingViewModel>();
-            ViewModelLocationProvider.Register<CombinedWorkflowSortingPage, CombinedWorkflowSortingViewModel>();
-            //程序设置
-            ViewModelLocationProvider.Register<GridSettingsPage, GridSettingsViewModel>();
-            ViewModelLocationProvider.Register<OtherSettingsPage, OtherSettingsViewModel>();
-            ViewModelLocationProvider.Register<LicensePage, LicensePageViewModel>();
-            ViewModelLocationProvider.Register<SyncSettingsPage, SyncSettingsViewModel>();
-            ViewModelLocationProvider.Register<PassWordSettingsPage, PassWordSettingsViewModel>();
-
-            //组包设置
-            ViewModelLocationProvider.Register<CreatePackageSettingsPage, CreatePackageSettingsViewModel>();
-            //日志
-            ViewModelLocationProvider.Register<AppLogPage, AppLogPageViewModel>();
-            ViewModelLocationProvider.Register<CameraLogPage, CameraLogPageViewModel>();
-            ViewModelLocationProvider.Register<SortingLogPage, SortingLogPageViewModel>();
-            ViewModelLocationProvider.Register<WeighingLogPage, WeighingLogPageViewModel>();
-            ViewModelLocationProvider.Register<VolumeLogPage, VolumeLogPageViewModel>();
-            ViewModelLocationProvider.Register<APILogPage, ApiLogPageViewModel>();
-            ViewModelLocationProvider.Register<OutputLogPage, OutputLogPageViewModel>();
-            ViewModelLocationProvider.Register<FTPLogPage, FtpLogPageViewModel>();
-            ViewModelLocationProvider.Register<ExceptionLogPage, ExceptionLogPageViewModel>();
-            //云端服务
-            ViewModelLocationProvider.Register<CloudDataPage, CloudDataPageViewModel>();
-            ViewModelLocationProvider.Register<CloudVideoPage, CloudVideoSettingsPageViewModel>();
-            //Nvr绑定页面
-            ViewModelLocationProvider.Register<NvrCameraBindingEditor, NvrCameraBindingEditorViewModel>();
-            //接口
-            ViewModelLocationProvider.Register<DefaultApiPage, DefaultApiPageViewModel>();
-            ViewModelLocationProvider.Register<SzjyApiPage, SzjyApiPageViewModel>();
-            ViewModelLocationProvider.Register<WdtFlagshipApiPage, WdtFlagshipApiPageViewModel>();
-            ViewModelLocationProvider.Register<WdtWmsApiPage, WdtWmsApiPageViewModel>();
-            ViewModelLocationProvider.Register<JtExpressApiPage, JtExpressApiPageViewModel>();
-            ViewModelLocationProvider.Register<JtPolarDayApiPage, JtPolarDayApiPageViewModel>();
-            ViewModelLocationProvider.Register<RoutDataApiPage, RoutDataApiViewPageModel>();
-            ViewModelLocationProvider.Register<CaiNiaoApiPage, CaiNiaoApiPageViewModel>();
-            ViewModelLocationProvider.Register<EshippingitApiPage, EshippingitApiPageViewModel>();
-            //实时日志
-            //实时日志
-            ViewModelLocationProvider.Register<RealTimeLogPage, RealTimeLogViewModel>();
-            //其他插件
-            {
-                ViewModelLocationProvider.Register<SunnenInputBarcodeControl, SunnenInputBarcodeViewModel>();
-            }
+            Composition.ViewModelMappingRegistration.Register();
         }
 
         protected override async void OnInitialized()
         {
-            await Task.Yield();
-            base.OnInitialized();
-            // 获取 IServiceProvider
-            var serviceProvider = Container.Resolve<IServiceProvider>();
-
-            // 启动 PackageAggregationService
-            var hostedServices = serviceProvider.GetServices<IHostedService>();
-
-            /*
-            Parallel.ForEach(hostedServices, async service => {
-                await service.StartAsync(default);
-            });*/
-
-            foreach (var service in hostedServices)
+            try
             {
-                var serviceName = service.GetType().Name;
-                NLog.LogManager.GetCurrentClassLogger().Info($"服务名: {serviceName}");
-                await service.StartAsync(default);
+                await Task.Yield();
+                base.OnInitialized();
+                await InitializeConfigurationAsync();
+                // 获取 IServiceProvider
+                var serviceProvider = Container.Resolve<IServiceProvider>();
+
+                var hostedServiceSupervisor = serviceProvider
+                    .GetRequiredService<IHostedServiceSupervisor>();
+                await hostedServiceSupervisor.StartAsync(CancellationToken.None);
+                foreach (var serviceState in hostedServiceSupervisor.GetHealthSnapshot())
+                {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Info($"服务名:{serviceState.Key}，状态:{serviceState.Value}");
+                }
+                NLog.LogManager.GetCurrentClassLogger().Info("全部服务启动完成");
             }
-            NLog.LogManager.GetCurrentClassLogger().Info("全部服务启动完成");
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Fatal(exception, "应用初始化失败");
+                Shutdown(-1);
+            }
+        }
+
+        /// <summary>
+        /// 异步创建默认配置并加载当前语言。
+        /// </summary>
+        private async Task InitializeConfigurationAsync()
+        {
+            var container = Container.GetContainer();
+            var defaultConfigurationService = container.Resolve<IDefaultConfigurationService>();
+            await defaultConfigurationService.WriteDefaultConfiguration();
+
+            var settingsStore = container.Resolve<ISettingsStore>();
+            var language = await settingsStore.GetRawAsync("Language");
+            if (!string.IsNullOrWhiteSpace(language))
+            {
+                var culture = new CultureInfo(language);
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+            }
         }
     }
 }

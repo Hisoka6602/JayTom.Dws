@@ -1,4 +1,9 @@
-﻿using System;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Interface;
+using JayTom.Dws.Client.Extensions;
+using JayTom.Dws.Abstractions.Integrations;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
@@ -21,7 +26,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
     public class JushuitanApiPageViewModel : SettingsPageTemplateViewModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly IDialogService _dialogService;
         private JushuitanErpApiModel _jushuitanErpApiInfo = new();
         private bool _isRefreshing = false;
@@ -29,10 +34,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private string _barcode = string.Empty;
         private double _weight;
 
-        public JushuitanApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory, IDialogService dialogService) : base(configRepository)
+        public JushuitanApiPageViewModel(ISettingsStore settingsStore,
+            IProviderRegistry<IDataUploader> providerRegistry, IDialogService dialogService) : base(settingsStore)
         {
-            _httpClientFactory = httpClientFactory;
+            _providerRegistry = providerRegistry;
             _dialogService = dialogService;
         }
 
@@ -68,9 +73,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>(SettingsName) ?? new JushuitanErpApiDto();
+                var settingsDto = await _settingsStore.GetAsync<JushuitanErpApiDto>(SettingsName) ?? new JushuitanErpApiDto();
                 JushuitanErpApiInfo = new JushuitanErpApiModel()
                 {
                     AppKey = settingsDto.AppKey,
@@ -94,10 +99,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new JushuitanErpApiDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new JushuitanErpApiDto()
                 {
                     AppKey = JushuitanErpApiInfo.AppKey,
                     AccessToken = JushuitanErpApiInfo.AccessToken,
@@ -111,8 +113,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     Version = JushuitanErpApiInfo.Version,
                     TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime ?? DateTime.MinValue,
                     LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime ?? DateTime.MinValue,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -126,9 +127,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsRefreshing)
             {
                 IsRefreshing = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var jushuitanErpApi = new JushuitanErpApi(_httpClientFactory);
+                    var jushuitanErpApi = _providerRegistry.Resolve<JushuitanErpApi>(ApiType.Jushuitan);
                     await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters()
                     {
                         AppKey = JushuitanErpApiInfo.AppKey,
@@ -193,10 +194,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsUploading)
             {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //上传
-                    var jushuitanErpApi = new JushuitanErpApi(_httpClientFactory);
+                    var jushuitanErpApi = _providerRegistry.Resolve<JushuitanErpApi>(ApiType.Jushuitan);
                     await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters()
                     {
                         AppKey = JushuitanErpApiInfo.AppKey,

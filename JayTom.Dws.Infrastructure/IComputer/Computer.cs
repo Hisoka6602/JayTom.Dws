@@ -6,7 +6,6 @@ using System.Management;
 using System.Diagnostics;
 using Microsoft.Win32;
 using System.Threading.Tasks;
-using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using LibreHardwareMonitor.Hardware;

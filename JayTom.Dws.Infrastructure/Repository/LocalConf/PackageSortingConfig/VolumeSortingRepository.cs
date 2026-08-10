@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -15,7 +15,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
-    public class VolumeSortingRepository : LocalRepositoryBase<VolumeSortingInfoModel>, IVolumeSortingRepository {
+    public class VolumeSortingRepository : LocalRepositoryBase<VolumeSortingInfoModel, SqliteConfContext>, IVolumeSortingRepository {
 
         public VolumeSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

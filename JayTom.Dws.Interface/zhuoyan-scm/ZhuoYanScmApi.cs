@@ -63,7 +63,7 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -146,7 +146,7 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =

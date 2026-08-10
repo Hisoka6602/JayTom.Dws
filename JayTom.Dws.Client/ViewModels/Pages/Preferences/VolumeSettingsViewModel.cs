@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -152,7 +153,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             Value = VolumeUnit.Millimeter
         };
 
-        public VolumeSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public VolumeSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -359,10 +360,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new VolumeSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new VolumeSettingsDto
                 {
                     Unit = SelectVolumeUnitInfo.Value,
                     DataTemplate = VolumeSettingsInfo.DataTemplate.Select(s => new ItemTemplateInfo()
@@ -409,8 +407,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         }
                     },
                     TriggerDelayMilliseconds = VolumeSettingsInfo.TriggerDelayMilliseconds,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -422,11 +419,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(SettingsName) ??
+                    var settingsDto = await _settingsStore.GetAsync<VolumeSettingsDto>(SettingsName) ??
                                       new VolumeSettingsDto();
                     var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel()
                     {

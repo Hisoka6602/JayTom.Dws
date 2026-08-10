@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
@@ -24,7 +25,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     {
         private SupplyCounterInfoModel _supplyCounterInfo = new();
 
-        public SupplyCounterSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public SupplyCounterSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -39,10 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new SupplyCounterSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new SupplyCounterSettingsDto
                 {
                     SendPreSequenceNumber = SupplyCounterInfo.SendPreSequenceNumber,
                     IsUseSupplyCounterMode = SupplyCounterInfo.IsUseSupplyCounterMode,
@@ -56,8 +54,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     RemovePackageAfterSignalTimeout = SupplyCounterInfo.RemovePackageAfterSignalTimeout,
                     ClearPackagesOnReset = SupplyCounterInfo.ClearPackagesOnReset,
                     ResetFilterAfterRemovingPackage = SupplyCounterInfo.ResetFilterAfterRemovingPackage
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("Save") ?? string.Empty}{(insertOrUpdate ?
                 Languages.Language.ResourceManager.GetString("Success") :
                 Languages.Language.ResourceManager.GetString("Failure"))}");
@@ -66,9 +63,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(SettingsName) ?? new SupplyCounterSettingsDto();
+                var settingsDto = await _settingsStore.GetAsync<SupplyCounterSettingsDto>(SettingsName) ?? new SupplyCounterSettingsDto();
 
                 SupplyCounterInfo = new SupplyCounterInfoModel()
                 {

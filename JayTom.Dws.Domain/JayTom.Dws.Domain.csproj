@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -9,14 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
+    <PackageReference Include="NLog" />
+    <PackageReference Include="System.Drawing.Common" />
+    <PackageReference Include="System.IO.Ports" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JayTom.Dws.Data\JayTom.Dws.Data.csproj" />
-    <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
-    <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Models\JayTom.Dws.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>

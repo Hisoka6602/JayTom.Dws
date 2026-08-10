@@ -115,11 +115,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                                     return;
                                 }
 
-                                var frameBytes = GC.AllocateUninitializedArray<byte>(checked((int)size));
-                                Marshal.Copy(buffer, frameBytes, 0, frameBytes.Length);
-                                using var stream = new MemoryStream(frameBytes, writable: false);
-                                using var decoded = Image.FromStream(stream);
-                                callback(new Bitmap(decoded));
+                                callback(CameraImageProcessing.DecodeCompressedFrame(
+                                    buffer,
+                                    checked((int)size)));
                             }
                             catch (Exception exception) {
                                 NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");
@@ -137,14 +135,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                                 return;
                             }
 
-                            var imageBytes = GC.AllocateUninitializedArray<byte>(checked((int)len));
-                            Marshal.Copy(buf, imageBytes, 0, imageBytes.Length);
-                            using var stream = new MemoryStream(imageBytes, writable: false);
-                            if (IsImageDataValid(stream)) {
-                                stream.Position = 0;
-                                using var imageBitmap = Image.FromStream(stream);
-                                callback(new Bitmap(imageBitmap));
-                            }
+                            callback(CameraImageProcessing.DecodeCompressedFrame(
+                                buf,
+                                checked((int)len)));
                         }
                         catch (Exception exception) {
                             NLog.LogManager.GetCurrentClassLogger().Error($"{exception}");

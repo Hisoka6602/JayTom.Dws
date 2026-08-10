@@ -167,7 +167,7 @@ namespace JayTom.Dws.Plugin.Ftp {
                             ftpDiskInfo.UsedSize = usedSize * 1024 * 1024; // 将单位转换为字节
 
                             // 计算已使用容量百分比
-                            ftpDiskInfo.UsedPercentage = (double)ftpDiskInfo.UsedSize / ftpDiskInfo.TotalSize * 100;
+                            ftpDiskInfo.UsedPercentage = (decimal)ftpDiskInfo.UsedSize / ftpDiskInfo.TotalSize * 100m;
                         }
                     }
 

@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -15,7 +15,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
-    public class WeightSortingRepository : LocalRepositoryBase<WeightSortingInfoModel>, IWeightSortingRepository {
+    public class WeightSortingRepository : LocalRepositoryBase<WeightSortingInfoModel, SqliteConfContext>, IWeightSortingRepository {
 
         public WeightSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

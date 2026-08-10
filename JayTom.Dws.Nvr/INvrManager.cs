@@ -116,49 +116,4 @@ namespace JayTom.Dws.Nvr {
         Task<KeyValuePair<bool, string>> DownloadPlaybackVideo(int channel, DateTime startTime, DateTime endTime, string savePath, CancellationToken token = default);
     }
 
-    // 用于传递实时预览信息的事件参数类
-    public class RealTimePreviewEventArgs : EventArgs {
-
-        // 可以添加一些实时预览的相关信息
-        public byte[]? YuvData { get; set; }
-
-        public Stream? Data { get; set; }
-
-        public IntPtr Section { get; set; }
-        public PixelFormat Format { get; set; }
-        public int Stride { get; set; }
-        public int Offset { get; set; }
-    }
-
-    // 用于传递远程回放信息的事件参数类
-    public class RemotePlaybackEventArgs : EventArgs {
-        // 可以添加一些远程回放的相关信息
-    }
-
-    // 用于传递下载进度信息的事件参数类
-    public class DownloadProgressEventArgs : EventArgs {
-
-        // 下载进度，可以是百分比或其他表示形式
-        public int Progress { get; set; }
-    }
-
-    public class RemotePlaybackProgressEventArgs : EventArgs {
-
-        // 远程回放进度，可以是百分比或其他表示形式
-        public int Progress { get; set; }
-    }
-
-    // 用于传递设备断开信息的事件参数类
-    public class DeviceDisconnectedEventArgs : EventArgs {
-
-        // 可以添加一些设备断开的相关信息
-        public IntPtr LoginId { get; set; }
-
-        public string Message { get; set; } = string.Empty;
-    }
-
-    // 用于传递设备重连信息的事件参数类
-    public class DeviceReconnectedEventArgs : DeviceDisconnectedEventArgs {
-        // 可以添加一些设备重连的相关信息
-    }
 }

@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -18,7 +18,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
-    public class VideoBarCodeRepository : RepositoryBase<VideoBarCodeInfoModel>, IVideoBarCodeRepository {
+    public class VideoBarCodeRepository : RepositoryBase<VideoBarCodeInfoModel, VideoApiContext>, IVideoBarCodeRepository {
 
         public VideoBarCodeRepository(IDbContextFactory<VideoApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

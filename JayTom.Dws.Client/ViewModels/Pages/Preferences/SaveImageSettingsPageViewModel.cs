@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -137,7 +138,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private int _timeout;
         private bool _isLoaded;
 
-        public SaveImageSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        public SaveImageSettingsPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
             _imageSource = _originalImage;
         }
@@ -344,13 +345,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //加载配置 SaveImageSettings
                     WatermarkItems.Clear();
                     SubDirectoryItems.Clear();
                     ImageNamingItems.Clear();
-                    var imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(SettingsName) ??
+                    var imageSettingsDto = await _settingsStore.GetAsync<ImageSettingsDto>(SettingsName) ??
                                            new ImageSettingsDto();
                     ImageRootDirectory = imageSettingsDto.ImageRootDirectory;
                     IsSaveBarcodeImage = imageSettingsDto.IsSaveBarcodeImage;
@@ -419,10 +420,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new ImageSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new ImageSettingsDto
                 {
                     ImageRootDirectory = ImageRootDirectory,
                     IsSaveBarcodeImage = IsSaveBarcodeImage,
@@ -461,8 +459,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         Timeout = Timeout,
                         Username = Username
                     }
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

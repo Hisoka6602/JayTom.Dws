@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using Prism.Commands;
@@ -32,7 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
         private string _fileName = string.Empty;
         private bool _isLoaded;
 
-        public OtherSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public OtherSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -76,18 +77,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                     File.Copy(FileName, dest, true);
                 }
 
-                var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = SettingsName,
-                    Value = JsonConvert.SerializeObject(new OtherSettingsDto()
+                var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new OtherSettingsDto()
                     {
                         IsAutoMaximize = OtherSettingsInfo.IsAutoMaximize,
                         IsAutoStart = OtherSettingsInfo.IsAutoStart,
                         ProgramTitle = OtherSettingsInfo.ProgramTitle,
                         ProgramLogoPath = dest,
                         IsAutoRunEnabled = OtherSettingsInfo.IsAutoRunEnabled
-                    })
-                });
+                    });
                 if (insertOrUpdate)
                 {
                     SetAutoRun(OtherSettingsInfo.IsAutoRunEnabled);
@@ -112,9 +109,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var otherSettingsDto = await _configRepository.FirstOrDefaultEntity<OtherSettingsDto>(SettingsName);
+                    var otherSettingsDto = await _settingsStore.GetAsync<OtherSettingsDto>(SettingsName);
                     if (otherSettingsDto is not null)
                     {
                         OtherSettingsInfo = new OtherSettingsModel()

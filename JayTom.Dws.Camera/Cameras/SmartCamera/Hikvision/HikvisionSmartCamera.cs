@@ -534,6 +534,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }
                         }
                         else {
+                            bmp?.Dispose();
                             if (!IsRealtimeImageEnabled) {
                                 thumbnailImage?.Dispose();
                             }
@@ -546,7 +547,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 Timestamp = timestamp,
                                 Barcode = "NoRead",
                                 Image = bmp,
-                                ThumbImage = thumbnailImage,
+                                ThumbImage = IsRealtimeImageEnabled && thumbnailImage is not null
+                                    ? new Bitmap(thumbnailImage)
+                                    : thumbnailImage,
                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                                 ScanTime = DateTime.Now,
                                 FrameNo = _frameNo
@@ -554,6 +557,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         }
                         else {
                             bmp?.Dispose();
+                            if (!IsRealtimeImageEnabled) {
+                                thumbnailImage?.Dispose();
+                            }
                         }
                     }
 
@@ -819,6 +825,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 triggeredEventArgsList.Add(barcodeTriggeredEventArgsList.FirstOrDefault() ?? new BarcodeTriggeredEventArgs());
             }
 
+            for (var index = 0; index < triggeredEventArgsList.Count; index++) {
+                var eventArgs = triggeredEventArgsList[index];
+                if (index > 0 && bmp is not null) {
+                    eventArgs.Image = new Bitmap(bmp);
+                }
+                if ((index > 0 || IsRealtimeImageEnabled) && thumbnailImage is not null) {
+                    eventArgs.ThumbImage = new Bitmap(thumbnailImage);
+                }
+            }
+
             return triggeredEventArgsList;
         }
 
@@ -984,10 +1000,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     points[i].Y = (int)(convertPoints[i].Y * ((float)thumbnail.Size.Height / imageHeight));
                 }
 
-                g.DrawPolygon(new Pen(color, BarcodeBorderSize - 4), points);
+                using var borderPen = new Pen(color, Math.Max(1, BarcodeBorderSize - 4));
+                g.DrawPolygon(borderPen, points);
 
-                var font = new Font("Arial", 12);
-                var brush = new SolidBrush(color);
+                using var font = new Font("Arial", 12);
+                using var brush = new SolidBrush(color);
+                using var linePen = new Pen(color);
 
                 // 截断文本
                 if (text.Length >= 20) {
@@ -1008,14 +1026,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 {
                     var rightMargin = 210;
                     g.DrawString(text, font, brush, thumbnail.Width - textWidth - rightMargin, yOffset);
-                    g.DrawLine(new Pen(color), thumbnail.Width - rightMargin, lineY, thumbnail.Width - textWidth - rightMargin, lineY);
-                    g.DrawLine(new Pen(color), thumbnail.Width - textWidth - rightMargin, lineY, points[0].X, points[0].Y);
+                    g.DrawLine(linePen, thumbnail.Width - rightMargin, lineY, thumbnail.Width - textWidth - rightMargin, lineY);
+                    g.DrawLine(linePen, thumbnail.Width - textWidth - rightMargin, lineY, points[0].X, points[0].Y);
                 }
                 else // 如果在右边，靠左绘制
                 {
                     g.DrawString(text, font, brush, 3, yOffset);
-                    g.DrawLine(new Pen(color), 3, lineY, textWidth + 3, lineY);
-                    g.DrawLine(new Pen(color), textWidth + 3, lineY, points[0].X, points[0].Y);
+                    g.DrawLine(linePen, 3, lineY, textWidth + 3, lineY);
+                    g.DrawLine(linePen, textWidth + 3, lineY, points[0].X, points[0].Y);
                 }
             }
             catch (Exception e) {
@@ -1062,43 +1080,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 Bitmap? bitmap = null;
                 switch (stFrameInfoEx2.enPixelType) {
                     case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
-                            bitmap = new Bitmap(
+                            bitmap = CameraImageProcessing.CopyPackedFrame(
+                                pData,
+                                checked((int)stFrameInfoEx2.nFrameLen),
                                 stFrameInfoEx2.nWidth,
                                 stFrameInfoEx2.nHeight,
-                                PixelFormat.Format8bppIndexed);
-                            var palette = bitmap.Palette;
-                            for (var i = 0; i < 256; i++) {
-                                palette.Entries[i] = Color.FromArgb(i, i, i);
-                            }
-                            bitmap.Palette = palette;
-                            var data = bitmap.LockBits(
-                                new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                                ImageLockMode.WriteOnly,
-                                PixelFormat.Format8bppIndexed);
-                            try {
-                                for (var row = 0; row < bitmap.Height; row++) {
-                                    unsafe {
-                                        Buffer.MemoryCopy(
-                                            IntPtr.Add(pData, row * bitmap.Width).ToPointer(),
-                                            IntPtr.Add(data.Scan0, row * data.Stride).ToPointer(),
-                                            data.Stride,
-                                            bitmap.Width);
-                                    }
-                                }
-                            }
-                            finally {
-                                bitmap.UnlockBits(data);
-                            }
+                                PixelFormat.Format8bppIndexed,
+                                stFrameInfoEx2.nWidth);
                             break;
                         }
                     case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg: {
-                            var imageBytes = new byte[(int)stFrameInfoEx2.nFrameLen];
-                            Marshal.Copy(pData, imageBytes, 0, imageBytes.Length);
-                            using var stream = new MemoryStream(imageBytes, false);
-                            using var decoded = new Bitmap(stream);
-                            bitmap = decoded.Clone(
-                                new Rectangle(0, 0, decoded.Width, decoded.Height),
-                                PixelFormat.Format24bppRgb);
+                            bitmap = CameraImageProcessing.DecodeCompressedFrame(
+                                pData,
+                                checked((int)stFrameInfoEx2.nFrameLen));
                             break;
                         }
                 }
@@ -1180,35 +1174,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         }
 
         public static Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-            // 创建目标缩略图的空白画布
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-
-            using var graphics = Graphics.FromImage(thumbnail);
-            // 设置绘图质量参数
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-            graphics.InterpolationMode = InterpolationMode.Low;
-
-            // 计算缩放比例
-            var scaleX = (float)thumbnailWidth / sourceImage.Width;
-            var scaleY = (float)thumbnailHeight / sourceImage.Height;
-            var scale = Math.Min(scaleX, scaleY);
-
-            // 计算缩放后的宽度和高度
-            var scaledWidth = (int)(sourceImage.Width * scale);
-            var scaledHeight = (int)(sourceImage.Height * scale);
-
-            // 计算在画布上居中绘制的起始位置
-            var startX = (thumbnailWidth - scaledWidth) / 2;
-            var startY = (thumbnailHeight - scaledHeight) / 2;
-
-            // 绘制缩略图
-            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
-
-            return thumbnail;
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         public unsafe Bitmap? GenerateThumbnail1(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {

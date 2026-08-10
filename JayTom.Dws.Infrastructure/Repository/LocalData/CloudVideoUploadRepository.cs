@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Infrastructure.Repository.LocalData
 {
 
-    public class CloudVideoUploadRepository : LocalRepositoryBase<CloudVideoUploadInfoModel>, ICloudVideoUploadRepository {
+    public class CloudVideoUploadRepository : LocalRepositoryBase<CloudVideoUploadInfoModel, SqliteContext>, ICloudVideoUploadRepository {
 
         public CloudVideoUploadRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

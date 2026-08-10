@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -68,7 +68,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                 Port = s.Port,
             })?.ToList();
 
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 NvrCameraMappingItemInfos.Clear();
                 await Task.Delay(200);

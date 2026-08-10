@@ -1,4 +1,9 @@
-﻿using System;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Interface;
+using JayTom.Dws.Client.Extensions;
+using JayTom.Dws.Abstractions.Integrations;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using Prism.Commands;
 using Newtonsoft.Json;
@@ -18,7 +23,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
     public class SzjyApiPageViewModel : SettingsPageTemplateViewModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly IDialogService _dialogService;
         private string _barcode = string.Empty;
         private double _weight;
@@ -36,10 +41,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         private string _nickname = string.Empty;
 
-        public SzjyApiPageViewModel(IConfigRepository configRepository, IHttpClientFactory httpClientFactory,
-            IDialogService dialogService) : base(configRepository)
+        public SzjyApiPageViewModel(ISettingsStore settingsStore, IProviderRegistry<IDataUploader> providerRegistry,
+            IDialogService dialogService) : base(settingsStore)
         {
-            _httpClientFactory = httpClientFactory;
+            _providerRegistry = providerRegistry;
             _dialogService = dialogService;
         }
 
@@ -153,18 +158,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new SzjyApiDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new SzjyApiDto
                 {
                     UserName = SzjyApiInfo.UserName,
                     Machine = SzjyApiInfo.Machine,
                     Password = SzjyApiInfo.Password,
                     TimeOut = SzjyApiInfo.TimeOut,
                     Url = SzjyApiInfo.Url,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -175,9 +176,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(SettingsName) ?? new SzjyApiDto();
+                    var settingsDto = await _settingsStore.GetAsync<SzjyApiDto>(SettingsName) ?? new SzjyApiDto();
                     SzjyApiInfo = new SzjyApiInfoModel()
                     {
                         Url = settingsDto.Url,
@@ -200,11 +201,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsLoggingIn)
             {
                 IsLoggingIn = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     IsLoginSuccessful = false;
                     //设置参数
-                    var szjyApi = new SzjyApi(_httpClientFactory);
+                    var szjyApi = _providerRegistry.Resolve<SzjyApi>(ApiType.SzjyApi);
                     await szjyApi.SetParameters(new SzjyApi.ApiParameter()
                     {
                         Machine = SzjyApiInfo.Machine,
@@ -250,10 +251,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsUploading)
             {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //上传
-                    var szjyApi = new SzjyApi(_httpClientFactory);
+                    var szjyApi = _providerRegistry.Resolve<SzjyApi>(ApiType.SzjyApi);
                     await szjyApi.SetParameters(new SzjyApi.ApiParameter()
                     {
                         Machine = SzjyApiInfo.Machine,

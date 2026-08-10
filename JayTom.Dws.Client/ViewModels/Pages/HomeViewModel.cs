@@ -1,12 +1,10 @@
-﻿using System;
-using DryIoc;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
 using JayTom.Dws.Ocr;
 using Prism.Commands;
 using System.Windows;
-using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.License;
@@ -36,6 +34,7 @@ using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Application.Configuration;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Service.ImageService;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
@@ -66,10 +65,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         private readonly IImageStorageService _imageStorageService;
         private readonly IResultOutputService _resultOutputService;
         private readonly IExternalDataService _externalDataService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsReader _settingsReader;
         private readonly ISortingService _sortingService;
         private readonly IClientLicenseApi _clientLicenseApi;
-        private readonly IContainer _container;
 
         private ObservableCollection<PackageItemModel> _packageItems = new();
 
@@ -276,24 +274,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             IImageStorageService imageStorageService,
             IResultOutputService resultOutputService,
             IExternalDataService externalDataService,
-            IConfigRepository configRepository,
+            ISettingsReader settingsReader,
             ISortingService sortingService,
             IClientLicenseApi clientLicenseApi,
-            IContainer container)
+            CameraHomeViewModel cameraHomeViewModel)
         {
             _dialogService = dialogService;
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
             _resultOutputService = resultOutputService;
             _externalDataService = externalDataService;
-            _configRepository = configRepository;
+            _settingsReader = settingsReader;
             _sortingService = sortingService;
             _clientLicenseApi = clientLicenseApi;
-            _container = container;
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = args?.Barcode ?? "未识别到条码";
                 }, DispatcherPriority.Background);
@@ -305,7 +302,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             _deviceService.VolumeCaptured += DeviceServiceOnVolumeCaptured;
             _deviceService.DeviceException += async delegate (object? sender, DeviceExceptionEventArgs args)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue(args?.ExceptionMessage?.Message ?? string.Empty);
                 }, DispatcherPriority.Background);
@@ -314,7 +311,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             };
             _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     Weight = args.Weight;
                 }, DispatcherPriority.Background);
@@ -322,7 +319,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             _deviceService.OcrContentRecognized += DeviceServiceOnOcrContentRecognized;
             _deviceService.BarCodeKeyReceived += async (sender, s) =>
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = s.Barcode;
                 }, DispatcherPriority.Background);
@@ -330,14 +327,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
             };
             _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("结果输出异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
@@ -345,7 +342,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             //外部数据
             _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("外部输入异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
@@ -353,7 +350,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) =>
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = args?.Barcode ?? "未解析到条码";
                     Weight = args?.Weight ?? 0;
@@ -365,7 +362,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             };
             _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args)
             {
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     Length = (float)args.Length;
                     Width = (float)args.Width;
@@ -403,7 +400,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 if (info is { } args)
                 {
-                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         //更新右边信息
                         BarCode = args?.Barcode ?? "未识别到条码";
@@ -418,46 +415,36 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     {
                         if (model.SettingsName.Equals("VolumeSettings"))
                         {
-                            var configInfoModel = await _configRepository
-                                .FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"))
+                            var volumeSettingsDto = await _settingsReader
+                                .GetAsync<VolumeSettingsDto>("VolumeSettings")
                                 .ConfigureAwait(false);
-                            if (configInfoModel is not null)
+                            if (volumeSettingsDto is not null)
                             {
-                                var volumeSettingsDto =
-                                    JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                                if (volumeSettingsDto is not null)
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                                 {
-                                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                                    {
-                                        VolumeUnit = volumeSettingsDto.Unit;
-                                    }, DispatcherPriority.Background);
-                                }
+                                    VolumeUnit = volumeSettingsDto.Unit;
+                                }, DispatcherPriority.Background);
                             }
                         }
                         else if (model.SettingsName.Equals("OcrSettings"))
                         {
-                            var configInfoModel = await _configRepository
-                                .FirstOrDefault(s => s.ConfigName.Equals("OcrSettings"))
+                            var ocrSettingsDto = await _settingsReader
+                                .GetAsync<OcrSettingsDto>("OcrSettings")
                                 .ConfigureAwait(false);
-                            if (configInfoModel is not null)
+                            if (ocrSettingsDto is not null)
                             {
-                                var ocrSettingsDto =
-                                    JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel.Value);
-                                if (ocrSettingsDto is not null)
+                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                                 {
-                                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                                    OcrSettingsInfo = new OcrSettingsInfoModel()
                                     {
-                                        OcrSettingsInfo = new OcrSettingsInfoModel()
-                                        {
-                                            IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
-                                            IsUseOcr = ocrSettingsDto.IsUseOcr,
-                                            IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
-                                            IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
-                                            IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
-                                            RecognitionTimeout = ocrSettingsDto.RecognitionTimeout
-                                        };
-                                    }, DispatcherPriority.Background);
-                                }
+                                        IsShowSenderInfo = ocrSettingsDto.IsShowSenderInfo,
+                                        IsUseOcr = ocrSettingsDto.IsUseOcr,
+                                        IsShowReceiverInfo = ocrSettingsDto.IsShowReceiverInfo,
+                                        IsShowRecognitionTime = ocrSettingsDto.IsShowRecognitionTime,
+                                        IsThreeSegmentCode = ocrSettingsDto.IsThreeSegmentCode,
+                                        RecognitionTimeout = ocrSettingsDto.RecognitionTimeout
+                                    };
+                                }, DispatcherPriority.Background);
                             }
                         }
                     }
@@ -521,14 +508,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     {
                         case RemoteCommand.Start:
                         case RemoteCommand.Stop:
-                            StartDelegate(remoteAction.Command);
+                            await StartAsync(remoteAction.Command);
                             break;
                     }
                 }
             });
 
             //加载左边模板
-            CurrentViewModel = _container.Resolve<CameraHomeViewModel>();
+            CurrentViewModel = cameraHomeViewModel;
         }
 
         /// <summary>
@@ -538,7 +525,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <param name="args"></param>
         private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args)
         {
-            await Application.Current.Dispatcher.BeginInvoke(() =>
+            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 //更新右边信息
                 BarCode = args?.BarCode ?? "未识别到条码";
@@ -555,7 +542,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args)
         {
-            await Application.Current.Dispatcher.BeginInvoke(() =>
+            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 Length = (float)args.Length;
                 Width = (float)args.Width;
@@ -566,7 +553,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args)
         {
-            await Application.Current.Dispatcher.BeginInvoke(() =>
+            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 BarCode = args?.Barcode ?? "未识别到条码";
             }, DispatcherPriority.Background);
@@ -587,20 +574,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 SettingsName = "OcrSettings"
             });
 
-            var configInfoModel = await _configRepository
-                .FirstOrDefault(f => f.ConfigName.Equals("OtherSettings"))
+            var settingsDto = await _settingsReader
+                .GetAsync<OtherSettingsDto>("OtherSettings")
                 .ConfigureAwait(false);
-            if (configInfoModel is not null)
+            if (settingsDto is not null)
             {
                 try
                 {
-                    var settingsDto = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                    if (settingsDto is not null && settingsDto.IsAutoStart)
+                    if (settingsDto.IsAutoStart)
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
-                        {
-                            StartDelegate(null);
-                        }, DispatcherPriority.Background);
+                        await StartAsync(null);
                     }
                 }
                 catch (Exception e)
@@ -631,167 +614,204 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void StartDelegate(object obj)
         {
-            await Task.Run(async () =>
+            try
             {
-                var command = RemoteCommand.None;
-                if (obj is RemoteCommand remoteCommand)
+                await StartAsync(obj);
+            }
+            catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+            {
+                // 页面正在释放。
+            }
+            catch (Exception exception)
+            {
+                LogStartStopFailure(exception);
+            }
+        }
+
+        /// <summary>
+        /// 串行执行设备和分拣服务的启动或停止流程。
+        /// </summary>
+        private async Task StartAsync(object? obj)
+        {
+            var command = obj is RemoteCommand remoteCommand ? remoteCommand : RemoteCommand.None;
+            await _runningSemaphoreSlim.WaitAsync(_cancellationTokenSource.Token);
+            try
+            {
+                IsSwitchingState = true;
+                if (!RunningStatus && (obj is null || command == RemoteCommand.Start))
                 {
-                    command = remoteCommand;
-                }
-                if (!IsSwitchingState)
-                {
-                    try
-                    {
-                        await _runningSemaphoreSlim.WaitAsync();
-                        IsSwitchingState = true;
-                        if (!RunningStatus && (obj is null || command == RemoteCommand.Start))
-                        {
-                            //效验
-                            /*
-                            var machineCode = await _computer.GenerateMachineCode();
-                            /#1#/判断机器码
-                            if (!machineCode.Equals("1E371E8FB7F89C94D93B274DDE14AC46")) {
-                                return;
-                            }#1#
-                            //判断时间
-                            var validateTime = await _certificateValidationService.ValidateTime();
-                            if (!validateTime) {
-                                return;
-                            }
-                            */
+                    //效验
+                    /*
+                    var machineCode = await _computer.GenerateMachineCode();
+                    /#1#/判断机器码
+                    if (!machineCode.Equals("1E371E8FB7F89C94D93B274DDE14AC46")) {
+                        return;
+                    }#1#
+                    //判断时间
+                    var validateTime = await _certificateValidationService.ValidateTime();
+                    if (!validateTime) {
+                        return;
+                    }
+                    */
 #if !DEBUG
 
-                            var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
-                            if (!Directory.Exists(licenseDirectory)) {
-                                Directory.CreateDirectory(licenseDirectory);
-                            }
-                            var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
-                            if (firstOrDefault is not null) {
-                                //解密授权
-                                var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
+                    var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
+                    if (!Directory.Exists(licenseDirectory)) {
+                        Directory.CreateDirectory(licenseDirectory);
+                    }
+                    var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
+                    if (firstOrDefault is not null) {
+                        //解密授权
+                        var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
 
-                                if (data is not null) {
-                                    //重新下载
-                                    Task.Run(async () => {
-                                        var (key1, o) = await _clientLicenseApi.CreateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
-                                        if (o is ApiResult result &&
-                                            !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty)) {
-                                            if (key1) {
-                                                var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
-                                                var files = Directory.GetFiles(licenseDirectory, "*.key");
-                                                Parallel.ForEach(files, File.Delete);
-
-                                                await _clientLicenseApi.DownloadFileAsync(result.Data?.ToString() ?? string.Empty,
-                                                    $"{licenseDirectory}\\License.key");
-                                            }
-                                        }
-                                    });
-                                }
-                                if (!b) {
-                                    EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                        CreateTime = DateTime.Now,
-                                        Message = s,
-                                        Type = LogType.Exception
-                                    });
-                                    HomeMessageQueue.Enqueue(s);
-                                    return;
-                                }
-                                else {
-                                    //提交激活
-                                    if (data is not null) {
-                                        Task.Run(async () => {
-                                            await _clientLicenseApi.ActivateAuthorization(data.LicenseCode, data.MachineCode, data.Remarks);
-                                        });
-                                    }
-                                }
-                            }
-                            else {
-                                EventAggregator.Instance.Publish(new AppLogInfoModel {
-                                    CreateTime = DateTime.Now,
-                                    Message = "未检测到授权文件",
-                                    Type = LogType.Exception
-                                });
-                                HomeMessageQueue.Enqueue("未检测到授权文件");
-                                return;
-                            }
+                        if (!b) {
+                            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                                CreateTime = DateTime.Now,
+                                Message = s,
+                                Type = LogType.Exception
+                            });
+                            HomeMessageQueue.Enqueue(s);
+                            return;
+                        }
+                        if (data is not null) {
+                            await RefreshAndActivateLicenseAsync(data, licenseDirectory,
+                                _cancellationTokenSource.Token);
+                        }
+                    }
+                    else {
+                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            CreateTime = DateTime.Now,
+                            Message = "未检测到授权文件",
+                            Type = LogType.Exception
+                        });
+                        HomeMessageQueue.Enqueue("未检测到授权文件");
+                        return;
+                    }
 #endif
 
-                            //启动
-                            var (externalDataStarted, externalDataMessage) = await _externalDataService.Start();
-                            if (!externalDataStarted)
-                            {
-                                EventAggregator.Instance.Publish(new AppLogInfoModel
-                                {
-                                    CreateTime = DateTime.Now,
-                                    Message = externalDataMessage,
-                                    Type = LogType.Exception
-                                });
-                                HomeMessageQueue.Enqueue(externalDataMessage);
-                                return;
-                            }
-
-                            var (deviceStarted, deviceMessage) = await _deviceService.Start();
-                            if (!deviceStarted)
-                            {
-                                await _externalDataService.Stop();
-                                EventAggregator.Instance.Publish(new AppLogInfoModel
-                                {
-                                    CreateTime = DateTime.Now,
-                                    Message = deviceMessage,
-                                    Type = LogType.Exception
-                                });
-                                HomeMessageQueue.Enqueue(deviceMessage);
-                                return;
-                            }
-
-                            var (sortingStarted, sortingMessage) = await _sortingService.Start();
-                            if (!sortingStarted)
-                            {
-                                await _deviceService.Stop();
-                                await _externalDataService.Stop();
-                                EventAggregator.Instance.Publish(new AppLogInfoModel
-                                {
-                                    CreateTime = DateTime.Now,
-                                    Message = sortingMessage,
-                                    Type = LogType.Exception
-                                });
-                                HomeMessageQueue.Enqueue(sortingMessage);
-                                return;
-                            }
-                            //提示
-                            //ApplicationStatusChanged
-                            EventAggregator.Instance.Publish(new ApplicationStatusChanged
-                            {
-                                Status = ApplicationStatus.Start
-                            });
-                            AppContext.SetData("IsRunning", true);
-                        }
-                        else
-                        {
-                            //停止
-                            HomeMessageQueue.Clear();
-                            await _externalDataService.Stop();
-                            var (key, value) = await _deviceService.Stop();
-                            await _sortingService.Stop();
-                            //提示
-                            EventAggregator.Instance.Publish(new ApplicationStatusChanged
-                            {
-                                Status = ApplicationStatus.Stop
-                            });
-                            AppContext.SetData("IsRunning", false);
-                        }
-
-                        await Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            RunningStatus = _deviceService.RunningStatus;
-                        }, DispatcherPriority.Background);
-                    }
-                    finally
+                    var (externalDataStarted, externalDataMessage) = await _externalDataService.Start();
+                    if (!externalDataStarted)
                     {
-                        _runningSemaphoreSlim.Release();
-                        IsSwitchingState = false;
+                        EventAggregator.Instance.Publish(new AppLogInfoModel
+                        {
+                            CreateTime = DateTime.Now,
+                            Message = externalDataMessage,
+                            Type = LogType.Exception
+                        });
+                        HomeMessageQueue.Enqueue(externalDataMessage);
+                        return;
+                    }
+
+                    var (deviceStarted, deviceMessage) = await _deviceService.Start();
+                    if (!deviceStarted)
+                    {
+                        await _externalDataService.Stop();
+                        EventAggregator.Instance.Publish(new AppLogInfoModel
+                        {
+                            CreateTime = DateTime.Now,
+                            Message = deviceMessage,
+                            Type = LogType.Exception
+                        });
+                        HomeMessageQueue.Enqueue(deviceMessage);
+                        return;
+                    }
+
+                    var (sortingStarted, sortingMessage) = await _sortingService.Start();
+                    if (!sortingStarted)
+                    {
+                        await _deviceService.Stop();
+                        await _externalDataService.Stop();
+                        EventAggregator.Instance.Publish(new AppLogInfoModel
+                        {
+                            CreateTime = DateTime.Now,
+                            Message = sortingMessage,
+                            Type = LogType.Exception
+                        });
+                        HomeMessageQueue.Enqueue(sortingMessage);
+                        return;
+                    }
+
+                    EventAggregator.Instance.Publish(new ApplicationStatusChanged
+                    {
+                        Status = ApplicationStatus.Start
+                    });
+                    AppContext.SetData("IsRunning", true);
+                }
+                else
+                {
+                    HomeMessageQueue.Clear();
+                    await _externalDataService.Stop();
+                    await _deviceService.Stop();
+                    await _sortingService.Stop();
+                    EventAggregator.Instance.Publish(new ApplicationStatusChanged
+                    {
+                        Status = ApplicationStatus.Stop
+                    });
+                    AppContext.SetData("IsRunning", false);
+                }
+
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    RunningStatus = _deviceService.RunningStatus;
+                }, DispatcherPriority.Background);
+            }
+            finally
+            {
+                IsSwitchingState = false;
+                _runningSemaphoreSlim.Release();
+            }
+        }
+
+        /// <summary>
+        /// 安全刷新授权文件，并在刷新完成后提交激活状态。
+        /// </summary>
+        private async Task RefreshAndActivateLicenseAsync(LicenseData data, string licenseDirectory,
+            CancellationToken token)
+        {
+            try
+            {
+                var (created, response) = await _clientLicenseApi.CreateAuthorization(
+                    data.LicenseCode, data.MachineCode, data.Remarks, token);
+                if (created && response is ApiResult result &&
+                    !string.IsNullOrWhiteSpace(result.Data?.ToString()))
+                {
+                    var targetPath = Path.Combine(licenseDirectory, "License.key");
+                    var downloaded = await _clientLicenseApi.DownloadFileAsync(
+                        result.Data!.ToString()!, targetPath, token);
+                    if (downloaded)
+                    {
+                        foreach (var file in Directory.GetFiles(licenseDirectory, "*.key")
+                                     .Where(file => !Path.GetFullPath(file).Equals(Path.GetFullPath(targetPath),
+                                         StringComparison.OrdinalIgnoreCase)))
+                        {
+                            File.Delete(file);
+                        }
                     }
                 }
+
+                await _clientLicenseApi.ActivateAuthorization(
+                    data.LicenseCode, data.MachineCode, data.Remarks, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                LogStartStopFailure(exception);
+            }
+        }
+
+        /// <summary>
+        /// 记录启动或停止流程中未处理的异常。
+        /// </summary>
+        private static void LogStartStopFailure(Exception exception)
+        {
+            EventAggregator.Instance.Publish(new AppLogInfoModel
+            {
+                CreateTime = DateTime.Now,
+                Message = exception.Message,
+                Type = LogType.Exception
             });
         }
 
@@ -812,7 +832,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     {
                         continue;
                     }
-                    var dispatcher = Application.Current?.Dispatcher;
+                    var dispatcher = System.Windows.Application.Current?.Dispatcher;
                     if (dispatcher is null)
                     {
                         break;
@@ -963,7 +983,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void ClearCountDelegate(object obj)
         {
-            await Application.Current.Dispatcher.BeginInvoke(() =>
+            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 if (_deviceService.RunningStatus)
                 {

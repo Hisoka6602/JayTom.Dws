@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
-using TouchSocket.Core;
 using System.Text.Json;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
@@ -12,7 +11,6 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using NPOI.OpenXmlFormats.Wordprocessing;
 
 namespace JayTom.Dws.Interface.Post {
 
@@ -130,7 +128,7 @@ namespace JayTom.Dws.Interface.Post {
                     data = stringWriter.ToString();
                 }*/
 
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -249,7 +247,7 @@ namespace JayTom.Dws.Interface.Post {
                     serializer.Serialize(xmlWriter, envelope, namespaces);
                     data = stringWriter.ToString();
                 }*/
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.Timeout);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -377,7 +375,7 @@ namespace JayTom.Dws.Interface.Post {
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
-                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -471,7 +469,7 @@ namespace JayTom.Dws.Interface.Post {
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
-                        using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                        using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                         httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                         HttpResponseMessage message;
                         await using (Stream dataStream =
@@ -559,7 +557,7 @@ namespace JayTom.Dws.Interface.Post {
         </web:getYJSM>
     </soapenv:Body>
 </soapenv:Envelope>";
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -680,7 +678,7 @@ namespace JayTom.Dws.Interface.Post {
                     Parameters?.CsbInfo.Ak ?? string.Empty,
                     Parameters?.CsbInfo.Sk ?? string.Empty, null, boby);
 
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.CsbInfo?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =

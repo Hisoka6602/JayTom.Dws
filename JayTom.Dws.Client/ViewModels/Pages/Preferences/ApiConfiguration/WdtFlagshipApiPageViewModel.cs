@@ -1,4 +1,9 @@
-﻿using System;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Interface;
+using JayTom.Dws.Client.Extensions;
+using JayTom.Dws.Abstractions.Integrations;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using Prism.Commands;
 using Newtonsoft.Json;
@@ -19,7 +24,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
     public class WdtFlagshipApiPageViewModel : SettingsPageTemplateViewModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly IDialogService _dialogService;
         private WdtFlagshipApiInfoModel _wdtFlagshipApiInfo = new();
         private string _barcode = string.Empty;
@@ -28,11 +33,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         private bool _isLoaded;
 
-        public WdtFlagshipApiPageViewModel(IHttpClientFactory httpClientFactory,
+        public WdtFlagshipApiPageViewModel(IProviderRegistry<IDataUploader> providerRegistry,
             IDialogService dialogService,
-            IConfigRepository configRepository) : base(configRepository)
+            ISettingsStore settingsStore) : base(settingsStore)
         {
-            _httpClientFactory = httpClientFactory;
+            _providerRegistry = providerRegistry;
             _dialogService = dialogService;
         }
 
@@ -74,10 +79,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new WdtFlagshipApiDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new WdtFlagshipApiDto()
                 {
                     Key = WdtFlagshipApiInfo.Key,
                     Appsecret = WdtFlagshipApiInfo.Appsecret,
@@ -91,8 +93,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     Force = WdtFlagshipApiInfo.Force,
                     Url = WdtFlagshipApiInfo.Url,
                     TimeOut = WdtFlagshipApiInfo.TimeOut,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -103,9 +104,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(SettingsName) ??
+                    var settingsDto = await _settingsStore.GetAsync<WdtFlagshipApiDto>(SettingsName) ??
                                       new WdtFlagshipApiDto();
                     WdtFlagshipApiInfo = new WdtFlagshipApiInfoModel()
                     {
@@ -136,10 +137,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsUploading)
             {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //上传
-                    var wdtFlagshipApi = new WdtFlagshipApi(_httpClientFactory);
+                    var wdtFlagshipApi = _providerRegistry.Resolve<WdtFlagshipApi>(ApiType.WdtErpFlagShipApi);
                     await wdtFlagshipApi.SetParameters(new WdtFlagshipApi.ApiParameter
                     {
                         Key = WdtFlagshipApiInfo.Key,

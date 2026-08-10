@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using DryIoc;
 using S7.Net;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
     public class DefaultStackedPackageService : IStackedPackageService
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IPackageDetectionSerialPort _packageDetectionSerialPort;
         private readonly IPackageDetectionTcp _packageDetectionTcp;
         private StackedPackageDetectionSettingsDto? _stackedPackageDetectionSettingsDto = new();
@@ -43,10 +44,10 @@ namespace JayTom.Dws.Client.Service.Sorting
         private Regex? _stackedRegex;
         private int _isConnected;
 
-        public DefaultStackedPackageService(IConfigRepository configRepository,
+        public DefaultStackedPackageService(ISettingsStore settingsStore,
             IPackageDetectionSerialPort packageDetectionSerialPort, IPackageDetectionTcp packageDetectionTcp)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _packageDetectionSerialPort = packageDetectionSerialPort;
             _packageDetectionTcp = packageDetectionTcp;
             _packageDetectionSerialPort.DataReceived += (sender, args) =>
@@ -193,7 +194,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         private async Task<KeyValuePair<bool, string>> StartCore(CancellationToken token)
         {
-            _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(
+            _stackedPackageDetectionSettingsDto = await _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>(
                 "StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
             Volatile.Write(
                 ref _stackedRegex,

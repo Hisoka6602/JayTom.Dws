@@ -4,17 +4,13 @@ using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Net.Http;
-using JayTom.Dws.Utils;
 using System.Diagnostics;
-using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection.PortableExecutable;
 
 namespace JayTom.Dws.Interface {
 
@@ -26,9 +22,10 @@ namespace JayTom.Dws.Interface {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
+        public Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
             double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            return new UploadResponse();
+            return UploadData(barcode, weight, DateTime.Now, length, width, height, volume, imageInfo,
+                panoramaImageInfos, other, token);
         }
 
         public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
@@ -64,46 +61,19 @@ namespace JayTom.Dws.Interface {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = _parameters.Timeout;
-                HttpResponseMessage message;
-                if (!_parameters.IsUseUploadImage) {
-                    await using Stream dataStream =
-                        new MemoryStream(Encoding.UTF8.GetBytes(data));
-                    using HttpContent content = new StreamContent(dataStream);
-                    content.Headers.Add("Content-Type", "application/json");
-                    message = await httpClient.PostAsync(_parameters.Url, content, token)
-                        .ConfigureAwait(false);
-                }
-                else {
-                    //上传图片
-                    var formData = new MultipartFormDataContent();
-                    if (imageInfo?.Image is not null) {
-                        var imageToStreamContent = ImageToStreamContent(imageInfo.Image, "barcodeImage",
-                            $"{imageInfo.CameraSerialNumber}_{imageInfo.CameraCustomName}.jpg");
-                        formData.Add(imageToStreamContent);
-                    }
-
-                    foreach (var imageToStreamContent in from info in panoramaImageInfos ?? new List<UploadImageInfo>()
-                                                         where info?.Image is not null
-                                                         select ImageToStreamContent(info.Image, "panoramaImages",
-                                 $"{info.CameraSerialNumber}_{info.CameraCustomName}.jpg")) {
-                        formData.Add(imageToStreamContent);
-                    }
-                    var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
-                    formData.Add(jsonContent, "jsonData");
-                    message = await httpClient.PostAsync(_parameters.Url, formData, token);
-                }
-
+                using HttpResponseMessage message = await CreateRequestAsync(httpClient, data, imageInfo,
+                    panoramaImageInfos, token).ConfigureAwait(false);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
                 if (!string.IsNullOrWhiteSpace(resultContent)) {
                     //临时判断
                     try {
                         isSuccess = _parameters.ValidationMode switch {
                             0 => resultContent.Equals(_parameters.CompleteMatch),
                             1 => resultContent.Contains(_parameters.StringContains),
-                            2 => Regex.IsMatch(resultContent, _parameters.RegularExpression),
+                            2 => Regex.IsMatch(resultContent, _parameters.RegularExpression,
+                                RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(250)),
                             _ => false
                         };
                     }
@@ -137,7 +107,7 @@ namespace JayTom.Dws.Interface {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = JsonConvert.SerializeObject(_parameters),
                     IsSuccess = isSuccess,
                     Duration = stopwatch.Elapsed.TotalSeconds,
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -160,7 +130,35 @@ namespace JayTom.Dws.Interface {
         public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
             double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
-            return Task.CompletedTask;
+            return UploadData(barcode, weight, scanTime, length, width, height, volume, imageInfo,
+                panoramaImageInfos, other, token);
+        }
+
+        /// <summary>
+        /// 根据当前参数创建并发送上传请求，统一管理请求内容的释放。
+        /// </summary>
+        private async Task<HttpResponseMessage> CreateRequestAsync(HttpClient httpClient, string data,
+            UploadImageInfo? imageInfo, List<UploadImageInfo>? panoramaImageInfos, CancellationToken token) {
+            if (!_parameters.IsUseUploadImage) {
+                using var content = new StringContent(data, Encoding.UTF8, "application/json");
+                return await httpClient.PostAsync(_parameters.Url, content, token).ConfigureAwait(false);
+            }
+
+            using var formData = new MultipartFormDataContent();
+            if (imageInfo?.Image is not null) {
+                formData.Add(ImageToStreamContent(imageInfo.Image, "barcodeImage",
+                    $"{imageInfo.CameraSerialNumber}_{imageInfo.CameraCustomName}.jpg"));
+            }
+
+            foreach (var info in panoramaImageInfos ?? []) {
+                if (info?.Image is not null) {
+                    formData.Add(ImageToStreamContent(info.Image, "panoramaImages",
+                        $"{info.CameraSerialNumber}_{info.CameraCustomName}.jpg"));
+                }
+            }
+
+            formData.Add(new StringContent(data, Encoding.UTF8, "application/json"), "jsonData");
+            return await httpClient.PostAsync(_parameters.Url, formData, token).ConfigureAwait(false);
         }
 
         public Task PackageAggregation(string packageExit, string aggregatePackageCode, DateTime packagingTime, List<string> packageItems,
@@ -190,14 +188,26 @@ namespace JayTom.Dws.Interface {
 
         public string ParseJsonTemplate(string jsonTemplate, string barCode, float weight, DateTime scanTime, float length,
             float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
-            return jsonTemplate.Replace("BarCodeValue", barCode)
+            var result = jsonTemplate.Replace("BarCodeValue", EscapeJsonString(barCode), StringComparison.Ordinal)
                   .Replace("WeightValue", weight.ToString(CultureInfo.InvariantCulture))
                   .Replace("ScanTimeValue", scanTime.ToString("yyyy-MM-dd HH:mm:ss"))
                   .Replace("LengthValue", length.ToString(CultureInfo.InvariantCulture))
                   .Replace("WidthValue", width.ToString(CultureInfo.InvariantCulture))
                   .Replace("HeightValue", height.ToString(CultureInfo.InvariantCulture))
                   .Replace("VolumeValue", volume.ToString(CultureInfo.InvariantCulture))
-                  .Replace("CameraSerialNumberValue", cameraSerialNumber);
+                  .Replace("CameraSerialNumberValue", EscapeJsonString(cameraSerialNumber), StringComparison.Ordinal);
+
+            _ = JsonConvert.DeserializeObject(result)
+                ?? throw new JsonException("JSON 模板替换后不是有效的 JSON。");
+            return result;
+        }
+
+        /// <summary>
+        /// 将模板中的字符串值转义为安全的 JSON 字符串内容。
+        /// </summary>
+        private static string EscapeJsonString(string value) {
+            var serialized = JsonConvert.ToString(value);
+            return serialized.Length >= 2 ? serialized[1..^1] : string.Empty;
         }
 
         public StreamContent ImageToStreamContent(Image image, string paramName, string fileName) {

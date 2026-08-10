@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -269,7 +269,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void ClearMessageDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
@@ -297,7 +297,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void OpenDateTimeDialogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var dataTimeEditor = new DataTimeEditor();
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
@@ -359,7 +359,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         {
             const int pageSize = 500;
             //这里的查询要分开锁，不然显示有卡顿
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)

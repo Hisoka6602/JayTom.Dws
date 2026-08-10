@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -37,7 +38,7 @@ namespace JayTom.Dws.Client.Service.TestService
     public class TestBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
         private readonly IDeviceService _deviceService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
         private readonly IGrayscaleService _grayscaleService;
         private readonly IExternalDataService _externalDataService;
@@ -59,14 +60,14 @@ namespace JayTom.Dws.Client.Service.TestService
 
         public TestBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             ISortingService sortingService,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IGrayscaleService grayscaleService,
             IExternalDataService externalDataService)
         {
             _deviceService = deviceService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _sortingService = sortingService;
             _grayscaleService = grayscaleService;
             _externalDataService = externalDataService;
@@ -517,9 +518,9 @@ namespace JayTom.Dws.Client.Service.TestService
 
                 await _touchSocketTcpClient.Connect("192.168.21.76", 2000, token: stoppingToken);
 
-                _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
-                _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
-                _grayscaleDeviceSettingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings", stoppingToken) ?? new GrayscaleDeviceSettingsDto();
+                _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+                _barcodeFilterSettingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
+                _grayscaleDeviceSettingsDto = await _settingsStore.GetAsync<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings", stoppingToken) ?? new GrayscaleDeviceSettingsDto();
             }
             catch (Exception e)
             {

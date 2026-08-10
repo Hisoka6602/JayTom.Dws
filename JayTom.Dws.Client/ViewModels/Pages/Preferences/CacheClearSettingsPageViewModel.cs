@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -34,8 +35,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private ImageSettingsDto? _imageSettingsDto;
         private bool _isShowingFtpSpaceInfo;
 
-        public CacheClearSettingsPageViewModel(IConfigRepository configRepository,
-            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) : base(configRepository)
+        public CacheClearSettingsPageViewModel(ISettingsStore settingsStore,
+            IComputer computer, IFtp ftp, ICacheCleanupService cacheCleanupService) : base(settingsStore)
         {
             _computer = computer;
             _ftp = ftp;
@@ -232,10 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CacheClearSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new CacheClearSettingsDto()
                 {
                     BarcodeDataAgoDays = AutoCleanupParams.BarcodeDataAgoDays,
                     FtpImageAgoDays = AutoCleanupParams.FtpImageAgoDays,
@@ -243,8 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     MinimumSpaceRetention = MinimumSpaceRetention,
                     PanoramaImageAgoDays = AutoCleanupParams.PanoramaImageAgoDays,
                     ScanImageAgoDays = AutoCleanupParams.ScanImageAgoDays
-                })
-            });
+                });
 
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
@@ -257,7 +254,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 LocalDiskUsageInfo localDiskUsageInfo = new();
                 FtpUsageInfo ftpUsageInfo = new();
-                _imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings");
+                _imageSettingsDto = await _settingsStore.GetAsync<ImageSettingsDto>("SaveImageSettings");
                 if (_imageSettingsDto is not null)
                 {
                     if (!string.IsNullOrEmpty(_imageSettingsDto.ImageRootDirectory))
@@ -319,7 +316,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     }
                 });
 
-                var cacheClearSettingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>(SettingsName);
+                var cacheClearSettingsDto = await _settingsStore.GetAsync<CacheClearSettingsDto>(SettingsName);
                 if (cacheClearSettingsDto is not null)
                 {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>

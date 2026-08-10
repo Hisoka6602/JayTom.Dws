@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using EFCore.BulkExtensions;
@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalLog {
 
-    public class ApiLogRepository : LocalRepositoryBase<ApiLogInfoModel>, IApiLogRepository {
+    public class ApiLogRepository : LocalRepositoryBase<ApiLogInfoModel, SqliteLogsContext>, IApiLogRepository {
 
         public ApiLogRepository(IDbContextFactory<SqliteLogsContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
@@ -24,7 +24,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalLog {
                 var dbSet = concardContext?.Set<ApiLogInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, string>(false, "数据实体为空");
                 var batchDeleteAsync = await dbSet.AsNoTracking().Where(w => w.CreateTime <= DateTime.Now.AddDays(0 - days))
-                    .BatchDeleteAsync();
+                    .ExecuteDeleteAsync();
                 return new KeyValuePair<bool, string>(true, "删除成功");
             }
             catch (Exception e) {
@@ -41,7 +41,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalLog {
                 var model = await dbSet.AsNoTracking().OrderBy(o => o.CreateTime).FirstOrDefaultAsync();
                 if (model is not null) {
                     var batchDeleteAsync = await dbSet.AsNoTracking().Where(w => w.CreateTime < model.CreateTime)
-                        .BatchDeleteAsync();
+                        .ExecuteDeleteAsync();
                     return new KeyValuePair<bool, string>(true, "删除成功");
                 }
             }

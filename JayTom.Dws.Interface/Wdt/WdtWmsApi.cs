@@ -69,7 +69,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     resultContent = exceptionMsg = "包装码不能为空!";
                 }
                 else {
-                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -176,7 +176,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     resultContent = exceptionMsg = "包装码不能为空!";
                 }
                 else {
-                    using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                     HttpResponseMessage message;
                     await using (Stream dataStream =

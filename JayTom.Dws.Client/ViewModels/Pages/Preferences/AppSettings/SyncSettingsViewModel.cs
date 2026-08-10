@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -43,9 +44,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(SettingsName) ?? new SyncSettingsDto();
+                var syncSettingsDto = await _settingsStore.GetAsync<SyncSettingsDto>(SettingsName) ?? new SyncSettingsDto();
                 SyncSettingsInfo = new SyncSettingsModel()
                 {
                     Url = syncSettingsDto.Url,
@@ -136,17 +137,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                         break;
                 }
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(syncSettingsDto)
-            });
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,syncSettingsDto);
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
         }
 
-        public SyncSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public SyncSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 

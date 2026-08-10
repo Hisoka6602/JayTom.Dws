@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -37,7 +38,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         private SemaphoreSlim _logSlim = new(1);
 
-        public CloudVideoSettingsPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        public CloudVideoSettingsPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
             EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item =>
             {
@@ -111,10 +112,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CloudVideoSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new CloudVideoSettingsDto()
                 {
                     Concurrency = CloudVideoSettings.Concurrency,
                     IsAutoUploadUnsyncedData = CloudVideoSettings.IsAutoUploadUnsyncedData,
@@ -125,8 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
                     RetryAttempts = CloudVideoSettings.RetryAttempts,
                     WebDoMain = CloudVideoSettings.WebDoMain,
                     UploadIntervalInSeconds = CloudVideoSettings.UploadIntervalInSeconds
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -137,7 +134,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                var cloudVideoSettingsDto = await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(SettingsName) ?? new CloudVideoSettingsDto();
+                var cloudVideoSettingsDto = await _settingsStore.GetAsync<CloudVideoSettingsDto>(SettingsName) ?? new CloudVideoSettingsDto();
                 CloudVideoSettings = new CloudVideoSettingsModel
                 {
                     Concurrency = cloudVideoSettingsDto.Concurrency,

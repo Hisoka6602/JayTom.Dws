@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NPOI.HPSF;
 using System.IO;
 using Prism.Mvvm;
@@ -122,7 +122,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var loadingDialog = new LoadingDialog();
                     if (loadingDialog.DataContext is LoadingDialogViewModel model)
@@ -132,7 +132,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                         await Task.Delay(500);
                         Task.Run(async () =>
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                             {
                                 try
                                 {
@@ -186,7 +186,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                 if (!IsRequestingAuthorization)
                 {
                     IsRequestingAuthorization = true;
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                     {
                         try
                         {

@@ -203,7 +203,7 @@ namespace JayTom.Dws.Nvr.Nvr {
         private static void HandleDisconnected(IntPtr loginId, IntPtr _, int __, IntPtr ___) {
             if (LoginOwners.TryGetValue(loginId, out var owner) && owner.TryGetTarget(out var nvr)) {
                 nvr.OnDeviceDisconnected(new DeviceDisconnectedEventArgs {
-                    LoginId = loginId,
+                    LoginHandle = loginId,
                     Message = "设备断开连接"
                 });
             }
@@ -212,7 +212,7 @@ namespace JayTom.Dws.Nvr.Nvr {
         private static void HandleReconnected(IntPtr loginId, IntPtr _, int __, IntPtr ___) {
             if (LoginOwners.TryGetValue(loginId, out var owner) && owner.TryGetTarget(out var nvr)) {
                 nvr.OnDeviceReconnected(new DeviceReconnectedEventArgs {
-                    LoginId = loginId,
+                    LoginHandle = loginId,
                     Message = "设备已重连"
                 });
             }

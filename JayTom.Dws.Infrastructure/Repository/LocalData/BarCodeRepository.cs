@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalConf;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +8,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
-    public class BarCodeRepository : LocalRepositoryBase<BarCodeInfoModel>, IBarCodeRepository {
+    public class BarCodeRepository : LocalRepositoryBase<BarCodeInfoModel, SqliteContext>, IBarCodeRepository {
 
         public BarCodeRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

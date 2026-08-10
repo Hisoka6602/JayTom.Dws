@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -282,7 +282,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void OpenDateTimeDialogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var dataTimeEditor = new DataTimeEditor();
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
@@ -347,7 +347,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void ClearMessageDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
@@ -371,7 +371,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         private async void LoadData(int pageIndex)
         {
             const int pageSize = 500;
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)

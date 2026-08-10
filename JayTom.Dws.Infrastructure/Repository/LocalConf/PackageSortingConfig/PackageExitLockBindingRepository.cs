@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
-    public class PackageExitLockBindingRepository : LocalRepositoryBase<PackageExitLockBindingInfoModel>, IPackageExitLockBindingRepository {
+    public class PackageExitLockBindingRepository : LocalRepositoryBase<PackageExitLockBindingInfoModel, SqliteConfContext>, IPackageExitLockBindingRepository {
 
         public PackageExitLockBindingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

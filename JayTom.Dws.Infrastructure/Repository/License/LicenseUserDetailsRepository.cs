@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.License;
 namespace JayTom.Dws.Infrastructure.Repository.License {
 
     public class LicenseUserDetailsRepository :
-        RepositoryBase<LicenseUserDetailsInfo>, ILicenseUserDetailsRepository {
+        RepositoryBase<LicenseUserDetailsInfo, LicenseApiContext>, ILicenseUserDetailsRepository {
 
         public LicenseUserDetailsRepository(IDbContextFactory<LicenseApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

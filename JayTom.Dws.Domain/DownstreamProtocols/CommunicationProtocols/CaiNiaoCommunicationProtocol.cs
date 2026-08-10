@@ -5,7 +5,6 @@ using System.Collections;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
-using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 

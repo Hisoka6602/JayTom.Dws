@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
-    public class SoundRepository : LocalRepositoryBase<SoundInfoModel>, ISoundRepository {
+    public class SoundRepository : LocalRepositoryBase<SoundInfoModel, SqliteContext>, ISoundRepository {
 
         public SoundRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

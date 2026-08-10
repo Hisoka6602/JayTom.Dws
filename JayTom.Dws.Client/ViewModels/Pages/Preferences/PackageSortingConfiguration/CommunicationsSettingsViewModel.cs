@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -43,7 +44,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class CommunicationsSettingsViewModel : BindableBase
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
         private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -217,12 +218,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private ObservableCollection<CommunicationConnectionItemInfoModel> _communicationConnectionItems = new();
 
-        public CommunicationsSettingsViewModel(IConfigRepository configRepository,
+        public CommunicationsSettingsViewModel(ISettingsStore settingsStore,
             ISortingService sortingService,
             ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _sortingService = sortingService;
             _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -397,7 +398,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void AddDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var recognitionEditor = new CommunicationConnectionConfigEditor();
                 if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model)
@@ -520,7 +521,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void ModifyDelegate(CommunicationConnectionItemInfoModel obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var recognitionEditor = new CommunicationConnectionConfigEditor();
                 if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model)
@@ -664,7 +665,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 model.Identifier = "CommunicationsSettingsDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
@@ -675,7 +676,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             var models = await _communicationConnectionConfigRepository.
                 CommunicationConnectionConfigItems(s => s.Id > 0);
 
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 CommunicationConnectionItems.Clear();
                 var infoModels = models?.Select((s, i) => new CommunicationConnectionItemInfoModel

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows;
 using System.IO.Pipes;
@@ -42,9 +42,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     var message = await reader.ReadToEndAsync(stoppingToken).ConfigureAwait(false);
                     if (message == "ActivateWindow")
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
-                            if (Application.Current.MainWindow is { } mainWindow)
+                            if (System.Windows.Application.Current.MainWindow is { } mainWindow)
                             {
                                 if (mainWindow.WindowState == WindowState.Minimized)
                                 {
@@ -66,6 +66,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 catch (Exception e)
                 {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+                    // 命名管道若持续初始化失败，避免无延迟重试耗尽 CPU 并形成日志洪峰。
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken).ConfigureAwait(false);
                 }
             }
         }

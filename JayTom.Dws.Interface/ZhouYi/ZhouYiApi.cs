@@ -51,7 +51,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
             // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
             var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
 
-            using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
             httpClient.DefaultRequestHeaders.Add("appid", _parameters.AppId);
@@ -128,7 +128,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
             // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
             var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
 
-            using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
             httpClient.DefaultRequestHeaders.Add("appid", _parameters.AppId);

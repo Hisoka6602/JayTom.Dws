@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -19,7 +20,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         private ObservableCollection<int> _deblurLevelItems = new([.. Enumerable.Range(0, 10)]);
         private ObservableCollection<int> _textureDetectionSensitivityItems = new([.. Enumerable.Range(0, 10)]);
 
-        public AlgorithmSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public AlgorithmSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -47,7 +48,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         public override async void LoadedDelegate(object obj)
         {
             //加载设置
-            var usbBarcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(SettingsName) ??
+            var usbBarcodeReaderDto = await _settingsStore.GetAsync<UsbBarcodeReaderDto>(SettingsName) ??
                                       new UsbBarcodeReaderDto();
             BarcodeReaderSettingsInfo = new BarcodeReaderSettingsInfoModel()
             {
@@ -85,10 +86,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             {
                 BarcodeReaderSettingsInfo.BarcodeType |= item.EnumValue;
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new UsbBarcodeReaderDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new UsbBarcodeReaderDto
                 {
                     /*IsUseOrCode = BarcodeReaderSettingsInfo.IsUseOrCode,
                     IsUseMicroQr = BarcodeReaderSettingsInfo.IsUseMicroQr,
@@ -114,8 +112,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     RecognitionSkipFrames = BarcodeReaderSettingsInfo.RecognitionSkipFrames,
                     ScalePercentage = BarcodeReaderSettingsInfo.ScalePercentage,
                     BarcodeType = BarcodeReaderSettingsInfo.BarcodeType
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             base.MessageQueue.Enqueue("请重启程序");

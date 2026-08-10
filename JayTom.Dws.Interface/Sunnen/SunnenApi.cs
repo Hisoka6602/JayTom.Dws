@@ -49,7 +49,7 @@ namespace JayTom.Dws.Interface.Sunnen {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Interface.Sunnen {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =

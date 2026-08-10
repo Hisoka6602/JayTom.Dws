@@ -60,7 +60,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 var sign = GenerateSign(parameters, _parameters.AppSecret);
                 parameters["sign"] = sign;
                 // 发请求
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
                 using var content = new FormUrlEncodedContent(parameters);
@@ -155,7 +155,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 var sign = GenerateSign(parameters, _parameters.AppSecret);
                 parameters["sign"] = sign;
                 // 发请求
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
                 using var content = new FormUrlEncodedContent(parameters);
@@ -289,7 +289,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 var sign = GenerateSign(parameters, _parameters.AppSecret);
                 parameters["sign"] = sign;
                 // 发请求
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(5000);
 
                 using var content = new FormUrlEncodedContent(parameters);

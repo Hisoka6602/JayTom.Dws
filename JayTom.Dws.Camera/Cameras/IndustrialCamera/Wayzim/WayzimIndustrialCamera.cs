@@ -18,7 +18,6 @@ using JayTom.Dws.Camera.Attributes.CameraAttributes;
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
     public class WayzimIndustrialCamera : IIndustrialCamera {
-        private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
         private readonly SemaphoreSlim _takeSlim = new(1, 1);
         private long _frameNo = 0;
 
@@ -137,8 +136,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                 var tryGetValue = _devInfo.TryGetValue(cameraInfo.SerialNumber, out var devInfo);
                 if (tryGetValue && devInfo is not null) {
                     this.Info = devInfo;
-                    ICAMAPI.ICAM_SetCamBeScanner(devInfo.Id, BindingType == CameraBindingType.ScannerCamera ? 1 : 0);
-                    ICAMAPI.ICAM_StartCamera(devInfo.Id);
+                    ICAMAPI.ICAM_SetCamBeScanner(checked((int)devInfo.Id), BindingType == CameraBindingType.ScannerCamera ? 1 : 0);
+                    ICAMAPI.ICAM_StartCamera(checked((int)devInfo.Id));
                     OnCameraInitialized(new CameraInitializedEventArgs() {
                         CameraInfo = this.Info
                     });
@@ -174,97 +173,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             }
             if (BindingType == CameraBindingType.ScannerCamera && _imageCallbackThread is null) {
                 _cancellationTokenSource = new CancellationTokenSource();
-                _imageCallbackThread = Task.Run(async () => {
-                    while (!_cancellationTokenSource.IsCancellationRequested) {
-                        var img = new ImageModelCpp();
-                        try {
-                            await _takeSlim.WaitAsync();
-                            await Task.Delay(100);
-
-                            if (this.Info is not null) {
-                                var scanTime = DateTime.Now;
-                                var localTime = new DateTimeOffset(scanTime).ToLocalTime();
-                                var timestamp = localTime.ToUnixTimeMilliseconds();
-                                int status = ICAMAPI.ICAM_FetchFrame(this.Info.Id, ref img, 300);
-                                if (status == 0) {
-                                    var bitmap = await GetBitmapAsync(img);
-                                    var thumbnailImage = GenerateThumbnail(bitmap);
-                                    if (img.BarcodeCount > 0 && BindingType != CameraBindingType.PanoramaCamera) {
-                                        if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
-                                            img.CodeModels?.Any() == true) {
-                                            //设置图像边框
-                                            using var g = Graphics.FromImage(thumbnailImage);
-
-                                            //画框
-                                            foreach (var convertPoint in img.CodeModels.Select(ConvertPoint)) {
-                                                var imageWidth = img.Width;
-                                                var imageHeight = img.Height;
-                                                var points = new Point[4];
-                                                for (var j = 0; j < 4; ++j) {
-                                                    points[j].X = (int)(convertPoint[j].X *
-                                                                        ((float)(thumbnailImage.Size.Width) / (imageWidth > 0 ? imageWidth : 1)));
-                                                    points[j].Y = (int)(convertPoint[j].Y *
-                                                                        ((float)(thumbnailImage.Size.Height) / (imageHeight > 0 ? imageHeight : 1)));
-                                                }
-                                                g.DrawPolygon(new Pen(BarcodeBorderColor, BarcodeBorderSize), points);
-                                            }
-                                            if (img.CodeModels?.Any() == true) {
-                                                //扫到条码
-                                                foreach (var codeInfo in img.CodeModels) {
-                                                    //过滤
-                                                    var barCode = Encoding.ASCII.GetString(codeInfo.strCode).TrimEnd('\0');
-                                                    if (!string.IsNullOrWhiteSpace(barCode)) {
-                                                        var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                                            BarCode = string.IsNullOrWhiteSpace(barCode) ? "NoRead" : barCode,
-                                                            ScanTime = scanTime
-                                                        });
-                                                        if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                                                            //返回条码
-
-                                                            OnBarcodeRead(new BarcodeTriggeredEventArgs() {
-                                                                Timestamp = timestamp,
-                                                                Barcode = _barCodeFilterContainer.RegexReplace(validateData.IsValidationPassed ? barCode : _barCodeFilterContainer.FilterOutContent),
-                                                                Image = bitmap,
-                                                                ThumbImage = (Bitmap?)thumbnailImage,
-                                                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                                                ScanTime = scanTime,
-                                                                AreaCoords = ConvertPoint(codeInfo),
-                                                                FrameNo = _frameNo
-                                                            });
-                                                        }
-                                                    }
-                                                }
-
-                                                _frameNo += 1;
-                                            }
-                                        }
-                                    }
-                                    if (IsRealtimeImageEnabled) {
-                                        OnRealtimeImage(new RealtimeImageEventArgs() {
-                                            Timestamp = timestamp,
-                                            ThumbImage = (Bitmap?)thumbnailImage,
-                                        });
-                                    }
-                                    await Task.Delay(5);
-                                }
-                                else {
-                                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                        Exception = new Exception($"获取图像失败,状态码:{status}")
-                                    });
-                                }
-                            }
-                        }
-                        catch (Exception e) {
-                            OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                Exception = e
-                            });
-                        }
-                        finally {
-                            ICAMAPI.ICAM_ReleaseFrame(ref img);
-                            _takeSlim.Release();
-                        }
-                    }
-                });
+                _imageCallbackThread = Task.Run(
+                    () => ProcessFramesAsync(_cancellationTokenSource.Token),
+                    _cancellationTokenSource.Token);
             }
             OnCameraStarted(new CameraStartedEventArgs() {
                 CameraInfo = this.Info,
@@ -273,23 +184,169 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             return new KeyValuePair<bool, string>(true, "启动成功!");
         }
 
-        public Task<KeyValuePair<bool, string>> Stop() {
+        /// <summary>
+        /// 持续获取相机最新帧，并限制失败日志频率。
+        /// </summary>
+        private async Task ProcessFramesAsync(CancellationToken token) {
+            var lastFailureReport = DateTime.MinValue;
+            while (!token.IsCancellationRequested) {
+                var image = new ImageModelCpp();
+                var lockTaken = false;
+                try {
+                    await _takeSlim.WaitAsync(token).ConfigureAwait(false);
+                    lockTaken = true;
+                    var cameraInfo = Info;
+                    if (cameraInfo is null) {
+                        return;
+                    }
+
+                    var status = ICAMAPI.ICAM_FetchFrame(checked((int)cameraInfo.Id), ref image, 300);
+                    if (status != 0) {
+                        if (DateTime.Now - lastFailureReport >= TimeSpan.FromSeconds(5)) {
+                            lastFailureReport = DateTime.Now;
+                            OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                                Exception = new Exception($"获取图像失败,状态码:{status}")
+                            });
+                        }
+                        continue;
+                    }
+
+                    var bitmap = GetBitmap(image);
+                    if (bitmap is not null) {
+                        PublishFrame(image, bitmap, cameraInfo.SerialNumber);
+                    }
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) {
+                    return;
+                }
+                catch (Exception exception) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception });
+                }
+                finally {
+                    ICAMAPI.ICAM_ReleaseFrame(ref image);
+                    if (lockTaken) {
+                        _takeSlim.Release();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 过滤并发布当前帧，确保每个事件消费者拥有独立图像。
+        /// </summary>
+        private void PublishFrame(ImageModelCpp image, Bitmap bitmap, string serialNumber) {
+            var scanTime = DateTime.Now;
+            var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
+            var codeModels = BindingType == CameraBindingType.PanoramaCamera
+                ? []
+                : image.CodeModels ?? [];
+            var results = new List<(string Barcode, List<Point> AreaCoords)>(codeModels.Length);
+            foreach (var codeInfo in codeModels) {
+                var barcode = Encoding.ASCII.GetString(codeInfo.strCode).TrimEnd('\0');
+                if (string.IsNullOrWhiteSpace(barcode)) {
+                    continue;
+                }
+
+                var validation = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
+                    BarCode = barcode,
+                    ScanTime = scanTime
+                });
+                if (validation.IsValidationPassed ||
+                    !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                    results.Add((
+                        _barCodeFilterContainer.RegexReplace(
+                            validation.IsValidationPassed
+                                ? barcode
+                                : _barCodeFilterContainer.FilterOutContent),
+                        ConvertPoint(codeInfo)));
+                }
+            }
+
+            var barcodeConsumerCount = BarcodeRead is null ? 0 : results.Count;
+            var realtimeConsumerCount = IsRealtimeImageEnabled && RealtimeImage is not null ? 1 : 0;
+            if (barcodeConsumerCount + realtimeConsumerCount == 0) {
+                bitmap.Dispose();
+                return;
+            }
+
+            var thumbnail = GenerateThumbnail(bitmap);
+            if (thumbnail is null) {
+                bitmap.Dispose();
+                return;
+            }
+
+            if (IsShowBarcodeBorder && results.Count > 0) {
+                using var graphics = Graphics.FromImage(thumbnail);
+                using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                foreach (var result in results) {
+                    var points = new Point[result.AreaCoords.Count];
+                    for (var index = 0; index < points.Length; index++) {
+                        points[index] = new Point(
+                            result.AreaCoords[index].X * thumbnail.Width / Math.Max(1, image.Width),
+                            result.AreaCoords[index].Y * thumbnail.Height / Math.Max(1, image.Height));
+                    }
+                    if (points.Length >= 3) {
+                        graphics.DrawPolygon(pen, points);
+                    }
+                }
+            }
+
+            var realtimeThumbnail = realtimeConsumerCount == 1 && barcodeConsumerCount > 0
+                ? new Bitmap(thumbnail)
+                : thumbnail;
+            for (var index = 0; index < barcodeConsumerCount; index++) {
+                var isLast = index == barcodeConsumerCount - 1;
+                OnBarcodeRead(new BarcodeTriggeredEventArgs {
+                    Timestamp = timestamp,
+                    Barcode = results[index].Barcode,
+                    Image = isLast ? bitmap : new Bitmap(bitmap),
+                    ThumbImage = isLast ? thumbnail : new Bitmap(thumbnail),
+                    CameraSerialNumber = serialNumber,
+                    ScanTime = scanTime,
+                    AreaCoords = results[index].AreaCoords,
+                    FrameNo = _frameNo
+                });
+            }
+
+            if (barcodeConsumerCount == 0) {
+                bitmap.Dispose();
+            }
+            if (realtimeConsumerCount == 1) {
+                OnRealtimeImage(new RealtimeImageEventArgs {
+                    Timestamp = timestamp,
+                    ThumbImage = realtimeThumbnail
+                });
+            }
+            _frameNo++;
+        }
+
+        public async Task<KeyValuePair<bool, string>> Stop() {
             if (Status == CameraStatus.Running &&
                 this.Info is not null) {
-                var icamStopCamera = ICAMAPI.ICAM_StopCamera(this.Info.Id);
+                _cancellationTokenSource?.Cancel();
+                if (_imageCallbackThread is not null) {
+                    try {
+                        await _imageCallbackThread.ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) {
+                    }
+                    _imageCallbackThread.Dispose();
+                    _imageCallbackThread = null;
+                }
+                var icamStopCamera = ICAMAPI.ICAM_StopCamera(checked((int)this.Info.Id));
                 if (icamStopCamera == 0) {
                     OnCameraStopped(new CameraStoppedEventArgs {
                         CameraInfo = Info
                     });
-                    return Task.FromResult(new KeyValuePair<bool, string>(true, "停止成功"));
+                    return new KeyValuePair<bool, string>(true, "停止成功");
                 }
-                return Task.FromResult(new KeyValuePair<bool, string>(false, $"停止失败,状态码:{icamStopCamera}"));
+                return new KeyValuePair<bool, string>(false, $"停止失败,状态码:{icamStopCamera}");
             }
             OnCameraStopped(new CameraStoppedEventArgs() {
                 CameraInfo = this.Info
             });
 
-            return Task.FromResult(new KeyValuePair<bool, string>(true, "设备未运行"));
+            return new KeyValuePair<bool, string>(true, "设备未运行");
         }
 
         public void SetParameters(Dictionary<string, object> parameters) {
@@ -324,15 +381,15 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             }
 
             var lockTaken = false;
+            var image = new ImageModelCpp();
             try {
                 Bitmap? bitmap = null;
                 Bitmap? thumbnailImage = null;
-                var image = new ImageModelCpp();
                 await _takeSlim.WaitAsync(cancellation);
                 lockTaken = true;
-                var status = ICAMAPI.ICAM_FetchFrame(Info.Id, ref image, 300);
+                var status = ICAMAPI.ICAM_FetchFrame(checked((int)Info.Id), ref image, 300);
                 if (status == 0) {
-                    bitmap = await GetBitmapAsync(image);
+                    bitmap = GetBitmap(image);
                     thumbnailImage = GenerateThumbnail(bitmap);
                 }
                 else {
@@ -359,6 +416,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                 });
             }
             finally {
+                ICAMAPI.ICAM_ReleaseFrame(ref image);
                 if (lockTaken) {
                     _takeSlim.Release();
                 }
@@ -464,90 +522,65 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             return bmp;
         }
 
-        private async Task<Bitmap?> GetBitmapAsync(ImageModelCpp img) {
-            Bitmap? bitmap = null;
+        private Bitmap? GetBitmap(ImageModelCpp img) {
             try {
-                await _semaphoreSlim.WaitAsync();
-                var imageBytes = new byte[img.DataLen];
-                Marshal.Copy(img.ImageData, imageBytes, 0, (int)img.DataLen);
-                if (img.Type == ImageType.IMAGE_MONO) {
-                    bitmap = NewBitmapFromGrayData(imageBytes, img.Width, img.Height);
+                var pixelFormat = img.Type switch {
+                    ImageType.IMAGE_MONO => PixelFormat.Format8bppIndexed,
+                    ImageType.IMAGE_RGB24 => PixelFormat.Format24bppRgb,
+                    _ => PixelFormat.Undefined
+                };
+                if (pixelFormat == PixelFormat.Undefined) {
+                    return null;
                 }
-                else if (img.Type == ImageType.IMAGE_RGB24) {
-                    bitmap = BytesToImg(imageBytes, img.Width, img.Height);
-                }
+
+                var bytesPerPixel = pixelFormat == PixelFormat.Format8bppIndexed ? 1 : 3;
+                return CameraImageProcessing.CopyPackedFrame(
+                    img.ImageData,
+                    checked((int)img.DataLen),
+                    img.Width,
+                    img.Height,
+                    pixelFormat,
+                    checked(img.Width * bytesPerPixel));
             }
             catch (Exception e) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = e
                 });
-            }
-            finally {
-                _semaphoreSlim.Release();
-            }
-            return bitmap;
-        }
-
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
                 return null;
             }
+        }
 
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
-            RealtimeImage?.Invoke(this, e);
+            var handler = RealtimeImage;
+            if (handler is null) {
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         protected virtual void OnBarcodeRead(BarcodeReadEventArgs e) {
-            BarcodeRead?.Invoke(this, e);
+            var handler = BarcodeRead;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         protected virtual void OnPhotoTaken(PhotoTakenEventArgs e) {
-            PhotoTaken?.Invoke(this, e);
+            var handler = PhotoTaken;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         protected virtual void OnCameraStarted(CameraStartedEventArgs e) {

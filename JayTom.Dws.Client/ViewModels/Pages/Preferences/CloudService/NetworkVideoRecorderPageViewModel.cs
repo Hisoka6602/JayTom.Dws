@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using DryIoc;
 using System.IO;
 using Prism.Mvvm;
@@ -56,8 +57,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
         private bool _isPlaying;
         private SemaphoreSlim _playSlim = new(1);
 
-        public NetworkVideoRecorderPageViewModel(IConfigRepository configRepository,
-            INvrManager nvrManager) : base(configRepository)
+        public NetworkVideoRecorderPageViewModel(ISettingsStore settingsStore,
+            INvrManager nvrManager) : base(settingsStore)
         {
             /*_nvrManager = nvrManager;
             _nvrManager.RealTimePreviewCallback += async delegate (object? sender, RealTimePreviewEventArgs args) {
@@ -138,10 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new NvrClientSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new NvrClientSettingsDto()
                 {
                     Ip = NvrClientSettingsInfo.Ip,
                     Port = NvrClientSettingsInfo.Port,
@@ -149,8 +147,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
                     MaxWatermarkTime = NvrClientSettingsInfo.MaxWatermarkTime,
                     Password = NvrClientSettingsInfo.Password,
                     Username = NvrClientSettingsInfo.Username
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -180,7 +177,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
                     base.MessageQueue.Enqueue($"{e.Message}");
                 }
 
-                var vnrClientSettingsDto = await _configRepository.FirstOrDefaultEntity<NvrClientSettingsDto>(SettingsName) ?? new NvrClientSettingsDto();
+                var vnrClientSettingsDto = await _settingsStore.GetAsync<NvrClientSettingsDto>(SettingsName) ?? new NvrClientSettingsDto();
                 NvrClientSettingsInfo = new NvrClientSettingsModel()
                 {
                     Ip = vnrClientSettingsDto.Ip,
@@ -269,7 +266,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
                         NvrClientSettingsInfo.Port,
                         NvrClientSettingsInfo.Username,
                         NvrClientSettingsInfo.Password);
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () => {
                         ChannelItems.Clear();
 
                         if (key) {

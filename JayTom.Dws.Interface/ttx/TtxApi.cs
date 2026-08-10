@@ -1,5 +1,4 @@
 ﻿using System;
-using HidSharp;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -65,7 +64,7 @@ namespace JayTom.Dws.Interface.ttx {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters?.TimeOut ?? 1000);
                 var message = await httpClient.PostAsync($"{ApiParameters?.Url}", content, token)
                     .ConfigureAwait(false);
@@ -142,7 +141,7 @@ namespace JayTom.Dws.Interface.ttx {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters?.TimeOut ?? 1000);
                 var message = await httpClient.PostAsync($"{ApiParameters?.Url}", content, token)
                     .ConfigureAwait(false);

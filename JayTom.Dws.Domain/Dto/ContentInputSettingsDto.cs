@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Plugin.Device.KeyboardDevice;
 
 namespace JayTom.Dws.Domain.Dto {
 

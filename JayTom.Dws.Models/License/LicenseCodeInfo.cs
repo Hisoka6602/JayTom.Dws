@@ -1,0 +1,77 @@
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using JayTom.Dws.Data.Attributes;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace JayTom.Dws.Data.License {
+
+    [Table("Code_LicenseCodeInfo", Schema = "dbo")]
+    public class LicenseCodeInfo : BaseLicenseModel {
+
+        [Column("UserId")]
+        public long? UserId { get; set; }
+
+        [ForeignKey("Id")]
+        public virtual LicenseUserInfo? UserInfo { get; set; }
+
+        [Column("LicensePermissionTemplateInfoId")]
+        public long? LicensePermissionTemplateInfoId { get; set; }
+
+        [ForeignKey("Id")]
+        public virtual LicensePermissionTemplateInfo? LicensePermissionTemplateInfo { get; set; }
+
+        [Column("LicenseGroupInfoId")]
+        public long? LicenseGroupInfoId { get; set; }
+
+        [ForeignKey("Id")]
+        public virtual LicenseGroupInfo? LicenseGroupInfo { get; set; }
+
+        /// <summary>
+        /// 授权码
+        /// </summary>
+        [Required, Column("LicenseCode"), UpdateBy]
+        public string LicenseCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 客户端上限数量
+        /// </summary>
+        [Required, Column("MaxClientCount"), InsertOrUpdate]
+        public int MaxClientCount { get; set; } = 0;
+
+        /// <summary>
+        /// 已激活数量
+        /// </summary>
+        [Required, Column("ActivatedClientCount"), InsertOrUpdate]
+        public int ActivatedClientCount { get; set; } = 0;
+
+        /// <summary>
+        /// 到期时间
+        /// </summary>
+        [Required, Column("ExpirationDate"), InsertOrUpdate]
+        public DateTime ExpirationDate { get; set; }
+
+        /// <summary>
+        /// 客户
+        /// </summary>
+        [Required, Column("ClientName"), InsertOrUpdate]
+        public string ClientName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否可用
+        /// </summary>
+        [Required, Column("IsAvailable"), InsertOrUpdate]
+        public bool IsAvailable { get; set; } = true;
+
+        /// <summary>
+        /// 扫码器上限数量
+        /// </summary>
+        [Required, Column("MaxBindingScannerCount"), InsertOrUpdate]
+        public int MaxBindingScannerCount { get; set; } = 1;
+
+        public ICollection<LicenseClientBindingInfo>? LicenseClientBindingInfo { get; set; }
+    }
+}

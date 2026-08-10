@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using Dynamsoft;
 using System.Linq;
 using System.Text;
@@ -62,15 +63,15 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             long elapsedMilliseconds = 0;
             TextResult[]? bars = null;
 
-            if (_scalePercentage >= 0) {
-                var scaledBitmap = GenerateThumbnail(bitmap, (int)(bitmap.Width * ((float)_scalePercentage / 100)),
-                    (int)(bitmap.Height * ((float)_scalePercentage / 100)));
-                if (scaledBitmap is not null) {
-                    bitmap.Dispose();
-                    bitmap = scaledBitmap;
-                }
+            Bitmap? scaledBitmap = null;
+            var decodeBitmap = bitmap;
+            if (_scalePercentage is > 0 and < 100) {
+                scaledBitmap = GenerateThumbnail(
+                    bitmap,
+                    Math.Max(1, bitmap.Width * _scalePercentage / 100),
+                    Math.Max(1, bitmap.Height * _scalePercentage / 100));
+                decodeBitmap = scaledBitmap ?? bitmap;
             }
-            var (buffer, stride, pixelFormat) = GetBitmapData(bitmap);
             var lockTaken = false;
             try {
                 await _semaphoreSlim.WaitAsync(token);
@@ -78,8 +79,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                 if (_mBarcodeReader is not null) {
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    bars = _mBarcodeReader?.DecodeBuffer(buffer, bitmap.Width, bitmap.Height, stride, pixelFormat,
-                        "");
+                    bars = DecodeBitmap(_mBarcodeReader, decodeBitmap);
                     stopwatch.Stop();
                     elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                 }
@@ -91,6 +91,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                 if (lockTaken) {
                     _semaphoreSlim.Release();
                 }
+                scaledBitmap?.Dispose();
             }
 
             //解析条码
@@ -110,6 +111,39 @@ namespace JayTom.Dws.Camera.BarCodeReader {
 
             }
             return barcodeResult;
+        }
+
+        /// <summary>
+        /// 使用池化缓冲区将位图提交给读码引擎。
+        /// </summary>
+        private static TextResult[]? DecodeBitmap(BarcodeReader reader, Bitmap bitmap) {
+            var bitmapData = bitmap.LockBits(
+                new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly,
+                bitmap.PixelFormat);
+            var stride = Math.Abs(bitmapData.Stride);
+            var bufferLength = checked(bitmapData.Height * stride);
+            var buffer = ArrayPool<byte>.Shared.Rent(bufferLength);
+            try {
+                for (var row = 0; row < bitmapData.Height; row++) {
+                    Marshal.Copy(
+                        IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride),
+                        buffer,
+                        row * stride,
+                        stride);
+                }
+                return reader.DecodeBuffer(
+                    buffer,
+                    bitmap.Width,
+                    bitmap.Height,
+                    stride,
+                    GetImagePixelFormat(bitmap.PixelFormat),
+                    string.Empty);
+            }
+            finally {
+                bitmap.UnlockBits(bitmapData);
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         public event EventHandler<BarcodeResult>? BarcodeRead;
@@ -486,23 +520,8 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             }
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null || thumbnailWidth <= 0 || thumbnailHeight <= 0) {
-                return null;
-            }
-
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight, PixelFormat.Format32bppArgb);
-            using var graphics = Graphics.FromImage(thumbnail);
-            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
-            graphics.DrawImage(
-                sourceImage,
-                new Rectangle(0, 0, thumbnailWidth, thumbnailHeight),
-                new Rectangle(0, 0, sourceImage.Width, sourceImage.Height),
-                GraphicsUnit.Pixel);
-            return thumbnail;
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         public static Bitmap FastClone(Bitmap sourceBitmap) {

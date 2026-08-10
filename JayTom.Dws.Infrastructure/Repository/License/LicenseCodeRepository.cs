@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -17,7 +17,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 namespace JayTom.Dws.Infrastructure.Repository.License {
 
     public class LicenseCodeRepository :
-        MemoryCacheRepositoryBase<LicenseCodeInfo>, ILicenseCodeRepository {
+        MemoryCacheRepositoryBase<LicenseCodeInfo, LicenseApiContext>, ILicenseCodeRepository {
 
         public LicenseCodeRepository(IDbContextFactory<LicenseApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

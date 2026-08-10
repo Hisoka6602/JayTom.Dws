@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using NPOI.Util;
 using Prism.Mvvm;
 using System.Linq;
@@ -25,15 +26,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             set => SetProperty(ref field, value);
         } = new();
 
-        public RoutDataApiViewPageModel(IConfigRepository configRepository) : base(configRepository)
+        public RoutDataApiViewPageModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(SettingsName) ?? new RoutDataApiDto();
+                var settingsDto = await _settingsStore.GetAsync<RoutDataApiDto>(SettingsName) ?? new RoutDataApiDto();
                 RoutDataApiInfo = new RoutDataApiModel()
                 {
                     Url = settingsDto.Url,
@@ -52,10 +53,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new RoutDataApiDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new RoutDataApiDto()
                 {
                     Url = RoutDataApiInfo.Url,
                     TimeOut = RoutDataApiInfo.TimeOut,
@@ -64,8 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     RetryInterval = RoutDataApiInfo.RetryInterval,
                     SignKey = RoutDataApiInfo.SignKey,
                     OrgCode = RoutDataApiInfo.OrgCode,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

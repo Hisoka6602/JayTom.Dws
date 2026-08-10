@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using S7.Net;
 using ImTools;
 using System.IO;
@@ -31,7 +32,7 @@ namespace JayTom.Dws.Client.Service.Sorting
     public class DefaultExitMonitor : IExitMonitor
     {
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
 
         public event EventHandler<PackageExitDefinitionInfoModel>? LockExitEvent;
@@ -61,10 +62,10 @@ namespace JayTom.Dws.Client.Service.Sorting
         private int _isConnected;
 
         public DefaultExitMonitor(IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IConfigRepository configRepository, IPackageExitLockBindingRepository packageExitLockBindingRepository)
+            ISettingsStore settingsStore, IPackageExitLockBindingRepository packageExitLockBindingRepository)
         {
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
         }
 
@@ -85,17 +86,13 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             try
             {
-                var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                    f.ConfigName.Equals("PackageExitLockSettings"), token);
-                if (configInfoModel is not null)
+                var packageExitLockSettings = await _settingsStore
+                    .GetAsync<PackageExitLockSettingsDto>("PackageExitLockSettings", token);
+                if (packageExitLockSettings is not null)
                 {
                     try
                     {
-                        _packageExitLockSettingsDto = JsonConvert.DeserializeObject<PackageExitLockSettingsDto>(configInfoModel.Value?.ToString() ?? string.Empty);
-                        if (_packageExitLockSettingsDto is null)
-                        {
-                            return new KeyValuePair<bool, string>(false, "锁格配置不存在");
-                        }
+                        _packageExitLockSettingsDto = packageExitLockSettings;
                         //取出队列
                         _lockBindingInfoModels = await _packageExitLockBindingRepository.Select(s => s.Id > 0,
                             o => o.Id, token);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -38,7 +39,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
     /// </summary>
     public class NvrIpcDeviceManagementViewModel : BindableBase
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
@@ -70,11 +71,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             set => SetProperty(ref _nvrIpcDeviceManagemenMessageQueue, value);
         }
 
-        public NvrIpcDeviceManagementViewModel(IConfigRepository configRepository,
+        public NvrIpcDeviceManagementViewModel(ISettingsStore settingsStore,
             IIpcNvrConfigRepository ipcNvrConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
         }
@@ -258,7 +259,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 var ipcNvrConfigTask = _ipcNvrConfigRepository.MemoryCacheData();
                 var scannerCameraConfigTask = _barcodeScannerCameraConfigRepository.MemoryCacheData();
                 var sdkSelectorTask =
-                    _configRepository.FirstOrDefaultEntity<CameraSdkSelectorDto>("CameraSdkSelector");
+                    _settingsStore.GetAsync<CameraSdkSelectorDto>("CameraSdkSelector");
                 await Task.WhenAll(ipcNvrConfigTask, scannerCameraConfigTask, sdkSelectorTask);
 
                 _ipcNvrConfigInfoModels = await ipcNvrConfigTask;

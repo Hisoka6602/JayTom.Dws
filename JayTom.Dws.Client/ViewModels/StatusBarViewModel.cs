@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -24,6 +24,7 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Application.Configuration;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Models.StatusBarModels;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
@@ -127,7 +128,7 @@ namespace JayTom.Dws.Client.ViewModels
         private SolidColorBrush _cameraSolidColorBrush = Brushes.DarkGray;
 
         public StatusBarViewModel(IComputerInfoReporter computerInfoReporter,
-            IDeviceService deviceService, IConfigRepository configRepository,
+            IDeviceService deviceService, ISettingsReader settingsReader,
             ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
             IFtp ftp, IDynamicScale dynamicScale,
             IStaticScale staticScale, ITcpVolumeInput tcpVolumeInput,
@@ -376,8 +377,8 @@ namespace JayTom.Dws.Client.ViewModels
                     var newConnectionItems = new List<ConnectionItemInfoModel>();
                     //判断添加
                     //FTP图片上传
-                    var imageSettingsDto = await configRepository
-                        .FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings")
+                    var imageSettingsDto = await settingsReader
+                        .GetAsync<ImageSettingsDto>("SaveImageSettings")
                         .ConfigureAwait(false) ?? new ImageSettingsDto();
                     if (imageSettingsDto.IsFtpUploadEnabled)
                     {
@@ -389,8 +390,8 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     }
                     //称重
-                    var weightSettingsDto = await configRepository
-                        .FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings")
+                    var weightSettingsDto = await settingsReader
+                        .GetAsync<WeightSettingsDto>("WeightSettings")
                         .ConfigureAwait(false) ?? new WeightSettingsDto();
                     if (weightSettingsDto.Mode == WeightMode.Dynamic)
                     {
@@ -411,8 +412,8 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     }
                     //体积
-                    var volumeSettingsDto = await configRepository
-                        .FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings")
+                    var volumeSettingsDto = await settingsReader
+                        .GetAsync<VolumeSettingsDto>("VolumeSettings")
                         .ConfigureAwait(false) ?? new VolumeSettingsDto();
                     if (volumeSettingsDto.IsUseExternalVolumeInput)
                     {
@@ -424,8 +425,8 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     }
                     //TCP输出结果
-                    var resultOutputSettingsDto = await configRepository
-                                                      .FirstOrDefaultEntity<ResultOutputSettingsDto>("ResultOutputSettings")
+                    var resultOutputSettingsDto = await settingsReader
+                                                      .GetAsync<ResultOutputSettingsDto>("ResultOutputSettings")
                                                       .ConfigureAwait(false) ??
                                                   new ResultOutputSettingsDto();
                     if (resultOutputSettingsDto.IsUseTcpOutput)
@@ -470,8 +471,8 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     }
                     //控件输入
-                    var contentInputSettingsDto = await configRepository
-                                                      .FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings")
+                    var contentInputSettingsDto = await settingsReader
+                                                      .GetAsync<ContentInputSettingsDto>("ContentInputSettings")
                                                       .ConfigureAwait(false) ??
                                                   new ContentInputSettingsDto();
                     if (contentInputSettingsDto.IsUseControlInput)
@@ -506,8 +507,8 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     });
                     //锁格
-                    var packageExitLockSettingsDto = await configRepository
-                                                         .FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings")
+                    var packageExitLockSettingsDto = await settingsReader
+                                                         .GetAsync<PackageExitLockSettingsDto>("PackageExitLockSettings")
                                                          .ConfigureAwait(false) ??
                                                      new PackageExitLockSettingsDto();
                     if (packageExitLockSettingsDto.IsUsePackageExitLock)
@@ -522,8 +523,8 @@ namespace JayTom.Dws.Client.ViewModels
 
                     //叠包
 
-                    var stackedPackageDetectionSettingsDto = await configRepository
-                                                                 .FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings")
+                    var stackedPackageDetectionSettingsDto = await settingsReader
+                                                                 .GetAsync<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings")
                                                                  .ConfigureAwait(false) ??
                                                              new StackedPackageDetectionSettingsDto();
                     if (stackedPackageDetectionSettingsDto.IsStackedPackageDetection)
@@ -537,8 +538,8 @@ namespace JayTom.Dws.Client.ViewModels
                     }
 
                     //灰度仪
-                    var grayscaleDeviceSettingsDto = await configRepository
-                                                         .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings")
+                    var grayscaleDeviceSettingsDto = await settingsReader
+                                                         .GetAsync<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings")
                                                          .ConfigureAwait(false) ??
                                                      new GrayscaleDeviceSettingsDto();
                     if (grayscaleDeviceSettingsDto.IsUseGrayscaleDetector)

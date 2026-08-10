@@ -46,6 +46,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// </summary>
         private int _originalHeight = 1;
 
+        /// <summary>匹配相机块数据中的条码数量。</summary>
+        private static readonly Regex ChunkCountPattern = new(
+            @"(?:BarCodeNum|QRNum)\s+Value:(\d+)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        /// <summary>匹配相机块数据中的条码文本。</summary>
+        private static readonly Regex ChunkCodePattern = new(
+            @"(?:Code|QR)(\d+)_CodeData\s+Value:(.+)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        /// <summary>匹配相机块数据中的条码顶点。</summary>
+        private static readonly Regex ChunkPointPattern = new(
+            @"(?:Code|QR)(\d+)_Point(\d+)_(X|Y)\s+Value:(\d+)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         public DaHuaSmartCamera(CameraInfo info) {
             this.Info = info;
             this.Info.Type = CameraType.SmartCamera;
@@ -116,7 +129,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 //实例化对象
                 var tryGetValue = _devInfo.TryGetValue(info.SerialNumber, out var devInfo);
                 if (tryGetValue && devInfo is not null) {
-                    _device = Enumerator.GetDeviceByIndex(devInfo.Id);
+                    _device = Enumerator.GetDeviceByIndex(checked((int)devInfo.Id));
                     if (_device != null) {
                         //注册事件
                         //相机打开事件
@@ -142,8 +155,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             using (IFloatParameter p = _device.ParameterCollection[ParametrizeNameSet.GainRaw]) {
                                 //p.SetValue(1.0);
                             }
-                            //设置缓存个数为8(默认值为16)
-                            _device.StreamGrabber.SetBufferCount(8);
+                            // 保留少量驱动缓冲以降低延迟和非托管内存占用。
+                            _device.StreamGrabber.SetBufferCount(3);
                             //开启码流
                             var loopThread = _device.GrabUsingGrabLoopThread();
                             if (!loopThread) {
@@ -197,9 +210,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 var open = _device.Open();
                 if (open) {
                     //码流回调事件
-                    _device.StreamGrabber.ImageGrabbed += async delegate (object? sender, GrabbedEventArgs args) {
-                        await Task.Yield();
-                        //解码
+                    _device.StreamGrabber.ImageGrabbed += delegate (object? sender, GrabbedEventArgs args) {
                         GrabResultDecode(args.GrabResult);
                     };
                     OnCameraStarted(new CameraStartedEventArgs() {
@@ -234,7 +245,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     CameraInfo = this.Info
                 });
             }
-            return new KeyValuePair<bool, string>(false, "设备停止成功!");
+            return new KeyValuePair<bool, string>(true, "设备停止成功!");
         }
 
         public void SetParameters(Dictionary<string, object> parameters) {
@@ -315,145 +326,95 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// </summary>
         /// <param name="grabbedRawData"></param>
         private void GrabResultDecode(IGrabbedRawData grabbedRawData) {
+            Bitmap? bitmap = null;
             try {
                 var scanTime = DateTime.Now;
-                var localTime = new DateTimeOffset(scanTime).ToLocalTime();
-                var timestamp = localTime.ToUnixTimeMilliseconds();
-                var barcodeInfo = new ConcurrentQueue<DaHuaBarcodeInfo>();
-                ConcurrentDictionary<uint, List<string>> chunkDataInfos = new();
+                var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
+                var barcodeInfo = new List<DaHuaBarcodeInfo>();
                 var chunkData = grabbedRawData.ChunkData;
                 for (var i = 0; i < chunkData.ChunkCount; i++) {
                     uint chunkId = 0;
-                    // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
                     var vecChunkInfos = new List<string>();
                     chunkData.GetChunkDataByIndex((uint)i, ref chunkId, ref vecChunkInfos);
-                    chunkDataInfos.TryAdd(chunkId, vecChunkInfos);
+                    ParseChunkData(chunkId, vecChunkInfos, scanTime, barcodeInfo);
                 }
 
-                //图片
-                var bitmap = grabbedRawData.ToBitmap(true);
-                var thumbnailImage = this.GenerateThumbnail(bitmap);
-                if (chunkDataInfos.Any()) {
-                    foreach (var dataInfo in chunkDataInfos) {
-                        // 一维码 0x80000000 == chunkId || 二维码  0x80000001 == chunkId
+                var noReadConsumer = barcodeInfo.Count == 0 && IsUseTriggerMode &&
+                                     TriggerMode == TriggerMode.Hardware && NotBarcodeHitEvent is not null;
+                var barcodeConsumerCount = BarcodeReadTriggered is null ? 0 : barcodeInfo.Count;
+                var realtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
+                if (!noReadConsumer && barcodeConsumerCount == 0 && !realtimeConsumer) {
+                    return;
+                }
 
-                        int.TryParse(Regex.Match(dataInfo.Value.FirstOrDefault(v => Regex.IsMatch(v,
-                                @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")) ?? string.Empty,
-                            @"(?:BarCodeNum|QRNum)\s+Value:(\d+)")?.Groups[1]?.Value, out var codeCount);
+                bitmap = grabbedRawData.ToBitmap(true);
+                var thumbnailImage = GenerateThumbnail(bitmap);
+                if (bitmap is null || thumbnailImage is null) {
+                    bitmap?.Dispose();
+                    bitmap = null;
+                    return;
+                }
 
-                        var codeList = dataInfo.Value.Where(w =>
-                                Regex.IsMatch(w, @"(?:Code|QR)(\d+)_CodeData\s+Value:(.+)") &&
-                                int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
-                            .Select(code =>
-                                Regex.Match(code, @"(?:Code|QR)(\d+)_CodeData\s+Value:(.+)")?.Groups[0]?.Value)
-                            .ToList();
-
-                        var pointList = dataInfo.Value.Where(w =>
-                                Regex.IsMatch(w, @"(?:Code|QR)\d+_Point\d+_(\w+)\s+Value:(\d+)") &&
-                                int.Parse(Regex.Match(w, @"\d+").Value) < codeCount)
-                            .ToList();
-                        foreach (int i in Enumerable.Range(0, codeCount)) {
-                            var daHuaBarcodeInfo = new DaHuaBarcodeInfo {
-                                BarcodeType = dataInfo.Key == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
-                                BarCode = codeList?
-                                    .Select(input => Regex.Match(input ?? string.Empty,
-                                        @$"(?:Code|QR){i}_CodeData\s+Value:(.+)"))
-                                    .FirstOrDefault(match => match.Success)?.Groups[1].Value ?? string.Empty
-                            };
-                            daHuaBarcodeInfo.BarcodeRegionCoordinates.AddRange(
-                                Enumerable.Range(0, 4)
-                                    .Select(j => {
-                                        int.TryParse(pointList?
-                                            .Select(input =>
-                                                Regex.Match(input, $"(?:Code|QR){i}_Point{j}_X\\s+Value:(\\d+)"))
-                                            .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var x);
-
-                                        int.TryParse(pointList?
-                                            .Select(input =>
-                                                Regex.Match(input, $"(?:Code|QR){i}_Point{j}_Y\\s+Value:(\\d+)"))
-                                            .FirstOrDefault(match => match.Success)?.Groups[1].Value, out var y);
-
-                                        return new Point(x, y);
-                                    })
-                            );
-                            //过滤
-                            var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                BarCode = string.IsNullOrWhiteSpace(daHuaBarcodeInfo.BarCode)
-                                    ? "NoRead"
-                                    : daHuaBarcodeInfo.BarCode,
-                                ScanTime = scanTime
-                            });
-                            if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                                daHuaBarcodeInfo.BarCode = validateData.IsValidationPassed
-                                    ? daHuaBarcodeInfo.BarCode
-                                    : _barCodeFilterContainer.FilterOutContent;
-                                barcodeInfo.Enqueue(daHuaBarcodeInfo);
-                            }
-                        }
-                    }
-
-                    //画边框
-                    if (IsShowBarcodeBorder && thumbnailImage is not null && bitmap is not null &&
-                        thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
-                        barcodeInfo?.Any() == true) {
-                        using var g = Graphics.FromImage(thumbnailImage);
-                        foreach (var huaBarcodeInfo in barcodeInfo) {
-                            var points = new Point[4];
-                            for (var j = 0; j < 4; ++j) {
-                                points[j].X = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].X *
-                                                    ((float)(thumbnailImage.Size.Width) /
-                                                     (_originalWidth <= 0 ? 1 : _originalWidth)));
-                                points[j].Y = (int)(huaBarcodeInfo.BarcodeRegionCoordinates[j].Y *
-                                                    ((float)(thumbnailImage.Size.Height) /
-                                                     (_originalHeight <= 0 ? 1 : _originalHeight)));
-                            }
-
-                            using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
-                            g.DrawPolygon(pen, points);
+                if (IsShowBarcodeBorder && barcodeInfo.Count > 0) {
+                    using var graphics = Graphics.FromImage(thumbnailImage);
+                    using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                    foreach (var barcode in barcodeInfo) {
+                        var points = barcode.BarcodeRegionCoordinates.Select(point => new Point(
+                            point.X * thumbnailImage.Width / Math.Max(1, _originalWidth),
+                            point.Y * thumbnailImage.Height / Math.Max(1, _originalHeight))).ToArray();
+                        if (points.Length >= 3) {
+                            graphics.DrawPolygon(pen, points);
                         }
                     }
                 }
 
-                if (barcodeInfo?.Any() != true) {
-                    //返回触发但没有条码
-                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware) {
-                        OnNotBarcodeHitEvent(new BarcodeReadEventArgs() {
+                var primaryConsumerCount = barcodeConsumerCount + (noReadConsumer ? 1 : 0);
+                var realtimeThumbnail = realtimeConsumer && primaryConsumerCount > 0
+                    ? new Bitmap(thumbnailImage)
+                    : thumbnailImage;
+                if (noReadConsumer) {
+                    OnNotBarcodeHitEvent(new BarcodeReadEventArgs {
                             Timestamp = timestamp,
                             Barcode = "NoRead",
                             Image = bitmap,
-                            ThumbImage = (Bitmap?)thumbnailImage,
+                            ThumbImage = thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                             ScanTime = scanTime,
                             FrameNo = _frameNo
                         });
-                    }
                 }
-                else {
-                    while (!barcodeInfo.IsEmpty) {
-                        //返回条码
-                        if (barcodeInfo.TryDequeue(out var barcode)) {
-                            OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs() {
-                                Timestamp = timestamp,
-                                Barcode = _barCodeFilterContainer.RegexReplace(string.IsNullOrWhiteSpace(barcode.BarCode) ? "NoRead" : barcode.BarCode),
-                                Image = bitmap,
-                                ThumbImage = (Bitmap?)thumbnailImage,
-                                CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                ScanTime = scanTime,
-                                AreaCoords = barcode.BarcodeRegionCoordinates,
-                                FrameNo = _frameNo
-                            });
-                        }
-                    }
+                for (var index = 0; index < barcodeConsumerCount; index++) {
+                    var isLast = index == barcodeConsumerCount - 1;
+                    var barcode = barcodeInfo[index];
+                    OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs {
+                        Timestamp = timestamp,
+                        Barcode = _barCodeFilterContainer.RegexReplace(
+                            string.IsNullOrWhiteSpace(barcode.BarCode) ? "NoRead" : barcode.BarCode),
+                        Image = isLast ? bitmap : new Bitmap(bitmap),
+                        ThumbImage = isLast ? thumbnailImage : new Bitmap(thumbnailImage),
+                        CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
+                        ScanTime = scanTime,
+                        AreaCoords = barcode.BarcodeRegionCoordinates,
+                        FrameNo = _frameNo
+                    });
                 }
 
-                if (IsRealtimeImageEnabled) {
-                    OnRealtimeImage(new RealtimeImageEventArgs() {
-                        ThumbImage = (Bitmap?)thumbnailImage,
+                if (primaryConsumerCount == 0) {
+                    bitmap.Dispose();
+                }
+                bitmap = null;
+                if (realtimeConsumer) {
+                    OnRealtimeImage(new RealtimeImageEventArgs {
+                        ThumbImage = realtimeThumbnail,
                         Timestamp = timestamp
                     });
                 }
+                else if (primaryConsumerCount == 0) {
+                    thumbnailImage.Dispose();
+                }
             }
             catch (Exception e) {
+                bitmap?.Dispose();
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = e
                 });
@@ -461,6 +422,86 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             finally {
                 Interlocked.Increment(ref _frameNo);
             }
+        }
+
+        /// <summary>
+        /// 单遍解析一个相机块，避免对每个字段反复扫描全部文本。
+        /// </summary>
+        private void ParseChunkData(
+            uint chunkType,
+            List<string> values,
+            DateTime scanTime,
+            List<DaHuaBarcodeInfo> output) {
+            var parsed = new Dictionary<int, DaHuaBarcodeInfo>();
+            var codeCount = 0;
+            foreach (var value in values) {
+                var countMatch = ChunkCountPattern.Match(value);
+                if (countMatch.Success) {
+                    int.TryParse(countMatch.Groups[1].Value, out codeCount);
+                    continue;
+                }
+
+                var codeMatch = ChunkCodePattern.Match(value);
+                if (codeMatch.Success && int.TryParse(codeMatch.Groups[1].Value, out var codeIndex)) {
+                    GetOrCreateBarcode(parsed, codeIndex, chunkType).BarCode = codeMatch.Groups[2].Value;
+                    continue;
+                }
+
+                var pointMatch = ChunkPointPattern.Match(value);
+                if (!pointMatch.Success ||
+                    !int.TryParse(pointMatch.Groups[1].Value, out var pointCodeIndex) ||
+                    !int.TryParse(pointMatch.Groups[2].Value, out var pointIndex) ||
+                    !int.TryParse(pointMatch.Groups[4].Value, out var coordinate) ||
+                    pointIndex is < 0 or > 3) {
+                    continue;
+                }
+
+                var info = GetOrCreateBarcode(parsed, pointCodeIndex, chunkType);
+                var point = info.BarcodeRegionCoordinates[pointIndex];
+                if (pointMatch.Groups[3].Value == "X") {
+                    point.X = coordinate;
+                }
+                else {
+                    point.Y = coordinate;
+                }
+                info.BarcodeRegionCoordinates[pointIndex] = point;
+            }
+
+            for (var index = 0; index < codeCount; index++) {
+                if (!parsed.TryGetValue(index, out var barcode)) {
+                    continue;
+                }
+                var validation = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
+                    BarCode = string.IsNullOrWhiteSpace(barcode.BarCode) ? "NoRead" : barcode.BarCode,
+                    ScanTime = scanTime
+                });
+                if (validation.IsValidationPassed ||
+                    !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                    barcode.BarCode = validation.IsValidationPassed
+                        ? barcode.BarCode
+                        : _barCodeFilterContainer.FilterOutContent;
+                    output.Add(barcode);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取或创建指定序号的条码解析结果。
+        /// </summary>
+        private static DaHuaBarcodeInfo GetOrCreateBarcode(
+            Dictionary<int, DaHuaBarcodeInfo> parsed,
+            int index,
+            uint chunkType) {
+            if (parsed.TryGetValue(index, out var existing)) {
+                return existing;
+            }
+
+            var created = new DaHuaBarcodeInfo {
+                BarcodeType = chunkType == 0x80000000 ? CodeType.BarCode : CodeType.QrCode,
+                BarcodeRegionCoordinates = [new Point(), new Point(), new Point(), new Point()]
+            };
+            parsed.Add(index, created);
+            return created;
         }
 
         protected virtual void OnCameraExceptionOccurred(CameraExceptionEventArgs e) {
@@ -523,97 +564,40 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         }
 
         protected virtual void OnNotBarcodeHitEvent(BarcodeReadEventArgs e) {
-            NotBarcodeHitEvent?.Invoke(this, e);
+            var handler = NotBarcodeHitEvent;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         protected virtual void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {
-            BarcodeReadTriggered?.Invoke(this, e);
+            var handler = BarcodeReadTriggered;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
-            RealtimeImage?.Invoke(this, e);
+            var handler = RealtimeImage;
+            if (handler is null) {
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
         public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-            // 创建目标缩略图的空白画布
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-
-            using var graphics = Graphics.FromImage(thumbnail);
-            // 设置绘图质量参数
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-            graphics.InterpolationMode = InterpolationMode.Low;
-
-            // 计算缩放比例
-            var scaleX = (float)thumbnailWidth / sourceImage.Width;
-            var scaleY = (float)thumbnailHeight / sourceImage.Height;
-            var scale = Math.Min(scaleX, scaleY);
-
-            // 计算缩放后的宽度和高度
-            var scaledWidth = (int)(sourceImage.Width * scale);
-            var scaledHeight = (int)(sourceImage.Height * scale);
-
-            // 计算在画布上居中绘制的起始位置
-            var startX = (thumbnailWidth - scaledWidth) / 2;
-            var startY = (thumbnailHeight - scaledHeight) / 2;
-
-            // 绘制缩略图
-            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
-
-            return thumbnail;
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
     }
 }

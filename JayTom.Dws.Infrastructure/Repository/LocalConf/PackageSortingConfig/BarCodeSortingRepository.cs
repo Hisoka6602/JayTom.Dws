@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -15,7 +15,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
-    public class BarCodeSortingRepository : LocalRepositoryBase<BarCodeSortingInfoModel>, IBarCodeSortingRepository {
+    public class BarCodeSortingRepository : LocalRepositoryBase<BarCodeSortingInfoModel, SqliteConfContext>, IBarCodeSortingRepository {
 
         public BarCodeSortingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

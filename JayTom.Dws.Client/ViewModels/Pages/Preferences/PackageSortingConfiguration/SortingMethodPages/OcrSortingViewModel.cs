@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -56,7 +56,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var ocrSortingRuleEditor = new OcrSortingRuleEditor();
                 if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model)
@@ -141,7 +141,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is OcrSortingItemInfoModel item)
             {
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var ocrSortingRuleEditor = new OcrSortingRuleEditor();
                     if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model)

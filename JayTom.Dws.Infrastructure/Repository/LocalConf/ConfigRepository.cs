@@ -1,14 +1,13 @@
-﻿using System.Linq;
+using System.Linq;
 using Newtonsoft.Json;
 using JayTom.Dws.Data.LocalConf;
-using NPOI.SS.Formula.Functions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Domain.Repository.LocalConf;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
 
-    public class ConfigRepository : MemoryCacheRepositoryBase<ConfigInfoModel>, IConfigRepository {
+    public class ConfigRepository : MemoryCacheRepositoryBase<ConfigInfoModel, SqliteConfContext>, IConfigRepository {
 
         public ConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

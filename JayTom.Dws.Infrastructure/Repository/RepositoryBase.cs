@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System.Reflection;
 using System.Transactions;
 using System.ComponentModel;
@@ -15,19 +15,21 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Infrastructure.Repository {
 
-    public class RepositoryBase<T> : IRepository<T> where T : class {
-        public readonly IDbContextFactory<DbContext> _contextFactory;
+    public class RepositoryBase<T, TContext> : IRepository<T>
+        where T : class
+        where TContext : DbContext {
+        public readonly IDbContextFactory<TContext> _contextFactory;
         private static readonly SemaphoreSlim _transactionSlim = new(1);
         private static readonly PropertyInfo[] EntityProperties =
             typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-        public RepositoryBase(IDbContextFactory<DbContext> contextFactory, IMemoryCache cache) {
+        public RepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache) {
             ArgumentNullException.ThrowIfNull(contextFactory);
             ArgumentNullException.ThrowIfNull(cache);
             _contextFactory = contextFactory;
         }
 
-        public async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
+        public virtual async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
             if (sql.Equals(string.Empty)) return 0;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -72,7 +74,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return new List<T>();
         }
 
-        public async Task<bool> Insert(T entity, CancellationToken token) {
+        public virtual async Task<bool> Insert(T entity, CancellationToken token) {
             /*try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -129,11 +131,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public async Task InsertAsync(T entity, CancellationToken token) {
+        public virtual async Task InsertAsync(T entity, CancellationToken token) {
             await Insert(entity, token);
         }
 
-        public async Task<bool> InsertRange(List<T> entitylist, CancellationToken token) {
+        public virtual async Task<bool> InsertRange(List<T> entitylist, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -156,26 +158,26 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
 
             return false;
         }
 
-        public async Task<bool> InsertOrUpdate(T entity, CancellationToken token) {
+        public virtual async Task<bool> InsertOrUpdate(T entity, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 var propertyInfos = EntityProperties;
@@ -190,7 +192,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                             UseTempDB = true,
                             UniqueTableNameTempDb = false,
                             PropertiesToIncludeOnUpdate = propertyInfos?.Where(
-                                w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null)?.Select(s => s.Name)?.ToList(),
+                                w => w.GetCustomAttribute<InsertOrUpdateAttribute>() != null)?.Select(s => s.Name)?.ToList(),
                             PropertiesToExclude = propertyInfos
                                 ?.Where(w => w.GetCustomAttribute<DatabaseGeneratedAttribute>() != null ||
                                              w.GetCustomAttribute<ExcludeOnUpdateAttribute>() != null)
@@ -207,11 +209,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TransactionException e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
@@ -219,14 +221,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
             return false;
         }
 
-        public async Task<bool> InsertOrUpdateRange(List<T> entities,
+        public virtual async Task<bool> InsertOrUpdateRange(List<T> entities,
             CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
@@ -243,17 +245,17 @@ namespace JayTom.Dws.Infrastructure.Repository {
                                     UseTempDB = true,
                                     UniqueTableNameTempDb = false,
                                     PropertiesToIncludeOnUpdate = propertyInfos?.Where(
-                                        w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null
+                                        w => w.GetCustomAttribute<InsertOrUpdateAttribute>() != null
                                     )?.Select(s => s.Name)?.ToList(),
                                     /*PropertiesToExcludeOnUpdate = propertyInfos
                                         ?.Where(w => w.GetCustomAttribute<DatabaseGeneratedAttribute>() != null ||
                                                      w.GetCustomAttribute<ExcludeOnUpdateAttribute>() != null)
                                         ?.Select(s => s.Name)?.ToList(),*/
                                     /*PropertiesToInclude = propertyInfos?.Where(
-                                        w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null)?.Select(s => s.Name)?.ToList(),*/
+                                        w => w.GetCustomAttribute<InsertOrUpdateAttribute>() != null)?.Select(s => s.Name)?.ToList(),*/
 
                                     /*PropertiesToExclude = propertyInfos
-                                        ?.Where(w => w.GetCustomAttribute<InsertOrUpdataAttribute>() == null)
+                                        ?.Where(w => w.GetCustomAttribute<InsertOrUpdateAttribute>() == null)
                                         ?.Select(s => s.Name)?.ToList(),*/
                                     PropertiesToExclude = propertyInfos
                                         ?.Where(w => w.GetCustomAttribute<DatabaseGeneratedAttribute>() != null)
@@ -274,11 +276,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (TransactionException e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
@@ -286,13 +288,13 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
         }
 
-        public async Task<bool> InsertOrUpdate(T entity, Expression<Func<T, object>> excludeColumns, CancellationToken token) {
+        public virtual async Task<bool> InsertOrUpdate(T entity, Expression<Func<T, object>> excludeColumns, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 var exclude = new List<string>();
@@ -324,11 +326,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TransactionException e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
@@ -336,14 +338,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
 
             return false;
         }
 
-        public async Task<bool> InsertOrUpdateRange(List<T> entities, Expression<Func<T, object>> excludeColumns, CancellationToken token) {
+        public virtual async Task<bool> InsertOrUpdateRange(List<T> entities, Expression<Func<T, object>> excludeColumns, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 var exclude = new List<string>();
@@ -376,11 +378,11 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (TransactionException e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
@@ -388,13 +390,13 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 }
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
         }
 
-        public async Task<bool> Update(T entity, CancellationToken token) {
+        public virtual async Task<bool> Update(T entity, CancellationToken token) {
             /*try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -455,19 +457,19 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                await contextTransaction?.RollbackAsync(token)!;
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException) {
-                await contextTransaction?.RollbackAsync(token)!;
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (Exception e) {
-                await contextTransaction?.RollbackAsync(token)!;
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;
         }
 
-        public async Task<bool> UpdateRange(List<T> entities, CancellationToken token) {
+        public virtual async Task<bool> UpdateRange(List<T> entities, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -486,26 +488,26 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
 
             return false;
         }
 
-        public async Task<bool> UpdateRange(List<T> entities, Expression<Func<T, object>> excludeColumns, CancellationToken token) {
+        public virtual async Task<bool> UpdateRange(List<T> entities, Expression<Func<T, object>> excludeColumns, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 var exclude = new List<string>();
@@ -529,26 +531,26 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
 
             return false;
         }
 
-        public async Task<bool> Delete(T entity, CancellationToken token) {
+        public virtual async Task<bool> Delete(T entity, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -580,7 +582,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public async Task<bool> DeleteRange(List<T> entities, CancellationToken token) {
+        public virtual async Task<bool> DeleteRange(List<T> entities, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var dbSet = concardContext?.Set<T>();
@@ -605,7 +607,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public async Task<int> DeleteCount(int count, CancellationToken token) {
+        public virtual async Task<int> DeleteCount(int count, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -633,7 +635,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return 0;
         }
 
-        public async Task<int> DeleteCount(int count, Expression<Func<T, bool>> @where, CancellationToken token) {
+        public virtual async Task<int> DeleteCount(int count, Expression<Func<T, bool>> @where, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 {
@@ -641,7 +643,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     var dbSet = concardContext?.Set<T>();
                     if (dbSet is null) return 0;
 
-                    return await dbSet.Where(where).Take(count).BatchDeleteAsync(cancellationToken: token);
+                    return await dbSet.Where(where).Take(count).ExecuteDeleteAsync(cancellationToken: token);
                 }
             }
             catch (Win32Exception) {
@@ -662,7 +664,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public async Task<List<T>> Select(Expression<Func<T, bool>> @where, int pageIndex, int pageSize, CancellationToken token) {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
-            pageSize = pageSize > 1000 ? 1000 : pageSize;
+            pageSize = Math.Clamp(pageSize, 1, 1000);
+            pageIndex = Math.Min(pageIndex, int.MaxValue / pageSize);
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 return await concardContext.Set<T>().AsNoTracking().Where(where)
@@ -681,7 +684,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public async Task<List<T>> Select<TOrder>(Expression<Func<T, bool>> @where, Expression<Func<T, TOrder>> order, int pageIndex, int pageSize, CancellationToken token) {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
-            pageSize = pageSize > 1000 ? 1000 : pageSize;
+            pageSize = Math.Clamp(pageSize, 1, 1000);
+            pageIndex = Math.Min(pageIndex, int.MaxValue / pageSize);
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
@@ -717,7 +721,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public async Task<List<T>> SelectOrderByDescending<TOrder>(Expression<Func<T, bool>> @where, Expression<Func<T, TOrder>> order, int pageIndex, int pageSize,
             CancellationToken token) {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
-            //pageSize = pageSize > 1000 ? 1000 : pageSize;
+            pageSize = Math.Clamp(pageSize, 1, 1000);
+            pageIndex = Math.Min(pageIndex, int.MaxValue / pageSize);
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
@@ -749,6 +754,13 @@ namespace JayTom.Dws.Infrastructure.Repository {
             }
 
             return new List<T>();
+        }
+
+        /// <summary>
+        /// 在事务存在时等待回滚完成，避免事务释放与回滚并发。
+        /// </summary>
+        private static Task RollbackTransactionAsync(IDbContextTransaction? transaction, CancellationToken token) {
+            return transaction?.RollbackAsync(token) ?? Task.CompletedTask;
         }
 
         public async Task<T?> FirstOrDefault(Expression<Func<T, bool>> @where, CancellationToken token) {
@@ -783,7 +795,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return 0;
         }
 
-        public async Task<bool> SyncEntities(List<T> entities, CancellationToken token) {
+        public virtual async Task<bool> SyncEntities(List<T> entities, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
             try {
                 var propertyInfos = EntityProperties;
@@ -804,19 +816,19 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 });
             }
             catch (Win32Exception) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (SqlException e) {
                 if (e.Number != -2) {
                     LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
                 }
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
             }
             catch (Exception e) {
-                contextTransaction?.RollbackAsync(token).ConfigureAwait(false);
+                await RollbackTransactionAsync(contextTransaction, token).ConfigureAwait(false);
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, $"[{typeof(T).Name}]{e}");
             }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 ChannelIdItems = new ObservableCollection<int>(
                     Enumerable.Range(1, IpcNvrItemInfo.ChannelCount)

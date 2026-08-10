@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -78,7 +78,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                             f.SerialNumber.Equals(model.SerialNumber));
                         if (infoModel is not null)
                         {
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                                 VolumeCameraItems.Add(new VolumeCameraItemInfoModel
                                 {
                                     ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
@@ -100,7 +100,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     }
                     catch (Exception exception)
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             VolumeCameraMessageQueue.Enqueue(
                                 $"加载新绑定体积相机失败:{exception.Message}"));
                     }
@@ -109,7 +109,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             _cameraUnboundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
             {
                 //解绑相机,更新列表
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var infoModel =
                         VolumeCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));

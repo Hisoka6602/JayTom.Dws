@@ -1,4 +1,9 @@
-﻿using System;
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Interface;
+using JayTom.Dws.Client.Extensions;
+using JayTom.Dws.Abstractions.Integrations;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -23,7 +28,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
     public class JtExpressApiPageViewModel : SettingsPageTemplateViewModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private JtExpressApiModel _jtExpressApiInfo = new();
         private bool _isLoaded;
 
@@ -114,10 +119,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private bool _isLoginSuccessful;
         private bool _isLoggingIn;
 
-        public JtExpressApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory) : base(configRepository)
+        public JtExpressApiPageViewModel(ISettingsStore settingsStore,
+            IProviderRegistry<IDataUploader> providerRegistry) : base(settingsStore)
         {
-            _httpClientFactory = httpClientFactory;
+            _providerRegistry = providerRegistry;
         }
 
         public JtExpressApiModel JtExpressApiInfo
@@ -223,7 +228,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             IsLoginSuccessful = false;
             try
             {
-                var api = new JtExpressApi(_httpClientFactory);
+                var api = _providerRegistry.Resolve<JtExpressApi>(ApiType.JtExpressApi);
                 var parameterResult = await api.SetParameters(
                     new JtExpressApi.ApiParameter
                     {
@@ -281,9 +286,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(SettingsName) ?? new JtExpressDto();
+                    var settingsDto = await _settingsStore.GetAsync<JtExpressDto>(SettingsName) ?? new JtExpressDto();
 
                     JtExpressApiInfo = new JtExpressApiModel()
                     {
@@ -322,10 +327,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new JtExpressDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new JtExpressDto()
                 {
                     AppKey = JtExpressApiInfo.AppKey,
                     AppSecret = JtExpressApiInfo.AppSecret,
@@ -343,8 +345,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     TransportTypeCode = JtExpressApiInfo.TransportTypeCode.Value,
                     IsUploadAfterReturn = JtExpressApiInfo.IsUploadAfterReturn,
                     InterceptorEnabled = JtExpressApiInfo.InterceptorEnabled
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

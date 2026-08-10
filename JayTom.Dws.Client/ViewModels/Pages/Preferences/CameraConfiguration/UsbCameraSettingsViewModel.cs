@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Dynamsoft;
 using Prism.Mvvm;
 using System.Linq;
@@ -96,7 +97,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 
         public UsbCameraSettingsViewModel(IDeviceService deviceService,
             IUsbCameraConfigRepository usbCameraConfigRepository,
-            IConfigRepository configRepository) : base(configRepository)
+            ISettingsStore settingsStore) : base(settingsStore)
         {
             _deviceService = deviceService;
             _usbCameraConfigRepository = usbCameraConfigRepository;
@@ -123,7 +124,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             try
             {
                 var usbBarcodeReaderDto =
-                    await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(
+                    await _settingsStore.GetAsync<UsbBarcodeReaderDto>(
                         "AlgorithmSettings") ?? new UsbBarcodeReaderDto();
                 var barcodeFormat = GetBarcodeFormat(usbBarcodeReaderDto.BarcodeType);
                 var dictionary = new Dictionary<BarcodeReaderParameter, object>
@@ -157,7 +158,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                         await _usbBarCodeReader.SetBarcodeReaderParameter(dictionary);
                     if (!key)
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             base.MessageQueue.Enqueue(value));
                     }
                 }
@@ -168,7 +169,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             }
             catch (Exception exception)
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     base.MessageQueue.Enqueue($"应用USB读码设置失败:{exception.Message}"));
             }
         }

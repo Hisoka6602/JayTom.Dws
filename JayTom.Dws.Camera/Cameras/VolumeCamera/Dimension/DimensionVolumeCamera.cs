@@ -14,7 +14,6 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
     public class DimensionVolumeCamera : IVolumeCamera {
         private DimensionVolumeSdk? _dimensionVolumeSdk = null;
-        private SemaphoreSlim _volumelim = new(1);
         private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
 
         /// <summary>
@@ -38,9 +37,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             this.Info.Type = CameraType.ThreeDCamera;
             if (_dimensionVolumeSdk is null) {
                 _dimensionVolumeSdk = new();
-                _dimensionVolumeSdk.VolumeCaptured += async delegate (object? sender, DimensionVolumeInfo info) {
+                _dimensionVolumeSdk.VolumeCaptured += delegate (object? sender, DimensionVolumeInfo info) {
                     try {
-                        await _volumelim.WaitAsync();
                         var thumbnailImage = GenerateThumbnail(info.Image, 640, 480);
                         OnVolumeCaptured(new VolumeCapturedEventArgs() {
                             Length = info.Length,
@@ -54,10 +52,8 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                         });
                     }
                     catch (Exception e) {
+                        info.Image?.Dispose();
                         NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    }
-                    finally {
-                        _volumelim.Release();
                     }
                 };
             }
@@ -216,57 +212,17 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         }
 
         protected virtual void OnVolumeCaptured(VolumeCapturedEventArgs e) {
-            VolumeCaptured?.Invoke(this, e);
+            var handler = VolumeCaptured;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.Thumbnail?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
     }
 }

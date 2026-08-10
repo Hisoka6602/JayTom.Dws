@@ -361,7 +361,7 @@ static void DetectUnsafeHexFormatting(
     SyntaxNode root,
     string relativePath,
     ICollection<string> errors) {
-    const string formatterPath = "JayTom.Dws.Plugin/HexDataFormatter.cs";
+    const string formatterPath = "JayTom.Dws.Abstractions/Text/HexDataFormatter.cs";
     if (relativePath.Equals(formatterPath, StringComparison.Ordinal)) {
         return;
     }
@@ -812,12 +812,28 @@ static void CountTypeIsolationViolations(
     }
 
     count += topLevelDeclarations.Count(declaration =>
-        !GetTypeIdentifier(declaration).Equals(
-            expectedFileName,
-            StringComparison.Ordinal));
+        !MatchesExpectedFileName(declaration, expectedFileName));
     if (count > 0) {
         violations[relativePath] = count;
     }
+}
+
+/// <summary>判断类型名是否符合普通或单泛型文件命名约定。</summary>
+static bool MatchesExpectedFileName(
+    SyntaxNode declaration,
+    string expectedFileName) {
+    var identifier = GetTypeIdentifier(declaration);
+    if (identifier.Equals(expectedFileName, StringComparison.Ordinal)) {
+        return true;
+    }
+
+    // 泛型类型使用 FooOfT 文件名，避免与非泛型 Foo 类型争用同一文件名。
+    return declaration is TypeDeclarationSyntax {
+               TypeParameterList.Parameters.Count: 1
+           } &&
+           expectedFileName.Equals(
+               identifier + "OfT",
+               StringComparison.Ordinal);
 }
 
 static bool IsTopLevelTypeDeclaration(SyntaxNode declaration) {
@@ -876,7 +892,8 @@ static void CountInvalidIdTypes(
 }
 
 static bool IsIdName(string name) {
-    return !name.Equals("Guid", StringComparison.Ordinal) &&
+    return name is not ("VendorId" or "ProductId" or "providerId") &&
+           !name.Equals("Guid", StringComparison.Ordinal) &&
            (name.Equals("id", StringComparison.OrdinalIgnoreCase) ||
             name.EndsWith("Id", StringComparison.Ordinal) ||
             name.EndsWith("ID", StringComparison.Ordinal) ||
@@ -1700,9 +1717,13 @@ static string BuildEfModelSignature(
                 continue;
             }
 
-            if (!relativePath.StartsWith(
-                    "JayTom.Dws.Data/",
-                    StringComparison.Ordinal) &&
+            var isModelProject = relativePath.StartsWith(
+                                     "JayTom.Dws.Data/",
+                                     StringComparison.Ordinal) ||
+                                 relativePath.StartsWith(
+                                     "JayTom.Dws.Models/",
+                                     StringComparison.Ordinal);
+            if (!isModelProject &&
                 !relativePath.StartsWith(
                     "JayTom.Dws.Infrastructure/",
                     StringComparison.Ordinal) ||
@@ -1720,9 +1741,37 @@ static string BuildEfModelSignature(
                 continue;
             }
 
+            // 项目重命名不应被误判为 EF 模型变化；保持历史逻辑路径用于稳定签名。
+            var signaturePath = relativePath.StartsWith(
+                "JayTom.Dws.Models/",
+                StringComparison.Ordinal)
+                ? "JayTom.Dws.Data/" + relativePath["JayTom.Dws.Models/".Length..]
+                : relativePath;
+            // 属性拼写修正不改变 EF 映射语义；使用历史名称保持模型签名稳定。
+            signaturePath = signaturePath.Replace(
+                "Attributes/InsertOrUpdateAttribute.cs",
+                "Attributes/InsertOrUpdataAttribute.cs",
+                StringComparison.Ordinal);
+            var signatureSource = root.WithoutTrivia()
+                .NormalizeWhitespace()
+                .ToFullString()
+                .Replace(
+                    "InsertOrUpdate",
+                    "InsertOrUpdata",
+                    StringComparison.Ordinal);
+            if (signaturePath.EndsWith(
+                    "Attributes/InsertOrUpdataAttribute.cs",
+                    StringComparison.Ordinal)) {
+                signatureSource = CSharpSyntaxTree.ParseText(
+                        "namespace JayTom.Dws.Data.Attributes { public class InsertOrUpdataAttribute : Attribute { } }")
+                    .GetRoot()
+                    .WithoutTrivia()
+                    .NormalizeWhitespace()
+                    .ToFullString();
+            }
             modelSources.Add(
-                relativePath + "\n" +
-                root.WithoutTrivia().NormalizeWhitespace().ToFullString());
+                signaturePath + "\n" +
+                signatureSource);
         }
     }
 

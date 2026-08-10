@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -42,8 +43,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private ImageSource? _imageSource;
         private Bitmap? _cropImage = null;
 
-        public OcrSettingsViewModel(IConfigRepository configRepository, IOcr ocr,
-            IDeviceService deviceService) : base(configRepository)
+        public OcrSettingsViewModel(ISettingsStore settingsStore, IOcr ocr,
+            IDeviceService deviceService) : base(settingsStore)
         {
             _ocr = ocr;
             _deviceService = deviceService;
@@ -419,10 +420,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 {"sender_addr", OcrSettingsInfo.IsShowSenderInfo},
             };
             await _ocr.SetOcrParameters(dictionary);
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new OcrSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new OcrSettingsDto()
                 {
                     IsThreeSegmentCode = OcrSettingsInfo.IsThreeSegmentCode,
                     IsShowReceiverInfo = OcrSettingsInfo.IsShowReceiverInfo,
@@ -436,8 +434,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     ModelFilePath = SelectModelFile,
                     RectangleScale = OcrSettingsInfo.RectangleScale,
                     IsSecondConfirmationEnabled = OcrSettingsInfo.IsSecondConfirmationEnabled,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -450,9 +447,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 ?.Select(s => new FileInfo(s))?.Where(w => w.Extension.Contains("onnx"))
                 ?.Select(s1 => s1.Name)?.ToList();
             ModelFiles.AddRange(modelNames);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var ocrSettingsDto = await _configRepository.FirstOrDefaultEntity<OcrSettingsDto>(SettingsName);
+                var ocrSettingsDto = await _settingsStore.GetAsync<OcrSettingsDto>(SettingsName);
 
                 if (ocrSettingsDto is not null)
                 {

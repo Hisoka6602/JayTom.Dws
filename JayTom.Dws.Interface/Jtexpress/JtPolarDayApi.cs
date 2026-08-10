@@ -244,15 +244,26 @@ namespace JayTom.Dws.Interface.Jtexpress {
             var imagePath = EmptyToNull(context.HalfPath);
             if (imageInfo?.Image is { } image &&
                 HasCompleteImageUploadConfiguration(parameters)) {
-                var imageContent =
-                    JtPolarDayScanImageProcessor.CreateUploadContent(image);
-                imagePath = await UploadScanImageAsync(
-                        barcode,
-                        scanTime,
-                        imageContent,
-                        parameters,
-                        token)
-                    .ConfigureAwait(false);
+                try {
+                    var imageContent =
+                        JtPolarDayScanImageProcessor.CreateUploadContent(image);
+                    imagePath = await UploadScanImageAsync(
+                            barcode,
+                            scanTime,
+                            imageContent,
+                            parameters,
+                            token)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) {
+                    throw;
+                }
+                catch (Exception exception) {
+                    Logger.Warn(
+                        exception,
+                        $"极昼扫描图片上传失败，继续发送设备报文:{barcode}");
+                    imagePath = EmptyToNull(context.HalfPath);
+                }
             }
 
             var scanRequest = CreateRequest(
@@ -263,6 +274,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 imageInfo,
                 context,
                 imagePath);
+            Logger.Info(
+                $"准备调用极昼设备信息接口:EventType={ScanEventType},WaybillNo={barcode}");
             var scanResponse = await UploadDeviceInfoAsync(scanRequest, token)
                 .ConfigureAwait(false);
             if (scanResponse.IsSuccess) {
@@ -298,6 +311,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 imageInfo,
                 context,
                 imagePath);
+            Logger.Info(
+                $"准备调用极昼设备信息接口:EventType={PackageEventType},WaybillNo={barcode},GridNo={context.GridNo}");
             var response = await UploadDeviceInfoAsync(request, token)
                 .ConfigureAwait(false);
             if (response.IsSuccess) {
@@ -619,7 +634,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 CancellationTokenSource.CreateLinkedTokenSource(token);
             timeoutSource.CancelAfter(timeoutMilliseconds);
             using var client =
-                _httpClientFactory.CreateClient("INSURANCE");
+                _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             using var response = await client.SendAsync(
                     request,
                     HttpCompletionOption.ResponseHeadersRead,
@@ -665,7 +680,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             };
             request.Content.Headers.ContentType = mediaTypeHeader;
             using var client =
-                _httpClientFactory.CreateClient("INSURANCE");
+                _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             using var response = await client.SendAsync(
                     request,
                     HttpCompletionOption.ResponseHeadersRead,
@@ -995,7 +1010,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 CancellationTokenSource.CreateLinkedTokenSource(token);
             timeoutSource.CancelAfter(timeoutMilliseconds);
             using var client =
-                _httpClientFactory.CreateClient("INSURANCE");
+                _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             using var response = await client.SendAsync(
                     request,
                     HttpCompletionOption.ResponseHeadersRead,

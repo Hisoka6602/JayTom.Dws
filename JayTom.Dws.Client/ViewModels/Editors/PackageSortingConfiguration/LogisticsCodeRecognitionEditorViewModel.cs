@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ImTools;
 using System.IO;
 using Prism.Mvvm;
@@ -225,7 +225,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
             };
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     SoundFilePath = new FileInfo(openFileDialog.FileName).Name;
                     LogisticsCodeRecognitionItemInfo.SoundBytes = await File.ReadAllBytesAsync(openFileDialog.FileName);

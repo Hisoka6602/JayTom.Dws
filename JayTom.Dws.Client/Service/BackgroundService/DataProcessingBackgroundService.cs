@@ -1,5 +1,6 @@
 ﻿using NLog;
 using System;
+using JayTom.Dws.Application.Workflows;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
@@ -13,7 +14,6 @@ using System.Windows.Documents;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Interface.Cloud;
-using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
@@ -49,12 +49,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly IImageRepository _imageRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExitInfoRepository _exitInfoRepository;
-        private readonly ConcurrentQueue<PackageInfoModel> _insertItems = new();
-        private readonly ConcurrentQueue<ApiResponseReceived> _updateResponseItems = new();
-        private readonly ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
-        private readonly ConcurrentQueue<InstructionReceived> _instructionItems = new();
-        private readonly ConcurrentQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
-        private readonly ConcurrentQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
+        private readonly BoundedWorkQueue<PackageInfoModel> _insertItems = new(MaxQueueLength);
+        private readonly BoundedWorkQueue<ApiResponseReceived> _updateResponseItems = new(MaxQueueLength);
+        private readonly BoundedWorkQueue<SavedImageInfo> _savedImageItems = new(MaxQueueLength);
+        private readonly BoundedWorkQueue<InstructionReceived> _instructionItems = new(MaxQueueLength);
+        private readonly BoundedWorkQueue<ExceptionSortingReceived> _exceptionSortingItems = new(MaxQueueLength);
+        private readonly BoundedWorkQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new(MaxQueueLength);
+        /// <summary>
+        /// 单类持久化任务允许排队的最大数量。
+        /// </summary>
+        private const int MaxQueueLength = 10_000;
+        /// <summary>统一记录持久化工作项的有限重试状态。</summary>
+        private readonly RetryAttemptTracker _retryTracker = new(5);
 
         /// <summary>
         /// 在任意持久化队列产生数据时唤醒后台消费者。
@@ -530,6 +536,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         await Task.Delay(TimeSpan.FromMilliseconds(50), stoppingToken);
                     }
                 }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
                 catch (Exception e)
                 {
                     if (inFlightInsert is not null)
@@ -572,17 +582,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <typeparam name="T">队列元素类型。</typeparam>
         /// <param name="queue">目标并发队列。</param>
         /// <param name="item">需要持久化的数据。</param>
-        private void EnqueueWork<T>(ConcurrentQueue<T> queue, T item)
+        private void EnqueueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
         {
-            queue.Enqueue(item);
+            if (!queue.TryEnqueue(item))
+            {
+                LogManager.GetCurrentClassLogger().Error(
+                    $"数据持久化队列已达到上限 {MaxQueueLength}，拒绝新任务:{typeof(T).Name}");
+                return;
+            }
             SignalWork();
         }
 
         /// <summary>
         /// 将失败工作重新入队并请求短暂退避。
         /// </summary>
-        private void RequeueWork<T>(ConcurrentQueue<T> queue, T item)
+        private void RequeueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
         {
+            if (!_retryTracker.TryRegisterFailure(item, out _))
+            {
+                LogManager.GetCurrentClassLogger().Error(
+                    $"数据持久化任务超过最大重试次数 {_retryTracker.MaxAttempts}，已转为错误日志:{typeof(T).Name}");
+                return;
+            }
             Interlocked.Exchange(ref _retryRequested, 1);
             EnqueueWork(queue, item);
         }

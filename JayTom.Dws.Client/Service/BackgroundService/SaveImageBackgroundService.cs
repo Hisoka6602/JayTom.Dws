@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using JayTom.Dws.Application.Configuration;
+using NLog;
 using System;
 using System.IO;
 using System.Drawing;
@@ -9,6 +10,7 @@ using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Domain.Model;
 using System.Collections.Generic;
+using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
@@ -25,12 +27,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
     public class SaveImageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
         private readonly IImageStorageService _imageStorageService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISaveImage _saveImage;
+        private readonly ISettingsStore _settingsStore;
         private readonly IDeviceService _deviceService;
         /// <summary>
         /// 原图待保存队列。
         /// </summary>
-        private readonly Queue<ImageMessageInfo> _imageItems = new(MaxPendingImages);
+        private readonly Queue<(ImageMessageInfo Message, long EstimatedBytes)> _imageItems =
+            new(MaxPendingImages);
         /// <summary>
         /// 原图队列同步锁。
         /// </summary>
@@ -41,7 +45,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>
         /// OCR 裁剪图待保存队列。
         /// </summary>
-        private readonly Queue<Bitmap> _cropImageQueue = new(MaxPendingCropImages);
+        private readonly Queue<(Bitmap Image, long EstimatedBytes)> _cropImageQueue =
+            new(MaxPendingCropImages);
         /// <summary>
         /// OCR 裁剪图队列同步锁。
         /// </summary>
@@ -68,23 +73,40 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         private long _cropImageSequence;
         /// <summary>
+        /// 原图队列当前估算的解码后内存占用。
+        /// </summary>
+        private long _pendingImageBytes;
+        /// <summary>
+        /// OCR 裁剪图队列当前估算的解码后内存占用。
+        /// </summary>
+        private long _pendingCropImageBytes;
+        /// <summary>
         /// 当前后台工作器的停止令牌。
         /// </summary>
         private CancellationToken _stoppingToken;
         /// <summary>
         /// 原图待保存队列容量上限。
         /// </summary>
-        private const int MaxPendingImages = 2048;
+        private const int MaxPendingImages = 32;
         /// <summary>
         /// 裁剪图待保存队列容量上限。
         /// </summary>
-        private const int MaxPendingCropImages = 512;
+        private const int MaxPendingCropImages = 64;
+        /// <summary>
+        /// 原图队列最多占用约 256 MiB 解码内存；单张超大图仍允许独占队列。
+        /// </summary>
+        private const long MaxPendingImageBytes = 256L * 1024L * 1024L;
+        /// <summary>
+        /// OCR 裁剪图队列最多占用约 64 MiB 解码内存。
+        /// </summary>
+        private const long MaxPendingCropImageBytes = 64L * 1024L * 1024L;
 
-        public SaveImageBackgroundService(IImageStorageService imageStorageService,
-            IConfigRepository configRepository, IDeviceService deviceService)
+        public SaveImageBackgroundService(IImageStorageService imageStorageService, ISaveImage saveImage,
+            ISettingsStore settingsStore, IDeviceService deviceService)
         {
             _imageStorageService = imageStorageService;
-            _configRepository = configRepository;
+            _saveImage = saveImage;
+            _settingsStore = settingsStore;
             _deviceService = deviceService;
             EventAggregator.Instance.Subscribe<ImageMessageInfo>(info =>
             {
@@ -117,7 +139,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 {
                     if (result?.CropImage is not null)
                     {
-                        EnqueueCropImage(result.CropImage);
+                        try
+                        {
+                            EnqueueCropImage(new Bitmap(result.CropImage));
+                        }
+                        catch (Exception exception)
+                        {
+                            LogManager.GetCurrentClassLogger()
+                                .Error(exception, "复制 OCR 裁剪图失败");
+                        }
                     }
                 }
             };
@@ -131,11 +161,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             });
         }
 
+        /// <summary>
+        /// 在生产者启动前加载存图配置，避免启动窗口期丢弃首批图片。
+        /// </summary>
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await ReloadSettingsAsync("SaveImageSettings", cancellationToken).ConfigureAwait(false);
+            await ReloadSettingsAsync("OcrSettings", cancellationToken).ConfigureAwait(false);
+            await base.StartAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _stoppingToken = stoppingToken;
-            await ReloadSettingsAsync("SaveImageSettings", stoppingToken).ConfigureAwait(false);
-            await ReloadSettingsAsync("OcrSettings", stoppingToken).ConfigureAwait(false);
 
             try
             {
@@ -166,9 +204,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var now = DateTime.Now;
                                     var directory = Path.Combine(cropImagePath, now.ToString("MM"),
                                         now.ToString("dd"), now.ToString("HH"));
-                                    Directory.CreateDirectory(directory);
-                                    cropImage.Save(Path.Combine(directory,
-                                        $"{new DateTimeOffset(now).ToUnixTimeMilliseconds()}_{Interlocked.Increment(ref _cropImageSequence)}.jpg"));
+                                    var imageName =
+                                        $"{new DateTimeOffset(now).ToUnixTimeMilliseconds()}_{Interlocked.Increment(ref _cropImageSequence)}";
+                                    var (saved, message) = await _saveImage.SaveOriginalImage(
+                                        cropImage,
+                                        imageName,
+                                        directory,
+                                        cancellationToken: stoppingToken).ConfigureAwait(false);
+                                    if (!saved)
+                                    {
+                                        LogManager.GetCurrentClassLogger()
+                                            .Error($"OCR裁剪图保存失败:{message}");
+                                    }
                                 }
                             }
                         }
@@ -221,21 +268,31 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         private void EnqueueImage(ImageMessageInfo imageInfo)
         {
-            ImageMessageInfo? discarded = null;
+            var estimatedBytes = EstimateDecodedBytes(imageInfo.Image);
+            List<ImageMessageInfo>? discarded = null;
             lock (_imageQueueLock)
             {
-                if (_imageItems.Count >= MaxPendingImages)
+                while (_imageItems.Count > 0 &&
+                       (_imageItems.Count >= MaxPendingImages ||
+                        WouldExceedBudget(_pendingImageBytes, estimatedBytes, MaxPendingImageBytes)))
                 {
-                    discarded = _imageItems.Dequeue();
+                    discarded ??= [];
+                    var removed = _imageItems.Dequeue();
+                    _pendingImageBytes = Math.Max(0, _pendingImageBytes - removed.EstimatedBytes);
+                    discarded.Add(removed.Message);
                 }
 
-                _imageItems.Enqueue(imageInfo);
+                _imageItems.Enqueue((imageInfo, estimatedBytes));
+                _pendingImageBytes += estimatedBytes;
             }
 
             if (discarded is not null)
             {
-                discarded.Image?.Dispose();
-                Interlocked.Increment(ref _droppedImageCount);
+                foreach (var discardedImage in discarded)
+                {
+                    discardedImage.Image?.Dispose();
+                }
+                Interlocked.Add(ref _droppedImageCount, discarded.Count);
             }
 
             SignalWork();
@@ -246,21 +303,36 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         private void EnqueueCropImage(Bitmap cropImage)
         {
-            Bitmap? discarded = null;
+            var estimatedBytes = EstimateDecodedBytes(cropImage);
+            List<Bitmap>? discarded = null;
             lock (_cropImageQueueLock)
             {
-                if (_cropImageQueue.Count >= MaxPendingCropImages)
+                while (_cropImageQueue.Count > 0 &&
+                       (_cropImageQueue.Count >= MaxPendingCropImages ||
+                        WouldExceedBudget(
+                            _pendingCropImageBytes,
+                            estimatedBytes,
+                            MaxPendingCropImageBytes)))
                 {
-                    discarded = _cropImageQueue.Dequeue();
+                    discarded ??= [];
+                    var removed = _cropImageQueue.Dequeue();
+                    _pendingCropImageBytes = Math.Max(
+                        0,
+                        _pendingCropImageBytes - removed.EstimatedBytes);
+                    discarded.Add(removed.Image);
                 }
 
-                _cropImageQueue.Enqueue(cropImage);
+                _cropImageQueue.Enqueue((cropImage, estimatedBytes));
+                _pendingCropImageBytes += estimatedBytes;
             }
 
             if (discarded is not null)
             {
-                discarded.Dispose();
-                Interlocked.Increment(ref _droppedCropImageCount);
+                foreach (var discardedImage in discarded)
+                {
+                    discardedImage.Dispose();
+                }
+                Interlocked.Add(ref _droppedCropImageCount, discarded.Count);
             }
 
             SignalWork();
@@ -281,7 +353,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     return false;
                 }
 
-                imageInfo = _imageItems.Dequeue();
+                var item = _imageItems.Dequeue();
+                _pendingImageBytes = Math.Max(0, _pendingImageBytes - item.EstimatedBytes);
+                imageInfo = item.Message;
                 return true;
             }
         }
@@ -301,7 +375,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     return false;
                 }
 
-                cropImage = _cropImageQueue.Dequeue();
+                var item = _cropImageQueue.Dequeue();
+                _pendingCropImageBytes = Math.Max(
+                    0,
+                    _pendingCropImageBytes - item.EstimatedBytes);
+                cropImage = item.Image;
                 return true;
             }
         }
@@ -357,6 +435,34 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
         }
 
+        /// <summary>
+        /// 估算图片解码后占用的像素内存字节数。
+        /// </summary>
+        private static long EstimateDecodedBytes(Image? image)
+        {
+            if (image is null || image.Width <= 0 || image.Height <= 0)
+            {
+                return 0;
+            }
+
+            var bitsPerPixel = Image.GetPixelFormatSize(image.PixelFormat);
+            if (bitsPerPixel <= 0)
+            {
+                bitsPerPixel = 32;
+            }
+
+            var bytesPerPixel = Math.Max(1, (bitsPerPixel + 7) / 8);
+            return (long)image.Width * image.Height * bytesPerPixel;
+        }
+
+        /// <summary>
+        /// 判断加入图片后是否会超过队列的内存预算。
+        /// </summary>
+        private static bool WouldExceedBudget(long currentBytes, long incomingBytes, long budgetBytes)
+        {
+            return incomingBytes > budgetBytes - Math.Min(currentBytes, budgetBytes);
+        }
+
         private async Task ReloadSettingsAsync(string settingsName, CancellationToken cancellationToken)
         {
             var lockTaken = false;
@@ -364,21 +470,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             {
                 await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 lockTaken = true;
-                var configInfoModel = await _configRepository
-                    .FirstOrDefault(w => w.ConfigName.Equals(settingsName), cancellationToken)
-                    .ConfigureAwait(false);
-
                 if (settingsName == "SaveImageSettings")
                 {
-                    Volatile.Write(ref _imageSettingsDto,
-                        JsonConvert.DeserializeObject<ImageSettingsDto>(
-                            configInfoModel?.Value ?? string.Empty) ?? new ImageSettingsDto());
+                    var imageSettings = await _settingsStore
+                        .GetAsync<ImageSettingsDto>(settingsName, cancellationToken)
+                        .ConfigureAwait(false);
+                    Volatile.Write(ref _imageSettingsDto, imageSettings ?? new ImageSettingsDto());
                 }
                 else
                 {
-                    Volatile.Write(ref _ocrSettingsDto,
-                        JsonConvert.DeserializeObject<OcrSettingsDto>(
-                            configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto());
+                    var ocrSettings = await _settingsStore
+                        .GetAsync<OcrSettingsDto>(settingsName, cancellationToken)
+                        .ConfigureAwait(false);
+                    Volatile.Write(ref _ocrSettingsDto, ocrSettings ?? new OcrSettingsDto());
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

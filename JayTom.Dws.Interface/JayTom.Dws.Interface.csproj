@@ -9,19 +9,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NLog" Version="5.3.2" />
-    <PackageReference Include="Polly" Version="7.2.4" />
-    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <PackageReference Include="Aliyun.OSS.SDK.NetCore" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="NLog" />
+    <PackageReference Include="Polly" />
+    <PackageReference Include="System.Drawing.Common" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Excel\JayTom.Dws.Excel.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Utils\JayTom.Dws.Utils.csproj" />
   </ItemGroup>
 

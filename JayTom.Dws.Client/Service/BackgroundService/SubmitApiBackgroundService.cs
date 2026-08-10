@@ -1,4 +1,7 @@
-﻿using NLog;
+﻿using JayTom.Dws.Application.Configuration;
+using NLog;
+using JayTom.Dws.Application.Workflows;
+using JayTom.Dws.Abstractions.Integrations;
 using System;
 using ImTools;
 using System.Net;
@@ -73,11 +76,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
     /// </summary>
     public class SubmitApiBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfigRepository _configRepository;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
+        private readonly ISettingsStore _settingsStore;
         private readonly IImageStorageService _imageStorageService;
         private readonly IMemoryCache _memoryCache;
-        private readonly ConcurrentQueue<SubmitItemInfo> _submitItems = new();
+        private readonly BoundedWorkQueue<SubmitItemInfo> _submitItems = new(MaxQueueLength);
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
         private static SzjyApi.ApiParameter _szjyApiParam = new();
@@ -97,10 +100,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
         private static JushuitanErpApi.ApiParameters _jushuitanErpParam = new();
         private static ZhouYiApi.ApiParameters _zhouYiApiParam = new();
-        private readonly ConcurrentQueue<SavedImageInfo> _savedImageItems = new();
+        private readonly BoundedWorkQueue<SavedImageInfo> _savedImageItems = new(MaxQueueLength);
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
-        private readonly ConcurrentQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
+        private readonly BoundedWorkQueue<PackageAggregationInfo> _packageAggregationInfoItems = new(MaxQueueLength);
+        /// <summary>
+        /// 单类接口任务允许排队的最大数量。
+        /// </summary>
+        private const int MaxQueueLength = 10_000;
+        /// <summary>
+        /// 用于唤醒接口任务消费者的合并信号。
+        /// </summary>
+        private readonly SemaphoreSlim _workSignal = new(0, 1);
+        /// <summary>统一记录接口工作项的有限重试状态。</summary>
+        private readonly RetryAttemptTracker _retryTracker = new(5);
         private readonly SemaphoreSlim _settingsUpdateGate = new(1, 1);
         private readonly ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
         private readonly ConcurrentDictionary<long, byte> _reportingPackageKeys = new();
@@ -114,12 +127,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
         #endregion 非通用版本变量(临时)
 
-        public SubmitApiBackgroundService(IHttpClientFactory httpClientFactory,
-            IConfigRepository configRepository, IImageStorageService imageStorageService,
+        public SubmitApiBackgroundService(IProviderRegistry<IDataUploader> providerRegistry,
+            ISettingsStore settingsStore, IImageStorageService imageStorageService,
             IMemoryCache memoryCache)
         {
-            _httpClientFactory = httpClientFactory;
-            _configRepository = configRepository;
+            _providerRegistry = providerRegistry;
+            _settingsStore = settingsStore;
             _imageStorageService = imageStorageService;
             _memoryCache = memoryCache;
             //包裹信息完成
@@ -158,16 +171,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         submissionKey = new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds();
                     }
 
-                    _submitItems.Enqueue(submitItem);
+                    EnqueueWork(_submitItems, submitItem);
                     //添加到推送队列
-                    if (shouldTrackSubmission && _submissionUploader is not null)
+                    if (shouldTrackSubmission)
                     {
-                        _packageSubmissionPushItems.TryAdd(
+                        var added = _packageSubmissionPushItems.TryAdd(
                             submissionKey,
                             new PackageSubmissionPushInfo()
                             {
                                 PackageInfo = model
                             });
+                        if (added)
+                        {
+                            LogManager.GetCurrentClassLogger().Info(
+                                $"已登记包裹落格回传:Timestamp={submissionKey},WaybillNo={submitItem.Barcode},UploaderReady={_submissionUploader is not null}");
+                            SignalWork();
+                        }
+                        else
+                        {
+                            LogManager.GetCurrentClassLogger().Warn(
+                                $"包裹落格回传记录已存在:Timestamp={submissionKey},WaybillNo={submitItem.Barcode}");
+                        }
                     }
                 }
             });
@@ -187,14 +211,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         switch (model.SettingsName)
                         {
                             case "ApiSettings":
-                                _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
+                                _apiSettingsDto = await _settingsStore.GetAsync<ApiSettingsDto>(model.SettingsName) ?? new ApiSettingsDto();
                                 _submissionUploader = _apiSettingsDto?.Type switch
                                 {
-                                    ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
-                                    ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
-                                    ApiType.JtPolarDayApi => new JtPolarDayApi(_httpClientFactory),
-                                    ApiType.PostInApi => new PostInApi(_httpClientFactory),
-                                    ApiType.PostApi => new PostApi(_httpClientFactory),
+                                    ApiType.CaiNiaoApi => ResolveUploader(ApiType.CaiNiaoApi),
+                                    ApiType.JtExpressApi => ResolveUploader(ApiType.JtExpressApi),
+                                    ApiType.JtPolarDayApi => ResolveUploader(ApiType.JtPolarDayApi),
+                                    ApiType.PostInApi => ResolveUploader(ApiType.PostInApi),
+                                    ApiType.PostApi => ResolveUploader(ApiType.PostApi),
                                     _ => null
                                 };
 
@@ -203,7 +227,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             case "DefaultApiParameters":
                                 {
                                     //默认上传接口改参数
-                                    var entity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(model.SettingsName) ?? new DefaultApiDto();
+                                    var entity = await _settingsStore.GetAsync<DefaultApiDto>(model.SettingsName) ?? new DefaultApiDto();
                                     _defaultApiParameters = new DefaultApi.DefaultApiParameters()
                                     {
                                         CompleteMatch = entity.CompleteMatch,
@@ -221,7 +245,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             case "SzjyApiParameters":
                                 {
                                     //默认上传接口改参数
-                                    var entity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(model.SettingsName) ?? new SzjyApiDto();
+                                    var entity = await _settingsStore.GetAsync<SzjyApiDto>(model.SettingsName) ?? new SzjyApiDto();
                                     _szjyApiParam = new SzjyApi.ApiParameter()
                                     {
                                         Machine = entity.Machine,
@@ -235,7 +259,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             case "WdtWmsApiParameters":
                                 {
                                     //默认上传接口改参数
-                                    var entity = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ?? new WdtWmsApiDto();
+                                    var entity = await _settingsStore.GetAsync<WdtWmsApiDto>(model.SettingsName) ?? new WdtWmsApiDto();
                                     _wdtWmsApiParameter = new WdtWmsApi.ApiParameter
                                     {
                                         AppKey = entity.AppKey,
@@ -251,7 +275,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             case "WdtFlagshipApiParameters":
                                 {
                                     //默认上传接口改参数
-                                    var entity = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(model.SettingsName) ?? new WdtFlagshipApiDto();
+                                    var entity = await _settingsStore.GetAsync<WdtFlagshipApiDto>(model.SettingsName) ?? new WdtFlagshipApiDto();
                                     _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter
                                     {
                                         TimeOut = entity.TimeOut,
@@ -271,7 +295,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
                             case "JtExpressApiParameters":
                                 //默认上传接口改参数
-                                _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
+                                _jtExpressDto = await _settingsStore.GetAsync<JtExpressDto>(model.SettingsName) ?? new JtExpressDto();
                                 _jtExpressApiParam = new JtExpressApi.ApiParameter
                                 {
                                     AppSecret = _jtExpressDto.AppSecret,
@@ -294,8 +318,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                             case "JtPolarDayApiParameters":
                                 {
-                                    var entity = await _configRepository
-                                        .FirstOrDefaultEntity<JtPolarDayDto>(
+                                    var entity = await _settingsStore
+                                        .GetAsync<JtPolarDayDto>(
                                             model.SettingsName) ??
                                                  new JtPolarDayDto();
                                     _jtPolarDayApiParam =
@@ -305,7 +329,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                             case "RoutDataApiParameters":
                                 {
-                                    var entity = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
+                                    var entity = await _settingsStore.GetAsync<RoutDataApiDto>(model.SettingsName) ?? new RoutDataApiDto();
                                     _rstDataApiParam = new RoutDataApi.ApiParameters()
                                     {
                                         Url = entity.Url,
@@ -320,7 +344,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
                             case "CaiNiaoApiParameters":
                                 {
-                                    var entity = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(model.SettingsName) ?? new CaiNiaoApiDto();
+                                    var entity = await _settingsStore.GetAsync<CaiNiaoApiDto>(model.SettingsName) ?? new CaiNiaoApiDto();
                                     _caiNiaoApiParam = new CaiNiaoApi.ApiParameters()
                                     {
                                         BcrName = entity.BcrName,
@@ -334,7 +358,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
                             case "EshippingitApiParameters":
                                 {
-                                    var entity = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(model.SettingsName) ?? new EshippingitApiDto();
+                                    var entity = await _settingsStore.GetAsync<EshippingitApiDto>(model.SettingsName) ?? new EshippingitApiDto();
                                     _eshippingitApiParam = new EshippingitApi.ApiParameters()
                                     {
                                         Authorization = entity.Authorization,
@@ -350,7 +374,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
                             case "JushuitanErpApiParameters":
                                 {
-                                    var entity = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>(model.SettingsName) ?? new JushuitanErpApiDto();
+                                    var entity = await _settingsStore.GetAsync<JushuitanErpApiDto>(model.SettingsName) ?? new JushuitanErpApiDto();
                                     _jushuitanErpParam = new JushuitanErpApi.ApiParameters()
                                     {
                                         AppKey = entity.AppKey,
@@ -370,7 +394,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
                             case "ZhouYiApiParameters":
                                 {
-                                    var entity = await _configRepository.FirstOrDefaultEntity<ZhouYiApiDto>(model.SettingsName) ?? new ZhouYiApiDto();
+                                    var entity = await _settingsStore.GetAsync<ZhouYiApiDto>(model.SettingsName) ?? new ZhouYiApiDto();
                                     _zhouYiApiParam = new ZhouYiApi.ApiParameters()
                                     {
                                         AppKey = entity.AppKey,
@@ -418,7 +442,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
                     ScanTime = args.ScanTime,
                 };
-                _savedImageItems.Enqueue(savedImageInfo);
+                EnqueueWork(_savedImageItems, savedImageInfo);
                 if (_apiSettingsDto?.Type == ApiType.JtPolarDayApi &&
                     args.PackageTimestamp > 0 &&
                     args.ImageType == SaveImageType.BarcodeImage)
@@ -446,7 +470,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 //加入队列
                 if (item is { } info)
                 {
-                    _packageAggregationInfoItems.Enqueue(info);
+                    EnqueueWork(_packageAggregationInfoItems, info);
                 }
             });
             //更新上传状态
@@ -458,6 +482,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     {
                         // 引用以原子方式替换；热回调不等待上传工作器。
                         value.ApiResponse = model;
+                        SignalWork();
                     }
                 }
             });
@@ -478,7 +503,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     if (_packageSubmissionPushItems.TryGetValue(model.Timestamp, out var value))
                     {
                         // 并发队列保证上传工作器枚举时不会与热回调发生 List 竞态。
-                        value.PackageExitUpdateItems.Enqueue(model);
+                        if (value.PackageExitUpdateItems.Count < 256)
+                        {
+                            value.PackageExitUpdateItems.Enqueue(model);
+                            if (model.ExitType == SortingExitType.PhysicalExit ||
+                                model.InstructionType is
+                                    InstructionType.SignalCallback or
+                                    InstructionType.PackageExceptionEx)
+                            {
+                                LogManager.GetCurrentClassLogger().Info(
+                                    $"已匹配包裹落格回调，准备接口回传:Timestamp={model.Timestamp},ExitName={model.ExitName},InstructionType={model.InstructionType}");
+                            }
+                            SignalWork();
+                        }
+                        else
+                        {
+                            LogManager.GetCurrentClassLogger().Error(
+                                $"单个包裹的格口事件超过上限，拒绝新事件:{model.Timestamp}");
+                        }
                     }
                     else
                     {
@@ -494,7 +536,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             await ReadDefaultConfig();
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose)
             {
-                await Task.Delay(30, stoppingToken);
+                await _workSignal.WaitAsync(TimeSpan.FromMilliseconds(250), stoppingToken);
                 // 所有队列都由这一个工作器消费，避免未跟踪任务重入同一包裹。
                 SubmitItemInfo? inFlightSubmit = null;
                 SavedImageInfo? inFlightSavedImage = null;
@@ -519,7 +561,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 case ApiType.DefaultApi:
                                     {
                                         //基础接口
-                                        uploader = new DefaultApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.DefaultApi);
                                         //设置参数
                                         var (key, value) = await uploader.SetParameters(_defaultApiParameters);
                                         if (key)
@@ -544,7 +586,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.SunnenApi:
                                     {
-                                        uploader = new SunnenApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.SunnenApi);
                                         uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
@@ -556,7 +598,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 case ApiType.SzjyApi:
                                     {
                                         //神州集运后台
-                                        uploader = new SzjyApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.SzjyApi);
                                         var (key, value) = await uploader.SetParameters(_szjyApiParam);
                                         if (key)
                                         {
@@ -579,7 +621,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.WdtWmsApi:
                                     {
-                                        uploader = new WdtWmsApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.WdtWmsApi);
                                         var (key, value) = await uploader.SetParameters(_wdtWmsApiParameter);
                                         if (key)
                                         {
@@ -602,7 +644,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.WdtErpFlagShipApi:
                                     {
-                                        uploader = new WdtFlagshipApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.WdtErpFlagShipApi);
                                         var (key, value) = await uploader.SetParameters(_wdtFlagshipApiParameter);
                                         if (key)
                                         {
@@ -625,7 +667,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.JdyWms:
                                     {
-                                        uploader = new JdyWmsApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.JdyWms);
                                         uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
@@ -636,7 +678,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.JtExpressApi:
                                     {
-                                        uploader = new JtExpressApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.JtExpressApi);
                                         var (key, value) = await uploader.SetParameters(_jtExpressApiParam);
                                         if (key)
                                         {
@@ -660,8 +702,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.JtPolarDayApi:
                                     {
-                                        uploader = new JtPolarDayApi(
-                                            _httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.JtPolarDayApi);
                                         var (key, value) =
                                             await uploader.SetParameters(
                                                 _jtPolarDayApiParam);
@@ -706,7 +747,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.RoutDataApi:
                                     {
-                                        uploader = new RoutDataApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.RoutDataApi);
                                         var (key, value) = await uploader.SetParameters(_rstDataApiParam);
                                         if (key)
                                         {
@@ -729,7 +770,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.GeekPlusApi:
                                     {
-                                        uploader = new GeekPlusApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.GeekPlusApi);
                                         var (key, value) = await uploader.SetParameters(_rstDataApiParam);
                                         if (key)
                                         {
@@ -752,7 +793,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.CaiNiaoApi:
                                     {
-                                        uploader = new CaiNiaoApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.CaiNiaoApi);
                                         var (key, value) = await uploader.SetParameters(_caiNiaoApiParam);
                                         if (key)
                                         {
@@ -775,7 +816,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.EshippingitApi:
                                     {
-                                        uploader = new EshippingitApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.EshippingitApi);
                                         var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
                                         if (key)
                                         {
@@ -798,7 +839,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                 case ApiType.PostApi:
                                     {
-                                        uploader = new PostApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.PostApi);
                                         var (key, value) = await uploader.SetParameters(_postApiParam);
                                         if (key)
                                         {
@@ -823,7 +864,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 case ApiType.PostInApi:
                                     {
-                                        uploader = new PostInApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.PostInApi);
                                         var (key, value) = await uploader.SetParameters(_postInApiParam);
                                         if (key)
                                         {
@@ -848,7 +889,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 case ApiType.ZhuoYanScm:
                                     {
-                                        uploader = new ZhuoYanScmApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.ZhuoYanScm);
                                         var (key, value) = await uploader.SetParameters(_zhuoYanScmApiParam);
 
                                         if (key)
@@ -873,7 +914,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 case ApiType.TtxApi:
                                     {
-                                        uploader = new TtxApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.TtxApi);
                                         uploadResponse = await uploader.UploadData(info.Barcode ?? string.Empty,
                                             info.Weight, info.ScanTime,
                                             info.Length, info.Width,
@@ -894,7 +935,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                         /// </summary>
                                         async Task<UploadResponse> UploadToWdtAsync()
                                         {
-                                            var apiUploader = new WdtWmsApi(_httpClientFactory);
+                                            var apiUploader = ResolveUploader(ApiType.WdtWmsApi);
                                             var (key, value) = await apiUploader.SetParameters(_wdtWmsApiParameter);
                                             if (key)
                                             {
@@ -918,7 +959,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                         /// </summary>
                                         async Task<UploadResponse> UploadToTtxAsync()
                                         {
-                                            var apiUploader = new TtxApi(_httpClientFactory);
+                                            var apiUploader = ResolveUploader(ApiType.TtxApi);
                                             return await apiUploader.UploadData(info.Barcode ?? string.Empty,
                                                  info.Weight, info.ScanTime,
                                                  info.Length, info.Width,
@@ -960,7 +1001,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 case ApiType.Jushuitan:
                                     {
-                                        uploader = new JushuitanErpApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.Jushuitan);
                                         var (key, value) = await uploader.SetParameters(_jushuitanErpParam);
                                         if (key)
                                         {
@@ -984,7 +1025,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 case ApiType.ZhouYi:
                                     {
-                                        uploader = new ZhouYiApi(_httpClientFactory);
+                                        uploader = ResolveUploader(ApiType.ZhouYi);
                                         var (key, value) = await uploader.SetParameters(_zhouYiApiParam);
                                         if (key)
                                         {
@@ -1049,7 +1090,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 case ApiType.GeekPlusApi:
 
-                                    uploader = new GeekPlusApi(_httpClientFactory);
+                                    uploader = ResolveUploader(ApiType.GeekPlusApi);
                                     using (var uploadImage = LoadImageSnapshot(model.FilePath))
                                     {
                                         await uploader.UploadInBackground(model.BarCode ?? string.Empty, 0,
@@ -1064,7 +1105,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     break;
 
                                 case ApiType.EshippingitApi:
-                                    uploader = new EshippingitApi(_httpClientFactory);
+                                    uploader = ResolveUploader(ApiType.EshippingitApi);
                                     var (key, value) = await uploader.SetParameters(_eshippingitApiParam);
                                     if (key)
                                     {
@@ -1148,7 +1189,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                             case ApiType.CaiNiaoApi:
                                 IDataUploader uploader =
-                                    new CaiNiaoApi(_httpClientFactory);
+                                    ResolveUploader(ApiType.CaiNiaoApi);
                                 var (key, _) = await uploader
                                     .SetParameters(_caiNiaoApiParam);
                                 if (key)
@@ -1175,28 +1216,102 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         }
                     }
                 }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
                 catch (Exception e)
                 {
                     if (inFlightSubmit is not null)
                     {
-                        _submitItems.Enqueue(inFlightSubmit);
+                        RequeueWork(_submitItems, inFlightSubmit);
                     }
                     if (inFlightSavedImage is not null)
                     {
-                        _savedImageItems.Enqueue(inFlightSavedImage);
+                        RequeueWork(_savedImageItems, inFlightSavedImage);
                     }
                     LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
+                finally
+                {
+                    if (!_submitItems.IsEmpty || !_savedImageItems.IsEmpty ||
+                        !_packageAggregationInfoItems.IsEmpty)
+                    {
+                        SignalWork();
+                    }
+                }
             }
+        }
+
+        /// <summary>
+        /// 将接口工作加入有界并发队列并唤醒消费者。
+        /// </summary>
+        private void EnqueueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
+        {
+            if (!queue.TryEnqueue(item))
+            {
+                LogManager.GetCurrentClassLogger().Error(
+                    $"接口提交队列已达到上限 {MaxQueueLength}，拒绝新任务:{typeof(T).Name}");
+                return;
+            }
+
+            SignalWork();
+        }
+
+        /// <summary>
+        /// 对失败的接口工作执行有限次数重试。
+        /// </summary>
+        private void RequeueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
+        {
+            if (!_retryTracker.TryRegisterFailure(item, out _))
+            {
+                LogManager.GetCurrentClassLogger().Error(
+                    $"接口任务超过最大重试次数 {_retryTracker.MaxAttempts}，停止重试:{typeof(T).Name}");
+                return;
+            }
+
+            EnqueueWork(queue, item);
+        }
+
+        /// <summary>
+        /// 唤醒接口工作消费者且不累积无意义的通知。
+        /// </summary>
+        private void SignalWork()
+        {
+            if (_workSignal.CurrentCount == 0)
+            {
+                try
+                {
+                    _workSignal.Release();
+                }
+                catch (SemaphoreFullException)
+                {
+                    // 其他生产者已经完成通知。
+                }
+            }
+        }
+
+        /// <summary>
+        /// 通过集中注册表创建指定类型的上传提供商。
+        /// </summary>
+        private IDataUploader ResolveUploader(ApiType apiType)
+        {
+            if (_providerRegistry.TryResolve(apiType.ToString(), out var uploader) &&
+                uploader is not null)
+            {
+                return uploader;
+            }
+
+            throw new InvalidOperationException($"未注册上传提供商: {apiType}");
         }
 
         private async Task ReadDefaultConfig()
         {
             //上传类型
-            _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
+            _apiSettingsDto = await _settingsStore.GetAsync<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
 
             //默认接口
-            var defaultentity = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>("DefaultApiParameters") ?? new DefaultApiDto();
+            var defaultentity = await _settingsStore.GetAsync<DefaultApiDto>("DefaultApiParameters") ?? new DefaultApiDto();
             _defaultApiParameters = new DefaultApi.DefaultApiParameters()
             {
                 CompleteMatch = defaultentity.CompleteMatch,
@@ -1210,7 +1325,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 ValidationMode = (int)defaultentity.ValidationMode,
             };
             //神州
-            var szjyEntity = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>("SzjyApiParameters") ?? new SzjyApiDto();
+            var szjyEntity = await _settingsStore.GetAsync<SzjyApiDto>("SzjyApiParameters") ?? new SzjyApiDto();
             _szjyApiParam = new SzjyApi.ApiParameter()
             {
                 Machine = szjyEntity.Machine,
@@ -1221,7 +1336,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
 
             //旺店通Wms
-            var wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>("WdtWmsApiParameters") ?? new WdtWmsApiDto();
+            var wdtWmsApiDto = await _settingsStore.GetAsync<WdtWmsApiDto>("WdtWmsApiParameters") ?? new WdtWmsApiDto();
 
             _wdtWmsApiParameter = new WdtWmsApi.ApiParameter
             {
@@ -1234,7 +1349,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 MustIncludeBoxBarcode = wdtWmsApiDto.MustIncludeBoxBarcode
             };
             //旺店通旗舰版
-            var wdtFlagshipApiDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>("WdtFlagshipApiParameters") ?? new WdtFlagshipApiDto();
+            var wdtFlagshipApiDto = await _settingsStore.GetAsync<WdtFlagshipApiDto>("WdtFlagshipApiParameters") ?? new WdtFlagshipApiDto();
 
             _wdtFlagshipApiParameter = new WdtFlagshipApi.ApiParameter
             {
@@ -1252,7 +1367,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 V = wdtFlagshipApiDto.V
             };
             //极兔
-            _jtExpressDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>("JtExpressApiParameters") ?? new JtExpressDto();
+            _jtExpressDto = await _settingsStore.GetAsync<JtExpressDto>("JtExpressApiParameters") ?? new JtExpressDto();
             _jtExpressApiParam = new JtExpressApi.ApiParameter
             {
                 AppSecret = _jtExpressDto.AppSecret,
@@ -1271,14 +1386,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 WeightFlag = _jtExpressDto.WeightFlag,
                 InterceptorEnabled = _jtExpressDto.InterceptorEnabled
             };
-            var jtPolarDayDto = await _configRepository
-                .FirstOrDefaultEntity<JtPolarDayDto>(
+            var jtPolarDayDto = await _settingsStore
+                .GetAsync<JtPolarDayDto>(
                     "JtPolarDayApiParameters") ??
                                     new JtPolarDayDto();
             _jtPolarDayApiParam =
                 CreateJtPolarDayParameters(jtPolarDayDto);
             //络道科技Api
-            var routDataApiDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();
+            var routDataApiDto = await _settingsStore.GetAsync<RoutDataApiDto>("RoutDataApiParameters") ?? new RoutDataApiDto();
             _rstDataApiParam = new RoutDataApi.ApiParameters()
             {
                 Url = routDataApiDto.Url,
@@ -1290,7 +1405,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 OrgCode = routDataApiDto.OrgCode
             };
             //菜鸟Api
-            var caiNiaoApiDto = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>("CaiNiaoApiParameters") ?? new CaiNiaoApiDto();
+            var caiNiaoApiDto = await _settingsStore.GetAsync<CaiNiaoApiDto>("CaiNiaoApiParameters") ?? new CaiNiaoApiDto();
 
             _caiNiaoApiParam = new CaiNiaoApi.ApiParameters()
             {
@@ -1302,7 +1417,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 Version = caiNiaoApiDto.Version
             };
             //海通智运Api
-            var eshippingitApiDto = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>("EshippingitApiParameters") ?? new EshippingitApiDto();
+            var eshippingitApiDto = await _settingsStore.GetAsync<EshippingitApiDto>("EshippingitApiParameters") ?? new EshippingitApiDto();
             _eshippingitApiParam = new EshippingitApi.ApiParameters()
             {
                 Authorization = eshippingitApiDto.Authorization,
@@ -1314,7 +1429,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 TimeOut = eshippingitApiDto.TimeOut,
                 Machine = eshippingitApiDto.Machine
             };
-            var jushuitanErpApiDto = await _configRepository.FirstOrDefaultEntity<JushuitanErpApiDto>("JushuitanErpApiParameters") ?? new JushuitanErpApiDto();
+            var jushuitanErpApiDto = await _settingsStore.GetAsync<JushuitanErpApiDto>("JushuitanErpApiParameters") ?? new JushuitanErpApiDto();
             _jushuitanErpParam = new JushuitanErpApi.ApiParameters()
             {
                 AppKey = jushuitanErpApiDto.AppKey,
@@ -1330,7 +1445,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 TokenExpireTime = jushuitanErpApiDto.TokenExpireTime,
                 LastTokenUpdateTime = jushuitanErpApiDto.LastTokenUpdateTime,
             };
-            var zhouYiApiDto = await _configRepository.FirstOrDefaultEntity<ZhouYiApiDto>("ZhouYiApiParameters") ?? new ZhouYiApiDto();
+            var zhouYiApiDto = await _settingsStore.GetAsync<ZhouYiApiDto>("ZhouYiApiParameters") ?? new ZhouYiApiDto();
             _zhouYiApiParam = new ZhouYiApi.ApiParameters()
             {
                 AppKey = zhouYiApiDto.AppKey,
@@ -1343,11 +1458,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _submissionUploader = _apiSettingsDto?.Type switch
             {
-                ApiType.CaiNiaoApi => new CaiNiaoApi(_httpClientFactory),
-                ApiType.JtExpressApi => new JtExpressApi(_httpClientFactory),
-                ApiType.JtPolarDayApi => new JtPolarDayApi(_httpClientFactory),
-                ApiType.PostInApi => new PostInApi(_httpClientFactory),
-                ApiType.PostApi => new PostApi(_httpClientFactory),
+                ApiType.CaiNiaoApi => ResolveUploader(ApiType.CaiNiaoApi),
+                ApiType.JtExpressApi => ResolveUploader(ApiType.JtExpressApi),
+                ApiType.JtPolarDayApi => ResolveUploader(ApiType.JtPolarDayApi),
+                ApiType.PostInApi => ResolveUploader(ApiType.PostInApi),
+                ApiType.PostApi => ResolveUploader(ApiType.PostApi),
                 _ => null
             };
         }

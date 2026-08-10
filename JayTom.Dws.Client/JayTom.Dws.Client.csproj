@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -16,9 +16,6 @@
     <IncludeSymbols>False</IncludeSymbols>
     <ApplicationIcon>ico.ico</ApplicationIcon>
   </PropertyGroup>
-  <ItemGroup>
-    <Content Remove="C:\Users\77051\.nuget\packages\lottiesharp\2.0.1\contentFiles\any\net6.0-windows7.0\lottie_sharp.ico" />
-  </ItemGroup>
   <ItemGroup>
     <None Remove="Fonts\FiraCode-Bold.ttf" />
     <None Remove="Fonts\iconfont.ttf" />
@@ -80,25 +77,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" Version="1.0.0.2" />
-    <PackageReference Include="gong-wpf-dragdrop" Version="3.2.1" />
-    <PackageReference Include="LottieSharp" Version="2.2.0" />
-    <PackageReference Include="MaterialDesignThemes" Version="4.8.0" />
-    <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="Prism.DryIoc" Version="8.1.97" />
-    <PackageReference Include="SkiaSharp" Version="2.88.6" />
-    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.7" />
-    <PackageReference Include="Vlc.DotNet.Wpf" Version="3.1.0" />
+    <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" />
+    <PackageReference Include="gong-wpf-dragdrop" />
+    <PackageReference Include="LottieSharp" />
+    <PackageReference Include="MaterialDesignThemes" />
+    <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Prism.DryIoc" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="System.Linq.Dynamic.Core" />
+    <PackageReference Include="Vlc.DotNet.Wpf" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Application\JayTom.Dws.Application.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Excel\JayTom.Dws.Excel.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Nvr\JayTom.Dws.Nvr.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Plugin.Abstractions\JayTom.Dws.Plugin.Abstractions.csproj" />
     <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
@@ -164,12 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Include the files from JayTom.Dws.Nvr\VideoLAN folder -->
-    <Content Include="..\JayTom.Dws.Nvr\VideoLAN\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <!-- Include the files from JayTom.Dws.Nvr\VideoLAN folder -->
     <Content Include="..\JayTom.Dws.Camera\UsbCameraDll\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -215,5 +209,15 @@
           DependsOnTargets="BuildCodeQualityGuard"
           Condition="'$(MSBuildProjectName)' == 'JayTom.Dws.Client' and '$(DesignTimeBuild)' != 'true'">
     <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)\..\eng\JayTom.Dws.CodeQualityGuard\bin\$(Configuration)\net10.0\JayTom.Dws.CodeQualityGuard.dll&quot; &quot;$(MSBuildProjectDirectory)\..&quot; &quot;$(MSBuildProjectDirectory)\..\eng\CodeQualityBaseline.json&quot;" />
+  </Target>
+
+  <!-- 原生 NuGet 资产可能忽略常规符号开关，生产发布统一从最终清单中移除 PDB。 -->
+  <Target Name="RemoveDebugSymbolsFromPublish"
+          AfterTargets="ComputeFilesToPublish"
+          Condition="'$(Configuration)' == 'Release' and '$(IncludeSymbols)' != 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb'" />
+    </ItemGroup>
   </Target>
 </Project>

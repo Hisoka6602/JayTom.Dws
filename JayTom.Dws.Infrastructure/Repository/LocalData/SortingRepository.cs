@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
-    public class SortingRepository : LocalRepositoryBase<SortingInfoModel>, ISortingRepository {
+    public class SortingRepository : LocalRepositoryBase<SortingInfoModel, SqliteContext>, ISortingRepository {
 
         public SortingRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(
             contextFactory, cache) {

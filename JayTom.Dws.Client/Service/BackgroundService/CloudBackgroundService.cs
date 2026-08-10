@@ -1,4 +1,5 @@
-﻿using Polly;
+﻿using JayTom.Dws.Application.Configuration;
+using Polly;
 using System;
 using System.IO;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
     public class CloudBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ICloud _cloud;
         private readonly IPackageRepository _packageRepository;
         private readonly ICloudVideoUploadRepository _cloudVideoUploadRepository;
@@ -82,7 +83,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly SemaphoreSlim _settingsUpdateGate = new(1, 1);
         private int _isWindowsClose;
 
-        public CloudBackgroundService(IConfigRepository configRepository,
+        public CloudBackgroundService(ISettingsStore settingsStore,
             ICloud cloud, IPackageRepository packageRepository,
             ICloudVideoUploadRepository cloudVideoUploadRepository,
             INvrCameraBindingRepository nvrCameraBindingRepository,
@@ -101,7 +102,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             ISortingInstructionBindingRepository sortingInstructionBindingRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _cloud = cloud;
             _packageRepository = packageRepository;
             _cloudVideoUploadRepository = cloudVideoUploadRepository;
@@ -130,8 +131,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     {
                         case { SettingsName: "CloudVideoSettings" } model:
                             {
-                                var settings = await _configRepository
-                                    .FirstOrDefaultEntity<CloudVideoSettingsDto>(model.SettingsName) ??
+                                var settings = await _settingsStore
+                                    .GetAsync<CloudVideoSettingsDto>(model.SettingsName) ??
                                     new CloudVideoSettingsDto();
                                 Volatile.Write(ref _cloudVideoSettingsDto, settings);
                                 ReplaceCloudVideoUploadGate(settings.Concurrency);
@@ -159,7 +160,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             {
                                 Volatile.Write(
                                     ref _syncSettingsDto,
-                                    await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(
+                                    await _settingsStore.GetAsync<SyncSettingsDto>(
                                         syncSettingsSettings.SettingsName) ?? new SyncSettingsDto());
                                 break;
                             }
@@ -183,7 +184,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>(apiSettings.SettingsName) ?? new ApiSettingsDto();
+                                    var apiSettingsDto = await _settingsStore.GetAsync<ApiSettingsDto>(apiSettings.SettingsName) ?? new ApiSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(apiSettings.SettingsName, apiSettingsDto);
                                     if (!key)
                                     {
@@ -199,7 +200,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var caiNiaoApiDto = await _configRepository.FirstOrDefaultEntity<CaiNiaoApiDto>(caiNiaoApiParameters.SettingsName) ?? new CaiNiaoApiDto();
+                                    var caiNiaoApiDto = await _settingsStore.GetAsync<CaiNiaoApiDto>(caiNiaoApiParameters.SettingsName) ?? new CaiNiaoApiDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(caiNiaoApiParameters.SettingsName, caiNiaoApiDto);
                                     if (!key)
                                     {
@@ -215,7 +216,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(eshippingitApiParameters.SettingsName) ?? new EshippingitApiDto();
+                                    var settingsDto = await _settingsStore.GetAsync<EshippingitApiDto>(eshippingitApiParameters.SettingsName) ?? new EshippingitApiDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(eshippingitApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -231,7 +232,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<JtExpressDto>(jtExpressApiParameters.SettingsName) ?? new JtExpressDto();
+                                    var settingsDto = await _settingsStore.GetAsync<JtExpressDto>(jtExpressApiParameters.SettingsName) ?? new JtExpressDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(jtExpressApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -247,7 +248,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<JtPolarDayDto>(jtPolarDayApiParameters.SettingsName) ?? new JtPolarDayDto();
+                                    var settingsDto = await _settingsStore.GetAsync<JtPolarDayDto>(jtPolarDayApiParameters.SettingsName) ?? new JtPolarDayDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(jtPolarDayApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -263,7 +264,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<RoutDataApiDto>(routDataApiParameters.SettingsName) ?? new RoutDataApiDto();
+                                    var settingsDto = await _settingsStore.GetAsync<RoutDataApiDto>(routDataApiParameters.SettingsName) ?? new RoutDataApiDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(routDataApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -279,7 +280,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<SzjyApiDto>(szjyApiParameters.SettingsName) ?? new SzjyApiDto();
+                                    var settingsDto = await _settingsStore.GetAsync<SzjyApiDto>(szjyApiParameters.SettingsName) ?? new SzjyApiDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(szjyApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -295,7 +296,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<WdtFlagshipApiDto>(wdtFlagshipApiParameters.SettingsName) ?? new WdtFlagshipApiDto();
+                                    var settingsDto = await _settingsStore.GetAsync<WdtFlagshipApiDto>(wdtFlagshipApiParameters.SettingsName) ?? new WdtFlagshipApiDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(wdtFlagshipApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -311,7 +312,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseApiSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(wdtWmsApiParameters.SettingsName) ?? new WdtWmsApiDto();
+                                    var settingsDto = await _settingsStore.GetAsync<WdtWmsApiDto>(wdtWmsApiParameters.SettingsName) ?? new WdtWmsApiDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(wdtWmsApiParameters.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -327,7 +328,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseImageStorageSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(saveImageSettings.SettingsName) ?? new ImageSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<ImageSettingsDto>(saveImageSettings.SettingsName) ?? new ImageSettingsDto();
 
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(saveImageSettings.SettingsName, JsonConvert.SerializeObject(settingsDto));
                                     if (!key)
@@ -344,7 +345,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseFilterSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(barcodeFilterSettings.SettingsName) ?? new BarcodeFilterSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>(barcodeFilterSettings.SettingsName) ?? new BarcodeFilterSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(barcodeFilterSettings.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -360,7 +361,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseContentInputSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>(contentInputSettings.SettingsName) ?? new ContentInputSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<ContentInputSettingsDto>(contentInputSettings.SettingsName) ?? new ContentInputSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(contentInputSettings.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -376,7 +377,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUsePackagingSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(createPackageSettings.SettingsName) ?? new CreatePackageSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>(createPackageSettings.SettingsName) ?? new CreatePackageSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(createPackageSettings.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -392,7 +393,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseOcrSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<OcrSettingsDto>(ocrSettings.SettingsName) ?? new OcrSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<OcrSettingsDto>(ocrSettings.SettingsName) ?? new OcrSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(ocrSettings.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -408,7 +409,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSpaceCleaningSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<CacheClearSettingsDto>(cacheClearSettings.SettingsName) ?? new CacheClearSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<CacheClearSettingsDto>(cacheClearSettings.SettingsName) ?? new CacheClearSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(cacheClearSettings.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -595,7 +596,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true })
                                 {
-                                    var settingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>(packageExitLockSettings.SettingsName) ?? new PackageExitLockSettingsDto();
+                                    var settingsDto = await _settingsStore.GetAsync<PackageExitLockSettingsDto>(packageExitLockSettings.SettingsName) ?? new PackageExitLockSettingsDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(packageExitLockSettings.SettingsName, settingsDto);
                                     if (!key)
                                     {
@@ -648,7 +649,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseStackingSync: true })
                                 {
-                                    var stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(stackedPackageDetectionSettings.SettingsName) ?? new StackedPackageDetectionSettingsDto();
+                                    var stackedPackageDetectionSettingsDto = await _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>(stackedPackageDetectionSettings.SettingsName) ?? new StackedPackageDetectionSettingsDto();
 
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(stackedPackageDetectionSettings.SettingsName, stackedPackageDetectionSettingsDto);
                                     if (!key)
@@ -665,7 +666,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true })
                                 {
-                                    var supplyCounterSettingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(supplyCounterSettings.SettingsName) ?? new SupplyCounterSettingsDto();
+                                    var supplyCounterSettingsDto = await _settingsStore.GetAsync<SupplyCounterSettingsDto>(supplyCounterSettings.SettingsName) ?? new SupplyCounterSettingsDto();
 
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(supplyCounterSettings.SettingsName, supplyCounterSettingsDto);
                                     if (!key)
@@ -682,7 +683,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var sortingMethodDto = await _configRepository.FirstOrDefaultEntity<SortingMethodDto>(sortingMethodSettings.SettingsName) ?? new SortingMethodDto();
+                                    var sortingMethodDto = await _settingsStore.GetAsync<SortingMethodDto>(sortingMethodSettings.SettingsName) ?? new SortingMethodDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(sortingMethodSettings.SettingsName, sortingMethodDto);
                                     if (!key)
                                     {
@@ -698,7 +699,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseAlgorithmSync: true })
                                 {
-                                    var barcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>(algorithmSettings.SettingsName) ?? new UsbBarcodeReaderDto();
+                                    var barcodeReaderDto = await _settingsStore.GetAsync<UsbBarcodeReaderDto>(algorithmSettings.SettingsName) ?? new UsbBarcodeReaderDto();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(algorithmSettings.SettingsName, barcodeReaderDto);
                                     if (!key)
                                     {
@@ -758,11 +759,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         case "SortingMethodSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }:
                         case "SupplyCounterSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSupplyCounterSync: true }:
                         case "AlgorithmSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseAlgorithmSync: true }:
-                            await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                            {
-                                ConfigName = info.SettingsName,
-                                Value = JsonConvert.SerializeObject(info.SettingsInfo)
-                            });
+                            await _settingsStore.SaveAsync(info.SettingsName,info.SettingsInfo);
                             break;
 
                         case "ApiSortingItemsSettings" when _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true }:
@@ -959,11 +956,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             {
                                 try
                                 {
-                                    await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                                    {
-                                        ConfigName = info.SettingsName,
-                                        Value = info.SettingsInfo?.ToString() ?? string.Empty
-                                    });
+                                    await _settingsStore.SaveRawAsync(info.SettingsName,info.SettingsInfo?.ToString() ?? string.Empty
+);
                                 }
                                 catch (Exception e)
                                 {
@@ -1000,7 +994,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var initialSettings =
-                await _configRepository.FirstOrDefaultEntity<CloudVideoSettingsDto>(
+                await _settingsStore.GetAsync<CloudVideoSettingsDto>(
                     "CloudVideoSettings", stoppingToken) ??
                 new CloudVideoSettingsDto();
             Volatile.Write(ref _cloudVideoSettingsDto, initialSettings);
@@ -1012,7 +1006,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
             Volatile.Write(
                 ref _syncSettingsDto,
-                await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(
+                await _settingsStore.GetAsync<SyncSettingsDto>(
                     "SyncSettingsSettings", stoppingToken) ?? new SyncSettingsDto());
             Volatile.Write(
                 ref _nvrCameraBindingInfoModels,

@@ -1,4 +1,5 @@
-﻿using Polly;
+﻿using JayTom.Dws.Application.Configuration;
+using Polly;
 using System;
 using DryIoc;
 using System.Linq;
@@ -27,9 +28,9 @@ using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEve
 namespace JayTom.Dws.Client.Service.ResultOutput
 {
 
-    public class DefaultResultOutputService : IResultOutputService
+    public class DefaultResultOutputService : IResultOutputService, IAsyncDisposable
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISpeech _speech;
         private readonly ITcpContentOutput _tcpContentOutput;
 
@@ -41,29 +42,36 @@ namespace JayTom.Dws.Client.Service.ResultOutput
         /// 串行处理数据输出的工作通道。
         /// </summary>
         private readonly Channel<Func<Task>> _outputWorkChannel =
-            Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions
+            Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(1024)
             {
                 SingleReader = true,
-                AllowSynchronousContinuations = false
+                AllowSynchronousContinuations = false,
+                FullMode = BoundedChannelFullMode.Wait
             });
         /// <summary>
         /// 串行处理声音输出的工作通道。
         /// </summary>
         private readonly Channel<Func<Task>> _soundWorkChannel =
-            Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions
+            Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(256)
             {
                 SingleReader = true,
-                AllowSynchronousContinuations = false
+                AllowSynchronousContinuations = false,
+                FullMode = BoundedChannelFullMode.Wait
             });
         /// <summary>
         /// 串行处理结果输出配置重载的工作通道。
         /// </summary>
         private readonly Channel<Func<Task>> _settingsWorkChannel =
-            Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions
+            Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(32)
             {
                 SingleReader = true,
-                AllowSynchronousContinuations = false
+                AllowSynchronousContinuations = false,
+                FullMode = BoundedChannelFullMode.Wait
             });
+        /// <summary>
+        /// 统一控制三个结果输出消费者的生命周期。
+        /// </summary>
+        private readonly CancellationTokenSource _workerCancellation = new();
         /// <summary>
         /// 数据输出通道消费者。
         /// </summary>
@@ -80,18 +88,18 @@ namespace JayTom.Dws.Client.Service.ResultOutput
         private ConcurrentDictionary<string, byte[]> _sounds = new();
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
 
-        public DefaultResultOutputService(IConfigRepository configRepository,
+        public DefaultResultOutputService(ISettingsStore settingsStore,
             ISpeech speech, ITcpContentOutput tcpContentOutput,
             ISoundRepository soundRepository)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _speech = speech;
             _tcpContentOutput = tcpContentOutput;
             _soundRepository = soundRepository;
             // 三个消费者彼此独立；每个消费者内部保持原有的单实例串行约束。
-            _outputWorker = Task.Run(() => ProcessWorkAsync(_outputWorkChannel));
-            _soundWorker = Task.Run(() => ProcessWorkAsync(_soundWorkChannel));
-            _settingsWorker = Task.Run(() => ProcessWorkAsync(_settingsWorkChannel));
+            _outputWorker = Task.Run(() => ProcessWorkAsync(_outputWorkChannel, _workerCancellation.Token));
+            _soundWorker = Task.Run(() => ProcessWorkAsync(_soundWorkChannel, _workerCancellation.Token));
+            _settingsWorker = Task.Run(() => ProcessWorkAsync(_settingsWorkChannel, _workerCancellation.Token));
             //tcp事件
             _tcpContentOutput.Exception += delegate (object? sender, Exception exception)
             {
@@ -123,7 +131,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                 if (settings is SettingsChangedEvent { SettingsName: "ResultOutputSettings" })
                 {
                     // 配置和声音来自数据库，必须脱离事件发布线程执行。
-                    _settingsWorkChannel.Writer.TryWrite(ReloadSettingsAsync);
+                    QueueWork(_settingsWorkChannel, ReloadSettingsAsync);
                 }
             });
             //默认加载
@@ -138,12 +146,9 @@ namespace JayTom.Dws.Client.Service.ResultOutput
             await _settingsSemaphore.WaitAsync();
             try
             {
-                var configInfoModel = await _configRepository.FirstOrDefault(
-                    settings => settings.ConfigName.Equals("ResultOutputSettings"));
-                var nextSettings = configInfoModel is null
-                    ? new ResultOutputSettingsDto()
-                    : JsonConvert.DeserializeObject<ResultOutputSettingsDto>(configInfoModel.Value)
-                      ?? new ResultOutputSettingsDto();
+                var nextSettings = await _settingsStore
+                    .GetAsync<ResultOutputSettingsDto>("ResultOutputSettings") ??
+                    new ResultOutputSettingsDto();
 
                 var nextSounds = new ConcurrentDictionary<string, byte[]>();
                 if (nextSettings.IsUseAudioOutput)
@@ -234,7 +239,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                 (currentSettings.IsUseLocationOutput || currentSettings.IsUseSerialOutput
                  || currentSettings.IsUseTcpOutput))
             {
-                _outputWorkChannel.Writer.TryWrite(async () =>
+                QueueWork(_outputWorkChannel, async () =>
                 {
                     var lockTaken = false;
                     try
@@ -403,27 +408,62 @@ namespace JayTom.Dws.Client.Service.ResultOutput
         /// <param name="cancellationToken"></param>
         private void SoundOutput(bool isSuccess, CancellationToken cancellationToken = default)
         {
-            _soundWorkChannel.Writer.TryWrite(
+            QueueWork(_soundWorkChannel,
                 () => SoundOutputAsync(isSuccess, cancellationToken));
+        }
+
+        /// <summary>
+        /// 将工作加入有界通道，并在通道繁忙或关闭时记录拒绝原因。
+        /// </summary>
+        private static void QueueWork(Channel<Func<Task>> channel, Func<Task> work)
+        {
+            if (!channel.Writer.TryWrite(work))
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn("结果输出队列已满或已停止，本次工作未入队");
+            }
         }
 
         /// <summary>
         /// 持续执行通道中的输出工作，并隔离单项工作异常。
         /// </summary>
-        private static async Task ProcessWorkAsync(Channel<Func<Task>> channel)
+        private static async Task ProcessWorkAsync(Channel<Func<Task>> channel, CancellationToken token)
         {
-            await foreach (var work in channel.Reader.ReadAllAsync().ConfigureAwait(false))
+            try
             {
-                try
+                await foreach (var work in channel.Reader.ReadAllAsync(token).ConfigureAwait(false))
                 {
-                    await work().ConfigureAwait(false);
-                }
-                catch (Exception exception)
-                {
-                    NLog.LogManager.GetCurrentClassLogger()
-                        .Error(exception, "执行结果输出工作失败");
+                    try
+                    {
+                        await work().ConfigureAwait(false);
+                    }
+                    catch (Exception exception)
+                    {
+                        NLog.LogManager.GetCurrentClassLogger()
+                            .Error(exception, "执行结果输出工作失败");
+                    }
                 }
             }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // 服务释放时终止消费者。
+            }
+        }
+
+        /// <summary>
+        /// 完成所有输出通道并等待后台消费者退出。
+        /// </summary>
+        public async ValueTask DisposeAsync()
+        {
+            _outputWorkChannel.Writer.TryComplete();
+            _soundWorkChannel.Writer.TryComplete();
+            _settingsWorkChannel.Writer.TryComplete();
+            _workerCancellation.Cancel();
+            await Task.WhenAll(_outputWorker, _soundWorker, _settingsWorker).ConfigureAwait(false);
+            _workerCancellation.Dispose();
+            _settingsSemaphore.Dispose();
+            _outputSemaphore.Dispose();
+            _soundSemaphore.Dispose();
+            _serialPort?.Dispose();
         }
 
         private async Task SoundOutputAsync(bool isSuccess, CancellationToken cancellationToken)

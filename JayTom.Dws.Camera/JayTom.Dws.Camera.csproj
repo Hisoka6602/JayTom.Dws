@@ -10,10 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Accord.Video.FFMPEG" Version="3.8.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-    <PackageReference Include="System.Management" Version="7.0.0" />
+    <PackageReference Include="Accord.Video.FFMPEG" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="System.Drawing.Common" />
+    <PackageReference Include="System.Management" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,7 +37,7 @@
       <HintPath>..\..\..\Dll\DynamsoftCommon.dll</HintPath>
     </Reference>
     <Reference Include="MvCodeReaderSDK.Net">
-      <HintPath>C:\Users\77051\Desktop\MvCodeReaderSDK\Demo\C#\BasicDemo\bin\AnyCpu\MvCodeReaderSDK.Net.dll</HintPath>
+      <HintPath>Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
     </Reference>
     <Reference Include="MVIDCodeReader.Net">
       <HintPath>Cameras\IndustrialCamera\Hikvision\Dll\MVIDCodeReader.Net.dll</HintPath>
@@ -50,7 +50,7 @@
       <HintPath>Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll</HintPath>
     </Reference>
     <Reference Include="VolMeasure.Net">
-      <HintPath>..\..\..\..\海康\V2.6.0_240227_实例分割版本stable\V2.6.0_240227_实例分割版本stable\MvVolMeasureSDK\Samples\C#\Demo C#-回调函数获取体积\VolMeasure\bin\AnyCPU\VolMeasure.Net.dll</HintPath>
+      <HintPath>Cameras\VolumeCamera\Hikvision\Dll\VolMeasure.Net.dll</HintPath>
     </Reference>
   </ItemGroup>
 

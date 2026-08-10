@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Data.Package;
 namespace JayTom.Dws.Infrastructure.Repository.LocalData
 {
 
-    public class UploadRepository : LocalRepositoryBase<UploadInfoModel>, IUploadRepository {
+    public class UploadRepository : LocalRepositoryBase<UploadInfoModel, SqliteContext>, IUploadRepository {
 
         public UploadRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

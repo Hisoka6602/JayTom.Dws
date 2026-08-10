@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -159,7 +159,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
         private async void LoadedDelegate(object obj)
         {
             //加载扫码相机
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 NvrCameraBindingItems.Clear();
                 if (_deviceService.CameraItems?.Any() != true &&
@@ -204,7 +204,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
         {
             //保存到表
             //先删除
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var list = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => s.CameraSerialNumber)?.ToList() ??
                            new List<string>();

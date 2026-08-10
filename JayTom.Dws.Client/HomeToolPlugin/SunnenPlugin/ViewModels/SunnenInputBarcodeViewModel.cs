@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -80,7 +80,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
 
         public void OnDialogOpened(IDialogParameters parameters)
         {
-            foreach (Window window in Application.Current.Windows)
+            foreach (Window window in System.Windows.Application.Current.Windows)
             {
                 if (window.Name.Equals("SunnenInputBarcodeWindows"))
                 {
@@ -110,10 +110,10 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
 
         private async void MinWinDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 // 获取对话框所属的窗口对象
-                Window dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+                Window dialogWindow = System.Windows.Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
 
                 // 将窗口状态设置为最小化
                 if (dialogWindow != null)
@@ -121,7 +121,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
                     dialogWindow.WindowState = WindowState.Minimized;
                 }
 
-                //Application.Current.MainWindow.WindowState = WindowState.Minimized;
+                //System.Windows.Application.Current.MainWindow.WindowState = WindowState.Minimized;
             });
         }
 
@@ -156,7 +156,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
 
         private async void BarcodeInputDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 if (!string.IsNullOrEmpty(BarCode))
                 {
@@ -181,7 +181,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
 
         private async void LoadedDelegate(UserControl obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 var textBox = PluginInterface.Utils.Utils.GetVisualChild<TextBox>(obj, b => b.Name.Equals("BarCodeTextBox"));
                 if (textBox is not null)
@@ -195,7 +195,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
                     Content = "Pallet"
                 });
             });
-            var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+            var dialogWindow = System.Windows.Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
             if (dialogWindow is not null)
             {
                 dialogWindow.Owner = null;

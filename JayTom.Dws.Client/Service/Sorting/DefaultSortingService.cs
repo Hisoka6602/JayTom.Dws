@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using DryIoc;
 using System.Linq;
 using System.Text;
@@ -43,9 +44,9 @@ using PushAlternateExitSorterEvent = JayTom.Dws.Client.EventMediators.PushAltern
 namespace JayTom.Dws.Client.Service.Sorting
 {
 
-    public class DefaultSortingService : ISortingService
+    public class DefaultSortingService : ISortingService, IAsyncDisposable
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ILogisticsRegexRepository _logisticsRegexRepository;
         private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -75,12 +76,17 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// 串行执行分拣工作的通道，避免为每个包裹创建阻塞任务。
         /// </summary>
         private readonly Channel<Func<Task>> _sortingWorkChannel =
-            Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions
+            Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(2048)
             {
                 SingleReader = true,
                 SingleWriter = false,
-                AllowSynchronousContinuations = false
+                AllowSynchronousContinuations = false,
+                FullMode = BoundedChannelFullMode.Wait
             });
+        /// <summary>
+        /// 控制分拣工作消费者的生命周期。
+        /// </summary>
+        private readonly CancellationTokenSource _sortingWorkerCancellation = new();
         /// <summary>
         /// 持续消费分拣工作通道的后台任务。
         /// </summary>
@@ -168,7 +174,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         public event EventHandler<string>? ClearExceptionEvent;
 
-        public DefaultSortingService(IConfigRepository configRepository,
+        public DefaultSortingService(ISettingsStore settingsStore,
            ILogisticsRegexRepository logisticsRegexRepository,
             ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
@@ -192,7 +198,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             IStackedPackageService stackedPackageService,
             IGrayscaleService grayscaleService)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -559,11 +565,11 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                 try
                 {
-                    _apiSettingsDto = await _configRepository.FirstOrDefaultEntity<ApiSettingsDto>("ApiSettings", token) ?? new ApiSettingsDto();
-                    _sortingMethodDto = await _configRepository.FirstOrDefaultEntity<SortingMethodDto>("SortingMethodSettings", token) ?? new SortingMethodDto();
-                    _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
+                    _apiSettingsDto = await _settingsStore.GetAsync<ApiSettingsDto>("ApiSettings", token) ?? new ApiSettingsDto();
+                    _sortingMethodDto = await _settingsStore.GetAsync<SortingMethodDto>("SortingMethodSettings", token) ?? new SortingMethodDto();
+                    _stackedPackageDetectionSettingsDto = await _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
 
-                    _packageExitLockSettingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>("PackageExitLockSettings", token) ?? new PackageExitLockSettingsDto();
+                    _packageExitLockSettingsDto = await _settingsStore.GetAsync<PackageExitLockSettingsDto>("PackageExitLockSettings", token) ?? new PackageExitLockSettingsDto();
 
                     Volatile.Write(
                         ref _packageExitDefinitionInfos,
@@ -1545,26 +1551,53 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         private async Task ProcessSortingWorkAsync()
         {
-            await foreach (var work in _sortingWorkChannel.Reader.ReadAllAsync())
+            try
             {
-                try
+                await foreach (var work in _sortingWorkChannel.Reader.ReadAllAsync(
+                                   _sortingWorkerCancellation.Token))
                 {
-                    await work();
-                }
-                catch (OperationCanceledException)
-                {
-                    // 调用方取消时停止当前发送，不污染后续分拣任务。
-                }
-                catch (Exception e)
-                {
-                    NLog.LogManager.GetCurrentClassLogger()
-                        .Error(e, "分拣任务执行失败");
-                    OnExceptionOccurred(new ExceptionEventArgs
+                    try
                     {
-                        ExceptionMessage = e.Message
-                    });
+                        await work();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // 调用方取消时停止当前发送，不污染后续分拣任务。
+                    }
+                    catch (Exception e)
+                    {
+                        NLog.LogManager.GetCurrentClassLogger()
+                            .Error(e, "分拣任务执行失败");
+                        OnExceptionOccurred(new ExceptionEventArgs
+                        {
+                            ExceptionMessage = e.Message
+                        });
+                    }
                 }
             }
+            catch (OperationCanceledException) when (_sortingWorkerCancellation.IsCancellationRequested)
+            {
+                // 服务释放时终止后台消费者。
+            }
+        }
+
+        /// <summary>
+        /// 停止分拣工作通道并等待消费者退出。
+        /// </summary>
+        public async ValueTask DisposeAsync()
+        {
+            _sortingWorkChannel.Writer.TryComplete();
+            _sortingWorkerCancellation.Cancel();
+            try
+            {
+                await _sortingWorker.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // 正常释放路径。
+            }
+            _sortingWorkerCancellation.Dispose();
+            _lifecycleGate.Dispose();
         }
 
         /// <summary>

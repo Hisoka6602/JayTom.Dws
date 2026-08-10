@@ -1,4 +1,3 @@
-﻿using NPOI.Util;
 using System.IO.Ports;
 using System.Globalization;
 using TouchSocket.Core;

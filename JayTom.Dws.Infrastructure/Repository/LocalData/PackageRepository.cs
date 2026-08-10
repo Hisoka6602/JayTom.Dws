@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +13,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
-    public class PackageRepository : LocalRepositoryBase<PackageInfoModel>, IPackageRepository {
+    public class PackageRepository : LocalRepositoryBase<PackageInfoModel, SqliteContext>, IPackageRepository {
 
         /// <summary>
         /// 合并同一包裹时间戳的并发缓存加载，防止缓存未命中时重复查询数据库。

@@ -33,8 +33,9 @@ namespace JayTom.Dws.Interface.License {
         /// </summary>
         /// <param name="fileUrl"></param>
         /// <param name="savePath"></param>
+        /// <param name="token">取消令牌。</param>
         /// <returns></returns>
-        Task<bool> DownloadFileAsync(string fileUrl, string savePath);
+        Task<bool> DownloadFileAsync(string fileUrl, string savePath, CancellationToken token = default);
     }
 
     public class ApiResult {

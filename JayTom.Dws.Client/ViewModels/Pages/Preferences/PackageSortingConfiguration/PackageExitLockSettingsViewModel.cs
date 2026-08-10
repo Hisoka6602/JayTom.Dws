@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -53,8 +54,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public PackageExitLockSettingsViewModel(IPackageExitLockBindingRepository packageExitLockBindingRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IConfigRepository configRepository, IExcel excel,
-            IDeviceService deviceService, IExitMonitor exitMonitor) : base(configRepository)
+            ISettingsStore settingsStore, IExcel excel,
+            IDeviceService deviceService, IExitMonitor exitMonitor) : base(settingsStore)
         {
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -65,7 +66,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             //锁格事件回调
             _exitMonitor.LockExitEvent += async (sender, model) =>
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var packageExitLockBindingItemInfoModel = PackageExitLockBindingItems.FirstOrDefault(f => f.ExitName.Equals(model.ExitName));
                     packageExitLockBindingItemInfoModel?.CurrentStatus = ExitLockStatus.Lock;
@@ -73,7 +74,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             };
             _exitMonitor.UnLockExitEvent += async (sender, model) =>
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var packageExitLockBindingItemInfoModel = PackageExitLockBindingItems.FirstOrDefault(f => f.ExitName.Equals(model.ExitName));
                     packageExitLockBindingItemInfoModel?.CurrentStatus = ExitLockStatus.Unlock;
@@ -122,9 +123,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var packageExitLockSettingsDto = await _configRepository.FirstOrDefaultEntity<PackageExitLockSettingsDto>(SettingsName);
+                    var packageExitLockSettingsDto = await _settingsStore.GetAsync<PackageExitLockSettingsDto>(SettingsName);
                     if (packageExitLockSettingsDto is not null)
                     {
                         PackageExitLockSettings = new PackageExitLockSettingsModel()
@@ -155,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void AddDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var packageExitLockEditor = new PackageExitLockEditor();
                 if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model)
@@ -240,7 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -250,7 +251,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         }
                     }, async e =>
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             if (DialogHost.IsDialogOpen(model.Identifier))
                             {
@@ -378,7 +379,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void ModifyDelegate(PackageExitLockBindingItemInfoModel obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var packageExitLockEditor = new PackageExitLockEditor();
                 if (packageExitLockEditor.DataContext is PackageExitLockEditorViewModel model)
@@ -433,7 +434,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void DeleteDelegate(PackageExitLockBindingItemInfoModel obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var model = await _packageExitLockBindingRepository.
                     FirstOrDefault(f =>
@@ -465,10 +466,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 MessageQueue.Enqueue($"设备工作中,无法设置");
                 return false;
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new PackageExitLockSettingsDto()
                 {
                     IsUsePackageExitLock = PackageExitLockSettings.IsUsePackageExitLock,
                     ProtocolType = PackageExitLockSettings.ProtocolType,
@@ -481,8 +479,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         Timeout = PackageExitLockSettings.S7Config.Timeout
                     },
                     IsAutoExceptionSorting = PackageExitLockSettings.IsAutoExceptionSorting
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return true;
@@ -492,7 +489,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 model.Identifier = "PackageExitLockListViewDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
@@ -503,7 +500,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 o => o.Id);
             var (key, value) = await _exitMonitor.GetAllPackageExitStatus();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitLockBindingItems.Clear();
 
@@ -551,7 +548,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             IsExitLockProgress = true;
             Task.Run(async () =>
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     await Task.Delay(3000);
                     var (key, value) = await _exitMonitor.AllLockExit();
@@ -577,7 +574,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             IsUnExitLockProgress = true;
             Task.Run(async () =>
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     await Task.Delay(3000);
                     var (key, value) = await _exitMonitor.AllUnLockExit();

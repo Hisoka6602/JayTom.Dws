@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionPara
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams {
 
-    public class TcpConnectionConfigRepository : LocalRepositoryBase<TcpConnectionConfigInfoModel>, ITcpConnectionConfigRepository {
+    public class TcpConnectionConfigRepository : LocalRepositoryBase<TcpConnectionConfigInfoModel, SqliteConfContext>, ITcpConnectionConfigRepository {
 
         public TcpConnectionConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

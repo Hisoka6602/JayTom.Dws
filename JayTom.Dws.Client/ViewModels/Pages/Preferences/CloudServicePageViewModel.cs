@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -84,7 +84,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     if (!_regionManager.Regions.ContainsRegionWithName("CloudServiceRegion"))
                     {
@@ -104,7 +104,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void MenuClickDelegate(MenuItemInfoModel obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 if (!obj.PageClassName.Equals(string.Empty))
                 {

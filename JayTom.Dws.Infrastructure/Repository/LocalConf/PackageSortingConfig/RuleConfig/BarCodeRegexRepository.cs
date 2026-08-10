@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig {
 
-    public class BarCodeRegexRepository : LocalRepositoryBase<BarCodeRegexInfoModel>, IBarCodeRegexRepository {
+    public class BarCodeRegexRepository : LocalRepositoryBase<BarCodeRegexInfoModel, SqliteConfContext>, IBarCodeRegexRepository {
 
         public BarCodeRegexRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

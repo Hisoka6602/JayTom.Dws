@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -16,7 +16,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig {
 
-    public class SortingInstructionBindingRepository : LocalRepositoryBase<SortingInstructionBindingInfoModel>, ISortingInstructionBindingRepository {
+    public class SortingInstructionBindingRepository : LocalRepositoryBase<SortingInstructionBindingInfoModel, SqliteConfContext>, ISortingInstructionBindingRepository {
 
         public SortingInstructionBindingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

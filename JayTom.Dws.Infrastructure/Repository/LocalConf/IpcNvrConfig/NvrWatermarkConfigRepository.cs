@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig {
 
-    public class NvrWatermarkConfigRepository : MemoryCacheRepositoryBase<NvrWatermarkConfigInfoModel>, INvrWatermarkConfigRepository {
+    public class NvrWatermarkConfigRepository : MemoryCacheRepositoryBase<NvrWatermarkConfigInfoModel, SqliteConfContext>, INvrWatermarkConfigRepository {
 
         public NvrWatermarkConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

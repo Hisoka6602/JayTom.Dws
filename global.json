@@ -1,0 +1,8 @@
+{
+  "$comment": "固定项目使用的 .NET SDK 版本，确保本地与持续集成构建一致。",
+  "sdk": {
+    "version": "10.0.301",
+    "rollForward": "latestPatch",
+    "allowPrerelease": false
+  }
+}

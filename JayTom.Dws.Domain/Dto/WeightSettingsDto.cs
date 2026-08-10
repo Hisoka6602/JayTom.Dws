@@ -4,7 +4,6 @@ using System.Text;
 using System.IO.Ports;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;

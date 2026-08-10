@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using ImTools;
 using System.Linq;
 using System.Globalization;
@@ -19,7 +20,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
 {
     public class ExternalDataService : IExternalDataService
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ITcpVolumeInput _tcpVolumeInput;
         private readonly ITcpContentInput _tcpContentInput;
         private VolumeSettingsDto _volumeSettingsDto = new();
@@ -33,11 +34,11 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
             RegexOptions.Compiled | RegexOptions.CultureInvariant,
             TimeSpan.FromMilliseconds(100));
 
-        public ExternalDataService(IConfigRepository configRepository,
+        public ExternalDataService(ISettingsStore settingsStore,
             ITcpVolumeInput tcpVolumeInput,
             ITcpContentInput tcpContentInput)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _tcpVolumeInput = tcpVolumeInput;
             _tcpContentInput = tcpContentInput;
             _tcpVolumeInput.Exception += delegate (object? sender, Exception exception)
@@ -123,10 +124,11 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
             //读取体积配置
             try
             {
-                var configInfoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"), token);
-                if (configInfoModel is not null)
+                var volumeSettings = await _settingsStore
+                    .GetAsync<VolumeSettingsDto>("VolumeSettings", token);
+                if (volumeSettings is not null)
                 {
-                    _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
+                    _volumeSettingsDto = volumeSettings;
 
                     if (_volumeSettingsDto.IsUseExternalVolumeInput)
                     {
@@ -181,10 +183,11 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
                     });
                 }
 
-                var infoModel = await _configRepository.FirstOrDefault(f => f.ConfigName.Equals("ContentInputSettings"), token);
-                if (infoModel is not null)
+                var contentInputSettings = await _settingsStore
+                    .GetAsync<ContentInputSettingsDto>("ContentInputSettings", token);
+                if (contentInputSettings is not null)
                 {
-                    _contentInputSettingsDto = JsonConvert.DeserializeObject<ContentInputSettingsDto>(infoModel.Value) ?? new ContentInputSettingsDto();
+                    _contentInputSettingsDto = contentInputSettings;
 
                     if (_contentInputSettingsDto.IsUseTcpInput)
                     {

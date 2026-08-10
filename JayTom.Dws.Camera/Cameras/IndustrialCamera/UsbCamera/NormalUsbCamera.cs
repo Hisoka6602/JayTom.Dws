@@ -132,7 +132,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                     var bindCamera = await _usbBarCodeReader.BindCamera(new UsbCameraInfo() {
                         CameraSerialNumber = this.Info.SerialNumber,
                         CameraName = this.Info.Name,
-                        CameraId = this.Info.Id,
+                        CameraId = checked((int)this.Info.Id),
                         CameraVersion = this.Info.Version,
                         CameraManufacturer = this.Info.Brand,
                         CameraModel = this.Info.Model,
@@ -144,75 +144,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                         return new KeyValuePair<bool, string>(false, "绑定相机失败!");
                     }
                     else {
-                        _usbBarCodeReader.BarcodeScanned += async delegate (object? sender, BarcodeScannedEventArgs args) {
-                            try {
-                                if (args?.Image is not null) {
-                                    var scanTime = DateTime.Now;
-                                    var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
-                                    Bitmap? generateThumbnail;
-                                    generateThumbnail = GenerateThumbnail(args.Image);
-                                    List<Point>? points = null;
-                                    if (generateThumbnail is not null) {
-                                        //设置图像边框
-                                        using var g = Graphics.FromImage(generateThumbnail);
-
-                                        foreach (var barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()) {
-                                            points = barcodeInfo.BarcodeRegion;
-                                            if (points is not null && points.Count == 4 &&
-                                                generateThumbnail is not null &&
-                                                args?.Image is { Width: > 0, Height: > 0 }) {
-                                                var stPointList = new Point[4];
-                                                for (var i = 0; i < 4; i++) {
-                                                    stPointList[i].X = (int)(points[i].X *
-                                                                             ((float)generateThumbnail.Width / args.Image.Width));
-                                                    stPointList[i].Y = (int)(points[i].Y *
-                                                                             ((float)generateThumbnail.Height / args.Image.Height));
-                                                }
-                                                g.DrawPolygon(new System.Drawing.Pen(BarcodeBorderColor, BarcodeBorderSize), stPointList);
-                                            }
-                                        }
-                                    }
-
-                                    foreach (var barcodeInfo in from barcodeInfo in args?.BarCodes ?? new List<BarcodeInfo>()
-                                                                let validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
-                                                                    BarCode = barcodeInfo.Barcode ?? "NoRead",
-                                                                    ScanTime = DateTime.Now
-                                                                })
-                                                                where validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)
-                                                                select new { BarcodeInfo = barcodeInfo, IsValid = validateData.IsValidationPassed }) {
-                                        OnBarcodeRead(new BarcodeReadEventArgs() {
-                                            Barcode = _barCodeFilterContainer.RegexReplace((barcodeInfo.IsValid ? barcodeInfo.BarcodeInfo.Barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
-                                            CameraSerialNumber = args?.CameraSerialNumber ?? this.Info.SerialNumber,
-                                            Image = args?.Image,
-                                            ScanTime = scanTime,
-                                            Timestamp = timestamp,
-                                            ThumbImage = generateThumbnail,
-                                            AreaCoords = points,
-                                            FrameNo = _frameNo
-                                        });
-                                    }
-
-                                    if (args?.BarCodes?.Any() == true) {
-                                        _frameNo += 1;
-                                    }
-
-                                    if (IsRealtimeImageEnabled) {
-                                        OnRealtimeImage(new RealtimeImageEventArgs() {
-                                            ThumbImage = generateThumbnail,
-                                            Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
-                                        });
-                                    }
-                                }
-                            }
-                            catch (Exception e) {
-                                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                    Exception = e
-                                });
-                            }
-
-                            //扫码回调
-                            //获取缩略图
-                            //画框
+                        _usbBarCodeReader.BarcodeScanned += delegate (object? sender, BarcodeScannedEventArgs args) {
+                            HandleBarcodeScanned(args);
                         };
                     }
                     OnCameraInitialized(new CameraInitializedEventArgs() {
@@ -232,6 +165,97 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                     Exception = new Exception("初始化传参类型错误!")
                 });
                 return new KeyValuePair<bool, string>(false, "初始化传参类型错误!");
+            }
+        }
+
+        /// <summary>
+        /// 处理 USB 相机读码结果并为各消费者分配独立图像。
+        /// </summary>
+        private void HandleBarcodeScanned(BarcodeScannedEventArgs args) {
+            var image = args.Image;
+            if (image is null) {
+                return;
+            }
+
+            try {
+                var scanTime = DateTime.Now;
+                var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
+                var results = new List<(string Barcode, List<Point>? AreaCoords)>();
+                foreach (var barcodeInfo in args.BarCodes ?? []) {
+                    var validation = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
+                        BarCode = barcodeInfo.Barcode ?? "NoRead",
+                        ScanTime = scanTime
+                    });
+                    if (validation.IsValidationPassed ||
+                        !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                        results.Add((
+                            _barCodeFilterContainer.RegexReplace(
+                                (validation.IsValidationPassed
+                                    ? barcodeInfo.Barcode
+                                    : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
+                            barcodeInfo.BarcodeRegion));
+                    }
+                }
+
+                var barcodeConsumerCount = BarcodeRead is null ? 0 : results.Count;
+                var realtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
+                if (barcodeConsumerCount == 0 && !realtimeConsumer) {
+                    image.Dispose();
+                    return;
+                }
+
+                var thumbnail = GenerateThumbnail(image);
+                if (thumbnail is null) {
+                    image.Dispose();
+                    return;
+                }
+                if (IsShowBarcodeBorder && results.Count > 0) {
+                    using var graphics = Graphics.FromImage(thumbnail);
+                    using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                    foreach (var result in results) {
+                        if (result.AreaCoords is not { Count: 4 }) {
+                            continue;
+                        }
+                        var points = new Point[result.AreaCoords.Count];
+                        for (var index = 0; index < points.Length; index++) {
+                            points[index] = new Point(
+                                result.AreaCoords[index].X * thumbnail.Width / Math.Max(1, image.Width),
+                                result.AreaCoords[index].Y * thumbnail.Height / Math.Max(1, image.Height));
+                        }
+                        graphics.DrawPolygon(pen, points);
+                    }
+                }
+
+                var realtimeThumbnail = realtimeConsumer && barcodeConsumerCount > 0
+                    ? new Bitmap(thumbnail)
+                    : thumbnail;
+                for (var index = 0; index < barcodeConsumerCount; index++) {
+                    var isLast = index == barcodeConsumerCount - 1;
+                    OnBarcodeRead(new BarcodeReadEventArgs {
+                        Barcode = results[index].Barcode,
+                        CameraSerialNumber = args.CameraSerialNumber ?? Info?.SerialNumber ?? string.Empty,
+                        Image = isLast ? image : new Bitmap(image),
+                        ScanTime = scanTime,
+                        Timestamp = timestamp,
+                        ThumbImage = isLast ? thumbnail : new Bitmap(thumbnail),
+                        AreaCoords = results[index].AreaCoords,
+                        FrameNo = _frameNo
+                    });
+                }
+                if (barcodeConsumerCount == 0) {
+                    image.Dispose();
+                }
+                if (realtimeConsumer) {
+                    OnRealtimeImage(new RealtimeImageEventArgs {
+                        ThumbImage = realtimeThumbnail,
+                        Timestamp = timestamp
+                    });
+                }
+                _frameNo++;
+            }
+            catch (Exception exception) {
+                image.Dispose();
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception });
             }
         }
 
@@ -396,61 +420,26 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
         }
 
         protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
-            RealtimeImage?.Invoke(this, e);
+            var handler = RealtimeImage;
+            if (handler is null) {
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    var sourcePtr = (byte*)sourceData.Scan0;
-                    var thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (var y = 0; y < thumbnailHeight; y++) {
-                        for (var x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         protected virtual void OnBarcodeRead(BarcodeReadEventArgs e) {
-            BarcodeRead?.Invoke(this, e);
+            var handler = BarcodeRead;
+            if (handler is null) {
+                e.Image?.Dispose();
+                e.ThumbImage?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
     }
 }

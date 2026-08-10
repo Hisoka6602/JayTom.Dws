@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -71,7 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                 if (_visibleCameraItems.TryGetValue(args.CameraInfo?.SerialNumber ?? string.Empty,
                         out var model))
                 {
-                    await Application.Current.Dispatcher.BeginInvoke(() =>
+                    await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                     {
                         model.IsRealtimeImageEnabled = args.Camera?.IsRealtimeImageEnabled ?? false;
                     }, System.Windows.Threading.DispatcherPriority.Background);
@@ -98,7 +98,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                     .ToDictionary(group => group.Key, group => group.First().CameraDisplayStatus,
                         StringComparer.Ordinal);
 
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     foreach (var item in CameraItems.Concat(HiddenCameraItems).Distinct())
                     {
@@ -142,7 +142,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
             _deviceService.CameraReleased += async delegate (object? sender, string s)
             {
                 _visibleCameraItems.TryRemove(s, out _);
-                await Application.Current.Dispatcher.BeginInvoke(() =>
+                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(s));
                     if (model != null)
@@ -256,7 +256,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
         private async void ImageClickDelegate(CameraItemInfoModel obj)
         {
             //放大图片(用另一个图像框显示、并重新绑定接收图像来源、过渡动画)
-            /*await Application.Current.Dispatcher.BeginInvoke(() => {
+            /*await System.Windows.Application.Current.Dispatcher.BeginInvoke(() => {
                 AddNewRow(new BarCodeItemModel() {
                     Barcode = new Random().Next(100000000, 999999999).ToString()
                 });

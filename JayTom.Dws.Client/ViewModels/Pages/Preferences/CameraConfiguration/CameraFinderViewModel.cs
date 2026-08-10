@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -49,7 +50,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IDialogService _dialogService;
         private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
         private bool _isExecuting;
@@ -115,7 +116,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IVolumeCameraConfigRepository volumeCameraConfigRepository,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             IDialogService dialogService,
             IIpcNvrConfigRepository ipcNvrConfigRepository)
         {
@@ -123,7 +124,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _dialogService = dialogService;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
         }
@@ -161,7 +162,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         /// </summary>
         private async Task UpdateUnboundCameraStateAsync(CameraFinderItemInfoModel model)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 var infoModel = CameraFinderItems.FirstOrDefault(camera =>
                     camera.SerialNumber.Equals(model.SerialNumber));
@@ -189,16 +190,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 
             try
             {
-                var configInfoModel = await _configRepository.FirstOrDefault(
-                    static config => config.ConfigName.Equals("OcrSettings"));
-                _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(
-                    configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto();
+                _ocrSettingsDto = await _settingsStore.GetAsync<OcrSettingsDto>("OcrSettings") ??
+                                  new OcrSettingsDto();
                 if (_ocrSettingsDto.IsUseOcr)
                 {
                     return;
                 }
 
-                var ocrCameras = await Application.Current.Dispatcher.InvokeAsync(() =>
+                var ocrCameras = await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var cameras = CameraFinderItems
                         .Where(static camera =>
@@ -213,14 +212,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 });
                 foreach (var camera in ocrCameras)
                 {
-                    Task unbindTask = await Application.Current.Dispatcher.InvokeAsync(
+                    Task unbindTask = await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                         () => UnbindCameraAsync(camera));
                     await unbindTask;
                 }
             }
             catch (Exception exception)
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     CameraFinderMessageQueue.Enqueue(
                         $"应用OCR设置失败:{exception.Message}"));
             }
@@ -275,31 +274,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 //读配置
                 try
                 {
-                    var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                        f.ConfigName.Equals("CameraSdkSelector"));
-                    if (configInfoModel is not null)
+                    var cameraSdkSelectorDto = await _settingsStore
+                        .GetAsync<CameraSdkSelectorDto>("CameraSdkSelector");
+                    if (cameraSdkSelectorDto is not null)
                     {
-                        var cameraSdkSelectorDto = JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value);
-                        if (cameraSdkSelectorDto is not null)
+                        CameraSdkSelectorInfo = new CameraSdkSelectorInfoModel()
                         {
-                            CameraSdkSelectorInfo = new CameraSdkSelectorInfoModel()
-                            {
-                                IsUseDaHuaSecurityCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSecurityCameraSdk,
-                                IsUseDaHuaSmartCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSmartCameraSdk,
-                                IsUseHikvisionIndustrialCameraSdk =
-                                    cameraSdkSelectorDto.IsUseHikvisionIndustrialCameraSdk,
-                                IsUseHikvisionSmartCameraSdk = cameraSdkSelectorDto.IsUseHikvisionSmartCameraSdk,
-                                IsUseWayzimIndustrialCameraSdk = cameraSdkSelectorDto.IsUseWayzimIndustrialCameraSdk,
-                                IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk,
-                                IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
-                                IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk,
-                                IsUseDimensionVolumeCameraSdk = cameraSdkSelectorDto.IsUseDimensionVolumeCameraSdk,
-                                IsUsbCameraSdk = cameraSdkSelectorDto.IsUsbCameraSdk,
-                            };
-                        }
+                            IsUseDaHuaSecurityCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSecurityCameraSdk,
+                            IsUseDaHuaSmartCameraSdk = cameraSdkSelectorDto.IsUseDaHuaSmartCameraSdk,
+                            IsUseHikvisionIndustrialCameraSdk =
+                                cameraSdkSelectorDto.IsUseHikvisionIndustrialCameraSdk,
+                            IsUseHikvisionSmartCameraSdk = cameraSdkSelectorDto.IsUseHikvisionSmartCameraSdk,
+                            IsUseWayzimIndustrialCameraSdk = cameraSdkSelectorDto.IsUseWayzimIndustrialCameraSdk,
+                            IsUseWayzimSmartCameraSdk = cameraSdkSelectorDto.IsUseWayzimSmartCameraSdk,
+                            IsUseDaHuaVolumeCameraSdk = cameraSdkSelectorDto.IsUseDaHuaVolumeCameraSdk,
+                            IsUseHikvisionVolumeCameraSdk = cameraSdkSelectorDto.IsUseHikvisionVolumeCameraSdk,
+                            IsUseDimensionVolumeCameraSdk = cameraSdkSelectorDto.IsUseDimensionVolumeCameraSdk,
+                            IsUsbCameraSdk = cameraSdkSelectorDto.IsUsbCameraSdk,
+                        };
                     }
-                    configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("OcrSettings"));
-                    _ocrSettingsDto = JsonConvert.DeserializeObject<OcrSettingsDto>(configInfoModel?.Value ?? string.Empty) ?? new OcrSettingsDto();
+                    _ocrSettingsDto = await _settingsStore.GetAsync<OcrSettingsDto>("OcrSettings") ??
+                                      new OcrSettingsDto();
                 }
                 catch (Exception e)
                 {
@@ -416,7 +411,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     .OrderBy(static camera => camera.SerialNumber, StringComparer.OrdinalIgnoreCase)
                     .ToList();
                 var disabledOcrCameras = new List<CameraFinderItemInfoModel>();
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     for (var index = 0; index < sortedCameraItems.Count; index++)
                     {
@@ -447,14 +442,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 
                 foreach (var disabledOcrCamera in disabledOcrCameras)
                 {
-                    Task unbindTask = await Application.Current.Dispatcher.InvokeAsync(
+                    Task unbindTask = await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                         () => UnbindCameraAsync(disabledOcrCamera));
                     await unbindTask;
                 }
             }
             catch (Exception exception)
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     CameraFinderMessageQueue.Enqueue($"更新相机列表失败:{exception.Message}"));
             }
             finally
@@ -1079,11 +1074,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 IsUseDimensionVolumeCameraSdk = CameraSdkSelectorInfo.IsUseDimensionVolumeCameraSdk,
                 IsUsbCameraSdk = CameraSdkSelectorInfo.IsUsbCameraSdk
             };
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = "CameraSdkSelector",
-                Value = JsonConvert.SerializeObject(cameraSdkSelectorDto)
-            });
+            var insertOrUpdate = await _settingsStore.SaveAsync("CameraSdkSelector",cameraSdkSelectorDto);
 
             if (insertOrUpdate)
             {

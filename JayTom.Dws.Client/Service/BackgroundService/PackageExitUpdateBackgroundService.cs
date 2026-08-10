@@ -275,6 +275,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await ReadDefaultConfig();
+            // 本服务的实际工作由事件订阅驱动；保持执行任务存活，便于统一监督和有序停机。
+            await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken).ConfigureAwait(false);
         }
 
         private async Task ReadDefaultConfig()

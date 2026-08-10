@@ -26,7 +26,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
         private static DecCBFun? _decCbFun;
         private static readonly Channel<(Func<Bitmap, Task> Callback, Bitmap Image)> _channel =
             Channel.CreateBounded<(Func<Bitmap, Task>, Bitmap)>(
-                new BoundedChannelOptions(8) {
+                new BoundedChannelOptions(3) {
                     SingleReader = true,
                     FullMode = BoundedChannelFullMode.Wait
                 });
@@ -314,42 +314,43 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.IPC {
         /// <param name="cancellation"></param>
         /// <returns></returns>
         public async Task CaptureAsync(string serialNo, long timestamp, CancellationToken cancellation = default) {
-            //获取已登录的设备
             await _captureSlim.WaitAsync(cancellation);
-            var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
-            if (tryGetValue && dev is { DevPlayInfo.CaptureSize: not null, DevPlayInfo.PlayPort: > 0 }) {
-                uint bmpSize = 0;
-                // 计算缓冲区大小
-                var bufferSize = (uint)(40 + dev.DevPlayInfo.CaptureSize.Value.Width * dev.DevPlayInfo.CaptureSize.Value.Height * 4);
-
-                // 分配缓冲区
-                var bmpBuffer = Marshal.AllocHGlobal((int)bufferSize);
-
-                try {
+            try {
+                if (_loginDev.TryGetValue(serialNo, out var dev) &&
+                    dev is { DevPlayInfo.CaptureSize: not null, DevPlayInfo.PlayPort: > 0 }) {
+                    uint bmpSize = 0;
+                    var bufferSize = (uint)(40 +
+                        dev.DevPlayInfo.CaptureSize.Value.Width *
+                        dev.DevPlayInfo.CaptureSize.Value.Height * 4);
+                    var bmpBuffer = Marshal.AllocHGlobal(checked((int)bufferSize));
+                    try {
                     if (DhPlaySdk.PLAY_GetPicBMP(dev.DevPlayInfo.PlayPort, bmpBuffer, bufferSize, ref bmpSize)) {
-                        // 使用非托管内存中的数据创建 Bitmap 对象
-                        using var stream = new System.IO.MemoryStream();
-                        byte[] bmpData = new byte[bmpSize];
-                        Marshal.Copy(bmpBuffer, bmpData, 0, (int)bmpSize);
-                        stream.Write(bmpData, 0, bmpData.Length);
-                        stream.Seek(0, System.IO.SeekOrigin.Begin);
-                        var bitmap = new Bitmap(stream);
+                        var bitmap = CameraImageProcessing.DecodeCompressedFrame(
+                            bmpBuffer,
+                            checked((int)bmpSize));
                         var captureCallBack = dev.DevPlayInfo.CaptureCallBack;
-                        if (captureCallBack is not null) {
+                        if (captureCallBack is not null && bitmap is not null) {
                             await captureCallBack(new CaptureInfo() {
                                 Bitmap = bitmap,
                                 SerialNo = serialNo,
                                 Timestamp = timestamp
                             }).ConfigureAwait(false);
                         }
+                        else {
+                            bitmap?.Dispose();
+                        }
+                    }
+                    }
+                    finally {
+                        Marshal.FreeHGlobal(bmpBuffer);
                     }
                 }
-                catch (Exception e) {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                }
-                finally {
-                    Marshal.FreeHGlobal(bmpBuffer);
-                }
+            }
+            catch (Exception e) {
+                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
+            }
+            finally {
+                _captureSlim.Release();
             }
         }
 

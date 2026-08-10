@@ -4,6 +4,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
+using KeyboardDeviceInfo = JayTom.Dws.Abstractions.Devices.KeyboardDevice;
+
 namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
     public interface IKeyboardDeviceManager : IDisposable {
@@ -24,13 +26,13 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         /// <summary>
         /// 正在监听的设备
         /// </summary>
-        KeyboardDevice ListeningDevice { get; }
+        KeyboardDeviceInfo ListeningDevice { get; }
 
         /// <summary>
         /// 枚举键盘设备
         /// </summary>
         /// <returns></returns>
-        Task<List<KeyboardDevice>> EnumerateKeyboardDevices();
+        Task<List<KeyboardDeviceInfo>> EnumerateKeyboardDevices();
 
         /// <summary>
         /// 启动监听指定的键盘设备
@@ -38,7 +40,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         /// <param name="device"></param>
 
         /// <returns></returns>
-        Task<bool> StartListening(KeyboardDevice device);
+        Task<bool> StartListening(KeyboardDeviceInfo device);
 
         /// <summary>
         /// 停止监听指定的键盘设备
@@ -77,7 +79,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         /// <summary>
         /// 设备
         /// </summary>
-        public KeyboardDevice? Device { get; set; }
+        public KeyboardDeviceInfo? Device { get; set; }
     }
 
     public class KeyboardBarCodeReceivedEventArgs : EventArgs {
@@ -100,15 +102,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         /// <summary>
         /// 设备
         /// </summary>
-        public KeyboardDevice? Device { get; set; }
+        public KeyboardDeviceInfo? Device { get; set; }
     }
 
-    public class KeyboardDevice {
-        public int VendorId { get; set; }
-        public int ProductId { get; set; }
-        public string? DeviceName { get; set; }
-        public string? DevicePath { get; set; }
-        public string? ManufacturerName { get; set; }
-        public bool IsConnected { get; set; }
-    }
 }

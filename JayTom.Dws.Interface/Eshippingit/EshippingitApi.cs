@@ -55,7 +55,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                     httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
                     HttpResponseMessage message;
@@ -138,7 +138,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                     httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
                     HttpResponseMessage message;
@@ -295,7 +295,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
 
         public async Task<OssParameters?> GetOssParameters() {
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 3);
                 httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
 
@@ -322,7 +322,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 cloudFileName = cloudFileName
             };
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
                 HttpResponseMessage message;

@@ -35,13 +35,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR {
         private static bool isloaded;
         private static readonly Channel<(Func<RealtimePreviewInfo, Task> Callback, RealtimePreviewInfo Preview)> _fcbChannel =
             Channel.CreateBounded<(Func<RealtimePreviewInfo, Task>, RealtimePreviewInfo)>(
-                new BoundedChannelOptions(8) {
+                new BoundedChannelOptions(3) {
                     SingleReader = true,
                     FullMode = BoundedChannelFullMode.Wait
                 });
         private static readonly Channel<(Func<RealtimePreviewInfo, Task> Callback, RealtimePreviewInfo Preview)> _recordingChannel =
             Channel.CreateBounded<(Func<RealtimePreviewInfo, Task>, RealtimePreviewInfo)>(
-                new BoundedChannelOptions(8) {
+                new BoundedChannelOptions(3) {
                     SingleReader = true,
                     FullMode = BoundedChannelFullMode.Wait
                 });

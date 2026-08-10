@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using NetSDKCS;
 using System.IO;
 using Prism.Mvvm;
@@ -46,7 +47,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
     {
         private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
         private readonly IPackageRepository _packageRepository;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
         //private BaseDaHuatech? _baseDaHuatech;
@@ -94,11 +95,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
 
         public NvrRecordingViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
             IPackageRepository packageRepository,
-            IConfigRepository configRepository)
+            ISettingsStore settingsStore)
         {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _packageRepository = packageRepository;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
         }
 
         public string Identifier
@@ -270,7 +271,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 return;
             }
 
-            var settingsDto = await _configRepository.FirstOrDefaultEntity<VideoPlaybackSettingsDto>("VideoPlaybackSettings") ?? new VideoPlaybackSettingsDto();
+            var settingsDto = await _settingsStore.GetAsync<VideoPlaybackSettingsDto>("VideoPlaybackSettings") ?? new VideoPlaybackSettingsDto();
             VideoPlaybackSettingsInfo = new VideoPlaybackSettingsInfoModel()
             {
                 IsWatermarkTimeMarked = settingsDto.IsWatermarkTimeMarked,
@@ -403,7 +404,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                     await Task.WhenAll(VideoPlayerItems.Select(async item =>
                     {
                         item.IsBuffering = true;
-                        await Application.Current.Dispatcher.InvokeAsync(async () =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                         {
                             var (key, value) = await _daHuatechNvr.QueryVideoFile(item.IpAddress,
                                 item.Channel, CurrentTime, EndTime, (int)SelectPlaybackStream);
@@ -418,7 +419,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                     {
                                         if (info.LoadSize > _loadedSize)
                                         {
-                                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                                             {
                                                 _loadedSize = Math.Max(_loadedSize, info.LoadSize);
                                                 if (item.IsBuffering)
@@ -470,7 +471,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                 item.IsBuffering = false;
                                 PlaybackState = PlaybackState.Ready;
                             }
-                        }).Task.Unwrap();
+                        });
                     }));
                 }
                 else if (PlaybackState == PlaybackState.Paused)
@@ -690,7 +691,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                              StartTime.AddSeconds(-2), EndTime, (int)SelectPlaybackStream,
                              saveFileDialog.FileName, async info =>
                              {
-                                 await Application.Current.Dispatcher.InvokeAsync(async () =>
+                                 await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                                  {
                                      if (info.IsDownloadComplete)
                                      {
@@ -739,7 +740,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                      {
                                          obj.DownloadProgress = infoTotalSize;
                                      }
-                                 }).Task.Unwrap();
+                                 });
                              });
                     }
                 }
@@ -776,16 +777,12 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
 
         private async void SaveVideoPlaybackSettingsDelegate(Popup obj)
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = "VideoPlaybackSettings",
-                Value = JsonConvert.SerializeObject(new VideoPlaybackSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync("VideoPlaybackSettings",new VideoPlaybackSettingsDto
                 {
                     IsWatermarkTimeMarked = VideoPlaybackSettingsInfo.IsWatermarkTimeMarked,
                     SecondsToSubtract = VideoPlaybackSettingsInfo.SecondsToSubtract,
                     VideoLengthInSeconds = VideoPlaybackSettingsInfo.VideoLengthInSeconds
-                })
-            });
+                });
             if (insertOrUpdate)
             {
                 obj.IsOpen = false;

@@ -12,7 +12,6 @@ using JayTom.Dws.Data.Package;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Data.LocalData;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
@@ -52,24 +51,32 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly ISortingService _sortingService;
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
-        private readonly ConcurrentQueue<ExceptionLogInfoModel> _exceptionItems = new();
-        private readonly ConcurrentQueue<AppLogInfoModel> _appLogItems = new();
-        private readonly ConcurrentQueue<CameraLogInfoModel> _cameraLogItems = new();
-        private readonly ConcurrentQueue<SortingLogInfoModel> _sortingLogItems = new();
-        private readonly ConcurrentQueue<WeighingLogInfoModel> _weighingLogItems = new();
-        private readonly ConcurrentQueue<VolumeLogInfoModel> _volumeLogItems = new();
-        private readonly ConcurrentQueue<ApiLogInfoModel> _apiLogInfoItems = new();
-        private readonly ConcurrentQueue<OutputLogInfoModel> _outputLogItems = new();
-        private readonly ConcurrentQueue<InputLogInfoModel> _inputLogItems = new();
-        private readonly ConcurrentQueue<OcrLogInfoModel> _ocrLogItems = new();
-        private readonly ConcurrentQueue<FtpLogInfoModel> _ftpLogItems = new();
-        private readonly ConcurrentQueue<LogCleaningLogInfoModel> _logCleaningLogItems = new();
+        /// <summary>每一种数据库日志在内存中允许等待写出的最大数量。</summary>
+        private const int MaxPendingLogsPerCategory = 4096;
+        /// <summary>诊断文本日志在内存中允许等待写出的最大数量。</summary>
+        private const int MaxPendingDiagnosticLogs = 8192;
+        /// <summary>日志丢弃汇总的最短报告间隔。</summary>
+        private static readonly TimeSpan DroppedLogReportInterval = TimeSpan.FromMinutes(1);
+        private readonly BoundedLogQueue<ExceptionLogInfoModel> _exceptionItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<AppLogInfoModel> _appLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<CameraLogInfoModel> _cameraLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<SortingLogInfoModel> _sortingLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<WeighingLogInfoModel> _weighingLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<VolumeLogInfoModel> _volumeLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<ApiLogInfoModel> _apiLogInfoItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<OutputLogInfoModel> _outputLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<InputLogInfoModel> _inputLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<OcrLogInfoModel> _ocrLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<FtpLogInfoModel> _ftpLogItems = new(MaxPendingLogsPerCategory);
+        private readonly BoundedLogQueue<LogCleaningLogInfoModel> _logCleaningLogItems = new(MaxPendingLogsPerCategory);
 
         /// <summary>
         /// 缓存需要由后台循环写出的诊断日志文本。
         /// </summary>
-        private readonly ConcurrentQueue<string> _diagnosticLogItems = new();
+        private readonly BoundedLogQueue<string> _diagnosticLogItems = new(MaxPendingDiagnosticLogs);
         private int _isWindowsClose;
+        /// <summary>最近一次统计日志丢弃数量的单调时钟时间戳。</summary>
+        private long _lastDroppedLogReportTimestamp;
 
         //LogCleaningLogInfoModel
         public LogProcessingService(IAppLogRepository appLogRepository,
@@ -531,35 +538,92 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             using var flushTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
-            while (await flushTimer.WaitForNextTickAsync(stoppingToken) &&
-                   Volatile.Read(ref _isWindowsClose) == 0)
+            try
             {
-                try
+                while (await flushTimer.WaitForNextTickAsync(stoppingToken) &&
+                       Volatile.Read(ref _isWindowsClose) == 0)
                 {
-                    await FlushBatchAsync(_exceptionItems, _exceptionLogRepository, stoppingToken);
-                    await FlushBatchAsync(_appLogItems, _appLogRepository, stoppingToken);
-                    await FlushBatchAsync(_cameraLogItems, _cameraLogRepository, stoppingToken);
-                    await FlushBatchAsync(_sortingLogItems, _sortingLogRepository, stoppingToken);
-                    await FlushBatchAsync(_weighingLogItems, _weighingLogRepository, stoppingToken);
-                    await FlushBatchAsync(_volumeLogItems, _volumeLogRepository, stoppingToken);
-                    await FlushBatchAsync(_apiLogInfoItems, _apiLogRepository, stoppingToken);
-                    await FlushBatchAsync(_outputLogItems, _outputLogRepository, stoppingToken);
-                    await FlushBatchAsync(_inputLogItems, _inputLogRepository, stoppingToken);
-                    await FlushBatchAsync(_ocrLogItems, _ocrLogRepository, stoppingToken);
-                    await FlushBatchAsync(_ftpLogItems, _ftpLogRepository, stoppingToken);
-                    await FlushBatchAsync(_logCleaningLogItems, _cleanupLogRepository, stoppingToken);
-                    FlushDiagnosticMessages();
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                catch (Exception e)
-                {
-                    NLog.LogManager.GetCurrentClassLogger().Error($"日志管理异常:{e}");
+                    try
+                    {
+                        await FlushAllQueuesAsync(stoppingToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        NLog.LogManager.GetCurrentClassLogger().Error($"日志管理异常:{e}");
+                    }
                 }
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // 进入 finally 后尽力刷新已经接收的日志。
+            }
+            finally
+            {
+                await FlushPendingLogsOnShutdownAsync().ConfigureAwait(false);
+            }
         }
+
+        /// <summary>按固定小批次刷新全部数据库日志和诊断文本队列。</summary>
+        private async Task FlushAllQueuesAsync(CancellationToken token)
+        {
+            await FlushBatchAsync(_exceptionItems, _exceptionLogRepository, token);
+            await FlushBatchAsync(_appLogItems, _appLogRepository, token);
+            await FlushBatchAsync(_cameraLogItems, _cameraLogRepository, token);
+            await FlushBatchAsync(_sortingLogItems, _sortingLogRepository, token);
+            await FlushBatchAsync(_weighingLogItems, _weighingLogRepository, token);
+            await FlushBatchAsync(_volumeLogItems, _volumeLogRepository, token);
+            await FlushBatchAsync(_apiLogInfoItems, _apiLogRepository, token);
+            await FlushBatchAsync(_outputLogItems, _outputLogRepository, token);
+            await FlushBatchAsync(_inputLogItems, _inputLogRepository, token);
+            await FlushBatchAsync(_ocrLogItems, _ocrLogRepository, token);
+            await FlushBatchAsync(_ftpLogItems, _ftpLogRepository, token);
+            await FlushBatchAsync(_logCleaningLogItems, _cleanupLogRepository, token);
+            FlushDiagnosticMessages();
+            ReportDroppedLogs();
+        }
+
+        /// <summary>停机时在三秒边界内尽量写出已经接收的日志，防止正常维护造成整批丢失。</summary>
+        private async Task FlushPendingLogsOnShutdownAsync()
+        {
+            using var flushCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            try
+            {
+                while (HasPendingLogs())
+                {
+                    await FlushAllQueuesAsync(flushCancellation.Token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(10), flushCancellation.Token)
+                        .ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException) when (flushCancellation.IsCancellationRequested)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn("停机日志刷新超过三秒，剩余日志将不再等待");
+            }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "停机日志刷新失败");
+            }
+        }
+
+        /// <summary>判断任意日志缓冲中是否还有未写出的项目。</summary>
+        private bool HasPendingLogs() =>
+            !_exceptionItems.IsEmpty ||
+            !_appLogItems.IsEmpty ||
+            !_cameraLogItems.IsEmpty ||
+            !_sortingLogItems.IsEmpty ||
+            !_weighingLogItems.IsEmpty ||
+            !_volumeLogItems.IsEmpty ||
+            !_apiLogInfoItems.IsEmpty ||
+            !_outputLogItems.IsEmpty ||
+            !_inputLogItems.IsEmpty ||
+            !_ocrLogItems.IsEmpty ||
+            !_ftpLogItems.IsEmpty ||
+            !_logCleaningLogItems.IsEmpty ||
+            !_diagnosticLogItems.IsEmpty;
 
         /// <summary>
         /// 在后台工作循环中批量写出诊断日志，避免事件热路径直接触发文件输出。
@@ -584,7 +648,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <param name="repository">日志仓储。</param>
         /// <param name="token">取消令牌。</param>
         private static async Task FlushBatchAsync<T>(
-            ConcurrentQueue<T> queue,
+            BoundedLogQueue<T> queue,
             IRepository<T> repository,
             CancellationToken token) where T : class
         {
@@ -611,5 +675,38 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             }
         }
+
+        /// <summary>按固定时间窗口汇总报告有界日志队列的丢弃数量。</summary>
+        private void ReportDroppedLogs()
+        {
+            var now = System.Diagnostics.Stopwatch.GetTimestamp();
+            var previous = Interlocked.Read(ref _lastDroppedLogReportTimestamp);
+            if (previous != 0 &&
+                System.Diagnostics.Stopwatch.GetElapsedTime(previous, now) < DroppedLogReportInterval)
+            {
+                return;
+            }
+
+            Interlocked.Exchange(ref _lastDroppedLogReportTimestamp, now);
+            var droppedCount = _exceptionItems.ConsumeDroppedCount() +
+                               _appLogItems.ConsumeDroppedCount() +
+                               _cameraLogItems.ConsumeDroppedCount() +
+                               _sortingLogItems.ConsumeDroppedCount() +
+                               _weighingLogItems.ConsumeDroppedCount() +
+                               _volumeLogItems.ConsumeDroppedCount() +
+                               _apiLogInfoItems.ConsumeDroppedCount() +
+                               _outputLogItems.ConsumeDroppedCount() +
+                               _inputLogItems.ConsumeDroppedCount() +
+                               _ocrLogItems.ConsumeDroppedCount() +
+                               _ftpLogItems.ConsumeDroppedCount() +
+                               _logCleaningLogItems.ConsumeDroppedCount() +
+                               _diagnosticLogItems.ConsumeDroppedCount();
+            if (droppedCount > 0)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn(
+                    $"日志写入积压超过内存队列上限，已丢弃 {droppedCount} 条日志");
+            }
+        }
+
     }
 }

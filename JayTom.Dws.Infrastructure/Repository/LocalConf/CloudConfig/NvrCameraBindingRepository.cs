@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig {
 
-    public class NvrCameraBindingRepository : MemoryCacheRepositoryBase<NvrCameraBindingInfoModel>, INvrCameraBindingRepository {
+    public class NvrCameraBindingRepository : MemoryCacheRepositoryBase<NvrCameraBindingInfoModel, SqliteConfContext>, INvrCameraBindingRepository {
 
         public NvrCameraBindingRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

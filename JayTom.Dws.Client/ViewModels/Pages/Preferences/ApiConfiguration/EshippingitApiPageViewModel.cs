@@ -1,4 +1,8 @@
-﻿using System;
+using JayTom.Dws.Interface;
+using JayTom.Dws.Client.Extensions;
+using JayTom.Dws.Abstractions.Integrations;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,7 +36,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
     public class EshippingitApiPageViewModel : SettingsPageTemplateViewModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly IDeviceService _deviceService;
         private readonly IPackageRepository _packageRepository;
         private readonly IBarCodeRepository _barCodeRepository;
@@ -94,13 +98,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             set => SetProperty(ref _failedUploads, value);
         }
 
-        public EshippingitApiPageViewModel(IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory,
+        public EshippingitApiPageViewModel(ISettingsStore settingsStore,
+            IProviderRegistry<IDataUploader> providerRegistry,
             IDeviceService deviceService,
             IPackageRepository packageRepository,
-            IBarCodeRepository barCodeRepository) : base(configRepository)
+            IBarCodeRepository barCodeRepository) : base(settingsStore)
         {
-            _httpClientFactory = httpClientFactory;
+            _providerRegistry = providerRegistry;
             _deviceService = deviceService;
             _packageRepository = packageRepository;
             _barCodeRepository = barCodeRepository;
@@ -111,10 +115,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new EshippingitApiDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new EshippingitApiDto()
                 {
                     Domain = EshippingitApiInfo.Domain,
                     TimeOut = EshippingitApiInfo.TimeOut,
@@ -124,8 +125,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     RetryCount = EshippingitApiInfo.RetryCount,
                     RetryInterval = EshippingitApiInfo.RetryInterval,
                     Machine = EshippingitApiInfo.Machine
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -133,9 +133,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<EshippingitApiDto>(SettingsName) ?? new EshippingitApiDto();
+                var settingsDto = await _settingsStore.GetAsync<EshippingitApiDto>(SettingsName) ?? new EshippingitApiDto();
                 EshippingitApiInfo = new EshippingitApiModel()
                 {
                     Domain = settingsDto.Domain,
@@ -147,7 +147,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     RetryInterval = settingsDto.RetryInterval,
                     Machine = settingsDto.Machine
                 };
-                var imageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
+                var imageSettingsDto = await _settingsStore.GetAsync<ImageSettingsDto>("SaveImageSettings") ?? new ImageSettingsDto();
                 if (!string.IsNullOrEmpty(imageSettingsDto.ImageRootDirectory))
                 {
                     ImageRootDirectory = imageSettingsDto.ImageRootDirectory;
@@ -233,7 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         public async Task<List<string>> UploadImageProcess(List<string> imagesPath)
         {
             var uploadedList = new ConcurrentBag<string>();
-            var eshippingitApi = new EshippingitApi(_httpClientFactory);
+            var eshippingitApi = _providerRegistry.Resolve<EshippingitApi>(ApiType.EshippingitApi);
             var (key, value) = await eshippingitApi.SetParameters(new EshippingitApi.ApiParameters()
             {
                 Authorization = EshippingitApiInfo.Authorization,

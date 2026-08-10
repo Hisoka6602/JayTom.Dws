@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Globalization;
+using System.Collections.Generic;
 using System.Windows.Input;
 using System.Windows.Media;
 using Prism.Services.Dialogs;
@@ -45,7 +47,7 @@ namespace JayTom.Dws.Client.ViewModels
     {
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISyncSettingsService _syncSettingsService;
         private double _uniformCornerRadius = 5;
         private string _maxBtnIcon = "\xe600";
@@ -75,12 +77,12 @@ namespace JayTom.Dws.Client.ViewModels
 
         public MainWindowViewModel(IRegionManager regionManager,
             IDialogService dialogService,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             ISyncSettingsService syncSettingsService)
         {
             _regionManager = regionManager;
             _dialogService = dialogService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _syncSettingsService = syncSettingsService;
             HomeToolItems = new ObservableCollection<HomeToolInfoModel>()
             {
@@ -116,7 +118,7 @@ namespace JayTom.Dws.Client.ViewModels
             {
                 if (item is SettingsChangedEvent { SettingsName: "SyncSettingsSettings" } syncSettingsSettings)
                 {
-                    _syncSettingsDto = await _configRepository.FirstOrDefaultEntity<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
+                    _syncSettingsDto = await _settingsStore.GetAsync<SyncSettingsDto>(syncSettingsSettings.SettingsName) ?? new SyncSettingsDto();
                     if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url))
                     {
                         //连接
@@ -305,27 +307,21 @@ namespace JayTom.Dws.Client.ViewModels
             }
             //加载语言选择
 
-            var language = (await _configRepository
-                    .FirstOrDefault(f => f.ConfigName.Equals("SelectedLanguage"))
-                    .ConfigureAwait(false))
-                ?.Value;
-            var configInfoModel = await _configRepository
-                .FirstOrDefault(f => f.ConfigName.Equals("OtherSettings"))
+            var language = await _settingsStore
+                .GetRawAsync("SelectedLanguage")
                 .ConfigureAwait(false);
-            OtherSettingsDto? otherSettings = null;
+            var otherSettings = await _settingsStore
+                .GetAsync<OtherSettingsDto>("OtherSettings")
+                .ConfigureAwait(false);
             ImageSource? logoSource = null;
-            if (configInfoModel is not null)
+            if (otherSettings is not null)
             {
                 try
                 {
-                    otherSettings = JsonConvert.DeserializeObject<OtherSettingsDto>(configInfoModel.Value);
-                    if (otherSettings is not null)
+                    if (File.Exists(otherSettings.ProgramLogoPath))
                     {
-                        if (File.Exists(otherSettings.ProgramLogoPath))
-                        {
-                            logoSource = JayTom.Dws.PluginInterface.Utils.Utils.CreateBitmapImage(
-                                new Uri(otherSettings.ProgramLogoPath), 148, 148);
-                        }
+                        logoSource = JayTom.Dws.PluginInterface.Utils.Utils.CreateBitmapImage(
+                            new Uri(otherSettings.ProgramLogoPath), 148, 148);
                     }
                 }
                 catch (Exception e)
@@ -339,7 +335,7 @@ namespace JayTom.Dws.Client.ViewModels
                 }
             }
 
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 NLog.LogManager.GetCurrentClassLogger().Info("进入主页加载");
                 if (otherSettings is not null)
@@ -354,7 +350,7 @@ namespace JayTom.Dws.Client.ViewModels
                 //加载配置需要有一个事件通知各个模块
                 //加载体积配置
                 //加载重量配置
-                var models = (LanguageInfoModel[])Application.Current.Resources["LanguageInfoArray"];
+                var models = (LanguageInfoModel[])System.Windows.Application.Current.Resources["LanguageInfoArray"];
                 var languageInfoModel = models.FirstOrDefault(f => f.DisplayName.Equals(language));
                 if (languageInfoModel is not null)
                 {
@@ -405,24 +401,24 @@ namespace JayTom.Dws.Client.ViewModels
             });
 
             // 等待启动页完成首帧渲染，避免菜单动画在窗口真正显示前就已经结束。
-            await Application.Current.Dispatcher.InvokeAsync(
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                 () => { },
                 System.Windows.Threading.DispatcherPriority.ContextIdle);
             await Task.Delay(300).ConfigureAwait(false);
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 IsLoaded = true;
             });
 
-            _syncSettingsDto = await _configRepository
-                .FirstOrDefaultEntity<SyncSettingsDto>("SyncSettingsSettings")
+            _syncSettingsDto = await _settingsStore
+                .GetAsync<SyncSettingsDto>("SyncSettingsSettings")
                 .ConfigureAwait(false) ?? new SyncSettingsDto();
             if (_syncSettingsDto.IsUseSyncSettings && !string.IsNullOrEmpty(_syncSettingsDto.Url))
             {
                 if (!_syncSettingsService.IsConnected)
                 {
                     var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url).ConfigureAwait(false);
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
                     }, System.Windows.Threading.DispatcherPriority.Background);
@@ -513,19 +509,11 @@ namespace JayTom.Dws.Client.ViewModels
                     Thread.CurrentThread.CurrentCulture = culture;
                     Thread.CurrentThread.CurrentUICulture = culture;
 
-                    var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                    {
-                        ConfigName = "Language",
-                        Value = culture.Name,
-                    });
-                    if (insertOrUpdate)
-                    {
-                        await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                        {
-                            ConfigName = "SelectedLanguage",
-                            Value = SelectedLanguage?.DisplayName ?? string.Empty,
+                    var insertOrUpdate = await _settingsStore.SaveRawBatchAsync(
+                        new Dictionary<string, string> {
+                            ["Language"] = culture.Name,
+                            ["SelectedLanguage"] = SelectedLanguage?.DisplayName ?? string.Empty
                         });
-                    }
                     MainMessageQueue.Enqueue(insertOrUpdate ? Languages.Language.ResourceManager.GetString("切换语言成功提示") : Languages.Language.ResourceManager.GetString("切换语言失败提示"));
                 }
 

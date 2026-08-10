@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using JayTom.Dws.Application.Configuration;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -37,7 +38,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
     {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExternalDataService _externalDataService;
@@ -57,14 +58,14 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
 
         public YunShanPackageBackgroundService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             ISortingService sortingService,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IExternalDataService externalDataService)
         {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _sortingService = sortingService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _externalDataService = externalDataService;
@@ -714,28 +715,28 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     {
                         case "CreatePackageSettings":
                             {
-                                var settings = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
+                                var settings = await _settingsStore.GetAsync<CreatePackageSettingsDto>(model.SettingsName) ??
                                                new CreatePackageSettingsDto();
                                 await SwapSettingsAsync(() => _createPackageSettingsDto = settings);
                                 break;
                             }
                         case "WeightSettings":
                             {
-                                var settings = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(model.SettingsName) ??
+                                var settings = await _settingsStore.GetAsync<WeightSettingsDto>(model.SettingsName) ??
                                                new WeightSettingsDto();
                                 await SwapSettingsAsync(() => _weightSettingsDto = settings);
                                 break;
                             }
                         case "BarcodeFilterSettings":
                             {
-                                var settings = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
+                                var settings = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>(model.SettingsName) ??
                                                new BarcodeFilterSettingsDto();
                                 await SwapSettingsAsync(() => _barcodeFilterSettingsDto = settings);
                                 break;
                             }
                         case "WdtWmsApiParameters":
                             {
-                                var settings = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>(model.SettingsName) ??
+                                var settings = await _settingsStore.GetAsync<WdtWmsApiDto>(model.SettingsName) ??
                                                new WdtWmsApiDto();
                                 await SwapSettingsAsync(() => _wdtWmsApiDto = settings);
                                 break;
@@ -897,10 +898,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             {
                 //读配置
 
-                _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
-                _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
-                _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
-                _wdtWmsApiDto = await _configRepository.FirstOrDefaultEntity<WdtWmsApiDto>("WdtWmsApiParameters", stoppingToken) ?? new WdtWmsApiDto();
+                _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+                _barcodeFilterSettingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
+                _weightSettingsDto = await _settingsStore.GetAsync<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
+                _wdtWmsApiDto = await _settingsStore.GetAsync<WdtWmsApiDto>("WdtWmsApiParameters", stoppingToken) ?? new WdtWmsApiDto();
             }
             catch (Exception e)
             {

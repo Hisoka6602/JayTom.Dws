@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.VideoApiData;
 
 namespace JayTom.Dws.Infrastructure.Repository.VideoApiData {
 
-    public class VideoNvrCameraBindingRepository : RepositoryBase<VideoNvrCameraBindingInfoModel>, IVideoNvrCameraBindingRepository {
+    public class VideoNvrCameraBindingRepository : RepositoryBase<VideoNvrCameraBindingInfoModel, VideoApiContext>, IVideoNvrCameraBindingRepository {
 
         public VideoNvrCameraBindingRepository(IDbContextFactory<VideoApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -15,17 +16,29 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
 {
     public class PasswordValidationDialogViewModel : BindableBase
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private bool _isValidationPassed;
         private string _identifier = string.Empty;
         private string _password = string.Empty;
         private string _passwordHint = string.Empty;
         private SnackbarMessageQueue _passwordValidationMessageQueue = new(TimeSpan.FromSeconds(2));
         private PassWordSettingsDto _passWordSettingsDto = new();
+        /// <summary>
+        /// 当前连续校验失败次数。
+        /// </summary>
+        private int _failedAttempts;
+        /// <summary>
+        /// 当前临时锁定结束时间。
+        /// </summary>
+        private DateTimeOffset _lockedUntil = DateTimeOffset.MinValue;
+        /// <summary>
+        /// 触发临时锁定前允许的连续失败次数。
+        /// </summary>
+        private const int MaxFailedAttempts = 5;
 
-        public PasswordValidationDialogViewModel(IConfigRepository configRepository)
+        public PasswordValidationDialogViewModel(ISettingsStore settingsStore)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
         }
 
         /// <summary>
@@ -77,11 +90,16 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
 
         public async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            try
             {
-                _passWordSettingsDto = await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
+                _passWordSettingsDto = await _settingsStore.GetAsync<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
                 PasswordHint = _passWordSettingsDto.PasswordHint;
-            });
+            }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "加载密码保护配置失败");
+                PasswordValidationMessageQueue.Enqueue("密码保护配置加载失败");
+            }
         }
 
         /// <summary>
@@ -91,27 +109,58 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
 
         private async void PasswordValidationDelegate(object obj)
         {
-            //校验密码
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            try
             {
-                if (_passWordSettingsDto.Password.Equals(Password))
-                {
-                    IsValidationPassed = true;
-                    if (_passWordSettingsDto.SkipPasswordValidationForThisSession)
-                    {
-                        AppContext.SetData("IsValidationPassed", IsValidationPassed);
-                    }
+                await ValidatePasswordAsync();
+            }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "密码校验失败");
+                PasswordValidationMessageQueue.Enqueue("密码校验失败");
+            }
+        }
 
-                    if (DialogHost.IsDialogOpen(Identifier))
-                    {
-                        DialogHost.Close(Identifier);
-                    }
-                }
-                else
+        /// <summary>
+        /// 执行带失败退避和临时锁定的密码校验。
+        /// </summary>
+        private async Task ValidatePasswordAsync()
+        {
+            var now = DateTimeOffset.Now;
+            if (now < _lockedUntil)
+            {
+                var remainingSeconds = Math.Max(1, (int)Math.Ceiling((_lockedUntil - now).TotalSeconds));
+                PasswordValidationMessageQueue.Enqueue($"尝试次数过多，请在 {remainingSeconds} 秒后重试");
+                return;
+            }
+
+            if (_passWordSettingsDto.Password.Equals(Password))
+            {
+                _failedAttempts = 0;
+                _lockedUntil = DateTimeOffset.MinValue;
+                IsValidationPassed = true;
+                if (_passWordSettingsDto.SkipPasswordValidationForThisSession)
                 {
-                    PasswordValidationMessageQueue.Enqueue("密码错误");
+                    AppContext.SetData("IsValidationPassed", true);
                 }
-            });
+
+                if (DialogHost.IsDialogOpen(Identifier))
+                {
+                    DialogHost.Close(Identifier);
+                }
+                return;
+            }
+
+            _failedAttempts++;
+            await Task.Delay(TimeSpan.FromMilliseconds(Math.Min(_failedAttempts * 300, 1500)));
+            if (_failedAttempts >= MaxFailedAttempts)
+            {
+                _lockedUntil = DateTimeOffset.Now.AddSeconds(30);
+                _failedAttempts = 0;
+                PasswordValidationMessageQueue.Enqueue("尝试次数过多，已锁定 30 秒");
+                return;
+            }
+
+            PasswordValidationMessageQueue.Enqueue("密码错误");
         }
 
         public ICommand ExitValidationCommand => new DelegateCommand<object>(ExitValidationDelegate);

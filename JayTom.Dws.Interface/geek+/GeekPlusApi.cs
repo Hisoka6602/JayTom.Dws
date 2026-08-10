@@ -80,7 +80,7 @@ namespace JayTom.Dws.Interface.geek_ {
 
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 HttpResponseMessage message;
@@ -172,7 +172,7 @@ namespace JayTom.Dws.Interface.geek_ {
 
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 HttpResponseMessage message;
@@ -298,7 +298,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 }
 
                 //using var httpClient = new HttpClient();
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 var message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", formData, token);

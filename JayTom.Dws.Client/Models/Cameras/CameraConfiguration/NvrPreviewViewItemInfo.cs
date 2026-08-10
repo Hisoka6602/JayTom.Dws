@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -37,9 +37,9 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
             {
                 if (info.RgbData is not null && info is { Width: > 0, Height: > 0 } && !_isStopRead)
                 {
-                    if (Application.Current is not null)
+                    if (System.Windows.Application.Current is not null)
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             if (VideoFrame is not null)
                             {
@@ -113,13 +113,13 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
                 VideoFrame = null;
                 RealtimePreviewCallback = null;
             };
-            if (Application.Current.Dispatcher.CheckAccess())
+            if (System.Windows.Application.Current.Dispatcher.CheckAccess())
             {
                 releaseResources();
             }
             else
             {
-                Application.Current.Dispatcher.Invoke(releaseResources);
+                System.Windows.Application.Current.Dispatcher.Invoke(releaseResources);
             }
         }
 

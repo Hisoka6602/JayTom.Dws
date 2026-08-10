@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -95,7 +96,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private ObservableCollection<DataFormatType> _dataFormatTypeItems = new(Enum.GetValues(typeof(DataFormatType)).Cast<DataFormatType>());
 
         public WeightSettingViewModel(IDynamicScale dynamicScale,
-            IStaticScale staticScale, IConfigRepository configRepository) : base(configRepository)
+            IStaticScale staticScale, ISettingsStore settingsStore) : base(settingsStore)
         {
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
@@ -469,10 +470,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     break;
             }
 
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new WeightSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new WeightSettingsDto
                 {
                     Mode = SelectWeightMode.Value,
                     ScaleCommunicationMode = WeightSettingsInfo.ScaleCommunicationMode,
@@ -537,8 +535,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         FixedWeightValue = WeightSettingsInfo.AdditionalWeight.FixedWeightValue,
                         MergedWeightTimeout = WeightSettingsInfo.AdditionalWeight.MergedWeightTimeout
                     }
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -550,12 +547,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
                     //加载
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(SettingsName) ??
+                    var settingsDto = await _settingsStore.GetAsync<WeightSettingsDto>(SettingsName) ??
                                       new WeightSettingsDto();
                     SelectWeightMode = WeightModeItems.FirstOrDefault(f => f.Value == settingsDto.Mode) ?? new WeightModeInfoModel();
                     SelectedWeightAccess =

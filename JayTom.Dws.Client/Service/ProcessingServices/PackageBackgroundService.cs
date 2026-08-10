@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using JayTom.Dws.Application.Configuration;
+using NLog;
 using System;
 using DryIoc;
 using ImTools;
@@ -57,12 +58,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly IResultOutputService _resultOutputService;
         private readonly IImageStorageService _imageStorageService;
         private readonly IExternalDataService _externalDataService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
         private readonly IStackedPackageService _stackedPackageService;
         private readonly IGrayscaleService _grayscaleService;
         private ExternalDataSourceEventArgs _externalDataSource = new();
-        private List<ConfigInfoModel> _configInfoModels = new();
 
         //private CommunicationsSettingsDto _communicationsSettingsDto = new();
         private VolumeSettingsDto _volumeSettingsDto = new();
@@ -104,7 +104,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         public PackageBackgroundService(IDeviceService deviceService,
             IResultOutputService resultOutputService,
             IImageStorageService imageStorageService,
-            IExternalDataService externalDataService, IConfigRepository configRepository,
+            IExternalDataService externalDataService, ISettingsStore settingsStore,
             ISortingService sortingService, IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IStackedPackageService stackedPackageService,
@@ -114,7 +114,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _resultOutputService = resultOutputService;
             _imageStorageService = imageStorageService;
             _externalDataService = externalDataService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _sortingService = sortingService;
             _stackedPackageService = stackedPackageService;
             _grayscaleService = grayscaleService;
@@ -1284,41 +1284,41 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     switch (model.SettingsName)
                     {
                         case "VolumeSettings":
-                            _volumeSettingsDto = await _configRepository.FirstOrDefaultEntity<VolumeSettingsDto>(model.SettingsName) ??
+                            _volumeSettingsDto = await _settingsStore.GetAsync<VolumeSettingsDto>(model.SettingsName) ??
                                                  new VolumeSettingsDto();
 
                             break;
 
                         case "WeightSettings":
-                            _weightSettingsDto = await _configRepository.FirstOrDefaultEntity<WeightSettingsDto>(model.SettingsName) ??
+                            _weightSettingsDto = await _settingsStore.GetAsync<WeightSettingsDto>(model.SettingsName) ??
                                                  new WeightSettingsDto();
 
                             break;
 
                         case "CreatePackageSettings":
-                            _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
+                            _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>(model.SettingsName) ??
                                                         new CreatePackageSettingsDto();
 
                             break;
 
                         case "StackedPackageDetectionSettings":
 
-                            _stackedPackageDetectionSettingsDto = await _configRepository.FirstOrDefaultEntity<StackedPackageDetectionSettingsDto>(model.SettingsName) ??
+                            _stackedPackageDetectionSettingsDto = await _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>(model.SettingsName) ??
                                                                   new StackedPackageDetectionSettingsDto();
                             break;
 
                         case "BarcodeFilterSettings":
-                            _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(model.SettingsName) ??
+                            _barcodeFilterSettingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>(model.SettingsName) ??
                                                         new BarcodeFilterSettingsDto();
                             break;
 
                         case "SupplyCounterSettings":
-                            _supplyCounterSettingsDto = await _configRepository.FirstOrDefaultEntity<SupplyCounterSettingsDto>(model.SettingsName) ?? new SupplyCounterSettingsDto();
+                            _supplyCounterSettingsDto = await _settingsStore.GetAsync<SupplyCounterSettingsDto>(model.SettingsName) ?? new SupplyCounterSettingsDto();
                             _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
                             break;
 
                         case "GrayscaleDeviceSettings":
-                            _grayscaleDeviceSettingsDto = await _configRepository.FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>(model.SettingsName)
+                            _grayscaleDeviceSettingsDto = await _settingsStore.GetAsync<GrayscaleDeviceSettingsDto>(model.SettingsName)
                                                           ?? new GrayscaleDeviceSettingsDto();
 
                             break;
@@ -1650,47 +1650,30 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         {
             try
             {
-                //读配置
-                _configInfoModels = await _configRepository.Select(s => s.Id > 0,
-                    o => o.Id, stoppingToken);
-                // var configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("CommunicationsSettings"));
-                var configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("VolumeSettings"));
-                if (configInfoModel is not null)
-                {
-                    _volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value) ?? new VolumeSettingsDto();
-                }
+                var volumeTask = _settingsStore.GetAsync<VolumeSettingsDto>("VolumeSettings", stoppingToken);
+                var weightTask = _settingsStore.GetAsync<WeightSettingsDto>("WeightSettings", stoppingToken);
+                var createPackageTask = _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken);
+                var stackedPackageTask = _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings", stoppingToken);
+                var barcodeFilterTask = _settingsStore.GetAsync<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken);
+                var supplyCounterTask = _settingsStore.GetAsync<SupplyCounterSettingsDto>("SupplyCounterSettings", stoppingToken);
+                var grayscaleTask = _settingsStore.GetAsync<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings", stoppingToken);
+                await Task.WhenAll(
+                    volumeTask,
+                    weightTask,
+                    createPackageTask,
+                    stackedPackageTask,
+                    barcodeFilterTask,
+                    supplyCounterTask,
+                    grayscaleTask);
 
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("WeightSettings"));
-                if (configInfoModel is not null)
-                {
-                    _weightSettingsDto = JsonConvert.DeserializeObject<WeightSettingsDto>(configInfoModel.Value) ?? new WeightSettingsDto();
-                }
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("CreatePackageSettings"));
-                if (configInfoModel is not null)
-                {
-                    _createPackageSettingsDto = JsonConvert.DeserializeObject<CreatePackageSettingsDto>(configInfoModel.Value) ?? new CreatePackageSettingsDto();
-                }
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("StackedPackageDetectionSettings"));
-                if (configInfoModel is not null)
-                {
-                    _stackedPackageDetectionSettingsDto = JsonConvert.DeserializeObject<StackedPackageDetectionSettingsDto>(configInfoModel.Value) ?? new StackedPackageDetectionSettingsDto();
-                }
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("BarcodeFilterSettings"));
-                if (configInfoModel is not null)
-                {
-                    _barcodeFilterSettingsDto = JsonConvert.DeserializeObject<BarcodeFilterSettingsDto>(configInfoModel.Value) ?? new BarcodeFilterSettingsDto();
-                }
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("SupplyCounterSettings"));
-                if (configInfoModel is not null)
-                {
-                    _supplyCounterSettingsDto = JsonConvert.DeserializeObject<SupplyCounterSettingsDto>(configInfoModel.Value) ?? new SupplyCounterSettingsDto();
-                    _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
-                }
-                configInfoModel = _configInfoModels?.FirstOrDefault(f => f.ConfigName.Equals("GrayscaleDeviceSettings"));
-                if (configInfoModel is not null)
-                {
-                    _grayscaleDeviceSettingsDto = JsonConvert.DeserializeObject<GrayscaleDeviceSettingsDto>(configInfoModel.Value) ?? new GrayscaleDeviceSettingsDto();
-                }
+                _volumeSettingsDto = await volumeTask ?? new VolumeSettingsDto();
+                _weightSettingsDto = await weightTask ?? new WeightSettingsDto();
+                _createPackageSettingsDto = await createPackageTask ?? new CreatePackageSettingsDto();
+                _stackedPackageDetectionSettingsDto = await stackedPackageTask ?? new StackedPackageDetectionSettingsDto();
+                _barcodeFilterSettingsDto = await barcodeFilterTask ?? new BarcodeFilterSettingsDto();
+                _supplyCounterSettingsDto = await supplyCounterTask ?? new SupplyCounterSettingsDto();
+                _grayscaleDeviceSettingsDto = await grayscaleTask ?? new GrayscaleDeviceSettingsDto();
+                _preSignal = _supplyCounterSettingsDto.StartPrecedingNumber;
             }
             catch (Exception e)
             {

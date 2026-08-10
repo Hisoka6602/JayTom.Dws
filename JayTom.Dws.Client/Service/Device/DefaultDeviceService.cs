@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Dynamsoft;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace JayTom.Dws.Client.Service.Device
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
         private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IDynamicScale _dynamicScale;
         private readonly IStaticScale _staticScale;
         private readonly IOcr _ocr;
@@ -69,6 +70,10 @@ namespace JayTom.Dws.Client.Service.Device
         private readonly List<CameraParametersModifiedEventArgs> _cameraParameters = new();
         private BarcodeFilterSettingsDto? _barcodeFilterSettingsDto = new();
         private WeightSettingsDto? _weightSettingsDto = new();
+        /// <summary>
+        /// 当前存图配置，用于决定相机是否需要输出原分辨率帧。
+        /// </summary>
+        private ImageSettingsDto? _imageSettingsDto = new();
         private CameraSdkSelectorDto? _cameraSdkSelectorDto;
         private static readonly ConcurrentDictionary<string, CameraInfo> _cameraInfos = new();
         private int _runningStatus;
@@ -102,7 +107,7 @@ namespace JayTom.Dws.Client.Service.Device
             await _cameraEnumerationGate.WaitAsync(token).ConfigureAwait(false);
             try
             {
-                _cameraSdkSelectorDto = await _configRepository.FirstOrDefaultEntity<CameraSdkSelectorDto>("CameraSdkSelector", token) ??
+                _cameraSdkSelectorDto = await _settingsStore.GetAsync<CameraSdkSelectorDto>("CameraSdkSelector", token) ??
                                         new CameraSdkSelectorDto();
                 var selector = _cameraSdkSelectorDto;
                 var emptyCameraTask = Task.FromResult<List<CameraInfo>?>([]);
@@ -223,7 +228,7 @@ namespace JayTom.Dws.Client.Service.Device
         public DefaultDeviceService(IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
             IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
             IVolumeCameraConfigRepository volumeCameraConfigRepository,
-            IConfigRepository configRepository, IDynamicScale dynamicScale,
+            ISettingsStore settingsStore, IDynamicScale dynamicScale,
             IStaticScale staticScale, IOcr ocr,
             IUsbCameraConfigRepository usbCameraConfigRepository,
             IKeyboardDeviceManager keyboardDeviceManager)
@@ -231,7 +236,7 @@ namespace JayTom.Dws.Client.Service.Device
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
             _ocr = ocr;
@@ -370,7 +375,7 @@ namespace JayTom.Dws.Client.Service.Device
             {
                 if (settings is SettingsChangedEvent { SettingsName: "BarcodeFilterSettings" })
                 {
-                    _barcodeFilterSettingsDto = await _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>("BarcodeFilterSettings") ??
+                    _barcodeFilterSettingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>("BarcodeFilterSettings") ??
                         new BarcodeFilterSettingsDto();
 
                     if (RunningStatus)
@@ -381,13 +386,31 @@ namespace JayTom.Dws.Client.Service.Device
                         });
                     }
                 }
+                else if (settings is SettingsChangedEvent { SettingsName: "SaveImageSettings" })
+                {
+                    try
+                    {
+                        var imageSettings = await _settingsStore
+                            .GetAsync<ImageSettingsDto>("SaveImageSettings")
+                            ?? new ImageSettingsDto();
+                        Volatile.Write(ref _imageSettingsDto, imageSettings);
+                        ApplyImageOutputSettings(Volatile.Read(ref _cameras));
+                    }
+                    catch (Exception exception)
+                    {
+                        OnDeviceException(new DeviceExceptionEventArgs()
+                        {
+                            ExceptionMessage = new Exception($"加载存图设置失败:{exception.Message}")
+                        });
+                    }
+                }
                 else if (settings is SettingsChangedEvent { SettingsName: "CameraSdkSelector" })
                 {
                     try
                     {
-                        var configInfoModel = await _configRepository.FirstOrDefault(f =>
-                            f.ConfigName.Equals("CameraSdkSelector"));
-                        _cameraSdkSelectorDto = configInfoModel is not null ? JsonConvert.DeserializeObject<CameraSdkSelectorDto>(configInfoModel.Value) : new CameraSdkSelectorDto();
+                        _cameraSdkSelectorDto = await _settingsStore
+                            .GetAsync<CameraSdkSelectorDto>("CameraSdkSelector") ??
+                            new CameraSdkSelectorDto();
                     }
                     catch (Exception e)
                     {
@@ -716,7 +739,7 @@ namespace JayTom.Dws.Client.Service.Device
             }
             //初始化扫码枪
             //获取已绑定的扫码枪
-            var contentInputSettingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>("ContentInputSettings", token) ?? new ContentInputSettingsDto();
+            var contentInputSettingsDto = await _settingsStore.GetAsync<ContentInputSettingsDto>("ContentInputSettings", token) ?? new ContentInputSettingsDto();
             if (contentInputSettingsDto.KeyboardDevice is { ProductId: > 0, VendorId: > 0 })
             {
                 //设置过滤
@@ -804,10 +827,10 @@ namespace JayTom.Dws.Client.Service.Device
                     }
 
                     var barcodeFilterSettingsTask =
-                        _configRepository.FirstOrDefaultEntity<BarcodeFilterSettingsDto>(
+                        _settingsStore.GetAsync<BarcodeFilterSettingsDto>(
                             "BarcodeFilterSettings");
                     var ocrSettingsTask =
-                        _configRepository.FirstOrDefaultEntity<OcrSettingsDto>("OcrSettings");
+                        _settingsStore.GetAsync<OcrSettingsDto>("OcrSettings");
                     var scannerCameraConfigsTask =
                         _barcodeScannerCameraConfigRepository.Select(static camera => camera.Id > 0,
                             static camera => camera.Id);
@@ -818,10 +841,13 @@ namespace JayTom.Dws.Client.Service.Device
                         _volumeCameraConfigRepository.Select(static camera => camera.Id > 0,
                             static camera => camera.Id);
                     var weightSettingsTask =
-                        _configRepository.FirstOrDefaultEntity<WeightSettingsDto>("WeightSettings");
+                        _settingsStore.GetAsync<WeightSettingsDto>("WeightSettings");
                     var createPackageSettingsTask =
-                        _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(
+                        _settingsStore.GetAsync<CreatePackageSettingsDto>(
                             "CreatePackageSettings");
+                    var imageSettingsTask =
+                        _settingsStore.GetAsync<ImageSettingsDto>(
+                            "SaveImageSettings");
                     await Task.WhenAll(
                         barcodeFilterSettingsTask,
                         ocrSettingsTask,
@@ -829,7 +855,8 @@ namespace JayTom.Dws.Client.Service.Device
                         panoramaCameraConfigsTask,
                         volumeCameraConfigsTask,
                         weightSettingsTask,
-                        createPackageSettingsTask);
+                        createPackageSettingsTask,
+                        imageSettingsTask);
 
                     _barcodeFilterSettingsDto =
                         await barcodeFilterSettingsTask ?? new BarcodeFilterSettingsDto();
@@ -840,6 +867,9 @@ namespace JayTom.Dws.Client.Service.Device
                     _weightSettingsDto = await weightSettingsTask ?? new WeightSettingsDto();
                     var createPackageSettingsDto =
                         await createPackageSettingsTask ?? new CreatePackageSettingsDto();
+                    Volatile.Write(
+                        ref _imageSettingsDto,
+                        await imageSettingsTask ?? new ImageSettingsDto());
 
                     try
                     {
@@ -983,6 +1013,7 @@ namespace JayTom.Dws.Client.Service.Device
 
                         if (camera is not null)
                         {
+                            ApplyImageOutputSettings([camera]);
                             var cameraInfo = camera.Info;
                             if (cameraInfo is null)
                             {
@@ -1586,7 +1617,7 @@ namespace JayTom.Dws.Client.Service.Device
 
         private async Task<Dictionary<BarcodeReaderParameter, object>?> GetBarcodeReaderParameter()
         {
-            var usbBarcodeReaderDto = await _configRepository.FirstOrDefaultEntity<UsbBarcodeReaderDto>("AlgorithmSettings") ??
+            var usbBarcodeReaderDto = await _settingsStore.GetAsync<UsbBarcodeReaderDto>("AlgorithmSettings") ??
                                       new UsbBarcodeReaderDto();
             var barcodeMapping = new Dictionary<BarcodeType, EnumBarcodeFormat>
             {
@@ -1662,9 +1693,36 @@ namespace JayTom.Dws.Client.Service.Device
             OcrInitializationExceptionOccurred?.Invoke(this, e);
         }
 
+        /// <summary>
+        /// 仅在业务确实需要保存原分辨率图片或执行 OCR 时要求相机输出原图。
+        /// </summary>
+        private void ApplyImageOutputSettings(IEnumerable<ICamera> cameras)
+        {
+            var settings = Volatile.Read(ref _imageSettingsDto) ?? new ImageSettingsDto();
+            foreach (var camera in cameras)
+            {
+                camera.IsOriginalImageOut = camera.BindingType switch
+                {
+                    CameraBindingType.OcrCamera => true,
+                    CameraBindingType.ScannerCamera => settings.IsSaveBarcodeImage,
+                    CameraBindingType.PanoramaCamera => settings.IsSavePanoramaImage,
+                    CameraBindingType.VolumeCamera => settings.IsSaveVolumeImage,
+                    _ => false
+                };
+            }
+        }
+
         protected virtual void OnOcrContentRecognized(OcrResult e)
         {
-            OcrContentRecognized?.Invoke(this, e);
+            try
+            {
+                OcrContentRecognized?.Invoke(this, e);
+            }
+            finally
+            {
+                e.CropImage?.Dispose();
+                e.CropImage = null;
+            }
         }
 
         protected virtual void OnAuthenticationExceptionOccurred(AuthenticationExceptionEventArgs e)

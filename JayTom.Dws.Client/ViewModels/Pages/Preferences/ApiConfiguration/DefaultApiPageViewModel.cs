@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -29,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private string _jsonContent = string.Empty;
         private bool _isLoaded;
 
-        public DefaultApiPageViewModel(IConfigRepository configRepository) : base(configRepository)
+        public DefaultApiPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -134,10 +135,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new DefaultApiDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new DefaultApiDto
                 {
                     CompleteMatch = DefaultApiInfo.CompleteMatch,
                     DataTemplate = DefaultApiInfo.DataTemplate.Select(s =>
@@ -159,8 +157,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     IsUploadPanoramaImage = DefaultApiInfo.IsUploadPanoramaImage,
                     IsUploadScanImage = DefaultApiInfo.IsUploadScanImage,
                     IsUseUploadImage = DefaultApiInfo.IsUseUploadImage
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -172,9 +169,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var settingsDto = await _configRepository.FirstOrDefaultEntity<DefaultApiDto>(SettingsName) ?? new DefaultApiDto();
+                    var settingsDto = await _settingsStore.GetAsync<DefaultApiDto>(SettingsName) ?? new DefaultApiDto();
 
                     var templateModels = settingsDto.DataTemplate.Select(s => new ItemBaseTemplateModel()
                     {

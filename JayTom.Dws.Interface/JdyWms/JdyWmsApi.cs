@@ -71,7 +71,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
                     HttpResponseMessage message;
                     using (Stream dataStream =
@@ -152,7 +152,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
                     HttpResponseMessage message;
                     using (Stream dataStream =

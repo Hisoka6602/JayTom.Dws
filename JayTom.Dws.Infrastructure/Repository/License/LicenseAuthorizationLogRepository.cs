@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.License;
 
 namespace JayTom.Dws.Infrastructure.Repository.License {
 
-    public class LicenseAuthorizationLogRepository : RepositoryBase<LicenseAuthorizationLog>, ILicenseAuthorizationLogRepository {
+    public class LicenseAuthorizationLogRepository : RepositoryBase<LicenseAuthorizationLog, LicenseApiContext>, ILicenseAuthorizationLogRepository {
 
         public LicenseAuthorizationLogRepository(IDbContextFactory<LicenseApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

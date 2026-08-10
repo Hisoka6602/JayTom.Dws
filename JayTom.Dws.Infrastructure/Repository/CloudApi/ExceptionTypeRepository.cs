@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.CloudApi;
 
 namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
 
-    public class ExceptionTypeRepository : MemoryCacheRepositoryBase<ExceptionTypeInfoModel>, IExceptionTypeRepository {
+    public class ExceptionTypeRepository : MemoryCacheRepositoryBase<ExceptionTypeInfoModel, CloudApiContext>, IExceptionTypeRepository {
 
         public ExceptionTypeRepository(IDbContextFactory<CloudApiContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

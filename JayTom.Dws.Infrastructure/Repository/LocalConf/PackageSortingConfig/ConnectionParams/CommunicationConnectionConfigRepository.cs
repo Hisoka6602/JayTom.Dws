@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -15,7 +15,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams {
-    public class CommunicationConnectionConfigRepository : LocalRepositoryBase<CommunicationConnectionConfigInfoModel>, ICommunicationConnectionConfigRepository {
+    public class CommunicationConnectionConfigRepository : LocalRepositoryBase<CommunicationConnectionConfigInfoModel, SqliteConfContext>, ICommunicationConnectionConfigRepository {
 
         public CommunicationConnectionConfigRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

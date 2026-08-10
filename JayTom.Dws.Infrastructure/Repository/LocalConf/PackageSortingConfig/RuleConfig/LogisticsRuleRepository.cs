@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig {
 
-    public class LogisticsRuleRepository : LocalRepositoryBase<LogisticsRuleInfoModel>, ILogisticsRuleRepository {
+    public class LogisticsRuleRepository : LocalRepositoryBase<LogisticsRuleInfoModel, SqliteConfContext>, ILogisticsRuleRepository {
 
         public LogisticsRuleRepository(IDbContextFactory<SqliteConfContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }

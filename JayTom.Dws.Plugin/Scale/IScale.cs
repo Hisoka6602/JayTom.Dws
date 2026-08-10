@@ -178,12 +178,4 @@ namespace JayTom.Dws.Plugin.Scale {
         Server
     }
 
-    public enum ScaleCommunicationMode {
-
-        [Description("串口")]
-        SerialPort,
-
-        [Description("TCP")]
-        Tcp
-    }
 }

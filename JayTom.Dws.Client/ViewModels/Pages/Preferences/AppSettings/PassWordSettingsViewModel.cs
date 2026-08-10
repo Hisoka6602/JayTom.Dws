@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -21,7 +22,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             set => SetProperty(ref field, value);
         } = new();
 
-        public PassWordSettingsViewModel(IConfigRepository configRepository) : base(configRepository)
+        public PassWordSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
         {
         }
 
@@ -30,9 +31,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
-                var settingsDto = await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>(SettingsName) ??
+                var settingsDto = await _settingsStore.GetAsync<PassWordSettingsDto>(SettingsName) ??
                                   new PassWordSettingsDto();
                 PassWordSettingsInfo = new PassWordSettingsModel()
                 {
@@ -58,10 +59,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             }
 
             //var encryptString = PluginInterface.Utils.Utils.EncryptString(PassWordSettingsInfo.Password);
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new PassWordSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new PassWordSettingsDto()
                 {
                     Password = PassWordSettingsInfo.Password,
                     IsUsePasswordProtection = PassWordSettingsInfo.IsUsePasswordProtection,
@@ -73,8 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                             IsProtected = s.IsProtected,
                             PageClassName = s.PageClassName
                         })]
-                })
-            });
+                });
             AppContext.SetData("IsValidationPassed", false);
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");

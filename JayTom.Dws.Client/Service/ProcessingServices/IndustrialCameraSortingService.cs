@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using JayTom.Dws.Application.Configuration;
+using NLog;
 using System;
 using System.Linq;
 using System.Text;
@@ -24,7 +25,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
     {
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
         private readonly IExternalDataService _externalDataService;
         private List<ICamera> _cameras = new();
@@ -36,13 +37,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
 
         public IndustrialCameraSortingService(IDeviceService deviceService,
             IImageStorageService imageStorageService,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             ISortingService sortingService,
             IExternalDataService externalDataService)
         {
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _sortingService = sortingService;
             _externalDataService = externalDataService;
 
@@ -355,7 +356,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     switch (model.SettingsName)
                     {
                         case "CreatePackageSettings":
-                            _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(model.SettingsName) ??
+                            _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>(model.SettingsName) ??
                                                         new CreatePackageSettingsDto();
 
                             break;
@@ -489,7 +490,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             {
                 //读配置
 
-                _createPackageSettingsDto = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+                _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
             }
             catch (Exception e)
             {

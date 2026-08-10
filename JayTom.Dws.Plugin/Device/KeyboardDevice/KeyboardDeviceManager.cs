@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Linearstar.Windows.RawInput;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Linearstar.Windows.RawInput.Native;
+
+using KeyboardDeviceInfo = JayTom.Dws.Abstractions.Devices.KeyboardDevice;
 
 namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
 
@@ -31,7 +32,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         private static DateTime _firstKeyTime = DateTime.Now;
         private static RawInputReceiverWindow? _window;
         private static string _regexPattern = string.Empty;
-        private static List<KeyboardDevice> _keyboardDevices = new();
+        private static List<KeyboardDeviceInfo> _keyboardDevices = new();
 
         public void Dispose() {
             StopListening();
@@ -42,24 +43,24 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         public event EventHandler<KeyboardRealTimeKeyEventArgs>? RealTimeKeyReceived;
 
         public bool IsListening { get; private set; }
-        public KeyboardDevice ListeningDevice { get; private set; } = new();
+        public KeyboardDeviceInfo ListeningDevice { get; private set; } = new();
 
-        public async Task<List<KeyboardDevice>> EnumerateKeyboardDevices() {
+        public async Task<List<KeyboardDeviceInfo>> EnumerateKeyboardDevices() {
             await Task.Yield();
             var devices = RawInputDevice.GetDevices();
 
-            _keyboardDevices = devices?.OfType<RawInputKeyboard>()?.Select(s => new KeyboardDevice {
+            _keyboardDevices = devices?.OfType<RawInputKeyboard>()?.Select(s => new KeyboardDeviceInfo {
                 ProductId = s.ProductId,
                 VendorId = s.VendorId,
                 DeviceName = s.ProductName,
                 DevicePath = s.DevicePath,
                 IsConnected = s.IsConnected,
                 ManufacturerName = s.ManufacturerName
-            })?.ToList() ?? new List<KeyboardDevice>();
+            })?.ToList() ?? new List<KeyboardDeviceInfo>();
             return _keyboardDevices;
         }
 
-        public async Task<bool> StartListening(KeyboardDevice device) {
+        public async Task<bool> StartListening(KeyboardDeviceInfo device) {
             await Task.Yield();
             if (!_keyboardDevices.Any()) {
                 await EnumerateKeyboardDevices();

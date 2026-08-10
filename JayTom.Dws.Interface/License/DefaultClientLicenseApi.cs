@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
-using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -27,7 +26,7 @@ namespace JayTom.Dws.Interface.License {
                     remarks = remarks,
                 });
 
-                using (var httpClient = _httpClientFactory.CreateClient("INSURANCE")) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromSeconds(20);
                     HttpResponseMessage message;
                     await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
@@ -37,12 +36,11 @@ namespace JayTom.Dws.Interface.License {
                                 .ConfigureAwait(false);
                         }
                     }
+                    using (message) {
                     string httpResult;
                     switch (message.StatusCode) {
                         case HttpStatusCode.OK: {
-                                using (message) {
-                                    httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                                }
+                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                                 break;
                             }
                         case HttpStatusCode.NotFound:
@@ -55,6 +53,7 @@ namespace JayTom.Dws.Interface.License {
                     //解码
                     var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
                     return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                    }
                 }
             }
             catch (HttpRequestException) {
@@ -80,7 +79,7 @@ namespace JayTom.Dws.Interface.License {
                     remarks = remarks
                 });
 
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromSeconds(20);
                 HttpResponseMessage message;
                 await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
@@ -90,12 +89,11 @@ namespace JayTom.Dws.Interface.License {
                             .ConfigureAwait(false);
                     }
                 }
+                using (message) {
                 string httpResult;
                 switch (message.StatusCode) {
                     case HttpStatusCode.OK: {
-                            using (message) {
-                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                            }
+                            httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                             break;
                         }
                     case HttpStatusCode.NotFound:
@@ -108,6 +106,7 @@ namespace JayTom.Dws.Interface.License {
                 //解码
                 var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
                 return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
+                }
             }
             catch (HttpRequestException) {
                 return new KeyValuePair<bool, object>(false, "Http访问异常!");
@@ -123,23 +122,47 @@ namespace JayTom.Dws.Interface.License {
             }
         }
 
-        public async Task<bool> DownloadFileAsync(string fileUrl, string savePath) {
+        public async Task<bool> DownloadFileAsync(string fileUrl, string savePath, CancellationToken token = default) {
+            string? temporaryPath = null;
             try {
                 if (string.IsNullOrEmpty(fileUrl) || string.IsNullOrEmpty(savePath)) {
                     return false;
                 }
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
-                using var response = await httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var response = await httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, token);
                 response.EnsureSuccessStatusCode();
 
-                await using var contentStream = await response.Content.ReadAsStreamAsync();
-                await using var fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                await contentStream.CopyToAsync(fileStream);
+                var directory = Path.GetDirectoryName(Path.GetFullPath(savePath));
+                if (string.IsNullOrEmpty(directory)) {
+                    return false;
+                }
+                Directory.CreateDirectory(directory);
+                temporaryPath = Path.Combine(directory, $".{Path.GetFileName(savePath)}.{Guid.NewGuid():N}.tmp");
+
+                await using (var contentStream = await response.Content.ReadAsStreamAsync(token)) {
+                    await using var fileStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
+                        FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.WriteThrough);
+                    await contentStream.CopyToAsync(fileStream, token);
+                    await fileStream.FlushAsync(token);
+                }
+
+                File.Move(temporaryPath, savePath, true);
+                temporaryPath = null;
 
                 return true;
             }
             catch (Exception) {
                 return false;
+            }
+            finally {
+                if (temporaryPath is not null) {
+                    try {
+                        File.Delete(temporaryPath);
+                    }
+                    catch (IOException) {
+                        // 下次启动时可由临时文件清理任务处理。
+                    }
+                }
             }
         }
     }

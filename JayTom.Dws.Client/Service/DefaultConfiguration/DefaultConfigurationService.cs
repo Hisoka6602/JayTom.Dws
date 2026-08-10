@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,13 +28,13 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
 
     public class DefaultConfigurationService : IDefaultConfigurationService
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly ISoundRepository _soundRepository;
 
-        public DefaultConfigurationService(IConfigRepository configRepository,
+        public DefaultConfigurationService(ISettingsStore settingsStore,
             ISoundRepository soundRepository)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _soundRepository = soundRepository;
         }
 
@@ -41,8 +42,7 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
         {
             try
             {
-                var configInfoModels = await _configRepository.Select(s => s.Id > 0, o => o.Id);
-                if (configInfoModels?.Any() == true)
+                if (await _settingsStore.AnyAsync())
                 {
                     return;
                 }
@@ -62,10 +62,7 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                         $"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\success.wav")
                 };
                 //重量
-                var task1 = _configRepository.InsertOrUpdate(new()
-                {
-                    ConfigName = "WeightSettings",
-                    Value = JsonConvert.SerializeObject(new WeightSettingsDto
+                var task1 = _settingsStore.SaveAsync("WeightSettings",new WeightSettingsDto
                     {
                         Mode = WeightMode.None,
                         Connection = new SerialPortSettingsInfo
@@ -81,13 +78,9 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                             MaxWeight = 50,
                             MinWeight = 0
                         },
-                    })
-                });
+                    });
                 //存图
-                var task2 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "SaveImageSettings",
-                    Value = JsonConvert.SerializeObject(new ImageSettingsDto
+                var task2 = _settingsStore.SaveAsync("SaveImageSettings",new ImageSettingsDto
                     {
                         ImageRootDirectory = $"{GetMaxFreeSpaceDrive()}Images",
                         IsSaveBarcodeImage = true,
@@ -151,28 +144,20 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                             Timeout = 5000,
                             Username = "Root"
                         }
-                    })
-                });
+                    });
 
                 //体积
-                var task4 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "VolumeSettings",
-                    Value = JsonConvert.SerializeObject(new VolumeSettingsDto
+                var task4 = _settingsStore.SaveAsync("VolumeSettings",new VolumeSettingsDto
                     {
                         Unit = VolumeUnit.Millimeter,
-                    })
-                });
+                    });
                 //输出
                 var task5 = _soundRepository.InsertOrUpdate(fail);
                 //(声音)
                 var task9 = _soundRepository.InsertOrUpdate(success);
 
                 //声音
-                var task6 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "ResultOutputSettings",
-                    Value = JsonConvert.SerializeObject(new ResultOutputSettingsDto
+                var task6 = _settingsStore.SaveAsync("ResultOutputSettings",new ResultOutputSettingsDto
                     {
                         DataTemplate = new List<ItemTemplateInfo>(),
                         UploadSettingsInfo = new UploadSettingsInfo(),
@@ -214,13 +199,9 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                             Result = ResultEnum.PackageRecognition
                         },
                         IsUseLocationOutput = false,
-                    })
-                });
+                    });
                 //空间清理
-                var task8 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "CacheClearSettings",
-                    Value = JsonConvert.SerializeObject(new CacheClearSettingsDto()
+                var task8 = _settingsStore.SaveAsync("CacheClearSettings",new CacheClearSettingsDto()
                     {
                         BarcodeDataAgoDays = 60,
                         FtpImageAgoDays = 60,
@@ -228,38 +209,21 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                         MinimumSpaceRetention = 100,
                         PanoramaImageAgoDays = 60,
                         ScanImageAgoDays = 60
-                    })
-                });
+                    });
                 //Api
-                var task10 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "ApiSettings",
-                    Value = JsonConvert.SerializeObject(new ApiSettingsDto()
+                var task10 = _settingsStore.SaveAsync("ApiSettings",new ApiSettingsDto()
                     {
                         Type = ApiType.None
-                    })
-                });
-                var task11 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "CreatePackageSettings",
-                    Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto()
+                    });
+                var task11 = _settingsStore.SaveAsync("CreatePackageSettings",new CreatePackageSettingsDto()
                     {
-                    })
-                });
-                var task12 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "PackageExitLockSettings",
-                    Value = JsonConvert.SerializeObject(new PackageExitLockSettingsDto()
+                    });
+                var task12 = _settingsStore.SaveAsync("PackageExitLockSettings",new PackageExitLockSettingsDto()
                     {
-                    })
-                });
-                var task13 = _configRepository.InsertOrUpdate(new ConfigInfoModel()
-                {
-                    ConfigName = "StackedPackageDetectionSettings",
-                    Value = JsonConvert.SerializeObject(new StackedPackageDetectionSettingsDto()
+                    });
+                var task13 = _settingsStore.SaveAsync("StackedPackageDetectionSettings",new StackedPackageDetectionSettingsDto()
                     {
-                    })
-                });
+                    });
                 await Task.WhenAll(task1,
                     task2,
                     task4,

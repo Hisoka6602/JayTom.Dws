@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -64,7 +64,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
 
         public void OnDialogOpened(IDialogParameters parameters)
         {
-            foreach (Window window in Application.Current.Windows)
+            foreach (Window window in System.Windows.Application.Current.Windows)
             {
                 if (window.Name.Equals("PackageDetailsDialog"))
                 {
@@ -125,7 +125,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
 
         private void LoadedDelegate(UserControl obj)
         {
-            var dialogWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+            var dialogWindow = System.Windows.Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
             if (dialogWindow is not null)
             {
                 dialogWindow.Owner = null;

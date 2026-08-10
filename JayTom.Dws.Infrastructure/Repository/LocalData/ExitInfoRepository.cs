@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ using JayTom.Dws.Domain.Repository.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 
-    public class ExitInfoRepository : LocalRepositoryBase<ExitInfoModel>, IExitInfoRepository {
+    public class ExitInfoRepository : LocalRepositoryBase<ExitInfoModel, SqliteContext>, IExitInfoRepository {
 
         public ExitInfoRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(
             contextFactory, cache) {

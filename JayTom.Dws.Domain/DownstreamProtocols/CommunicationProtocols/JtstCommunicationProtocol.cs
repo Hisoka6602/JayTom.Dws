@@ -4,7 +4,6 @@ using System.Text;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Plugin;
 
 namespace JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols {
 

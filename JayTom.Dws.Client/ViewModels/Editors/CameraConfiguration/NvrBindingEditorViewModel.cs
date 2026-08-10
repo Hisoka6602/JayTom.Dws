@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -98,7 +98,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                     }))
                     ?.ToList();
 
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     NvrBindingItems.Clear();
                     await Task.Delay(200);
@@ -108,7 +108,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                                  !w.Password.Equals(string.Empty) &&
                                  !w.Brand.Equals(string.Empty)))
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             model.Status = NvrStatus.LoggingIn;
                         });
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                         {
                             //大华登录
                             var (key, value) = await baseDaHuatech.LogIn(device.Key.SerialNumber, device.Key.Username, device.Key.Password);
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 foreach (var model in NvrBindingItems.Where(w =>
                                              w.SerialNumber.Equals(device.Key.SerialNumber)))
@@ -145,11 +145,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                     {
                         model.Status = NvrStatus.LoginFailed;
                     }
-                }).Task.Unwrap();
+                });
             }
             else
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     foreach (var model in NvrBindingItems)
                     {

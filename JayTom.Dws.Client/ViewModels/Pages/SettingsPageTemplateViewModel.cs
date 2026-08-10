@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -25,14 +26,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
     public abstract class SettingsPageTemplateViewModel : BindableBase
     {
-        protected readonly IConfigRepository _configRepository;
+        protected readonly ISettingsStore _settingsStore;
 
         private bool _isSavingInProgress;
         private SnackbarMessageQueue _messageQueue = new(TimeSpan.FromSeconds(2));
 
-        protected SettingsPageTemplateViewModel(IConfigRepository configRepository)
+        protected SettingsPageTemplateViewModel(ISettingsStore settingsStore)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);

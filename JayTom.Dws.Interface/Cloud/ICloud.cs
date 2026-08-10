@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace JayTom.Dws.Interface.Cloud {
 
@@ -539,6 +540,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 图片
         /// </summary>
+        [JsonIgnore]
         public Image? Image { get; set; }
     }
 

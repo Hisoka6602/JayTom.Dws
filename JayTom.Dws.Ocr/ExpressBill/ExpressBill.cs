@@ -12,7 +12,6 @@ using JayTom.Dws.Ocr.Yolo;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
-using System.Windows.Documents;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using Point = System.Drawing.Point;
@@ -81,16 +80,9 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             var submitTimestamp = DateTime.Now;
             if (OcrStatus == OcrStatus.Initialized) {
                 try {
-                    var matBgr = new Mat();
-
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    using var stream = new MemoryStream();
-                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    //stream.Position = 0;
-                    var array = stream.ToArray();
-                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
-                    //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                    using var mat = CreateMat(bitmap);
                     var ptr = process(mat.CvPtr);
 
                     var buf = Marshal.PtrToStringAnsi(ptr);
@@ -191,15 +183,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
                         try {
                             if (OcrStatus == OcrStatus.Initialized) {
-                                var matBgr = new Mat();
-
                                 stopwatch.Start();
-                                using var stream = new MemoryStream();
-                                cropImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
-                                //stream.Position = 0;
-                                var array = stream.ToArray();
-                                var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
-                                //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                                using var mat = CreateMat(cropImage);
                                 var ptr = process(mat.CvPtr);
 
                                 var buf = Marshal.PtrToStringAnsi(ptr);
@@ -309,15 +294,9 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             var submitTimestamp = DateTime.Now;
             if (OcrStatus == OcrStatus.Initialized) {
                 try {
-                    //var matBgr = new Mat();
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    using var stream = new MemoryStream();
-                    bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    //stream.Position = 0;
-                    var array = stream.ToArray();
-                    var mat = Cv2.ImDecode(array, ImreadModes.Unchanged);
-                    //Cv2.CvtColor(mat, matBgr, ColorConversionCodes.RGB2BGR);
+                    using var mat = CreateMat(bitmap);
                     var ptr = process(mat.CvPtr);
                     var buf = Marshal.PtrToStringAnsi(ptr);
                     var unescape = Regex.Unescape(buf ?? string.Empty);
@@ -486,6 +465,55 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             using var graphics = Graphics.FromImage(croppedImage);
             graphics.DrawImage(image, new Rectangle(0, 0, croppedImage.Width, croppedImage.Height), cropArea, GraphicsUnit.Pixel);
             return croppedImage;
+        }
+
+        /// <summary>
+        /// 将位图直接复制到 OpenCV 原生内存，避免 JPEG 中转和重复编解码。
+        /// </summary>
+        private static Mat CreateMat(Bitmap bitmap) {
+            Bitmap? convertedBitmap = null;
+            var sourceBitmap = bitmap;
+            if (bitmap.PixelFormat != PixelFormat.Format24bppRgb) {
+                convertedBitmap = new Bitmap(
+                    bitmap.Width,
+                    bitmap.Height,
+                    PixelFormat.Format24bppRgb);
+                using (var graphics = Graphics.FromImage(convertedBitmap)) {
+                    graphics.DrawImageUnscaled(bitmap, 0, 0);
+                }
+                sourceBitmap = convertedBitmap;
+            }
+
+            BitmapData? bitmapData = null;
+            try {
+                bitmapData = sourceBitmap.LockBits(
+                    new Rectangle(0, 0, sourceBitmap.Width, sourceBitmap.Height),
+                    ImageLockMode.ReadOnly,
+                    PixelFormat.Format24bppRgb);
+                var stride = Math.Abs(bitmapData.Stride);
+                var firstRow = bitmapData.Stride >= 0
+                    ? bitmapData.Scan0
+                    : IntPtr.Add(
+                        bitmapData.Scan0,
+                        bitmapData.Stride * (sourceBitmap.Height - 1));
+                using var bitmapView = new Mat(
+                    sourceBitmap.Height,
+                    sourceBitmap.Width,
+                    MatType.CV_8UC3,
+                    firstRow,
+                    stride);
+                var mat = bitmapView.Clone();
+                if (bitmapData.Stride < 0) {
+                    Cv2.Flip(mat, mat, FlipMode.X);
+                }
+                return mat;
+            }
+            finally {
+                if (bitmapData is not null) {
+                    sourceBitmap.UnlockBits(bitmapData);
+                }
+                convertedBitmap?.Dispose();
+            }
         }
 
         public Bitmap DrawRectangleOnImage(Image image, Rectangle drawArea, Color color, int thickness) {

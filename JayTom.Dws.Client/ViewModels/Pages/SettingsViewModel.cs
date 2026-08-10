@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Regions;
@@ -30,7 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
     public class SettingsViewModel : BindableBase
     {
         private readonly IRegionManager _regionManager;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private Frame? _frame;
         private ObservableCollection<MenuItemInfoModel> _menuItems;
         private double _listBoxMaxHeight = 900;
@@ -56,10 +57,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// </summary>
         private bool _isLoading;
 
-        public SettingsViewModel(IRegionManager regionManager, IConfigRepository configRepository)
+        public SettingsViewModel(IRegionManager regionManager, ISettingsStore settingsStore)
         {
             _regionManager = regionManager;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _menuItems = new()
             {
                 /*new MenuItemInfoModel()
@@ -317,7 +318,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 if (settings is SettingsChangedEvent { SettingsName: "PassWordSettings" })
                 {
-                    _passWordSettingsDto = await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
+                    _passWordSettingsDto = await _settingsStore.GetAsync<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
                 }
             });
         }
@@ -365,7 +366,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         private async void LoadedDelegate(Frame obj)
         {
             _frame = obj;
-            _passWordSettingsDto ??= await _configRepository.FirstOrDefaultEntity<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
+            _passWordSettingsDto ??= await _settingsStore.GetAsync<PassWordSettingsDto>("PassWordSettings") ?? new PassWordSettingsDto();
             if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion"))
             {
                 // 创建区域，用于视觉树以外的控件。

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -241,7 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -251,7 +251,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         }
                     }, async e =>
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             if (DialogHost.IsDialogOpen(model.Identifier))
                             {
@@ -320,13 +320,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 model.Identifier = Identifier;
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
             await RefreshDataProcess();
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 if (DialogHost.IsDialogOpen(model.Identifier))
                 {

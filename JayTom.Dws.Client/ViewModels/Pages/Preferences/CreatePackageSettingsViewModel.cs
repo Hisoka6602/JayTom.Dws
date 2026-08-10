@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private CreatePackageSettingsInfoModel _createPackageSettingsInfo = new();
         private bool _isLoaded;
 
-        public CreatePackageSettingsViewModel(IConfigRepository configRepository, IDeviceService deviceService) : base(configRepository)
+        public CreatePackageSettingsViewModel(ISettingsStore settingsStore, IDeviceService deviceService) : base(settingsStore)
         {
             _deviceService = deviceService;
         }
@@ -45,9 +46,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var deserializeObject = await _configRepository.FirstOrDefaultEntity<CreatePackageSettingsDto>(SettingsName) ?? new CreatePackageSettingsDto();
+                    var deserializeObject = await _settingsStore.GetAsync<CreatePackageSettingsDto>(SettingsName) ?? new CreatePackageSettingsDto();
                     CreatePackageSettingsInfo = new CreatePackageSettingsInfoModel()
                     {
                         IsUseEmptyPackageExpiry = deserializeObject.IsUseEmptyPackageExpiry,
@@ -103,10 +104,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 CreatePackageSettingsInfo.PackageCreationMethods |= item.EnumValue;
             }
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new CreatePackageSettingsDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new CreatePackageSettingsDto()
                 {
                     IsUseEmptyPackageExpiry = CreatePackageSettingsInfo.IsUseEmptyPackageExpiry,
                     EmptyPackageExpiryTime = CreatePackageSettingsInfo.EmptyPackageExpiryTime,
@@ -124,8 +122,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     MaximumAssignmentTime = CreatePackageSettingsInfo.MaximumAssignmentTime,
                     MinimumAssignmentTime = CreatePackageSettingsInfo.MinimumAssignmentTime,
                     IsUseBarcodeAssignmentInterval = CreatePackageSettingsInfo.IsUseBarcodeAssignmentInterval
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

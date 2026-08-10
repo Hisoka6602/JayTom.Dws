@@ -14,12 +14,13 @@ using System.Collections.Generic;
 using Image = System.Drawing.Image;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 
 namespace JayTom.Dws.Interface.Cloud.CloudVideo {
 
     public class CloudVideoUploadApi : ICloud {
         private readonly IHttpClientFactory _httpClientFactory;
-        private static CloudVideoApiParameters _parameters = new();
+        private CloudVideoApiParameters _parameters = new();
 
         public CloudVideoUploadApi(IHttpClientFactory httpClientFactory) {
             _httpClientFactory = httpClientFactory;
@@ -41,7 +42,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                var formData = new MultipartFormDataContent();
+                using var formData = new MultipartFormDataContent();
                 //组建数据
                 data = JsonConvert.SerializeObject(new {
                     Barcode = barcode,
@@ -76,7 +77,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                     }
                 }
                 //提交
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.Timeout);
                 var message = await httpClient.PostAsync($"http://{_parameters.WebDoMain}/api/BarCode/UploadBarcodeData", formData, token);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -129,7 +130,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                var formData = new MultipartFormDataContent();
+                using var formData = new MultipartFormDataContent();
                 //组建数据
                 if (packageCloudInfo?.ImageInfos?.Any() == true) {
                     //扫码图
@@ -154,21 +155,17 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                         }
                     }
 
-                    foreach (var packageCloudImageInfo in packageCloudInfo.ImageInfos) {
-                        packageCloudImageInfo.Image = null;
-                    }
                 }
                 data = JsonConvert.SerializeObject(packageCloudInfo);
                 var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
                 formData.Add(jsonContent, "packageInfo");
                 //提交
-                using var httpClient = _httpClientFactory.CreateClient("INSURANCE");
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.Timeout);
                 //$"http://{_parameters.WebDoMain}"
-                var message = await httpClient.PostAsync($"{_parameters.WebDoMain}", formData, token);
+                using var message = await httpClient.PostAsync($"{_parameters.WebDoMain}", formData, token);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                resultContent = Regex.Unescape(resultContent);
-                isSuccess = resultContent.ToLower().Contains("true");
+                isSuccess = message.IsSuccessStatusCode && TryReadSuccess(resultContent);
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
@@ -204,6 +201,40 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                 };
             }
             return response;
+        }
+
+        /// <summary>
+        /// 从明确的布尔值或标准成功字段中读取接口结果。
+        /// </summary>
+        private static bool TryReadSuccess(string responseContent) {
+            if (bool.TryParse(responseContent.Trim(), out var directResult)) {
+                return directResult;
+            }
+
+            try {
+                var token = JToken.Parse(responseContent);
+                if (token.Type == JTokenType.Boolean) {
+                    return token.Value<bool>();
+                }
+
+                if (token is JObject obj) {
+                    foreach (var propertyName in new[] { "result", "success", "isSuccess", "isSuccessful" }) {
+                        var property = obj.Properties().FirstOrDefault(p =>
+                            p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                        if (property?.Value.Type == JTokenType.Boolean) {
+                            return property.Value.Value<bool>();
+                        }
+                        if (property?.Value.Type == JTokenType.Integer) {
+                            return property.Value.Value<int>() == 1;
+                        }
+                    }
+                }
+            }
+            catch (JsonException) {
+                // 非 JSON 响应必须明确等于 true，不能再做子串匹配。
+            }
+
+            return false;
         }
 
         public Task<KeyValuePair<bool, string>> SetParameters<T>(T parameters) {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -15,16 +16,16 @@ namespace JayTom.Dws.Client.Service.Device
 
     public class DefaultGrayscaleService : IGrayscaleService
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IGrayscaleDevice _grayscaleDevice;
         private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
         private readonly SemaphoreSlim _sendGate = new(1, 1);
         private int _isConnected;
 
-        public DefaultGrayscaleService(IConfigRepository configRepository,
+        public DefaultGrayscaleService(ISettingsStore settingsStore,
             IGrayscaleDevice grayscaleDevice)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _grayscaleDevice = grayscaleDevice;
 
             _grayscaleDevice.Connected += (sender, s) =>
@@ -57,8 +58,8 @@ namespace JayTom.Dws.Client.Service.Device
                 {
                     //连接
 
-                    var grayscaleDeviceSettingsDto = await _configRepository
-                                                         .FirstOrDefaultEntity<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
+                    var grayscaleDeviceSettingsDto = await _settingsStore
+                                                         .GetAsync<GrayscaleDeviceSettingsDto>("GrayscaleDeviceSettings") ??
                                                      new GrayscaleDeviceSettingsDto();
                     if (grayscaleDeviceSettingsDto is { IsUseGrayscaleDetector: true, TcpConnectionConfigInfo: not null })
                     {

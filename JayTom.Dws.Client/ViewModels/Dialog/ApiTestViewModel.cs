@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Interface;
+using JayTom.Dws.Interface;
 using Newtonsoft.Json;
 using Prism.Commands;
 using Prism.Mvvm;

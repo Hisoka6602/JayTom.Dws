@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using DryIoc;
 using System.IO;
 using Prism.Mvvm;
@@ -47,7 +48,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
     {
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private readonly IPackageRepository _packageRepository;
         private DateTime? _startTime;
@@ -73,13 +74,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         public DataManagementViewModel(IDialogService dialogService,
             IExcel excel,
-            IConfigRepository configRepository,
+            ISettingsStore settingsStore,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
             IPackageRepository packageRepository)
         {
             _dialogService = dialogService;
             _excel = excel;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _packageRepository = packageRepository;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info =>
@@ -88,17 +89,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 {
                     if (model.SettingsName.Equals("VolumeSettings"))
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(async () =>
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                         {
                             //临时写在这里加载配置，后续修改通过事件通知
-                            var configInfoModel = await _configRepository.FirstOrDefault(s => s.ConfigName.Equals("VolumeSettings"));
-                            if (configInfoModel is not null)
+                            var volumeSettingsDto = await _settingsStore
+                                .GetAsync<VolumeSettingsDto>("VolumeSettings");
+                            if (volumeSettingsDto is not null)
                             {
-                                var volumeSettingsDto = JsonConvert.DeserializeObject<VolumeSettingsDto>(configInfoModel.Value);
-                                if (volumeSettingsDto is not null)
-                                {
-                                    VolumeUnit = volumeSettingsDto.Unit;
-                                }
+                                VolumeUnit = volumeSettingsDto.Unit;
                             }
                         });
                     }
@@ -338,7 +336,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
                 o => o.CreateTime);
             PackageExitDefinitionItems.Clear();
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel
@@ -379,7 +377,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void OpenDateTimeDialogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var dataTimeEditor = new DataTimeEditor();
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
@@ -660,7 +658,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         {
             const int pageSize = 500;
             //这里的查询要分开锁，不然显示有卡顿
-            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
@@ -804,7 +802,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         DialogHost.Close(model.Identifier);
                     }
                 }
-            }, DispatcherPriority.Background);
+            }, DispatcherPriority.Background).Forget("加载数据管理列表");
         }
 
         public ICommand ShowDetailsCommand => new DelegateCommand<object>(ShowDetailsDelegate);

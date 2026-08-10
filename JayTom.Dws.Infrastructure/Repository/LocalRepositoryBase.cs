@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System.Reflection;
 using System.Transactions;
 using System.ComponentModel;
@@ -22,15 +22,17 @@ namespace JayTom.Dws.Infrastructure.Repository {
         internal static readonly SemaphoreSlim Gate = new(1, 1);
     }
 
-    public class LocalRepositoryBase<T> : IRepository<T> where T : class {
-        protected IDbContextFactory<DbContext> _contextFactory;
+    public class LocalRepositoryBase<T, TContext> : IRepository<T>
+        where T : class
+        where TContext : DbContext {
+        protected IDbContextFactory<TContext> _contextFactory;
         protected IMemoryCache _cache;
         private static readonly SemaphoreSlim _changeSlim = LocalDatabaseWriteCoordinator.Gate;
         private static readonly SemaphoreSlim _transactionSlim = LocalDatabaseWriteCoordinator.Gate;
         private static readonly PropertyInfo[] EntityProperties =
             typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-        public LocalRepositoryBase(IDbContextFactory<DbContext> contextFactory, IMemoryCache cache) {
+        public LocalRepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache) {
             ArgumentNullException.ThrowIfNull(contextFactory);
             ArgumentNullException.ThrowIfNull(cache);
             _contextFactory = contextFactory;
@@ -129,7 +131,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                             UseTempDB = true,
                             UniqueTableNameTempDb = false,
                             PropertiesToIncludeOnUpdate = propertyInfos?.Where(
-                                w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null)?.Select(s => s.Name)?.ToList(),
+                                w => w.GetCustomAttribute<InsertOrUpdateAttribute>() != null)?.Select(s => s.Name)?.ToList(),
                             PropertiesToExclude = propertyInfos
                                 ?.Where(w => w.GetCustomAttribute<DatabaseGeneratedAttribute>() != null ||
                                              w.GetCustomAttribute<ExcludeOnUpdateAttribute>() != null)
@@ -170,7 +172,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                             UseTempDB = true,
                             UniqueTableNameTempDb = false,
                             PropertiesToIncludeOnUpdate = propertyInfos?.Where(
-                                w => w.GetCustomAttribute<InsertOrUpdataAttribute>() != null)?.Select(s => s.Name)?.ToList(),
+                                w => w.GetCustomAttribute<InsertOrUpdateAttribute>() != null)?.Select(s => s.Name)?.ToList(),
                             UpdateByProperties = propertyInfos
                                 ?.Where(w => w.GetCustomAttribute<UpdateByAttribute>() != null)
                                 ?.Select(s => s.Name)?.ToList(),
@@ -498,8 +500,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     dbSet.RemoveRange(itemsToDelete);
                     return await concardContext?.SaveChangesAsync(cancellationToken: token);
 
-                    //return await dbSet.Where(where).Where((item, index) => index < count).BatchDeleteAsync(cancellationToken: token);
-                    // return await dbSet.Where(where).Take(count).BatchDeleteAsync(cancellationToken: token);
+                    //return await dbSet.Where(where).Where((item, index) => index < count).ExecuteDeleteAsync(cancellationToken: token);
+                    // return await dbSet.Where(where).Take(count).ExecuteDeleteAsync(cancellationToken: token);
                 }
             }
             catch (Exception e) {

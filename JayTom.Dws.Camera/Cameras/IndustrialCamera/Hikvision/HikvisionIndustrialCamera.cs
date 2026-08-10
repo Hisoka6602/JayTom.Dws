@@ -11,7 +11,6 @@ using MVIDCodeReaderNet;
 using System.Reflection;
 using System.Diagnostics;
 using MvCodeReaderSDKNet;
-using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
@@ -21,10 +20,8 @@ using System.Reflection.Metadata;
 using Point = System.Drawing.Point;
 using Image = System.Drawing.Image;
 using Color = System.Drawing.Color;
-using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Buffers;
 using JayTom.Dws.Camera.FilterContainer;
 using Rectangle = System.Drawing.Rectangle;
 using static System.Net.Mime.MediaTypeNames;
@@ -814,6 +811,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         }
                     }
 
+                    var emittedImageCount = 0;
                     for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
                         if (stOutput.stCodeList.stCodeInfo != null) {
                             var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
@@ -827,8 +825,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                     Timestamp = timestamp,
                                     CameraSerialNumber = Structure.chSerialNumber,
                                     ScanTime = scanTime,
-                                    ThumbImage = (Bitmap?)thumbnailImage,
-                                    Image = bitmap,
+                                    ThumbImage = (emittedImageCount > 0 || IsRealtimeImageEnabled) &&
+                                                 thumbnailImage is not null
+                                        ? new Bitmap(thumbnailImage)
+                                        : thumbnailImage,
+                                    Image = emittedImageCount > 0 && bitmap is not null
+                                        ? new Bitmap(bitmap)
+                                        : bitmap,
                                     AreaCoords = [.. Enumerable.Range(0, 4).Select(s => {
                                         if (bitmap != null)
                                             return new System.Drawing.Point {
@@ -842,6 +845,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                     })],
                                     FrameNo = Interlocked.Read(ref _frameNo)
                                 });
+                                emittedImageCount++;
                             }
                             /*if (!validateData) {
                                 //被过滤的
@@ -868,6 +872,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                             }*/
                         }
 
+                    }
+
+                    if (emittedImageCount == 0) {
+                        bitmap?.Dispose();
+                        if (!IsRealtimeImageEnabled) {
+                            thumbnailImage?.Dispose();
+                        }
                     }
 
                     Interlocked.Increment(ref _frameNo);
@@ -910,44 +921,20 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             var isMonochrome =
                 MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType;
             var stride = checked(pFrameInfo.nWidth * (isMonochrome ? 1 : 3));
-            var requiredLength = checked(stride * pFrameInfo.nHeight);
-            var bufferLength = Math.Max(sourceLength, requiredLength);
-            var imageBuffer = ArrayPool<byte>.Shared.Rent(bufferLength);
-            GCHandle imageBufferHandle = default;
             try {
-                Marshal.Copy(pFrameInfo.pImageBuf, imageBuffer, 0, sourceLength);
-                if (sourceLength < requiredLength) {
-                    Array.Clear(imageBuffer, sourceLength, requiredLength - sourceLength);
-                }
-
-                imageBufferHandle = GCHandle.Alloc(imageBuffer, GCHandleType.Pinned);
-                using var bitmapView = new Bitmap(
+                return CameraImageProcessing.CopyPackedFrame(
+                    pFrameInfo.pImageBuf,
+                    sourceLength,
                     pFrameInfo.nWidth,
                     pFrameInfo.nHeight,
-                    stride,
                     isMonochrome ? PixelFormat.Format8bppIndexed : PixelFormat.Format24bppRgb,
-                    imageBufferHandle.AddrOfPinnedObject());
-                if (isMonochrome) {
-                    var cp = bitmapView.Palette;
-                    for (var i = 0; i < 256; i++) {
-                        cp.Entries[i] = Color.FromArgb(i, i, i);
-                    }
-                    bitmapView.Palette = cp;
-                }
-
-                return new Bitmap(bitmapView);
+                    stride);
             }
             catch (Exception e) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs {
                     Exception = e
                 });
                 return null;
-            }
-            finally {
-                if (imageBufferHandle.IsAllocated) {
-                    imageBufferHandle.Free();
-                }
-                ArrayPool<byte>.Shared.Return(imageBuffer);
             }
         }
 
@@ -1072,85 +1059,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// <param name="thumbnailHeight"></param>
         /// <returns></returns>
         public static Image? GenerateThumbnail(Image? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-            // 创建目标缩略图的空白画布
-            var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-
-            using var graphics = Graphics.FromImage(thumbnail);
-            // 设置绘图质量参数
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-            graphics.InterpolationMode = InterpolationMode.Low;
-
-            // 计算缩放比例
-            var scaleX = (float)thumbnailWidth / sourceImage.Width;
-            var scaleY = (float)thumbnailHeight / sourceImage.Height;
-            var scale = Math.Min(scaleX, scaleY);
-
-            // 计算缩放后的宽度和高度
-            var scaledWidth = (int)(sourceImage.Width * scale);
-            var scaledHeight = (int)(sourceImage.Height * scale);
-
-            // 计算在画布上居中绘制的起始位置
-            var startX = (thumbnailWidth - scaledWidth) / 2;
-            var startY = (thumbnailHeight - scaledHeight) / 2;
-
-            // 绘制缩略图
-            graphics.DrawImage(sourceImage, startX, startY, scaledWidth, scaledHeight);
-
-            return thumbnail;
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
-        public unsafe Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
-            if (sourceImage is null) {
-                return null;
-            }
-
-            var sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            try {
-                var thumbnail = new Bitmap(thumbnailWidth, thumbnailHeight);
-                var thumbnailData = thumbnail.LockBits(new Rectangle(0, 0, thumbnailWidth, thumbnailHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-                try {
-                    byte* sourcePtr = (byte*)sourceData.Scan0;
-                    byte* thumbnailPtr = (byte*)thumbnailData.Scan0;
-
-                    var sourceBytesPerPixel = 4;
-                    var thumbnailBytesPerPixel = 4;
-
-                    var scaleX = (float)thumbnailWidth / sourceImage.Width;
-                    var scaleY = (float)thumbnailHeight / sourceImage.Height;
-
-                    var sourceWidth = sourceImage.Width;
-                    var sourceHeight = sourceImage.Height;
-
-                    for (int y = 0; y < thumbnailHeight; y++) {
-                        for (int x = 0; x < thumbnailWidth; x++) {
-                            var sourceX = (int)(x / scaleX);
-                            var sourceY = (int)(y / scaleY);
-
-                            var sourceIndex = (sourceY * sourceWidth + sourceX) * sourceBytesPerPixel;
-                            var thumbnailIndex = (y * thumbnailWidth + x) * thumbnailBytesPerPixel;
-
-                            thumbnailPtr[thumbnailIndex] = sourcePtr[sourceIndex];
-                            thumbnailPtr[thumbnailIndex + 1] = sourcePtr[sourceIndex + 1];
-                            thumbnailPtr[thumbnailIndex + 2] = sourcePtr[sourceIndex + 2];
-                            thumbnailPtr[thumbnailIndex + 3] = sourcePtr[sourceIndex + 3];
-                        }
-                    }
-                }
-                finally {
-                    thumbnail.UnlockBits(thumbnailData);
-                }
-
-                return thumbnail;
-            }
-            finally {
-                sourceImage.UnlockBits(sourceData);
-            }
+        public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
+            return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
 
         protected virtual void OnOcrContentRecognized(OcrResult e) {

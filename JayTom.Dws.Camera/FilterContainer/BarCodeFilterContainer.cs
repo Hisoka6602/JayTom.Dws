@@ -11,6 +11,10 @@ namespace JayTom.Dws.Camera.FilterContainer {
 
     public class BarCodeFilterContainer {
         private static readonly ConcurrentDictionary<string, BarCodeFilterInfo> Container = new();
+        /// <summary>
+        /// 限制单次正则匹配的最长执行时间，防止灾难性回溯阻塞采集线程。
+        /// </summary>
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(250);
         private int _maxSize;
 
         /// <summary>
@@ -70,7 +74,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
         public bool InsertOrUpdate(BarCodeFilterInfo data) {
             if (!string.IsNullOrEmpty(Pattern)) {
                 try {
-                    if (!Regex.IsMatch(data.BarCode, Pattern)) {
+                    if (!Regex.IsMatch(data.BarCode, Pattern, RegexOptions.CultureInvariant, RegexTimeout)) {
                         return false;
                     }
                 }
@@ -96,7 +100,8 @@ namespace JayTom.Dws.Camera.FilterContainer {
             if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
                 if (!string.IsNullOrEmpty(Pattern)) {
                     try {
-                        if (!Regex.IsMatch(barCodeFilterInfo.BarCode, Pattern)) {
+                        if (!Regex.IsMatch(barCodeFilterInfo.BarCode, Pattern,
+                                RegexOptions.CultureInvariant, RegexTimeout)) {
                             return new ValidationResult {
                                 IsValidationPassed = false,
                                 FilteredCategory = FilteredCategory.RuleFiltered,
@@ -117,7 +122,8 @@ namespace JayTom.Dws.Camera.FilterContainer {
                 if (CustomRegularExpressionItems.Any()) {
                     try {
                         var any = CustomRegularExpressionItems.Any(a =>
-                            Regex.IsMatch(barCodeFilterInfo.BarCode, a));
+                            Regex.IsMatch(barCodeFilterInfo.BarCode, a,
+                                RegexOptions.CultureInvariant, RegexTimeout));
                         if (!any) {
                             return new ValidationResult {
                                 IsValidationPassed = false,
@@ -191,7 +197,9 @@ namespace JayTom.Dws.Camera.FilterContainer {
             if (IsUseCustomRegexReplacement && CustomRegexReplacementItems.Any()) {
                 var replacedBarcode = barCode;
                 try {
-                    replacedBarcode = CustomRegexReplacementItems.Aggregate(replacedBarcode, (current, customRegexReplacementItemInfoModel) => Regex.Replace(current, customRegexReplacementItemInfoModel.RegexPattern, customRegexReplacementItemInfoModel.ReplaceContent));
+                    replacedBarcode = CustomRegexReplacementItems.Aggregate(replacedBarcode,
+                        (current, item) => Regex.Replace(current, item.RegexPattern, item.ReplaceContent,
+                            RegexOptions.CultureInvariant, RegexTimeout));
                     return replacedBarcode;
                 }
                 catch (Exception e) {

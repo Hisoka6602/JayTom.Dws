@@ -4,7 +4,6 @@ using System.Text;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Windows.Media.Imaging;
 
 namespace JayTom.Dws.Ocr {
 
@@ -112,63 +111,6 @@ namespace JayTom.Dws.Ocr {
         /// 初始化
         /// </summary>
         Task<KeyValuePair<bool, string>> Initialize();
-    }
-
-    public enum OcrStatus {
-
-        /// <summary>
-        /// 未初始化
-        /// </summary>
-        Uninitialized,
-
-        /// <summary>
-        /// 已连接
-        /// </summary>
-        Connected,
-
-        /// <summary>
-        /// 已初始化
-        /// </summary>
-        Initialized,
-
-        /// <summary>
-        /// 运行中
-        /// </summary>
-        Running,
-
-        /// <summary>
-        /// 未连接
-        /// </summary>
-        Disconnected,
-
-        /// <summary>
-        /// 故障
-        /// </summary>
-        Failure,
-
-        /// <summary>
-        /// 暂停中
-        /// </summary>
-        Paused
-    }
-
-    // 自定义事件参数类
-
-    public class OcrExceptionEventArgs : EventArgs {
-
-        /// <summary>
-        /// 异常内容
-        /// </summary>
-        public Exception? Exception { get; set; }
-
-        /// <summary>
-        /// 异常时间
-        /// </summary>
-        public DateTime? ExceptionTime { get; set; } = DateTime.Now;
-    }
-
-    public class OcrInitializationExceptionEventArgs : OcrExceptionEventArgs {
-        // 添加与OCR初始化异常相关的任何必要属性或信息
     }
 
     public class OcrResult : EventArgs {
@@ -294,7 +236,4 @@ namespace JayTom.Dws.Ocr {
         public bool IsSuccess { get; set; }
     }
 
-    public class AuthenticationExceptionEventArgs : OcrExceptionEventArgs {
-        // 添加与鉴权异常相关的任何必要属性或信息
-    }
 }

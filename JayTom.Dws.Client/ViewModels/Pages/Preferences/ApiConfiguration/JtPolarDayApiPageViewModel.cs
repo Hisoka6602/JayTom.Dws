@@ -1,3 +1,8 @@
+using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Interface;
+using JayTom.Dws.Client.Extensions;
+using JayTom.Dws.Abstractions.Integrations;
+using JayTom.Dws.Application.Configuration;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 using JayTom.Dws.Data.LocalConf;
@@ -26,7 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// HTTP 客户端工厂。
         /// </summary>
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IProviderRegistry<IDataUploader> _providerRegistry;
 
         /// <summary>
         /// 对话框服务。
@@ -55,13 +60,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <param name="httpClientFactory">HTTP 客户端工厂。</param>
         /// <param name="dialogService">对话框服务。</param>
         public JtPolarDayApiPageViewModel(
-            IConfigRepository configRepository,
-            IHttpClientFactory httpClientFactory,
-            IDialogService dialogService) : base(configRepository)
+            ISettingsStore settingsStore,
+            IProviderRegistry<IDataUploader> providerRegistry,
+            IDialogService dialogService) : base(settingsStore)
         {
-            ArgumentNullException.ThrowIfNull(httpClientFactory);
+            ArgumentNullException.ThrowIfNull(providerRegistry);
             ArgumentNullException.ThrowIfNull(dialogService);
-            _httpClientFactory = httpClientFactory;
+            _providerRegistry = providerRegistry;
             _dialogService = dialogService;
             UploadCommand = new DelegateCommand(UploadDelegate);
             RefreshOperateTypeItems();
@@ -188,8 +193,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             }
 
             _isLoaded = true;
-            var settings = await _configRepository
-                .FirstOrDefaultEntity<JtPolarDayDto>(SettingsName) ??
+            var settings = await _settingsStore
+                .GetAsync<JtPolarDayDto>(SettingsName) ??
                            new JtPolarDayDto();
             PolarDayApiInfo = new JtPolarDayApiModel
             {
@@ -288,12 +293,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 RetryIntervalMilliseconds =
                     PolarDayApiInfo.RetryIntervalMilliseconds
             };
-            var succeeded = await _configRepository.InsertOrUpdate(
-                new ConfigInfoModel
-                {
-                    ConfigName = SettingsName,
-                    Value = JsonConvert.SerializeObject(settings)
-                });
+            var succeeded = await _settingsStore.SaveAsync(SettingsName,settings);
             MessageQueue.Enqueue(
                 succeeded
                     ? "极昼接口配置保存成功"
@@ -330,7 +330,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 }
 
                 var polarDayApi =
-                    new JtPolarDayApi(_httpClientFactory);
+                    _providerRegistry.Resolve<JtPolarDayApi>(ApiType.JtPolarDayApi);
                 var parameterResult = await polarDayApi.SetParameters(
                     CreateApiParameter());
                 if (!parameterResult.Key)

@@ -208,15 +208,19 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                     FirstDetails(f =>
                         f.Id.Equals(templateId), token);
                 if (key && value is LicensePermissionTemplateInfo info) {
+                    var templateApplication = info.LicenseApplicationInfo;
+                    if (templateApplication is null) {
+                        return new KeyValuePair<bool, object>(false, "模板未关联应用信息");
+                    }
+
                     var (b, o) = await _licenseApplicationRepository.FirstDetails(f =>
-                        info.LicenseApplicationInfo != null &&
-                        f.ApplicationName.Equals(info.LicenseApplicationInfo.ApplicationName) &&
+                        f.ApplicationName.Equals(templateApplication.ApplicationName) &&
                         f.LicensePermissionTemplateId == null, token);
                     if (b && o is LicenseApplicationInfo licenseApplicationInfo) {
                         var licenseFeatureInfos = licenseApplicationInfo.LicenseFeatureInfos?.Select(s =>
                             new LicenseFeatureInfo {
-                                CreateTime = info.LicenseApplicationInfo
-                                    ?.LicenseFeatureInfos
+                                CreateTime = templateApplication
+                                    .LicenseFeatureInfos
                                     ?.FirstOrDefault(f =>
                                         f.FeatureGuid.Equals(s.FeatureGuid))?.CreateTime ?? DateTime.Now,
                                 Description = licenseFeatures
@@ -228,20 +232,20 @@ namespace JayTom.Dws.Domain.Service.LicenseApi {
                                 IsActive = licenseFeatures
                                     ?.FirstOrDefault(f =>
                                         f.FeatureGuid.Equals(s.FeatureGuid))?.IsActive ?? false,
-                                LicenseApplicationInfoId = info.LicenseApplicationInfo
-                                    ?.LicenseFeatureInfos
+                                LicenseApplicationInfoId = templateApplication
+                                    .LicenseFeatureInfos
                                     ?.FirstOrDefault(f =>
                                         f.FeatureGuid.Equals(s.FeatureGuid))?.LicenseApplicationInfoId ?? 0,
                             })?.ToList();
 
                         var featureInfos = await _licenseFeatureRepository.Select(s =>
-                            s.LicenseApplicationInfoId.Equals(info.LicenseApplicationInfo.Id), o => o.Id, token);
+                            s.LicenseApplicationInfoId.Equals(templateApplication.Id), o => o.Id, token);
 
                         var deleteRange = await _licenseFeatureRepository.DeleteRange(
                             featureInfos,
                             token);
 
-                        info.LicenseApplicationInfo.LicenseFeatureInfos = licenseFeatureInfos;
+                        templateApplication.LicenseFeatureInfos = licenseFeatureInfos;
 
                         var update = await _licensePermissionTemplateRepository.Update(info, token);
                         return new KeyValuePair<bool, object>(update, $"修改{(update && deleteRange ? "成功" : "失败")}");

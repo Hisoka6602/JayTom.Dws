@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -52,7 +52,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var barcodeSortingRuleEditor = new BarcodeSortingRuleEditor();
                 if (barcodeSortingRuleEditor.DataContext is BarcodeSortingRuleEditorViewModel model)
@@ -137,7 +137,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is BarCodeSortingItemInfoModel item)
             {
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var barcodeSortingRuleEditor = new BarcodeSortingRuleEditor();
                     if (barcodeSortingRuleEditor.DataContext is BarcodeSortingRuleEditorViewModel model)

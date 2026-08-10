@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JayTom.Dws.Application.Configuration;
+using System;
 using System.IO;
 using System.Linq;
 using System.Drawing;
@@ -29,17 +30,17 @@ namespace JayTom.Dws.Client.Service.ImageService
         private static readonly Regex ControlCharactersRegex =
             new(@"[\u0000-\u001f\b]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private readonly ISaveImage _saveImage;
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
         private readonly IFtp _ftp;
-        private readonly SemaphoreSlim _semaphore = new(1);
-        private readonly SemaphoreSlim _saveSemaphore = new(2);
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly SemaphoreSlim _saveSemaphore = new(1, 1);
         private VolumeSettingsDto? _volumeSettingsDto;
 
-        public DefaultImageStorageService(ISaveImage saveImage, IConfigRepository configRepository,
+        public DefaultImageStorageService(ISaveImage saveImage, ISettingsStore settingsStore,
             IFtp ftp)
         {
             _saveImage = saveImage;
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
             _ftp = ftp;
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings =>
             {
@@ -50,8 +51,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                             await _semaphore.WaitAsync();
                             try
                             {
-                                ImageSettingsDto = await _configRepository.FirstOrDefaultEntity<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
-                                if (ImageSettingsDto.IsFtpUploadEnabled)
+                                ImageSettingsDto = await _settingsStore.GetAsync<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
+                                if (ImageSettingsDto.IsFtpUploadEnabled && !_ftp.IsConnected)
                                 {
                                     var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
                                         ImageSettingsDto.FtpInfo.Port,
@@ -77,8 +78,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                     case SettingsChangedEvent { SettingsName: "VolumeSettings" } volumeSettings:
                         try
                         {
-                            _volumeSettingsDto = await _configRepository
-                                .FirstOrDefaultEntity<VolumeSettingsDto>(volumeSettings.SettingsName)
+                            _volumeSettingsDto = await _settingsStore
+                                .GetAsync<VolumeSettingsDto>(volumeSettings.SettingsName)
                                 ?? new VolumeSettingsDto();
                         }
                         catch (Exception exception)
@@ -123,15 +124,15 @@ namespace JayTom.Dws.Client.Service.ImageService
             if (image is null) return;
             try
             {
-                ImageSettingsDto ??= await _configRepository
-                    .FirstOrDefaultEntity<ImageSettingsDto>("SaveImageSettings", cancellationToken)
+                ImageSettingsDto ??= await _settingsStore
+                    .GetAsync<ImageSettingsDto>("SaveImageSettings", cancellationToken)
                     ?? new ImageSettingsDto();
                 var configurationLockTaken = false;
                 try
                 {
                     await _semaphore.WaitAsync(cancellationToken);
                     configurationLockTaken = true;
-                    if (ImageSettingsDto.IsFtpUploadEnabled)
+                    if (ImageSettingsDto.IsFtpUploadEnabled && !_ftp.IsConnected)
                     {
                         var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
                             ImageSettingsDto.FtpInfo.Port,
@@ -142,8 +143,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                             OnImageSaveFailed(new Exception(value));
                         }
                     }
-                    _volumeSettingsDto ??= await _configRepository
-                        .FirstOrDefaultEntity<VolumeSettingsDto>("VolumeSettings", cancellationToken)
+                    _volumeSettingsDto ??= await _settingsStore
+                        .GetAsync<VolumeSettingsDto>("VolumeSettings", cancellationToken)
                         ?? new VolumeSettingsDto();
                 }
                 finally

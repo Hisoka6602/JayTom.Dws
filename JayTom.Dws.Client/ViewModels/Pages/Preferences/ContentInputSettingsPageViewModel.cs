@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -21,7 +22,7 @@ using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ContentInputSettingsModels;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
-using KeyboardDevice = JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice;
+using KeyboardDevice = JayTom.Dws.Abstractions.Devices.KeyboardDevice;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 {
@@ -38,8 +39,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private bool _isUseRegularFilter;
         private ObservableCollection<KeyboardDeviceItemInfoModel> _keyboardDeviceItemInfo = new();
 
-        public ContentInputSettingsPageViewModel(IConfigRepository configRepository,
-            IKeyboardDeviceManager keyboardDeviceManager) : base(configRepository)
+        public ContentInputSettingsPageViewModel(ISettingsStore settingsStore,
+            IKeyboardDeviceManager keyboardDeviceManager) : base(settingsStore)
         {
             _keyboardDeviceManager = keyboardDeviceManager;
         }
@@ -129,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             set => SetProperty(ref _keyboardDeviceItemInfo, value);
         }
 
-        public JayTom.Dws.Plugin.Device.KeyboardDevice.KeyboardDevice KeyboardDevice { get; set; } = new();
+        public KeyboardDevice KeyboardDevice { get; set; } = new();
         public override string Identifier => "SettingDialog";
         public override string SettingsName => "ContentInputSettings";
 
@@ -305,10 +306,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         protected override async Task<bool> SaveSettingsProcess()
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = SettingsName,
-                Value = JsonConvert.SerializeObject(new ContentInputSettingsDto
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new ContentInputSettingsDto
                 {
                     IsUseControlInput = IsUseControlInput,
                     IsUseTcpInput = IsUseTcpInput,
@@ -345,8 +343,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     },
                     Separator = Separator,
                     KeyboardDevice = KeyboardDevice,
-                })
-            });
+                });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;
@@ -354,7 +351,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         public override async void LoadedDelegate(object obj)
         {
-            var settingsDto = await _configRepository.FirstOrDefaultEntity<ContentInputSettingsDto>(SettingsName) ?? new ContentInputSettingsDto();
+            var settingsDto = await _settingsStore.GetAsync<ContentInputSettingsDto>(SettingsName) ?? new ContentInputSettingsDto();
             KeyboardDevice = settingsDto.KeyboardDevice;
             IsUseTcpInput = settingsDto.IsUseTcpInput;
             IsUseControlInput = settingsDto.IsUseControlInput;
@@ -403,7 +400,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         {
             Task.Run(async () =>
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     KeyboardDeviceItemInfo.Clear();
                     var keyboardDevices = await _keyboardDeviceManager.EnumerateKeyboardDevices();

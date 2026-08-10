@@ -65,7 +65,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         private bool _isRuning;
         private Task? _volumeThread;
         private CancellationTokenSource? _cancellationTokenSource;
-        private readonly byte[] _realTimeImageData = new byte[1280 * 800 * 3];
+        /// <summary>串行保护不支持并发调用的体积测量原生接口。</summary>
+        private readonly SemaphoreSlim _captureGate = new(1, 1);
+        /// <summary>复用长宽高结果缓冲，避免高频小对象分配。</summary>
+        private readonly float[] _dimensionData = new float[3];
+        /// <summary>复用测量图像缓冲，避免每次产生大对象堆分配。</summary>
+        private readonly byte[] _imageData = GC.AllocateUninitializedArray<byte>(5120000);
         private int _deviceNum;
 
         public async Task<KeyValuePair<bool, int>> Initialize() {
@@ -125,29 +130,17 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             _isRuning = false;
         }
 
-        public Task TriggerMeasurementPhotoAsync(CancellationToken cancellation = default) {
+        public async Task TriggerMeasurementPhotoAsync(CancellationToken cancellation = default) {
+            await _captureGate.WaitAsync(cancellation).ConfigureAwait(false);
             try {
-                var rec = ComputeOnceNoBlock(); //触发计算一次
-                var dimensionData = new float[3]; //存储长、宽、高数据
-                var imageData = new byte[5120000]; //存储图像数据
-                var len = GetDmsResult(dimensionData, imageData); //获取测量结果与测量结果的图像
-                if (len > 0) {
-                    using var bmpStream = new MemoryStream(imageData, 0, len);
-                    using var decodedImage = System.Drawing.Image.FromStream(bmpStream);
-                    var image = new Bitmap(decodedImage);
-                    // 处理图像
-                    OnVolumeCaptured(new DimensionVolumeInfo() {
-                        Length = dimensionData[0],
-                        Width = dimensionData[1],
-                        Height = dimensionData[2],
-                        Image = (Bitmap?)image
-                    });
-                }
+                CaptureMeasurement();
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
             }
-            return Task.CompletedTask;
+            finally {
+                _captureGate.Release();
+            }
         }
 
         public async Task VolumeThread(CancellationToken token) {
@@ -155,21 +148,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             try {
                 while (!token.IsCancellationRequested) {
                     try {
-                        var rec = ComputeOnceNoBlock(); //触发计算一次
-                        var dimensionData = new float[3]; //存储长、宽、高数据
-                        var imageData = new byte[5120000]; //存储图像数据
-                        var len = GetDmsResult(dimensionData, imageData); //获取测量结果与测量结果的图像
-                        if (len > 0) {
-                            using var bmpStream = new MemoryStream(imageData, 0, len);
-                            using var decodedImage = System.Drawing.Image.FromStream(bmpStream);
-                            var image = new Bitmap(decodedImage);
-                            // 处理图像
-                            OnVolumeCaptured(new DimensionVolumeInfo() {
-                                Length = dimensionData[0],
-                                Width = dimensionData[1],
-                                Height = dimensionData[2],
-                                Image = (Bitmap?)image
-                            });
+                        await _captureGate.WaitAsync(token).ConfigureAwait(false);
+                        try {
+                            CaptureMeasurement();
+                        }
+                        finally {
+                            _captureGate.Release();
                         }
                     }
                     catch (Exception e) {
@@ -187,8 +171,32 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             }
         }
 
+        /// <summary>
+        /// 执行一次测量并从复用缓冲区发布结果。
+        /// </summary>
+        private void CaptureMeasurement() {
+            ComputeOnceNoBlock();
+            var length = GetDmsResult(_dimensionData, _imageData);
+            if (length <= 0 || length > _imageData.Length) {
+                return;
+            }
+
+            var image = CameraImageProcessing.DecodeCompressedFrame(_imageData, length);
+            OnVolumeCaptured(new DimensionVolumeInfo {
+                Length = _dimensionData[0],
+                Width = _dimensionData[1],
+                Height = _dimensionData[2],
+                Image = image
+            });
+        }
+
         protected virtual void OnVolumeCaptured(DimensionVolumeInfo e) {
-            VolumeCaptured?.Invoke(this, e);
+            var handler = VolumeCaptured;
+            if (handler is null) {
+                e.Image?.Dispose();
+                return;
+            }
+            handler.Invoke(this, e);
         }
     }
 

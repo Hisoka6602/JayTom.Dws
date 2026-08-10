@@ -1,4 +1,5 @@
-﻿using System;
+using JayTom.Dws.Application.Configuration;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -21,7 +22,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class SortingMethodViewModel : BindableBase
     {
-        private readonly IConfigRepository _configRepository;
+        private readonly ISettingsStore _settingsStore;
 
         private ObservableCollection<SortModeInfoModel> _sortModeItems = new()
         {
@@ -71,9 +72,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private SnackbarMessageQueue _sortingMethodMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public SortingMethodViewModel(IConfigRepository configRepository)
+        public SortingMethodViewModel(ISettingsStore settingsStore)
         {
-            _configRepository = configRepository;
+            _settingsStore = settingsStore;
         }
 
         public ObservableCollection<SortModeInfoModel> SortModeItems
@@ -98,14 +99,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void OptionSelectionChangedDelegate(SelectionChangedEventArgs obj)
         {
-            var insertOrUpdate = await _configRepository.InsertOrUpdate(new ConfigInfoModel()
-            {
-                ConfigName = "SortingMethodSettings",
-                Value = JsonConvert.SerializeObject(new SortingMethodDto()
+            var insertOrUpdate = await _settingsStore.SaveAsync("SortingMethodSettings",new SortingMethodDto()
                 {
                     SortMode = SelectSortMode?.Value ?? SortMode.None
-                })
-            });
+                });
             if (!insertOrUpdate)
             {
                 SelectSortMode = SortModeItems.FirstOrDefault(f => f.Value == SortMode.None) ?? new SortModeInfoModel();
@@ -130,17 +127,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    var configInfoModel = await _configRepository.FirstOrDefault(w => w.ConfigName.Equals("SortingMethodSettings"));
-                    if (configInfoModel is not null)
+                    var settingsDto = await _settingsStore
+                        .GetAsync<SortingMethodDto>("SortingMethodSettings");
+                    if (settingsDto is not null)
                     {
-                        var settingsDto = JsonConvert.DeserializeObject<SortingMethodDto>(configInfoModel.Value);
-                        if (settingsDto is not null)
-                        {
-                            SelectSortMode = SortModeItems.FirstOrDefault(f => f.Value == settingsDto.SortMode) ??
-                                             new SortModeInfoModel();
-                        }
+                        SelectSortMode = SortModeItems.FirstOrDefault(f => f.Value == settingsDto.SortMode) ??
+                                         new SortModeInfoModel();
                     }
                 });
             }
