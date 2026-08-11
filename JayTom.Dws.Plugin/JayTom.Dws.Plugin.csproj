@@ -7,6 +7,8 @@
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>JayTom.Dws.DeviceAdapters</AssemblyName>
+    <Description>串口、网络、称重、PLC、语音及 FTP 等设备适配器。</Description>
   </PropertyGroup>
 
   <ItemGroup>

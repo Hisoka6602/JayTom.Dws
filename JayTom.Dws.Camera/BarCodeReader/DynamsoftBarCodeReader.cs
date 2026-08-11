@@ -59,7 +59,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             _mBarcodeReader?.Dispose();
         }
 
-        public async Task<BarcodeResult> ReadFromFrame(Bitmap bitmap, CancellationToken token = default) {
+        public async Task<BarcodeResult> ReadFromFrameAsync(Bitmap bitmap, CancellationToken token = default) {
             long elapsedMilliseconds = 0;
             TextResult[]? bars = null;
 
@@ -107,7 +107,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                     BarcodeType = s.LocalizationResult.BarcodeFormatString,
                 })?.ToList();
 
-                barcodeResult.RecognitionTime = elapsedMilliseconds;
+                barcodeResult.RecognitionDurationMilliseconds = elapsedMilliseconds;
 
             }
             return barcodeResult;
@@ -160,7 +160,12 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> SetBarcodeReaderParameter(Dictionary<BarcodeReaderParameter, object> parameters) {
+        public async Task<KeyValuePair<bool, string>> ApplySettingsAsync(
+            BarcodeReaderSettings settings,
+            CancellationToken cancellationToken = default) {
+            ArgumentNullException.ThrowIfNull(settings);
+            cancellationToken.ThrowIfCancellationRequested();
+            var parameters = settings.ToAdapterParameters();
             await Task.Yield();
             if (_mBarcodeReader is not null) {
                 try {
@@ -180,6 +185,9 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                         .Value;
                     if (enumBarcodeFormat is EnumBarcodeFormat format) {
                         runtimeSettings.BarcodeFormatIds = (int)format;
+                    }
+                    else if (enumBarcodeFormat is SupportedBarcodeFormat supportedFormat) {
+                        runtimeSettings.BarcodeFormatIds = (int)DynamsoftBarcodeFormatMapper.Map(supportedFormat);
                     }
 
                     var enumBarcodeFormat2 = parameters.FirstOrDefault(f =>
@@ -413,7 +421,8 @@ namespace JayTom.Dws.Camera.BarCodeReader {
 
         public event EventHandler<Exception>? ExceptionOccurred;
 
-        public async Task<bool> Initialize() {
+        public async Task<bool> InitializeAsync(CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             var ret = BarcodeReader.InitLicense(dbrLicenseKeys, out var errorMsg);
             IsInitialized = (ret == EnumErrorCode.DBR_SUCCESS);
             if (!IsInitialized) {
@@ -423,15 +432,19 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                 _mBarcodeReader = BarcodeReader.GetInstance();
                 _mNormalRuntimeSettings = _mBarcodeReader?.GetRuntimeSettings();
 
-                await SetBarcodeReaderParameter(new Dictionary<BarcodeReaderParameter, object>()
-                {
-                   {BarcodeReaderParameter.RecognitionMode, ScanMode.Custom },
-                    {BarcodeReaderParameter.IsUseTextFilterMode,true},
-                    {BarcodeReaderParameter.IsUseRegionPredetectionMode,true},
-                    {BarcodeReaderParameter.DeblurLevel,3},
-                    {BarcodeReaderParameter.ExpectedBarcodesCount,1},
-                    {BarcodeReaderParameter.EnumBarcodeFormat, EnumBarcodeFormat.BF_QR_CODE|EnumBarcodeFormat.BF_MICRO_QR|EnumBarcodeFormat.BF_CODE_128|EnumBarcodeFormat.BF_CODE_39|EnumBarcodeFormat.BF_CODE_93|EnumBarcodeFormat.BF_CODABAR },
-                });
+                await ApplySettingsAsync(new BarcodeReaderSettings {
+                    RecognitionMode = ScanMode.Custom,
+                    UseTextFilter = true,
+                    UseRegionPredetection = true,
+                    DeblurLevel = 3,
+                    ExpectedBarcodesCount = 1,
+                    BarcodeFormats = SupportedBarcodeFormat.QrCode |
+                                     SupportedBarcodeFormat.MicroQr |
+                                     SupportedBarcodeFormat.Code128 |
+                                     SupportedBarcodeFormat.Code39 |
+                                     SupportedBarcodeFormat.Code93 |
+                                     SupportedBarcodeFormat.Codabar
+                }, cancellationToken);
             }
 
             if (_readerThread is null) {
@@ -456,7 +469,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
                                 if (_framenum >= _recognitionSkipFrames) {
                                     _framenum = 0;
 
-                                    barcodeResult = await ReadFromFrame(image);
+                                    barcodeResult = await ReadFromFrameAsync(image, token);
                                 }
                                 OnBarcodeRead(barcodeResult);
                                 _framenum++;

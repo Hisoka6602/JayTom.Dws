@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
         }
 
         public async Task<KeyValuePair<bool, object>> GetPackages(string? barcode, DateTime? startScanTime, DateTime? endScanTime, string? serialNumber,
-            double? minWeight, double? maxWeight, int? requestStatus, string? physicalExit, string? sentInstruction,
+            decimal? minWeight, decimal? maxWeight, int? requestStatus, string? physicalExit, string? sentInstruction,
             string? logisticsName, string? threeSegmentCode, string? nodeName, string? deviceName, int pageIndex,
             int pageSize, CancellationToken cancellationToken) {
             var total = await _cloudPackageRepository.Total(w =>

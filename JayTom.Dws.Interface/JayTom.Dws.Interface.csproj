@@ -21,8 +21,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Integrations.Contracts\JayTom.Dws.Integrations.Contracts.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Excel\JayTom.Dws.Excel.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Utils\JayTom.Dws.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 契约由跨平台项目编译，本项目仅保留供应商实现。 -->
+    <Compile Remove="IDataUploader.cs" />
+    <Compile Remove="IApiUploader.cs" />
+    <Compile Remove="BaseApiParameters.cs" />
+    <Compile Remove="ApiHttpClientNames.cs" />
+    <Compile Remove="INetworkTime.cs" />
   </ItemGroup>
 
   <ItemGroup>

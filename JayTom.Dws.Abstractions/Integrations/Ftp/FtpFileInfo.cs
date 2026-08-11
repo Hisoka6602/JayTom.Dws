@@ -1,4 +1,4 @@
-namespace JayTom.Dws.Plugin.Ftp;
+namespace JayTom.Dws.Abstractions.Integrations.Ftp;
 
 /// <summary>描述 FTP 远程文件元数据。</summary>
 public class FtpFileInfo {

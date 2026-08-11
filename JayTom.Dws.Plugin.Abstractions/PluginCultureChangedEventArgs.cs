@@ -1,4 +1,4 @@
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 封装宿主文化设置变化信息。

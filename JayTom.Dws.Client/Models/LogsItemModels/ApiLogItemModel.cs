@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +13,7 @@ namespace JayTom.Dws.Client.Models.LogsItemModels
         private string _responseContent = string.Empty;
         private DateTime _requestTime;
         private DateTime _responseTime;
-        private double _duration;
+        private decimal _duration;
         private string _apiParameters = string.Empty;
         private string _exceptionMsg = string.Empty;
         private string _url = string.Empty;
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Client.Models.LogsItemModels
         /// <summary>
         /// 耗时(秒)
         /// </summary>
-        public double Duration
+        public decimal Duration
         {
             get => _duration;
             set => SetProperty(ref _duration, value);

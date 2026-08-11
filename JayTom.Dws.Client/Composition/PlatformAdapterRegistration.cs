@@ -22,6 +22,7 @@ using JayTom.Dws.Plugin;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using JayTom.Dws.Plugin.Excel;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using JayTom.Dws.Plugin.Ftp;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Plugin.Scale.DynamicScale;

@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using LegacyUploadMeasurement = System.Double;
+using FixedPointMeasurement = System.Decimal;
 
 namespace JayTom.Dws.Interface {
 
@@ -26,9 +26,9 @@ namespace JayTom.Dws.Interface {
         /// <param name="other"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData(string barcode, LegacyUploadMeasurement weight,
-            LegacyUploadMeasurement length = default, LegacyUploadMeasurement width = default, LegacyUploadMeasurement height = default,
-            LegacyUploadMeasurement volume = default, UploadImageInfo? imageInfo = default,
+        Task<UploadResponse> UploadData(string barcode, FixedPointMeasurement weight,
+            FixedPointMeasurement length = default, FixedPointMeasurement width = default, FixedPointMeasurement height = default,
+            FixedPointMeasurement volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default);
 
@@ -47,8 +47,8 @@ namespace JayTom.Dws.Interface {
         /// <param name="token"></param>
         /// <param name="imageInfo"></param>
         /// <returns></returns>
-        Task<UploadResponse> UploadData(string barcode, LegacyUploadMeasurement weight, DateTime scanTime, LegacyUploadMeasurement length = default, LegacyUploadMeasurement width = default, LegacyUploadMeasurement height = default,
-            LegacyUploadMeasurement volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
+        Task<UploadResponse> UploadData(string barcode, FixedPointMeasurement weight, DateTime scanTime, FixedPointMeasurement length = default, FixedPointMeasurement width = default, FixedPointMeasurement height = default,
+            FixedPointMeasurement volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default);
 
         /// <summary>
         /// 设置接口参数
@@ -61,8 +61,8 @@ namespace JayTom.Dws.Interface {
         /// <summary>
         /// 包裹结束后上传(无返回接收)
         /// </summary>
-        Task UploadInBackground(string barcode, LegacyUploadMeasurement weight, DateTime scanTime, LegacyUploadMeasurement length = default, LegacyUploadMeasurement width = default, LegacyUploadMeasurement height = default,
-            LegacyUploadMeasurement volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        Task UploadInBackground(string barcode, FixedPointMeasurement weight, DateTime scanTime, FixedPointMeasurement length = default, FixedPointMeasurement width = default, FixedPointMeasurement height = default,
+            FixedPointMeasurement volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default);
 
         /// <summary>
@@ -135,11 +135,11 @@ namespace JayTom.Dws.Interface {
         /// <returns>上传响应。</returns>
         public Task<UploadResponse> UploadData(
             string barcode,
-            LegacyUploadMeasurement weight,
-            LegacyUploadMeasurement length = default,
-            LegacyUploadMeasurement width = default,
-            LegacyUploadMeasurement height = default,
-            LegacyUploadMeasurement volume = default,
+            FixedPointMeasurement weight,
+            FixedPointMeasurement length = default,
+            FixedPointMeasurement width = default,
+            FixedPointMeasurement height = default,
+            FixedPointMeasurement volume = default,
             UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null,
@@ -174,12 +174,12 @@ namespace JayTom.Dws.Interface {
         /// <returns>上传响应。</returns>
         public Task<UploadResponse> UploadData(
             string barcode,
-            LegacyUploadMeasurement weight,
+            FixedPointMeasurement weight,
             DateTime scanTime,
-            LegacyUploadMeasurement length = default,
-            LegacyUploadMeasurement width = default,
-            LegacyUploadMeasurement height = default,
-            LegacyUploadMeasurement volume = default,
+            FixedPointMeasurement length = default,
+            FixedPointMeasurement width = default,
+            FixedPointMeasurement height = default,
+            FixedPointMeasurement volume = default,
             UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null,
@@ -224,12 +224,12 @@ namespace JayTom.Dws.Interface {
         /// <returns>后台上传任务。</returns>
         public Task UploadInBackground(
             string barcode,
-            LegacyUploadMeasurement weight,
+            FixedPointMeasurement weight,
             DateTime scanTime,
-            LegacyUploadMeasurement length = default,
-            LegacyUploadMeasurement width = default,
-            LegacyUploadMeasurement height = default,
-            LegacyUploadMeasurement volume = default,
+            FixedPointMeasurement length = default,
+            FixedPointMeasurement width = default,
+            FixedPointMeasurement height = default,
+            FixedPointMeasurement volume = default,
             UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null,
@@ -349,57 +349,57 @@ namespace JayTom.Dws.Interface {
             CancellationToken token);
     }
 
-    public class UploadResponse {
+    public sealed record UploadResponse {
 
         /// <summary>
         /// 请求内容
         /// </summary>
-        public string RequestContent { get; set; } = string.Empty; // 请求内容
+        public string RequestContent { get; init; } = string.Empty; // 请求内容
 
         /// <summary>
         /// 响应内容
         /// </summary>
-        public string ResponseContent { get; set; } = string.Empty;
+        public string ResponseContent { get; init; } = string.Empty;
 
         /// <summary>
         /// 是否成功
         /// </summary>
-        public bool IsSuccess { get; set; }
+        public bool IsSuccess { get; init; }
 
         /// <summary>
         /// 上传时间
         /// </summary>
-        public DateTime RequestTime { get; set; }
+        public DateTime RequestTime { get; init; }
 
         /// <summary>
         /// 返回时间
         /// </summary>
-        public DateTime ResponseTime { get; set; }
+        public DateTime ResponseTime { get; init; }
 
         /// <summary>
         /// 耗时(秒)
         /// </summary>
-        public double Duration { get; set; }
+        public decimal DurationSeconds { get; init; }
 
         /// <summary>
         /// 接口参数
         /// </summary>
-        public string ApiParameters { get; set; } = string.Empty;
+        public string ApiParameters { get; init; } = string.Empty;
 
         /// <summary>
         /// 请求地址
         /// </summary>
-        public string RequestUrl { get; set; } = string.Empty;
+        public string RequestUrl { get; init; } = string.Empty;
 
         /// <summary>
         /// 异常信息
         /// </summary>
-        public string ExceptionMsg { get; set; } = string.Empty;
+        public string ExceptionMsg { get; init; } = string.Empty;
 
         /// <summary>
         /// Api异常类型
         /// </summary>
-        public ApiExceptionType ApiExceptionType { get; set; } = ApiExceptionType.None;
+        public ApiExceptionType ApiExceptionType { get; init; } = ApiExceptionType.None;
     }
 
     public enum ApiExceptionType {
@@ -440,7 +440,7 @@ namespace JayTom.Dws.Interface {
         /// <summary>
         /// 图片
         /// </summary>
-        public Image? Image { get; set; }
+        public ImageHandle? Image { get; set; }
 
         /// <summary>
         /// 相机序列号

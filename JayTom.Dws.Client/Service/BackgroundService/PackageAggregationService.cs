@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ImTools;
 using NPOI.Util;
 using System.Linq;
@@ -16,10 +16,10 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using PushPackageInfo = JayTom.Dws.Client.EventMediators.PushPackageInfo;
+using PushPackageInfo = JayTom.Dws.Domain.EventMediators.PushPackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
-using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
+using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
+using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {

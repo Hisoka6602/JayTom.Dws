@@ -117,7 +117,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                     //初始化设备
                     var baseDaHuatech = BaseDaHuatech.CreateInstance();
                     //枚举设备
-                    await BaseDaHuatech.EnumDevices();
+                    await BaseDaHuatech.InitializeDeviceDiscoveryAsync();
                     //不需要每个都登录(组合SerialNumber、相同的SerialNumber只登录一次)
 
                     var devices = NvrBindingItems.Where(w =>

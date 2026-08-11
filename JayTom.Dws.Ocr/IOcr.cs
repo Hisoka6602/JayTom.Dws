@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Ocr {
         /// <param name="rectangleScale"></param>
         /// <returns></returns>
         OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath,
-            float confidenceThreshold, float rectangleScale);
+            decimal confidenceThreshold, decimal rectangleScale);
 
         /// <summary>
         /// 解析Ocr
@@ -84,14 +84,14 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="confidenceThreshold"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> SetConfidenceThreshold(float confidenceThreshold);
+        Task<KeyValuePair<bool, string>> SetConfidenceThreshold(decimal confidenceThreshold);
 
         /// <summary>
         /// 设置区域扩展
         /// </summary>
         /// <param name="rectangleScale"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> SetRectangleScale(float rectangleScale);
+        Task<KeyValuePair<bool, string>> SetRectangleScale(decimal rectangleScale);
 
         /// <summary>
         /// 设置解析超时时间
@@ -186,9 +186,16 @@ namespace JayTom.Dws.Ocr {
         public Bitmap? Thumbnail { get; set; }
 
         /// <summary>
-        /// 裁剪的图片
+        /// 获取事件分发期间借用的裁剪图片；需要延长生命周期时调用 <see cref="TakeCropImage"/>。
         /// </summary>
         public Bitmap? CropImage { get; set; }
+
+        /// <summary>取得裁剪图片所有权，并从事件参数中移除该图片。</summary>
+        public Bitmap? TakeCropImage() {
+            var image = CropImage;
+            CropImage = null;
+            return image;
+        }
 
         /// <summary>
         /// 裁剪区域
@@ -213,22 +220,22 @@ namespace JayTom.Dws.Ocr {
         /// <summary>
         /// 条码区域
         /// </summary>
-        public List<double>? BarcodeArea { get; set; }
+        public List<decimal>? BarcodeArea { get; set; }
 
         /// <summary>
         /// 三段码区域
         /// </summary>
-        public List<double>? ThreeSegmentArea { get; set; }
+        public List<decimal>? ThreeSegmentArea { get; set; }
 
         /// <summary>
         /// 收件人地址区域
         /// </summary>
-        public List<double>? RecipientAddressArea { get; set; }
+        public List<decimal>? RecipientAddressArea { get; set; }
 
         /// <summary>
         /// 寄件人地址区域
         /// </summary>
-        public List<double>? SenderAddressArea { get; set; }
+        public List<decimal>? SenderAddressArea { get; set; }
 
         /// <summary>
         /// 是否成功

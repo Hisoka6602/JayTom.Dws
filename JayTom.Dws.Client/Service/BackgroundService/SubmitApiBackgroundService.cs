@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using NLog;
 using JayTom.Dws.Application.Workflows;
 using JayTom.Dws.Abstractions.Integrations;
@@ -52,21 +52,21 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
-using PluginType = JayTom.Dws.Client.EventMediators.PluginType;
+using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using PushPackageInfo = JayTom.Dws.Client.EventMediators.PushPackageInfo;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
-using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
-using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
-using PluginParamChangedEvent = JayTom.Dws.Client.EventMediators.PluginParamChangedEvent;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
-using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using PushPackageInfo = JayTom.Dws.Domain.EventMediators.PushPackageInfo;
+using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
+using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
+using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
+using PluginParamChangedEvent = JayTom.Dws.Domain.EventMediators.PluginParamChangedEvent;
+using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
+using PackageAbnormalSortingType = JayTom.Dws.Domain.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -148,12 +148,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         submitItem = new SubmitItemInfo
                         {
                             Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
-                            Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
+                            Height = (decimal)(model.VolumeInfo?.FormattedHeight ?? 0),
                             ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
-                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
-                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
-                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
+                            Weight = (decimal)(model.WeightInfo?.FormattedWeight ?? 0),
+                            Length = (decimal)(model.VolumeInfo?.FormattedLength ?? 0),
+                            Width = (decimal)(model.VolumeInfo?.FormattedWidth ?? 0),
+                            Volume = (decimal)(model.VolumeInfo?.FormattedVolume ?? 0),
                             Guid = model.Guid,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
                             PackageCreationInstruction = model.PackageCreationInstruction ?? string.Empty,
@@ -398,7 +398,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     _zhouYiApiParam = new ZhouYiApi.ApiParameters()
                                     {
                                         AppKey = entity.AppKey,
-                                        AppId = entity.AppId,
+                                        ApplicationCode = entity.ApplicationCode,
                                         NeedUpload = entity.NeedUpload,
                                         IsFstCode = entity.IsFstCode,
 
@@ -1099,7 +1099,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                                 CameraCustomName = model.CameraSerialNumber,
                                                 CameraName = model.CameraSerialNumber,
                                                 CameraSerialNumber = model.CameraSerialNumber,
-                                                Image = uploadImage
+                                                Image = uploadImage is null
+                                                    ? null
+                                                    : ImageHandle.TakeOwnership(
+                                                        (Image)uploadImage.Clone())
                                             }, token: stoppingToken);
                                     }
                                     break;
@@ -1116,7 +1119,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                                 CameraCustomName = model.CameraSerialNumber,
                                                 CameraName = model.CameraSerialNumber,
                                                 CameraSerialNumber = model.CameraSerialNumber,
-                                                Image = uploadImage
+                                                Image = uploadImage is null
+                                                    ? null
+                                                    : ImageHandle.TakeOwnership(
+                                                        (Image)uploadImage.Clone())
                                             }, token: stoppingToken);
                                     }
                                     else
@@ -1449,7 +1455,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _zhouYiApiParam = new ZhouYiApi.ApiParameters()
             {
                 AppKey = zhouYiApiDto.AppKey,
-                AppId = zhouYiApiDto.AppId,
+                ApplicationCode = zhouYiApiDto.ApplicationCode,
                 NeedUpload = zhouYiApiDto.NeedUpload,
                 IsFstCode = zhouYiApiDto.IsFstCode,
 
@@ -1465,6 +1471,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 ApiType.PostApi => ResolveUploader(ApiType.PostApi),
                 _ => null
             };
+            LogManager.GetCurrentClassLogger().Info(
+                $"接口回传初始化完成:ApiType={_apiSettingsDto?.Type},UploaderReady={_submissionUploader is not null},JtPolarDayBaseUrl={_jtPolarDayApiParam.BaseUrl}");
         }
 
         /// <summary>
@@ -1825,10 +1833,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     return;
                                 }
 
+                                var submissionCacheKey =
+                                    CreateJtPolarDaySubmissionCacheKey(
+                                        packageValue.Key);
                                 if (_memoryCache.TryGetValue(
-                                        packageValue.Key,
+                                        submissionCacheKey,
                                         out _))
                                 {
+                                    LogManager.GetCurrentClassLogger().Info(
+                                        $"极昼设备信息已回传，跳过重复提交:Timestamp={packageValue.Key},WaybillNo={packageValue.Value.PackageInfo.BarCodeInfo?.Barcode}");
                                     break;
                                 }
 
@@ -1893,7 +1906,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     0,
                                     new UploadImageInfo
                                     {
-                                        Image = image,
+                                        Image = image is null
+                                            ? null
+                                            : ImageHandle.TakeOwnership(
+                                                (Image)image.Clone()),
                                         CameraCustomName = cameraSerialNumber,
                                         CameraName = cameraSerialNumber,
                                         CameraSerialNumber =
@@ -1921,13 +1937,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     token);
                                 // 仅在上传任务明确完成后标记，异常时保留记录供下一轮重试。
                                 _memoryCache.Set(
-                                    packageValue.Key,
-                                    packageValue.Value,
+                                    submissionCacheKey,
+                                    true,
                                     new MemoryCacheEntryOptions
                                     {
                                         AbsoluteExpirationRelativeToNow =
                                             TimeSpan.FromMinutes(1)
                                     });
+                                LogManager.GetCurrentClassLogger().Info(
+                                    $"极昼设备信息回传完成:Timestamp={packageValue.Key},WaybillNo={barcode},GridNo={fallEvent.ExitName}");
                                 _memoryCache.Remove(imageCacheKey);
                                 break;
                             }
@@ -1950,15 +1968,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 var exitName = packageValue.Value.PackageExitUpdateItems?.FirstOrDefault(f =>
                                         f.InstructionType == InstructionType.SignalCallback)
                                     ?.ExitName ?? string.Empty;
-                                if (!string.IsNullOrEmpty(packageValue.Value.ApiResponse.UploadResponse?.RequestContent) &&
-                                    !packageValue.Value.ApiResponse.UploadResponse.IsSuccess)
+                                var uploadResponse = packageValue.Value.ApiResponse.UploadResponse;
+                                if (!string.IsNullOrEmpty(uploadResponse?.RequestContent) &&
+                                    !uploadResponse.IsSuccess)
                                 {
-                                    packageValue.Value.ApiResponse.UploadResponse.RequestContent += $"落格:[{exitName}]";
+                                    uploadResponse = uploadResponse with
+                                    {
+                                        RequestContent = uploadResponse.RequestContent + $"落格:[{exitName}]"
+                                    };
+                                    packageValue.Value.ApiResponse.UploadResponse = uploadResponse;
                                 }
 
                                 await uploader.UploadInBackground(packageValue.Value.PackageInfo.BarCodeInfo?.Barcode ?? string.Empty, packageValue.Value.PackageInfo?.WeightInfo?.FormattedWeight ?? 0,
                                     packageValue.Value.PackageInfo?.BarCodeInfo?.ScanTime ?? DateTime.Now, imageInfo: new UploadImageInfo(), other:
-                                    packageValue.Value.ApiResponse.UploadResponse, token: token);
+                                    uploadResponse, token: token);
                                 _packageSubmissionPushItems?.TryRemove(packageValue.Key, out _);
                             }
                             break;
@@ -2064,6 +2087,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             return $"jt-polar-day-image:{packageTimestamp}";
         }
 
+        /// <summary>
+        /// 创建极昼设备信息回传去重缓存键。
+        /// </summary>
+        /// <param name="packageTimestamp">包裹时间戳。</param>
+        /// <returns>不会与数据仓储裸时间戳缓存冲突的字符串键。</returns>
+        private static string CreateJtPolarDaySubmissionCacheKey(
+            long packageTimestamp)
+        {
+            return $"jt-polar-day-submission:{packageTimestamp}";
+        }
+
         public class SubmitItemInfo
         {
             public long Guid { get; set; }
@@ -2076,7 +2110,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             /// <summary>
             /// 重量
             /// </summary>
-            public float Weight { get; set; }
+            public decimal Weight { get; set; }
 
             /// <summary>
             /// 扫码时间
@@ -2086,22 +2120,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             /// <summary>
             /// 长度
             /// </summary>
-            public float Length { get; set; }
+            public decimal Length { get; set; }
 
             /// <summary>
             /// 宽度
             /// </summary>
-            public float Width { get; set; }
+            public decimal Width { get; set; }
 
             /// <summary>
             /// 高度
             /// </summary>
-            public float Height { get; set; }
+            public decimal Height { get; set; }
 
             /// <summary>
             /// 体积
             /// </summary>
-            public float Volume { get; set; }
+            public decimal Volume { get; set; }
 
             /// <summary>
             /// 条码图片

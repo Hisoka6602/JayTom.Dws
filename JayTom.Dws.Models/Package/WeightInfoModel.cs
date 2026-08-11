@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
@@ -28,7 +28,7 @@ namespace JayTom.Dws.Data.Package {
         /// 格式化后重量
         /// </summary>
         [Column("FormattedWeight")]
-        public double FormattedWeight { get; set; }
+        public decimal FormattedWeight { get; set; }
 
         /// <summary>
         /// 创建时间

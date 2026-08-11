@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Runtime.InteropServices;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
@@ -100,7 +100,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
     [StructLayout(LayoutKind.Sequential)]
     public struct CameraDefailInfoCpp {
-        public int CameraId;
+        public int CameraIndex;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 200)]
         public byte[] CamFriendlyName;
@@ -176,11 +176,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         public int Width;
         public int Height;
         public int DataLen;
-        public uint FrameId;
+        public uint FrameSequence;
         public IntPtr ImageData;
         public ImageType Type;
         public int BarcodeCount;
-        public int CameraId;
+        public int CameraIndex;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 50)]
         public BarCodeModelCpp[] CodeModels;
@@ -223,180 +223,180 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
     /******************************************************/
     // 函数名   : ICAM_StartCamera
     // 功能描述 : 通过id来打开对应的相机
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     // 返回值   : 是否打开成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_StartCamera(int id);
+    public delegate int pinvoke_ICAM_StartCamera(int cameraIndex);
 
     /******************************************************/
     // 函数名   : ICAM_StopCamera
     // 功能描述 : 通过id来关闭对应的相机
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     // 返回值   : 是否关闭成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_StopCamera(int id);
+    public delegate int pinvoke_ICAM_StopCamera(int cameraIndex);
 
     /******************************************************/
     // 函数名   : ICAM_GetExposureRange
     // 功能描述 : 获取相机的曝光范围值
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            min 最小值
     //            max 最大值
     //            step 步长
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_GetExposureRange(int id, ref int min, ref int max, ref int step);
+    public delegate int pinvoke_ICAM_GetExposureRange(int cameraIndex, ref int min, ref int max, ref int step);
 
     /******************************************************/
     // 函数名   : ICAM_GetExposure
     // 功能描述 : 获取相机的曝光值
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            exposure 曝光值
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_GetExposure(int id, ref int exposure);
+    public delegate int pinvoke_ICAM_GetExposure(int cameraIndex, ref int exposure);
 
     /******************************************************/
     // 函数名   : ICAM_SetExposure
     // 功能描述 : 设置相机的曝光值
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            exposure 曝光值
     // 返回值   : 是否设置成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SetExposure(int id, int exposure);
+    public delegate int pinvoke_ICAM_SetExposure(int cameraIndex, int exposure);
 
     /******************************************************/
     // 函数名   : ICAM_SetExposureMode
     // 功能描述 : 设置相机曝光模式
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            mode 曝光模式 0:自动曝光 1:手动曝光
     // 返回值   : 是否设置成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SetExposureMode(int id, int mode);
+    public delegate int pinvoke_ICAM_SetExposureMode(int cameraIndex, int mode);
 
     /******************************************************/
     // 函数名   : ICAM_GetExposureMode
     // 功能描述 : 获取相机曝光模式
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            mode 曝光模式 0:自动曝光 1:手动曝光
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_GetExposureMode(int id, ref int mode);
+    public delegate int pinvoke_ICAM_GetExposureMode(int cameraIndex, ref int mode);
 
     /******************************************************/
     // 函数名   : ICAM_GetAnaloggainRange
     // 功能描述 : 获取相机模拟增益范围
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            min 最小值
     //            max 最大值
     //            step 步长
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_GetAnaloggainRange(int id, ref float min, ref float max, ref float step);
+    public delegate int pinvoke_ICAM_GetAnaloggainRange(int cameraIndex, ref float min, ref float max, ref float step);
 
     /******************************************************/
     // 函数名   : ICAM_GetAnaloggain
     // 功能描述 : 获取相机模拟增益值
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            gain 模拟增益值
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_GetAnaloggain(int id, ref int gain);
+    public delegate int pinvoke_ICAM_GetAnaloggain(int cameraIndex, ref int gain);
 
     /******************************************************/
     // 函数名   : ICAM_SetAnaloggain
     // 功能描述 : 设置相机模拟增益值
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            gain 模拟增益值
     // 返回值   : 是否设置成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SetAnaloggain(int id, int gain);
+    public delegate int pinvoke_ICAM_SetAnaloggain(int cameraIndex, int gain);
 
     /******************************************************/
     // 函数名   : ICAM_SaveCameraParameters
     // 功能描述 : 保存相机参数 曝光增益等参数设置后需要保存参数后断电后才会生效
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     // 返回值   : 是否保存成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SaveCameraParameters(int id);
+    public delegate int pinvoke_ICAM_SaveCameraParameters(int cameraIndex);
 
     /******************************************************/
     // 函数名   : ICAM_ImportCameraConfigFile
     // 功能描述 : 导入相机参数文件
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            filepath 相机参数文件全路径
     // 返回值   : 是否导入成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_ImportCameraConfigFile(int id, string filepath);
+    public delegate int pinvoke_ICAM_ImportCameraConfigFile(int cameraIndex, string filepath);
 
     /******************************************************/
     // 函数名   : ICAM_ExportCameraConfigFile
     // 功能描述 : 导出相机参数文件
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            filepath 相机参数文件全路径
     // 返回值   : 是否导出成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_ExportCameraConfigFile(int id, string filepath);
+    public delegate int pinvoke_ICAM_ExportCameraConfigFile(int cameraIndex, string filepath);
 
     /******************************************************/
     // 函数名   : ICAM_ModifyCameraName
     // 功能描述 : 修改相机名称 需要断电重启后生效
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            cameraname 修改后的相机名称 不能超过32个字节
     // 返回值   : 是否设置成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_ModifyCameraName(int id, string cameraname);
+    public delegate int pinvoke_ICAM_ModifyCameraName(int cameraIndex, string cameraname);
 
     /******************************************************/
     // 函数名   : ICAM_GetImageMirror
     // 功能描述 : 获取图像镜像信息
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            hmirror 是否水平镜像 0:未水平镜像 1:水平镜像
     //            vmirror 是否垂直镜像 0:未垂直镜像 1:垂直镜像
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_GetImageMirror(int id, ref int hmirror, ref int vmirror);
+    public delegate int pinvoke_ICAM_GetImageMirror(int cameraIndex, ref int hmirror, ref int vmirror);
 
     /******************************************************/
     // 函数名   : ICAM_SetImageMirror
     // 功能描述 : 设置图像镜像信息
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            hmirror 是否水平镜像 0:未水平镜像 1:水平镜像
     //            vmirror 是否垂直镜像 0:未垂直镜像 1:垂直镜像
     // 返回值   : 是否设置成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SetImageMirror(int id, int hmirror, int vmirror);
+    public delegate int pinvoke_ICAM_SetImageMirror(int cameraIndex, int hmirror, int vmirror);
 
     /******************************************************/
     // 函数名   : ICAM_FetchFrame
     // 功能描述 : 获取一帧图像数据
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            image 图像信息
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_FetchFrame(int id, ref ImageModelCpp image, int timeout = 300);
+    public delegate int pinvoke_ICAM_FetchFrame(int cameraIndex, ref ImageModelCpp image, int timeout = 300);
 
     /******************************************************/
     // 函数名   : ICAM_ReleaseFrame
     // 功能描述 : 释放一帧图像
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            image 图像信息
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
@@ -406,31 +406,31 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
     /******************************************************/
     // 函数名   : ICAM_SetCamBeScanner  默认是不开启读码
     // 功能描述 : 获取一帧图像数据
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            isscanner 是否需要扫码 0:不需要扫码 1:需要扫码
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SetCamBeScanner(int id, int isscanner);
+    public delegate int pinvoke_ICAM_SetCamBeScanner(int cameraIndex, int isscanner);
 
     /******************************************************/
     // 函数名   : ICAM_SetTriggerMode
     // 功能描述 : 设置相机触发模式
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     //            model 触发模式 0:连续模式 1:软件触发 2:硬件触发
     // 返回值   : 是否获取成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_SetTriggerMode(int id, int mode);
+    public delegate int pinvoke_ICAM_SetTriggerMode(int cameraIndex, int mode);
 
     /******************************************************/
     // 函数名   : ICAM_ExecuteSoftTrigger
     // 功能描述 : 执行一次软件触发
-    // 参数     : id  相机id
+    // 参数     : cameraIndex  相机id
     // 返回值   : 是否触发成功,成功返回 0
     /******************************************************/
 
-    public delegate int pinvoke_ICAM_ExecuteSoftTrigger(int id);
+    public delegate int pinvoke_ICAM_ExecuteSoftTrigger(int cameraIndex);
 
     public static class ICAMAPI {
 

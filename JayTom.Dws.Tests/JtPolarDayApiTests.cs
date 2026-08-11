@@ -1,4 +1,5 @@
 using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using JayTom.Dws.Interface;
 using JayTom.Dws.Interface.Jtexpress;
 
@@ -10,20 +11,20 @@ namespace JayTom.Dws.Tests;
 public sealed class JtPolarDayApiTests
 {
     /// <summary>
-    /// 图片服务失败不能阻断 scanInfo 和 packageInfo 设备报文。
+    /// 本地图片暂存失败不能阻断 scanInfo 和 packageInfo 设备报文。
     /// </summary>
     [Fact]
-    public async Task DeviceInfoStillUploadsWhenImageServiceFails()
+    public async Task DeviceInfoStillUploadsWhenLocalImageStagingFails()
     {
         var requestPaths = new List<string>();
         using var handler = new StubHttpMessageHandler(request =>
         {
             requestPaths.Add(request.RequestUri?.AbsolutePath ?? string.Empty);
             return request.RequestUri?.AbsolutePath.Contains(
-                       "/opa/smartLogin",
+                       "/polarDay/upload/sortingImage",
                        StringComparison.OrdinalIgnoreCase) == true
                 ? StubHttpMessageHandler.CreateOkResponse(
-                    "{\"succ\":false,\"msg\":\"login failed\"}")
+                    "{\"code\":0,\"msg\":\"staging failed\",\"data\":null}")
                 : StubHttpMessageHandler.CreateOkResponse(
                     "{\"code\":1,\"msg\":\"success\",\"data\":null}");
         });
@@ -31,7 +32,7 @@ public sealed class JtPolarDayApiTests
         var parameterResult = await api.SetParameters(CreateParameters());
         Assert.True(parameterResult.Key, parameterResult.Value);
 
-        using var image = new Bitmap(2, 2);
+        using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
         await api.UploadInBackground(
             "JT5513378378679",
             1,
@@ -52,13 +53,71 @@ public sealed class JtPolarDayApiTests
         Assert.Contains(
             requestPaths,
             path => path.EndsWith(
-                "/opa/smartLogin",
+                "/polarDay/upload/sortingImage",
                 StringComparison.OrdinalIgnoreCase));
         Assert.Equal(
             2,
             requestPaths.Count(path => path.EndsWith(
                 "/polarDay/upload/deviceInfo",
                 StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// 图片必须先暂存到本地适配服务，再把 halfPath 传给设备报文。
+    /// </summary>
+    [Fact]
+    public async Task ImageStagesLocallyBeforeDeviceInfoWithoutDirectOpaCall()
+    {
+        var requestPaths = new List<string>();
+        using var handler = new StubHttpMessageHandler(request =>
+        {
+            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+            requestPaths.Add(path);
+            return path.EndsWith(
+                    "/polarDay/upload/sortingImage",
+                    StringComparison.OrdinalIgnoreCase)
+                ? StubHttpMessageHandler.CreateOkResponse(
+                    "{\"code\":1,\"msg\":\"success\",\"data\":{\"halfPath\":\"staging\\\\JT001.jpg\"}}")
+                : StubHttpMessageHandler.CreateOkResponse(
+                    "{\"code\":1,\"msg\":\"success\",\"data\":null}");
+        });
+        var api = new JtPolarDayApi(new StubHttpClientFactory(handler));
+        var parameterResult = await api.SetParameters(CreateParameters());
+        Assert.True(parameterResult.Key, parameterResult.Value);
+
+        using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
+        await api.UploadInBackground(
+            "JT001",
+            0,
+            new DateTime(2026, 8, 12, 8, 1, 2),
+            imageInfo: new UploadImageInfo
+            {
+                Image = image,
+                CameraSerialNumber = "CAM01"
+            },
+            other: new JtPolarDayApi.UploadContext
+            {
+                CarNum = "1",
+                GridNo = "01",
+                GridCode = "111",
+                FallTime = new DateTime(2026, 8, 12, 8, 1, 3)
+            });
+
+        Assert.Equal(
+            "/polarDay/upload/sortingImage",
+            requestPaths[0]);
+        Assert.DoesNotContain(
+            requestPaths,
+            path => path.Contains(
+                "/opa/",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(3, requestPaths.Count);
+        Assert.All(
+            handler.RequestContents.Skip(1),
+            content => Assert.Contains(
+                "staging\\\\JT001.jpg",
+                content,
+                StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -70,11 +129,6 @@ public sealed class JtPolarDayApiTests
         BaseUrl = "http://unit.test",
         AppKey = "app-key",
         AppSecret = "app-secret",
-        ImageServiceBaseUrl = "http://image.unit.test",
-        ImageAccount = "image-account",
-        ImagePassword = "image-password",
-        ImageAppKey = "image-app-key",
-        ImageAppSecret = "image-app-secret",
         SiteCode = "6398155",
         EquipmentCode = "ZXJCD6398155001",
         SortingPlanCode = "6398155-001",

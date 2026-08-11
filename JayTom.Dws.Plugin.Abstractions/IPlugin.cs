@@ -1,4 +1,4 @@
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 定义不依赖桌面 UI 或宿主容器的插件元数据与生命周期事件。

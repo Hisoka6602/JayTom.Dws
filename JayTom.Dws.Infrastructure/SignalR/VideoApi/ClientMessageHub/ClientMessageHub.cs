@@ -1,4 +1,4 @@
-﻿using Polly.Retry;
+using Polly.Retry;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
@@ -8,16 +8,16 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
         private static bool _isConnected = false;
         private static bool _autoReconnect;
         private static bool _isReconnecting = false;
-        private static string _connectionId = string.Empty;
+        private static string _connectionIdentifier = string.Empty;
 
         public bool IsConnected {
             get => _isConnected;
             private set => _isConnected = value;
         }
 
-        public string ConnectionId {
-            get => _connectionId;
-            private set => _connectionId = value;
+        public string ConnectionIdentifier {
+            get => _connectionIdentifier;
+            private set => _connectionIdentifier = value;
         }
 
         public bool AutoReconnect {
@@ -54,7 +54,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
                 RegisterMethod(_hubConnection, "UpDateNodes",
                     ReceiveMessageType.UpDateNodes);
                 await _hubConnection?.StartAsync(token)!;
-                ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
+                ConnectionIdentifier = _hubConnection?.ConnectionId ?? string.Empty;
                 IsConnected = true;
             }
             catch (Exception e) {
@@ -78,7 +78,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
         private async Task OnReconnected(string? arg) {
             NLog.LogManager.GetCurrentClassLogger().Error($"重连成功:id={_hubConnection.ConnectionId}");
             IsConnected = true;
-            ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
+            ConnectionIdentifier = _hubConnection?.ConnectionId ?? string.Empty;
             var handlers = Reconnected;
             if (handlers is null) {
                 return;
@@ -108,9 +108,9 @@ namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
                 await Task.Delay(delayTime, token);
                 await _hubConnection?.StartAsync(token)!;
 
-                ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
+                ConnectionIdentifier = _hubConnection?.ConnectionId ?? string.Empty;
                 IsConnected = true;
-                await OnReconnected($"重连成功,ConnectionId:{ConnectionId},时间:{DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                await OnReconnected($"重连成功,ConnectionIdentifier:{ConnectionIdentifier},时间:{DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 return true;
             }
             catch (Exception e) {

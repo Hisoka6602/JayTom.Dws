@@ -21,6 +21,8 @@ using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Abstractions.Devices;
+using JayTom.Dws.Abstractions.Graphics;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace JayTom.Dws.Client.Service.DefaultConfiguration
@@ -70,8 +72,8 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                             BaudRate = 9600,
                             DataBits = 8,
                             DataFormat = DataFormatType.Ascii,
-                            Parity = Parity.None,
-                            StopBits = StopBits.One
+                            Parity = SerialParity.None,
+                            StopBits = SerialStopBits.One
                         },
                         CommonWeight = new CommonWeightParams
                         {
@@ -90,7 +92,8 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                         IsUseWatermark = false,
                         WatermarkInfo = new WatermarkInfo
                         {
-                            WatermarkColor = Color.DodgerBlue,
+                            WatermarkColor = new RgbaColor(Color.DodgerBlue.A, Color.DodgerBlue.R,
+                                Color.DodgerBlue.G, Color.DodgerBlue.B),
                             WatermarkFontSize = 10,
                             WatermarkPosition = WatermarkPosition.TopLeft
                         },
@@ -182,8 +185,8 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                             BaudRate = 9600,
                             DataBits = 8,
                             DataFormat = DataFormatType.Ascii,
-                            Parity = Parity.None,
-                            StopBits = StopBits.One
+                            Parity = SerialParity.None,
+                            StopBits = SerialStopBits.One
                         },
                         SerialPortResultOutputInfo = new SerialPortResultOutputInfo()
                         {

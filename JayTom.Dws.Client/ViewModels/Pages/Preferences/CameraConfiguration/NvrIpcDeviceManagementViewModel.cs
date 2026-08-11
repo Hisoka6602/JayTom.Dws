@@ -454,7 +454,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var (loginSucceeded, loginMessage) =
                         await baseDaHuatech.LogIn(device.SerialNumber, device.Username, device.Password);
                     var detectedChannelCount = loginSucceeded
-                        ? baseDaHuatech.GetLoggedInDeviceInfo(device.SerialNumber)?.LoggedInDeviceInfo?.nChanNum ?? 0
+                        ? baseDaHuatech.GetLoggedInChannelCount(device.SerialNumber)
                         : 0;
                     return (loginSucceeded, loginMessage, detectedChannelCount);
                 });

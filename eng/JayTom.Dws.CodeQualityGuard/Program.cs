@@ -1080,6 +1080,11 @@ static void CountDatabasePolicyViolations(
     string source,
     string relativePath,
     IDictionary<string, int> violations) {
+    // 数据库兼容测试必须直接构造旧文件并检查物理结构；生产代码仍执行完整策略检查。
+    if (relativePath.StartsWith("JayTom.Dws.Tests/", StringComparison.Ordinal)) {
+        return;
+    }
+
     var count = root.DescendantNodes()
         .OfType<ObjectCreationExpressionSyntax>()
         .Count(creation => IsDirectDatabaseClientType(

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DryIoc;
 using System.Linq;
 using System.Text;
@@ -20,10 +20,10 @@ using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.Repository;
 using JayTom.Dws.Domain.Repository.LocalLog;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
@@ -297,7 +297,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     CameraSerialNumber = model.SerialNumber
                 });
             };
-            _deviceService.CameraEnumerationRefreshed += delegate (object? sender, List<CameraFinderItemInfoModel> list)
+            _deviceService.CameraEnumerationRefreshed += delegate (object? sender, IReadOnlyList<CameraFinderItemInfoModel> list)
             {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel()
                 {
@@ -305,7 +305,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     Message = $"枚举相机",
                 });
             };
-            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraDisconnected += delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel()
                 {
@@ -313,7 +313,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     Message = $"相机断开连接",
                 });
             };
-            _deviceService.CameraFault += delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraFault += delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel()
                 {
@@ -326,7 +326,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 EventAggregator.Instance.Publish(new CameraLogInfoModel()
                 {
                     Type = LogType.Exception,
-                    Message = args.ExceptionMessage?.Message ?? string.Empty,
+                    Message = args.Exception?.Message ?? string.Empty,
                 });
             };
             _deviceService.CameraUnbound += delegate (object? sender, CameraFinderItemInfoModel model)
@@ -338,7 +338,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     CameraSerialNumber = model.SerialNumber
                 });
             };
-            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args)
+            _deviceService.BarcodeMissed += delegate (object? sender, BarcodeReadEventArgs args)
             {
                 EventAggregator.Instance.Publish(new CameraLogInfoModel()
                 {
@@ -516,7 +516,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         Type = model.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
                         ApiParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
                         CreateTime = model.UploadResponse?.RequestTime ?? DateTime.Now,
-                        Duration = model.UploadResponse?.Duration ?? 0,
+                        Duration = model.UploadResponse?.DurationSeconds ?? 0,
                         ExceptionMsg = model.UploadResponse?.ExceptionMsg ?? string.Empty,
                         RequestContent = model.UploadResponse?.RequestContent ?? string.Empty,
                         RequestTime = model.UploadResponse?.RequestTime ?? DateTime.Now,

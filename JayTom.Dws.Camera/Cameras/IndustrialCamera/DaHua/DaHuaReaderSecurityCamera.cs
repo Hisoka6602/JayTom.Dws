@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -74,11 +74,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             throw new NotImplementedException();
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             throw new NotImplementedException();
         }
 

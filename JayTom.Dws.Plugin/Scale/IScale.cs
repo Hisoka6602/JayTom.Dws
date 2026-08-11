@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
@@ -24,7 +24,7 @@ namespace JayTom.Dws.Plugin.Scale {
         /// <summary>
         /// 稳定重量
         /// </summary>
-        event EventHandler<float> StabledWeight;
+        event EventHandler<decimal> StabledWeight;
 
         /// <summary>
         /// 稳定重量(含原文)
@@ -111,7 +111,7 @@ namespace JayTom.Dws.Plugin.Scale {
         /// <summary>
         /// 重量转换率
         /// </summary>
-        public double WeightConversionRate { get; set; }
+        public decimal WeightConversionRate { get; set; }
 
         /// <summary>
         /// 是否使用追加重量
@@ -121,7 +121,7 @@ namespace JayTom.Dws.Plugin.Scale {
         /// <summary>
         /// 追加重量的值
         /// </summary>
-        public double AppendedWeightValue { get; set; }
+        public decimal AppendedWeightValue { get; set; }
 
         /// <summary>
         /// 是否使用固定重量
@@ -131,7 +131,7 @@ namespace JayTom.Dws.Plugin.Scale {
         /// <summary>
         /// 固定重量的值
         /// </summary>
-        public double FixedWeightValue { get; set; }
+        public decimal FixedWeightValue { get; set; }
 
         /// <summary>
         /// 是否使用融合重量超时
@@ -147,7 +147,7 @@ namespace JayTom.Dws.Plugin.Scale {
     public class WeightChangedEventArgs : EventArgs {
         public string OriginalContent { get; set; } = string.Empty;
         public DateTime Time { get; set; } = DateTime.Now;
-        public double FormattedWeight { get; set; }
+        public decimal FormattedWeight { get; set; }
         public WeightType Type { get; set; }
         public ScaleWeightFormat Format { get; set; }
     }

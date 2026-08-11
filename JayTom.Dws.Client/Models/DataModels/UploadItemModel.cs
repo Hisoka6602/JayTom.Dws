@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.DataModels
@@ -10,7 +10,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         private string _responseContent = string.Empty;
         private DateTime? _requestTime;
         private DateTime? _responseTime;
-        private double _durationInSeconds;
+        private decimal _durationInSeconds;
         private string _interfaceParameters = string.Empty;
         private string _requestUrl = string.Empty;
         private string _exceptionMessage = string.Empty;
@@ -63,7 +63,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 耗时(秒)
         /// </summary>
-        public double DurationInSeconds
+        public decimal DurationInSeconds
         {
             get => _durationInSeconds;
             set => SetProperty(ref _durationInSeconds, value);

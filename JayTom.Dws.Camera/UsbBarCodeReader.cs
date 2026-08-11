@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using Dynamsoft;
 using System.IO;
@@ -105,7 +105,7 @@ namespace JayTom.Dws.Camera {
                         var selectCamera = cameraManager?.SelectCamera(orDefault.Name);
                         var usbCameraInfo = new UsbCameraInfo() {
                             CameraName = orDefault.Name,
-                            CameraId = orDefault.Id,
+                            CameraIndex = orDefault.Id,
                             CameraDescription = device["Description"]?.ToString(),
                             CameraManufacturer = device["Manufacturer"]?.ToString(),
                             CameraSerialNumber = device["ClassGuid"]?.ToString(),
@@ -345,8 +345,12 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, string>> SetBarcodeReaderParameter(
-            Dictionary<BarcodeReaderParameter, object> parameters) {
+        public async Task<KeyValuePair<bool, string>> ApplyBarcodeReaderSettingsAsync(
+            BarcodeReaderSettings settings,
+            CancellationToken cancellationToken = default) {
+            ArgumentNullException.ThrowIfNull(settings);
+            cancellationToken.ThrowIfCancellationRequested();
+            var parameters = settings.ToAdapterParameters();
             await Task.Yield();
             if (mBarcodeReader is not null) {
                 if (/*!_isOpend*/ true) {
@@ -366,6 +370,9 @@ namespace JayTom.Dws.Camera {
                         .Value;
                     if (enumBarcodeFormat is EnumBarcodeFormat format) {
                         runtimeSettings.BarcodeFormatIds = (int)format;
+                    }
+                    else if (enumBarcodeFormat is SupportedBarcodeFormat supportedFormat) {
+                        runtimeSettings.BarcodeFormatIds = (int)DynamsoftBarcodeFormatMapper.Map(supportedFormat);
                     }
 
                     var enumBarcodeFormat2 = parameters.FirstOrDefault(f =>
@@ -593,11 +600,9 @@ namespace JayTom.Dws.Camera {
 
                 mBarcodeReader = BarcodeReader.GetInstance();
                 mNormalRuntimeSettings = mBarcodeReader?.GetRuntimeSettings();
-                await SetBarcodeReaderParameter(new Dictionary<BarcodeReaderParameter, object>()
-                 {
-                    { BarcodeReaderParameter.RecognitionMode, ScanMode.Speed },
-                    {BarcodeReaderParameter.IsUseTextFilterMode,true},
-                    //{BarcodeReaderParameter.IsUseRegionPredetectionMode,true}
+                await ApplyBarcodeReaderSettingsAsync(new BarcodeReaderSettings {
+                    RecognitionMode = ScanMode.Speed,
+                    UseTextFilter = true
                 });
                 NLog.LogManager.GetCurrentClassLogger().Error($"成功绑定");
                 return true;
@@ -719,7 +724,7 @@ namespace JayTom.Dws.Camera {
                             BarcodeRegion = s.LocalizationResult.ResultPoints?.ToList(),
                             BarcodeType = s.LocalizationResult.BarcodeFormatString
                         })];
-                        barcodeScannedEventArgs.RecognitionTime = elapsedMilliseconds;
+                        barcodeScannedEventArgs.RecognitionDurationMilliseconds = elapsedMilliseconds;
                     }
                     OnBarcodeScanned(barcodeScannedEventArgs);
                 }
@@ -950,7 +955,7 @@ public class UsbCameraInfo {
     /// <summary>
     /// 相机Id
     /// </summary>
-    public int? CameraId { get; set; }
+    public int? CameraIndex { get; set; }
 
     /// <summary>
     /// 相机序列号
@@ -1008,7 +1013,7 @@ public class BarcodeScannedEventArgs : EventArgs {
     /// <summary>
     /// 识别耗时
     /// </summary>
-    public long RecognitionTime { get; set; }
+    public long RecognitionDurationMilliseconds { get; set; }
 }
 
 //增益

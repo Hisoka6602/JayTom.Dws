@@ -39,7 +39,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 {
@@ -341,7 +341,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             try
             {
                 // 各相机原生SDK可能在返回任务前同步阻塞，保留线程池隔离并等待其完整结束。
-                var (key, value) = await Task.Run(() => _deviceService.OnCameraEnumerationRefreshed());
+                var (key, value) = await Task.Run(() => _deviceService.RefreshCameraEnumerationAsync());
                 await Volatile.Read(ref _cameraItemRefreshTask);
                 CameraFinderMessageQueue.Enqueue(key
                     ? $"{Languages.Language.ResourceManager.GetString("已重新枚举相机")}"
@@ -362,7 +362,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         /// </summary>
         private void OnCameraEnumerationRefreshed(
             object? sender,
-            List<CameraFinderItemInfoModel> cameraFinderItems)
+            IReadOnlyList<CameraFinderItemInfoModel> cameraFinderItems)
         {
             Volatile.Write(ref _cameraItemRefreshTask, RefreshCameraItemsAsync(cameraFinderItems));
         }
@@ -370,7 +370,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         /// <summary>
         /// 并发读取相机配置并在线性时间内合并绑定状态。
         /// </summary>
-        private async Task RefreshCameraItemsAsync(List<CameraFinderItemInfoModel> cameraFinderItems)
+        private async Task RefreshCameraItemsAsync(IReadOnlyList<CameraFinderItemInfoModel> cameraFinderItems)
         {
             await _cameraItemRefreshGate.WaitAsync();
             try
@@ -601,7 +601,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     //触发修改事件
                     obj.HasBinding = true;
                     obj.BoundType = CameraBindingType.PanoramaCamera;
-                    var (key, value) = await _deviceService.OnCameraBound(obj);
+                    var (key, value) = await _deviceService.BindCameraAsync(obj);
                     if (!key)
                     {
                         obj.HasBinding = false;
@@ -746,7 +746,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     //触发修改事件
                     obj.HasBinding = true;
                     obj.BoundType = CameraBindingType.ScannerCamera;
-                    var (key, value) = await _deviceService.OnCameraBound(obj);
+                    var (key, value) = await _deviceService.BindCameraAsync(obj);
                     if (!key)
                     {
                         obj.HasBinding = false;
@@ -830,7 +830,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     //触发修改事件
                     obj.HasBinding = true;
                     obj.BoundType = CameraBindingType.OcrCamera;
-                    var (key, value) = await _deviceService.OnCameraBound(obj);
+                    var (key, value) = await _deviceService.BindCameraAsync(obj);
                     if (!key)
                     {
                         obj.HasBinding = false;
@@ -890,7 +890,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     //触发修改事件
                     obj.HasBinding = true;
                     obj.BoundType = CameraBindingType.VolumeCamera;
-                    var (key, value) = await _deviceService.OnCameraBound(obj);
+                    var (key, value) = await _deviceService.BindCameraAsync(obj);
                     if (!key)
                     {
                         obj.HasBinding = false;
@@ -968,7 +968,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 }
                 if (isSuccess)
                 {
-                    var (key, value) = await _deviceService.OnCameraUnbound(obj);
+                    var (key, value) = await _deviceService.UnbindCameraAsync(obj);
                     isSuccess = key;
                 }
 

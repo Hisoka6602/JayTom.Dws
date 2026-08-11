@@ -21,7 +21,7 @@ namespace JayTom.Dws.Data.ServerData {
         /// 授权序列号
         /// </summary>
         [Required, Column("AuthorizationInfoUserId")]
-        public int AuthorizationInfoUserId { get; set; }
+        public long AuthorizationInfoUserId { get; set; }
 
         /// <summary>
         /// 初次效验时间

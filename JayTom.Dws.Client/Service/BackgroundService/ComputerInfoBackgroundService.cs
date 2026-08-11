@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
@@ -10,8 +10,8 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Infrastructure.IComputer;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -77,18 +77,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     {
                         CpuInfo = new CpuInfoModel
                         {
-                            ClockSpeed = cpuInfo.CpuBusSpeed,
-                            CpuTemperature = cpuInfo.CpuPackageTemperature,
-                            FanSpeed = fanSpeed,
+                            ClockSpeed = Convert.ToDecimal(cpuInfo.CpuBusSpeed),
+                            CpuTemperature = Convert.ToDecimal(cpuInfo.CpuPackageTemperature),
+                            FanSpeed = Convert.ToInt32(fanSpeed),
                             Name = cpuInfo.CpuName,
                             NumberOfCores = cpuInfo.CpuCoreInfos?.Count ?? 0,
-                            UsagePercentage = cpuInfo.CpuTotalUsedPercent,
+                            UsagePercentage = Convert.ToDecimal(cpuInfo.CpuTotalUsedPercent),
                         },
                         MemoryInfo = new MemoryInfoModel
                         {
                             AvailableSizeBytes = memoryInfo.AvailableMemory,
-                            UsedPercentage = memoryInfo.UsedMemoryPercent,
-                            MemoryRemaining = memoryInfo.AvailableMemoryPercentage,
+                            UsedPercentage = Convert.ToDecimal(memoryInfo.UsedMemoryPercent),
+                            MemoryRemaining = Convert.ToDecimal(memoryInfo.AvailableMemoryPercentage),
                             TotalSizeBytes = memoryInfo.UsedMemory + memoryInfo.AvailableMemory
                         },
                         GpuInfo = new GpuInfoModel

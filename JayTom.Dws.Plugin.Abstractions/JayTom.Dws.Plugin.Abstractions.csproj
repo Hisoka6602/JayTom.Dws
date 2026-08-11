@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>JayTom.Dws.Plugin.Contracts</AssemblyName>
+    <RootNamespace>JayTom.Dws.Plugin.Contracts</RootNamespace>
+    <Description>跨平台插件契约、生命周期与兼容性模型。</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />

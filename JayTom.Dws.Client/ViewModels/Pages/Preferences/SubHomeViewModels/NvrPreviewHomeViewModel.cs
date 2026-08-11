@@ -22,7 +22,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
+using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
 {
@@ -55,13 +55,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
             {
                 if (item is { } info)
                 {
-                    if (info.Status == EventMediators.ApplicationStatus.Start)
+                    if (info.Status == JayTom.Dws.Domain.EventMediators.ApplicationStatus.Start)
                     {
                         try
                         {
                             await _runningSemaphoreSlim.WaitAsync();
                             var ipcNvrConfigInfoModels = await _ipcNvrConfigRepository.MemoryCacheData();
-                            await BaseDaHuatech.EnumDevices();
+                            await BaseDaHuatech.InitializeDeviceDiscoveryAsync();
                             var settingsDto = await _settingsStore.GetAsync<ContentInputSettingsDto>("ContentInputSettings") ?? new ContentInputSettingsDto();
 
                             var bindingInfoModels = await _nvrCameraBindingRepository.MemoryCacheData();
@@ -78,7 +78,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                                     var previewViewItemInfo = new NvrPreviewViewItemInfo()
                                     {
                                         SerialNumber = serialNumber,
-                                        ChannelId = model.Channel,
+                                        ChannelNumber = model.Channel,
                                         IncreaseZoomCommand = new DelegateCommand<object>(sub =>
                                         {
                                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
@@ -144,7 +144,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                             _runningSemaphoreSlim.Release();
                         }
                     }
-                    else if (info.Status == EventMediators.ApplicationStatus.Stop)
+                    else if (info.Status == JayTom.Dws.Domain.EventMediators.ApplicationStatus.Stop)
                     {
                         //停止
                         try
@@ -156,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                                 var itemInfos = NvrPreviewViewItems.Where(w => w.VideoFrame != null).ToList();
                                 foreach (var itemInfo in itemInfos)
                                 {
-                                    _baseDaHuatech?.StopRealtimePreview(itemInfo.SerialNumber, itemInfo.ChannelId);
+                                    _baseDaHuatech?.StopRealtimePreview(itemInfo.SerialNumber, itemInfo.ChannelNumber);
                                     itemInfo.Dispose();
                                 }
 

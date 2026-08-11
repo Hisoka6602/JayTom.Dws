@@ -1,4 +1,4 @@
-﻿namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
+namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.ClientMessageHub {
 
     public interface IClientMessageHub {
 
@@ -10,7 +10,7 @@
         /// <summary>
         /// 链接Id
         /// </summary>
-        public string ConnectionId { get; }
+        public string ConnectionIdentifier { get; }
 
         /// <summary>
         /// 是否自动重连

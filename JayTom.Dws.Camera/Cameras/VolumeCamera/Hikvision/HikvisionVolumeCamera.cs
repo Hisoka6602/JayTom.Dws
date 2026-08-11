@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Linq;
 using System.Text;
@@ -338,13 +338,13 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
-            return TriggerMeasurementPhotoAsync(barcode, barcodeTimestamp, TakePhotoDelay, cancellation);
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
+            return TriggerMeasurementPhotoAsync(barcode, packageTimestampMilliseconds, TakePhotoDelay, cancellation);
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             var delayMilliseconds = (int)Math.Clamp(delay.TotalMilliseconds, 0, int.MaxValue);
-            return TriggerMeasurementPhotoAsync(barcode, barcodeTimestamp, delayMilliseconds, cancellation);
+            return TriggerMeasurementPhotoAsync(barcode, packageTimestampMilliseconds, delayMilliseconds, cancellation);
         }
 
         public int TakePhotoDelay { get; set; }
@@ -356,7 +356,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
-        public async Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+        public async Task TriggerMeasurementPhotoAsync(string barcode, long packageTimestampMilliseconds, int delay, CancellationToken cancellation = default) {
             if (MeasurementTriggerMode == MeasurementTriggerMode.Continuous) {
                 return;
             }

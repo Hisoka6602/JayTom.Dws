@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
 using SixLabors.ImageSharp;
 using System.ComponentModel;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Point = System.Drawing.Point;
 using System.Collections.Concurrent;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
@@ -209,7 +207,7 @@ namespace JayTom.Dws.Plugin.Device.GrayscaleDevice {
                     }
 
                     //中心点
-                    grayscaleResult.CenterPoint = new Point(MainRectangleBoxCoordinates.X2 / 2,
+                    grayscaleResult.CenterPoint = new Point2D(MainRectangleBoxCoordinates.X2 / 2,
                         MainRectangleBoxCoordinates.Y2 / 2);
                     if (grayscaleResult.MainRectangleBoxInfos.Any()) {
                         var pCenterPoint =

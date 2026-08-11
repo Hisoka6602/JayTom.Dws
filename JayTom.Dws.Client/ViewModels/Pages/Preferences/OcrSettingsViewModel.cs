@@ -237,12 +237,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         public Bitmap DrawIndicator(Bitmap thumbnail, Size originalSize,
            OcrResult result, int thickness)
         {
-            var sortedAreas = new List<List<double>>()
+            var sortedAreas = new List<List<decimal>>()
             {
-                result.BarcodeArea ?? new List<double>(),
-                result.RecipientAddressArea ?? new List<double>(),
-                result.ThreeSegmentArea ?? new List<double>(),
-                result.SenderAddressArea ?? new List<double>()
+                result.BarcodeArea ?? new List<decimal>(),
+                result.RecipientAddressArea ?? new List<decimal>(),
+                result.ThreeSegmentArea ?? new List<decimal>(),
+                result.SenderAddressArea ?? new List<decimal>()
             };
 
             var yOffset = 30; // 初始偏移量
@@ -258,7 +258,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             return thumbnail;
         }
 
-        private Color GetColorForArea(OcrResult result, List<double> area)
+        private Color GetColorForArea(OcrResult result, List<decimal> area)
         {
             if (area == result.BarcodeArea)
             {
@@ -280,7 +280,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             return Color.Black; // 默认颜色为黑色
         }
 
-        private string GetTextForArea(OcrResult result, List<double> area)
+        private string GetTextForArea(OcrResult result, List<decimal> area)
         {
             if (area == result.BarcodeArea)
             {
@@ -302,7 +302,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             return string.Empty;
         }
 
-        private void DrawIndicatorForArea(Graphics g, Image thumbnail, Size originalSize, List<double> areaPoints, string text, Color color, int yOffset, int lineWidth)
+        private void DrawIndicatorForArea(Graphics g, Image thumbnail, Size originalSize, List<decimal> areaPoints, string text, Color color, int yOffset, int lineWidth)
         {
             try
             {
@@ -313,8 +313,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 var points = new Point[4];
                 for (var i = 0; i < convertPoints.Count; i++)
                 {
-                    points[i].X = (int)(convertPoints[i].X * ((float)thumbnail.Size.Width / imageWidth));
-                    points[i].Y = (int)(convertPoints[i].Y * ((float)thumbnail.Size.Height / imageHeight));
+                    points[i].X = (int)(convertPoints[i].X * ((decimal)thumbnail.Size.Width / imageWidth));
+                    points[i].Y = (int)(convertPoints[i].Y * ((decimal)thumbnail.Size.Height / imageHeight));
                 }
 
                 g.DrawPolygon(new Pen(color, (int)(lineWidth / 6)), points);
@@ -358,7 +358,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             }
         }
 
-        private List<Point> ConvertPoint(List<double>? coord)
+        private List<Point> ConvertPoint(List<decimal>? coord)
         {
             var points = new List<Point>();
             if (coord?.Count == 8)
@@ -387,10 +387,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             return points;
         }
 
-        public double CalculateLineWidthMultiplier(int imageWidth, int imageHeight, int desiredLineWidthInPixels = 1)
+        public decimal CalculateLineWidthMultiplier(int imageWidth, int imageHeight, int desiredLineWidthInPixels = 1)
         {
-            var widthMultiplier = (double)imageWidth / 800; // 计算宽度倍数
-            var heightMultiplier = (double)imageHeight / 600; // 计算高度倍数
+            var widthMultiplier = (decimal)imageWidth / 800; // 计算宽度倍数
+            var heightMultiplier = (decimal)imageHeight / 600; // 计算高度倍数
 
             // 取宽度和高度倍数的最大值作为结果
             var lineWidthMultiplier = Math.Max(widthMultiplier, heightMultiplier);

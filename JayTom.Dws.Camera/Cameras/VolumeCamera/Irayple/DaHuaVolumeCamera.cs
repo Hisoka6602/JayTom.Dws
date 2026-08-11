@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -176,11 +176,11 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 
@@ -193,7 +193,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
-        public Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+        public Task TriggerMeasurementPhotoAsync(string barcode, long packageTimestampMilliseconds, int delay, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 

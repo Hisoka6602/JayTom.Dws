@@ -152,7 +152,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                 var bindingsByAddress = _lockBindingInfoModels
                                     .GroupBy(binding => binding.Address, StringComparer.Ordinal)
                                     .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-                                var definitionsById = _definitionInfoModels
+                                var definitionsByKey = _definitionInfoModels
                                     .GroupBy(definition => definition.Id)
                                     .ToDictionary(group => group.Key, group => group.First());
                                 while (!monitorToken.IsCancellationRequested)
@@ -197,7 +197,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                         dataItem.StartByteAdr.ToString(),
                                                         out var model))
                                                 {
-                                                    definitionsById.TryGetValue(model.ExitId, out var infoModel);
+                                                    definitionsByKey.TryGetValue(model.ExitId, out var infoModel);
 
                                                     PackageExitDefinitionInfoModel? changedModel = null;
                                                     var isLocked = Convert.ToByte(dataItem.Value) != 0;

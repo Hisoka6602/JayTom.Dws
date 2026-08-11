@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NetSDKCS;
 using System.Linq;
 using System.Text;
@@ -94,9 +94,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                 });
                         }
                     };
-                    _mDisConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
+                    _mDisConnectCallBack += delegate (IntPtr callbackHandle, IntPtr dvrip, int port, IntPtr user) {
                     };
-                    _mReConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
+                    _mReConnectCallBack += delegate (IntPtr callbackHandle, IntPtr dvrip, int port, IntPtr user) {
                     };
                     _mRealDataCallBackEx2 += delegate (IntPtr handle, uint type, IntPtr buffer, uint size, IntPtr nint,
                         IntPtr user) {
@@ -121,27 +121,27 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     _fCbDecode += (long port, ref FRAME_DECODE_INFO info, ref FRAME_INFO_EX frameInfo, IntPtr user) => {
                         var preview = _realTimePreviewInfos.FirstOrDefault(item =>
                             item.PlayPort == port &&
-                            item.PlayChannelId.Equals((int)user) &&
+                            item.PlayChannelNumber.Equals((int)user) &&
                             item.IsRealTimePlay);
                         if (preview is not null &&
                             _realtimePreviewEvent.TryGetValue(
-                                $"{preview.SerialNo}|{preview.PlayChannelId}",
+                                $"{preview.SerialNo}|{preview.PlayChannelNumber}",
                                 out var callback)) {
                             _fcbChannel.Writer.TryWrite((callback, new RealtimePreviewInfo {
-                                ChannelId = (int)user,
+                                ChannelNumber = (int)user,
                                 RgbData = ConvertFrameInfoToRgbByteArray(info, 768, 432),
                                 Width = 768,
                                 Height = 432
                             }));
                         }
                     };
-                    _mSnapRevCallBack += delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
+                    _mSnapRevCallBack += delegate (IntPtr callbackHandle, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
                         if (len == 0 || type != 10 || buf == IntPtr.Zero) {
                             return;
                         }
 
                         try {
-                            var key = _loginDev.FirstOrDefault(pair => pair.Value.Handle == id).Key;
+                            var key = _loginDev.FirstOrDefault(pair => pair.Value.Handle == callbackHandle).Key;
                             if (key is null || !_imageEvent.TryGetValue(key, out var callback)) {
                                 return;
                             }
@@ -240,6 +240,15 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         /// <summary>
+        /// 初始化设备发现缓存且不向上层暴露厂商 SDK 类型。
+        /// </summary>
+        /// <returns>已发现的设备数量。</returns>
+        public static async Task<int> InitializeDeviceDiscoveryAsync() {
+            var devices = await EnumDevices().ConfigureAwait(false);
+            return devices?.Count ?? 0;
+        }
+
+        /// <summary>
         /// 获取所有Ip地址
         /// </summary>
         /// <returns></returns>
@@ -277,41 +286,50 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         /// <summary>
+        /// 获取已登录设备的通道数量，隐藏厂商登录信息结构。
+        /// </summary>
+        /// <param name="serialNo">设备序列号。</param>
+        /// <returns>设备通道数量，未登录时返回零。</returns>
+        public int GetLoggedInChannelCount(string serialNo) {
+            return GetLoggedInDeviceInfo(serialNo)?.LoggedInDeviceInfo?.nChanNum ?? 0;
+        }
+
+        /// <summary>
         /// 设备登录
         /// </summary>
         /// <param name="serialNo"></param>
         /// <param name="userName"></param>
         /// <param name="passWord"></param>
-        /// <param name="playChannelId"></param>
+        /// <param name="playChannelNumber"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, string>> LogIn(string serialNo, string userName, string passWord, int playChannelId = 0) {
+        public async Task<KeyValuePair<bool, string>> LogIn(string serialNo, string userName, string passWord, int playChannelNumber = 0) {
             await Task.Yield();
 
             try {
                 await _enumerateSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginId);
-                if (!tryGetValue || (loginId?.Handle == IntPtr.Zero)) {
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var existingLoginHandle);
+                if (!tryGetValue || (existingLoginHandle?.Handle == IntPtr.Zero)) {
                     var getValue = _devInfo.TryGetValue(serialNo, out var info);
                     if (getValue) {
                         var mDeviceInfo = new NET_DEVICEINFO_Ex();
-                        var mLoginId = NETClient.LoginWithHighLevelSecurity(info.szIP
+                        var loginHandle = NETClient.LoginWithHighLevelSecurity(info.szIP
                             , (ushort)info.nPort, userName, passWord,
                             EM_LOGIN_SPAC_CAP_TYPE.TCP, IntPtr.Zero, ref mDeviceInfo);
-                        if (IntPtr.Zero == mLoginId) {
+                        if (IntPtr.Zero == loginHandle) {
                             var lastError = NETClient.GetLastError();
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
                         //添加到字典
-                        _loginDev.TryAdd(serialNo, new DevLogInInfo { SerialNo = serialNo, Handle = mLoginId, PlayChannelId = playChannelId, LoggedInDeviceInfo = mDeviceInfo });
+                        _loginDev.TryAdd(serialNo, new DevLogInInfo { SerialNo = serialNo, Handle = loginHandle, PlayChannelNumber = playChannelNumber, LoggedInDeviceInfo = mDeviceInfo });
 
-                        return new KeyValuePair<bool, string>(true, mLoginId.ToString());
+                        return new KeyValuePair<bool, string>(true, loginHandle.ToString());
                     }
                     else {
                         return new KeyValuePair<bool, string>(false, "不存在该设备或未枚举");
                     }
                 }
                 else {
-                    return new KeyValuePair<bool, string>(true, loginId?.Handle.ToString() ?? string.Empty);
+                    return new KeyValuePair<bool, string>(true, existingLoginHandle?.Handle.ToString() ?? string.Empty);
                 }
             }
             catch (Exception e) {
@@ -323,22 +341,22 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         public async Task<KeyValuePair<bool, string>> LogIn(string ip, int port, string userName, string passWord,
-            int playChannelId = 0) {
+            int playChannelNumber = 0) {
             await Task.Yield();
             try {
                 await _enumerateSlim.WaitAsync();
                 var mDeviceInfo = new NET_DEVICEINFO_Ex();
-                var mLoginId = NETClient.LoginWithHighLevelSecurity(ip
+                var loginHandle = NETClient.LoginWithHighLevelSecurity(ip
                     , (ushort)port, userName, passWord,
                     EM_LOGIN_SPAC_CAP_TYPE.TCP, IntPtr.Zero, ref mDeviceInfo);
-                if (IntPtr.Zero == mLoginId) {
+                if (IntPtr.Zero == loginHandle) {
                     var lastError = NETClient.GetLastError();
                     return new KeyValuePair<bool, string>(false, lastError);
                 }
                 //添加到字典
-                _loginDev.TryAdd($"{ip}-{port}", new DevLogInInfo { SerialNo = $"{ip}-{port}", Handle = mLoginId, PlayChannelId = playChannelId, LoggedInDeviceInfo = mDeviceInfo });
+                _loginDev.TryAdd($"{ip}-{port}", new DevLogInInfo { SerialNo = $"{ip}-{port}", Handle = loginHandle, PlayChannelNumber = playChannelNumber, LoggedInDeviceInfo = mDeviceInfo });
 
-                return new KeyValuePair<bool, string>(true, mLoginId.ToString());
+                return new KeyValuePair<bool, string>(true, loginHandle.ToString());
             }
             catch (Exception e) {
                 return new KeyValuePair<bool, string>(false, e.Message);
@@ -357,20 +375,20 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             await Task.Yield();
             try {
                 await _enumerateSlim.WaitAsync();
-                _loginDev.TryGetValue(serialNo, out var mLoginId);
-                if (mLoginId != null && mLoginId?.Handle != IntPtr.Zero) {
-                    if (mLoginId?.IsRealTimePlay == true && mLoginId.PlayHandle != IntPtr.Zero) {
+                _loginDev.TryGetValue(serialNo, out var loginHandle);
+                if (loginHandle != null && loginHandle?.Handle != IntPtr.Zero) {
+                    if (loginHandle?.IsRealTimePlay == true && loginHandle.PlayHandle != IntPtr.Zero) {
                         await StopRealtimePlay(serialNo);
                     }
-                    var result = NETClient.Logout(mLoginId.Handle);
+                    var result = NETClient.Logout(loginHandle.Handle);
                     if (!result) {
                         var lastError = NETClient.GetLastError();
                         //退出play
                         return new KeyValuePair<bool, string>(false, lastError);
                     }
 
-                    _loginDev.TryRemove(serialNo, out mLoginId);
-                    return new KeyValuePair<bool, string>(true, mLoginId?.ToString() ?? string.Empty);
+                    _loginDev.TryRemove(serialNo, out loginHandle);
+                    return new KeyValuePair<bool, string>(true, loginHandle?.ToString() ?? string.Empty);
                 }
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
@@ -404,32 +422,32 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 注册NVR实时预览
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <param name="callback"></param>
-        public void RegisterRealtimePreviewCallback(string serialNo, int channelId, Func<RealtimePreviewInfo, Task> callback) {
-            _realtimePreviewEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
+        public void RegisterRealtimePreviewCallback(string serialNo, int channelNumber, Func<RealtimePreviewInfo, Task> callback) {
+            _realtimePreviewEvent.AddOrUpdate($"{serialNo}|{channelNumber}", callback, (k, v) => callback);
         }
 
         /// <summary>
         /// 注册录像回放
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <param name="callback"></param>
-        public void RegisterPlaybackCallback(string serialNo, int channelId,
+        public void RegisterPlaybackCallback(string serialNo, int channelNumber,
             Func<RealtimePreviewInfo, Task> callback) {
-            _playBackEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
+            _playBackEvent.AddOrUpdate($"{serialNo}|{channelNumber}", callback, (k, v) => callback);
         }
 
         /// <summary>
         /// 注册录像回放进度回调
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <param name="callback"></param>
-        public void RegisterPlayBackProgressCallback(string serialNo, int channelId,
+        public void RegisterPlayBackProgressCallback(string serialNo, int channelNumber,
             Func<PlayBackProgressInfo, Task> callback) {
-            _playBackProgresEvent.AddOrUpdate($"{serialNo}|{channelId}", callback, (k, v) => callback);
+            _playBackProgresEvent.AddOrUpdate($"{serialNo}|{channelNumber}", callback, (k, v) => callback);
         }
 
         /// <summary>
@@ -443,8 +461,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             try {
                 await _takePhotoSlim.WaitAsync();
                 await Task.Delay(400);
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
-                if (tryGetValue && mLoginId is not null) {
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginHandle);
+                if (tryGetValue && loginHandle is not null) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     var asyncSnap = new NET_SNAP_PARAMS {
                         Channel = (uint)indexOf,
@@ -453,7 +471,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         mode = 0,
                         CmdSerial = (uint)new Random().Next(0, 65536),
                     };
-                    var ret = NETClient.SnapPictureEx(mLoginId.Handle, asyncSnap, IntPtr.Zero);
+                    var ret = NETClient.SnapPictureEx(loginHandle.Handle, asyncSnap, IntPtr.Zero);
                     if (!ret) {
                         var lastError = NETClient.GetLastError();
                         return new KeyValuePair<bool, string>(false, lastError);
@@ -517,13 +535,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
                     }
 
-                    var realPlayId = NETClient.RealPlay(dev.Handle, dev.PlayChannelId, IntPtr.Zero);
-                    if (realPlayId == IntPtr.Zero) {
+                    var previewHandle = NETClient.RealPlay(dev.Handle, dev.PlayChannelNumber, IntPtr.Zero);
+                    if (previewHandle == IntPtr.Zero) {
                         return new KeyValuePair<bool, string>(false, "通道播放失败!");
                     }
-                    dev.PlayHandle = realPlayId;
+                    dev.PlayHandle = previewHandle;
                     //设置播放回调
-                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, plPort,
+                    var realDataCallBack = NETClient.SetRealDataCallBack(previewHandle, _mRealDataCallBackEx2, plPort,
                         EM_REALDATA_FLAG.DATA_WITH_FRAME_INFO | EM_REALDATA_FLAG.PCM_AUDIO_DATA | EM_REALDATA_FLAG.RAW_DATA | EM_REALDATA_FLAG.YUV_DATA);
                     if (!realDataCallBack) {
                         return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
@@ -585,29 +603,29 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         public async Task<KeyValuePair<bool, string>> StopRealtimePlay(string serialNo) {
             try {
                 await _switchRealtimeFrameSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
-                if (tryGetValue && mLoginId is not null) {
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginHandle);
+                if (tryGetValue && loginHandle is not null) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     //判断是否已经开启
 
-                    if (mLoginId.IsRealTimePlay && mLoginId.PlayHandle != IntPtr.Zero) {
-                        var ret = NETClient.StopRealPlay(mLoginId.PlayHandle);
+                    if (loginHandle.IsRealTimePlay && loginHandle.PlayHandle != IntPtr.Zero) {
+                        var ret = NETClient.StopRealPlay(loginHandle.PlayHandle);
                         if (!ret) {
                             var lastError = NETClient.GetLastError();
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
                         //停止数据回调
-                        var playStop = DhPlaySdk.PLAY_Stop(mLoginId.PlayPort);
+                        var playStop = DhPlaySdk.PLAY_Stop(loginHandle.PlayPort);
                         if (playStop) {
-                            DhPlaySdk.PLAY_ResetSourceBuffer(mLoginId.PlayPort);
-                            PLAY_CloseStream(mLoginId.PlayPort);
-                            mLoginId.PlayPort = 0;
-                            mLoginId.IsRealTimePlay = false;
+                            DhPlaySdk.PLAY_ResetSourceBuffer(loginHandle.PlayPort);
+                            PLAY_CloseStream(loginHandle.PlayPort);
+                            loginHandle.PlayPort = 0;
+                            loginHandle.IsRealTimePlay = false;
                         }
                         return new KeyValuePair<bool, string>(true, string.Empty);
                     }
                     else {
-                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mLoginId.SerialNo}");
+                        return new KeyValuePair<bool, string>(true, $"未开启预览:{loginHandle.SerialNo}");
                     }
                 }
                 else {
@@ -626,16 +644,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 开始实时画面预览(通常用于NVR)
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelId) {
+        public async Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelNumber) {
             try {
                 await _switchRealtimeFrameSlim.WaitAsync();
 
                 var tryGetValue = _loginDev.TryGetValue(serialNo, out var dev);
                 if (tryGetValue && dev is not null) {
                     var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.SerialNo.Equals(serialNo) &&
-                        f.PlayChannelId.Equals(channelId));
+                        f.PlayChannelNumber.Equals(channelNumber));
                     if (devLogInInfo?.IsRealTimePlay == true) {
                         return new KeyValuePair<bool, string>(true, "已开启实时预览");
                     }
@@ -654,7 +672,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
                     var previewInfo = new DevLogInInfo() {
                         SerialNo = serialNo,
-                        PlayChannelId = channelId,
+                        PlayChannelNumber = channelNumber,
                         PlayPort = plPort,
                         Handle = dev.Handle,
                     };
@@ -675,13 +693,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         return new KeyValuePair<bool, string>(openMode, "开启播放流失败!");
                     }
 
-                    var realPlayId = NETClient.RealPlay(previewInfo.Handle, channelId, IntPtr.Zero);
-                    if (realPlayId == IntPtr.Zero) {
+                    var previewHandle = NETClient.RealPlay(previewInfo.Handle, channelNumber, IntPtr.Zero);
+                    if (previewHandle == IntPtr.Zero) {
                         return new KeyValuePair<bool, string>(false, "通道播放失败!");
                     }
-                    previewInfo.PlayHandle = realPlayId;
+                    previewInfo.PlayHandle = previewHandle;
                     //设置播放回调
-                    var realDataCallBack = NETClient.SetRealDataCallBack(realPlayId, _mRealDataCallBackEx2, plPort,
+                    var realDataCallBack = NETClient.SetRealDataCallBack(previewHandle, _mRealDataCallBackEx2, plPort,
                         EM_REALDATA_FLAG.DATA_WITH_FRAME_INFO | EM_REALDATA_FLAG.PCM_AUDIO_DATA | EM_REALDATA_FLAG.RAW_DATA | EM_REALDATA_FLAG.YUV_DATA);
                     if (!realDataCallBack) {
                         return new KeyValuePair<bool, string>(realDataCallBack, "设置播放回调失败!");
@@ -713,7 +731,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     }
 
                     var playSetDecCallBack = _fCbDecode != null &&
-                                             DhPlaySdk.PLAY_SetVisibleDecodeCallBack(plPort, _fCbDecode, channelId);
+                                             DhPlaySdk.PLAY_SetVisibleDecodeCallBack(plPort, _fCbDecode, channelNumber);
                     previewInfo.IsRealTimePlay = playSetDecCallBack;
                     _realTimePreviewInfos.Add(previewInfo);
                     return new KeyValuePair<bool, string>(playSetDecCallBack, $"{(playSetDecCallBack ? "开启实时预览成功" : "设置播放回调失败!")}");
@@ -732,19 +750,19 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 停止实时画面预览(通常用于NVR)
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <returns></returns>
-        public async Task<KeyValuePair<bool, string>> StopRealtimePreview(string serialNo, int channelId) {
+        public async Task<KeyValuePair<bool, string>> StopRealtimePreview(string serialNo, int channelNumber) {
             try {
                 await _switchRealtimeFrameSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
-                if (tryGetValue && mLoginId is not null) {
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginHandle);
+                if (tryGetValue && loginHandle is not null) {
                     var devLogInInfo = _realTimePreviewInfos.FirstOrDefault(f => f.SerialNo.Equals(serialNo) &&
-                        f.PlayChannelId.Equals(channelId));
+                        f.PlayChannelNumber.Equals(channelNumber));
                     if (devLogInInfo is null ||
                         !devLogInInfo.IsRealTimePlay ||
                         devLogInInfo.PlayHandle == IntPtr.Zero) {
-                        return new KeyValuePair<bool, string>(false, $"未开启通道预览:{mLoginId.SerialNo}-{channelId}");
+                        return new KeyValuePair<bool, string>(false, $"未开启通道预览:{loginHandle.SerialNo}-{channelNumber}");
                     }
 
                     var ret = NETClient.StopRealPlay(devLogInInfo.PlayHandle);
@@ -801,25 +819,25 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 添加水印
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        public Task AddRealTimeWatermark(string serialNo, int channelId, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
+        public Task AddRealTimeWatermark(string serialNo, int channelNumber, long packAgeTimestamp, string content, SecurityCameraWatermarkConfig config) {
             //每行间隔是70
             //获取位置坐标
-            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+            if (_loginDev.TryGetValue(serialNo, out var loginHandle)) {
                 //添加
-                _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{serialNo}-{channelId}",
-                    new HistoricalWatermark(serialNo, mLoginId.Handle, channelId, content, DateTime.Now, config.Duration,
+                _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{serialNo}-{channelNumber}",
+                    new HistoricalWatermark(serialNo, loginHandle.Handle, channelNumber, content, DateTime.Now, config.Duration,
                         w => {
                             var (key, value) = _historicalWatermarkInfos.FirstOrDefault(f => f.Value != null
                                 && f.Value.AddedTime.Equals(w.AddedTime));
                             if (value is not null) {
                                 _historicalWatermarkInfos.Remove(key, out var info);
                                 if (info is not null && !_historicalWatermarkInfos.Any(a =>
-                                        a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
-                                    _ = DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                        a.Value != null && a.Value.LoginHandle.Equals(info.LoginHandle) && a.Value.ChannelNumber.Equals(info.ChannelNumber))) {
+                                    _ = DeleteAllWatermarks(info.SerialNo, info.ChannelNumber);
                                 }
                                 UpDateRealTimeWatermark(_historicalWatermarkInfos);
                             }
@@ -845,18 +863,18 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             //获取位置坐标
             if (devices.Any()) {
                 foreach (var device in devices) {
-                    if (_loginDev.TryGetValue(device.SerialNumber, out var mLoginId)) {
+                    if (_loginDev.TryGetValue(device.SerialNumber, out var loginHandle)) {
                         //添加
                         _historicalWatermarkInfos.TryAdd($"{packAgeTimestamp}-{device.SerialNumber}-{device.Channel}",
-                            new HistoricalWatermark(device.SerialNumber, mLoginId.Handle, device.Channel, content, DateTime.Now, config.Duration,
+                            new HistoricalWatermark(device.SerialNumber, loginHandle.Handle, device.Channel, content, DateTime.Now, config.Duration,
                                 w => {
                                     var (key, value) = _historicalWatermarkInfos.FirstOrDefault(f => f.Value != null
                                         && f.Value.AddedTime.Equals(w.AddedTime));
                                     if (value is not null) {
                                         _historicalWatermarkInfos.Remove(key, out var info);
                                         if (info is not null && !_historicalWatermarkInfos.Any(a =>
-                                                a.Value != null && a.Value.LoginId.Equals(info.LoginId) && a.Value.ChannelId.Equals(info.ChannelId))) {
-                                            _ = DeleteAllWatermarks(info.SerialNo, info.ChannelId);
+                                                a.Value != null && a.Value.LoginHandle.Equals(info.LoginHandle) && a.Value.ChannelNumber.Equals(info.ChannelNumber))) {
+                                            _ = DeleteAllWatermarks(info.SerialNo, info.ChannelNumber);
                                         }
                                         UpDateRealTimeWatermark(_historicalWatermarkInfos);
                                     }
@@ -885,15 +903,15 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 //最小写入间隔是700
                 var waitTime = 2300;
                 historicalWatermarkInfos.GroupBy(g => new {
-                    g.Value.LoginId,
-                    g.Value.ChannelId
+                    g.Value.LoginHandle,
+                    g.Value.ChannelNumber
                 }).Select(s => new RealTimeWatermarkInfo() {
-                    LoginId = s.Key.LoginId,
-                    ChannelId = s.Key.ChannelId,
-                    CustomInfo = GetNET_OSD_CUSTOM_TITLE([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId))], 8),
-                    CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginId.Equals(s.Key.LoginId) && w.ChannelId.Equals(s.Key.ChannelId))], 8),
+                    LoginHandle = s.Key.LoginHandle,
+                    ChannelNumber = s.Key.ChannelNumber,
+                    CustomInfo = GetNET_OSD_CUSTOM_TITLE([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginHandle.Equals(s.Key.LoginHandle) && w.ChannelNumber.Equals(s.Key.ChannelNumber))], 8),
+                    CustomAlign = GetNET_OSD_CUSTOM_TITLE_TEXT_ALIGN([.. historicalWatermarkInfos.Select(s1 => s1.Value).Where(w => w.LoginHandle.Equals(s.Key.LoginHandle) && w.ChannelNumber.Equals(s.Key.ChannelNumber))], 8),
                 }).Select(ac => new Action(() => {
-                    var osdConfig = NETClient.SetOSDConfig(ac.LoginId, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelId, ac.CustomInfo, waitTime);
+                    var osdConfig = NETClient.SetOSDConfig(ac.LoginHandle, EM_CFG_OSD_TYPE.CUSTOMTITLE, ac.ChannelNumber, ac.CustomInfo, waitTime);
                     if (!osdConfig) {
                         NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
                     }
@@ -945,11 +963,11 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 删除全部水印
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
-        public async Task DeleteAllWatermarks(string serialNo, int channelId) {
+        /// <param name="channelNumber"></param>
+        public async Task DeleteAllWatermarks(string serialNo, int channelNumber) {
             await Task.Delay(200);
             var waitTime = 3300;
-            if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
+            if (_loginDev.TryGetValue(serialNo, out var loginHandle)) {
                 var customInfo = new NET_OSD_CUSTOM_TITLE {
                     dwSize = (uint)Marshal.SizeOf(typeof(NET_OSD_CUSTOM_TITLE)),
                     emOsdBlendType = EM_OSD_BLEND_TYPE.MAIN,
@@ -957,7 +975,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     stuCustomTitle = new NET_CUSTOM_TITLE_INFO[8],
                 };
 
-                var osdConfig = NETClient.SetOSDConfig(mLoginId.Handle, EM_CFG_OSD_TYPE.CUSTOMTITLE, channelId, customInfo, waitTime);
+                var osdConfig = NETClient.SetOSDConfig(loginHandle.Handle, EM_CFG_OSD_TYPE.CUSTOMTITLE, channelNumber, customInfo, waitTime);
                 if (!osdConfig) {
                     NLog.LogManager.GetCurrentClassLogger().Error(NETClient.GetLastError());
                 }
@@ -967,17 +985,17 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>
         /// 调整缩放倍率
         /// </summary>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <param name="increase"></param>
         /// <param name="start"></param>
         /// <param name="serialNo"></param>
         /// <returns></returns>
-        public async Task AdjustZoomContinuouslyAsync(string serialNo, int channelId, bool increase, bool start) {
+        public async Task AdjustZoomContinuouslyAsync(string serialNo, int channelNumber, bool increase, bool start) {
             var speed = 4;
             try {
                 await _ptzOperationSlim.WaitAsync();
-                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
-                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                if (_loginDev.TryGetValue(serialNo, out var loginHandle)) {
+                    var ptzControl = NETClient.PTZControl(loginHandle.Handle, channelNumber,
                         increase ? EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL : EM_EXTPTZ_ControlType.ZOOM_DEC_CONTROL, 0,
                         speed, 0, start, IntPtr.Zero);
                     if (!ptzControl) {
@@ -990,12 +1008,12 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
         }
 
-        public async Task AdjustPtzFocusContinuouslyAsync(string serialNo, int channelId, bool increase, bool start) {
+        public async Task AdjustPtzFocusContinuouslyAsync(string serialNo, int channelNumber, bool increase, bool start) {
             var speed = 4;
             try {
                 await _ptzOperationSlim.WaitAsync();
-                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
-                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                if (_loginDev.TryGetValue(serialNo, out var loginHandle)) {
+                    var ptzControl = NETClient.PTZControl(loginHandle.Handle, channelNumber,
                         increase ? EM_EXTPTZ_ControlType.FOCUS_ADD_CONTROL : EM_EXTPTZ_ControlType.FOCUS_DEC_CONTROL, 0,
                         speed, 0, start, IntPtr.Zero);
                     if (!ptzControl) {
@@ -1008,16 +1026,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
         }
 
-        public async Task AutoFocusAsync(string serialNo, int channelId) {
+        public async Task AutoFocusAsync(string serialNo, int channelNumber) {
             var speed = 1;
             try {
                 await _ptzOperationSlim.WaitAsync();
-                if (_loginDev.TryGetValue(serialNo, out var mLoginId)) {
-                    NETClient.PTZControl(mLoginId.Handle, channelId,
+                if (_loginDev.TryGetValue(serialNo, out var loginHandle)) {
+                    NETClient.PTZControl(loginHandle.Handle, channelNumber,
                         EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL, 0,
                         speed, 0, false, IntPtr.Zero);
 
-                    var ptzControl = NETClient.PTZControl(mLoginId.Handle, channelId,
+                    var ptzControl = NETClient.PTZControl(loginHandle.Handle, channelNumber,
                         EM_EXTPTZ_ControlType.ZOOM_ADD_CONTROL, 0,
                         speed, 0, true, IntPtr.Zero);
                     if (!ptzControl) {
@@ -1033,7 +1051,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
     public class RealtimePreviewInfo {
         public byte[]? RgbData { get; set; }
-        public int? ChannelId { get; set; }
+        public int? ChannelNumber { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
     }
@@ -1049,7 +1067,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// 获取或设置通道 ID。
         /// 这是一个可选值，可能为空。
         /// </summary>
-        public int? ChannelId { get; set; }
+        public int? ChannelNumber { get; set; }
 
         /// <summary>
         /// 获取或设置文件的总大小（以字节为单位）。
@@ -1096,8 +1114,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
     }
 
     public class RealTimeWatermarkInfo {
-        public nint LoginId { get; set; }
-        public int ChannelId { get; set; }
+        public nint LoginHandle { get; set; }
+        public int ChannelNumber { get; set; }
         public NET_OSD_CUSTOM_TITLE CustomInfo { get; set; }
         public NET_OSD_CUSTOM_TITLE_TEXT_ALIGN CustomAlign { get; set; }
     }
@@ -1130,7 +1148,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>
         /// 播放通道
         /// </summary>
-        public int PlayChannelId { get; set; }
+        public int PlayChannelNumber { get; set; }
 
         /// <summary>
         /// 播放句柄
@@ -1249,7 +1267,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>
         /// 播放通道
         /// </summary>
-        public int PlayChannelId { get; set; }
+        public int PlayChannelNumber { get; set; }
 
         /// <summary>
         /// 是否实时播放
@@ -1270,7 +1288,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>
         /// 回放/录像Id
         /// </summary>
-        public IntPtr PlayBackId { get; set; }
+        public IntPtr PlaybackHandle { get; set; }
 
         /// <summary>
         /// 图片尺寸

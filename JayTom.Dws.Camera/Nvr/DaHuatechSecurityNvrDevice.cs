@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NetSDKCS;
 using System.Linq;
 using System.Text;
@@ -44,23 +44,23 @@ namespace JayTom.Dws.Camera.Nvr {
             return Task.FromResult(new KeyValuePair<bool, string>(true, "初始化成功"));
         }
 
-        public Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelId) {
+        public Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelNumber) {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, string>> StopRealTimePreview(string serialNo, int channelId) {
+        public Task<KeyValuePair<bool, string>> StopRealTimePreview(string serialNo, int channelNumber) {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, string>> StartRemotePlayback(string serialNo, int channelId, DateTime startTime, DateTime endTime) {
+        public Task<KeyValuePair<bool, string>> StartRemotePlayback(string serialNo, int channelNumber, DateTime startTime, DateTime endTime) {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, string>> StopRemotePlayback(string serialNo, int channelId) {
+        public Task<KeyValuePair<bool, string>> StopRemotePlayback(string serialNo, int channelNumber) {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, string>> PauseRemotePlayback(string serialNo, int channelId) {
+        public Task<KeyValuePair<bool, string>> PauseRemotePlayback(string serialNo, int channelNumber) {
             throw new NotImplementedException();
         }
 
@@ -68,16 +68,16 @@ namespace JayTom.Dws.Camera.Nvr {
             throw new NotImplementedException();
         }
 
-        public void AddWatermark(string serialNo, int channelId, long packAgeTimestamp, string content,
+        public void AddWatermark(string serialNo, int channelNumber, long packAgeTimestamp, string content,
             SecurityCameraWatermarkConfig config) {
             throw new NotImplementedException();
         }
 
-        public void ClearWatermark(string serialNo, int channelId) {
+        public void ClearWatermark(string serialNo, int channelNumber) {
             throw new NotImplementedException();
         }
 
-        public async Task<KeyValuePair<bool, string>> Login(string serialNo, string userName, string passWord, int playChannelId = 0) {
+        public async Task<KeyValuePair<bool, string>> Login(string serialNo, string userName, string passWord, int playChannelNumber = 0) {
             if (_baseDaHuatech is not null) {
                 var (key, value) = await _baseDaHuatech.LogIn(serialNo, userName, passWord);
                 if (!key) {
@@ -99,7 +99,7 @@ namespace JayTom.Dws.Camera.Nvr {
             return new KeyValuePair<bool, string>(false, "未初始化");
         }
 
-        public void DownloadPlaybackVideo(string serialNo, int channelId, DateTime startTime, DateTime endTime, string savePath) {
+        public void DownloadPlaybackVideo(string serialNo, int channelNumber, DateTime startTime, DateTime endTime, string savePath) {
             //throw new NotImplementedException();
         }
 

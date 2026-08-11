@@ -1,6 +1,6 @@
 using JayTom.Dws.Abstractions.Results;
 
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 定义条码数据过滤与拦截插件能力。

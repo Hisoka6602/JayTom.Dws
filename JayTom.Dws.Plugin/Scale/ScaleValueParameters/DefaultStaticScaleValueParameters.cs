@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,7 +31,7 @@ namespace JayTom.Dws.Plugin.Scale.ScaleValueParameters {
         /// <summary>
         /// 稳定精度(误差范围)
         /// </summary>
-        public float BalanceQty { get; set; } = (float)0.002;
+        public decimal BalanceQty { get; set; } = 0.002m;
 
         /// <summary>
         /// 标识符

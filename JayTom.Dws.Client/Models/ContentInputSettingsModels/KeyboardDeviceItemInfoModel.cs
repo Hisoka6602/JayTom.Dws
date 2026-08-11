@@ -10,8 +10,8 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels
 
     public class KeyboardDeviceItemInfoModel : BindableBase
     {
-        private int _vendorId;
-        private int _productId;
+        private int _vendorCode;
+        private int _productCode;
         private string? _deviceName;
         private string? _devicePath;
         private string? _manufacturerName;
@@ -27,14 +27,14 @@ namespace JayTom.Dws.Client.Models.ContentInputSettingsModels
 
         public int VendorId
         {
-            get => _vendorId;
-            set => SetProperty(ref _vendorId, value);
+            get => _vendorCode;
+            set => SetProperty(ref _vendorCode, value);
         }
 
         public int ProductId
         {
-            get => _productId;
-            set => SetProperty(ref _productId, value);
+            get => _productCode;
+            set => SetProperty(ref _productCode, value);
         }
 
         public string? DeviceName

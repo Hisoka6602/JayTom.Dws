@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -82,7 +82,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                 Name = usbCameraInfo.CameraName ?? string.Empty,
                 Type = CameraType.IndustrialCamera,
                 ConnectionType = CameraConnectionType.Usb,
-                Id = usbCameraInfo.CameraId ?? 0,
+                Id = usbCameraInfo.CameraIndex ?? 0,
                 SupportedBindingType =
                     CameraBindingType.ScannerCamera
                 //如果是海康的工业相机则支持
@@ -132,7 +132,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                     var bindCamera = await _usbBarCodeReader.BindCamera(new UsbCameraInfo() {
                         CameraSerialNumber = this.Info.SerialNumber,
                         CameraName = this.Info.Name,
-                        CameraId = checked((int)this.Info.Id),
+                        CameraIndex = checked((int)this.Info.Id),
                         CameraVersion = this.Info.Version,
                         CameraManufacturer = this.Info.Brand,
                         CameraModel = this.Info.Model,
@@ -310,8 +310,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                     switch (parameter.Key) {
                         case "BarcodeReaderParameter": {
                                 //读码器参数
-                                var (key, value) = _usbBarCodeReader.SetBarcodeReaderParameter(
-                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value).GetAwaiter().GetResult();
+                                var (key, value) = _usbBarCodeReader.ApplyBarcodeReaderSettingsAsync(
+                                    (BarcodeReaderSettings)parameter.Value).GetAwaiter().GetResult();
                                 if (!key) {
                                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                         Exception = new Exception(value)
@@ -354,11 +354,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 

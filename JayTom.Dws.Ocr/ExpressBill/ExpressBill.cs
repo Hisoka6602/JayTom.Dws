@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -161,8 +161,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             };
         }
 
-        public OcrResult? ParseOcrResult(Bitmap bitmap, YoloParser? yoloParser, float confidenceThreshold = 0.5f,
-            float rectangleScale = 1) {
+        public OcrResult? ParseOcrResult(Bitmap bitmap, YoloParser? yoloParser, decimal confidenceThreshold = 0.5m,
+            decimal rectangleScale = 1) {
             var submitTimestamp = DateTime.Now;
             //过滤
             Bitmap? cropImage = null;
@@ -213,7 +213,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                             ?.Str ?? string.Empty,
                                         BarcodeArea = ConvertToRectangleAndOffset(result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
-                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                            ?.Coord ?? new List<decimal>(), originalTopLeft.X, originalTopLeft.Y),
                                         ElapsedTime = stopwatch.ElapsedMilliseconds,
                                         Image = bitmap,
                                         CropImage = cropImage,
@@ -222,7 +222,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                             ?.Str ?? string.Empty,
                                         RecipientAddressArea = ConvertToRectangleAndOffset(result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
-                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                            ?.Coord ?? new List<decimal>(), originalTopLeft.X, originalTopLeft.Y),
                                         RecipientName = result.Data?.FirstOrDefault(f =>
                                                 f.Title?.Key?.Equals("recipient_name") == true)
                                             ?.Str ?? string.Empty,
@@ -242,13 +242,13 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                             ?.Str ?? string.Empty,
                                         SenderAddressArea = ConvertToRectangleAndOffset(result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("sender_addr") == true)
-                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                            ?.Coord ?? new List<decimal>(), originalTopLeft.X, originalTopLeft.Y),
                                         ThreeSegmentCode = result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
                                             ?.Str ?? string.Empty,
                                         ThreeSegmentArea = ConvertToRectangleAndOffset(result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("three_segment_code") == true)
-                                            ?.Coord ?? new List<double>(), originalTopLeft.X, originalTopLeft.Y),
+                                            ?.Coord ?? new List<decimal>(), originalTopLeft.X, originalTopLeft.Y),
                                         VirtualNumber = result.Data?.FirstOrDefault(f =>
                                                 f.Title?.Key?.Equals("virtual_number") == true)
                                             ?.Str ?? string.Empty,
@@ -283,8 +283,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             };
         }
 
-        public OcrResult? ParseOcrResult(Bitmap bitmap, float confidenceThreshold = 0.5f,
-            float rectangleScale = 1) {
+        public OcrResult? ParseOcrResult(Bitmap bitmap, decimal confidenceThreshold = 0.5m,
+            decimal rectangleScale = 1) {
             _yoloParser ??= new YoloParser(OnnxModel);
             return ParseOcrResult(bitmap, _yoloParser, confidenceThreshold, rectangleScale);
         }
@@ -526,12 +526,12 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return markedImage;
         }
 
-        public static List<double> ConvertToRectangleAndOffset(List<double> rectangleData, int offsetX, int offsetY) {
+        public static List<decimal> ConvertToRectangleAndOffset(List<decimal> rectangleData, int offsetX, int offsetY) {
             if (rectangleData == null || rectangleData.Count % 2 != 0 || rectangleData.Count < 8) {
-                return new List<double>() { 0, 0, 0, 0, 0, 0, 0, 0 };
+                return new List<decimal>() { 0, 0, 0, 0, 0, 0, 0, 0 };
             }
 
-            var result = new List<double>();
+            var result = new List<decimal>();
 
             // 计算偏移后的坐标点
             for (var i = 0; i < rectangleData.Count; i += 2) {
@@ -552,8 +552,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
     }
 
     public class DataItem {
-        public List<double>? Coord { get; set; }
-        public double Score { get; set; }
+        public List<decimal>? Coord { get; set; }
+        public decimal Score { get; set; }
         public string? Str { get; set; }
         public Title? Title { get; set; }
     }

@@ -1,4 +1,4 @@
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 封装插件之间传递的不可变消息。

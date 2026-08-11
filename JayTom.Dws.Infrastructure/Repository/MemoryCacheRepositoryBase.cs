@@ -8,8 +8,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
     public class MemoryCacheRepositoryBase<T, TContext> : RepositoryBase<T, TContext>, IMemoryCacheRepository<T>
         where T : class
         where TContext : DbContext {
-        private readonly IMemoryCache _cache;
-
         /// <summary>
         /// 合并同一实体类型的并发首次加载，防止缓存击穿。
         /// </summary>
@@ -31,7 +29,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
         private static long _cacheGeneration;
 
         public MemoryCacheRepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
-            _cache = cache;
         }
 
         public async Task<List<T>> MemoryCacheData() {
@@ -90,9 +87,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return insert;
         }
 
-        public override async Task InsertAsync(T entity, CancellationToken token) {
-            await Insert(entity, token);
-        }
+        public override Task<bool> InsertAsync(T entity, CancellationToken token) =>
+            Insert(entity, token);
 
         /// <summary>批量插入成功后使实体缓存失效。</summary>
         public override async Task<bool> InsertRange(List<T> entities, CancellationToken token) {

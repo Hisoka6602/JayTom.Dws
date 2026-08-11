@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
@@ -16,7 +16,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
     public class DefaultStaticScale : IStaticScale {
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
-        private readonly Queue<float> _weightQueue = new();
+        private readonly Queue<decimal> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
         /// <summary>
         /// 串口数据到达信号，避免接收工作器空闲轮询。
@@ -38,9 +38,9 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         /// <summary>
         /// 稳定重量累计次数
         /// </summary>
-        private readonly Queue<float> _oldStableWeight = new();
+        private readonly Queue<decimal> _oldStableWeight = new();
 
-        private float _lastweight;
+        private decimal _lastweight;
 
         //private static int _stableWeightCount = 0;
 
@@ -73,7 +73,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         public WeightAdditionalProperties WeightAdditionalProperties { get; set; } = new();
         public ScaleWeightFormat WeightFormat { get; set; } = ScaleWeightFormat.Ascii;
 
-        public event EventHandler<float>? StabledWeight;
+        public event EventHandler<decimal>? StabledWeight;
 
         public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
@@ -229,7 +229,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
         private void ProcessDataPackage(string data) {
             try {
-                if (float.TryParse(
+                if (decimal.TryParse(
                         data.Replace(" ", string.Empty),
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
@@ -288,7 +288,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                         }
                         else if (!_isZeroed && (_weightQueue.All(item => item == 0) ||
                                            (_weightQueue.Count >= 2 && _weightQueue.Reverse().Take(2).All(w => w < _defaultStaticScaleValueParameters.MinWeight)) ||
-                                           (_weightQueue.Count >= 3 && _weightQueue.Reverse().Take(3).All(w => w < _lastweight * 0.85)) ||
+                                           (_weightQueue.Count >= 3 && _weightQueue.Reverse().Take(3).All(w => w < _lastweight * 0.85m)) ||
                                            (_oldStableWeight.Count > 0 && _oldStableWeight.All(a => a < _defaultStaticScaleValueParameters.MinWeight)) ||
                                            (_oldStableWeight.Count > 2 && _oldStableWeight.Max() - _oldStableWeight.Min() <= _defaultStaticScaleValueParameters.BalanceQty))) {
                             OnWeightCleared(new WeightChangedEventArgs() {
@@ -353,11 +353,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             }
         }
 
-        public event EventHandler<float>? CurrentWeight;
+        public event EventHandler<decimal>? CurrentWeight;
 
         public event EventHandler<WeightChangedEventArgs>? WeightCleared;
 
-        protected virtual void OnCurrentWeight(float e) {
+        protected virtual void OnCurrentWeight(decimal e) {
             CurrentWeight?.Invoke(this, e);
         }
 
@@ -371,25 +371,25 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
             Disconnected?.Invoke(this, e);
         }
 
-        protected virtual void OnStabledWeight(float e) {
+        protected virtual void OnStabledWeight(decimal e) {
             //使用附加属性
             if (WeightAdditionalProperties.IsUseActualWeightConversionRate) {
                 //使用重量转换率
-                e = (float)(e * (WeightAdditionalProperties.WeightConversionRate / 100));
+                e = (decimal)(e * (WeightAdditionalProperties.WeightConversionRate / 100));
             }
             if (WeightAdditionalProperties.IsUseAppendedWeight) {
                 //追加重量
-                e = (float)(e + WeightAdditionalProperties.AppendedWeightValue);
+                e = (decimal)(e + WeightAdditionalProperties.AppendedWeightValue);
             }
             //判断输出的小数位数
             var position = _defaultStaticScaleValueParameters.DecimalEndPosition -
                 _defaultStaticScaleValueParameters.DecimalStartPosition + 1;
             position = position > 3 ? 3 : position;
-            e = (float)Math.Round(e, position);
+            e = (decimal)Math.Round(e, position);
 
             if (WeightAdditionalProperties.IsUseFixedWeight) {
                 //固定重量输出
-                e = (float)WeightAdditionalProperties.FixedWeightValue;
+                e = (decimal)WeightAdditionalProperties.FixedWeightValue;
             }
 
             StabledWeight?.Invoke(this, e);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -48,8 +48,8 @@ namespace JayTom.Dws.Interface.geek_ {
             }
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -129,7 +129,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters.BaseUrl}{method}",
@@ -140,8 +140,8 @@ namespace JayTom.Dws.Interface.geek_ {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -221,7 +221,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters?.BaseUrl}{method}",
@@ -236,8 +236,8 @@ namespace JayTom.Dws.Interface.geek_ {
             return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
         }
 
-        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -263,7 +263,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 //扫码图
 
                 if (imageInfo?.Image is not null) {
-                    var clone = (Image)imageInfo.Image?.Clone();
+                    var clone = (Image)imageInfo.Image.As<Image>().Clone();
                     if (clone is not null) {
                         //传假的全景图
                         var toStreamContent = ImageToStreamContent(clone, "panoramaImages",
@@ -272,7 +272,7 @@ namespace JayTom.Dws.Interface.geek_ {
                             formData.Add(toStreamContent);
                         }
                     }
-                    var imageToStreamContent = ImageToStreamContent(imageInfo.Image, "barcodeImage",
+                    var imageToStreamContent = ImageToStreamContent(imageInfo.Image.As<Image>(), "barcodeImage",
                         $"{imageInfo.CameraSerialNumber}_{data.timestamp}.jpg");
                     if (imageToStreamContent is not null) {
                         formData.Add(imageToStreamContent);
@@ -282,7 +282,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 /*if (panoramaImageInfos?.Any() == true) {
                     foreach (var imageToStreamContent in from cloudUploadImageInfo in panoramaImageInfos
                                                          where cloudUploadImageInfo?.Image is not null
-                                                         select ImageToStreamContent(cloudUploadImageInfo.Image, "panoramaImages",
+                                                         select ImageToStreamContent(cloudUploadImageInfo.Image.As<Image>(), "panoramaImages",
                                                              $"{imageInfo.CameraSerialNumber}_{data.timestamp}.jpg") into imageToStreamContent
                                                          where imageToStreamContent is not null
                                                          select imageToStreamContent) {
@@ -332,7 +332,7 @@ namespace JayTom.Dws.Interface.geek_ {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters?.BaseUrl}{method}",
@@ -378,7 +378,7 @@ namespace JayTom.Dws.Interface.geek_ {
 
             public string Key { get; set; } = "12345";
 
-            public int SellerId { get; set; } = 1000;
+            public long SellerId { get; set; } = 1000;
             public int TimeOut { get; set; } = 10000;
         }
     }

@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using JayTom.Dws.Application.Workflows;
 using System.Linq;
@@ -23,12 +23,12 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using PackageInfo = JayTom.Dws.Domain.Manager.PackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
-using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
+using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
+using PackageAbnormalSortingType = JayTom.Dws.Domain.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -210,7 +210,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 ResponseContent = responseModel.UploadResponse.ResponseContent,
                                 RequestTime = responseModel.UploadResponse.RequestTime,
                                 ResponseTime = responseModel.UploadResponse.ResponseTime,
-                                DurationInSeconds = responseModel.UploadResponse.Duration,
+                                DurationInSeconds = responseModel.UploadResponse.DurationSeconds,
                                 InterfaceParameters = responseModel.UploadResponse.ApiParameters,
                                 RequestUrl = responseModel.UploadResponse.RequestUrl,
                                 ExceptionMessage = responseModel.UploadResponse.ExceptionMsg,

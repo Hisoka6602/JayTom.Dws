@@ -1,4 +1,4 @@
-﻿namespace JayTom.Dws.Client.Models.Cameras
+namespace JayTom.Dws.Client.Models.Cameras
 {
 
     public class VolumeCameraItemInfoModel : BaseCameraItemInfoModel
@@ -6,8 +6,8 @@
         private int _volumeMeasurementMode;
         private int _minSyncTime;
         private int _maxSyncTime;
-        private double _minLength;
-        private double _maxLength;
+        private decimal _minLength;
+        private decimal _maxLength;
         private int _triggerMode;
 
         /// <summary>
@@ -40,7 +40,7 @@
         /// <summary>
         /// 最小长度
         /// </summary>
-        public double MinLength
+        public decimal MinLength
         {
             get => _minLength;
             set => SetProperty(ref _minLength, value);
@@ -49,7 +49,7 @@
         /// <summary>
         /// 最大长度
         /// </summary>
-        public double MaxLength
+        public decimal MaxLength
         {
             get => _maxLength;
             set => SetProperty(ref _maxLength, value);

@@ -21,7 +21,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
         private DateTime? _responseTime;
         private string _responseContent = string.Empty;
         private string _barcode = string.Empty;
-        private float _duration;
+        private decimal _duration;
         private string _url = string.Empty;
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
         /// <summary>
         /// 耗时
         /// </summary>
-        public float Duration
+        public decimal Duration
         {
             get => _duration;
             set => SetProperty(ref _duration, value);
@@ -133,7 +133,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
             {
                 Barcode = itemModel.Barcode;
                 RequestStatus = itemModel.RequestStatus;
-                Duration = (float)itemModel.UploadInfo.DurationInSeconds * 1000;
+                Duration = (decimal)itemModel.UploadInfo.DurationInSeconds * 1000;
                 RequestTime = itemModel.UploadInfo.RequestTime;
                 RequestContent = itemModel.UploadInfo.RequestContent;
                 ResponseTime = itemModel.UploadInfo.ResponseTime;

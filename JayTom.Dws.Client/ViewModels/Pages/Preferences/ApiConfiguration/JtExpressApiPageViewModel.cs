@@ -112,7 +112,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             },
         };
 
-        private string _networkId = string.Empty;
+        private string _networkIdentifier = string.Empty;
         private string _networkCode = string.Empty;
         private string _networkName = string.Empty;
         private string _name = string.Empty;
@@ -164,10 +164,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 登录人的网点编码
         /// </summary>
-        public string NetworkId
+        public string NetworkIdentifier
         {
-            get => _networkId;
-            set => SetProperty(ref _networkId, value);
+            get => _networkIdentifier;
+            set => SetProperty(ref _networkIdentifier, value);
         }
 
         /// <summary>
@@ -263,7 +263,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 if (key)
                 {
                     Name = value.Name;
-                    NetworkId = value.NetworkId;
+                    NetworkIdentifier = value.NetworkIdentifier;
                     NetworkCode = value.NetworkCode;
                     NetworkName = value.NetworkName;
                     MessageQueue.Enqueue("登录成功");

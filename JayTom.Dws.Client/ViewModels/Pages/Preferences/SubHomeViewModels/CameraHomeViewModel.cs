@@ -77,7 +77,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             };
-            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraInitialized += async delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 var barcodeCameraConfigs = await _barcodeScannerCameraConfigRepository.MemoryCacheData()
                     .ConfigureAwait(false);
@@ -113,7 +113,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                         CameraName = $"{s?.Info?.Brand}:{s?.Info?.SerialNumber}" ?? string.Empty,
                         Type = s?.Info?.Type ?? JayTom.Dws.Camera.CameraType.IndustrialCamera,
                         Status = CameraStatus.Running,
-                        CameraId = (s?.Info?.Id)?.ToString() ?? string.Empty,
+                        CameraIdentifier = (s?.Info?.Id)?.ToString() ?? string.Empty,
                         SerialNumber = s?.Info?.SerialNumber ?? string.Empty,
                         Camera = s,
                         StatusClickCommand = StatusClickCommand,
@@ -161,7 +161,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                     }
                 });
             };
-            _deviceService.NotBarcodeHitEvent += delegate (object? sender, BarcodeReadEventArgs args)
+            _deviceService.BarcodeMissed += delegate (object? sender, BarcodeReadEventArgs args)
             {
                 if (_visibleCameraItems.TryGetValue(args.CameraSerialNumber, out var model) &&
                     model.Image is not null &&
@@ -173,7 +173,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.RealTimeImage += DeviceServiceOnRealTimeImage;
             _deviceService.PanoramaCaptured += DeviceServiceOnPanoramaCaptured;
-            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraDisconnected += delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 //更新现有列表,例如删除相机成员
             };

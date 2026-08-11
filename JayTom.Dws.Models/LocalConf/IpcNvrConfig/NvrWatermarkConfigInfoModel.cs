@@ -19,7 +19,7 @@ namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
         /// 通道Id
         /// </summary>
         [Column("IpAddress"), Required]
-        public int ChannelId { get; set; }
+        public long ChannelId { get; set; }
 
         /// <summary>
         /// 前景色

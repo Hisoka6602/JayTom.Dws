@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Linq;
 using System.Text;
@@ -594,14 +594,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                 Exception = new Exception("没有实现拍照方法")
             });
             return Task.CompletedTask;
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             throw new NotImplementedException();
         }
 
@@ -793,7 +793,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             ThumbImage = (Bitmap?)thumbnailImage,
                             AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
                             Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
-                            CodeId = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
+                            CodeIdentifier = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
                             Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                             ScanTime = scanTime,
@@ -928,12 +928,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public async Task<Bitmap> DrawIndicator(Bitmap thumbnail, Size originalSize,
            OcrResult result) {
-            var sortedAreas = new List<List<double>>()
+            var sortedAreas = new List<List<decimal>>()
             {
-                result.BarcodeArea ?? new List<double>(),
-                result.RecipientAddressArea ?? new List<double>(),
-                result.ThreeSegmentArea ?? new List<double>(),
-                result.SenderAddressArea ?? new List<double>()
+                result.BarcodeArea ?? new List<decimal>(),
+                result.RecipientAddressArea ?? new List<decimal>(),
+                result.ThreeSegmentArea ?? new List<decimal>(),
+                result.SenderAddressArea ?? new List<decimal>()
             };
 
             var yOffset = 30; // 初始偏移量
@@ -954,7 +954,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             return thumbnail;
         }
 
-        private Color GetColorForArea(OcrResult result, List<double> area) {
+        private Color GetColorForArea(OcrResult result, List<decimal> area) {
             if (area == result.BarcodeArea) {
                 return BarcodeBorderColor;
             }
@@ -971,7 +971,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             return Color.Black; // 默认颜色为黑色
         }
 
-        private string GetTextForArea(OcrResult result, List<double> area) {
+        private string GetTextForArea(OcrResult result, List<decimal> area) {
             if (area == result.BarcodeArea) {
                 return result.BarCode;
             }
@@ -988,7 +988,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             return string.Empty;
         }
 
-        private void DrawIndicatorForArea(Graphics g, Image thumbnail, Size originalSize, List<double> areaPoints, string text, Color color, int yOffset) {
+        private void DrawIndicatorForArea(Graphics g, Image thumbnail, Size originalSize, List<decimal> areaPoints, string text, Color color, int yOffset) {
             try {
                 var imageWidth = originalSize.Width > 0 ? originalSize.Width : 1;
                 var imageHeight = originalSize.Height > 0 ? originalSize.Height : 1;
@@ -1043,7 +1043,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
-        private List<Point> ConvertPoint(List<double>? coord) {
+        private List<Point> ConvertPoint(List<decimal>? coord) {
             var points = new List<Point>();
             if (coord?.Count == 8) {
                 points = [.. Enumerable.Range(0, coord.Count / 2).Select(i => new Point((int)coord[i * 2], (int)coord[i * 2 + 1]))];

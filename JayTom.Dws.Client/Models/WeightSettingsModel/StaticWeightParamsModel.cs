@@ -1,4 +1,4 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 using JayTom.Dws.Domain.Dto;
 using JayTom.Dws.Data.LocalLog;
 
@@ -11,7 +11,7 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel
         private bool _isReversed;
         private WeightAccessMode _accessMode = WeightAccessMode.Readonly;
         private int _balanceCount = 10;
-        private float _balanceQty = (float)0.002;
+        private decimal _balanceQty = 0.002m;
         private string _identifier = "=";
         private int _characterLength = 8;
         private int _identifierPosition = 0;
@@ -61,7 +61,7 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel
         /// <summary>
         /// 稳定精度(误差范围)
         /// </summary>
-        public float BalanceQty
+        public decimal BalanceQty
         {
             get => _balanceQty;
             set => SetProperty(ref _balanceQty, value);

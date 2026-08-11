@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,17 +26,17 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 异常分拣占比
         /// </summary>
-        public double AbnormalSortingRate { get; set; }
+        public decimal AbnormalSortingRate { get; set; }
 
         /// <summary>
         /// 平均重量
         /// </summary>
-        public double AverageWeight { get; set; }
+        public decimal AverageWeight { get; set; }
 
         /// <summary>
         /// 识别率
         /// </summary>
-        public double RecognitionRate { get; set; }
+        public decimal RecognitionRate { get; set; }
 
         /// <summary>
         /// 分拣效率（单位：包裹/时）

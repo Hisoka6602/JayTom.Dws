@@ -1,4 +1,4 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.CacheClearSettings
 {
@@ -8,7 +8,7 @@ namespace JayTom.Dws.Client.Models.CacheClearSettings
         /// <summary>
         /// 磁盘占用百分比
         /// </summary>
-        public double DiskUsagePercentage
+        public decimal DiskUsagePercentage
         {
             get;
             set => SetProperty(ref field, value);
@@ -26,7 +26,7 @@ namespace JayTom.Dws.Client.Models.CacheClearSettings
         /// <summary>
         /// 数据占用百分比
         /// </summary>
-        public double DataUsagePercentage
+        public decimal DataUsagePercentage
         {
             get;
             set => SetProperty(ref field, value);
@@ -35,7 +35,7 @@ namespace JayTom.Dws.Client.Models.CacheClearSettings
         /// <summary>
         /// 扫码图片占用百分比
         /// </summary>
-        public double ScanImageUsagePercentage
+        public decimal ScanImageUsagePercentage
         {
             get;
             set => SetProperty(ref field, value);
@@ -44,7 +44,7 @@ namespace JayTom.Dws.Client.Models.CacheClearSettings
         /// <summary>
         /// 全景图片占用百分比
         /// </summary>
-        public double PanoramaImageUsagePercentage
+        public decimal PanoramaImageUsagePercentage
         {
             get;
             set => SetProperty(ref field, value);
@@ -53,7 +53,7 @@ namespace JayTom.Dws.Client.Models.CacheClearSettings
         /// <summary>
         /// 非程序占用百分比
         /// </summary>
-        public double OtherUsagePercentage
+        public decimal OtherUsagePercentage
         {
             get;
             set => SetProperty(ref field, value);

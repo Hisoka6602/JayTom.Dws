@@ -15,7 +15,7 @@ namespace JayTom.Dws.Data.ServerData {
         /// 用户Id
         /// </summary>
         [Required, Column("UserId")]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
 
         /// <summary>
         /// 验证序列号

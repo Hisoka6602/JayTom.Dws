@@ -192,10 +192,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                         {
                             LicenseStatus = false;
                             var (key, value) = await _clientLicenseApi.CreateAuthorization(LicenseCode, MachineCode, Remarks);
-                            if (value is ApiResult result)
+                            if (value is { } result)
                             {
                                 //获取授权文件地址
-                                if (result.Result && !string.IsNullOrEmpty(result.Data?.ToString() ?? string.Empty))
+                                if (result.IsSuccess && !string.IsNullOrEmpty(result.Data))
                                 {
                                     var licenseDirectory = Path.Combine(AppContext.BaseDirectory, "License");
                                     if (!Directory.Exists(licenseDirectory))
@@ -205,9 +205,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                                     var files = Directory.GetFiles(licenseDirectory, "*.key");
                                     Parallel.ForEach(files, File.Delete);
 
-                                    var fileAsync = await _clientLicenseApi.DownloadFileAsync(result.Data.ToString(),
+                                    var fileAsync = await _clientLicenseApi.DownloadFileAsync(result.Data,
                                         $"{licenseDirectory}\\License.key");
-                                    if (fileAsync)
+                                    if (fileAsync.IsSuccess)
                                     {
                                         await Task.Delay(1000);
                                         var firstOrDefault = Directory.GetFiles(licenseDirectory, "*.key").FirstOrDefault();
@@ -237,8 +237,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                                 }
                                 else
                                 {
-                                    FailureReason = result.Msg;
-                                    LicenseMessageQueue.Enqueue(result.Msg);
+                                    FailureReason = result.Message;
+                                    LicenseMessageQueue.Enqueue(result.Message);
                                 }
                             }
                             else

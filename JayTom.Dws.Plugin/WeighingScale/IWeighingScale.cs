@@ -1,4 +1,4 @@
-﻿namespace JayTom.Dws.Plugin.WeighingScale {
+namespace JayTom.Dws.Plugin.WeighingScale {
 
     /// <summary>
     /// 称重器
@@ -8,12 +8,12 @@
         /// <summary>
         /// 稳定重量
         /// </summary>
-        event EventHandler<float> StabledWeight;
+        event EventHandler<decimal> StabledWeight;
 
         /// <summary>
         /// 实时重量
         /// </summary>
-        event EventHandler<float> CurrentWeight;
+        event EventHandler<decimal> CurrentWeight;
 
         /// <summary>
         /// 接收内容

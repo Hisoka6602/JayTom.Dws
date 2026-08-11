@@ -9,9 +9,9 @@ namespace JayTom.Dws.Interface {
     public interface INetworkTime {
 
         /// <summary>
-        /// 获取时间
+        /// 获取带时区偏移的本地网络时间
         /// </summary>
-        /// <returns></returns>
-        public Task<DateTime> GetTime();
+        /// <param name="cancellationToken">取消令牌。</param>
+        public Task<DateTimeOffset> GetLocalTimeAsync(CancellationToken cancellationToken = default);
     }
 }

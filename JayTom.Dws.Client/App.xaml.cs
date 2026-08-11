@@ -21,7 +21,7 @@ using JayTom.Dws.Nvr.Nvr;
 using JayTom.Dws.Interface;
 using System.Globalization;
 using System.Windows.Media;
-using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
@@ -129,20 +129,24 @@ namespace JayTom.Dws.Client
 {
 
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// WPF 进程宿主与依赖组合入口。
     /// </summary>
     public partial class App : PrismApplication
     {
+        /// <summary>用于阻止桌面进程重复启动的互斥量。</summary>
         private Mutex? _singleInstanceMutex;
+        /// <summary>用于通知已运行实例激活窗口的命名管道。</summary>
         private const string PipeName = "DwsPipe";
         /// <summary>单个设备或分拣组件在停机阶段允许占用的最长时间。</summary>
         private static readonly TimeSpan ComponentStopTimeout = TimeSpan.FromSeconds(5);
 
+        /// <summary>向容器注册展示层、应用服务与基础设施。</summary>
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             Composition.ApplicationComposition.Register(containerRegistry);
         }
 
+        /// <summary>创建桌面主窗口。</summary>
         protected override Window CreateShell()
         {
             return Container.Resolve<MainWindow>();
@@ -162,6 +166,7 @@ namespace JayTom.Dws.Client
             }.ToString();
         }
 
+        /// <summary>建立单实例约束并注册全局异常处理。</summary>
         protected override void OnStartup(StartupEventArgs e)
         {
             NLog.LogManager.GetCurrentClassLogger().Info("OnStartup开始");
@@ -226,6 +231,7 @@ namespace JayTom.Dws.Client
         private static bool IsFatalException(Exception exception) =>
             exception is OutOfMemoryException or AccessViolationException;
 
+        /// <summary>在退出前按顺序停止应用服务并释放进程资源。</summary>
         protected override void OnExit(ExitEventArgs e)
         {
             try
@@ -238,14 +244,29 @@ namespace JayTom.Dws.Client
                 });
 
                 using var shutdownCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-                var shutdownTask = Task.Run(() => StopApplicationServicesAsync(shutdownCancellation.Token));
-                if (!shutdownTask.Wait(TimeSpan.FromSeconds(20)))
+                var shutdownTask = StopApplicationServicesAsync(shutdownCancellation.Token);
+                var shutdownFrame = new DispatcherFrame();
+                var timeoutTimer = new DispatcherTimer(
+                    TimeSpan.FromSeconds(20),
+                    DispatcherPriority.Send,
+                    (_, _) => shutdownFrame.Continue = false,
+                    Dispatcher);
+                _ = shutdownTask.ContinueWith(
+                    _ => shutdownFrame.Continue = false,
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.FromCurrentSynchronizationContext());
+                timeoutTimer.Start();
+                Dispatcher.PushFrame(shutdownFrame);
+                timeoutTimer.Stop();
+                if (!shutdownTask.IsCompleted)
                 {
                     NLog.LogManager.GetCurrentClassLogger().Warn("程序关闭资源释放超过 20 秒，继续退出");
                 }
-                else
+                else if (shutdownTask.Exception is not null)
                 {
-                    shutdownTask.GetAwaiter().GetResult();
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(shutdownTask.Exception, "程序关闭资源释放异常");
                 }
             }
             catch (Exception exception)
@@ -317,6 +338,7 @@ namespace JayTom.Dws.Client
             await hostedServiceSupervisor.StopAsync(token).ConfigureAwait(false);
         }
 
+        /// <summary>通过命名管道通知已运行实例激活主窗口。</summary>
         private void NotifyExistingInstance()
         {
             try
@@ -337,18 +359,26 @@ namespace JayTom.Dws.Client
             }
         }
 
+        /// <summary>注册视图与视图模型的显式映射。</summary>
         protected override void ConfigureViewModelLocator()
         {
             base.ConfigureViewModelLocator();
             Composition.ViewModelMappingRegistration.Register();
         }
 
-        protected override async void OnInitialized()
+        /// <summary>初始化配置并启动受管后台服务。</summary>
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            _ = StartApplicationServicesAsync();
+        }
+
+        /// <summary>异步初始化配置并启动受管后台服务。</summary>
+        private async Task StartApplicationServicesAsync()
         {
             try
             {
                 await Task.Yield();
-                base.OnInitialized();
                 await InitializeConfigurationAsync();
                 // 获取 IServiceProvider
                 var serviceProvider = Container.Resolve<IServiceProvider>();

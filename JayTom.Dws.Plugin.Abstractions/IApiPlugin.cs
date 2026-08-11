@@ -1,6 +1,6 @@
 using JayTom.Dws.Abstractions.Results;
 
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 定义数据上传插件能力。

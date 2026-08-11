@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -173,11 +173,11 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             return Task.CompletedTask;
         }
 
@@ -190,7 +190,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
 
-        public async Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default) {
+        public async Task TriggerMeasurementPhotoAsync(string barcode, long packageTimestampMilliseconds, int delay, CancellationToken cancellation = default) {
             if (_dimensionVolumeSdk is not null) {
                 if (MeasurementTriggerMode == MeasurementTriggerMode.Single) {
                     await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellation);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,7 +39,7 @@ namespace JayTom.Dws.Data.LocalLog {
         /// 耗时(秒)
         /// </summary>
         [Column("Duration")]
-        public double Duration { get; set; }
+        public decimal Duration { get; set; }
 
         /// <summary>
         /// 接口参数

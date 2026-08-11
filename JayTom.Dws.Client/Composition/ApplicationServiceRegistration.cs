@@ -10,6 +10,8 @@ using JayTom.Dws.Domain.Service.CacheCleanup;
 using JayTom.Dws.Domain.Service.ImageService;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Infrastructure.Service;
+using JayTom.Dws.Application.Messaging;
+using JayTom.Dws.Client.EventMediators;
 
 namespace JayTom.Dws.Client.Composition;
 
@@ -17,6 +19,9 @@ namespace JayTom.Dws.Client.Composition;
 internal static class ApplicationServiceRegistration {
     /// <summary>注册设备、分拣、输出和同步等应用服务。</summary>
     public static IServiceCollection AddDwsApplicationServices(this IServiceCollection services) {
+        services.AddSingleton(EventAggregator.Instance);
+        services.AddSingleton<IEventBus>(provider => provider.GetRequiredService<EventAggregator>());
+        services.AddSingleton<IPackageSessionStore, PackageSessionStore>();
         services.AddSingleton<IComputerInfoReporter, ComputerInfoReporter>();
         services.AddSingleton<IDefaultConfigurationService, DefaultConfigurationService>();
         services.AddSingleton<IDeviceService, DefaultDeviceService>();

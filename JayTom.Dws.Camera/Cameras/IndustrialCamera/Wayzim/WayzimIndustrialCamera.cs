@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CamSDK;
 using System.Linq;
 using System.Text;
@@ -89,7 +89,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                     var cameraInfo = new CameraInfo() {
                         Brand = "Wayzim",
                         ConnectionType = CameraConnectionType.Ethernet,
-                        Id = cam.Cameras[i].CameraId,
+                        Id = cam.Cameras[i].CameraIndex,
                         IpAddress = ICAMAPI.ICAM_BytesToString(cam.Cameras[i].CamIp),
                         IsAvailable = true,
                         Model = "IndustrialCamera",
@@ -365,17 +365,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public async Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             await Task.Delay(TakePhotoDelay, cancellation);
-            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
+            await CapturePhotoAsync(barcode, packageTimestampMilliseconds, cancellation);
         }
 
-        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public async Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             await Task.Delay(delay, cancellation);
-            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
+            await CapturePhotoAsync(barcode, packageTimestampMilliseconds, cancellation);
         }
 
-        private async Task CapturePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation) {
+        private async Task CapturePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation) {
             if (Status != CameraStatus.Running || Info is null) {
                 return;
             }
@@ -405,7 +405,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                     PhotoTime = DateTime.Now,
                     ThumbImage = thumbnailImage,
                     Barcode = barcode,
-                    BarcodeTimestamp = barcodeTimestamp
+                    PackageTimestampMilliseconds = packageTimestampMilliseconds
                 });
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) {

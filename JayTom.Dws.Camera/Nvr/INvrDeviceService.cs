@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -63,38 +63,38 @@ namespace JayTom.Dws.Camera.Nvr {
         /// 开启实时预览
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
-        Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelId);
+        /// <param name="channelNumber">通道ID</param>
+        Task<KeyValuePair<bool, string>> StartRealTimePreview(string serialNo, int channelNumber);
 
         /// <summary>
         /// 关闭实时预览
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
-        Task<KeyValuePair<bool, string>> StopRealTimePreview(string serialNo, int channelId);
+        /// <param name="channelNumber">通道ID</param>
+        Task<KeyValuePair<bool, string>> StopRealTimePreview(string serialNo, int channelNumber);
 
         /// <summary>
         /// 开始远程回放
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
+        /// <param name="channelNumber">通道ID</param>
         /// <param name="startTime">回放开始时间</param>
         /// <param name="endTime">回放结束时间</param>
-        Task<KeyValuePair<bool, string>> StartRemotePlayback(string serialNo, int channelId, DateTime startTime, DateTime endTime);
+        Task<KeyValuePair<bool, string>> StartRemotePlayback(string serialNo, int channelNumber, DateTime startTime, DateTime endTime);
 
         /// <summary>
         /// 停止远程回放
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
-        Task<KeyValuePair<bool, string>> StopRemotePlayback(string serialNo, int channelId);
+        /// <param name="channelNumber">通道ID</param>
+        Task<KeyValuePair<bool, string>> StopRemotePlayback(string serialNo, int channelNumber);
 
         /// <summary>
         /// 暂停远程回放
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
-        Task<KeyValuePair<bool, string>> PauseRemotePlayback(string serialNo, int channelId);
+        /// <param name="channelNumber">通道ID</param>
+        Task<KeyValuePair<bool, string>> PauseRemotePlayback(string serialNo, int channelNumber);
 
         /// <summary>
         /// 枚举设备
@@ -106,19 +106,19 @@ namespace JayTom.Dws.Camera.Nvr {
         /// 添加水印
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId"></param>
+        /// <param name="channelNumber"></param>
         /// <param name="packAgeTimestamp"></param>
         /// <param name="content"></param>
         /// <param name="config"></param>
-        void AddWatermark(string serialNo, int channelId, long packAgeTimestamp,
+        void AddWatermark(string serialNo, int channelNumber, long packAgeTimestamp,
             string content, SecurityCameraWatermarkConfig config);
 
         /// <summary>
         /// 清空水印
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
-        void ClearWatermark(string serialNo, int channelId);
+        /// <param name="channelNumber">通道ID</param>
+        void ClearWatermark(string serialNo, int channelNumber);
 
         /// <summary>
         /// 登录设备
@@ -126,9 +126,9 @@ namespace JayTom.Dws.Camera.Nvr {
         /// <param name="serialNo"></param>
         /// <param name="userName"></param>
         /// <param name="passWord"></param>
-        /// <param name="playChannelId"></param>
+        /// <param name="playChannelNumber"></param>
         /// <returns>是否登录成功</returns>
-        Task<KeyValuePair<bool, string>> Login(string serialNo, string userName, string passWord, int playChannelId = 0);
+        Task<KeyValuePair<bool, string>> Login(string serialNo, string userName, string passWord, int playChannelNumber = 0);
 
         /// <summary>
         /// 登出设备
@@ -140,11 +140,11 @@ namespace JayTom.Dws.Camera.Nvr {
         /// 下载回放录像
         /// </summary>
         /// <param name="serialNo"></param>
-        /// <param name="channelId">通道ID</param>
+        /// <param name="channelNumber">通道ID</param>
         /// <param name="startTime">录像开始时间</param>
         /// <param name="endTime">录像结束时间</param>
         /// <param name="savePath">保存路径</param>
-        void DownloadPlaybackVideo(string serialNo, int channelId, DateTime startTime, DateTime endTime, string savePath);
+        void DownloadPlaybackVideo(string serialNo, int channelNumber, DateTime startTime, DateTime endTime, string savePath);
     }
 
     public class NvrDeviceInfo {
@@ -192,7 +192,7 @@ namespace JayTom.Dws.Camera.Nvr {
         /// <summary>
         /// 通道Id
         /// </summary>
-        public int ChannelId { get; set; }
+        public int ChannelNumber { get; set; }
 
         /// <summary>
         /// 设备序列号
@@ -215,7 +215,7 @@ namespace JayTom.Dws.Camera.Nvr {
         /// <summary>
         /// 通道Id
         /// </summary>
-        public int ChannelId { get; set; }
+        public int ChannelNumber { get; set; }
 
         /// <summary>
         /// 设备序列号

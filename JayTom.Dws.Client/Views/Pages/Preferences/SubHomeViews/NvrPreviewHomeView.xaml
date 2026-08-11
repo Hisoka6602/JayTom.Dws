@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.SubHomeViews.NvrPreviewHomeView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -175,7 +175,7 @@
                         FontSize="13"
                         FontWeight="Bold"
                         Foreground="SpringGreen"
-                        Text="{Binding ChannelId, StringFormat='通道{0}'}" />
+                        Text="{Binding ChannelNumber, StringFormat='通道{0}'}" />
 
                     <!--  工具栏  -->
                     <Border

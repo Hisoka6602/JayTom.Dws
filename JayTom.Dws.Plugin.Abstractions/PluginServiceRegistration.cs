@@ -1,4 +1,4 @@
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 描述插件向宿主声明的一项服务映射。

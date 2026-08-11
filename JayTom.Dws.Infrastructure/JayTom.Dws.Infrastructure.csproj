@@ -30,6 +30,7 @@
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" />
+    <PackageReference Include="System.Drawing.Common" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="TouchSocket" />
   </ItemGroup>
@@ -39,6 +40,11 @@
     <ProjectReference Include="..\JayTom.Dws.Application\JayTom.Dws.Application.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Models\JayTom.Dws.Models.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\JayTom.Dws.Domain\Service\VideoApi\VideoBarCodeService.cs"
+             Link="Service\VideoApi\VideoBarCodeService.cs" />
   </ItemGroup>
 
 </Project>

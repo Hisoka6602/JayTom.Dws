@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using JayTom.Dws.Domain.Dto;
 
 namespace JayTom.Dws.Domain.Service.ImageService {
@@ -34,12 +34,15 @@ namespace JayTom.Dws.Domain.Service.ImageService {
         /// <param name="volume"></param>
         /// <param name="cameraSerialNumber"></param>
         /// <param name="cancellationToken"></param>
-        Task SaveImage(Image image, SaveImageType type, string barCode, float weight,
-           DateTime scanTime, float length, float width, float height, float volume,
+        /// <remarks>调用即转移 <paramref name="image"/> 所有权；方法结束时句柄必定被释放。</remarks>
+        Task SaveAndDisposeImageAsync(ImageHandle image, SaveImageType type, string barCode, decimal weight,
+           DateTime scanTime, decimal length, decimal width, decimal height, decimal volume,
            string cameraSerialNumber, CancellationToken cancellationToken = default);
 
-        Task SaveImage(long packageTimestamped, Image image, SaveImageType type, string barCode, float weight,
-            DateTime scanTime, float length, float width, float height, float volume,
+        /// <summary>保存包裹图片，并在完成后释放已转移所有权的图像句柄。</summary>
+        /// <remarks>调用即转移 <paramref name="image"/> 所有权；方法结束时句柄必定被释放。</remarks>
+        Task SaveAndDisposeImageAsync(long packageTimestamped, ImageHandle image, SaveImageType type, string barCode, decimal weight,
+            DateTime scanTime, decimal length, decimal width, decimal height, decimal volume,
             string cameraSerialNumber, CancellationToken cancellationToken = default);
     }
 

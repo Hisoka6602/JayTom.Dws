@@ -12,7 +12,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         private string _method = string.Empty;
         private string _v = string.Empty;
         private string _salt = string.Empty;
-        private int _packagerId;
+        private long _packagerId;
         private string _operateTableName = string.Empty;
         private bool _force;
         private int _timeOut = 1000;
@@ -84,7 +84,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         /// <summary>
         /// 打包员Id
         /// </summary>
-        public int PackagerId
+        public long PackagerId
         {
             get => _packagerId;
             set => SetProperty(ref _packagerId, value);

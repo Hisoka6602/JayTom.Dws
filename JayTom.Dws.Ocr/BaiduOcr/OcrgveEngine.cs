@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -28,8 +28,8 @@ namespace JayTom.Dws.Ocr.BaiduOcr {
         public struct GeneralVerticalKvRet {
             public string vertical_key; // 垂直字段名
             public string value;        // 字段值
-            public float score;         // 字段置信度
-            public string zone_id;      // 字段的zone id
+            public decimal score;         // 字段置信度
+            public string zone_key;     // 字段的区域键
         }
 
         [StructLayout(LayoutKind.Sequential)]

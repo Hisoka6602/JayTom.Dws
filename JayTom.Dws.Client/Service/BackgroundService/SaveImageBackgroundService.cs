@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using NLog;
 using System;
 using System.IO;
@@ -16,9 +16,9 @@ using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Service.ImageService;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
@@ -187,7 +187,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                         if (TryDequeueImage(out var messageInfo) && messageInfo.Image is not null)
                         {
-                            await _imageStorageService.SaveImage(messageInfo.PackageTimestamped, messageInfo.Image,
+                            await _imageStorageService.SaveAndDisposeImageAsync(messageInfo.PackageTimestamped, messageInfo.Image,
                                 messageInfo.Type, messageInfo.BarCode, messageInfo.Weight,
                                 messageInfo.ScanTime, messageInfo.Length, messageInfo.Width,
                                 messageInfo.Height, messageInfo.Volume, messageInfo.CameraSerialNumber,
@@ -268,7 +268,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         private void EnqueueImage(ImageMessageInfo imageInfo)
         {
-            var estimatedBytes = EstimateDecodedBytes(imageInfo.Image);
+            var estimatedBytes = EstimateDecodedBytes(imageInfo.Image?.As<Image>());
             List<ImageMessageInfo>? discarded = null;
             lock (_imageQueueLock)
             {

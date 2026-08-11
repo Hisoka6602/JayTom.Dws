@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
@@ -16,6 +16,6 @@ namespace JayTom.Dws.Domain.Model {
         /// <summary>
         /// 图片
         /// </summary>
-        public Bitmap? Image { get; set; }
+        public ImageHandle? Image { get; set; }
     }
 }

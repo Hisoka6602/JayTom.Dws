@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,12 +45,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 置信度
         /// </summary>
-        public float ConfidenceThreshold { get; set; }
+        public decimal ConfidenceThreshold { get; set; }
 
         /// <summary>
         /// 截图扩充倍数
         /// </summary>
-        public float RectangleScale { get; set; }
+        public decimal RectangleScale { get; set; }
 
         /// <summary>
         /// 截图存图路径

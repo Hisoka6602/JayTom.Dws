@@ -22,8 +22,8 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
         private string _username = string.Empty;
         private string _password = string.Empty;
         private int _channel;
-        private double _downloadProgress;
-        private double _playbackSpeed;
+        private decimal _downloadProgress;
+        private decimal _playbackSpeed;
         private bool _isReversed;
         private ICommand? _videoScreenShotCommand;
         private ICommand? _downloadCommand;
@@ -136,7 +136,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
         /// <summary>
         /// 获取或设置下载进度（百分比）。
         /// </summary>
-        public double DownloadProgress
+        public decimal DownloadProgress
         {
             get => _downloadProgress;
             set => SetProperty(ref _downloadProgress, value);
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
         /// <summary>
         /// 获取或设置播放速度。
         /// </summary>
-        public double PlaybackSpeed
+        public decimal PlaybackSpeed
         {
             get => _playbackSpeed;
             set => SetProperty(ref _playbackSpeed, value);

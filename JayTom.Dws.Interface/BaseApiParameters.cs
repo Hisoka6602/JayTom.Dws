@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace JayTom.Dws.Interface {
 
@@ -14,8 +15,9 @@ namespace JayTom.Dws.Interface {
         public string Url { get; set; } = string.Empty;
 
         /// <summary>
-        /// TimeOut
+        /// 请求超时时间，单位为毫秒
         /// </summary>
-        public int TimeOut { get; set; }
+        [JsonPropertyName("TimeOut")]
+        public int TimeoutMilliseconds { get; set; }
     }
 }

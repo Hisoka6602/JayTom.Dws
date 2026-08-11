@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -29,8 +29,8 @@ namespace JayTom.Dws.Interface.Sunnen {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -38,9 +38,9 @@ namespace JayTom.Dws.Interface.Sunnen {
             var isSuccess = false;
             var data = new {
                 handlingunit = barcode,
-                length = length / (double)10,
-                width = width / (double)10,
-                height = height / (double)10,
+                length = length / (decimal)10,
+                width = width / (decimal)10,
+                height = height / (decimal)10,
                 weight = weight,
                 barcode = barcode,
                 handlingunitgroup = other?.ToString()
@@ -99,7 +99,7 @@ namespace JayTom.Dws.Interface.Sunnen {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = Url,
@@ -110,8 +110,8 @@ namespace JayTom.Dws.Interface.Sunnen {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -119,9 +119,9 @@ namespace JayTom.Dws.Interface.Sunnen {
             var isSuccess = false;
             var data = new {
                 handlingunit = barcode,
-                length = length / (double)10,
-                width = width / (double)10,
-                height = height / (double)10,
+                length = length / (decimal)10,
+                width = width / (decimal)10,
+                height = height / (decimal)10,
                 weight = weight,
                 barcode = barcode,
                 handlingunitgroup = other?.ToString()
@@ -180,7 +180,7 @@ namespace JayTom.Dws.Interface.Sunnen {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = Url,
@@ -195,8 +195,8 @@ namespace JayTom.Dws.Interface.Sunnen {
             return Task.FromResult(new KeyValuePair<bool, string>(true, "无可设置参数"));
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return Task.CompletedTask;
         }

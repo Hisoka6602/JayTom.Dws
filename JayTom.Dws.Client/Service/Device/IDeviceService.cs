@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using JayTom.Dws.Ocr;
 using System.Drawing;
 using System.Threading;
@@ -8,6 +8,7 @@ using JayTom.Dws.Plugin.Scale;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
+using JayTom.Dws.Abstractions.Results;
 
 namespace JayTom.Dws.Client.Service.Device
 {
@@ -18,12 +19,15 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 设备运行状态
         /// </summary>
-        public bool RunningStatus { get; }
+        public DeviceRuntimeState RuntimeState { get; }
+
+        /// <summary>获取设备服务是否处于运行状态。</summary>
+        bool RunningStatus => RuntimeState == DeviceRuntimeState.Running;
 
         /// <summary>
         /// 相机列表
         /// </summary>
-        public List<CameraInfo> CameraItems { get; }
+        public IReadOnlyList<CameraInfo> CameraItems { get; }
 
         /// <summary>
         /// 磅秤类型
@@ -33,17 +37,17 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 当相机初始化完成时触发的事件，返回初始化的相机列表
         /// </summary>
-        event EventHandler<List<ICamera>> CameraInitialized;
+        event EventHandler<IReadOnlyList<ICamera>> CameraInitialized;
 
         /// <summary>
         /// 当相机断开连接时触发的事件，返回已断开连接的相机列表
         /// </summary>
-        event EventHandler<List<ICamera>> CameraDisconnected;
+        event EventHandler<IReadOnlyList<ICamera>> CameraDisconnected;
 
         /// <summary>
         /// 当相机故障发生时触发的事件，返回相机故障列表
         /// </summary>
-        event EventHandler<List<ICamera>> CameraFault;
+        event EventHandler<IReadOnlyList<ICamera>> CameraFault;
 
         /// <summary>
         /// 当相机扫到条码时触发的事件
@@ -53,7 +57,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 包裹触发但未识别到条码
         /// </summary>
-        event EventHandler<BarcodeReadEventArgs> NotBarcodeHitEvent;
+        event EventHandler<BarcodeReadEventArgs> BarcodeMissed;
 
         /// <summary>
         /// 相机捕获到全景图片触发事件
@@ -73,7 +77,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 相机枚举事件
         /// </summary>
-        event EventHandler<List<CameraFinderItemInfoModel>> CameraEnumerationRefreshed;
+        event EventHandler<IReadOnlyList<CameraFinderItemInfoModel>> CameraEnumerationRefreshed;
 
         /// <summary>
         /// 相机异常事件
@@ -85,7 +89,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> OnCameraEnumerationRefreshed(CancellationToken token = default);
+        Task<OperationResult<string>> RefreshCameraEnumerationAsync(CancellationToken token = default);
 
         /// <summary>
         /// 相机绑定事件
@@ -98,7 +102,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <param name="camera"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> OnCameraBound(CameraFinderItemInfoModel camera, CancellationToken token = default);
+        Task<OperationResult<string>> BindCameraAsync(CameraFinderItemInfoModel camera, CancellationToken token = default);
 
         /// <summary>
         /// 相机解绑事件
@@ -111,12 +115,12 @@ namespace JayTom.Dws.Client.Service.Device
         /// <param name="camera"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> OnCameraUnbound(CameraFinderItemInfoModel camera, CancellationToken token = default);
+        Task<OperationResult<string>> UnbindCameraAsync(CameraFinderItemInfoModel camera, CancellationToken token = default);
 
         /// <summary>
         /// 相机修改参数事件
         /// </summary>
-        event EventHandler<List<CameraParametersModifiedEventArgs>> CameraParametersModified;
+        event EventHandler<IReadOnlyList<CameraParametersModifiedEventArgs>> CameraParametersModified;
 
         /// <summary>
         /// 相机修改参数
@@ -124,7 +128,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <param name="camera"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> OnCameraParametersModified(List<CameraParametersModifiedEventArgs> camera, CancellationToken token = default);
+        Task<OperationResult<string>> ModifyCameraParametersAsync(List<CameraParametersModifiedEventArgs> camera, CancellationToken token = default);
 
         /// <summary>
         /// 相机释放事件
@@ -196,12 +200,12 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 启动设备服务
         /// </summary>
-        Task<KeyValuePair<bool, string>> Start(CancellationToken token = default);
+        Task<OperationResult<string>> Start(CancellationToken token = default);
 
         /// <summary>
         /// 停止设备服务
         /// </summary>
-        Task<KeyValuePair<bool, string>> Stop(CancellationToken token = default);
+        Task<OperationResult<string>> Stop(CancellationToken token = default);
 
         /// <summary>
         /// 扫码枪条码返回事件
@@ -216,7 +220,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 初始化设备服务
         /// </summary>
-        Task Initialization();
+        Task<OperationResult<string>> InitializeAsync(CancellationToken token = default);
 
         /// <summary>
         /// 释放设备注册资源
@@ -235,7 +239,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 重量
         /// </summary>
-        public float Weight { get; set; }
+        public decimal Weight { get; set; }
     }
 
     public class RealTimeWeightEventArgs : EventArgs
@@ -249,7 +253,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 实时重量
         /// </summary>
-        public float RealTimeWeight { get; set; }
+        public decimal RealTimeWeight { get; set; }
     }
 
     public class ScaleDisconnectedEventArgs : EventArgs
@@ -286,20 +290,20 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 静态磅秤
         /// </summary>
-        Static,
+        Static = 1,
 
         /// <summary>
         /// 动态磅秤
         /// </summary>
-        Dynamic,
+        Dynamic = 2,
 
         /// <summary>
         /// 无称重
         /// </summary>
-        None
+        None = 0
     }
 
-    public class DeviceExceptionEventArgs
+    public class DeviceExceptionEventArgs : EventArgs
     {
         /*/// <summary>
         /// 设备
@@ -309,7 +313,7 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 异常信息
         /// </summary>
-        public Exception? ExceptionMessage;
+        public Exception? Exception { get; init; }
     }
 
     public class RealTimeImageEventArgs
@@ -328,21 +332,23 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 实时帧率
         /// </summary>
-        public float RealTimeFrameRate { get; set; }
+        public decimal RealTimeFrameRate { get; set; }
     }
 
-    public class CameraParametersModifiedEventArgs : EventArgs
+    public abstract class CameraParametersModifiedEventArgs : EventArgs
     {
+
+        /// <summary>初始化指定类型的相机配置变更事件。</summary>
+        /// <param name="type">相机绑定类型。</param>
+        protected CameraParametersModifiedEventArgs(CameraBindingType type)
+        {
+            Type = type;
+        }
 
         /// <summary>
         /// 已绑定类型
         /// </summary>
-        public CameraBindingType Type { get; set; }
-
-        /// <summary>
-        /// 参数
-        /// </summary>
-        public object? Parameters { get; set; }
+        public CameraBindingType Type { get; }
     }
 
     public class PanoramaCaptureEventArgs : EventArgs
@@ -381,6 +387,6 @@ namespace JayTom.Dws.Client.Service.Device
         /// <summary>
         /// 条码时间戳
         /// </summary>
-        public long BarcodeTimestamp { get; set; }
+        public long PackageTimestampMilliseconds { get; set; }
     }
 }

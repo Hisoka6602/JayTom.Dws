@@ -596,7 +596,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             if (exitId > 0)
             {
-                var connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
+                long? connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
                     ?.CommunicationConnectionId;
                 if (connectionId > 0)
                 {
@@ -757,7 +757,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             if (exitId > 0)
             {
-                var connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
+                long? connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
                     ?.CommunicationConnectionId;
                 if (connectionId > 0)
                 {

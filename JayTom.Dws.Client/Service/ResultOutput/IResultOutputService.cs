@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 
 namespace JayTom.Dws.Client.Service.ResultOutput
@@ -24,8 +24,8 @@ namespace JayTom.Dws.Client.Service.ResultOutput
         /// <param name="volume"></param>
         /// <param name="cameraSerialNumber"></param>
         /// <param name="cancellationToken"></param>
-        void ExecuteOutput(string barCode, float weight,
-            DateTime scanTime, float length, float width, float height, float volume,
+        void ExecuteOutput(string barCode, decimal weight,
+            DateTime scanTime, decimal length, decimal width, decimal height, decimal volume,
             string cameraSerialNumber, CancellationToken cancellationToken = default);
     }
 }

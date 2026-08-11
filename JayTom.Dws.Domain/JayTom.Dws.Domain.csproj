@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
@@ -9,14 +9,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NLog" />
-    <PackageReference Include="System.Drawing.Common" />
-    <PackageReference Include="System.IO.Ports" />
+    <Compile Remove="Service\CloudApi\CloudService.cs" />
+    <Compile Remove="Service\LicenseApi\LicenseApplicationService.cs" />
+    <Compile Remove="Service\LicenseApi\LicenseCodeService.cs" />
+    <Compile Remove="Service\LicenseApi\LicenseLogService.cs" />
+    <Compile Remove="Service\LicenseApi\LicenseUserService.cs" />
+    <Compile Remove="Service\VideoApi\VideoBarCodeService.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Models\JayTom.Dws.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>

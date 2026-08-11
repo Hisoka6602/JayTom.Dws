@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.IO.Ports;
@@ -42,7 +42,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
         public WeightAdditionalProperties WeightAdditionalProperties { get; set; } = new();
         public ScaleWeightFormat WeightFormat { get; set; }
 
-        public event EventHandler<float>? StabledWeight;
+        public event EventHandler<decimal>? StabledWeight;
 
         public event EventHandler<WeightChangedEventArgs>? WeightStabilized;
 
@@ -99,7 +99,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                             // 提取重量值
                                             if (match.Success) {
                                                 var weight = match.Value;
-                                                var tryParse = float.TryParse(
+                                                var tryParse = decimal.TryParse(
                                                     weight,
                                                     NumberStyles.Float,
                                                     CultureInfo.InvariantCulture,
@@ -193,7 +193,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                                     // 提取重量值
                                     if (match.Success) {
                                         var weight = match.Value;
-                                        var tryParse = float.TryParse(
+                                        var tryParse = decimal.TryParse(
                                             weight,
                                             NumberStyles.Float,
                                             CultureInfo.InvariantCulture,
@@ -273,7 +273,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             return false;
         }
 
-        public static float ExtractWeightFromHex(string input) {
+        public static decimal ExtractWeightFromHex(string input) {
             // 移除所有空格
             try {
                 var hexString = input.Replace(" ", "");
@@ -281,7 +281,7 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
                     var weightSubstring = hexString.Substring(4, 10);
                     var processedWeight = string.Concat(weightSubstring.Where((ch, index) => index % 2 == 1));
                     int.TryParse(processedWeight, out var weightInt);
-                    return weightInt / 100f;
+                    return weightInt / 100m;
                 }
             }
             catch {
@@ -291,22 +291,22 @@ namespace JayTom.Dws.Plugin.Scale.DynamicScale {
             return 0;
         }
 
-        protected virtual void OnStabledWeight(float e) {
+        protected virtual void OnStabledWeight(decimal e) {
             //使用附加属性
             if (WeightAdditionalProperties.IsUseActualWeightConversionRate) {
                 //使用重量转换率
-                e = (float)(e * (WeightAdditionalProperties.WeightConversionRate / 100));
+                e = (decimal)(e * (WeightAdditionalProperties.WeightConversionRate / 100));
             }
             if (WeightAdditionalProperties.IsUseAppendedWeight) {
                 //追加重量
-                e = (float)(e + WeightAdditionalProperties.AppendedWeightValue);
+                e = (decimal)(e + WeightAdditionalProperties.AppendedWeightValue);
             }
-            e = (float)Math.Round(
+            e = (decimal)Math.Round(
                 e,
                 Math.Clamp(_defaultDynamicScaleValueParameters.DecimalPlaces, 0, 6));
             if (WeightAdditionalProperties.IsUseFixedWeight) {
                 //固定重量输出
-                e = (float)WeightAdditionalProperties.FixedWeightValue;
+                e = (decimal)WeightAdditionalProperties.FixedWeightValue;
             }
 
             StabledWeight?.Invoke(this, e);

@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using ImTools;
 using System.Linq;
@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
         /// 清除外部输入控制字符的复用正则。
         /// </summary>
         private static readonly Regex ControlCharacterRegex = new(
-            @"[\u0000-\u001f\b]",
+            @"[\u0000-\u001D\b]",
             RegexOptions.Compiled | RegexOptions.CultureInvariant,
             TimeSpan.FromMilliseconds(100));
 
@@ -253,7 +253,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
                 };
                 try
                 {
-                    float length = 0, width = 0, height = 0, volume = 0, weight = 0;
+                    decimal length = 0, width = 0, height = 0, volume = 0, weight = 0;
                     var split = e.Content.Split(_contentInputSettingsDto.Separator);
                     if (split.Length == _contentInputSettingsDto.DataTemplate.Count(c => c.Type != 2))
                     {
@@ -262,27 +262,27 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
                         {
                             if (templateInfos[i].Content.Contains("length", StringComparison.OrdinalIgnoreCase))
                             {
-                                float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out length);
+                                decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out length);
                                 inputEventArgs.Length = length;
                             }
                             else if (templateInfos[i].Content.Contains("width", StringComparison.OrdinalIgnoreCase))
                             {
-                                float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out width);
+                                decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out width);
                                 inputEventArgs.Width = width;
                             }
                             else if (templateInfos[i].Content.Contains("height", StringComparison.OrdinalIgnoreCase))
                             {
-                                float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out height);
+                                decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out height);
                                 inputEventArgs.Height = height;
                             }
                             else if (templateInfos[i].Content.Contains("volume", StringComparison.OrdinalIgnoreCase))
                             {
-                                float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out volume);
+                                decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out volume);
                                 inputEventArgs.Volume = volume;
                             }
                             else if (templateInfos[i].Content.Contains("weight", StringComparison.OrdinalIgnoreCase))
                             {
-                                float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out weight);
+                                decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out weight);
                                 inputEventArgs.Weight = weight;
                             }
                             else if (templateInfos[i].Content.Contains("barcode", StringComparison.OrdinalIgnoreCase))
@@ -313,7 +313,7 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
         {
             if (!string.IsNullOrEmpty(e.Content) && e.Type == CommunicationType.Receive)
             {
-                float length = 0, width = 0, height = 0, volume = 0;
+                decimal length = 0, width = 0, height = 0, volume = 0;
                 var split = e.Content.Split(_volumeSettingsDto.Separator);
                 if (split.Length == _volumeSettingsDto.DataTemplate.Count(c => c.Type != 2))
                 {
@@ -322,19 +322,19 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
                     {
                         if (templateInfos[i].Content.Contains("length", StringComparison.OrdinalIgnoreCase))
                         {
-                            float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out length);
+                            decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out length);
                         }
                         else if (templateInfos[i].Content.Contains("width", StringComparison.OrdinalIgnoreCase))
                         {
-                            float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out width);
+                            decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out width);
                         }
                         else if (templateInfos[i].Content.Contains("height", StringComparison.OrdinalIgnoreCase))
                         {
-                            float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out height);
+                            decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out height);
                         }
                         else if (templateInfos[i].Content.Contains("volume", StringComparison.OrdinalIgnoreCase))
                         {
-                            float.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out volume);
+                            decimal.TryParse(split[i], NumberStyles.Float, CultureInfo.InvariantCulture, out volume);
                         }
                     }
                 }

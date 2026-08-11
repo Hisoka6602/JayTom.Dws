@@ -25,10 +25,10 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
 
-namespace JayTom.Dws.Client.Composition;
+namespace JayTom.Dws.Infrastructure.DependencyInjection;
 
 /// <summary>集中注册本地数据库上下文与仓储适配器。</summary>
-internal static class PersistenceRegistration {
+public static class PersistenceServiceCollectionExtensions {
     /// <summary>注册持久化基础设施。</summary>
     public static IServiceCollection AddDwsPersistence(this IServiceCollection services) {
         services.AddPooledDbContextFactory<SqliteContext>(

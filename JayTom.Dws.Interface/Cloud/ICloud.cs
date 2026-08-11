@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -240,7 +240,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 格式化后重量
         /// </summary>
-        public double FormattedWeight { get; set; }
+        public decimal FormattedWeight { get; set; }
 
         /// <summary>
         /// 创建时间
@@ -271,22 +271,22 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 格式化后的长
         /// </summary>
-        public double FormattedLength { get; set; }
+        public decimal FormattedLength { get; set; }
 
         /// <summary>
         /// 格式化后的宽
         /// </summary>
-        public double FormattedWidth { get; set; }
+        public decimal FormattedWidth { get; set; }
 
         /// <summary>
         /// 格式化后的高
         /// </summary>
-        public double FormattedHeight { get; set; }
+        public decimal FormattedHeight { get; set; }
 
         /// <summary>
         /// 格式化的体积
         /// </summary>
-        public double FormattedVolume { get; set; }
+        public decimal FormattedVolume { get; set; }
 
         /// <summary>
         /// 创建时间
@@ -327,7 +327,7 @@ namespace JayTom.Dws.Interface.Cloud {
         /// <summary>
         /// 耗时(秒)
         /// </summary>
-        public double DurationInSeconds { get; set; }
+        public decimal DurationInSeconds { get; set; }
 
         /// <summary>
         /// 接口参数

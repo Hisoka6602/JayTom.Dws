@@ -1,4 +1,4 @@
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 描述插件服务的宿主无关生命周期。

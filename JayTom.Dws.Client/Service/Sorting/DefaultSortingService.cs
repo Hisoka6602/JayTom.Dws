@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using DryIoc;
 using System.Linq;
@@ -32,14 +32,14 @@ using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using UploadResponse = JayTom.Dws.Interface.UploadResponse;
-using FormulaNumber = System.Double;
+using FormulaNumber = System.Decimal;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
+using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PushAlternateExitSorterEvent = JayTom.Dws.Client.EventMediators.PushAlternateExitSorterEvent;
+using PushAlternateExitSorterEvent = JayTom.Dws.Domain.EventMediators.PushAlternateExitSorterEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {
@@ -362,12 +362,12 @@ namespace JayTom.Dws.Client.Service.Sorting
                         {
                             Guid = model.Guid,
                             BarCode = model.BarCodeInfo?.Barcode ?? string.Empty,
-                            Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
+                            Height = (decimal)(model.VolumeInfo?.FormattedHeight ?? 0),
                             ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                            Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
-                            Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
-                            Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
-                            Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
+                            Weight = (decimal)(model.WeightInfo?.FormattedWeight ?? 0),
+                            Length = (decimal)(model.VolumeInfo?.FormattedLength ?? 0),
+                            Width = (decimal)(model.VolumeInfo?.FormattedWidth ?? 0),
+                            Volume = (decimal)(model.VolumeInfo?.FormattedVolume ?? 0),
                             PackageCreationTime = model.CreateTime,
                             PackageCreationInstruction = model.PackageCreationInstruction,
                             IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
@@ -1239,7 +1239,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                             else if (apiRuleJsonDto.IsUseJsonField)
                             {
                                 var resultContent = Regex.Unescape(apiResponse.ResponseContent);
-                                var replace = Regex.Replace(resultContent, @"[\u0000-\u001f\b]", "");
+                                var replace = Regex.Replace(resultContent, @"[\u0000-\u001D\b]", "");
                                 var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(replace));
                                 var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
                                 if (tryParseValue && document is not null)

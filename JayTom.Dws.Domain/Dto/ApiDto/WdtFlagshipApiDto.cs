@@ -46,7 +46,7 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// <summary>
         /// 打包员Id
         /// </summary>
-        public int PackagerId { get; set; }
+        public long PackagerId { get; set; }
 
         /// <summary>
         /// 打包员编号

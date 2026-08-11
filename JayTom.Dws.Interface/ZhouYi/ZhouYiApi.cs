@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -27,8 +27,8 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
         // Infrastructure/Http/InsuranceClient.cs 内部
         public async Task<UploadResponse> UploadData(
-            string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+            string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             var requestTime = DateTime.Now;
             var weightValue = weight.ToString("0.###");
@@ -46,7 +46,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
             var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-            var signPlain = $"{_parameters.AppId}{bodyStrNoWs}{timestamp}{_parameters.AppKey}";
+            var signPlain = $"{_parameters.ApplicationCode}{bodyStrNoWs}{timestamp}{_parameters.AppKey}";
 
             // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
             var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
@@ -54,7 +54,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
             using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
-            httpClient.DefaultRequestHeaders.Add("appid", _parameters.AppId);
+            httpClient.DefaultRequestHeaders.Add("appid", _parameters.ApplicationCode);
             httpClient.DefaultRequestHeaders.Add("timestamp", timestamp.ToString());
             httpClient.DefaultRequestHeaders.Add("sign", sign);
 
@@ -94,7 +94,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
                 ExceptionMsg = exceptionMsg,
                 ApiParameters = JsonConvert.SerializeObject(this),
                 IsSuccess = isSuccess,
-                Duration = stopwatch.Elapsed.TotalSeconds,
+                DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 RequestContent = bodyStrNoWs,
                 RequestTime = requestTime,
                 RequestUrl = _parameters?.Url ?? string.Empty,
@@ -103,8 +103,8 @@ namespace JayTom.Dws.Interface.ZhouYi {
             };
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             //请求格口
             var requestTime = DateTime.Now;
@@ -123,7 +123,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
             var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-            var signPlain = $"{_parameters.AppId}{bodyStrNoWs}{timestamp}{_parameters.AppKey}";
+            var signPlain = $"{_parameters.ApplicationCode}{bodyStrNoWs}{timestamp}{_parameters.AppKey}";
 
             // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
             var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
@@ -131,7 +131,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
             using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
-            httpClient.DefaultRequestHeaders.Add("appid", _parameters.AppId);
+            httpClient.DefaultRequestHeaders.Add("appid", _parameters.ApplicationCode);
             httpClient.DefaultRequestHeaders.Add("timestamp", timestamp.ToString());
             httpClient.DefaultRequestHeaders.Add("sign", sign);
 
@@ -171,7 +171,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
                 ExceptionMsg = exceptionMsg,
                 ApiParameters = JsonConvert.SerializeObject(this),
                 IsSuccess = isSuccess,
-                Duration = stopwatch.Elapsed.TotalSeconds,
+                DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 RequestContent = bodyStrNoWs,
                 RequestTime = requestTime,
                 RequestUrl = _parameters?.Url ?? string.Empty,
@@ -190,8 +190,8 @@ namespace JayTom.Dws.Interface.ZhouYi {
             }
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return Task.CompletedTask;
         }
@@ -213,7 +213,8 @@ namespace JayTom.Dws.Interface.ZhouYi {
             /// </summary>
             public int TimeOut { get; set; } = 10000;
 
-            public string AppId { get; set; } = string.Empty;
+            [JsonProperty("AppId")]
+            public string ApplicationCode { get; set; } = string.Empty;
             public string AppKey { get; set; } = string.Empty;
             public bool NeedUpload { get; set; }
             public bool IsFstCode { get; set; }

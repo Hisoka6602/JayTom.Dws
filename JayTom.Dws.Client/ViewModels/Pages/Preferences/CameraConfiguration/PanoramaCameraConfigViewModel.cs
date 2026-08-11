@@ -177,7 +177,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var delete = await _panoramaCameraConfigRepository.Delete(model);
                     if (delete)
                     {
-                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel()
+                        var (key, value) = await _deviceService.UnbindCameraAsync(new CameraFinderItemInfoModel()
                         {
                             BoundType = CameraBindingType.PanoramaCamera,
                             ConnectionType = obj.ConnectionType,
@@ -224,14 +224,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var update = await _panoramaCameraConfigRepository.Update(infoModel);
                     if (update)
                     {
-                        var (key, value) = await _deviceService.OnCameraParametersModified(new List<CameraParametersModifiedEventArgs>()
-                        {
-                            new()
-                            {
-                                Type = CameraBindingType.PanoramaCamera,
-                                Parameters = infoModel
-                            }
-                        });
+                        var (key, value) = await _deviceService.ModifyCameraParametersAsync(
+                            [new PanoramaCameraParametersModifiedEventArgs(infoModel)]);
                         isSuccess = key;
                     }
                 }
@@ -268,13 +262,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var updateRange = await _panoramaCameraConfigRepository.UpdateRange(infoModels);
                     if (updateRange)
                     {
-                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs
-                        {
-                            Type = CameraBindingType.PanoramaCamera,
-                            Parameters = s
-                        })?.ToList();
+                        var list = infoModels.Select(s =>
+                            (CameraParametersModifiedEventArgs)new PanoramaCameraParametersModifiedEventArgs(s)).ToList();
 
-                        var (key, value) = await _deviceService.OnCameraParametersModified(list ?? new List<CameraParametersModifiedEventArgs>());
+                        var (key, value) = await _deviceService.ModifyCameraParametersAsync(list ?? new List<CameraParametersModifiedEventArgs>());
                         isSuccess = key;
                         if (isSuccess)
                         {

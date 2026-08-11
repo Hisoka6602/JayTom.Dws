@@ -1,4 +1,4 @@
-﻿using Polly;
+using Polly;
 using System;
 using Aliyun.OSS;
 using System.Net;
@@ -36,8 +36,8 @@ namespace JayTom.Dws.Interface.Eshippingit {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -107,7 +107,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters.Domain}/api/ilw-service/ilw/parcel/asyncInbound",
@@ -118,8 +118,8 @@ namespace JayTom.Dws.Interface.Eshippingit {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -190,7 +190,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters.Domain}/api/ilw-service/ilw/parcel/asyncInbound",
@@ -218,11 +218,11 @@ namespace JayTom.Dws.Interface.Eshippingit {
             return Task.FromResult(new KeyValuePair<bool, string>(false, "参数类型不匹配"));
         }
 
-        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (imageInfo?.Image is not null) {
-                await PolicyPush(barcode, scanTime, imageInfo.Image, token);
+                await PolicyPush(barcode, scanTime, imageInfo.Image.As<Image>(), token);
                 imageInfo?.Image?.Dispose();
             }
         }
@@ -248,7 +248,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                         if (OssParam is null) {
                             return false;
                         }
-                        _ossClient = new OssClient(Parameters.Endpoint, OssParam.AccessKeyId, OssParam.AccessKeySecret,
+                        _ossClient = new OssClient(Parameters.Endpoint, OssParam.AccessKeyIdentifier, OssParam.AccessKeySecret,
                             OssParam.SecurityToken);
                     }
                 }
@@ -379,7 +379,8 @@ namespace JayTom.Dws.Interface.Eshippingit {
         public class OssParameters {
             public string SecurityToken { get; set; } = string.Empty;
             public string AccessKeySecret { get; set; } = string.Empty;
-            public string AccessKeyId { get; set; } = string.Empty;
+            [JsonProperty("AccessKeyId")]
+            public string AccessKeyIdentifier { get; set; } = string.Empty;
             public DateTime Expiration { get; set; }
         }
     }

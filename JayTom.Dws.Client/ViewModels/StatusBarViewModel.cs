@@ -7,7 +7,7 @@ using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Windows.Media;
 using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
@@ -31,7 +31,7 @@ using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels
 {
@@ -289,7 +289,7 @@ namespace JayTom.Dws.Client.ViewModels
                 }
             };
             //断开
-            _deviceService.CameraDisconnected += async delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraDisconnected += async delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 try
                 {
@@ -311,7 +311,7 @@ namespace JayTom.Dws.Client.ViewModels
                 }
             };
             //异常
-            _deviceService.CameraFault += async delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraFault += async delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 try
                 {
@@ -334,7 +334,7 @@ namespace JayTom.Dws.Client.ViewModels
                 }
             };
             //相机初始化
-            _deviceService.CameraInitialized += async delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraInitialized += async delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 try
                 {

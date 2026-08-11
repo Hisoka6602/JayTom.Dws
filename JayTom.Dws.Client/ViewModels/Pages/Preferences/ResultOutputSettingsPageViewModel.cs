@@ -623,10 +623,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     SerialPortSettingsInfo = new SerialPortSettingsInfo()
                     {
                         BaudRate = SelectBaudRate,
-                        Parity = SelectedParity.Value,
+                        Parity = (JayTom.Dws.Abstractions.Devices.SerialParity)SelectedParity.Value,
                         PortName = SelectedPort,
                         DataBits = SelectedDataBits,
-                        StopBits = SelectedStopBits.Value,
+                        StopBits = (JayTom.Dws.Abstractions.Devices.SerialStopBits)SelectedStopBits.Value,
                         DataFormat = SelectDataFormat.Value,
                     },
                     SerialPortResultOutputInfo = new SerialPortResultOutputInfo()
@@ -647,13 +647,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     LocationOutputSettingsInfo = new LocationOutputSettingsInfo()
                     {
                         BarcodeOutputKey = LocationOutputSettingsInfo.BarcodeOutputKey,
-                        BarcodeOutputPosition = LocationOutputSettingsInfo.BarcodeOutputPosition,
+                        BarcodeOutputPosition = new JayTom.Dws.Abstractions.Devices.Point2D(
+                            LocationOutputSettingsInfo.BarcodeOutputPosition.X,
+                            LocationOutputSettingsInfo.BarcodeOutputPosition.Y),
                         IsOutputBarcode = LocationOutputSettingsInfo.IsOutputBarcode,
                         IsOutputWeight = LocationOutputSettingsInfo.IsOutputWeight,
                         IsOutputWeightFirst = LocationOutputSettingsInfo.IsOutputWeightFirst,
                         OperationDelay = LocationOutputSettingsInfo.OperationDelay,
                         WeightOutputKey = LocationOutputSettingsInfo.WeightOutputKey,
-                        WeightOutputPosition = LocationOutputSettingsInfo.WeightOutputPosition
+                        WeightOutputPosition = new JayTom.Dws.Abstractions.Devices.Point2D(
+                            LocationOutputSettingsInfo.WeightOutputPosition.X,
+                            LocationOutputSettingsInfo.WeightOutputPosition.Y)
                     },
                 });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
@@ -682,10 +686,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                           new ResultOutputSettingsDto();
                     //加载停止位的值
                     SelectedStopBits = StopBitsItems.FirstOrDefault(f =>
-                        f.Value.Equals(settingsDto.SerialPortSettingsInfo.StopBits)) ?? new StopBitsInfoModel();
+                        f.Value == (StopBits)settingsDto.SerialPortSettingsInfo.StopBits) ?? new StopBitsInfoModel();
                     //加载效验位的值
                     SelectedParity = ParityItems.FirstOrDefault(f =>
-                        f.Value.Equals(settingsDto.SerialPortSettingsInfo.Parity)) ?? new ParityInfoModel();
+                        f.Value == (Parity)settingsDto.SerialPortSettingsInfo.Parity) ?? new ParityInfoModel();
                     //加载触发位置的值
                     SelectedTriggerPosition = TriggerPositionItems.FirstOrDefault(f =>
                         f.TriggerPositionValue.Equals(settingsDto.AudioOutputSettingsInfo.TriggerPosition)) ?? new TriggerPositionModel();
@@ -732,10 +736,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     SerialPortSettingsInfo = new SerialPortSettingsInfoModel()
                     {
                         BaudRate = settingsDto.SerialPortSettingsInfo.BaudRate,
-                        Parity = settingsDto.SerialPortSettingsInfo.Parity,
+                        Parity = (Parity)settingsDto.SerialPortSettingsInfo.Parity,
                         DataBits = settingsDto.SerialPortSettingsInfo.DataBits,
                         PortName = settingsDto.SerialPortSettingsInfo.PortName,
-                        StopBits = settingsDto.SerialPortSettingsInfo.StopBits,
+                        StopBits = (StopBits)settingsDto.SerialPortSettingsInfo.StopBits,
                         DataFormat = settingsDto.SerialPortSettingsInfo.DataFormat
                     };
                     SerialPortResultOutput = new SerialPortResultOutputModel()
@@ -758,14 +762,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     LocationOutputSettingsInfo = new LocationOutputSettingsInfoModel()
                     {
                         BarcodeOutputKey = settingsDto.LocationOutputSettingsInfo.BarcodeOutputKey,
-                        BarcodeOutputPosition =
-                            settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition,
+                        BarcodeOutputPosition = new System.Drawing.Point(
+                            settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition.X,
+                            settingsDto.LocationOutputSettingsInfo.BarcodeOutputPosition.Y),
                         IsOutputBarcode = settingsDto.LocationOutputSettingsInfo.IsOutputBarcode,
                         IsOutputWeight = settingsDto.LocationOutputSettingsInfo.IsOutputWeight,
                         IsOutputWeightFirst = settingsDto.LocationOutputSettingsInfo.IsOutputWeightFirst,
                         OperationDelay = settingsDto.LocationOutputSettingsInfo.OperationDelay,
                         WeightOutputKey = settingsDto.LocationOutputSettingsInfo.WeightOutputKey,
-                        WeightOutputPosition = settingsDto.LocationOutputSettingsInfo.WeightOutputPosition,
+                        WeightOutputPosition = new System.Drawing.Point(
+                            settingsDto.LocationOutputSettingsInfo.WeightOutputPosition.X,
+                            settingsDto.LocationOutputSettingsInfo.WeightOutputPosition.Y),
                     };
                 });
             }

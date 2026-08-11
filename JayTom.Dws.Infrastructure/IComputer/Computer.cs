@@ -193,7 +193,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                             Name = drive.Name?.Replace(":", string.Empty)?.Replace("\\", string.Empty) ?? string.Empty,
                             AvailableDiskSpace = availableSpace,
                             AvailableDiskSpaceFormat = FormatByteSize(availableSpace),
-                            AvailableDiskSpacePercentage = Convert.ToSingle(availablePercentage),
+                            AvailableDiskSpacePercentage = availablePercentage,
                             UsedDiskSpacePercentage = usedPercentage,
                             UsedDiskSpace = usedSpace,
                             UsedDiskSpaceFormat = FormatByteSize(usedSpace)
@@ -266,20 +266,20 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                             sensor.Name.Contains(coreName, StringComparison.Ordinal));
                         coreInfos.Add(new CpuCoreInfo {
                             CpuCoreName = coreName,
-                            CpuCoreSpeed = clockSensor?.Value ?? 0,
-                            CpuTemperature = temperatureSensor?.Value ?? 0,
-                            CpuUsedPercent = loadSensor?.Value ?? 0,
-                            Voltage = voltageSensor?.Value ?? 0,
+                            CpuCoreSpeed = Convert.ToDecimal(clockSensor?.Value ?? 0),
+                            CpuTemperature = Convert.ToDecimal(temperatureSensor?.Value ?? 0),
+                            CpuUsedPercent = Convert.ToDecimal(loadSensor?.Value ?? 0),
+                            Voltage = Convert.ToDecimal(voltageSensor?.Value ?? 0),
                         });
                     }
 
                     var cpuInfo = new CpuInfo() {
-                        CpuPackageTemperature = sensors.FirstOrDefault(f => f.Name.Equals("CPU Package"))
-                             ?.Value.GetValueOrDefault() ?? 0,
-                        CpuTotalUsedPercent = sensors.FirstOrDefault(f => f.Name.Equals("CPU Total"))?.Value
-                             .GetValueOrDefault() ?? 0,
-                        CpuBusSpeed = sensors.FirstOrDefault(f => f.Name.Equals("Bus Speed"))?.Value
-                             .GetValueOrDefault() ?? 0,
+                        CpuPackageTemperature = Convert.ToDecimal(sensors.FirstOrDefault(f => f.Name.Equals("CPU Package"))
+                             ?.Value.GetValueOrDefault() ?? 0),
+                        CpuTotalUsedPercent = Convert.ToDecimal(sensors.FirstOrDefault(f => f.Name.Equals("CPU Total"))?.Value
+                             .GetValueOrDefault() ?? 0),
+                        CpuBusSpeed = Convert.ToDecimal(sensors.FirstOrDefault(f => f.Name.Equals("Bus Speed"))?.Value
+                             .GetValueOrDefault() ?? 0),
                         CpuName = $"{hardware.Name}",
                         CpuCoreInfos = coreInfos
                     };
@@ -336,9 +336,9 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                     UsedMemory = usedMemory,
                     AvailableMemory = availableMemory,
                     AvailableMemoryFormat = FormatByteSize(availableMemory),
-                    AvailableMemoryPercentage = Convert.ToSingle(availableMemoryPercent),
+                    AvailableMemoryPercentage = availableMemoryPercent,
                     UsedMemoryFormat = FormatByteSize(usedMemory),
-                    UsedMemoryPercent = Convert.ToSingle(usedMemoryPercent),
+                    UsedMemoryPercent = usedMemoryPercent,
                 };
             }
             catch (Exception exception) {
@@ -446,7 +446,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
 
                 var systemInfo = new SystemInfo {
                     DeviceName = Environment.MachineName,
-                    DeviceId = cryptography?.GetValue("MachineGuid")?.ToString() ?? string.Empty,
+                    DeviceIdentifier = cryptography?.GetValue("MachineGuid")?.ToString() ?? string.Empty,
                     ProductId = currentVersion?.GetValue("ProductId")?.ToString() ?? string.Empty,
                     SystemType = Environment.Is64BitOperatingSystem ? "64 位操作系统" : "32 位操作系统",
                     WindowsVersion = Environment.OSVersion.Version.ToString(),
@@ -670,7 +670,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         public async Task<string> GenerateMachineCode() {
             await Task.Yield();
             var cpuSerialNumber = string.Empty;
-            var hardDiskId = string.Empty;
+            var hardDiskSerialNumber = string.Empty;
             var machineName = string.Empty;
             var versionString = string.Empty;
             var machineCode = string.Empty;
@@ -685,13 +685,13 @@ namespace JayTom.Dws.Infrastructure.IComputer {
                 collection = searcher.Get();
                 foreach (var o in collection) {
                     var obj = (ManagementObject)o;
-                    hardDiskId += obj?["SerialNumber"].ToString();
+                    hardDiskSerialNumber += obj?["SerialNumber"].ToString();
                 }
 
                 machineName = Environment.MachineName;
                 versionString = Environment.OSVersion.VersionString;
 
-                machineCode = $"{cpuSerialNumber}{hardDiskId}{machineName}{versionString}";
+                machineCode = $"{cpuSerialNumber}{hardDiskSerialNumber}{machineName}{versionString}";
 
                 // DWS-HEX-COMPACT: 许可证机器码必须保持既有的无分隔符格式。
                 machineCode = Convert.ToHexString(MD5.HashData(

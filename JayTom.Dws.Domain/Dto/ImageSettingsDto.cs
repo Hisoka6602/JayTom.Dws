@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Abstractions.Graphics;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
@@ -71,7 +71,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 水印颜色
         /// </summary>
-        public Color WatermarkColor { get; set; }
+        public RgbaColor WatermarkColor { get; set; }
 
         /// <summary>
         /// 水印字体大小

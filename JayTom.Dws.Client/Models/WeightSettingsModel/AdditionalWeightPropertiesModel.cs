@@ -1,15 +1,15 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.WeightSettingsModel
 {
     public class AdditionalWeightPropertiesModel : BindableBase
     {
         private bool _isUseActualWeightConversionRate;
-        private double _weightConversionRate;
+        private decimal _weightConversionRate;
         private bool _isUseAppendedWeight;
-        private double _appendedWeightValue;
+        private decimal _appendedWeightValue;
         private bool _isUseFixedWeight;
-        private double _fixedWeightValue;
+        private decimal _fixedWeightValue;
         private bool _isUseMergedWeightTimeout;
         private int _mergedWeightTimeout = 300;
 
@@ -25,7 +25,7 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel
         /// <summary>
         /// 重量转换率
         /// </summary>
-        public double WeightConversionRate
+        public decimal WeightConversionRate
         {
             get => _weightConversionRate;
             set => SetProperty(ref _weightConversionRate, value);
@@ -43,7 +43,7 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel
         /// <summary>
         /// 追加重量的值
         /// </summary>
-        public double AppendedWeightValue
+        public decimal AppendedWeightValue
         {
             get => _appendedWeightValue;
             set => SetProperty(ref _appendedWeightValue, value);
@@ -61,7 +61,7 @@ namespace JayTom.Dws.Client.Models.WeightSettingsModel
         /// <summary>
         /// 固定重量的值
         /// </summary>
-        public double FixedWeightValue
+        public decimal FixedWeightValue
         {
             get => _fixedWeightValue;
             set => SetProperty(ref _fixedWeightValue, value);

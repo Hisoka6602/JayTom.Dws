@@ -7,7 +7,7 @@ using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
 using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Data.LocalConf;
@@ -287,7 +287,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 {
                     if (IsSameDiskStorage)
                     {
-                        double progress = 0;
+                        decimal progress = 0;
                         LocalDiskUsageInfo = new LocalDiskUsageInfo()
                         {
                             DiskUsagePercentage = localDiskUsageInfo.DiskUsagePercentage,
@@ -302,7 +302,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     //判断FTP是否连接
                     if (IsShowingFtpSpaceInfo)
                     {
-                        double progress = 0;
+                        decimal progress = 0;
 
                         FtpUsageInfo = new FtpUsageInfo()
                         {
@@ -342,7 +342,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 w.Name.Equals(Path.GetPathRoot(Directory.GetCurrentDirectory())?.Replace(":\\", string.Empty)));
             if (firstOrDefault is not null)
             {
-                localDiskUsageInfo.DiskUsagePercentage = (double)firstOrDefault.UsedDiskSpacePercentage;
+                localDiskUsageInfo.DiskUsagePercentage = (decimal)firstOrDefault.UsedDiskSpacePercentage;
                 localDiskUsageInfo.UsedBytes = firstOrDefault.UsedDiskSpace;
 
                 //获取本地磁盘信息
@@ -353,7 +353,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 if (File.Exists(dbFileName))
                 {
                     var length = new FileInfo(dbFileName).Length;
-                    var space = (double)length / firstOrDefault.UsedDiskSpace;
+                    var space = (decimal)length / firstOrDefault.UsedDiskSpace;
                     localDiskUsageInfo.DataUsagePercentage = space;
                 }
                 //获取扫码文件夹数据总大小
@@ -365,7 +365,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         .AsParallel()
                         .Select(file => new FileInfo(file).Length)
                         .Sum();
-                    var space = (double)totalSizeInBytes / firstOrDefault.UsedDiskSpace;
+                    var space = (decimal)totalSizeInBytes / firstOrDefault.UsedDiskSpace;
                     localDiskUsageInfo.ScanImageUsagePercentage = space;
                 }
                 //获取全景图片文件夹数据总大小
@@ -376,7 +376,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         .AsParallel()
                         .Select(file => new FileInfo(file).Length)
                         .Sum();
-                    var space = (double)totalSizeInBytes / firstOrDefault.UsedDiskSpace;
+                    var space = (decimal)totalSizeInBytes / firstOrDefault.UsedDiskSpace;
                     localDiskUsageInfo.PanoramaImageUsagePercentage = space;
                 }
                 //获取日志文件(log.db文件大小,目前没有填0)
@@ -384,11 +384,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 if (File.Exists(logFileName))
                 {
                     var length = new FileInfo(logFileName).Length;
-                    var space = (double)length / firstOrDefault.UsedDiskSpace;
+                    var space = (decimal)length / firstOrDefault.UsedDiskSpace;
                     localDiskUsageInfo.LogFileUsagePercentage = space;
                 }
 
-                var otherUsage = (double)firstOrDefault.UsedDiskSpacePercentage / 100 - (localDiskUsageInfo.LogFileUsagePercentage +
+                var otherUsage = (decimal)firstOrDefault.UsedDiskSpacePercentage / 100 - (localDiskUsageInfo.LogFileUsagePercentage +
                                                                      localDiskUsageInfo.PanoramaImageUsagePercentage +
                                                                      localDiskUsageInfo.ScanImageUsagePercentage +
                                                                      localDiskUsageInfo.DataUsagePercentage);
@@ -410,10 +410,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 info.UsedBytes = ftpDiskInfo.UsedSize;
                 var directorySize = await _ftp.GetDirectorySize("PanoramaImage");
-                info.PanoramaImageUsagePercentage = (double)directorySize / info.UsedBytes;
+                info.PanoramaImageUsagePercentage = (decimal)directorySize / info.UsedBytes;
                 var size = await _ftp.GetDirectorySize("BarcodeImage");
-                info.ScanImageUsagePercentage = (double)size / info.UsedBytes;
-                info.DataUsagePercentage = (double)(ftpDiskInfo.UsedSize / (ftpDiskInfo.TotalSize > 0 ? ftpDiskInfo.TotalSize : 1));
+                info.ScanImageUsagePercentage = (decimal)size / info.UsedBytes;
+                info.DataUsagePercentage = (decimal)(ftpDiskInfo.UsedSize / (ftpDiskInfo.TotalSize > 0 ? ftpDiskInfo.TotalSize : 1));
             }
 
             return info;

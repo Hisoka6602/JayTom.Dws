@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration.JtExpressApiPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -340,7 +340,7 @@
                                     FontSize="13"
                                     FontWeight="Bold"
                                     Foreground="DarkGray">
-                                    <Run Text="登录人的网点编码:" /> <Run Text="{Binding NetworkId, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Run Text="登录人的网点编码:" /> <Run Text="{Binding NetworkIdentifier, UpdateSourceTrigger=PropertyChanged}" />
                                 </TextBlock>
                                 <TextBlock
                                     Margin="10"

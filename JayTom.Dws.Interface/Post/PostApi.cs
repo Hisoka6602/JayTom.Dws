@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Xml;
 using System.Linq;
 using System.Text;
@@ -37,7 +37,7 @@ namespace JayTom.Dws.Interface.Post {
                             Url = configuration["Url"] ?? string.Empty,
                             Timeout = Convert.ToInt32(configuration["Timeout"]),
                             EmployeeNumber = configuration["EmployeeNumber"] ?? string.Empty,
-                            DeviceId = configuration["DeviceId"] ?? string.Empty,
+                            DeviceCode = configuration["DeviceId"] ?? string.Empty,
                             WorkshopCode = configuration["WorkshopCode"] ?? string.Empty,
                             LocalServiceUrl = configuration["LocalServiceUrl"] ?? string.Empty,
                         };
@@ -51,8 +51,8 @@ namespace JayTom.Dws.Interface.Post {
             }
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             //请求格口
             await SubmitScanInfo(barcode, token);
@@ -72,7 +72,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getGKCX>
-            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters?.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters?.DeviceId}::{Parameters?.WorkshopCode}:: :: ::||#END</arg0>
+            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters?.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters?.DeviceCode}::{Parameters?.WorkshopCode}:: :: ::||#END</arg0>
         </web:getGKCX>
     </soapenv:Body>
 </soapenv:Envelope>";
@@ -80,7 +80,7 @@ namespace JayTom.Dws.Interface.Post {
                 var envelope = new SoapEnvelope {
                     Body = new SoapBody {
                         GetGKCX = new GetGKCXRequest {
-                            Arg0 = $"#HEAD::{DateTime.Now:yyyyMM}{Parameters.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters.DeviceId}::{Parameters.WorkshopCode}:: :: ::||#END"
+                            Arg0 = $"#HEAD::{DateTime.Now:yyyyMM}{Parameters.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters.DeviceCode}::{Parameters.WorkshopCode}:: :: ::||#END"
                         }
                     }
                 };
@@ -162,7 +162,7 @@ namespace JayTom.Dws.Interface.Post {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = Parameters?.Url ?? string.Empty,
@@ -173,8 +173,8 @@ namespace JayTom.Dws.Interface.Post {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             //请求格口
             await SubmitScanInfo(barcode, token);
@@ -195,7 +195,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getGKCX>
-            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters?.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters?.DeviceId}::{Parameters?.WorkshopCode}:: :: ::||#END</arg0>
+            <arg0>#HEAD::{DateTime.Now:yyyyMM}{Parameters?.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters?.DeviceCode}::{Parameters?.WorkshopCode}:: :: ::||#END</arg0>
         </web:getGKCX>
     </soapenv:Body>
 </soapenv:Envelope>";
@@ -204,7 +204,7 @@ namespace JayTom.Dws.Interface.Post {
                 var envelope = new SoapEnvelope {
                     Body = new SoapBody {
                         GetGKCX = new GetGKCXRequest {
-                            Arg0 = $"#HEAD::{DateTime.Now:yyyyMM}{Parameters.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters.DeviceId}::{Parameters.WorkshopCode}:: :: ::||#END"
+                            Arg0 = $"#HEAD::{DateTime.Now:yyyyMM}{Parameters.WorkshopCode}FJ{_num.ToString().PadLeft(9, '0')}::{barcode}::{Parameters.DeviceCode}::{Parameters.WorkshopCode}:: :: ::||#END"
                         }
                     }
                 };
@@ -284,7 +284,7 @@ namespace JayTom.Dws.Interface.Post {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = Parameters?.Url ?? string.Empty,
@@ -300,14 +300,14 @@ namespace JayTom.Dws.Interface.Post {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
-        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             if (other is UploadResponse { IsSuccess: true } uploadResponse) {
                 var chuteCode = "0";//6
                 var routingDirection = "0";//1
                 var mailType = "0";//5
-                var playId = "0";//2
+                var playCode = "0";//2
                 var lcgk = "0";
                 if (!string.IsNullOrWhiteSpace(uploadResponse.ResponseContent)) {
                     var match = ResponseEnvelopeRegex().Match(uploadResponse.ResponseContent);
@@ -334,7 +334,7 @@ namespace JayTom.Dws.Interface.Post {
                             mailType = parts[5];
                         }
                         if (parts.Length > 2) {
-                            playId = parts[2];
+                            playCode = parts[2];
                         }
                         if (parts.Length > 3) {
                             lcgk = parts[3];
@@ -358,7 +358,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getYJLG>
-            <arg0>#HEAD::{Parameters?.DeviceId}::{barcode}::{"0"}::{"0"}::{Parameters?.EmployeeNumber}::{"0"}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{lcgk}::{mailType}::{chuteCode}::{Parameters?.WorkshopCode}::{"1"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{playId}::||#END</arg0>
+            <arg0>#HEAD::{Parameters?.DeviceCode}::{barcode}::{"0"}::{"0"}::{Parameters?.EmployeeNumber}::{"0"}::{DateTime.Now:yyyyMMddHHmmss}::{routingDirection}::{lcgk}::{mailType}::{chuteCode}::{Parameters?.WorkshopCode}::{"1"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{"0"}::{playCode}::||#END</arg0>
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
@@ -402,7 +402,7 @@ namespace JayTom.Dws.Interface.Post {
                         ExceptionMsg = exceptionMsg,
                         ApiParameters = JsonConvert.SerializeObject(this),
                         IsSuccess = isSuccess,
-                        Duration = stopwatch.Elapsed.TotalSeconds,
+                        DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                         RequestContent = data,
                         RequestTime = requestTime,
                         RequestUrl = Parameters?.Url ?? string.Empty,
@@ -445,7 +445,7 @@ namespace JayTom.Dws.Interface.Post {
     <soapenv:Header />
     <soapenv:Body>
         <web:getYJSM>
-            <arg0>#HEAD::{Parameters?.DeviceId}::{barcode}::{Parameters?.EmployeeNumber}::{DateTime.Now:yyyyMMddHHmmss}::2::0::0::{Parameters?.WorkshopCode}::0::0::0::0::0::0::0::||#END</arg0>
+            <arg0>#HEAD::{Parameters?.DeviceCode}::{barcode}::{Parameters?.EmployeeNumber}::{DateTime.Now:yyyyMMddHHmmss}::2::0::0::{Parameters?.WorkshopCode}::0::0::0::0::0::0::0::||#END</arg0>
         </web:getYJSM>
     </soapenv:Body>
 </soapenv:Envelope>";
@@ -489,7 +489,7 @@ namespace JayTom.Dws.Interface.Post {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = data,
                     RequestTime = requestTime,
                     RequestUrl = Parameters?.Url ?? string.Empty,
@@ -560,7 +560,7 @@ namespace JayTom.Dws.Interface.Post {
             /// <summary>
             /// 设备ID (Device ID)
             /// </summary>
-            public string DeviceId { get; set; } = "43400002";
+            public string DeviceCode { get; set; } = "43400002";
 
             /// <summary>
             /// 员工号 (Employee number)

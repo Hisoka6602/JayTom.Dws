@@ -74,6 +74,9 @@ namespace JayTom.Dws.Domain.Dto {
     /// </summary>
     public class SupplyCounterPackageSignal {
 
+        /// <summary>获取信号创建时的单调时钟时间戳，仅用于超时判断。</summary>
+        public long CreatedAtMonotonicTimestamp { get; } = System.Diagnostics.Stopwatch.GetTimestamp();
+
         /// <summary>
         /// 指令
         /// </summary>

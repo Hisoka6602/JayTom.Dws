@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NetSDKCS;
 using System.Net;
 using System.Linq;
@@ -124,7 +124,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         _barCodeReader ??= new DynamsoftBarCodeReader();
                         _barCodeReader.BarcodeRead += (sender, result) => HandleBarcodeResult(result);
 
-                        await _barCodeReader.Initialize();
+                        await _barCodeReader.InitializeAsync();
                     }
 
                     _baseDaHuatech.RegisterImageCallback(devInfo.SerialNumber, imageBitmap => {
@@ -135,7 +135,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                                 OnPhotoTaken(new PhotoTakenEventArgs() {
                                     Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
                                     Barcode = imageMessageInfo.Barcode,
-                                    BarcodeTimestamp = imageMessageInfo.BarcodeTimestamp,
+                                    PackageTimestampMilliseconds = imageMessageInfo.PackageTimestampMilliseconds,
                                     CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                                     Image = imageBitmap,
                                     ThumbImage = (Bitmap?)thumbnailImage,
@@ -199,7 +199,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 var parameters = JsonConvert.DeserializeObject<SecurityCameraConnectionParameters>(CameraConnectionParameters);
                 if (parameters is not null && Info is not null) {
                     var (key, value) = await _baseDaHuatech.LogIn(Info.SerialNumber,
-                        parameters.Username, parameters.Password, parameters.PlayChannelId);
+                        parameters.Username, parameters.Password, parameters.PlayChannelNumber);
 
                     if (key) {
                         OnCameraStarted(new CameraStartedEventArgs() {
@@ -250,8 +250,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     switch (parameter.Key) {
                         case "BarcodeReaderParameter": {
                                 //读码器参数
-                                var (key, value) = _barCodeReader.SetBarcodeReaderParameter(
-                                    (Dictionary<BarcodeReaderParameter, object>)parameter.Value).GetAwaiter().GetResult();
+                                var (key, value) = _barCodeReader.ApplySettingsAsync(
+                                    (BarcodeReaderSettings)parameter.Value).GetAwaiter().GetResult();
                                 if (!key) {
                                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                         Exception = new Exception(value)
@@ -345,17 +345,17 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public async Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             await Task.Delay(TakePhotoDelay, cancellation);
-            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
+            await CapturePhotoAsync(barcode, packageTimestampMilliseconds, cancellation);
         }
 
-        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public async Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             await Task.Delay(delay, cancellation);
-            await CapturePhotoAsync(barcode, barcodeTimestamp, cancellation);
+            await CapturePhotoAsync(barcode, packageTimestampMilliseconds, cancellation);
         }
 
-        private async Task CapturePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation) {
+        private async Task CapturePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation) {
             if (Status != CameraStatus.Running || string.IsNullOrEmpty(Info?.SerialNumber)) {
                 return;
             }
@@ -366,7 +366,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                 lockTaken = true;
                 _imageMessageQueue.Enqueue(new CameraImageMessageInfo {
                     Barcode = barcode,
-                    BarcodeTimestamp = barcodeTimestamp
+                    PackageTimestampMilliseconds = packageTimestampMilliseconds
                 });
                 var (success, message) = await _baseDaHuatech.GetRealtimeImage(Info.SerialNumber);
                 if (!success) {

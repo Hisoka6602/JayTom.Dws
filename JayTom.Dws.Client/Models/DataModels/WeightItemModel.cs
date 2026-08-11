@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using JayTom.Dws.Data.Package;
 
@@ -9,7 +9,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         private SourceType _sourceType;
         private string _serialPortName = string.Empty;
         private string _originalText = string.Empty;
-        private double _formattedWeight;
+        private decimal _formattedWeight;
         private DateTime? _createTime;
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 格式化后重量
         /// </summary>
-        public double FormattedWeight
+        public decimal FormattedWeight
         {
             get => _formattedWeight;
             set => SetProperty(ref _formattedWeight, value);

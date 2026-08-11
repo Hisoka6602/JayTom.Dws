@@ -5,7 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 using TouchSocket.Core;
 using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Repository.LocalLog;

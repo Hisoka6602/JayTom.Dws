@@ -1,6 +1,6 @@
 using JayTom.Dws.Abstractions.Results;
 
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 定义不依赖特定宿主框架的后台插件生命周期。

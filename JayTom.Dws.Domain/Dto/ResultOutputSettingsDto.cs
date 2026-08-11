@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
-using System.IO.Ports;
-using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using JayTom.Dws.Abstractions.Devices;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Domain.Dto {
@@ -222,12 +220,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 条码输出位置
         /// </summary>
-        public Point BarcodeOutputPosition { get; set; }
+        public Point2D BarcodeOutputPosition { get; set; }
 
         /// <summary>
         /// 重量输出位置
         /// </summary>
-        public Point WeightOutputPosition { get; set; }
+        public Point2D WeightOutputPosition { get; set; }
 
         /// <summary>
         /// 条码输出后按键

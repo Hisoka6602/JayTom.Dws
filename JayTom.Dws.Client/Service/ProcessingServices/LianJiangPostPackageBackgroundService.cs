@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using NLog;
 using System;
 using System.Linq;
@@ -27,6 +27,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
     public class LianJiangPostPackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
         private readonly IDeviceService _deviceService;
+        /// <summary>
+        /// 获取运行期包裹会话存储。
+        /// </summary>
+        private readonly IPackageSessionStore _packageSessionStore;
 
         private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
@@ -35,11 +39,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private SemaphoreSlim _createPackageSlim = new(1);
         private static bool _isWindowsClose;
 
-        public LianJiangPostPackageBackgroundService(IDeviceService deviceService,
+        public LianJiangPostPackageBackgroundService(IPackageSessionStore packageSessionStore,
+            IDeviceService deviceService,
             ISettingsStore settingsStore,
             ISortingService sortingService,
             IExternalDataService externalDataService)
         {
+            _packageSessionStore = packageSessionStore;
             _deviceService = deviceService;
 
             _settingsStore = settingsStore;
@@ -111,7 +117,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse)
                     {
-                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
+                        var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
 
                         if (packageInfo is not null)
                         {
@@ -139,7 +145,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             });*/
                             if (_createPackageSettingsDto.PackageRemoveMethods == PackageRemoveMethodsEnum.LowerMachineRemoval)
                             {
-                                PackageInfoManager.RemovePackage(packageInfo.CreateTime, "下位机移除");
+                                _packageSessionStore.RemovePackage(packageInfo.CreateTime, "下位机移除");
                             }
                         }
                         else
@@ -168,7 +174,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse)
                     {
-                        var packageInfo = PackageInfoManager.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
+                        var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
                         if (packageInfo is not null)
                         {
                             EventAggregator.Instance.Publish(new InstructionReceived()
@@ -204,20 +210,20 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null } &&
+                            _packageSessionStore.GetPackage(f => f.Value is { BarCodeInfo: null } &&
                                                                (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
                                                                 (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
                                                                  DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
                                                                )) :
-                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
+                            _packageSessionStore.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
                                                                    (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
                                                                     (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
                                                                      DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
                                                                    ));
                     /*var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            PackageInfoManager.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                            PackageInfoManager.GetLastPackage(f => f.Value is { BarCodeInfo: null });*/
+                            _packageSessionStore.GetPackage(f => f.Value is { BarCodeInfo: null }) :
+                            _packageSessionStore.GetLastPackage(f => f.Value is { BarCodeInfo: null });*/
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null)
                     {
@@ -240,16 +246,16 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             VolumeInfo = new VolumeInfoModel()
                             {
                                 CreateTime = DateTime.Now,
-                                FormattedHeight = args.Height,
-                                FormattedLength = args.Length,
-                                FormattedVolume = args.Volume,
-                                FormattedWidth = args.Width,
+                                FormattedHeight = Convert.ToDecimal(args.Height),
+                                FormattedLength = Convert.ToDecimal(args.Length),
+                                FormattedVolume = Convert.ToDecimal(args.Volume),
+                                FormattedWidth = Convert.ToDecimal(args.Width),
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             },
                             CreateTime = DateTime.Now,
                             IsCreatedByLowerMachine = false,
-                            IsSavedImage = true
+                            IsImageSaveRequested = true
                         };
 
                         EventAggregator.Instance.Publish(new TriggerPositionEvent()
@@ -279,10 +285,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             packageInfo.VolumeInfo = new VolumeInfoModel()
                             {
                                 CreateTime = DateTime.Now,
-                                FormattedHeight = args.Height,
-                                FormattedLength = args.Length,
-                                FormattedVolume = args.Volume,
-                                FormattedWidth = args.Width,
+                                FormattedHeight = Convert.ToDecimal(args.Height),
+                                FormattedLength = Convert.ToDecimal(args.Length),
+                                FormattedVolume = Convert.ToDecimal(args.Volume),
+                                FormattedWidth = Convert.ToDecimal(args.Width),
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
@@ -340,7 +346,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             {
                 if (item is { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { } packageInfo })
                 {
-                    var info = PackageInfoManager.GetLastPackage(f => f is { Value: not null });
+                    var info = _packageSessionStore.GetLastPackage(f => f is { Value: not null });
 
                     if (info is not null &&
                         packageInfo.CreateTime.Subtract(info.CreateTime).TotalMilliseconds <
@@ -370,7 +376,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
                         });
                     }
-                    PackageInfoManager.AddPackage(packageInfo, packageRemoveTimers);
+                    _packageSessionStore.AddPackage(packageInfo, packageRemoveTimers);
                     //触发创建包裹事件
                     EventAggregator.Instance.Publish(new TriggerPositionEvent()
                     {
@@ -381,7 +387,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }
                 else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null } info, TriggerPosition: TriggerPositionEnum.ExternalDataInputAfter })
                 {
-                    PackageInfoManager.CompletedPackage(f => f.Key.Equals(info.CreateTime));
+                    _packageSessionStore.CompletePackage(f => f.Key.Equals(info.CreateTime));
                 }
             });
             //程序停止
@@ -392,13 +398,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     if (info.Status == ApplicationStatus.Stop &&
                         _createPackageSettingsDto.ClearPackageQueueOnStop)
                     {
-                        PackageInfoManager.ClearAllPackages();
+                        _packageSessionStore.ClearAllPackages();
                     }
                 }
             });
 
             //移除包裹事件
-            PackageInfoManager.PackageRemoved += (sender, args) =>
+            _packageSessionStore.PackageRemoved += (sender, args) =>
             {
                 EventAggregator.Instance.Publish(new TriggerPositionEvent()
                 {
@@ -408,7 +414,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     Description = args.Description
                 });
             };
-            PackageInfoManager.PackageCompleted += (sender, args) =>
+            _packageSessionStore.PackageCompleted += (sender, args) =>
             {
                 //执行输出
                 if (args.CompletedPackage?.BarCodeInfo is not null &&
@@ -447,15 +453,15 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     if (_createPackageSettingsDto.PackageRemoveMethods ==
                         PackageRemoveMethodsEnum.FillInformation)
                     {
-                        var packageInfos = PackageInfoManager.GetPackages(w =>
-                            w.Value is { IsCompleted: true, IsSavedImage: true } &&
+                        var packageInfos = _packageSessionStore.GetPackages(w =>
+                            w.Value is { IsCompleted: true, IsImageSaveRequested: true } &&
                             (w.Value.PanoramaCameraImageInfo.All(info => info.IsExists) ||
                              DateTime.Now.Subtract(w.Value.CreateTime)
                                  .TotalMinutes > 5)) ?? new List<PackageInfo>();
 
                         foreach (var kvp in packageInfos)
                         {
-                            PackageInfoManager.RemovePackage(kvp.CreateTime, "填充完整信息移除");
+                            _packageSessionStore.RemovePackage(kvp.CreateTime, "填充完整信息移除");
                         }
                     }
                 }

@@ -13,6 +13,26 @@ namespace JayTom.Dws.Infrastructure {
         /// </summary>
         private static readonly ConcurrentDictionary<string, InitializationState> InitializationStates = new();
 
+        /// <summary>解析上下文当前实际连接的数据库路径。</summary>
+        /// <param name="context">数据库上下文。</param>
+        /// <param name="fallbackFileName">连接未提供数据源时使用的文件名。</param>
+        /// <returns>文件数据库的绝对路径，或内存数据库的上下文级标识。</returns>
+        public static string ResolveDatabasePath(DbContext context, string fallbackFileName) {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentException.ThrowIfNullOrWhiteSpace(fallbackFileName);
+
+            var dataSource = context.Database.GetDbConnection().DataSource;
+            if (string.IsNullOrWhiteSpace(dataSource)) {
+                dataSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fallbackFileName);
+            }
+
+            if (string.Equals(dataSource, ":memory:", StringComparison.OrdinalIgnoreCase)) {
+                return $":memory:|{context.ContextId.InstanceId}";
+            }
+
+            return Path.GetFullPath(dataSource);
+        }
+
         /// <summary>
         /// 确保指定类型和路径的数据库只初始化一次。
         /// </summary>
@@ -25,7 +45,7 @@ namespace JayTom.Dws.Infrastructure {
             ArgumentNullException.ThrowIfNull(context);
             ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
 
-            var stateKey = $"{typeof(TContext).AssemblyQualifiedName}|{Path.GetFullPath(databasePath)}";
+            var stateKey = $"{typeof(TContext).AssemblyQualifiedName}|{databasePath}";
             var state = InitializationStates.GetOrAdd(stateKey, _ => new InitializationState());
             if (Volatile.Read(ref state.IsInitialized) == 1) {
                 return;
@@ -36,12 +56,11 @@ namespace JayTom.Dws.Infrastructure {
                     return;
                 }
 
-                // 存在迁移时应用迁移；没有迁移时按当前模型创建数据库。
+                // 先兼容历史上由 EnsureCreated 建立、没有迁移历史表的数据库；
+                // 兼容迁移只登记 CLR 类型策略，不修改任何既有业务表或列。
+                context.Database.EnsureCreated();
                 if (context.Database.GetMigrations().Any()) {
                     context.Database.Migrate();
-                }
-                else {
-                    context.Database.EnsureCreated();
                 }
                 ConfigurePersistentSettings(context, databasePath);
                 Volatile.Write(ref state.IsInitialized, 1);

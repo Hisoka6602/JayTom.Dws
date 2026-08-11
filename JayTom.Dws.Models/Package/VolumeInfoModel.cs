@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,25 +26,25 @@ namespace JayTom.Dws.Data.Package {
         /// 格式化后的长
         /// </summary>
         [Column("FormattedLength")]
-        public double FormattedLength { get; set; }
+        public decimal FormattedLength { get; set; }
 
         /// <summary>
         /// 格式化后的宽
         /// </summary>
         [Column("FormattedWidth")]
-        public double FormattedWidth { get; set; }
+        public decimal FormattedWidth { get; set; }
 
         /// <summary>
         /// 格式化后的高
         /// </summary>
         [Column("FormattedHeight")]
-        public double FormattedHeight { get; set; }
+        public decimal FormattedHeight { get; set; }
 
         /// <summary>
         /// 格式化的体积
         /// </summary>
         [Column("FormattedVolume")]
-        public double FormattedVolume { get; set; }
+        public decimal FormattedVolume { get; set; }
 
         /// <summary>
         /// 创建时间

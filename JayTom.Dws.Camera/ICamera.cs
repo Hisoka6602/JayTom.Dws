@@ -73,13 +73,13 @@ public interface ICamera : IDisposable {
     /// <summary>按条码与时间戳拍照。</summary>
     Task TakePhotoAsync(
         string barcode,
-        long barcodeTimestamp,
+        long packageTimestampMilliseconds,
         CancellationToken cancellation = default);
 
     /// <summary>延迟指定时长后按条码与时间戳拍照。</summary>
     Task TakePhotoAsync(
         string barcode,
-        long barcodeTimestamp,
+        long packageTimestampMilliseconds,
         TimeSpan delay,
         CancellationToken cancellation = default);
 

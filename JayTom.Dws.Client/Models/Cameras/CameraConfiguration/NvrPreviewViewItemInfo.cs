@@ -16,7 +16,7 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
 
     public class NvrPreviewViewItemInfo : BindableBase, IDisposable
     {
-        private int _channelId;
+        private int _channelNumber;
         private string _displayName = string.Empty;
         private WriteableBitmap? _videoFrame = new(768, 432, 96, 96, PixelFormats.Bgr24, null);
         private bool _isShow;
@@ -67,10 +67,10 @@ namespace JayTom.Dws.Client.Models.Cameras.CameraConfiguration
             set => SetProperty(ref _serialNumber, value);
         }
 
-        public int ChannelId
+        public int ChannelNumber
         {
-            get => _channelId;
-            set => SetProperty(ref _channelId, value);
+            get => _channelNumber;
+            set => SetProperty(ref _channelNumber, value);
         }
 
         public string DisplayName

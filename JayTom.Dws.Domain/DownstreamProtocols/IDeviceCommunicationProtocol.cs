@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
@@ -269,27 +269,27 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
         /// <summary>
         /// 获取或设置重量（以千克为单位）。
         /// </summary>
-        public double Weight { get; set; }
+        public decimal Weight { get; set; }
 
         /// <summary>
         /// 获取或设置长度（以厘米为单位）。
         /// </summary>
-        public double Length { get; set; }
+        public decimal Length { get; set; }
 
         /// <summary>
         /// 获取或设置宽度（以厘米为单位）。
         /// </summary>
-        public double Width { get; set; }
+        public decimal Width { get; set; }
 
         /// <summary>
         /// 获取或设置高度（以厘米为单位）。
         /// </summary>
-        public double Height { get; set; }
+        public decimal Height { get; set; }
 
         /// <summary>
         /// 获取或设置体积（以立方厘米为单位）。
         /// </summary>
-        public double Volume { get; set; }
+        public decimal Volume { get; set; }
 
         /// <summary>
         /// 格口名称

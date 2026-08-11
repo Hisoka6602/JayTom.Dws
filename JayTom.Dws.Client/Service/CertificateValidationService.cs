@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Microsoft.Win32;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;
@@ -19,18 +20,18 @@ namespace JayTom.Dws.Client.Service
             _networkTime = networkTime;
         }
 
-        public async Task<bool> ValidateTime()
+        public async Task<bool> ValidateTimeAsync(CancellationToken cancellationToken = default)
         {
-            var dateTime = await _networkTime.GetTime();
-            return Convert.ToDateTime("2024-11-01 00:00:00").CompareTo(dateTime) >= 0;
+            var dateTime = await _networkTime.GetLocalTimeAsync(cancellationToken);
+            return new DateTime(2024, 11, 1).CompareTo(dateTime.LocalDateTime) >= 0;
         }
 
-        public Task<bool> ValidateCertificate()
+        public Task<bool> ValidateCertificateAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(false);
         }
 
-        public Task<bool> ValidateMachineCode()
+        public Task<bool> ValidateMachineCodeAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(false);
         }

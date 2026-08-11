@@ -1,5 +1,6 @@
 ﻿using System;
 using FluentFTP;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Net;
 using System.Linq;
 using System.Text;

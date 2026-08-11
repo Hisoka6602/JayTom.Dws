@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using Prism.Mvvm;
 using System.Linq;
@@ -19,7 +19,7 @@ using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
@@ -65,7 +65,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// </summary>
         public ICommand SaveSettingsCommand => new DelegateCommand(SaveDelegate);
 
-        public virtual async void SaveDelegate()
+        private void SaveDelegate() => _ = SaveAsync();
+
+        /// <summary>异步保存当前设置。</summary>
+        public virtual async Task SaveAsync()
         {
             if (IsSavingInProgress)
             {

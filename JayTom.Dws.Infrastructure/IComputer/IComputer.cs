@@ -118,7 +118,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// Cpu总温度(1位小数)
         /// </summary>
-        public float CpuPackageTemperature { get; set; }
+        public decimal CpuPackageTemperature { get; set; }
 
         /// <summary>
         /// Cpu名称
@@ -128,12 +128,12 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// Cpu占用百分比
         /// </summary>
-        public float CpuTotalUsedPercent { get; set; }
+        public decimal CpuTotalUsedPercent { get; set; }
 
         /// <summary>
         /// Cpu总线速率
         /// </summary>
-        public float CpuBusSpeed { get; set; }
+        public decimal CpuBusSpeed { get; set; }
 
         /// <summary>
         /// Cpu核信息
@@ -149,7 +149,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// Cpu温度(1位小数)
         /// </summary>
-        public float CpuTemperature { get; set; }
+        public decimal CpuTemperature { get; set; }
 
         /// <summary>
         /// 核名称
@@ -159,17 +159,17 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// Cpu占用百分比
         /// </summary>
-        public float CpuUsedPercent { get; set; }
+        public decimal CpuUsedPercent { get; set; }
 
         /// <summary>
         /// 速率
         /// </summary>
-        public float CpuCoreSpeed { get; set; }
+        public decimal CpuCoreSpeed { get; set; }
 
         /// <summary>
         /// 电压
         /// </summary>
-        public float Voltage { get; set; }
+        public decimal Voltage { get; set; }
     }
 
     /// <summary>
@@ -180,12 +180,12 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// 剩余内存百分比
         /// </summary>
-        public float AvailableMemoryPercentage { get; set; }
+        public decimal AvailableMemoryPercentage { get; set; }
 
         /// <summary>
         /// 使用内存百分比
         /// </summary>
-        public float UsedMemoryPercent { get; set; }
+        public decimal UsedMemoryPercent { get; set; }
 
         /// <summary>
         /// 使用内存
@@ -267,7 +267,7 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// 剩余磁盘容量百分比
         /// </summary>
-        public float AvailableDiskSpacePercentage { get; set; }
+        public decimal AvailableDiskSpacePercentage { get; set; }
 
         /// <summary>
         /// 已用磁盘空间百分比
@@ -324,7 +324,8 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// <summary>
         /// 设备Id
         /// </summary>
-        public string? DeviceId { get; set; } = string.Empty;       // 设备ID
+        [Newtonsoft.Json.JsonProperty("DeviceId")]
+        public string? DeviceIdentifier { get; set; } = string.Empty;       // 设备标识
 
         /// <summary>
         /// 产品Id

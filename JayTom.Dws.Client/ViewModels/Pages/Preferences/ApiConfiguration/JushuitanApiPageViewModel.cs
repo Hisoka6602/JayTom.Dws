@@ -32,7 +32,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private bool _isRefreshing = false;
         private bool _isUploading;
         private string _barcode = string.Empty;
-        private double _weight;
+        private decimal _weight;
 
         public JushuitanApiPageViewModel(ISettingsStore settingsStore,
             IProviderRegistry<IDataUploader> providerRegistry, IDialogService dialogService) : base(settingsStore)
@@ -65,7 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             set => SetProperty(ref _barcode, value);
         }
 
-        public double Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);
@@ -111,8 +111,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     TimeOut = JushuitanErpApiInfo.TimeOut,
                     Url = JushuitanErpApiInfo.Url,
                     Version = JushuitanErpApiInfo.Version,
-                    TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime ?? DateTime.MinValue,
-                    LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime ?? DateTime.MinValue,
+                    TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime,
+                    LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime,
                 });
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
@@ -142,8 +142,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                         TimeOut = JushuitanErpApiInfo.TimeOut,
                         Url = JushuitanErpApiInfo.Url,
                         Version = JushuitanErpApiInfo.Version,
-                        TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime ?? DateTime.MinValue,
-                        LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime ?? DateTime.MinValue,
+                        TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime,
+                        LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime,
                     });
 
                     var (key, value) = await jushuitanErpApi.RefreshAccessTokenAsync();
@@ -210,8 +210,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                         TimeOut = JushuitanErpApiInfo.TimeOut,
                         Url = JushuitanErpApiInfo.Url,
                         Version = JushuitanErpApiInfo.Version,
-                        TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime ?? DateTime.MinValue,
-                        LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime ?? DateTime.MinValue,
+                        TokenExpireTime = JushuitanErpApiInfo.TokenExpireTime,
+                        LastTokenUpdateTime = JushuitanErpApiInfo.LastTokenUpdateTime,
                     });
                     var uploadResponse = await jushuitanErpApi.UploadData(Barcode, Weight);
                     IsUploading = false;

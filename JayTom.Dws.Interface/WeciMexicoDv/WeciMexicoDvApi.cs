@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Web;
 using System.Linq;
 using System.Text;
@@ -42,15 +42,17 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
             var isSuccess = false;
             UploadResponse response;
             var effectiveScanTime = other is DateTime specifiedScanTime ? specifiedScanTime : DateTime.Now;
-            using var watermarkedImage = imageInfo?.Image is null ? null : new Bitmap(imageInfo.Image);
+            using var watermarkedImage = imageInfo?.Image is null
+                ? null
+                : new Bitmap(imageInfo.Image.As<Image>());
             watermarkedImage?.AddTextWatermark(
                 $"bc_no:{barcode}\nsize_width:{width}\nsize_long:{length}\nsize_heigth:{height}\nweigth_kg:{weight}\ndate_tran:{effectiveScanTime:yyyy-MM-dd HH:mm:ss}",
                 Color.Red, 30);
@@ -117,7 +119,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = Url,
@@ -128,8 +130,8 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             return response;
         }
 
-        public Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        public Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             return UploadData(barcode, weight, length, width, height, volume, imageInfo, panoramaImageInfos,
                 scanTime, token);
@@ -147,8 +149,8 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             }
         }
 
-        public async Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             await UploadData(barcode, weight, scanTime, length, width, height, volume, imageInfo,
                 panoramaImageInfos, other, token).ConfigureAwait(false);

@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿using JayTom.Dws.Abstractions.Imaging;
 
 namespace JayTom.Dws.Domain.Dto.VideoApi {
 
@@ -22,6 +22,6 @@ namespace JayTom.Dws.Domain.Dto.VideoApi {
         /// <summary>
         /// 图像
         /// </summary>
-        public Bitmap? Image { get; set; }
+        public ImageHandle? Image { get; set; }
     }
 }

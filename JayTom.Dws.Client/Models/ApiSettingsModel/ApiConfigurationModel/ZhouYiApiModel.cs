@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -12,7 +12,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
     {
         private string _url = "http://api.zygp.site/openapi/express/fjUpload";
         private int _timeOut = 10000;
-        private string _appid = string.Empty;
+        private string _applicationCode = string.Empty;
         private string _appKey = string.Empty;
         private bool _needUpload;
         private bool _isFstCode;
@@ -35,10 +35,11 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
             set => SetProperty(ref _timeOut, value);
         }
 
-        public string AppId
+        [Newtonsoft.Json.JsonProperty("AppId")]
+        public string ApplicationCode
         {
-            get => _appid;
-            set => SetProperty(ref _appid, value);
+            get => _applicationCode;
+            set => SetProperty(ref _applicationCode, value);
         }
 
         public string AppKey

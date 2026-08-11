@@ -16,7 +16,7 @@ using JayTom.Dws.Data.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.CloudSettingModel;
 using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
 {
@@ -165,7 +165,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
                 if (_deviceService.CameraItems?.Any() != true &&
                     !_deviceService.RunningStatus)
                 {
-                    await _deviceService.OnCameraEnumerationRefreshed();
+                    await _deviceService.RefreshCameraEnumerationAsync();
                 }
                 var configInfoModels = await _barcodeScannerCameraConfigRepository
                     .Select(s => s.Id > 0,

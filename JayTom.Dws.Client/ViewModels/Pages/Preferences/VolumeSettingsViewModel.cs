@@ -401,9 +401,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             BaudRate = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.BaudRate,
                             DataBits = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.DataBits,
                             DataFormat = SelectDataFormat.Value,
-                            Parity = SelectParity.Value,
+                            Parity = (JayTom.Dws.Abstractions.Devices.SerialParity)SelectParity.Value,
                             PortName = VolumeSettingsInfo.VolumeInformationRequesterInfo.SerialPortSettingsInfo.PortName,
-                            StopBits = SelectStopBits.Value,
+                            StopBits = (JayTom.Dws.Abstractions.Devices.SerialStopBits)SelectStopBits.Value,
                         }
                     },
                     TriggerDelayMilliseconds = VolumeSettingsInfo.TriggerDelayMilliseconds,
@@ -475,10 +475,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                                     .DataBits,
                                 DataFormat = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                                     .DataFormat,
-                                Parity = SelectParity.Value,
+                                Parity = (Parity)settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                    .Parity,
                                 PortName = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                                     .PortName,
-                                StopBits = settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                                StopBits = (StopBits)settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                                     .StopBits,
                             }
                         },
@@ -487,14 +488,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     SelectTriggerPosition = VolumeTriggerPositionItems.FirstOrDefault(f =>
                         f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.VolumeTriggerPosition)) ?? new VolumeTriggerPositionModel();
                     SelectParity = ParityItems.FirstOrDefault(f =>
-                        f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                            .Parity)) ?? new ParityInfoModel();
+                        f.Value == (Parity)settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                            .Parity) ?? new ParityInfoModel();
                     SelectDataFormat = DataFormatTypeItems.FirstOrDefault(f =>
                         f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
                             .DataFormat)) ?? new DataFormatTypeInfoModel();
                     SelectStopBits = StopBitsItems.FirstOrDefault(f =>
-                        f.Value.Equals(settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
-                            .StopBits)) ?? new StopBitsInfoModel();
+                        f.Value == (StopBits)settingsDto.VolumeInformationRequesterInfo.SerialPortSettingsInfo
+                            .StopBits) ?? new StopBitsInfoModel();
                     SelectVolumeUnitInfo =
                         VolumeUnitInfoItem.FirstOrDefault(f => f.Value.Equals(settingsDto.Unit)) ??
                         new VolumeUnitInfoModel();

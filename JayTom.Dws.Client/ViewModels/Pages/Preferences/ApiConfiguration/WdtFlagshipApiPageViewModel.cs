@@ -28,7 +28,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private readonly IDialogService _dialogService;
         private WdtFlagshipApiInfoModel _wdtFlagshipApiInfo = new();
         private string _barcode = string.Empty;
-        private double _weight;
+        private decimal _weight;
         private bool _isUploading;
 
         private bool _isLoaded;
@@ -59,7 +59,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 重量
         /// </summary>
-        public double Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);

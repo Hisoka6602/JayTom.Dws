@@ -5,6 +5,7 @@ using Prism.Mvvm;
 using Prism.Services.Dialogs;
 using System;
 using System.Windows.Input;
+using UploadResponse = JayTom.Dws.Interface.UploadResponse;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog
 {

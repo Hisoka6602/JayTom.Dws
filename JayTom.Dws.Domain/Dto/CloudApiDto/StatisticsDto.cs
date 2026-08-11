@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,11 +26,11 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 占比
         /// </summary>
-        public double Percentage { get; set; }
+        public decimal Percentage { get; set; }
 
         /// <summary>
         /// 整体Item占比
         /// </summary>
-        public double OverallPercentage { get; set; }
+        public decimal OverallPercentage { get; set; }
     }
 }

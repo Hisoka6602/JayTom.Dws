@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -30,9 +30,9 @@ namespace JayTom.Dws.Interface.Szjy188 {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default,
-            double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default,
+            decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             length -= 5;
             width -= 5;
@@ -128,7 +128,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = $"{ApiParameters.Url}{method}?{urlJoin}",
                     RequestTime = requestTime,
                     RequestUrl = $"{ApiParameters.Url}{method}?{urlJoin}",
@@ -141,9 +141,9 @@ namespace JayTom.Dws.Interface.Szjy188 {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime,
-            double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime,
+            decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             length -= 5;
             width -= 5;
@@ -239,7 +239,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = $"{ApiParameters.Url}{method}?{urlJoin}",
                     RequestTime = requestTime,
                     RequestUrl = $"{ApiParameters.Url}{method}?{urlJoin}",
@@ -266,8 +266,8 @@ namespace JayTom.Dws.Interface.Szjy188 {
             }
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return Task.CompletedTask;
         }

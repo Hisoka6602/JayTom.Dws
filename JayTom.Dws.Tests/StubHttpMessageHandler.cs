@@ -32,6 +32,11 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
     public string LastRequestContent { get; private set; } = string.Empty;
 
     /// <summary>
+    /// 获取按调用顺序捕获的全部请求正文。
+    /// </summary>
+    public List<string> RequestContents { get; } = [];
+
+    /// <summary>
     /// 捕获请求信息并返回预设响应。
     /// </summary>
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -42,6 +47,7 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
         LastRequestContent = request.Content is null
             ? string.Empty
             : await request.Content.ReadAsStringAsync(cancellationToken);
+        RequestContents.Add(LastRequestContent);
         return _responseFactory(request);
     }
 

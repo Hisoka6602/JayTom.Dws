@@ -12,9 +12,10 @@ using JayTom.Dws.Domain.Dto.VideoApi;
 using JayTom.Dws.Domain.Dto.CloudApiDto;
 using JayTom.Dws.Domain.Repository.VideoApi;
 using JayTom.Dws.Domain.Repository.VideoApiData;
+using JayTom.Dws.Domain.Service.VideoApi;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace JayTom.Dws.Domain.Service.VideoApi {
+namespace JayTom.Dws.Infrastructure.Service.VideoApi {
 
     public class VideoBarCodeService : IVideoBarCodeService {
         private readonly IVideoPackageRepository _videoPackageRepository;
@@ -49,7 +50,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                         Directory.CreateDirectory(barcodeImageRootPath);
                     }
                     var barcodeImagePath = $"{barcodeImageRootPath}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.jpg";
-                    barcodeImageInfo.Image?.Save(barcodeImagePath, ImageFormat.Jpeg);
+                    barcodeImageInfo.Image?.As<Bitmap>().Save(barcodeImagePath, ImageFormat.Jpeg);
                     barcodeImageInfo.Image?.Dispose();
 
                     imageInfoModels?.Add(new ImageInfoModel() {
@@ -68,7 +69,7 @@ namespace JayTom.Dws.Domain.Service.VideoApi {
                     var num = 0;
                     var videoNodeImageInfoModels = panoramaImageInfos.Select(s => {
                         var panoramaImagePath = $"{panoramaRootImage}\\{DateTimeOffset.Now.ToUnixTimeMilliseconds()}-{num}.jpg";
-                        s.Image?.Save(panoramaImagePath, ImageFormat.Jpeg);
+                            s.Image?.As<Bitmap>().Save(panoramaImagePath, ImageFormat.Jpeg);
                         s.Image?.Dispose();
                         num++;
                         return new ImageInfoModel {

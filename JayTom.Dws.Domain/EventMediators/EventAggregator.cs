@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using JayTom.Dws.Domain.Dto;
 using System.ComponentModel;
 using JayTom.Dws.Data.Package;
@@ -53,27 +53,27 @@ namespace JayTom.Dws.Domain.EventMediators {
         /// <summary>
         /// 需要扣除的重量
         /// </summary>
-        public float LengthToDeduct { get; set; }
+        public decimal LengthToDeduct { get; set; }
 
         /// <summary>
         /// 需要扣除的宽度
         /// </summary>
-        public float WidthToDeduct { get; set; }
+        public decimal WidthToDeduct { get; set; }
 
         /// <summary>
         /// /需要扣除的重量
         /// </summary>
-        public float WeightToDeduct { get; set; }
+        public decimal WeightToDeduct { get; set; }
 
         /// <summary>
         /// 需要扣除的高度
         /// </summary>
-        public float HeightToDeduct { get; set; }
+        public decimal HeightToDeduct { get; set; }
 
         /// <summary>
         /// 需要扣除的体积
         /// </summary>
-        public float VolumeToDeduct { get; set; }
+        public decimal VolumeToDeduct { get; set; }
     }
 
     public class PluginParamChangedEvent {

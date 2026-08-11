@@ -26,10 +26,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly IDialogService _dialogService;
         private string _barcode = string.Empty;
-        private double _weight;
-        private double _length;
-        private double _width;
-        private double _height;
+        private decimal _weight;
+        private decimal _length;
+        private decimal _width;
+        private decimal _height;
         private bool _isLoggingIn;
         private bool _isUploading;
         private SzjyApiInfoModel _szjyApiInfo = new();
@@ -66,7 +66,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 重量
         /// </summary>
-        public double Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);
@@ -75,7 +75,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 长度
         /// </summary>
-        public double Length
+        public decimal Length
         {
             get => _length;
             set => SetProperty(ref _length, value);
@@ -84,7 +84,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 宽度
         /// </summary>
-        public double Width
+        public decimal Width
         {
             get => _width;
             set => SetProperty(ref _width, value);
@@ -93,7 +93,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 高度
         /// </summary>
-        public double Height
+        public decimal Height
         {
             get => _height;
             set => SetProperty(ref _height, value);

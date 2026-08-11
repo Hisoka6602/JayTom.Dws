@@ -199,7 +199,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
                 if (FormulaTemplate.LastOrDefault()?.Type == 4)
                 {
                     obj = obj.Replace("'", string.Empty);
-                    var tryParse = float.TryParse(obj, out _);
+                    var tryParse = decimal.TryParse(obj, out _);
                     if (tryParse)
                     {
                         FormulaTemplate.Add(new ItemBaseTemplateModel

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -21,8 +21,8 @@ namespace JayTom.Dws.Interface.Jushuitan {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             //请求格口
             UploadResponse response;
@@ -106,7 +106,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(parameters),
                     RequestTime = requestTime,
                     RequestUrl = _parameters.Url,
@@ -117,8 +117,8 @@ namespace JayTom.Dws.Interface.Jushuitan {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -201,7 +201,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(parameters),
                     RequestTime = requestTime,
                     RequestUrl = _parameters.Url,
@@ -233,8 +233,8 @@ namespace JayTom.Dws.Interface.Jushuitan {
             }
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return Task.CompletedTask;
         }
@@ -372,12 +372,12 @@ namespace JayTom.Dws.Interface.Jushuitan {
             /// <summary>
             /// 上次更新 Token 的时间
             /// </summary>
-            public DateTime LastTokenUpdateTime { get; set; } = DateTime.MinValue;
+            public DateTime? LastTokenUpdateTime { get; set; }
 
             /// <summary>
             /// Token 到期时间
             /// </summary>
-            public DateTime TokenExpireTime { get; set; } = DateTime.MinValue;
+            public DateTime? TokenExpireTime { get; set; }
         }
     }
 }

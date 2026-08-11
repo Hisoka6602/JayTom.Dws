@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace JayTom.Dws.Domain.Entities.SystemEntities {
 
@@ -93,7 +93,7 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// 磁盘剩余空间
         /// </summary>
-        public float FreeSpacePercentage { get; set; }
+        public decimal FreeSpacePercentage { get; set; }
 
         /// <summary>
         /// 磁盘剩余字节
@@ -103,7 +103,7 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// 已使用空间
         /// </summary>
-        public float UsedSpacePercentage { get; set; }
+        public decimal UsedSpacePercentage { get; set; }
 
         /// <summary>
         /// 剩余空间
@@ -123,17 +123,17 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// 写入速度
         /// </summary>
-        public float WriteSpeed { get; set; }
+        public decimal WriteSpeed { get; set; }
 
         /// <summary>
         /// 读取速度
         /// </summary>
-        public float ReadSpeed { get; set; }
+        public decimal ReadSpeed { get; set; }
 
         /// <summary>
         /// 平均响应时间
         /// </summary>
-        public float AverageResponseTime { get; set; }
+        public decimal AverageResponseTime { get; set; }
     }
 
     /// <summary>
@@ -159,12 +159,12 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// 使用内存百分比
         /// </summary>
-        public float UsedPercentage { get; set; }
+        public decimal UsedPercentage { get; set; }
 
         /// <summary>
         /// 内存剩余比率
         /// </summary>
-        public float MemoryRemaining { get; set; }
+        public decimal MemoryRemaining { get; set; }
     }
 
     /// <summary>
@@ -195,12 +195,12 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// CPU 时钟速度
         /// </summary>
-        public float ClockSpeed { get; set; }
+        public decimal ClockSpeed { get; set; }
 
         /// <summary>
         ///  CPU 使用率
         /// </summary>
-        public float UsagePercentage { get; set; }
+        public decimal UsagePercentage { get; set; }
 
         /// <summary>
         /// 逻辑处理器数量
@@ -215,7 +215,7 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// Cpu温度
         /// </summary>
-        public float CpuTemperature { get; set; }
+        public decimal CpuTemperature { get; set; }
 
         /// <summary>
         /// 风扇转速
@@ -246,22 +246,22 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// GPU 内存大小
         /// </summary>
-        public float MemorySizeGb { get; set; }
+        public decimal MemorySizeGb { get; set; }
 
         /// <summary>
         ///  GPU 使用率
         /// </summary>
-        public float UsagePercentage { get; set; }
+        public decimal UsagePercentage { get; set; }
 
         /// <summary>
         /// 已使用内存大小
         /// </summary>
-        public float UsedMemoryGb { get; set; }
+        public decimal UsedMemoryGb { get; set; }
 
         /// <summary>
         /// 已使用内存百分比
         /// </summary>
-        public float UsedMemoryPercentage { get; set; }
+        public decimal UsedMemoryPercentage { get; set; }
     }
 
     /// <summary>
@@ -297,12 +297,12 @@ namespace JayTom.Dws.Domain.Entities.SystemEntities {
         /// <summary>
         /// 网络上行速度
         /// </summary>
-        public float UploadSpeed { get; set; }
+        public decimal UploadSpeed { get; set; }
 
         /// <summary>
         /// 网络下行速度
         /// </summary>
-        public float DownloadSpeed { get; set; }
+        public decimal DownloadSpeed { get; set; }
 
         // 其他网络相关字段
     }

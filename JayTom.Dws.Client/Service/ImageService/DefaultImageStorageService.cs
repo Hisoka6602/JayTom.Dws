@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using System.IO;
 using System.Linq;
@@ -6,7 +6,8 @@ using System.Drawing;
 using System.Threading;
 using System.Globalization;
 using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
+using JayTom.Dws.Abstractions.Imaging;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using JayTom.Dws.Plugin.SaveImage;
@@ -28,7 +29,7 @@ namespace JayTom.Dws.Client.Service.ImageService
         /// 用于清除水印和文件名中控制字符的复用正则。
         /// </summary>
         private static readonly Regex ControlCharactersRegex =
-            new(@"[\u0000-\u001f\b]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+            new(@"[\u0000-\u001D\b]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private readonly ISaveImage _saveImage;
         private readonly ISettingsStore _settingsStore;
         private readonly IFtp _ftp;
@@ -98,11 +99,10 @@ namespace JayTom.Dws.Client.Service.ImageService
 
         public event EventHandler<ImageSavedEventArgs>? ImageSaved;
 
-        public async Task SaveImage(Image? image, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, CancellationToken cancellationToken = default)
+        public async Task SaveAndDisposeImageAsync(ImageHandle image, SaveImageType type, string barCode, decimal weight, DateTime scanTime, decimal length,
+            decimal width, decimal height, decimal volume, string cameraSerialNumber, CancellationToken cancellationToken = default)
         {
-            if (image is null) return;
-            await SaveImage(
+            await SaveAndDisposeImageAsync(
                 0,
                 image,
                 type,
@@ -117,11 +117,11 @@ namespace JayTom.Dws.Client.Service.ImageService
                 cancellationToken);
         }
 
-        public async Task SaveImage(long packageTimestamped, Image image, SaveImageType type, string barCode, float weight, DateTime scanTime,
-            float length, float width, float height, float volume, string cameraSerialNumber,
+        public async Task SaveAndDisposeImageAsync(long packageTimestamped, ImageHandle image, SaveImageType type, string barCode, decimal weight, DateTime scanTime,
+            decimal length, decimal width, decimal height, decimal volume, string cameraSerialNumber,
             CancellationToken cancellationToken = default)
         {
-            if (image is null) return;
+            var drawingImage = image.As<Image>();
             try
             {
                 ImageSettingsDto ??= await _settingsStore
@@ -205,7 +205,10 @@ namespace JayTom.Dws.Client.Service.ImageService
                     watermarkParams = new WatermarkParams()
                     {
                         FontSize = ImageSettingsDto.WatermarkInfo.WatermarkFontSize,
-                        WatermarkColor = ImageSettingsDto.WatermarkInfo.WatermarkColor,
+                        WatermarkColor = Color.FromArgb(ImageSettingsDto.WatermarkInfo.WatermarkColor.A,
+                            ImageSettingsDto.WatermarkInfo.WatermarkColor.R,
+                            ImageSettingsDto.WatermarkInfo.WatermarkColor.G,
+                            ImageSettingsDto.WatermarkInfo.WatermarkColor.B),
                         WatermarkPosition = (WatermarkPosition)ImageSettingsDto.WatermarkInfo.WatermarkPosition,
                         WatermarkContent = watermarkList
                     };
@@ -214,11 +217,11 @@ namespace JayTom.Dws.Client.Service.ImageService
                 //判断是否保存原图
                 if (ImageSettingsDto.IsSaveOriginalImage)
                 {
-                    var (key, value) = await _saveImage.SaveOriginalImage(image, imageName, fullPath, watermarkParams,
+                    var (key, value) = await _saveImage.SaveOriginalImage(drawingImage, imageName, fullPath, watermarkParams,
                         cancellationToken);
                     if (!key)
                     {
-                        OnImageSaveFailed(new Exception(value));
+                        throw new InvalidOperationException(value);
                     }
                     else
                     {
@@ -237,12 +240,12 @@ namespace JayTom.Dws.Client.Service.ImageService
                 }
                 else
                 {
-                    var (key, value) = await _saveImage.SaveCompressedImage(image, imageName, fullPath, watermarkParams,
+                    var (key, value) = await _saveImage.SaveCompressedImage(drawingImage, imageName, fullPath, watermarkParams,
                         cancellationToken);
                     if (!key)
                     {
                         NLog.LogManager.GetCurrentClassLogger().Error(value);
-                        OnImageSaveFailed(new Exception(value));
+                        throw new InvalidOperationException(value);
                     }
                     else
                     {
@@ -271,7 +274,7 @@ namespace JayTom.Dws.Client.Service.ImageService
                             cancellationToken);
                         if (!key)
                         {
-                            OnImageSaveFailed(new Exception(value));
+                            throw new InvalidOperationException(value);
                         }
                         else
                         {
@@ -293,7 +296,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                 catch (Exception e)
                 {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    OnImageSaveFailed(new Exception($"存图异常:{e.Message}"));
+                    OnImageSaveFailed(e);
+                    throw;
                 }
                 finally
                 {
@@ -309,8 +313,8 @@ namespace JayTom.Dws.Client.Service.ImageService
             }
         }
 
-        public string ParseTemplate(string source, SaveImageType type, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false)
+        public string ParseTemplate(string source, SaveImageType type, string barCode, decimal weight, DateTime scanTime, decimal length,
+            decimal width, decimal height, decimal volume, string cameraSerialNumber, bool isWatermark = false)
         {
             return source switch
             {
@@ -319,8 +323,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                 "{Volume}" => $"{(isWatermark ? "Volume:" : string.Empty)}{(volume / _volumeSettingsDto?.Unit switch
                 {
                     VolumeUnit.Millimeter => 1,
-                    VolumeUnit.Centimeter => Math.Pow(10, 3),
-                    VolumeUnit.Meter => Math.Pow(1000, 3),
+                    VolumeUnit.Centimeter => 1_000m,
+                    VolumeUnit.Meter => 1_000_000_000m,
                     _ => 1
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
@@ -349,7 +353,7 @@ namespace JayTom.Dws.Client.Service.ImageService
                 })
                     .ToString(CultureInfo.InvariantCulture)}",
                 "{ScanTime}" => $"{(isWatermark ? "ScanTime:" : string.Empty)}{(isWatermark ? $"{scanTime:yyyy-MM-dd HH:mm:ss.fff}" : $"{scanTime:yyyyMMddHHmmssfff}")}",
-                "{TimestampedGuid}" => $"{(isWatermark ? "TimestampedGuid:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
+                "{TimestampedGuid}" => $"{(isWatermark ? "TimestampMilliseconds:" : string.Empty)}{new DateTimeOffset(scanTime).ToUnixTimeMilliseconds().ToString()}",
                 "{CameraSerialNumber}" => $"{(isWatermark ? "CameraSerialNumber:" : string.Empty)}{(isWatermark ? RemoveControlCharacters(cameraSerialNumber) : SanitizeFileSystemSegment(cameraSerialNumber))}",
                 "{ImageType}" => $"{(isWatermark ? "ImageType:" : string.Empty)}{type}",
                 "{Year}" => $"{(isWatermark ? "Year:" : string.Empty)}{scanTime:yyyy}",
@@ -360,9 +364,9 @@ namespace JayTom.Dws.Client.Service.ImageService
             };
         }
 
-        public string WatermarkParseTemplate(string source, SaveImageType type, string barCode, float weight,
-            DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false, string? language = default)
+        public string WatermarkParseTemplate(string source, SaveImageType type, string barCode, decimal weight,
+            DateTime scanTime, decimal length,
+            decimal width, decimal height, decimal volume, string cameraSerialNumber, bool isWatermark = false, string? language = default)
         {
             //默认中文
             var vUnit = _volumeSettingsDto?.Unit switch
@@ -379,8 +383,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                 "{Volume}" => $"{(isWatermark ? "体积:" : string.Empty)}{Math.Round(volume / _volumeSettingsDto?.Unit switch
                 {
                     VolumeUnit.Millimeter => 1,
-                    VolumeUnit.Centimeter => Math.Pow(10, 3),
-                    VolumeUnit.Meter => Math.Pow(1000, 3),
+                    VolumeUnit.Centimeter => 1_000m,
+                    VolumeUnit.Meter => 1_000_000_000m,
                     _ => 1
                 }, 2).ToString("#.##", CultureInfo.InvariantCulture)} {vUnit}³",
 

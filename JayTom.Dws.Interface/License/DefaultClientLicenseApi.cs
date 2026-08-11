@@ -1,169 +1,191 @@
-﻿using System;
 using System.Net;
-using System.Linq;
 using System.Text;
-using System.Net.Http;
+using JayTom.Dws.Abstractions.Results;
 using Newtonsoft.Json;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 
-namespace JayTom.Dws.Interface.License {
-    public class DefaultClientLicenseApi : IClientLicenseApi {
-        private readonly IHttpClientFactory _httpClientFactory;
+namespace JayTom.Dws.Interface.License;
 
-        public static string Domain { get; private set; } = "http://api.wxck.top";
+/// <summary>通过远程授权服务创建、激活并下载客户端授权文件。</summary>
+public sealed class DefaultClientLicenseApi : IClientLicenseApi {
+    private readonly IHttpClientFactory _httpClientFactory;
 
-        public DefaultClientLicenseApi(IHttpClientFactory httpClientFactory) {
-            _httpClientFactory = httpClientFactory;
+    /// <summary>获取授权服务根地址。</summary>
+    public static string Domain { get; private set; } = "http://api.wxck.top";
+
+    /// <summary>创建客户端授权接口。</summary>
+    public DefaultClientLicenseApi(IHttpClientFactory httpClientFactory) {
+        _httpClientFactory = httpClientFactory;
+    }
+
+    /// <inheritdoc />
+    public Task<OperationResult<ApiResult>> CreateAuthorization(
+        string licenseCode,
+        string machineCode,
+        string remarks,
+        CancellationToken token = default) =>
+        PostAuthorizationAsync(
+            "/api/License/CreateAuthorization",
+            licenseCode,
+            machineCode,
+            remarks,
+            "license_authorization_rejected",
+            token);
+
+    /// <inheritdoc />
+    public Task<OperationResult<ApiResult>> ActivateAuthorization(
+        string licenseCode,
+        string machineCode,
+        string remarks,
+        CancellationToken token = default) =>
+        PostAuthorizationAsync(
+            "/api/License/ActivateAuthorization",
+            licenseCode,
+            machineCode,
+            remarks,
+            "license_activation_rejected",
+            token);
+
+    /// <inheritdoc />
+    public async Task<OperationResult<string>> DownloadFileAsync(
+        string fileUrl,
+        string savePath,
+        CancellationToken token = default) {
+        string? temporaryPath = null;
+        try {
+            if (string.IsNullOrWhiteSpace(fileUrl) || string.IsNullOrWhiteSpace(savePath)) {
+                return OperationResult<string>.Failure(
+                    "license_download_invalid_path",
+                    "下载地址或保存路径为空");
+            }
+
+            using var httpClient = _httpClientFactory.CreateClient(ApiHttpClientNames.ExternalApi);
+            using var response = await httpClient.GetAsync(
+                fileUrl,
+                HttpCompletionOption.ResponseHeadersRead,
+                token).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            var directory = Path.GetDirectoryName(Path.GetFullPath(savePath));
+            if (string.IsNullOrWhiteSpace(directory)) {
+                return OperationResult<string>.Failure(
+                    "license_download_invalid_directory",
+                    "无法确定授权文件目录");
+            }
+
+            Directory.CreateDirectory(directory);
+            temporaryPath = Path.Combine(
+                directory,
+                $".{Path.GetFileName(savePath)}.{Guid.NewGuid():N}.tmp");
+            await using (var contentStream = await response.Content
+                             .ReadAsStreamAsync(token)
+                             .ConfigureAwait(false)) {
+                await using var fileStream = new FileStream(
+                    temporaryPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.None,
+                    81920,
+                    FileOptions.Asynchronous | FileOptions.WriteThrough);
+                await contentStream.CopyToAsync(fileStream, token).ConfigureAwait(false);
+                await fileStream.FlushAsync(token).ConfigureAwait(false);
+            }
+
+            File.Move(temporaryPath, savePath, true);
+            temporaryPath = null;
+            return OperationResult<string>.Success(savePath);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) {
+            throw;
+        }
+        catch (Exception exception) {
+            return OperationResult<string>.Failure(
+                "license_download_failed",
+                exception.Message);
+        }
+        finally {
+            DeleteTemporaryFile(temporaryPath);
+        }
+    }
+
+    private async Task<OperationResult<ApiResult>> PostAuthorizationAsync(
+        string endpoint,
+        string licenseCode,
+        string machineCode,
+        string remarks,
+        string rejectedErrorCode,
+        CancellationToken token) {
+        try {
+            var requestJson = JsonConvert.SerializeObject(new {
+                licenseCode,
+                machineCode,
+                remarks
+            });
+            using var httpClient = _httpClientFactory.CreateClient(ApiHttpClientNames.ExternalApi);
+            httpClient.Timeout = TimeSpan.FromSeconds(20);
+            using var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+            using var response = await httpClient.PostAsync(
+                $"{Domain}{endpoint}",
+                content,
+                token).ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.NotFound) {
+                return OperationResult<ApiResult>.Failure(
+                    "license_endpoint_not_found",
+                    "授权服务地址不存在");
+            }
+
+            var responseContent = await response.Content
+                .ReadAsStringAsync(token)
+                .ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) {
+                return OperationResult<ApiResult>.Failure(
+                    "license_http_status_error",
+                    $"授权服务返回 HTTP {(int)response.StatusCode}: {responseContent}");
+            }
+
+            var result = JsonConvert.DeserializeObject<ApiResult>(responseContent);
+            if (result is null) {
+                return OperationResult<ApiResult>.Failure(
+                    "license_response_invalid",
+                    "授权服务返回了无法解析的响应");
+            }
+
+            return result.IsSuccess
+                ? OperationResult<ApiResult>.Success(result)
+                : OperationResult<ApiResult>.Failure(
+                    rejectedErrorCode,
+                    string.IsNullOrWhiteSpace(result.Message) ? "授权操作被拒绝" : result.Message,
+                    result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) {
+            throw;
+        }
+        catch (TaskCanceledException) {
+            return OperationResult<ApiResult>.Failure(
+                "license_timeout",
+                "授权服务响应超时");
+        }
+        catch (HttpRequestException exception) {
+            return OperationResult<ApiResult>.Failure(
+                "license_http_error",
+                exception.Message);
+        }
+        catch (Exception exception) {
+            return OperationResult<ApiResult>.Failure(
+                "license_unknown_error",
+                exception.Message);
+        }
+    }
+
+    private static void DeleteTemporaryFile(string? temporaryPath) {
+        if (temporaryPath is null) {
+            return;
         }
 
-        public async Task<KeyValuePair<bool, object>> CreateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token = default) {
-            try {
-                //组包
-                var requestJson = JsonConvert.SerializeObject(new {
-                    licenseCode = licenseCode,
-                    machineCode = machineCode,
-                    remarks = remarks,
-                });
-
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
-                    httpClient.Timeout = TimeSpan.FromSeconds(20);
-                    HttpResponseMessage message;
-                    await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
-                        using (HttpContent content = new StreamContent(dataStream)) {
-                            content.Headers.Add("Content-Type", "application/json");
-                            message = await httpClient.PostAsync($"{Domain}{"/api/License/CreateAuthorization"}", content, token)
-                                .ConfigureAwait(false);
-                        }
-                    }
-                    using (message) {
-                    string httpResult;
-                    switch (message.StatusCode) {
-                        case HttpStatusCode.OK: {
-                                httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                                break;
-                            }
-                        case HttpStatusCode.NotFound:
-                            return new KeyValuePair<bool, object>(false, $"该地址不存在!");
-
-                        default:
-                            httpResult = $"{message}";
-                            break;
-                    }
-                    //解码
-                    var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
-                    return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
-                    }
-                }
-            }
-            catch (HttpRequestException) {
-                return new KeyValuePair<bool, object>(false, "Http访问异常!");
-            }
-            catch (AggregateException) {
-                return new KeyValuePair<bool, object>(false, "接口访问异常!");
-            }
-            catch (TaskCanceledException) {
-                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
-            }
-            catch (Exception) {
-                return new KeyValuePair<bool, object>(false, "接口访问异常!");
-            }
+        try {
+            File.Delete(temporaryPath);
         }
-
-        public async Task<KeyValuePair<bool, object>> ActivateAuthorization(string licenseCode, string machineCode, string remarks, CancellationToken token = default) {
-            try {
-                //组包
-                var requestJson = JsonConvert.SerializeObject(new {
-                    licenseCode = licenseCode,
-                    machineCode = machineCode,
-                    remarks = remarks
-                });
-
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
-                httpClient.Timeout = TimeSpan.FromSeconds(20);
-                HttpResponseMessage message;
-                await using (Stream dataStream = new MemoryStream(Encoding.UTF8.GetBytes(requestJson))) {
-                    using (HttpContent content = new StreamContent(dataStream)) {
-                        content.Headers.Add("Content-Type", "application/json");
-                        message = await httpClient.PostAsync($"{Domain}{"/api/License/ActivateAuthorization"}", content, token)
-                            .ConfigureAwait(false);
-                    }
-                }
-                using (message) {
-                string httpResult;
-                switch (message.StatusCode) {
-                    case HttpStatusCode.OK: {
-                            httpResult = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                            break;
-                        }
-                    case HttpStatusCode.NotFound:
-                        return new KeyValuePair<bool, object>(false, $"该地址不存在!");
-
-                    default:
-                        httpResult = $"{message}";
-                        break;
-                }
-                //解码
-                var result = JsonConvert.DeserializeObject<ApiResult>(httpResult);
-                return new KeyValuePair<bool, object>(result?.Result ?? false, result ?? new ApiResult());
-                }
-            }
-            catch (HttpRequestException) {
-                return new KeyValuePair<bool, object>(false, "Http访问异常!");
-            }
-            catch (AggregateException) {
-                return new KeyValuePair<bool, object>(false, "接口访问异常!");
-            }
-            catch (TaskCanceledException) {
-                return new KeyValuePair<bool, object>(false, "接口访问返回超时!");
-            }
-            catch (Exception) {
-                return new KeyValuePair<bool, object>(false, "接口访问异常!");
-            }
-        }
-
-        public async Task<bool> DownloadFileAsync(string fileUrl, string savePath, CancellationToken token = default) {
-            string? temporaryPath = null;
-            try {
-                if (string.IsNullOrEmpty(fileUrl) || string.IsNullOrEmpty(savePath)) {
-                    return false;
-                }
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
-                using var response = await httpClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, token);
-                response.EnsureSuccessStatusCode();
-
-                var directory = Path.GetDirectoryName(Path.GetFullPath(savePath));
-                if (string.IsNullOrEmpty(directory)) {
-                    return false;
-                }
-                Directory.CreateDirectory(directory);
-                temporaryPath = Path.Combine(directory, $".{Path.GetFileName(savePath)}.{Guid.NewGuid():N}.tmp");
-
-                await using (var contentStream = await response.Content.ReadAsStreamAsync(token)) {
-                    await using var fileStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
-                        FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.WriteThrough);
-                    await contentStream.CopyToAsync(fileStream, token);
-                    await fileStream.FlushAsync(token);
-                }
-
-                File.Move(temporaryPath, savePath, true);
-                temporaryPath = null;
-
-                return true;
-            }
-            catch (Exception) {
-                return false;
-            }
-            finally {
-                if (temporaryPath is not null) {
-                    try {
-                        File.Delete(temporaryPath);
-                    }
-                    catch (IOException) {
-                        // 下次启动时可由临时文件清理任务处理。
-                    }
-                }
-            }
+        catch (IOException) {
+            // 临时文件由后续清理任务处理。
         }
     }
 }

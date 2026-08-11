@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 外部系统契约保持跨平台，只依赖共享抽象，不包含任何供应商实现。 -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>JayTom.Dws.Integrations.Contracts</AssemblyName>
+    <Description>上传、网络时间与接口参数等外部集成契约。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\JayTom.Dws.Interface\IDataUploader.cs" Link="IDataUploader.cs" />
+    <Compile Include="..\JayTom.Dws.Interface\IApiUploader.cs" Link="IApiUploader.cs" />
+    <Compile Include="..\JayTom.Dws.Interface\BaseApiParameters.cs" Link="BaseApiParameters.cs" />
+    <Compile Include="..\JayTom.Dws.Interface\ApiHttpClientNames.cs" Link="ApiHttpClientNames.cs" />
+    <Compile Include="..\JayTom.Dws.Interface\INetworkTime.cs" Link="INetworkTime.cs" />
+  </ItemGroup>
+</Project>

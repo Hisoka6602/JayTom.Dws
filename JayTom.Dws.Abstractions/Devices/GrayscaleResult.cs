@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Drawing;
 
 namespace JayTom.Dws.Abstractions.Devices;
 
@@ -25,7 +24,7 @@ public sealed class GrayscaleResult {
 
     /// <summary>获取或设置包裹中心点。</summary>
     [Description("中心点")]
-    public Point CenterPoint { get; set; }
+    public Point2D CenterPoint { get; set; }
 
     /// <summary>获取或设置结果产生时间。</summary>
     [Description("返回结果时间")]

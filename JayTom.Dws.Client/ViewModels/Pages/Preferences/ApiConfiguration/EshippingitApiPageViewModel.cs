@@ -42,9 +42,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private readonly IBarCodeRepository _barCodeRepository;
         private EshippingitApiModel _eshippingitApiInfo = new();
         private string _progressText = $"0%";
-        private double _progress;
+        private decimal _progress;
         private bool _isUploadProgress;
-        private double _maxProgress;
+        private decimal _maxProgress;
         private string _imageRootDirectory = string.Empty;
         private int _successfulUploads;
         private int _failedUploads;
@@ -68,13 +68,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             set => SetProperty(ref _isUploadProgress, value);
         }
 
-        public double Progress
+        public decimal Progress
         {
             get => _progress;
             set => SetProperty(ref _progress, value);
         }
 
-        public double MaxProgress
+        public decimal MaxProgress
         {
             get => _maxProgress;
             set => SetProperty(ref _maxProgress, value);

@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
-using System.IO.Ports;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
@@ -77,12 +76,12 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 最小重量
         /// </summary>
-        public float MinWeight { get; set; }
+        public decimal MinWeight { get; set; }
 
         /// <summary>
         /// 最大重量
         /// </summary>
-        public float MaxWeight { get; set; }
+        public decimal MaxWeight { get; set; }
     }
 
     /// <summary>
@@ -113,7 +112,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 稳定精度(误差范围)
         /// </summary>
-        public float BalanceQty { get; set; } = (float)0.002;
+        public decimal BalanceQty { get; set; } = 0.002m;
 
         /// <summary>
         /// 标识符
@@ -195,7 +194,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 重量转换率
         /// </summary>
-        public double WeightConversionRate { get; set; }
+        public decimal WeightConversionRate { get; set; }
 
         /// <summary>
         /// 是否使用追加重量
@@ -205,7 +204,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 追加重量的值
         /// </summary>
-        public double AppendedWeightValue { get; set; }
+        public decimal AppendedWeightValue { get; set; }
 
         /// <summary>
         /// 是否使用固定重量
@@ -215,7 +214,7 @@ namespace JayTom.Dws.Domain.Dto {
         /// <summary>
         /// 固定重量的值
         /// </summary>
-        public double FixedWeightValue { get; set; }
+        public decimal FixedWeightValue { get; set; }
 
         /// <summary>
         /// 是否使用融合重量超时

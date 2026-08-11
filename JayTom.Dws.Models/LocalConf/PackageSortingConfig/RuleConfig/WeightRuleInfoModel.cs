@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,7 +28,7 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
         /// 值
         /// </summary>
         [Column("Value"), Required, InsertOrUpdate]
-        public float Value { get; set; }*/
+        public decimal Value { get; set; }*/
 
         /// <summary>
         /// 规则

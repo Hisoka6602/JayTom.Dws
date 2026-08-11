@@ -3,7 +3,7 @@ namespace JayTom.Dws.Camera;
 /// <summary>
 /// 描述可枚举和连接的相机硬件。
 /// </summary>
-public class CameraInfo : IEquatable<CameraInfo> {
+public class CameraInfo {
     /// <summary>获取或设置相机标识。</summary>
     public long Id { get; set; }
 
@@ -29,7 +29,7 @@ public class CameraInfo : IEquatable<CameraInfo> {
     public int Port { get; set; }
 
     /// <summary>获取或设置相机是否已激活并可用。</summary>
-    public bool IsAvailable { get; set; } = true;
+    public bool IsAvailable { get; set; }
 
     /// <summary>获取或设置相机是否支持 OCR。</summary>
     public bool IsOcrSupported { get; set; }
@@ -50,21 +50,4 @@ public class CameraInfo : IEquatable<CameraInfo> {
     public CameraNvrInfo? CameraNvrInfo { get; set; }
 
     /// <summary>按非空序列号判断两个相机是否相同。</summary>
-    public bool Equals(CameraInfo? other) {
-        if (ReferenceEquals(this, other)) {
-            return true;
-        }
-
-        return other is not null &&
-               SerialNumber.Length > 0 &&
-               StringComparer.Ordinal.Equals(SerialNumber, other.SerialNumber);
-    }
-
-    /// <summary>判断指定对象是否代表同一台相机。</summary>
-    public override bool Equals(object? obj) => Equals(obj as CameraInfo);
-
-    /// <summary>返回与相机序列号一致的哈希值。</summary>
-    public override int GetHashCode() => SerialNumber.Length == 0
-        ? base.GetHashCode()
-        : StringComparer.Ordinal.GetHashCode(SerialNumber);
 }

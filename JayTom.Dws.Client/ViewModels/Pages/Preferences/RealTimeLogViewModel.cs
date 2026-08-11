@@ -123,9 +123,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     OnAddLog(model.CreateTime, $"[输入]-{model.Message}");
                 }
             });
-            EventAggregator.Instance.Subscribe<JayTom.Dws.Client.EventMediators.WindowsAction>(item =>
+            EventAggregator.Instance.Subscribe<JayTom.Dws.Domain.EventMediators.WindowsAction>(item =>
             {
-                if (item is { Type: JayTom.Dws.Client.EventMediators.WindowsActionType.Close })
+                if (item is { Type: JayTom.Dws.Domain.EventMediators.WindowsActionType.Close })
                 {
                     _cancellationTokenSource.Cancel();
                 }

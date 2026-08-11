@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -42,12 +42,12 @@ namespace JayTom.Dws.Ocr.Yolo {
         /// <summary>
         /// mask缩放比例
         /// </summary>
-        private float _maskScale = 1;
+        private decimal _maskScale = 1;
 
         /// <summary>
         /// 缩放比例
         /// </summary>
-        private float _scale = 1;
+        private decimal _scale = 1;
 
         /// <summary>
         /// 张量宽度、高度
@@ -84,7 +84,7 @@ namespace JayTom.Dws.Ocr.Yolo {
         /// 缩放比例
         /// </summary>
 
-        private float _maskScaleFactor;
+        private decimal _maskScaleFactor;
 
         /// <summary>
         /// 获取模型的基本信息
@@ -110,7 +110,7 @@ namespace JayTom.Dws.Ocr.Yolo {
                     //输出张量信息
                     _outDimensions = _session.OutputMetadata[_outputName].Dimensions;
                     //缩放比例
-                    _maskScaleFactor = 160f / _outDimensions[2];
+                    _maskScaleFactor = 160m / _outDimensions[2];
                     //获取模型的基本信息
                     _modelMetadataCustomMetadataMap = _session.ModelMetadata.CustomMetadataMap;
 
@@ -199,25 +199,25 @@ namespace JayTom.Dws.Ocr.Yolo {
         /// <param name="iouThreshold"></param>
         /// <param name="globalIoU"></param>
         /// <returns></returns>
-        public List<YoloInfo>? Evaluate(Bitmap bitmap, float confidenceThreshold = 0.5f,
-            float rectangleScale = 1,
-            float iouThreshold = 0.3f,
+        public List<YoloInfo>? Evaluate(Bitmap bitmap, decimal confidenceThreshold = 0.5m,
+            decimal rectangleScale = 1,
+            decimal iouThreshold = 0.3m,
             bool globalIoU = false) {
             try {
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 var denseTensorInfo = GetDenseTensorInfo(bitmap, _inputDimensions ?? [], _tensorWidth, _tensorHeight);
                 IReadOnlyCollection<NamedOnnxValue> container = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor(_inputName, denseTensorInfo) };
-                Tensor<float> output0;
-                Tensor<float>? output1;
+                Tensor<decimal> output0;
+                Tensor<decimal>? output1;
                 var filteredDataArray = new List<YoloData>();
                 var finalResultData = new List<YoloData>();
                 if (_taskType == TaskType.Classify) {
-                    output0 = _session?.Run(container).First().AsTensor<float>() ?? new DenseTensor<float>(0);
+                    output0 = _session?.Run(container).First().AsTensor<decimal>() ?? new DenseTensor<decimal>(0);
                     finalResultData = ConfidenceFilter_Classification(output0, confidenceThreshold);
                 }
                 else if (_taskType is TaskType.Detect or TaskType.Segment) {
-                    output0 = _session?.Run(container)?.First()?.AsTensor<float>() ?? new DenseTensor<float>(0);
+                    output0 = _session?.Run(container)?.First()?.AsTensor<decimal>() ?? new DenseTensor<decimal>(0);
 
                     if (_modelVersion.StartsWith("8")) {
                         filteredDataArray = ConfidenceFilter_YOLO8Detection(output0, confidenceThreshold, _semanticSegmentationWidth, _poseWidth);
@@ -265,7 +265,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             return dataList;
         }
 
-        private List<YoloData> NMSFilter(List<YoloData> initialFilterArray, float iouThreshold, bool globalIoU) {
+        private List<YoloData> NMSFilter(List<YoloData> initialFilterArray, decimal iouThreshold, bool globalIoU) {
             // Sort the initial filter array in descending order based on confidence
             var bubbleSortConfidence = BubbleSortConfidence(initialFilterArray);
 
@@ -281,16 +281,16 @@ namespace JayTom.Dws.Ocr.Yolo {
             return nmsFilterArray;
         }
 
-        private float CalculateIntersectionOverUnion(IReadOnlyList<float> box1, IReadOnlyList<float> box2) {
+        private decimal CalculateIntersectionOverUnion(IReadOnlyList<decimal> box1, IReadOnlyList<decimal> box2) {
             // 恢复传入参数的实际起点坐标和终点坐标，因为传进来的是中心点和宽高
-            float[] rect1 = [
+            decimal[] rect1 = [
                 box1[0] - box1[2] / 2,
                 box1[1] - box1[3] / 2,
                 box1[0] + box1[2] / 2,
                 box1[1] + box1[3] / 2
             ];
 
-            float[] rect2 = [
+            decimal[] rect2 = [
                 box2[0] - box2[2] / 2,
                 box2[1] - box2[3] / 2,
                 box2[0] + box2[2] / 2,
@@ -310,7 +310,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             return unionArea == 0 ? 0 : intersectionArea / unionArea;
         }
 
-        private List<YoloData> ConfidenceFilter_Classification(Tensor<float> data, float confidenceThreshold) {
+        private List<YoloData> ConfidenceFilter_Classification(Tensor<decimal> data, decimal confidenceThreshold) {
             // Classification model returns output data like {1, 80} representing 80 categories, and the data is the confidence of each category.
             var resultList = new List<YoloData>();
 
@@ -325,17 +325,17 @@ namespace JayTom.Dws.Ocr.Yolo {
             return BubbleSortConfidence(resultList);
         }
 
-        private DenseTensor<float> GetDenseTensorInfo(Bitmap bitmap, int[] tensorInfo,
+        private DenseTensor<decimal> GetDenseTensorInfo(Bitmap bitmap, int[] tensorInfo,
        int tensorWidth, int tensorHeight) {
             var imageData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
             var stride = imageData.Stride;  // 每一行的字节数
             var scan0 = imageData.Scan0;  // 第一个像素的内存地址
 
-            // 用基本的 float 类型模拟与 DenseTensor 维度相同的数组，并进行写入，如 {3, 640, 640}
-            var temporaryData = new float[tensorInfo[1], tensorInfo[2], tensorInfo[3]];
-            float scaledImageWidth = imageData.Width;
-            float scaledImageHeight = imageData.Height;
+            // 用基本的 decimal 类型模拟与 DenseTensor 维度相同的数组，并进行写入，如 {3, 640, 640}
+            var temporaryData = new decimal[tensorInfo[1], tensorInfo[2], tensorInfo[3]];
+            decimal scaledImageWidth = imageData.Width;
+            decimal scaledImageHeight = imageData.Height;
 
             // 科学的缩放方式，而不是裁剪和拉伸
             // 图片宽和高只要有一个比张量的宽高大，就说明要缩放
@@ -357,35 +357,35 @@ namespace JayTom.Dws.Ocr.Yolo {
                     yPosition = (int)(y * coefficient);
 
                     var pixel = nint.Add(scan0, yPosition * stride + xPosition * 3);
-                    temporaryData[2, y, x] = Marshal.ReadByte(pixel) / 255f;  // B 通道，归一化
+                    temporaryData[2, y, x] = Marshal.ReadByte(pixel) / 255m;  // B 通道，归一化
 
                     pixel = nint.Add(pixel, 1);
-                    temporaryData[1, y, x] = Marshal.ReadByte(pixel) / 255f;  // G
+                    temporaryData[1, y, x] = Marshal.ReadByte(pixel) / 255m;  // G
 
                     pixel = nint.Add(pixel, 1);
-                    temporaryData[0, y, x] = Marshal.ReadByte(pixel) / 255f;  // R
+                    temporaryData[0, y, x] = Marshal.ReadByte(pixel) / 255m;  // R
                 }
             }
 
             bitmap.UnlockBits(imageData);
-            var flattenedTemporaryData = new float[tensorInfo[1] * tensorInfo[2] * tensorInfo[3]];
+            var flattenedTemporaryData = new decimal[tensorInfo[1] * tensorInfo[2] * tensorInfo[3]];
 
-            // 将多维数组的所有数据复制到展开的数组中，Length * 4 是每个 float 数据占用 4 个字节
+            // 将多维数组的所有数据复制到展开的数组中，Length * 4 是每个 decimal 数据占用 4 个字节
             Buffer.BlockCopy(temporaryData, 0, flattenedTemporaryData, 0, flattenedTemporaryData.Length * 4);
 
             // 然后将展开的数组创建成一个 DenseTensor 并返回
-            return new DenseTensor<float>(flattenedTemporaryData, tensorInfo);
+            return new DenseTensor<decimal>(flattenedTemporaryData, tensorInfo);
         }
 
-        private List<YoloData> ConfidenceFilter_YOLO8Detection(Tensor<float> data,
-       float confidenceThreshold, int semanticSegmentationWidth, int poseWidth) {
+        private List<YoloData> ConfidenceFilter_YOLO8Detection(Tensor<decimal> data,
+       decimal confidenceThreshold, int semanticSegmentationWidth, int poseWidth) {
             var isSizeMiddle = data.Dimensions[1] < data.Dimensions[2];
 
             if (isSizeMiddle) {
                 var resultList = new ConcurrentBag<YoloData>();
 
                 Parallel.For(0, data.Dimensions[2], i => {
-                    var tempConfidence = 0f;
+                    var tempConfidence = 0m;
                     var index = -1;
 
                     for (var j = 0; j < data.Dimensions[1] - 4 - semanticSegmentationWidth - poseWidth; j++) {
@@ -407,12 +407,12 @@ namespace JayTom.Dws.Ocr.Yolo {
             else {
                 var resultList = new List<YoloData>();
                 var outputSize = data.Dimensions[2];
-                var tempConfidence = 0f;
+                var tempConfidence = 0m;
                 var index = -1;
                 var data2 = data.ToArray();
 
                 for (var i = 0; i < data2.Length; i += outputSize) {
-                    tempConfidence = 0f;
+                    tempConfidence = 0m;
                     index = -1;
 
                     for (var j = 0; j < outputSize - 4 - semanticSegmentationWidth - poseWidth; j++) {
@@ -448,7 +448,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             return dataArray;
         }
 
-        private List<YoloData> RestoreCoordinates(List<YoloData> dataList, float scaleFactor) {
+        private List<YoloData> RestoreCoordinates(List<YoloData> dataList, decimal scaleFactor) {
             if (dataList.Count > 0) {
                 // Check if it is not data returned from a classification model before processing
                 if (dataList[0]?.BasicData?.Length > 2) {
@@ -472,7 +472,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             return dataList;
         }
 
-        private Rectangle ExpandRegion(Rectangle originalRegion, float rectangleScale = 1) {
+        private Rectangle ExpandRegion(Rectangle originalRegion, decimal rectangleScale = 1) {
             var newWidth = (int)(originalRegion.Width * rectangleScale);
             var newHeight = (int)(originalRegion.Height * rectangleScale);
 
@@ -489,7 +489,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             /// <summary>
             /// Used to store basic data: x, y, w, h, confidence, label.
             /// </summary>
-            public float[]? BasicData { get; set; }
+            public decimal[]? BasicData { get; set; }
 
             /// <summary>
             /// Default to use a pose model with 17 keypoints.
@@ -509,7 +509,7 @@ namespace JayTom.Dws.Ocr.Yolo {
             /// <summary>
             /// 置信度
             /// </summary>
-            public float? Confidence { get; set; }
+            public decimal? Confidence { get; set; }
 
             /// <summary>
             /// 标签
@@ -527,18 +527,18 @@ namespace JayTom.Dws.Ocr.Yolo {
             /// <summary>
             /// x-coordinate of the pose point.
             /// </summary>
-            public float X { get; set; }
+            public decimal X { get; set; }
 
             /// <summary>
             /// y-coordinate of the pose point.
             /// </summary>
-            public float Y { get; set; }
+            public decimal Y { get; set; }
 
             /// <summary>
             /// Confidence of the pose point.
             /// When this value is low, it is likely to be outside the bounding box, generally using 0.5 as the threshold.
             /// </summary>
-            public float V { get; set; }
+            public decimal V { get; set; }
         }
 
         public enum TaskType {

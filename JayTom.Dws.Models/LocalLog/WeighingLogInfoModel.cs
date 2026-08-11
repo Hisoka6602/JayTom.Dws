@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,6 +38,6 @@ namespace JayTom.Dws.Data.LocalLog {
         /// 格式化后的重量
         /// </summary>
         [Column("FormatWeight")]
-        public double FormatWeight { get; set; }
+        public decimal FormatWeight { get; set; }
     }
 }

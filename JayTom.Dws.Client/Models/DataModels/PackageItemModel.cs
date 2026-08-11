@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.ComponentModel;
 using JayTom.Dws.Data.Package;
@@ -10,16 +10,16 @@ namespace JayTom.Dws.Client.Models.DataModels
 
     public class PackageItemModel : BindableBase
     {
-        private float _volume;
+        private decimal _volume;
         private bool _isInserting;
         private bool _isRemoving;
         private int _num;
-        private long _timestampedGuid;
+        private long _timestampMilliseconds;
         private string _barcode = string.Empty;
-        private float _weight;
-        private float _length;
-        private float _width;
-        private float _height;
+        private decimal _weight;
+        private decimal _length;
+        private decimal _width;
+        private decimal _height;
         private DateTime _scanTime = DateTime.MinValue;
         private UploadStatus _requestStatus = UploadStatus.NotUploaded;
         private string? _barcodeImagePath = string.Empty;
@@ -45,11 +45,12 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 时间戳Id
         /// </summary>
-        [DisplayName("TimestampedGuid"), ExcelInfo(Width = 5000)]
-        public long TimestampedGuid
+        [DisplayName("TimestampMilliseconds"), ExcelInfo(Width = 5000)]
+        [Newtonsoft.Json.JsonProperty("TimestampedGuid")]
+        public long TimestampMilliseconds
         {
-            get => _timestampedGuid;
-            set => SetProperty(ref _timestampedGuid, value);
+            get => _timestampMilliseconds;
+            set => SetProperty(ref _timestampMilliseconds, value);
         }
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// 重量
         /// </summary>
         [DisplayName("Weight"), ExcelInfo(Width = 2000)]
-        public float Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);
@@ -76,7 +77,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// 长度
         /// </summary>
         [DisplayName("Length"), ExcelInfo(Width = 2000)]
-        public float Length
+        public decimal Length
         {
             get => _length;
             set => SetProperty(ref _length, value);
@@ -86,7 +87,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// 宽度
         /// </summary>
         [DisplayName("Width"), ExcelInfo(Width = 2000)]
-        public float Width
+        public decimal Width
         {
             get => _width;
             set => SetProperty(ref _width, value);
@@ -96,7 +97,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// 高度
         /// </summary>
         [DisplayName("Height"), ExcelInfo(Width = 2000)]
-        public float Height
+        public decimal Height
         {
             get => _height;
             set => SetProperty(ref _height, value);
@@ -106,7 +107,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// 体积
         /// </summary>
         [DisplayName("Volume"), ExcelInfo(Width = 2000)]
-        public float Volume
+        public decimal Volume
         {
             get => _volume;
             set => SetProperty(ref _volume, value);

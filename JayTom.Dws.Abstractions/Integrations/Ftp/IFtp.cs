@@ -1,4 +1,4 @@
-namespace JayTom.Dws.Plugin.Ftp;
+namespace JayTom.Dws.Abstractions.Integrations.Ftp;
 
 /// <summary>定义与具体 FTP 客户端实现无关的文件传输能力。</summary>
 public interface IFtp {

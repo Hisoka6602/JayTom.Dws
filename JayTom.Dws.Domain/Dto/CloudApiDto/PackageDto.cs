@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.Package;
 using System.Collections.Generic;
@@ -131,7 +131,7 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 格式化后重量
         /// </summary>
-        public double FormattedWeight { get; set; }
+        public decimal FormattedWeight { get; set; }
 
         /// <summary>
         /// 创建时间
@@ -162,22 +162,22 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 格式化后的长
         /// </summary>
-        public double FormattedLength { get; set; }
+        public decimal FormattedLength { get; set; }
 
         /// <summary>
         /// 格式化后的宽
         /// </summary>
-        public double FormattedWidth { get; set; }
+        public decimal FormattedWidth { get; set; }
 
         /// <summary>
         /// 格式化后的高
         /// </summary>
-        public double FormattedHeight { get; set; }
+        public decimal FormattedHeight { get; set; }
 
         /// <summary>
         /// 格式化的体积
         /// </summary>
-        public double FormattedVolume { get; set; }
+        public decimal FormattedVolume { get; set; }
 
         /// <summary>
         /// 创建时间
@@ -218,7 +218,7 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// <summary>
         /// 耗时(秒)
         /// </summary>
-        public double DurationInSeconds { get; set; }
+        public decimal DurationInSeconds { get; set; }
 
         /// <summary>
         /// 接口参数
@@ -427,7 +427,7 @@ namespace JayTom.Dws.Domain.Dto.CloudApiDto {
         /// 图像
         /// </summary>
         [JsonIgnore]
-        public Bitmap? Image { get; set; }
+        public ImageHandle? Image { get; set; }
     }
 
     /// <summary>

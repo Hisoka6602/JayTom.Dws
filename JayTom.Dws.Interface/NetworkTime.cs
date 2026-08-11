@@ -15,22 +15,20 @@ namespace JayTom.Dws.Interface {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<DateTime> GetTime() {
-            try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
-                httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
-                var resultContent = await httpClient.GetStringAsync("http://worldtimeapi.org/api/ip");
+        public async Task<DateTimeOffset> GetLocalTimeAsync(CancellationToken cancellationToken = default) {
+            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+            httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
+            var resultContent = await httpClient
+                .GetStringAsync("http://worldtimeapi.org/api/ip", cancellationToken)
+                .ConfigureAwait(false);
 
-                // 解析 JSON 数据
-                var jsonObject = JObject.Parse(resultContent);
-                var unixTime = jsonObject.Value<DateTime>("datetime");
+            var jsonObject = JObject.Parse(resultContent);
+            var value = jsonObject.Value<string>("datetime");
+            if (!DateTimeOffset.TryParse(value, out var networkTime)) {
+                throw new FormatException("网络时间响应不包含有效的 datetime 字段。");
+            }
 
-                return unixTime;
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-            }
-            return DateTime.Now;
+            return networkTime.ToLocalTime();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,8 +16,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
         private readonly System.Threading.Lock _confirmationLock = new();
         private static string _onnxModel = string.Empty;
 
-        private static float _confidenceThreshold = 0.5F;
-        private static float _rectangleScale = 1;
+        private static decimal _confidenceThreshold = 0.5m;
+        private static decimal _rectangleScale = 1;
         private static bool _isSecondConfirmationEnabled;
         private string _lastBarCode = string.Empty;
 
@@ -81,8 +81,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
         }
 
-        public OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath, float confidenceThreshold,
-            float rectangleScale) {
+        public OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath, decimal confidenceThreshold,
+            decimal rectangleScale) {
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
@@ -211,12 +211,12 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return Task.FromResult(new KeyValuePair<bool, string>(false, "找不到文件或文件不匹配"));
         }
 
-        public Task<KeyValuePair<bool, string>> SetConfidenceThreshold(float confidenceThreshold) {
+        public Task<KeyValuePair<bool, string>> SetConfidenceThreshold(decimal confidenceThreshold) {
             _confidenceThreshold = confidenceThreshold;
             return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
         }
 
-        public Task<KeyValuePair<bool, string>> SetRectangleScale(float rectangleScale) {
+        public Task<KeyValuePair<bool, string>> SetRectangleScale(decimal rectangleScale) {
             _rectangleScale = rectangleScale;
             return Task.FromResult(new KeyValuePair<bool, string>(true, "设置成功"));
         }

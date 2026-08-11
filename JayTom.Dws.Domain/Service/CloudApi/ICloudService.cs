@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,8 +42,8 @@ namespace JayTom.Dws.Domain.Service.CloudApi {
             DateTime? startScanTime,
             DateTime? endScanTime,
             string? cameraSerialNumber,
-            double? minWeight,
-            double? maxWeight,
+            decimal? minWeight,
+            decimal? maxWeight,
             int? requestStatus,
             string? physicalExit,
             string? sentInstruction,

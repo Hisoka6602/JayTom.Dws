@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using Prism.Mvvm;
 using System.Linq;
@@ -21,9 +21,9 @@ using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Domain.Repository.LocalConf;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
@@ -34,7 +34,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         private readonly ISettingsStore _settingsStore;
         private Frame? _frame;
         private ObservableCollection<MenuItemInfoModel> _menuItems;
-        private double _listBoxMaxHeight = 900;
+        private decimal _listBoxMaxHeight = 900;
         private PassWordSettingsDto? _passWordSettingsDto;
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
-                        IconCode = "\xe69d",
+                        IconCode = "\xe69D",
                         IconSize = 25,
                     },
                     Title = "插件信息",
@@ -160,7 +160,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
-                        IconCode = "\xe72f",
+                        IconCode = "\xe72D",
                         IconSize = 28
                     },
                     Title = Languages.Language.ResourceManager.GetString("VolumeSettings")??string.Empty,
@@ -199,7 +199,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
-                        IconCode = "\xe79f",
+                        IconCode = "\xe79D",
                         IconSize = 33
                     },
                     Title = "分拣设置"??string.Empty,
@@ -306,7 +306,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 {
                     if (info.Type == WindowsActionType.Maximize)
                     {
-                        ListBoxMaxHeight = _frame.ActualHeight;
+                        ListBoxMaxHeight = Convert.ToDecimal(_frame.ActualHeight);
                     }
                     else
                     {
@@ -330,7 +330,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             set => SetProperty(ref _menuItems, value);
         }
 
-        public double ListBoxMaxHeight
+        public decimal ListBoxMaxHeight
         {
             get => _listBoxMaxHeight;
             set => SetProperty(ref _listBoxMaxHeight, value);

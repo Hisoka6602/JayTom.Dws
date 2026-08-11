@@ -208,7 +208,7 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         .Select(s => new StatisticsDto {
                             Name = s.Key,
                             Quantity = s.Count(),
-                            Percentage = Math.Round((double)s.Count() / totalPackages, 3),
+                            Percentage = decimal.Round((decimal)s.Count() / totalPackages, 3),
                             TotalCount = totalPackages
                         }
                         )?.ToListAsync(cancellationToken: cancellationToken);
@@ -255,9 +255,9 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         ?.Select(s => new StatisticsDto {
                             Name = s.Key.ToString(),
                             Quantity = s.Count(),
-                            Percentage = Math.Round((double)s.Count() / infoModels.Count, 3),
+                            Percentage = decimal.Round((decimal)s.Count() / infoModels.Count, 3),
                             TotalCount = infoModels.Count,
-                            OverallPercentage = Math.Round((double)s.Count() / totalPackages, 3),
+                            OverallPercentage = decimal.Round((decimal)s.Count() / totalPackages, 3),
                         })
                         ?.ToList();
 
@@ -338,9 +338,9 @@ namespace JayTom.Dws.Infrastructure.Repository.CloudApi {
                         TotalPackages = totalPackages,
                         NormalSortingCount = normalSortingCount,
                         AbnormalSortingCount = abnormalSortingCount,
-                        AbnormalSortingRate = Math.Round((double)abnormalSortingCount / totalPackages, 3),
-                        AverageWeight = Math.Round(averageWeight, 3),
-                        RecognitionRate = Math.Round((double)recognitionCount / totalPackages, 3),
+                        AbnormalSortingRate = decimal.Round((decimal)abnormalSortingCount / totalPackages, 3),
+                        AverageWeight = decimal.Round(averageWeight, 3),
+                        RecognitionRate = decimal.Round((decimal)recognitionCount / totalPackages, 3),
                         SortingEfficiency = CalculateHourlyEfficiency(totalPackages, elapsedTicks),
                         ExitStatisticsInfo = statisticsDtos,
                         ErrorStatistics = errorStatistics,

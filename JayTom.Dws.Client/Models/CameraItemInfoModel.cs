@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Drawing;
 using System.Windows;
@@ -22,8 +22,8 @@ namespace JayTom.Dws.Client.Models
         private string _cameraName = string.Empty;
         private CameraType _type;
         private CameraStatus _status = CameraStatus.Disconnected;
-        private double _frameRate;
-        private string _cameraId = string.Empty;
+        private decimal _frameRate;
+        private string _cameraIdentifier = string.Empty;
         private bool _isSwitchingState;
         private long _imageTimestamp;
         private string _serialNumber = string.Empty;
@@ -227,10 +227,10 @@ namespace JayTom.Dws.Client.Models
                 TaskScheduler.Default);
         }
 
-        public string CameraId
+        public string CameraIdentifier
         {
-            get => _cameraId;
-            set => SetProperty(ref _cameraId, value);
+            get => _cameraIdentifier;
+            set => SetProperty(ref _cameraIdentifier, value);
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 帧率
         /// </summary>
-        public double FrameRate
+        public decimal FrameRate
         {
             get => _frameRate;
             set => SetProperty(ref _frameRate, value);

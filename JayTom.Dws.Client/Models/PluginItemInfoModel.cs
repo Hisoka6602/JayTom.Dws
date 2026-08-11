@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using System;
 using System.Windows.Input;
 using System.Windows.Media;
+using PluginType = JayTom.Dws.Plugin.Contracts.PluginType;
 
 namespace JayTom.Dws.Client.Models
 {

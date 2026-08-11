@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DryIoc;
 using System.Linq;
 using System.Text;
@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using JayTom.Dws.Domain.Dto.Timer;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Domain.EventMediators;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {

@@ -1,6 +1,5 @@
 using JayTom.Dws.Application.Configuration;
 using System;
-using NetSDKCS;
 using System.IO;
 using Prism.Mvvm;
 using System.Linq;
@@ -89,7 +88,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         // 当前慢放速度索引
         private int _currentSlowMotionSpeedIndex = 0;
 
-        private double _speed = 1;
+        private decimal _speed = 1;
         private PackageItemModel _packageItemModel = new();
         private VideoPlaybackSettingsInfoModel _videoPlaybackSettingsInfo = new();
 
@@ -194,7 +193,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
             set => SetProperty(ref _slowMotionSpeed, value);
         }
 
-        public double Speed
+        public decimal Speed
         {
             get => _speed;
             set => SetProperty(ref _speed, value);
@@ -266,7 +265,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            if (PackageItemModel.TimestampedGuid <= 0)
+            if (PackageItemModel.TimestampMilliseconds <= 0)
             {
                 return;
             }
@@ -279,7 +278,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 VideoLengthInSeconds = settingsDto.VideoLengthInSeconds,
             };
 
-            var (b, packageInfoModel) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(PackageItemModel.TimestampedGuid));
+            var (b, packageInfoModel) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(PackageItemModel.TimestampMilliseconds));
 
             var serialNumber = packageInfoModel?.BarCodeInfo?.SerialNumber;
             if (serialNumber is null)
@@ -319,7 +318,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 return;
             }
             _daHuatechNvr ??= DaHuatechNVR.Instance;
-            await BaseDaHuatech.EnumDevices();
+            await BaseDaHuatech.InitializeDeviceDiscoveryAsync();
             //登录
             var firstPlayer = VideoPlayerItems[0];
             var any = _daHuatechNvr.GetDevLogInInfo(f =>
@@ -408,7 +407,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                         {
                             var (key, value) = await _daHuatechNvr.QueryVideoFile(item.IpAddress,
                                 item.Channel, CurrentTime, EndTime, (int)SelectPlaybackStream);
-                            if (key && value is NET_RECORDFILE_INFO[] recordFileInfos)
+                            if (key)
                             {
                                 //临时显示
 
@@ -427,7 +426,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                                     item.IsBuffering = false;
                                                 }
 
-                                                var addSeconds = PlayDateTime.AddSeconds(info.LoadSize * Speed);
+                                                var addSeconds = PlayDateTime.AddSeconds(Convert.ToDouble(info.LoadSize * Speed));
                                                 if (CurrentTime.CompareTo(addSeconds) < 0 && !ProgressRelease)
                                                 {
                                                     CurrentTime = addSeconds;
@@ -509,7 +508,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 {
                     DaHuatechNVR.FastForwardSpeed.X2 => 1,
                     DaHuatechNVR.FastForwardSpeed.X4 => 1,
-                    DaHuatechNVR.FastForwardSpeed.X8 => 2.2,
+                    DaHuatechNVR.FastForwardSpeed.X8 => 2.2m,
                     DaHuatechNVR.FastForwardSpeed.X16 => 5,
                     DaHuatechNVR.FastForwardSpeed.Normal => 1,
                     _ => 1
@@ -683,7 +682,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 {
                     var (key, value) = await _daHuatechNvr.QueryVideoFile(obj.IpAddress,
                         obj.Channel, StartTime, EndTime, 0);
-                    if (key && value is NET_RECORDFILE_INFO[] recordFileInfos)
+                    if (key)
                     {
                         obj.DownloadProgress = 0;
                         await _daHuatechNvr.DownloadRecording(obj.IpAddress,
@@ -705,7 +704,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                                       obj.DownloadState = DownloadState.Transcoding;
                                                       obj.DownloadProgress = 0;
                                                   }
-                                                  var d = ((double)i / i1) * 100;
+                                                  var d = ((decimal)i / i1) * 100;
                                                   if (d - obj.DownloadProgress > 2)
                                                   {
                                                       obj.DownloadProgress = d;
@@ -735,7 +734,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                          }
                                      }
 
-                                     var infoTotalSize = ((double)info.LoadSize / info.TotalSize) * 100;
+                                     var infoTotalSize = ((decimal)info.LoadSize / info.TotalSize) * 100;
                                      if (infoTotalSize - obj.DownloadProgress > 2)
                                      {
                                          obj.DownloadProgress = infoTotalSize;

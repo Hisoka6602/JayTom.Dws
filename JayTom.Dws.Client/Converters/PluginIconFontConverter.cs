@@ -2,6 +2,7 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
+using PluginType = JayTom.Dws.Plugin.Contracts.PluginType;
 
 namespace JayTom.Dws.Client.Converters
 {

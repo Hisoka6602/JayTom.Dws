@@ -6,7 +6,7 @@ namespace JayTom.Dws.Client.Models.ImageSettingModels
 
     public class ItemBaseTemplateModel : BindableBase
     {
-        private int _id;
+        private long _id;
         private int _type;
         private string _content = string.Empty;
         private ItemApplicationType _applicationType;
@@ -14,7 +14,7 @@ namespace JayTom.Dws.Client.Models.ImageSettingModels
         /// <summary>
         /// Id
         /// </summary>
-        public int Id
+        public long Id
         {
             get => _id;
             set => SetProperty(ref _id, value);

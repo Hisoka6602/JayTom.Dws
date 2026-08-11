@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -26,11 +26,11 @@ namespace JayTom.Dws.Camera {
         /// 触发一次体积测量
         /// </summary>
         /// <param name="barcode"></param>
-        /// <param name="barcodeTimestamp"></param>
+        /// <param name="packageTimestampMilliseconds"></param>
         /// <param name="delay"></param>
         /// <param name="cancellation"></param>
         /// <returns></returns>
-        Task TriggerMeasurementPhotoAsync(string barcode, long barcodeTimestamp, int delay, CancellationToken cancellation = default);
+        Task TriggerMeasurementPhotoAsync(string barcode, long packageTimestampMilliseconds, int delay, CancellationToken cancellation = default);
     }
 
     public class VolumeCapturedEventArgs : EventArgs {

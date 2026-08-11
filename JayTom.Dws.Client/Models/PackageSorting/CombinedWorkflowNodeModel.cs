@@ -1,4 +1,4 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 using System.Windows;
 using System.Windows.Input;
 
@@ -19,16 +19,16 @@ namespace JayTom.Dws.Client.Models.PackageSorting
         private Point _positiveConnectionPoint;
         private Point _negativeConnectionPoint;
         private Point _receiverConnectionPoint;
-        private int _id;
-        private int _parentId;
+        private long _id;
+        private long _parentId;
 
-        public int Id
+        public long Id
         {
             get => _id;
             set => SetProperty(ref _id, value);
         }
 
-        public int ParentId
+        public long ParentId
         {
             get => _parentId;
             set => SetProperty(ref _parentId, value);

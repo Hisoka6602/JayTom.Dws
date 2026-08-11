@@ -1,563 +1,92 @@
-﻿using System;
-using Prism.Events;
-using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Manager;
+using System;
 using System.Collections.Generic;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using InstructionType = JayTom.Dws.Data.Package.InstructionType;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using JayTom.Dws.Application.Messaging;
+using Prism.Events;
 
-namespace JayTom.Dws.Client.EventMediators
+namespace JayTom.Dws.Client.EventMediators;
+
+/// <summary>通过 Prism 在进程内发布和订阅应用事件。</summary>
+public sealed class EventAggregator : IEventBus
 {
+    /// <summary>兼容尚未迁移到构造函数注入的调用点。</summary>
+    private static readonly Lazy<EventAggregator> SharedInstance = new(() => new EventAggregator());
 
-    public class EventAggregator
+    /// <summary>普通应用事件聚合器。</summary>
+    private readonly IEventAggregator _eventAggregator = new Prism.Events.EventAggregator();
+
+    /// <summary>高频包裹事件聚合器。</summary>
+    private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
+
+    /// <summary>让异步订阅包装器与其真实订阅目标具有相同生命周期。</summary>
+    private readonly ConditionalWeakTable<object, List<object>> _asyncSubscriptions = new();
+
+    /// <summary>保存没有实例目标的静态异步订阅包装器。</summary>
+    private readonly List<object> _staticAsyncSubscriptions = [];
+
+    /// <summary>获取迁移期共享实例。</summary>
+    public static EventAggregator Instance => SharedInstance.Value;
+
+    /// <summary>发布普通应用事件。</summary>
+    public void Publish<TEvent>(TEvent eventData) =>
+        _eventAggregator.GetEvent<PubSubEvent<TEvent>>().Publish(eventData);
+
+    /// <summary>订阅普通应用事件。</summary>
+    public void Subscribe<TEvent>(Action<TEvent> handler) =>
+        _eventAggregator.GetEvent<PubSubEvent<TEvent>>()
+            .Subscribe(handler, ThreadOption.PublisherThread, false);
+
+    /// <summary>订阅异步事件处理器，并按发布顺序观察处理异常。</summary>
+    public SubscriptionToken Subscribe<TEvent>(Func<TEvent, Task> handler)
     {
-        private static readonly Lazy<EventAggregator> _instance = new(() => new EventAggregator());
-
-        public static EventAggregator Instance => _instance.Value;
-
-        private readonly IEventAggregator _eventAggregator = new Prism.Events.EventAggregator();
-        private readonly IEventAggregator _packageEventAggregator = new Prism.Events.EventAggregator();
-        /// <summary>
-        /// 让异步订阅包装器与其真实订阅目标具有相同生命周期。
-        /// </summary>
-        private readonly ConditionalWeakTable<object, List<object>> _asyncSubscriptions = new();
-        /// <summary>
-        /// 保存没有实例目标的静态异步订阅包装器。
-        /// </summary>
-        private readonly List<object> _staticAsyncSubscriptions = new();
-
-        public void Publish<TEventType>(TEventType eventData)
+        ArgumentNullException.ThrowIfNull(handler);
+        var subscription = new SequentialAsyncEventHandler<TEvent>(handler);
+        if (handler.Target is { } target)
         {
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
-        }
-
-        public void Subscribe<TEventType>(Action<TEventType> action)
-        {
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
-                .Subscribe(action, ThreadOption.PublisherThread, false);
-        }
-
-        /// <summary>
-        /// 订阅异步事件处理器，并统一观察处理任务中的异常。
-        /// </summary>
-        /// <typeparam name="TEventType">事件数据类型。</typeparam>
-        /// <param name="action">异步事件处理器。</param>
-        /// <returns>可用于精确取消订阅的令牌。</returns>
-        public SubscriptionToken Subscribe<TEventType>(Func<TEventType, Task> action)
-        {
-            ArgumentNullException.ThrowIfNull(action);
-            var subscription = new SequentialAsyncEventHandler<TEventType>(action);
-            if (action.Target is { } target) {
-                var subscriptions = _asyncSubscriptions.GetValue(
-                    target,
-                    static _ => new List<object>());
-                lock (subscriptions) {
-                    subscriptions.Add(subscription);
-                }
+            var subscriptions = _asyncSubscriptions.GetValue(target, static _ => []);
+            lock (subscriptions)
+            {
+                subscriptions.Add(subscription);
             }
-            else {
-                lock (_staticAsyncSubscriptions) {
-                    _staticAsyncSubscriptions.Add(subscription);
-                }
+        }
+        else
+        {
+            lock (_staticAsyncSubscriptions)
+            {
+                _staticAsyncSubscriptions.Add(subscription);
             }
-
-            return _eventAggregator.GetEvent<PubSubEvent<TEventType>>()
-                .Subscribe(subscription.Enqueue, ThreadOption.PublisherThread, false);
         }
 
-        public void PublishPackage<TEventType>(TEventType eventData)
-        {
-            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Publish(eventData);
-        }
-
-        public void SubscribePackage<TEventType>(Action<TEventType> action)
-        {
-            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Subscribe(action, ThreadOption.PublisherThread, false);
-        }
-
-        public void Unsubscribe<TEventType>(Action<TEventType> action)
-        {
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(action);
-        }
-
-        /// <summary>
-        /// 使用订阅令牌取消指定事件类型的订阅。
-        /// </summary>
-        public void Unsubscribe<TEventType>(SubscriptionToken token)
-        {
-            ArgumentNullException.ThrowIfNull(token);
-            _eventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(token);
-        }
-
-        /// <summary>
-        /// 取消包裹事件订阅，供具有明确生命周期的订阅者释放资源。
-        /// </summary>
-        public void UnsubscribePackage<TEventType>(Action<TEventType> action)
-        {
-            _packageEventAggregator.GetEvent<PubSubEvent<TEventType>>().Unsubscribe(action);
-        }
+        return _eventAggregator.GetEvent<PubSubEvent<TEvent>>()
+            .Subscribe(subscription.Enqueue, ThreadOption.PublisherThread, false);
     }
 
-    public class SettingsChangedEvent
+    /// <summary>通过应用边界注册有界且有序的异步事件订阅者。</summary>
+    public void SubscribeAsync<TEvent>(Func<TEvent, Task> handler) =>
+        Subscribe(handler);
+
+    /// <summary>发布高频包裹事件。</summary>
+    public void PublishPackage<TEvent>(TEvent eventData) =>
+        _packageEventAggregator.GetEvent<PubSubEvent<TEvent>>().Publish(eventData);
+
+    /// <summary>订阅高频包裹事件。</summary>
+    public void SubscribePackage<TEvent>(Action<TEvent> handler) =>
+        _packageEventAggregator.GetEvent<PubSubEvent<TEvent>>()
+            .Subscribe(handler, ThreadOption.PublisherThread, false);
+
+    /// <summary>取消普通应用事件订阅。</summary>
+    public void Unsubscribe<TEvent>(Action<TEvent> handler) =>
+        _eventAggregator.GetEvent<PubSubEvent<TEvent>>().Unsubscribe(handler);
+
+    /// <summary>使用订阅令牌取消普通应用事件订阅。</summary>
+    public void Unsubscribe<TEvent>(SubscriptionToken token)
     {
-
-        /// <summary>
-        /// 配置名称
-        /// </summary>
-        public string SettingsName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 是否本地保存
-        /// </summary>
-        public bool IsLocallySaved { get; set; }
+        ArgumentNullException.ThrowIfNull(token);
+        _eventAggregator.GetEvent<PubSubEvent<TEvent>>().Unsubscribe(token);
     }
 
-    public class TriggerPositionEvent
-    {
-
-        /// <summary>
-        /// 触发位置
-        /// </summary>
-        public TriggerPositionEnum TriggerPosition { get; set; }
-
-        /// <summary>
-        /// 是否成功
-        /// </summary>
-        public bool IsSuccess { get; set; }
-
-        /// <summary>
-        /// 包裹信息
-        /// </summary>
-        public PackageInfo? PackageInfo { get; set; }
-
-        /// <summary>
-        /// 说明
-        /// </summary>
-        public string Description { get; set; } = string.Empty;
-    }
-
-    public class BarcodeTypeProviderEvent
-    {
-
-        /// <summary>
-        /// 条码
-        /// </summary>
-        public string Barcode { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 需要扣除的重量
-        /// </summary>
-        public float LengthToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的宽度
-        /// </summary>
-        public float WidthToDeduct { get; set; }
-
-        /// <summary>
-        /// /需要扣除的重量
-        /// </summary>
-        public float WeightToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的高度
-        /// </summary>
-        public float HeightToDeduct { get; set; }
-
-        /// <summary>
-        /// 需要扣除的体积
-        /// </summary>
-        public float VolumeToDeduct { get; set; }
-    }
-
-    public class PluginParamChangedEvent
-    {
-        public PluginType Type { get; set; }
-        public string PluginName { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-    }
-
-    public enum PluginType
-    {
-
-        /// <summary>
-        /// 拓展包
-        /// </summary>
-        ExtensionPackage,
-
-        /// <summary>
-        /// 主页
-        /// </summary>
-        Home,
-
-        /// <summary>
-        /// 内页
-        /// </summary>
-        Inner,
-
-        /// <summary>
-        /// 弹窗
-        /// </summary>
-        Dialog,
-
-        /// <summary>
-        /// 控件
-        /// </summary>
-        Control,
-
-        /// <summary>
-        /// 工具
-        /// </summary>
-        Tool,
-
-        /// <summary>
-        /// Api上传接口
-        /// </summary>
-        Api,
-
-        /// <summary>
-        /// 过滤逻辑
-        /// </summary>
-        Filter,
-
-        /// <summary>
-        /// 处理逻辑
-        /// </summary>
-        Process,
-
-        /// <summary>
-        /// 初始化插件
-        /// </summary>
-        Initialize,
-
-        /// <summary>
-        /// 后台处理
-        /// </summary>
-        Background,
-
-        /// <summary>
-        /// 设备
-        /// </summary>
-        Device,
-
-        /// <summary>
-        /// 主页工具
-        /// </summary>
-        HomeTool,
-    }
-
-    public class WindowsAction
-    {
-        public object? Windows { get; set; }
-        public WindowsActionType Type { get; set; }
-    }
-
-    /// <summary>
-    /// 远程操作
-    /// </summary>
-    public class RemoteAction
-    {
-
-        /// <summary>
-        /// 消息
-        /// </summary>
-        public object? Message { get; set; }
-
-        /// <summary>
-        /// 指令
-        /// </summary>
-        public RemoteCommand Command { get; set; }
-    }
-
-    public enum WindowsActionType
-    {
-
-        /// <summary>
-        /// 最小化
-        /// </summary>
-        Minimize,
-
-        /// <summary>
-        /// 最大化
-        /// </summary>
-        Maximize,
-
-        /// <summary>
-        /// 还原
-        /// </summary>
-        Restore,
-
-        /// <summary>
-        /// 显示
-        /// </summary>
-        Show,
-
-        /// <summary>
-        /// 隐藏
-        /// </summary>
-        Hide,
-
-        /// <summary>
-        /// 关闭
-        /// </summary>
-        Close,
-
-        /// <summary>
-        /// 激活
-        /// </summary>
-        Activate
-    }
-
-    public class ApplicationStatusChanged
-    {
-        public ApplicationStatus Status { get; set; }
-    }
-
-    public enum ApplicationStatus
-    {
-        Start,
-        Stop
-    }
-
-    /// <summary>
-    /// 远程指令
-    /// </summary>
-    public enum RemoteCommand
-    {
-        None,
-
-        /// <summary>
-        /// 停止
-        /// </summary>
-        Stop,
-
-        /// <summary>
-        /// 启动
-        /// </summary>
-        Start,
-
-        /// <summary>
-        /// 退出
-        /// </summary>
-        Exit,
-
-        /// <summary>
-        /// 重启
-        /// </summary>
-        Restart
-    }
-
-    /// <summary>
-    /// 格口更新事件
-    /// </summary>
-    public class PackageExitUpdateEvent
-    {
-
-        /// <summary>
-        /// 包裹创建时间
-        /// </summary>
-        public DateTime CreateTime { get; set; } = DateTime.Now;
-
-        /// <summary>
-        /// 包裹时间戳
-        /// </summary>
-        public long Timestamp { get; set; }
-
-        /// <summary>
-        /// 格口名称
-        /// </summary>
-        public string ExitName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 格口Id
-        /// </summary>
-
-        public long ExitId { get; set; }
-
-        /// <summary>
-        /// 格口类型(物理/理论)
-        /// </summary>
-        public SortingExitType ExitType { get; set; }
-
-        /// <summary>
-        /// 包裹异常原因
-        /// </summary>
-        public PackageAbnormalSortingType PackageAbnormalSortingType { get; set; }
-
-        /// <summary>
-        /// 指令信息
-        /// </summary>
-        public List<InstructionInfoModel>? InstructionInfos { get; set; }
-
-        /// <summary>
-        /// 指令类型
-        /// </summary>
-        public InstructionType InstructionType { get; set; }
-
-        /// <summary>
-        /// 格口类型
-        /// </summary>
-        public ExitType Type { get; set; }
-    }
-
-    public enum PackageAbnormalSortingType
-    {
-
-        /// <summary>
-        /// 无
-        /// </summary>
-        [Description("正常分拣")]
-        None,
-
-        /// <summary>
-        /// 网络超时
-        /// </summary>
-        [Description("网络超时")]
-        NetworkTimeout,
-
-        /// <summary>
-        /// Api异常访问
-        /// </summary>
-        [Description("Api异常访问")]
-        ApiAccessError,
-
-        /// <summary>
-        /// 无条码
-        /// </summary>
-        [Description("无条码")]
-        NoRead,
-
-        /// <summary>
-        /// 多条码识别
-        /// </summary>
-        [Description("多条码识别")]
-        MultipleBarCode,
-
-        /// <summary>
-        /// 无分拣指令
-        /// </summary>
-        [Description("无分拣指令")]
-        NoSortingInstruction,
-
-        /// <summary>
-        /// 无物理格口
-        /// </summary>
-        [Description("无物理格口")]
-        NoPhysicalMailbox,
-
-        /// <summary>
-        /// 锁格
-        /// </summary>
-        [Description("锁格")]
-        LockExit,
-
-        /// <summary>
-        /// 叠包
-        /// </summary>
-        [Description("叠包")]
-        StackedPackage,
-
-        /// <summary>
-        /// 非本机构条码
-        /// </summary>
-        [Description("非本机构条码")]
-        PostNonLocalBarcode,
-
-        /// <summary>
-        /// 查不到段道
-        /// </summary>
-        [Description("查不到段道")]
-        PostSegmentNotFound,
-
-        /// <summary>
-        /// 未命中规则
-        /// </summary>
-        [Description("未命中规则")]
-        UnmatchedRule,
-
-        /// <summary>
-        /// 距离过近
-        /// </summary>
-        [Description("距离过近")]
-        DistanceTooClose,
-
-        /// <summary>
-        /// 车号不匹配
-        /// </summary>
-        [Description("车号不匹配")]
-        VehicleNumberMismatch,
-
-        /// <summary>
-        /// 线速度未稳定放包
-        /// </summary>
-        [Description("线速度未稳定放包")]
-        UnstableLineSpeed
-    }
-
-    public enum SortingExitType
-    {
-
-        /// <summary>
-        /// 物理格口
-        /// </summary>
-        PhysicalExit,
-
-        /// <summary>
-        /// 理论格口
-        /// </summary>
-        TheoreticalExit
-    }
-
-    /// <summary>
-    /// 推送包裹
-    /// </summary>
-    public class PushPackageInfo
-    {
-
-        /// <summary>
-        /// 落格信息
-        /// </summary>
-        public PackageExitUpdateEvent PackageExitUpdateEvent { get; set; } = new();
-
-        /// <summary>
-        /// 包裹信息
-        /// </summary>
-        public PackageInfo PackageInfo { get; set; } = new();
-
-        /// <summary>
-        /// 落格信号时间
-        /// </summary>
-        public DateTime? SignalCallbackTime { get; set; }
-    }
-
-    /// <summary>
-    /// 推送备用格口分拣
-    /// </summary>
-    public class PushAlternateExitSorterEvent
-    {
-
-        /// <summary>
-        /// 包裹信息
-        /// </summary>
-        public PackageInfo PackageInfo { get; set; } = new();
-
-        /// <summary>
-        /// 原出口Id
-        /// </summary>
-        public long OriginalExitId { get; set; }
-
-        /// <summary>
-        /// 原出口名称
-        /// </summary>
-        public string OriginalExitName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 锁格时间
-        /// </summary>
-        public DateTime LockTime { get; set; }
-    }
+    /// <summary>取消高频包裹事件订阅。</summary>
+    public void UnsubscribePackage<TEvent>(Action<TEvent> handler) =>
+        _packageEventAggregator.GetEvent<PubSubEvent<TEvent>>().Unsubscribe(handler);
 }

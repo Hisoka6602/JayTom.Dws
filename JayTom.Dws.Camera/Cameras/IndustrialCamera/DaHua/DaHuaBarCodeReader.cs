@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NetSDKCS;
 using System.Linq;
 using System.Text;
@@ -94,10 +94,10 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                         }
                     };
                     //设备断连回调
-                    _mDisConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
+                    _mDisConnectCallBack += delegate (IntPtr callbackHandle, IntPtr dvrip, int port, IntPtr user) {
                     };
                     //设备重连回调
-                    _mReConnectCallBack += delegate (IntPtr id, IntPtr dvrip, int port, IntPtr user) {
+                    _mReConnectCallBack += delegate (IntPtr callbackHandle, IntPtr dvrip, int port, IntPtr user) {
                     };
                     //设备连接
                     //设备登录
@@ -124,13 +124,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                             }
                         };
                     //设备远程抓图回调
-                    _mSnapRevCallBack = delegate (IntPtr id, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
+                    _mSnapRevCallBack = delegate (IntPtr callbackHandle, IntPtr buf, uint len, uint type, uint serial, IntPtr user) {
                         if (len == 0 || type != 10 || buf == IntPtr.Zero) {
                             return;
                         }
 
                         try {
-                            if (!_serialByLoginHandle.TryGetValue(id, out var key) ||
+                            if (!_serialByLoginHandle.TryGetValue(callbackHandle, out var key) ||
                                 !_imageEvent.TryGetValue(key, out var callback)) {
                                 return;
                             }
@@ -205,30 +205,30 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
             try {
                 await _enumerateSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginId);
-                if (!tryGetValue || (loginId == IntPtr.Zero)) {
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var existingLoginHandle);
+                if (!tryGetValue || (existingLoginHandle == IntPtr.Zero)) {
                     var getValue = _devInfo.TryGetValue(serialNo, out var info);
                     if (getValue) {
                         var mDeviceInfo = new NET_DEVICEINFO_Ex();
-                        var mLoginId = NETClient.LoginWithHighLevelSecurity(info.szIP
+                        var loginHandle = NETClient.LoginWithHighLevelSecurity(info.szIP
                             , (ushort)info.nPort, userName, passWord,
                             EM_LOGIN_SPAC_CAP_TYPE.TCP, IntPtr.Zero, ref mDeviceInfo);
-                        if (IntPtr.Zero == mLoginId) {
+                        if (IntPtr.Zero == loginHandle) {
                             var lastError = NETClient.GetLastError();
                             return new KeyValuePair<bool, string>(false, lastError);
                         }
                         //添加到字典
-                        _loginDev[serialNo] = mLoginId;
-                        _serialByLoginHandle[mLoginId] = serialNo;
+                        _loginDev[serialNo] = loginHandle;
+                        _serialByLoginHandle[loginHandle] = serialNo;
 
-                        return new KeyValuePair<bool, string>(true, mLoginId.ToString());
+                        return new KeyValuePair<bool, string>(true, loginHandle.ToString());
                     }
                     else {
                         return new KeyValuePair<bool, string>(false, "不存在该设备或未枚举");
                     }
                 }
                 else {
-                    return new KeyValuePair<bool, string>(true, loginId.ToString());
+                    return new KeyValuePair<bool, string>(true, existingLoginHandle.ToString());
                 }
             }
             catch (Exception e) {
@@ -248,17 +248,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
             await Task.Yield();
             try {
                 await _enumerateSlim.WaitAsync();
-                _loginDev.TryGetValue(serialNo, out var mLoginId);
-                var result = NETClient.Logout(mLoginId);
+                _loginDev.TryGetValue(serialNo, out var loginHandle);
+                var result = NETClient.Logout(loginHandle);
                 if (!result) {
                     var lastError = NETClient.GetLastError();
 
                     return new KeyValuePair<bool, string>(false, lastError);
                 }
 
-                _loginDev.TryRemove(serialNo, out mLoginId);
-                _serialByLoginHandle.TryRemove(mLoginId, out _);
-                return new KeyValuePair<bool, string>(true, mLoginId.ToString());
+                _loginDev.TryRemove(serialNo, out loginHandle);
+                _serialByLoginHandle.TryRemove(loginHandle, out _);
+                return new KeyValuePair<bool, string>(true, loginHandle.ToString());
             }
             catch (Exception e) {
                 return new KeyValuePair<bool, string>(false, e.Message);
@@ -298,7 +298,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
             try {
                 await _takePhotoSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginHandle);
                 if (tryGetValue) {
                     var asyncSnap = new NET_SNAP_PARAMS {
                         Channel = 0,
@@ -307,7 +307,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                         mode = 0,
                         CmdSerial = (uint)Random.Shared.Next(0, 65536),
                     };
-                    var ret = NETClient.SnapPictureEx(mLoginId, asyncSnap, IntPtr.Zero);
+                    var ret = NETClient.SnapPictureEx(loginHandle, asyncSnap, IntPtr.Zero);
                     if (!ret) {
                         var lastError = NETClient.GetLastError();
                         return new KeyValuePair<bool, string>(false, lastError);
@@ -336,15 +336,15 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
             try {
                 return new KeyValuePair<bool, string>(false, "暂时不支持实时画面");
                 /*await _switchRealtimeFrameSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginHandle);
                 if (tryGetValue) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     //判断是否已经开启
-                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var mRealPlayId);
-                    if (isRealPlay && mRealPlayId != IntPtr.Zero) {
+                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var previewHandle);
+                    if (isRealPlay && previewHandle != IntPtr.Zero) {
                         return new KeyValuePair<bool, string>(true, "已经开启了预览");
                     }
-                    var ret = NETClient.RealPlay(mLoginId, indexOf, IntPtr.Zero);
+                    var ret = NETClient.RealPlay(loginHandle, indexOf, IntPtr.Zero);
                     if (ret == IntPtr.Zero) {
                         var lastError = NETClient.GetLastError();
                         return new KeyValuePair<bool, string>(false, $"开始预览失败:{lastError}");
@@ -379,13 +379,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
         public async Task<KeyValuePair<bool, string>> StopRealtimePlay(string serialNo) {
             /*try {
                 await _switchRealtimeFrameSlim.WaitAsync();
-                var tryGetValue = _loginDev.TryGetValue(serialNo, out var mLoginId);
+                var tryGetValue = _loginDev.TryGetValue(serialNo, out var loginHandle);
                 if (tryGetValue) {
                     var indexOf = _loginDev.Keys.OrderBy(o => o).ToList().IndexOf(serialNo);
                     //判断是否已经开启
-                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var mRealPlayId);
-                    if (isRealPlay && mRealPlayId != IntPtr.Zero) {
-                        var ret = NETClient.StopRealPlay(mRealPlayId);
+                    var isRealPlay = _realPlayInfo.TryGetValue(serialNo, out var previewHandle);
+                    if (isRealPlay && previewHandle != IntPtr.Zero) {
+                        var ret = NETClient.StopRealPlay(previewHandle);
                         if (!ret) {
                             var lastError = NETClient.GetLastError();
                             return new KeyValuePair<bool, string>(false, lastError);
@@ -394,7 +394,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
                         return new KeyValuePair<bool, string>(true, string.Empty);
                     }
                     else {
-                        return new KeyValuePair<bool, string>(true, $"未开启预览:{mRealPlayId}");
+                        return new KeyValuePair<bool, string>(true, $"未开启预览:{previewHandle}");
                     }
                 }
                 else {
@@ -412,16 +412,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
         }
 
         //查询录像文件
-        private KeyValuePair<bool, string> QueryFile(IntPtr mLoginId, int channelId, DateTime startTime, DateTime endTime, ref NET_RECORDFILE_INFO[] infos, ref int fileCount) {
+        private KeyValuePair<bool, string> QueryFile(IntPtr loginHandle, int channelNumber, DateTime startTime, DateTime endTime, ref NET_RECORDFILE_INFO[] infos, ref int fileCount) {
             //set stream type 设置码流类型 (一律主码流)
             const EM_STREAM_TYPE streamType = EM_STREAM_TYPE.MAIN;
             var pStream = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(int)));
             try {
                 Marshal.StructureToPtr((int)streamType, pStream, false);
-                NETClient.SetDeviceMode(mLoginId, EM_USEDEV_MODE.RECORD_STREAM_TYPE, pStream);
+                NETClient.SetDeviceMode(loginHandle, EM_USEDEV_MODE.RECORD_STREAM_TYPE, pStream);
                 //query record file 查询录像文件
-                var ret = NETClient.QueryRecordFile(mLoginId, channelId, EM_QUERY_RECORD_TYPE.ALL, startTime, endTime, null, ref infos, ref fileCount, 5000, false);
-                Console.WriteLine($"{channelId}");
+                var ret = NETClient.QueryRecordFile(loginHandle, channelNumber, EM_QUERY_RECORD_TYPE.ALL, startTime, endTime, null, ref infos, ref fileCount, 5000, false);
+                Console.WriteLine($"{channelNumber}");
                 Console.WriteLine($"{startTime}--{endTime}");
                 Console.WriteLine($"fileCount:{fileCount}");
                 return (false == ret || fileCount <= 0) ? new KeyValuePair<bool, string>(false, "录像文件不存在") : new KeyValuePair<bool, string>(true, string.Empty);

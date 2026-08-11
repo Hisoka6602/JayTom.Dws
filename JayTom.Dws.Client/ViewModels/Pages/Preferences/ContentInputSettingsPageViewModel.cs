@@ -51,11 +51,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         public string ExampleJson => JsonConvert.SerializeObject(new
         {
             barcode = "123456",
-            weight = 10.1,
-            length = 5.1,
-            width = 4.1,
-            height = 3.1,
-            volume = 2.1
+            weight = 10.1m,
+            length = 5.1m,
+            width = 4.1m,
+            height = 3.1m,
+            volume = 2.1m
         }, Formatting.Indented);
 
         /// <summary>

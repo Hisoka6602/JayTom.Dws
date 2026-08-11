@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using DryIoc;
 using S7.Net;
@@ -25,7 +25,7 @@ using JayTom.Dws.Domain.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
-using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
+using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {
@@ -248,8 +248,8 @@ namespace JayTom.Dws.Client.Service.Sorting
                         _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.PortName,
                         _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.BaudRate,
                         _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.DataBits,
-                        _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.Parity,
-                        _stackedPackageDetectionSettingsDto.SerialPortConfigInfo.StopBits,
+                        (System.IO.Ports.Parity)_stackedPackageDetectionSettingsDto.SerialPortConfigInfo.Parity,
+                        (System.IO.Ports.StopBits)_stackedPackageDetectionSettingsDto.SerialPortConfigInfo.StopBits,
                         (SerialPortFormat)_stackedPackageDetectionSettingsDto.SerialPortConfigInfo.DataFormat
                     );
                     if (connect)

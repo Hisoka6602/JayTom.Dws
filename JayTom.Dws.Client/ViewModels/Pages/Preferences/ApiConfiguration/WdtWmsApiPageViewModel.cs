@@ -28,7 +28,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private WdtWmsApiInfo _wdtWmsApiInfo = new();
         private bool _isLoaded;
         private string _barcode = string.Empty;
-        private double _weight;
+        private decimal _weight;
         private bool _isUploading;
         private string _boxBarcode = string.Empty;
 
@@ -58,7 +58,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         /// <summary>
         /// 重量
         /// </summary>
-        public double Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);

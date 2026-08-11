@@ -252,8 +252,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     DataFormat = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.DataFormat?.Value ??
                                  DataFormatType.Ascii,
                     PortName = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.PortName ?? string.Empty,
-                    Parity = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.Parity?.Value ?? Parity.None,
-                    StopBits = StackedPackageDetectionItemInfo.SerialPortConfigInfo?.StopBits?.Value ?? StopBits.None
+                    Parity = (JayTom.Dws.Abstractions.Devices.SerialParity)(StackedPackageDetectionItemInfo.SerialPortConfigInfo?.Parity?.Value ?? Parity.None),
+                    StopBits = (JayTom.Dws.Abstractions.Devices.SerialStopBits)(StackedPackageDetectionItemInfo.SerialPortConfigInfo?.StopBits?.Value ?? StopBits.None)
                 },
                 TcpConnectionConfigInfo = new TcpSettingsInfo()
                 {
@@ -321,10 +321,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                    new DataFormatTypeInfoModel(),
                             PortName = settingsDto.SerialPortConfigInfo?.PortName ?? string.Empty,
                             Parity = ParityItems.FirstOrDefault(f =>
-                                         f.Value.Equals(settingsDto.SerialPortConfigInfo?.Parity)) ??
+                                         f.Value == (Parity?)settingsDto.SerialPortConfigInfo?.Parity) ??
                                         new ParityInfoModel(),
                             StopBits = StopBitsItems.FirstOrDefault(f =>
-                                f.Value.Equals(settingsDto.SerialPortConfigInfo?.StopBits)) ?? new StopBitsInfoModel()
+                                f.Value == (StopBits?)settingsDto.SerialPortConfigInfo?.StopBits) ?? new StopBitsInfoModel()
                         },
                         TcpConnectionConfigInfo = new TcpConnectionConfigItemInfoModel()
                         {

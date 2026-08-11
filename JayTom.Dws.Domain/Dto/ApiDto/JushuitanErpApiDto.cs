@@ -67,11 +67,11 @@ namespace JayTom.Dws.Domain.Dto.ApiDto {
         /// <summary>
         /// 上次更新 Token 的时间
         /// </summary>
-        public DateTime LastTokenUpdateTime { get; set; } = DateTime.MinValue;
+        public DateTime? LastTokenUpdateTime { get; set; }
 
         /// <summary>
         /// Token 到期时间
         /// </summary>
-        public DateTime TokenExpireTime { get; set; } = DateTime.MinValue;
+        public DateTime? TokenExpireTime { get; set; }
     }
 }

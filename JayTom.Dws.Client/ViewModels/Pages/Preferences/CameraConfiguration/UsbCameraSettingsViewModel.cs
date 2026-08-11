@@ -1,6 +1,5 @@
 using JayTom.Dws.Application.Configuration;
 using System;
-using Dynamsoft;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -40,7 +39,7 @@ using FontFamily = System.Drawing.FontFamily;
 using Matrix = System.Drawing.Drawing2D.Matrix;
 using JayTom.Dws.Domain.Dto.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 {
@@ -127,23 +126,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     await _settingsStore.GetAsync<UsbBarcodeReaderDto>(
                         "AlgorithmSettings") ?? new UsbBarcodeReaderDto();
                 var barcodeFormat = GetBarcodeFormat(usbBarcodeReaderDto.BarcodeType);
-                var dictionary = new Dictionary<BarcodeReaderParameter, object>
+                var settings = new BarcodeReaderSettings
                 {
-                    { BarcodeReaderParameter.EnumBarcodeFormat, barcodeFormat },
-                    { BarcodeReaderParameter.RecognitionMode, (ScanMode)usbBarcodeReaderDto.RecognitionMode },
-                    { BarcodeReaderParameter.TextureDetectionSensitivity, usbBarcodeReaderDto.TextureDetectionSensitivity },
-                    { BarcodeReaderParameter.BinarizationBlockSize, usbBarcodeReaderDto.BinarizationBlockSize },
-                    { BarcodeReaderParameter.ExpectedBarcodesCount, usbBarcodeReaderDto.ExpectedBarcodesCount },
-                    { BarcodeReaderParameter.DeblurLevel, usbBarcodeReaderDto.DeblurLevel },
-                    { BarcodeReaderParameter.LocalizationMode, usbBarcodeReaderDto.LocalizationMode },
-                    { BarcodeReaderParameter.IsUseTextFilterMode, usbBarcodeReaderDto.IsUseTextFilterMode },
-                    { BarcodeReaderParameter.IsUseRegionPredetectionMode, usbBarcodeReaderDto.IsUseRegionPredetectionMode },
-                    { BarcodeReaderParameter.ScaleDownThreshold, usbBarcodeReaderDto.ScaleDownThreshold },
-                    { BarcodeReaderParameter.GrayscaleTransformationMode, usbBarcodeReaderDto.GrayscaleTransformationMode },
-                    { BarcodeReaderParameter.ImagePreprocessingMode, usbBarcodeReaderDto.ImagePreprocessingMode },
-                    { BarcodeReaderParameter.MinResultConfidence, usbBarcodeReaderDto.MinResultConfidence },
-                    { BarcodeReaderParameter.RecognitionSkipFrames, usbBarcodeReaderDto.RecognitionSkipFrames },
-                    { BarcodeReaderParameter.ScalePercentage, usbBarcodeReaderDto.ScalePercentage }
+                    BarcodeFormats = barcodeFormat,
+                    RecognitionMode = (ScanMode)usbBarcodeReaderDto.RecognitionMode,
+                    TextureDetectionSensitivity = usbBarcodeReaderDto.TextureDetectionSensitivity,
+                    BinarizationBlockSize = usbBarcodeReaderDto.BinarizationBlockSize,
+                    ExpectedBarcodesCount = usbBarcodeReaderDto.ExpectedBarcodesCount,
+                    DeblurLevel = usbBarcodeReaderDto.DeblurLevel,
+                    LocalizationMode = (LocalizationMode)usbBarcodeReaderDto.LocalizationMode,
+                    UseTextFilter = usbBarcodeReaderDto.IsUseTextFilterMode,
+                    UseRegionPredetection = usbBarcodeReaderDto.IsUseRegionPredetectionMode,
+                    ScaleDownThreshold = usbBarcodeReaderDto.ScaleDownThreshold,
+                    GrayscaleTransformationMode = (GrayscaleTransformationMode)usbBarcodeReaderDto.GrayscaleTransformationMode,
+                    ImagePreprocessingMode = (ImagePreprocessingMode)usbBarcodeReaderDto.ImagePreprocessingMode,
+                    MinimumResultConfidence = usbBarcodeReaderDto.MinResultConfidence,
+                    RecognitionSkipFrames = usbBarcodeReaderDto.RecognitionSkipFrames,
+                    ScalePercentage = usbBarcodeReaderDto.ScalePercentage
                 };
 
                 await _cameraOperationGate.WaitAsync();
@@ -155,7 +154,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     }
 
                     var (key, value) =
-                        await _usbBarCodeReader.SetBarcodeReaderParameter(dictionary);
+                        await _usbBarCodeReader.ApplyBarcodeReaderSettingsAsync(settings);
                     if (!key)
                     {
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
@@ -177,25 +176,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         /// <summary>
         /// 将条码类型位标志转换为读码器格式位标志，不创建临时映射集合。
         /// </summary>
-        private static EnumBarcodeFormat GetBarcodeFormat(BarcodeType barcodeType)
+        private static SupportedBarcodeFormat GetBarcodeFormat(BarcodeType barcodeType)
         {
-            var barcodeFormat = (EnumBarcodeFormat)0;
+            var barcodeFormat = SupportedBarcodeFormat.None;
             if ((barcodeType & BarcodeType.QRCode) == BarcodeType.QRCode)
-                barcodeFormat |= EnumBarcodeFormat.BF_QR_CODE;
+                barcodeFormat |= SupportedBarcodeFormat.QrCode;
             if ((barcodeType & BarcodeType.MicroQR) == BarcodeType.MicroQR)
-                barcodeFormat |= EnumBarcodeFormat.BF_MICRO_QR;
+                barcodeFormat |= SupportedBarcodeFormat.MicroQr;
             if ((barcodeType & BarcodeType.Code128) == BarcodeType.Code128)
-                barcodeFormat |= EnumBarcodeFormat.BF_CODE_128;
+                barcodeFormat |= SupportedBarcodeFormat.Code128;
             if ((barcodeType & BarcodeType.Code39) == BarcodeType.Code39)
-                barcodeFormat |= EnumBarcodeFormat.BF_CODE_39;
+                barcodeFormat |= SupportedBarcodeFormat.Code39;
             if ((barcodeType & BarcodeType.Code93) == BarcodeType.Code93)
-                barcodeFormat |= EnumBarcodeFormat.BF_CODE_93;
+                barcodeFormat |= SupportedBarcodeFormat.Code93;
             if ((barcodeType & BarcodeType.CodeBar) == BarcodeType.CodeBar)
-                barcodeFormat |= EnumBarcodeFormat.BF_CODABAR;
+                barcodeFormat |= SupportedBarcodeFormat.Codabar;
             if ((barcodeType & BarcodeType.EAN13) == BarcodeType.EAN13)
-                barcodeFormat |= EnumBarcodeFormat.BF_EAN_13;
+                barcodeFormat |= SupportedBarcodeFormat.Ean13;
             if ((barcodeType & BarcodeType.EAN8) == BarcodeType.EAN8)
-                barcodeFormat |= EnumBarcodeFormat.BF_EAN_8;
+                barcodeFormat |= SupportedBarcodeFormat.Ean8;
             return barcodeFormat;
         }
 
@@ -657,7 +656,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                             }
                             using var font = new Font(FontFamily.GenericSerif, 15, FontStyle.Bold);
                             using var brush = new SolidBrush(Color.Red);
-                            g.DrawString($"{args?.RecognitionTime}ms", font, brush, 10, 10);
+                            g.DrawString($"{args?.RecognitionDurationMilliseconds}ms", font, brush, 10, 10);
                             EnqueueImage(thumbnail);
                             Debug.WriteLine($"{JsonConvert.SerializeObject(args?.BarCodes)}");
                         }

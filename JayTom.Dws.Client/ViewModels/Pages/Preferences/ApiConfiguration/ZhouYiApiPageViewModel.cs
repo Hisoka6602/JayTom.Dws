@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private ZhouYiApiModel _zhouYiApiInfo = new();
         private bool _isUploading;
         private string _barcode = string.Empty;
-        private double _weight;
+        private decimal _weight;
 
         public ZhouYiApiPageViewModel(ISettingsStore settingsStore,
             IProviderRegistry<IDataUploader> providerRegistry, IDialogService dialogService) : base(settingsStore)
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             set => SetProperty(ref _barcode, value);
         }
 
-        public double Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);
@@ -71,7 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new ZhouYiApiDto()
                 {
                     AppKey = ZhouYiApiInfo.AppKey,
-                    AppId = ZhouYiApiInfo.AppId,
+                    ApplicationCode = ZhouYiApiInfo.ApplicationCode,
                     NeedUpload = ZhouYiApiInfo.NeedUpload,
                     IsFstCode = ZhouYiApiInfo.IsFstCode,
                     TimeOut = ZhouYiApiInfo.TimeOut,
@@ -90,7 +90,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 ZhouYiApiInfo = new ZhouYiApiModel()
                 {
                     AppKey = settingsDto.AppKey,
-                    AppId = settingsDto.AppId,
+                    ApplicationCode = settingsDto.ApplicationCode,
                     NeedUpload = settingsDto.NeedUpload,
                     IsFstCode = settingsDto.IsFstCode,
                     TimeOut = settingsDto.TimeOut,
@@ -115,7 +115,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     await zhouYiApi.SetParameters(new ZhouYiApi.ApiParameters()
                     {
                         AppKey = ZhouYiApiInfo.AppKey,
-                        AppId = ZhouYiApiInfo.AppId,
+                        ApplicationCode = ZhouYiApiInfo.ApplicationCode,
                         NeedUpload = ZhouYiApiInfo.NeedUpload,
                         IsFstCode = ZhouYiApiInfo.IsFstCode,
                         TimeOut = ZhouYiApiInfo.TimeOut,

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using JayTom.Dws.Interface;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
+using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {
@@ -295,27 +295,27 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>
         /// 重量
         /// </summary>
-        public float Weight { get; set; }
+        public decimal Weight { get; set; }
 
         /// <summary>
         /// 长度
         /// </summary>
-        public float Length { get; set; }
+        public decimal Length { get; set; }
 
         /// <summary>
         /// 宽度
         /// </summary>
-        public float Width { get; set; }
+        public decimal Width { get; set; }
 
         /// <summary>
         /// 高度
         /// </summary>
-        public float Height { get; set; }
+        public decimal Height { get; set; }
 
         /// <summary>
         /// 体积
         /// </summary>
-        public float Volume { get; set; }
+        public decimal Volume { get; set; }
 
         /// <summary>
         /// Ocr三段码信息
@@ -325,7 +325,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>
         /// Api响应内容
         /// </summary>
-        public UploadResponse ApiResponse { get; set; } = new();
+        public JayTom.Dws.Interface.UploadResponse ApiResponse { get; set; } = new();
 
         /// <summary>
         /// 格口Id

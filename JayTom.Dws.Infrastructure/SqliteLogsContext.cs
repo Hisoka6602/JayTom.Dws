@@ -12,7 +12,13 @@ namespace JayTom.Dws.Infrastructure {
 
         public SqliteLogsContext(DbContextOptions<SqliteLogsContext> options) : base(options) {
             SqliteDatabaseInitializer.EnsureInitialized(
-                this, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClientLogs.db"));
+                this, SqliteDatabaseInitializer.ResolveDatabasePath(this, "ClientLogs.db"));
+        }
+
+        /// <summary>保持既有 SQLite REAL 列结构，同时在业务模型中使用定点数。</summary>
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) {
+            configurationBuilder.Properties<decimal>()
+                .HaveColumnType("REAL");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {

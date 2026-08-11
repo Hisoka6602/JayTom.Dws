@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using RTools_NTS.Util;
@@ -16,16 +16,16 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         private static bool _isConnected = false;
         private static bool _autoReconnect;
         private static bool _isReconnecting = true;
-        private static string _connectionId = string.Empty;
+        private static string _connectionIdentifier = string.Empty;
 
         public bool IsConnected {
             get => _isConnected;
             private set => _isConnected = value;
         }
 
-        public string ConnectionId {
-            get => _connectionId;
-            private set => _connectionId = value;
+        public string ConnectionIdentifier {
+            get => _connectionIdentifier;
+            private set => _connectionIdentifier = value;
         }
 
         public bool AutoReconnect {
@@ -60,7 +60,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
                 RegisterMethod(_hubConnection, "Exit");
                 RegisterMethod(_hubConnection, "SyncSettingsInfo");
                 await _hubConnection?.StartAsync(token)!;
-                ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
+                ConnectionIdentifier = _hubConnection?.ConnectionId ?? string.Empty;
                 IsConnected = true;
             }
             catch (Exception e) {
@@ -101,9 +101,9 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
                 await Task.Delay(delayTime, token);
                 await _hubConnection?.StartAsync(token)!;
 
-                ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
+                ConnectionIdentifier = _hubConnection?.ConnectionId ?? string.Empty;
                 IsConnected = true;
-                await OnReconnected($"重连成功,ConnectionId:{ConnectionId},时间:{DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                await OnReconnected($"重连成功,ConnectionIdentifier:{ConnectionIdentifier},时间:{DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 return true;
             }
             catch (Exception e) {
@@ -193,7 +193,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
                 if (IsConnected && _hubConnection is not null) {
                     await _hubConnection.SendCoreAsync("SyncSettingsInfo",
                      [
-                         ConnectionId,
+                         ConnectionIdentifier,
                         settingsName,
                         message
                      ]);
@@ -250,7 +250,7 @@ namespace JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub {
         protected virtual async Task OnReconnected(string? arg) {
             NLog.LogManager.GetCurrentClassLogger().Error($"重连成功:id={_hubConnection.ConnectionId}");
             IsConnected = true;
-            ConnectionId = _hubConnection?.ConnectionId ?? string.Empty;
+            ConnectionIdentifier = _hubConnection?.ConnectionId ?? string.Empty;
             var handlers = Reconnected;
             if (handlers is null) {
                 return;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -161,6 +161,6 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 条码时间戳
         /// </summary>
-        public long BarcodeTimestamp { get; set; }
+        public long PackageTimestampMilliseconds { get; set; }
     }
 }

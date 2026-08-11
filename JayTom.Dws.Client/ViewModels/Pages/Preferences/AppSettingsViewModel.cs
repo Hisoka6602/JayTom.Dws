@@ -60,7 +60,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     IconFont = new IconInfoModel()
                     {
                         IconFont = "pack://application:,,,/Fonts/#iconfont",
-                        IconCode = "\xe90f",
+                        IconCode = "\xe90D",
                         IconSize = 25
                     },
                     Description = "授权信息",

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -29,7 +29,7 @@ namespace JayTom.Dws.Interface.ttx {
                             Url = configuration["Url"] ?? string.Empty,
                             TimeOut = Convert.ToInt32(configuration["TimeOut"]),
                             WarehouseCode = configuration["WarehouseCode"] ?? string.Empty,
-                            DeviceId = configuration["DeviceId"] ?? string.Empty,
+                            DeviceCode = configuration["DeviceId"] ?? string.Empty,
                             Api = configuration["Api"] ?? string.Empty,
                         };
                     }
@@ -42,8 +42,8 @@ namespace JayTom.Dws.Interface.ttx {
             }
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -51,7 +51,7 @@ namespace JayTom.Dws.Interface.ttx {
             var isSuccess = false;
             var data = new {
                 warehouseCode = ApiParameters?.WarehouseCode,
-                deviceId = ApiParameters?.DeviceId,
+                deviceId = ApiParameters?.DeviceCode,
                 waybillCode = barcode,
                 weight = Math.Round(Convert.ToDecimal(weight), 3),
             };
@@ -108,7 +108,7 @@ namespace JayTom.Dws.Interface.ttx {
                     ExceptionMsg = exceptionMsg ?? string.Empty,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = ApiParameters?.Url ?? string.Empty,
@@ -119,8 +119,8 @@ namespace JayTom.Dws.Interface.ttx {
             return response;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             UploadResponse response;
             var resultContent = string.Empty;
@@ -128,7 +128,7 @@ namespace JayTom.Dws.Interface.ttx {
             var isSuccess = false;
             var data = new {
                 warehouseCode = ApiParameters?.WarehouseCode,
-                deviceId = ApiParameters?.DeviceId,
+                deviceId = ApiParameters?.DeviceCode,
                 waybillCode = barcode,
                 weight = Math.Round(Convert.ToDecimal(weight), 3),
             };
@@ -185,7 +185,7 @@ namespace JayTom.Dws.Interface.ttx {
                     ExceptionMsg = exceptionMsg ?? string.Empty,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = ApiParameters?.Url ?? string.Empty,
@@ -201,7 +201,7 @@ namespace JayTom.Dws.Interface.ttx {
                 this.ApiParameters = new ApiParameter() {
                     Api = param.Api,
                     WarehouseCode = param.WarehouseCode,
-                    DeviceId = param.DeviceId,
+                    DeviceCode = param.DeviceCode,
                     TimeOut = param.TimeOut,
                     Url = param.Url,
                 };
@@ -212,8 +212,8 @@ namespace JayTom.Dws.Interface.ttx {
             }
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return Task.CompletedTask;
         }
@@ -235,7 +235,7 @@ namespace JayTom.Dws.Interface.ttx {
             /// <summary>
             /// 设备Id
             /// </summary>
-            public string DeviceId { get; set; } = "abc";
+            public string DeviceCode { get; set; } = "abc";
 
             /// <summary>
             /// 超时

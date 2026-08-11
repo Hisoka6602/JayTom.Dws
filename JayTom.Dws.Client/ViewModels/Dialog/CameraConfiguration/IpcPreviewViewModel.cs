@@ -70,7 +70,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                     ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select(s =>
                         new PreviewViewChannelInfo
                         {
-                            ChannelId = s,
+                            ChannelNumber = s,
                             DisplayName = $"通道{s}",
                             IsChecked = false
                         }).ToList());
@@ -92,7 +92,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
             var itemInfos = NvrPreviewViewItems.Where(w => w.VideoFrame != null).ToList();
             foreach (var itemInfo in itemInfos)
             {
-                _baseDaHuatech?.StopRealtimePreview(IpcNvrItemInfo.SerialNumber, itemInfo.ChannelId);
+                _baseDaHuatech?.StopRealtimePreview(IpcNvrItemInfo.SerialNumber, itemInfo.ChannelNumber);
                 itemInfo.Dispose();
             }
             NvrPreviewViewItems.Clear();
@@ -116,50 +116,50 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 {
                     var previewViewItemInfo = new NvrPreviewViewItemInfo()
                     {
-                        ChannelId = obj.ChannelId,
+                        ChannelNumber = obj.ChannelNumber,
                         IncreaseZoomCommand = new DelegateCommand<object>(sub =>
                         {
                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                             _baseDaHuatech?.AdjustZoomContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
-                                obj.ChannelId,
+                                obj.ChannelNumber,
                                 true, isStart);
                         }),
                         DecreaseZoomCommand = new DelegateCommand<object>(sub =>
                         {
                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                             _baseDaHuatech?.AdjustZoomContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
-                                obj.ChannelId,
+                                obj.ChannelNumber,
                                 false, isStart);
                         }),
                         IncreaseFocusCommand = new DelegateCommand<object>(sub =>
                         {
                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                             _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
-                                obj.ChannelId,
+                                obj.ChannelNumber,
                                 true, isStart);
                         }),
                         DecreaseFocusCommand = new DelegateCommand<object>(sub =>
                         {
                             var isStart = sub.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
                             _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(IpcNvrItemInfo.SerialNumber,
-                                obj.ChannelId,
+                                obj.ChannelNumber,
                                 false, isStart);
                         }),
                         AutoFocusCommand = new DelegateCommand<object>(sub =>
                         {
                             _baseDaHuatech?.AutoFocusAsync(IpcNvrItemInfo.SerialNumber,
-                                obj.ChannelId);
+                                obj.ChannelNumber);
                         }),
                     };
                     if (previewViewItemInfo.VideoFrame is not null)
                     {
-                        _baseDaHuatech.RegisterRealtimePreviewCallback(IpcNvrItemInfo.SerialNumber, obj.ChannelId, previewViewItemInfo.RealtimePreviewCallback);
+                        _baseDaHuatech.RegisterRealtimePreviewCallback(IpcNvrItemInfo.SerialNumber, obj.ChannelNumber, previewViewItemInfo.RealtimePreviewCallback);
 
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             NvrPreviewViewItems.Add(previewViewItemInfo);
                         });
-                        var (b, s) = await _baseDaHuatech.StartRealTimePreview(IpcNvrItemInfo.SerialNumber, obj.ChannelId);
+                        var (b, s) = await _baseDaHuatech.StartRealTimePreview(IpcNvrItemInfo.SerialNumber, obj.ChannelNumber);
                         if (b)
                         {
                             previewViewItemInfo.IsShow = true;
@@ -168,11 +168,11 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 }
                 else
                 {
-                    var info = NvrPreviewViewItems.FirstOrDefault(f => f.ChannelId == obj.ChannelId);
+                    var info = NvrPreviewViewItems.FirstOrDefault(f => f.ChannelNumber == obj.ChannelNumber);
                     if (info is not null)
                     {
                         info.IsShow = false;
-                        var (b, s) = await _baseDaHuatech.StopRealtimePreview(IpcNvrItemInfo.SerialNumber, obj.ChannelId);
+                        var (b, s) = await _baseDaHuatech.StopRealtimePreview(IpcNvrItemInfo.SerialNumber, obj.ChannelNumber);
                         NvrPreviewViewItems.Remove(info);
                         info.Dispose();
                     }
@@ -198,6 +198,6 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         /// <summary>
         /// 通道
         /// </summary>
-        public int ChannelId { get; set; }
+        public int ChannelNumber { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.OcrSettingsModel
 {
@@ -11,8 +11,8 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel
         private bool _isShowSenderInfo;
         private int _recognitionTimeout;
         private string _modelFilePath = string.Empty;
-        private float _confidenceThreshold;
-        private float _rectangleScale;
+        private decimal _confidenceThreshold;
+        private decimal _rectangleScale;
         private string _cropImagePath = string.Empty;
         private bool _isSaveCropImage;
         private bool _isSecondConfirmationEnabled;
@@ -83,7 +83,7 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel
         /// <summary>
         /// 置信度
         /// </summary>
-        public float ConfidenceThreshold
+        public decimal ConfidenceThreshold
         {
             get => _confidenceThreshold;
             set => SetProperty(ref _confidenceThreshold, value);
@@ -92,7 +92,7 @@ namespace JayTom.Dws.Client.Models.OcrSettingsModel
         /// <summary>
         /// 截图扩充倍数
         /// </summary>
-        public float RectangleScale
+        public decimal RectangleScale
         {
             get => _rectangleScale;
             set => SetProperty(ref _rectangleScale, value);

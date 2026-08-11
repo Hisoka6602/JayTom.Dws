@@ -51,7 +51,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         {
             var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
             _baseDaHuatech?.AdjustZoomContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
-                NvrPreviewViewInfo.ChannelId,
+                NvrPreviewViewInfo.ChannelNumber,
                 true, isStart);
         }
 
@@ -61,7 +61,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         {
             var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
             _baseDaHuatech?.AdjustZoomContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
-                NvrPreviewViewInfo.ChannelId,
+                NvrPreviewViewInfo.ChannelNumber,
                 false, isStart);
         }
 
@@ -71,7 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         {
             var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
             _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
-                NvrPreviewViewInfo.ChannelId,
+                NvrPreviewViewInfo.ChannelNumber,
                 true, isStart);
         }
 
@@ -81,7 +81,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         {
             var isStart = obj.ToString()?.Equals("Stop", StringComparison.CurrentCultureIgnoreCase) == true;
             _baseDaHuatech?.AdjustPtzFocusContinuouslyAsync(NvrPreviewViewInfo.SerialNumber,
-                NvrPreviewViewInfo.ChannelId,
+                NvrPreviewViewInfo.ChannelNumber,
                 false, isStart);
         }
 
@@ -90,7 +90,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         private void AutoFocusDelegate(object obj)
         {
             _baseDaHuatech?.AutoFocusAsync(NvrPreviewViewInfo.SerialNumber,
-                NvrPreviewViewInfo.ChannelId);
+                NvrPreviewViewInfo.ChannelNumber);
         }
 
         public bool CanCloseDialog()
@@ -105,7 +105,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
             {
                 if (_baseDaHuatech is not null)
                 {
-                    var (key, value) = await _baseDaHuatech.StopRealtimePreview(NvrPreviewViewInfo.SerialNumber, NvrPreviewViewInfo.ChannelId);
+                    var (key, value) = await _baseDaHuatech.StopRealtimePreview(NvrPreviewViewInfo.SerialNumber, NvrPreviewViewInfo.ChannelNumber);
 
                     NvrPreviewViewInfo?.Dispose();
                 }
@@ -122,16 +122,16 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                     //打开
                     NvrPreviewViewInfo = new NvrPreviewViewItemInfo()
                     {
-                        ChannelId = info.Channel,
+                        ChannelNumber = info.Channel,
                         DisplayName = info.DeviceName,
                         SerialNumber = info.SerialNumber,
                     };
                     if (_baseDaHuatech is not null)
                     {
                         _baseDaHuatech.RegisterRealtimePreviewCallback(NvrPreviewViewInfo.SerialNumber,
-                            NvrPreviewViewInfo.ChannelId, NvrPreviewViewInfo.RealtimePreviewCallback);
+                            NvrPreviewViewInfo.ChannelNumber, NvrPreviewViewInfo.RealtimePreviewCallback);
 
-                        var (key, value) = await _baseDaHuatech.StartRealTimePreview(NvrPreviewViewInfo.SerialNumber, NvrPreviewViewInfo.ChannelId);
+                        var (key, value) = await _baseDaHuatech.StartRealTimePreview(NvrPreviewViewInfo.SerialNumber, NvrPreviewViewInfo.ChannelNumber);
                         if (key)
                         {
                             NvrPreviewViewInfo.IsShow = true;

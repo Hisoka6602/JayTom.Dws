@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,11 +8,11 @@ namespace JayTom.Dws.Domain.Converters {
 
     public static class UnitConverter {
 
-        public static float WeightConverter1(this float weight, WeightUnit unit) {
+        public static decimal WeightConverter1(this decimal weight, WeightUnit unit) {
             return unit switch {
                 WeightUnit.Gram => weight * 1000,
                 WeightUnit.Kilogram => weight,
-                WeightUnit.Pound => (float)(weight * 2.20462),
+                WeightUnit.Pound => weight * 2.20462m,
                 _ => 0
             };
         }
@@ -23,7 +23,7 @@ namespace JayTom.Dws.Domain.Converters {
         /// <param name="volume"></param>
         /// <param name="unit"></param>
         /// <returns></returns>
-        public static float VolumeConverter1(this float volume, VolumeUnit unit) {
+        public static decimal VolumeConverter1(this decimal volume, VolumeUnit unit) {
             return unit switch {
                 VolumeUnit.Centimeter => volume / 10,
                 VolumeUnit.Meter => volume / 1000,
@@ -32,11 +32,11 @@ namespace JayTom.Dws.Domain.Converters {
             };
         }
 
-        public static double WeightConverter1(this double weight, WeightUnit unit) {
+        private static decimal LegacyWeightConverter(decimal weight, WeightUnit unit) {
             return unit switch {
                 WeightUnit.Gram => weight * 1000,
                 WeightUnit.Kilogram => weight,
-                WeightUnit.Pound => weight * 2.20462,
+                WeightUnit.Pound => weight * 2.20462m,
                 _ => 0
             };
         }
@@ -47,7 +47,7 @@ namespace JayTom.Dws.Domain.Converters {
         /// <param name="volume"></param>
         /// <param name="unit"></param>
         /// <returns></returns>
-        public static double VolumeConverter1(this double volume, VolumeUnit unit) {
+        private static decimal LegacyVolumeConverter(decimal volume, VolumeUnit unit) {
             return unit switch {
                 VolumeUnit.Centimeter => volume / 10,
                 VolumeUnit.Meter => volume / 1000,

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using ThridLibray;
@@ -265,15 +265,15 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             cancellation.ThrowIfCancellationRequested();
             _device?.TriggerSet?.ExecuteSoftwareTrigger();
             return Task.CompletedTask;
         }
 
-        public async Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public async Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             await Task.Delay(delay, cancellation).ConfigureAwait(false);
-            await TakePhotoAsync(barcode, barcodeTimestamp, cancellation).ConfigureAwait(false);
+            await TakePhotoAsync(barcode, packageTimestampMilliseconds, cancellation).ConfigureAwait(false);
         }
 
         public int TakePhotoDelay { get; set; }
@@ -333,10 +333,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 var barcodeInfo = new List<DaHuaBarcodeInfo>();
                 var chunkData = grabbedRawData.ChunkData;
                 for (var i = 0; i < chunkData.ChunkCount; i++) {
-                    uint chunkId = 0;
+                    uint chunkNumber = 0;
                     var vecChunkInfos = new List<string>();
-                    chunkData.GetChunkDataByIndex((uint)i, ref chunkId, ref vecChunkInfos);
-                    ParseChunkData(chunkId, vecChunkInfos, scanTime, barcodeInfo);
+                    chunkData.GetChunkDataByIndex((uint)i, ref chunkNumber, ref vecChunkInfos);
+                    ParseChunkData(chunkNumber, vecChunkInfos, scanTime, barcodeInfo);
                 }
 
                 var noReadConsumer = barcodeInfo.Count == 0 && IsUseTriggerMode &&

@@ -21,7 +21,7 @@ using JayTom.Dws.Nvr.Nvr;
 using JayTom.Dws.Interface;
 using System.Globalization;
 using System.Windows.Media;
-using JayTom.Dws.Plugin.Ftp;
+using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 using JayTom.Dws.Client.Views;
@@ -128,7 +128,7 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
 namespace JayTom.Dws.Client.Composition
 {
     /// <summary>集中维护视图与视图模型的显式映射。</summary>
-    internal static class ViewModelMappingRegistration
+    public static class ViewModelMappingRegistration
     {
         /// <summary>注册全部显式视图模型映射。</summary>
         public static void Register()

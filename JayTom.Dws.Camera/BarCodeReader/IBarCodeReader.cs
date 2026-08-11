@@ -18,7 +18,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         /// <param name="bitmap"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<BarcodeResult> ReadFromFrame(Bitmap bitmap, CancellationToken token = default);
+        Task<BarcodeResult> ReadFromFrameAsync(Bitmap bitmap, CancellationToken token = default);
 
         /// <summary>
         /// 回调条码事件
@@ -35,8 +35,9 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         /// 设置读码参数
         /// </summary>
         /// <param name="parameters">读码参数</param>
-        Task<KeyValuePair<bool, string>> SetBarcodeReaderParameter(
-            Dictionary<BarcodeReaderParameter, object> parameters);
+        Task<KeyValuePair<bool, string>> ApplySettingsAsync(
+            BarcodeReaderSettings settings,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异常回调事件
@@ -46,7 +47,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         /// <summary>
         /// 初始化读码器
         /// </summary>
-        Task<bool> Initialize();
+        Task<bool> InitializeAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取一个值，该值指示读码器是否已初始化
@@ -77,7 +78,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         /// <summary>
         /// 识别耗时
         /// </summary>
-        public long RecognitionTime { get; set; }
+        public long RecognitionDurationMilliseconds { get; set; }
     }
 
     public class BarcodeInfo {

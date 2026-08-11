@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -12,7 +12,7 @@ namespace JayTom.Dws.Domain.Model {
         /// <summary>
         /// 图片
         /// </summary>
-        public Image? Image { get; set; }
+        public ImageHandle? Image { get; set; }
 
         /// <summary>
         /// 相机序列号
@@ -32,6 +32,7 @@ namespace JayTom.Dws.Domain.Model {
         /// <summary>
         /// 条码时间戳
         /// </summary>
-        public long BarcodeTimestamp { get; set; }
+        [Newtonsoft.Json.JsonProperty("BarcodeTimestamp")]
+        public long PackageTimestampMilliseconds { get; set; }
     }
 }

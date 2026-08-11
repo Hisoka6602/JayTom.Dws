@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
@@ -47,7 +47,7 @@ namespace JayTom.Dws.Data.Package {
         /// 耗时(秒)
         /// </summary>
         [Column("DurationInSeconds")]
-        public double DurationInSeconds { get; set; }
+        public decimal DurationInSeconds { get; set; }
 
         /// <summary>
         /// 接口参数

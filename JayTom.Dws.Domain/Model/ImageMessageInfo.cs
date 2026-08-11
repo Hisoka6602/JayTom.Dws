@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
-using System.Drawing;
+using JayTom.Dws.Abstractions.Imaging;
 using JayTom.Dws.Domain.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -12,16 +12,16 @@ namespace JayTom.Dws.Domain.Model {
     /// 存图参数
     /// </summary>
     public class ImageMessageInfo {
-        public Image? Image { get; set; }
+        public ImageHandle? Image { get; set; }
 
         public SaveImageType Type { get; set; }
         public string BarCode { get; set; } = string.Empty;
-        public float Weight { get; set; }
+        public decimal Weight { get; set; }
         public DateTime ScanTime { get; set; }
-        public float Length { get; set; }
-        public float Width { get; set; }
-        public float Height { get; set; }
-        public float Volume { get; set; }
+        public decimal Length { get; set; }
+        public decimal Width { get; set; }
+        public decimal Height { get; set; }
+        public decimal Volume { get; set; }
         public string CameraSerialNumber { get; set; } = string.Empty;
 
         /// <summary>

@@ -24,6 +24,9 @@
     <ProjectReference Include="..\JayTom.Dws.Application\JayTom.Dws.Application.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Integrations.Contracts\JayTom.Dws.Integrations.Contracts.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Plugin.Abstractions\JayTom.Dws.Plugin.Abstractions.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
 </Project>

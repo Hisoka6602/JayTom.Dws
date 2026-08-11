@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using JayTom.Dws.Data.Package;
 
@@ -9,10 +9,10 @@ namespace JayTom.Dws.Client.Models.DataModels
     {
         private SourceType _sourceType;
         private string _originalText = string.Empty;
-        private double _formattedLength;
-        private double _formattedWidth;
-        private double _formattedHeight;
-        private double _formattedVolume;
+        private decimal _formattedLength;
+        private decimal _formattedWidth;
+        private decimal _formattedHeight;
+        private decimal _formattedVolume;
         private DateTime? _createTime;
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 格式化后的长
         /// </summary>
-        public double FormattedLength
+        public decimal FormattedLength
         {
             get => _formattedLength;
             set => SetProperty(ref _formattedLength, value);
@@ -45,7 +45,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 格式化后的宽
         /// </summary>
-        public double FormattedWidth
+        public decimal FormattedWidth
         {
             get => _formattedWidth;
             set => SetProperty(ref _formattedWidth, value);
@@ -54,7 +54,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 格式化后的高
         /// </summary>
-        public double FormattedHeight
+        public decimal FormattedHeight
         {
             get => _formattedHeight;
             set => SetProperty(ref _formattedHeight, value);
@@ -63,7 +63,7 @@ namespace JayTom.Dws.Client.Models.DataModels
         /// <summary>
         /// 格式化的体积
         /// </summary>
-        public double FormattedVolume
+        public decimal FormattedVolume
         {
             get => _formattedVolume;
             set => SetProperty(ref _formattedVolume, value);

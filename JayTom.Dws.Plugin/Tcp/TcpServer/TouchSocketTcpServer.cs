@@ -347,7 +347,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         /// <summary>
         /// 处理指定客户端的 TCP 粘包和拆包。
         /// </summary>
-        private void HandleReceivedBytes(string clientId, byte[] buffer, int length) {
+        private void HandleReceivedBytes(string clientKey, byte[] buffer, int length) {
             if (length <= 0) {
                 return;
             }
@@ -357,7 +357,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                 frames.Add(buffer.AsSpan(0, length).ToArray());
             }
             else {
-                var state = _receiveBuffers.GetOrAdd(clientId, static _ => new ReceiveBufferState());
+                var state = _receiveBuffers.GetOrAdd(clientKey, static _ => new ReceiveBufferState());
                 lock (state.SyncRoot) {
                     for (var index = 0; index < length; index++) {
                         state.Buffer.Add(buffer[index]);

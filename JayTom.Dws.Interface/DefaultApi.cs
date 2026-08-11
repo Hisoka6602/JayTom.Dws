@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -22,14 +22,14 @@ namespace JayTom.Dws.Interface {
             _httpClientFactory = httpClientFactory;
         }
 
-        public Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
+        public Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return UploadData(barcode, weight, DateTime.Now, length, width, height, volume, imageInfo,
                 panoramaImageInfos, other, token);
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default, object? other = null,
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
@@ -39,22 +39,22 @@ namespace JayTom.Dws.Interface {
             string data;
             if (!_parameters.IsUploadScanImage) {
                 if (_parameters.IsUseJsonUpload) {
-                    data = ParseJsonTemplate(_parameters.JsonTemplate, barcode, (float)weight, scanTime,
-                        (float)length, (float)width, (float)height,
-                        (float)volume, "");
+                    data = ParseJsonTemplate(_parameters.JsonTemplate, barcode, (decimal)weight, scanTime,
+                        (decimal)length, (decimal)width, (decimal)height,
+                        (decimal)volume, "");
                 }
                 else {
                     var list = _parameters.StringTemplate.Split(",").Select(s =>
-                        ParseTemplate(s, barcode, (float)weight, scanTime,
-                            (float)length, (float)width, (float)height,
-                            (float)volume, "")).ToList();
+                        ParseTemplate(s, barcode, (decimal)weight, scanTime,
+                            (decimal)length, (decimal)width, (decimal)height,
+                            (decimal)volume, "")).ToList();
                     data = string.Join(",", list);
                 }
             }
             else {
-                data = ParseJsonTemplate(_parameters.JsonTemplate, barcode, (float)weight, scanTime,
-                    (float)length, (float)width, (float)height,
-                    (float)volume, "");
+                data = ParseJsonTemplate(_parameters.JsonTemplate, barcode, (decimal)weight, scanTime,
+                    (decimal)length, (decimal)width, (decimal)height,
+                    (decimal)volume, "");
             }
 
             var requestTime = DateTime.Now;
@@ -109,7 +109,7 @@ namespace JayTom.Dws.Interface {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(_parameters),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,
                     RequestUrl = _parameters.Url,
@@ -127,8 +127,8 @@ namespace JayTom.Dws.Interface {
             return Task.FromResult(new KeyValuePair<bool, string>(true, string.Empty));
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return UploadData(barcode, weight, scanTime, length, width, height, volume, imageInfo,
                 panoramaImageInfos, other, token);
@@ -146,13 +146,13 @@ namespace JayTom.Dws.Interface {
 
             using var formData = new MultipartFormDataContent();
             if (imageInfo?.Image is not null) {
-                formData.Add(ImageToStreamContent(imageInfo.Image, "barcodeImage",
+                formData.Add(ImageToStreamContent(imageInfo.Image.As<Image>(), "barcodeImage",
                     $"{imageInfo.CameraSerialNumber}_{imageInfo.CameraCustomName}.jpg"));
             }
 
             foreach (var info in panoramaImageInfos ?? []) {
                 if (info?.Image is not null) {
-                    formData.Add(ImageToStreamContent(info.Image, "panoramaImages",
+                    formData.Add(ImageToStreamContent(info.Image.As<Image>(), "panoramaImages",
                         $"{info.CameraSerialNumber}_{info.CameraCustomName}.jpg"));
                 }
             }
@@ -166,8 +166,8 @@ namespace JayTom.Dws.Interface {
             return Task.CompletedTask;
         }
 
-        public string ParseTemplate(string source, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
+        public string ParseTemplate(string source, string barCode, decimal weight, DateTime scanTime, decimal length,
+            decimal width, decimal height, decimal volume, string cameraSerialNumber, bool isWatermark = false) {
             return source switch {
                 "{BarCode}" => $"{(isWatermark ? "BarCode:" : string.Empty)}{barCode}",
                 "{Weight}" => $"{(isWatermark ? "Weight:" : string.Empty)}{weight.ToString(CultureInfo.InvariantCulture)}",
@@ -186,8 +186,8 @@ namespace JayTom.Dws.Interface {
             };
         }
 
-        public string ParseJsonTemplate(string jsonTemplate, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false) {
+        public string ParseJsonTemplate(string jsonTemplate, string barCode, decimal weight, DateTime scanTime, decimal length,
+            decimal width, decimal height, decimal volume, string cameraSerialNumber, bool isWatermark = false) {
             var result = jsonTemplate.Replace("BarCodeValue", EscapeJsonString(barCode), StringComparison.Ordinal)
                   .Replace("WeightValue", weight.ToString(CultureInfo.InvariantCulture))
                   .Replace("ScanTimeValue", scanTime.ToString("yyyy-MM-dd HH:mm:ss"))

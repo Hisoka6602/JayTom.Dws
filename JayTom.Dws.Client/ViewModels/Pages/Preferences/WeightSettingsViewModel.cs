@@ -85,11 +85,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private WeightAccessInfoMode _selectedWeightAccess = new();
         private WeightModeInfoModel _selectWeightMode = new();
         private bool _isRealtimeDataEnabled;
-        private float _realtimeWeight;
+        private decimal _realtimeWeight;
         private bool _isLoaded;
         private string _receivedData = string.Empty;
         private string _weightSourceContent = string.Empty;
-        private float _parsedWeight;
+        private decimal _parsedWeight;
         private ObservableCollection<ScaleCommunicationMode> _scaleCommunicationModeItem = new(Enum.GetValues(typeof(ScaleCommunicationMode)).Cast<ScaleCommunicationMode>());
         private ObservableCollection<Parity> _parityItems = new(Enum.GetValues(typeof(Parity)).Cast<Parity>());
         private ObservableCollection<StopBits> _stopBitsItems = new(Enum.GetValues(typeof(StopBits)).Cast<StopBits>());
@@ -100,13 +100,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         {
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
-            _dynamicScale.StabledWeight += async delegate (object? sender, float f)
+            _dynamicScale.StabledWeight += async (sender, f) =>
             {
                 if (SelectWeightMode.Value == WeightMode.Dynamic)
                 {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        RealtimeWeight = f;
+                        RealtimeWeight = Convert.ToDecimal(f);
                     });
                 }
             };
@@ -125,13 +125,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     }, DispatcherPriority.Background);
                 }
             };
-            _staticScale.CurrentWeight += async delegate (object? sender, float f)
+            _staticScale.CurrentWeight += async (sender, f) =>
             {
                 if (SelectWeightMode.Value == WeightMode.Static)
                 {
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        RealtimeWeight = f;
+                        RealtimeWeight = Convert.ToDecimal(f);
                     });
                 }
             };
@@ -299,7 +299,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// <summary>
         /// 实时重量
         /// </summary>
-        public float RealtimeWeight
+        public decimal RealtimeWeight
         {
             get => _realtimeWeight;
             set => SetProperty(ref _realtimeWeight, value);
@@ -317,7 +317,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// <summary>
         /// 解析后的重量
         /// </summary>
-        public float ParsedWeight
+        public decimal ParsedWeight
         {
             get => _parsedWeight;
             set => SetProperty(ref _parsedWeight, value);
@@ -479,9 +479,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         BaudRate = WeightSettingsInfo.Connection.BaudRate,
                         DataBits = WeightSettingsInfo.Connection.DataBits,
                         DataFormat = WeightSettingsInfo.Connection.DataFormat,
-                        Parity = WeightSettingsInfo.Connection.Parity,
+                        Parity = (JayTom.Dws.Abstractions.Devices.SerialParity)WeightSettingsInfo.Connection.Parity,
                         PortName = WeightSettingsInfo.Connection.PortName,
-                        StopBits = WeightSettingsInfo.Connection.StopBits
+                        StopBits = (JayTom.Dws.Abstractions.Devices.SerialStopBits)WeightSettingsInfo.Connection.StopBits
                     },
                     TcpSettingsInfo = new TcpSettingsInfo()
                     {
@@ -568,9 +568,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             BaudRate = settingsDto.Connection.BaudRate,
                             DataBits = settingsDto.Connection.DataBits,
                             DataFormat = settingsDto.Connection.DataFormat,
-                            Parity = settingsDto.Connection.Parity,
+                            Parity = (Parity)settingsDto.Connection.Parity,
                             PortName = settingsDto.Connection.PortName,
-                            StopBits = settingsDto.Connection.StopBits
+                            StopBits = (StopBits)settingsDto.Connection.StopBits
                         },
                         TcpSettingsInfo = new TcpSettingsInfoModel()
                         {
@@ -672,7 +672,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             var rightResult = right.Value.Trim();
                             //组合判断是否反转
                             var weightStr = $"{leftResult}.{rightResult}";
-                            if (Math.Abs(Convert.ToSingle(weightStr) - ParsedWeight) == 0)
+                            if (decimal.Abs(Convert.ToDecimal(weightStr) - ParsedWeight) == 0)
                             {
                                 //不用反转
                                 isReversed = false;
@@ -680,7 +680,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             else
                             {
                                 var reversedString = new string([.. weightStr.Reverse()]);
-                                if (Math.Abs(Convert.ToSingle(reversedString) - ParsedWeight) == 0)
+                                if (decimal.Abs(Convert.ToDecimal(reversedString) - ParsedWeight) == 0)
                                 {
                                     isReversed = true;
                                 }

@@ -47,8 +47,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         private TriggerModeDisplay _triggerMode = new();
         private int _minSyncTime;
         private int _maxSyncTime;
-        private double _minLength;
-        private double _maxLength;
+        private decimal _minLength;
+        private decimal _maxLength;
         /// <summary>
         /// 相机绑定事件处理器，保存实例以便页面卸载时退订。
         /// </summary>
@@ -180,7 +180,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         /// <summary>
         /// 最小长度
         /// </summary>
-        public double MinLength
+        public decimal MinLength
         {
             get => _minLength;
             set => SetProperty(ref _minLength, value);
@@ -189,7 +189,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         /// <summary>
         /// 最大长度
         /// </summary>
-        public double MaxLength
+        public decimal MaxLength
         {
             get => _maxLength;
             set => SetProperty(ref _maxLength, value);
@@ -262,7 +262,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var delete = await _volumeCameraConfigRepository.Delete(model);
                     if (delete)
                     {
-                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel()
+                        var (key, value) = await _deviceService.UnbindCameraAsync(new CameraFinderItemInfoModel()
                         {
                             BoundType = CameraBindingType.VolumeCamera,
                             ConnectionType = obj.ConnectionType,
@@ -315,14 +315,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var update = await _volumeCameraConfigRepository.Update(infoModel);
                     if (update)
                     {
-                        var (key, value) = await _deviceService.OnCameraParametersModified(new List<CameraParametersModifiedEventArgs>()
-                        {
-                            new()
-                            {
-                                Type = CameraBindingType.VolumeCamera,
-                                Parameters = infoModel
-                            }
-                        });
+                        var (key, value) = await _deviceService.ModifyCameraParametersAsync(
+                            [new VolumeCameraParametersModifiedEventArgs(infoModel)]);
                         isSuccess = key;
                     }
                 }
@@ -364,13 +358,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var updateRange = await _volumeCameraConfigRepository.UpdateRange(infoModels);
                     if (updateRange)
                     {
-                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs
-                        {
-                            Type = CameraBindingType.VolumeCamera,
-                            Parameters = s
-                        })?.ToList();
+                        var list = infoModels.Select(s =>
+                            (CameraParametersModifiedEventArgs)new VolumeCameraParametersModifiedEventArgs(s)).ToList();
 
-                        var (key, value) = await _deviceService.OnCameraParametersModified(list ?? new List<CameraParametersModifiedEventArgs>());
+                        var (key, value) = await _deviceService.ModifyCameraParametersAsync(list ?? new List<CameraParametersModifiedEventArgs>());
                         isSuccess = key;
                         if (isSuccess)
                         {

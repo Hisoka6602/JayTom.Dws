@@ -29,7 +29,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
         private Color _watermarkColor;
         private ObservableCollection<int> _channelIdItems = new();
         private int _duration = 2000;
-        private int _selectChannelId;
+        private int _selectedChannelNumber;
         private bool _isOverlay = true;
         private bool _isAllChannel;
         private SnackbarMessageQueue _nvrWatermarkConfigEditorMessageQueue = new(TimeSpan.FromSeconds(1));
@@ -99,10 +99,10 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
         /// <summary>
         /// 选择的通道
         /// </summary>
-        public int SelectChannelId
+        public int SelectedChannelNumber
         {
-            get => _selectChannelId;
-            set => SetProperty(ref _selectChannelId, value);
+            get => _selectedChannelNumber;
+            set => SetProperty(ref _selectedChannelNumber, value);
         }
 
         /// <summary>

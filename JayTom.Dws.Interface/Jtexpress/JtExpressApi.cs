@@ -73,11 +73,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <returns>三段码查询结果。</returns>
         public Task<UploadResponse> UploadData(
             string barcode,
-            double weight,
-            double length = default,
-            double width = default,
-            double height = default,
-            double volume = default,
+            decimal weight,
+            decimal length = default,
+            decimal width = default,
+            decimal height = default,
+            decimal volume = default,
             UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null,
@@ -102,12 +102,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <returns>三段码查询结果。</returns>
         public Task<UploadResponse> UploadData(
             string barcode,
-            double weight,
+            decimal weight,
             DateTime scanTime,
-            double length = default,
-            double width = default,
-            double height = default,
-            double volume = default,
+            decimal length = default,
+            decimal width = default,
+            decimal height = default,
+            decimal volume = default,
             UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null,
@@ -163,12 +163,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <returns>后台上传任务。</returns>
         public async Task UploadInBackground(
             string barcode,
-            double weight,
+            decimal weight,
             DateTime scanTime,
-            double length = default,
-            double width = default,
-            double height = default,
-            double volume = default,
+            decimal length = default,
+            decimal width = default,
+            decimal height = default,
+            decimal volume = default,
             UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null,
@@ -304,11 +304,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
         /// <returns>到件扫描任务。</returns>
         public async Task ArrivalScan(
             string barcode,
-            double weight,
+            decimal weight,
             DateTime scanTime,
-            double length = default,
-            double width = default,
-            double height = default,
+            decimal length = default,
+            decimal width = default,
+            decimal height = default,
             string? scanTypeCode = default,
             string? transportTypeCode = default,
             string? scanPda = default,
@@ -448,7 +448,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 ApiExceptionType = exceptionType,
                 ApiParameters = CreateRedactedParameterJson(parameters),
                 IsSuccess = isSuccess,
-                Duration = stopwatch.Elapsed.TotalSeconds,
+                DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 RequestUrl = requestUrl,
                 RequestTime = requestTime,
                 RequestContent = requestContent,
@@ -636,7 +636,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 ApiExceptionType = exceptionType,
                 ApiParameters = CreateRedactedParameterJson(parameters),
                 IsSuccess = isSuccess,
-                Duration = stopwatch.Elapsed.TotalSeconds,
+                DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 RequestContent = requestContent,
                 RequestTime = requestTime,
                 RequestUrl = requestUrl,
@@ -982,7 +982,8 @@ namespace JayTom.Dws.Interface.Jtexpress {
             /// <summary>
             /// 登录人的网点编码。
             /// </summary>
-            public string NetworkId { get; set; } = string.Empty;
+            [JsonProperty("networkId")]
+            public string NetworkIdentifier { get; set; } = string.Empty;
 
             /// <summary>
             /// 网点代码。

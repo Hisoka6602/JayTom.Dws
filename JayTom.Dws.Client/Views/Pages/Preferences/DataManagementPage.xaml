@@ -1,4 +1,4 @@
-﻿<!--  数据管理  -->
+<!--  数据管理  -->
 <Page
     x:Class="JayTom.Dws.Client.Views.Pages.Preferences.DataManagementPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -595,7 +595,7 @@
                     <DataGridTextColumn
                         Width="100"
                         MinWidth="100"
-                        Binding="{Binding TimestampedGuid, UpdateSourceTrigger=PropertyChanged}"
+                        Binding="{Binding TimestampMilliseconds, UpdateSourceTrigger=PropertyChanged}"
                         CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                         EditingElementStyle="{StaticResource DataGridReadOnlyTextBlockStyle}">
                         <DataGridTextColumn.Header>

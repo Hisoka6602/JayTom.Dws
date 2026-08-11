@@ -6,6 +6,8 @@
     <UseWPF>true</UseWPF>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>JayTom.Dws.Plugin.Presentation</AssemblyName>
+    <Description>WPF 插件视图与交互扩展契约。</Description>
   </PropertyGroup>
 
   <ItemGroup>

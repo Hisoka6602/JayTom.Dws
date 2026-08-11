@@ -639,9 +639,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         var export = await _excel.Export(saveFileDialog.FileName,
                             excelTitle,
                             sheetName, items,
-                            new List<string>(), async p =>
+                            new List<string>(), async (int p) =>
                             {
-                                model.Progress = p;
+                                model.Progress = Convert.ToDecimal(p);
                                 model.ProgressText = $"{p}%";
                                 if (p == 100)
                                 {
@@ -701,7 +701,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
                     var readExcel = await _excel.ReadExcel<T>(openFileDialog.FileName, async p =>
                     {
-                        model.Progress = p;
+                        model.Progress = Convert.ToDecimal(p);
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
@@ -713,7 +713,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                                 }
                             });
                         }
-                    }, async e =>
+                    }, async (Exception e) =>
                     {
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {

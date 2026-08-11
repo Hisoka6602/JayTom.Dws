@@ -1,4 +1,4 @@
-﻿using Polly;
+using Polly;
 using System.Net;
 using System.Text;
 using Newtonsoft.Json;
@@ -21,8 +21,8 @@ namespace JayTom.Dws.Interface.Routdata {
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, double length = default, double width = default, double height = default,
-            double volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, decimal length = default, decimal width = default, decimal height = default,
+            decimal volume = default, UploadImageInfo? imageInfo = default, List<UploadImageInfo>? panoramaImageInfos = default,
             object? other = null, CancellationToken token = default) {
             var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
                 Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
@@ -41,7 +41,9 @@ namespace JayTom.Dws.Interface.Routdata {
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
                     mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
                     if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
-                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
+                        callApiMethod = callApiMethod with {
+                            ApiExceptionType = ApiExceptionType.LogicValidationFailed
+                        };
                     }
                 }
             }
@@ -62,8 +64,8 @@ namespace JayTom.Dws.Interface.Routdata {
             return callApiMethod;
         }
 
-        public async Task<UploadResponse> UploadData(string barcode, double weight, DateTime scanTime, double length = default, double width = default,
-            double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public async Task<UploadResponse> UploadData(string barcode, decimal weight, DateTime scanTime, decimal length = default, decimal width = default,
+            decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             var callApiMethod = await CallApiMethod(ApiMethod.MailInfoQuery, barcode, Parameters.OrgCode, string.Empty,
                 Parameters.DeviceCode, string.Empty, true, DateTime.Now, token: token);
@@ -82,7 +84,9 @@ namespace JayTom.Dws.Interface.Routdata {
                     var jObject = JObject.Parse(callApiMethod.ResponseContent);
                     mailInfoQueryResponseContent = $"{jObject?["HEAD"]?["RET_MSG"]?.ToString() ?? mailInfoQueryResponseContent}";
                     if (callApiMethod.ApiExceptionType == ApiExceptionType.None) {
-                        callApiMethod.ApiExceptionType = ApiExceptionType.LogicValidationFailed;
+                        callApiMethod = callApiMethod with {
+                            ApiExceptionType = ApiExceptionType.LogicValidationFailed
+                        };
                     }
                 }
             }
@@ -118,8 +122,8 @@ namespace JayTom.Dws.Interface.Routdata {
             }
         }
 
-        public Task UploadInBackground(string barcode, double weight, DateTime scanTime, double length = default,
-            double width = default, double height = default, double volume = default, UploadImageInfo? imageInfo = default,
+        public Task UploadInBackground(string barcode, decimal weight, DateTime scanTime, decimal length = default,
+            decimal width = default, decimal height = default, decimal volume = default, UploadImageInfo? imageInfo = default,
             List<UploadImageInfo>? panoramaImageInfos = default, object? other = null, CancellationToken token = default) {
             return Task.CompletedTask;
         }
@@ -286,7 +290,7 @@ namespace JayTom.Dws.Interface.Routdata {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = JsonConvert.SerializeObject(this),
                     IsSuccess = isSuccess,
-                    Duration = stopwatch.Elapsed.TotalSeconds,
+                    DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = requestContent,
                     RequestTime = requestTime,
                     RequestUrl = $"{Parameters.Url}?SIGN={sign}",

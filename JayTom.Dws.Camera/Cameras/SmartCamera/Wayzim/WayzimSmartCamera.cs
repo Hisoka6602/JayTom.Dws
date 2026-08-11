@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CamSDK;
 using System.Linq;
 using System.Text;
@@ -340,14 +340,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, CancellationToken cancellation = default) {
             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                 Exception = new Exception("该SDK无拍照函数")
             });
             return Task.CompletedTask;
         }
 
-        public Task TakePhotoAsync(string barcode, long barcodeTimestamp, TimeSpan delay, CancellationToken cancellation = default) {
+        public Task TakePhotoAsync(string barcode, long packageTimestampMilliseconds, TimeSpan delay, CancellationToken cancellation = default) {
             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                 Exception = new Exception("该SDK无拍照函数")
             });

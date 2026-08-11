@@ -9,7 +9,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
     public class WeighingScale : IWeighingScale {
         private ConnectInfo? _connectInfo { get; set; } = new();
         private System.IO.Ports.SerialPort? _serialPort { get; set; }
-        private readonly Queue<float> _weightQueue = new();
+        private readonly Queue<decimal> _weightQueue = new();
         private readonly ConcurrentQueue<string> _character = new();
         /// <summary>
         /// 串口数据到达信号，避免接收工作器空闲轮询。
@@ -218,7 +218,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
 
         private void ProcessDataPackage(string data) {
             try {
-                if (float.TryParse(
+                if (decimal.TryParse(
                         data,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
@@ -278,7 +278,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
                             var value = match.Groups[1].Value;
 
                             //var value = match.Value; // 提取出匹配的浮点数部分
-                            if (float.TryParse(value, out var result)) {
+                            if (decimal.TryParse(value, out var result)) {
                                 /*lock (_weightCapacity) {
                                     _weightCapacity.Add(result);
                                     if (_weightCapacity.Count > info.BalanceCount) {
@@ -329,9 +329,9 @@ namespace JayTom.Dws.Plugin.WeighingScale {
 
         public event EventHandler<Exception>? Excepted;
 
-        public event EventHandler<float>? StabledWeight;
+        public event EventHandler<decimal>? StabledWeight;
 
-        public event EventHandler<float>? CurrentWeight;
+        public event EventHandler<decimal>? CurrentWeight;
 
         public event EventHandler<string>? Received;
 
@@ -373,7 +373,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
             Reconnected?.Invoke(this, e);
         }
 
-        protected virtual void OnCurrentWeight(float e) {
+        protected virtual void OnCurrentWeight(decimal e) {
             CurrentWeight?.Invoke(this, e);
         }
 
@@ -381,7 +381,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
             Received?.Invoke(this, e);
         }
 
-        protected virtual void OnStabledWeight(float e) {
+        protected virtual void OnStabledWeight(decimal e) {
             StabledWeight?.Invoke(this, e);
         }
     }
@@ -411,7 +411,7 @@ namespace JayTom.Dws.Plugin.WeighingScale {
         /// <summary>
         /// 稳定精度(误差范围)
         /// </summary>
-        public float BalanceQty { get; set; } = (float)0.002;
+        public decimal BalanceQty { get; set; } = 0.002m;
 
         /// <summary>
         /// 最大稳定时间
@@ -421,12 +421,12 @@ namespace JayTom.Dws.Plugin.WeighingScale {
         /// <summary>
         /// 最小可用重量
         /// </summary>
-        public float MinWeight { get; set; } = (float)0.002;
+        public decimal MinWeight { get; set; } = 0.002m;
 
         /// <summary>
         /// 最大可用重量
         /// </summary>
-        public float MaxWeight { get; set; } = 30;
+        public decimal MaxWeight { get; set; } = 30;
 
         /// <summary>
         /// 标识符

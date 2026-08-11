@@ -15,63 +15,28 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JayTom.Dws.Infrastructure.Repository {
 
-    public class RepositoryBase<T, TContext> : IRepository<T>
+    public class RepositoryBase<T, TContext> : RepositoryContextBase<TContext>, IRepository<T>
         where T : class
         where TContext : DbContext {
-        public readonly IDbContextFactory<TContext> _contextFactory;
         private static readonly SemaphoreSlim _transactionSlim = new(1);
         private static readonly PropertyInfo[] EntityProperties =
             typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-        public RepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache) {
-            ArgumentNullException.ThrowIfNull(contextFactory);
-            ArgumentNullException.ThrowIfNull(cache);
-            _contextFactory = contextFactory;
+        public RepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache)
+            : base(contextFactory, cache) {
         }
 
         public virtual async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
-            if (sql.Equals(string.Empty)) return 0;
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Database.ExecuteSqlRawAsync(sql, token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (SqlException e) {
-                if (e.Number != -2) {
-                    LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-                }
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return 0;
+            ArgumentException.ThrowIfNullOrWhiteSpace(sql);
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Database.ExecuteSqlRawAsync(sql, token);
         }
 
         public async Task<List<T>> FromSqlRaw(string sql, CancellationToken token) {
-            if (string.IsNullOrWhiteSpace(sql)) return new List<T>();
-
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().FromSqlRaw(sql).AsNoTracking()
-                    .ToListAsync(cancellationToken: token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (SqlException e) {
-                if (e.Number != -2) {
-                    LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-                }
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            return new List<T>();
+            ArgumentException.ThrowIfNullOrWhiteSpace(sql);
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().FromSqlRaw(sql).AsNoTracking()
+                .ToListAsync(cancellationToken: token);
         }
 
         public virtual async Task<bool> Insert(T entity, CancellationToken token) {
@@ -131,9 +96,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public virtual async Task InsertAsync(T entity, CancellationToken token) {
-            await Insert(entity, token);
-        }
+        public virtual Task<bool> InsertAsync(T entity, CancellationToken token) =>
+            Insert(entity, token);
 
         public virtual async Task<bool> InsertRange(List<T> entitylist, CancellationToken token) {
             IDbContextTransaction? contextTransaction = null;
@@ -636,86 +600,35 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public virtual async Task<int> DeleteCount(int count, Expression<Func<T, bool>> @where, CancellationToken token) {
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    var dbSet = concardContext?.Set<T>();
-                    if (dbSet is null) return 0;
-
-                    return await dbSet.Where(where).Take(count).ExecuteDeleteAsync(cancellationToken: token);
-                }
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (SqlException e) {
-                if (e.Number != -2) {
-                    LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-                }
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return 0;
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>()
+                .Where(where)
+                .Take(Math.Max(0, count))
+                .ExecuteDeleteAsync(cancellationToken: token);
         }
 
         public async Task<List<T>> Select(Expression<Func<T, bool>> @where, int pageIndex, int pageSize, CancellationToken token) {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
             pageSize = Math.Clamp(pageSize, 1, 1000);
             pageIndex = Math.Min(pageIndex, int.MaxValue / pageSize);
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().AsNoTracking().Where(where)
-                    .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return new List<T>();
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().AsNoTracking().Where(where)
+                .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
         }
 
         public async Task<List<T>> Select<TOrder>(Expression<Func<T, bool>> @where, Expression<Func<T, TOrder>> order, int pageIndex, int pageSize, CancellationToken token) {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
             pageSize = Math.Clamp(pageSize, 1, 1000);
             pageIndex = Math.Min(pageIndex, int.MaxValue / pageSize);
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
-                    .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return new List<T>();
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
+                .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
         }
 
         public async Task<List<T>> Select<TOrder>(Expression<Func<T, bool>> where, Expression<Func<T, TOrder>> order, CancellationToken token) {
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
-                    .ToListAsync(token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            return new List<T>();
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().AsNoTracking().Where(where).OrderBy(order)
+                .ToListAsync(token);
         }
 
         public async Task<List<T>> SelectOrderByDescending<TOrder>(Expression<Func<T, bool>> @where, Expression<Func<T, TOrder>> order, int pageIndex, int pageSize,
@@ -723,37 +636,15 @@ namespace JayTom.Dws.Infrastructure.Repository {
             pageIndex = pageIndex < 0 ? 0 : pageIndex;
             pageSize = Math.Clamp(pageSize, 1, 1000);
             pageIndex = Math.Min(pageIndex, int.MaxValue / pageSize);
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
-                    .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return new List<T>();
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
+                .Skip(pageIndex * pageSize).Take(pageSize).ToListAsync(token);
         }
 
         public async Task<List<T>> SelectOrderByDescending<TOrder>(Expression<Func<T, bool>> where, Expression<Func<T, TOrder>> order, CancellationToken token) {
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
-                    .ToListAsync(token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return new List<T>();
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().AsNoTracking().Where(where).OrderByDescending(order)
+                .ToListAsync(token);
         }
 
         /// <summary>
@@ -764,35 +655,13 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<T?> FirstOrDefault(Expression<Func<T, bool>> @where, CancellationToken token) {
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().AsNoTracking().FirstOrDefaultAsync(where, token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return null;
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().AsNoTracking().FirstOrDefaultAsync(where, token);
         }
 
         public async Task<int> Total(Expression<Func<T, bool>> @where, CancellationToken token) {
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().CountAsync(where, token);
-            }
-            catch (Win32Exception) {
-            }
-            catch (TaskCanceledException) {
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return 0;
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().CountAsync(where, token);
         }
 
         public virtual async Task<bool> SyncEntities(List<T> entities, CancellationToken token) {

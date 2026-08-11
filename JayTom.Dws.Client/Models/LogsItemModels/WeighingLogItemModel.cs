@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace JayTom.Dws.Client.Models.LogsItemModels
         private CommunicationType? _communicationType;
         private DataFormatType? _dataFormatType;
         private DataSourceType? _dataSourceType;
-        private double _formatWeight;
+        private decimal _formatWeight;
 
         /// <summary>
         /// 源数据
@@ -55,7 +55,7 @@ namespace JayTom.Dws.Client.Models.LogsItemModels
         /// <summary>
         /// 格式化后的重量
         /// </summary>
-        public double FormatWeight
+        public decimal FormatWeight
         {
             get => _formatWeight;
             set => SetProperty(ref _formatWeight, value);

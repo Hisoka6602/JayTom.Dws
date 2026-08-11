@@ -22,48 +22,29 @@ namespace JayTom.Dws.Infrastructure.Repository {
         internal static readonly SemaphoreSlim Gate = new(1, 1);
     }
 
-    public class LocalRepositoryBase<T, TContext> : IRepository<T>
+    public class LocalRepositoryBase<T, TContext> : RepositoryContextBase<TContext>, IRepository<T>
         where T : class
         where TContext : DbContext {
-        protected IDbContextFactory<TContext> _contextFactory;
-        protected IMemoryCache _cache;
         private static readonly SemaphoreSlim _changeSlim = LocalDatabaseWriteCoordinator.Gate;
         private static readonly SemaphoreSlim _transactionSlim = LocalDatabaseWriteCoordinator.Gate;
         private static readonly PropertyInfo[] EntityProperties =
             typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-        public LocalRepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache) {
-            ArgumentNullException.ThrowIfNull(contextFactory);
-            ArgumentNullException.ThrowIfNull(cache);
-            _contextFactory = contextFactory;
-            _cache = cache;
+        public LocalRepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache)
+            : base(contextFactory, cache) {
         }
 
         public async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
-            if (sql.Equals(string.Empty)) return 0;
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Database.ExecuteSqlRawAsync(sql, token);
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-
-            return 0;
+            ArgumentException.ThrowIfNullOrWhiteSpace(sql);
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Database.ExecuteSqlRawAsync(sql, token);
         }
 
         public async Task<List<T>> FromSqlRaw(string sql, CancellationToken token) {
-            if (string.IsNullOrWhiteSpace(sql)) return new List<T>();
-
-            try {
-                await using var concardContext = _contextFactory.CreateDbContext();
-                return await concardContext.Set<T>().FromSqlRaw(sql).AsNoTracking()
-                    .ToListAsync(cancellationToken: token);
-            }
-            catch (Exception e) {
-                LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
-            }
-            return new List<T>();
+            ArgumentException.ThrowIfNullOrWhiteSpace(sql);
+            await using var concardContext = _contextFactory.CreateDbContext();
+            return await concardContext.Set<T>().FromSqlRaw(sql).AsNoTracking()
+                .ToListAsync(cancellationToken: token);
         }
 
         public async Task<bool> Insert(T entity, CancellationToken token) {
@@ -83,9 +64,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return false;
         }
 
-        public async Task InsertAsync(T entity, CancellationToken token) {
-            await Insert(entity, token);
-        }
+        public Task<bool> InsertAsync(T entity, CancellationToken token) =>
+            Insert(entity, token);
 
         public async Task<bool> InsertRange(List<T> entitylist, CancellationToken token) {
             if (entitylist.Count == 0) {

@@ -7,7 +7,7 @@ namespace JayTom.Dws.Client.Service.Runtime;
 /// <summary>
 /// 统一管理桌面应用后台服务的启动、故障重启、健康状态和停止。
 /// </summary>
-internal interface IHostedServiceSupervisor {
+public interface IHostedServiceSupervisor {
     /// <summary>启动并开始监督全部后台服务。</summary>
     Task StartAsync(CancellationToken cancellationToken = default);
 

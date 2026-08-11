@@ -177,7 +177,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var delete = await _barcodeScannerCameraConfigRepository.Delete(model);
                     if (delete)
                     {
-                        var (key, value) = await _deviceService.OnCameraUnbound(new CameraFinderItemInfoModel()
+                        var (key, value) = await _deviceService.UnbindCameraAsync(new CameraFinderItemInfoModel()
                         {
                             BoundType = CameraBindingType.ScannerCamera,
                             ConnectionType = obj.ConnectionType,
@@ -224,14 +224,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var update = await _barcodeScannerCameraConfigRepository.Update(infoModel);
                     if (update)
                     {
-                        var (key, value) = await _deviceService.OnCameraParametersModified(new List<CameraParametersModifiedEventArgs>()
-                        {
-                            new()
-                            {
-                                Type = CameraBindingType.ScannerCamera,
-                                Parameters = infoModel
-                            }
-                        });
+                        var (key, value) = await _deviceService.ModifyCameraParametersAsync(
+                            [new ScannerCameraParametersModifiedEventArgs(infoModel)]);
                         isSuccess = key;
                     }
                 }
@@ -268,13 +262,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     var updateRange = await _barcodeScannerCameraConfigRepository.UpdateRange(infoModels);
                     if (updateRange)
                     {
-                        var list = infoModels?.Select(s => new CameraParametersModifiedEventArgs
-                        {
-                            Type = CameraBindingType.ScannerCamera,
-                            Parameters = s
-                        })?.ToList();
+                        var list = infoModels.Select(s =>
+                            (CameraParametersModifiedEventArgs)new ScannerCameraParametersModifiedEventArgs(s)).ToList();
 
-                        var (key, value) = await _deviceService.OnCameraParametersModified(list ?? new List<CameraParametersModifiedEventArgs>());
+                        var (key, value) = await _deviceService.ModifyCameraParametersAsync(list ?? new List<CameraParametersModifiedEventArgs>());
                         isSuccess = key;
                         if (isSuccess)
                         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Timers;
@@ -148,13 +148,13 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 播放通道
         /// </summary>
-        public int PlayChannelId { get; set; } = 0;
+        public int PlayChannelNumber { get; set; } = 0;
     }
 
     public class CameraImageMessageInfo {
         public string Barcode { get; set; } = string.Empty;
 
-        public long BarcodeTimestamp { get; set; }
+        public long PackageTimestampMilliseconds { get; set; }
     }
 
     /// <summary>
@@ -232,7 +232,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 获取或设置频道的标识符，用于关联特定频道。
         /// </summary>
-        public int ChannelId { get; set; }
+        public int ChannelNumber { get; set; }
 
         /// <summary>
         /// 获取或设置水印的内容，如文本或图像描述。
@@ -247,7 +247,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 登录ID
         /// </summary>
-        public nint LoginId { get; set; }
+        public nint LoginHandle { get; set; }
 
         /// <summary>
         /// 获取或设置自动删除水印的计时器。
@@ -262,15 +262,15 @@ namespace JayTom.Dws.Camera {
 
         public HistoricalWatermark(
             string serialNo,
-            nint loginId,
-            int channelId,
+            nint loginHandle,
+            int channelNumber,
             string content,
             DateTime addedTime,
             double autoDeleteInterval,
             Action<HistoricalWatermark>? onAutoDelete = null) {
             SerialNo = serialNo;
-            LoginId = loginId;
-            ChannelId = channelId;
+            LoginHandle = loginHandle;
+            ChannelNumber = channelNumber;
             Content = content;
             AddedTime = addedTime;
             OnAutoDelete = onAutoDelete;

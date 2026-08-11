@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using JayTom.Dws.Ocr;
@@ -115,7 +115,7 @@ namespace JayTom.Dws.Camera {
         /// <summary>
         /// 条码Id
         /// </summary>
-        public string CodeId { get; set; } = string.Empty;
+        public string CodeIdentifier { get; set; } = string.Empty;
 
         /// <summary>
         /// 处理总耗时

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Collections.Generic;
 
@@ -145,7 +145,7 @@ namespace JayTom.Dws.Client.Models
     public class HardDiskInfoModel : BindableBase
     {
         private string _diskName = string.Empty;
-        private float _freeSpacePercentage;
+        private decimal _freeSpacePercentage;
         private long _freeSpaceBytes;
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 磁盘剩余空间
         /// </summary>
-        public float FreeSpacePercentage
+        public decimal FreeSpacePercentage
         {
             get => _freeSpacePercentage;
             set => SetProperty(ref _freeSpacePercentage, value);
@@ -178,7 +178,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 已使用空间
         /// </summary>
-        public float UsedSpacePercentage { get; set; }
+        public decimal UsedSpacePercentage { get; set; }
 
         /// <summary>
         /// 剩余空间
@@ -198,17 +198,17 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 写入速度
         /// </summary>
-        public float WriteSpeed { get; set; }
+        public decimal WriteSpeed { get; set; }
 
         /// <summary>
         /// 读取速度
         /// </summary>
-        public float ReadSpeed { get; set; }
+        public decimal ReadSpeed { get; set; }
 
         /// <summary>
         /// 平均响应时间
         /// </summary>
-        public float AverageResponseTime { get; set; }
+        public decimal AverageResponseTime { get; set; }
     }
 
     /// <summary>
@@ -216,11 +216,11 @@ namespace JayTom.Dws.Client.Models
     /// </summary>
     public class MemoryInfoModel : BindableBase
     {
-        private float _memoryRemaining;
+        private decimal _memoryRemaining;
         private string? _memoryType;
         private long _totalSizeBytes;
         private long _availableSizeBytes;
-        private float _usedPercentage;
+        private decimal _usedPercentage;
 
         /// <summary>
         /// 内存类型
@@ -252,7 +252,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 使用内存百分比
         /// </summary>
-        public float UsedPercentage
+        public decimal UsedPercentage
         {
             get => _usedPercentage;
             set => SetProperty(ref _usedPercentage, value);
@@ -261,7 +261,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 内存剩余比率
         /// </summary>
-        public float MemoryRemaining
+        public decimal MemoryRemaining
         {
             get => _memoryRemaining;
             set => SetProperty(ref _memoryRemaining, value);
@@ -277,11 +277,11 @@ namespace JayTom.Dws.Client.Models
         private string? _manufacturer;
         private string? _model;
         private int _numberOfCores;
-        private float _clockSpeed;
-        private float _usagePercentage;
+        private decimal _clockSpeed;
+        private decimal _usagePercentage;
         private int _numberOfLogicalProcessors;
         private int _socketCount;
-        private float _cpuTemperature;
+        private decimal _cpuTemperature;
         private int _fanSpeed;
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// CPU 时钟速度
         /// </summary>
-        public float ClockSpeed
+        public decimal ClockSpeed
         {
             get => _clockSpeed;
             set => SetProperty(ref _clockSpeed, value);
@@ -332,7 +332,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         ///  CPU 使用率
         /// </summary>
-        public float UsagePercentage
+        public decimal UsagePercentage
         {
             get => _usagePercentage;
             set => SetProperty(ref _usagePercentage, value);
@@ -359,7 +359,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// Cpu温度
         /// </summary>
-        public float CpuTemperature
+        public decimal CpuTemperature
         {
             get => _cpuTemperature;
             set => SetProperty(ref _cpuTemperature, value);
@@ -383,10 +383,10 @@ namespace JayTom.Dws.Client.Models
         private string? _name;
         private string? _manufacturer;
         private string? _model;
-        private float _memorySizeGb;
-        private float _usagePercentage;
-        private float _usedMemoryGb;
-        private float _usedMemoryPercentage;
+        private decimal _memorySizeGb;
+        private decimal _usagePercentage;
+        private decimal _usedMemoryGb;
+        private decimal _usedMemoryPercentage;
 
         /// <summary>
         /// 名称
@@ -418,7 +418,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// GPU 内存大小
         /// </summary>
-        public float MemorySizeGb
+        public decimal MemorySizeGb
         {
             get => _memorySizeGb;
             set => SetProperty(ref _memorySizeGb, value);
@@ -427,7 +427,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         ///  GPU 使用率
         /// </summary>
-        public float UsagePercentage
+        public decimal UsagePercentage
         {
             get => _usagePercentage;
             set => SetProperty(ref _usagePercentage, value);
@@ -436,7 +436,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 已使用内存大小
         /// </summary>
-        public float UsedMemoryGb
+        public decimal UsedMemoryGb
         {
             get => _usedMemoryGb;
             set => SetProperty(ref _usedMemoryGb, value);
@@ -445,7 +445,7 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 已使用内存百分比
         /// </summary>
-        public float UsedMemoryPercentage
+        public decimal UsedMemoryPercentage
         {
             get => _usedMemoryPercentage;
             set => SetProperty(ref _usedMemoryPercentage, value);
@@ -496,12 +496,12 @@ namespace JayTom.Dws.Client.Models
         /// <summary>
         /// 网络上行速度
         /// </summary>
-        public float UploadSpeed { get; set; }
+        public decimal UploadSpeed { get; set; }
 
         /// <summary>
         /// 网络下行速度
         /// </summary>
-        public float DownloadSpeed { get; set; }
+        public decimal DownloadSpeed { get; set; }
 
         // 其他网络相关字段
     }

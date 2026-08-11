@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         /// <summary>
         /// 实时重量
         /// </summary>
-        event EventHandler<float> CurrentWeight;
+        event EventHandler<decimal> CurrentWeight;
 
         /// <summary>
         /// 重量清零

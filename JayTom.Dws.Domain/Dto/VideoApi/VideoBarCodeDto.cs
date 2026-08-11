@@ -1,11 +1,12 @@
-﻿namespace JayTom.Dws.Domain.Dto.VideoApi {
+namespace JayTom.Dws.Domain.Dto.VideoApi {
 
     public class VideoBarCodeDto {
 
         /// <summary>
         /// 时间戳Id
         /// </summary>
-        public long TimestampedGuid { get; set; }
+        [Newtonsoft.Json.JsonProperty("TimestampedGuid")]
+        public long TimestampMilliseconds { get; set; }
 
         /// <summary>
         /// 条码
@@ -15,27 +16,27 @@
         /// <summary>
         /// 重量
         /// </summary>
-        public float Weight { get; set; }
+        public decimal Weight { get; set; }
 
         /// <summary>
         /// 体积
         /// </summary>
-        public float Volume { get; set; }
+        public decimal Volume { get; set; }
 
         /// <summary>
         /// 长度
         /// </summary>
-        public float Length { get; set; }
+        public decimal Length { get; set; }
 
         /// <summary>
         /// 宽度
         /// </summary>
-        public float Width { get; set; }
+        public decimal Width { get; set; }
 
         /// <summary>
         /// 高度
         /// </summary>
-        public float Height { get; set; }
+        public decimal Height { get; set; }
 
         /// <summary>
         /// 扫码时间

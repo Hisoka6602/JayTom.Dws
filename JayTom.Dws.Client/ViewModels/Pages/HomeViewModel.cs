@@ -42,18 +42,18 @@ using LogType = JayTom.Dws.Data.LocalLog.LogType;
 using JayTom.Dws.Client.Service.ExternalDataService;
 using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using RemoteAction = JayTom.Dws.Client.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Client.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Client.EventMediators.WindowsAction;
+using RemoteAction = JayTom.Dws.Domain.EventMediators.RemoteAction;
+using RemoteCommand = JayTom.Dws.Domain.EventMediators.RemoteCommand;
+using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels;
-using ApplicationStatus = JayTom.Dws.Client.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Client.EventMediators.WindowsActionType;
+using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
-using ApplicationStatusChanged = JayTom.Dws.Client.EventMediators.ApplicationStatusChanged;
-using BarcodeTypeProviderEvent = JayTom.Dws.Client.EventMediators.BarcodeTypeProviderEvent;
+using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
+using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
+using BarcodeTypeProviderEvent = JayTom.Dws.Domain.EventMediators.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
@@ -77,11 +77,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         private bool _runningStatus;
         private SnackbarMessageQueue _homeMessageQueue = new(TimeSpan.FromSeconds(2));
         private string _barCode = Languages.Language.ResourceManager.GetString("BarCode") ?? string.Empty;
-        private float _weight;
-        private float _volume;
-        private float _length;
-        private float _width;
-        private float _height;
+        private decimal _weight;
+        private decimal _volume;
+        private decimal _length;
+        private decimal _width;
+        private decimal _height;
         private bool _isSwitchingState;
         private VolumeUnit _volumeUnit;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
@@ -225,7 +225,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 重量
         /// </summary>
-        public float Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);
@@ -234,7 +234,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 体积
         /// </summary>
-        public float Volume
+        public decimal Volume
         {
             get => _volume;
             set => SetProperty(ref _volume, value);
@@ -243,7 +243,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 长度
         /// </summary>
-        public float Length
+        public decimal Length
         {
             get => _length;
             set => SetProperty(ref _length, value);
@@ -252,7 +252,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 宽度
         /// </summary>
-        public float Width
+        public decimal Width
         {
             get => _width;
             set => SetProperty(ref _width, value);
@@ -261,7 +261,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 高度
         /// </summary>
-        public float Height
+        public decimal Height
         {
             get => _height;
             set => SetProperty(ref _height, value);
@@ -288,14 +288,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             _sortingService = sortingService;
             _clientLicenseApi = clientLicenseApi;
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
-            _deviceService.NotBarcodeHitEvent += async delegate (object? sender, BarcodeReadEventArgs args)
+            _deviceService.BarcodeMissed += async delegate (object? sender, BarcodeReadEventArgs args)
             {
                 await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = args?.Barcode ?? "未识别到条码";
                 }, DispatcherPriority.Background);
             };
-            _deviceService.CameraDisconnected += delegate (object? sender, List<ICamera> list)
+            _deviceService.CameraDisconnected += delegate (object? sender, IReadOnlyList<ICamera> list)
             {
                 //更新现有列表,例如删除相机成员
             };
@@ -304,7 +304,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
-                    HomeMessageQueue.Enqueue(args?.ExceptionMessage?.Message ?? string.Empty);
+                    HomeMessageQueue.Enqueue(args?.Exception?.Message ?? string.Empty);
                 }, DispatcherPriority.Background);
 
                 //弹出提示框
@@ -364,10 +364,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                 {
-                    Length = (float)args.Length;
-                    Width = (float)args.Width;
-                    Height = (float)args.Height;
-                    Volume = (float)args.Volume;
+                    Length = (decimal)args.Length;
+                    Width = (decimal)args.Width;
+                    Height = (decimal)args.Height;
+                    Volume = (decimal)args.Volume;
                 }, DispatcherPriority.Background);
             };
             //分拣
@@ -387,12 +387,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     {
                         Barcode = model.BarCodeInfo?.Barcode ?? string.Empty,
                         ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                        Weight = (float)(model.WeightInfo?.FormattedWeight ?? 0),
-                        Length = (float)(model.VolumeInfo?.FormattedLength ?? 0),
-                        Width = (float)(model.VolumeInfo?.FormattedWidth ?? 0),
-                        Height = (float)(model.VolumeInfo?.FormattedHeight ?? 0),
-                        Volume = (float)(model.VolumeInfo?.FormattedVolume ?? 0),
-                        TimestampedGuid = model.Timestamp
+                        Weight = (decimal)(model.WeightInfo?.FormattedWeight ?? 0),
+                        Length = (decimal)(model.VolumeInfo?.FormattedLength ?? 0),
+                        Width = (decimal)(model.VolumeInfo?.FormattedWidth ?? 0),
+                        Height = (decimal)(model.VolumeInfo?.FormattedHeight ?? 0),
+                        Volume = (decimal)(model.VolumeInfo?.FormattedVolume ?? 0),
+                        TimestampMilliseconds = model.Timestamp
                     });
                 }
             });
@@ -544,10 +544,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         {
             await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                Length = (float)args.Length;
-                Width = (float)args.Width;
-                Height = (float)args.Height;
-                Volume = (float)args.Volume;
+                Length = (decimal)args.Length;
+                Width = (decimal)args.Width;
+                Height = (decimal)args.Height;
+                Volume = (decimal)args.Volume;
             }, DispatcherPriority.Background);
         }
 
@@ -648,7 +648,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         return;
                     }#1#
                     //判断时间
-                    var validateTime = await _certificateValidationService.ValidateTime();
+                    var validateTime = await _certificateValidationService.ValidateTimeAsync();
                     if (!validateTime) {
                         return;
                     }
@@ -772,13 +772,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 var (created, response) = await _clientLicenseApi.CreateAuthorization(
                     data.LicenseCode, data.MachineCode, data.Remarks, token);
-                if (created && response is ApiResult result &&
-                    !string.IsNullOrWhiteSpace(result.Data?.ToString()))
+                if (created && response is { } result &&
+                    !string.IsNullOrWhiteSpace(result.Data))
                 {
                     var targetPath = Path.Combine(licenseDirectory, "License.key");
                     var downloaded = await _clientLicenseApi.DownloadFileAsync(
-                        result.Data!.ToString()!, targetPath, token);
-                    if (downloaded)
+                        result.Data, targetPath, token);
+                    if (downloaded.IsSuccess)
                     {
                         foreach (var file in Directory.GetFiles(licenseDirectory, "*.key")
                                      .Where(file => !Path.GetFullPath(file).Equals(Path.GetFullPath(targetPath),
@@ -895,7 +895,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                             }
                             packageItem.UploadInfo = new UploadItemModel
                             {
-                                DurationInSeconds = updateResponse.UploadResponse?.Duration ?? 0,
+                                DurationInSeconds = updateResponse.UploadResponse?.DurationSeconds ?? 0,
                                 ExceptionMessage = updateResponse.UploadResponse?.ExceptionMsg ?? string.Empty,
                                 InterfaceParameters = updateResponse.UploadResponse?.ApiParameters ?? string.Empty,
                                 IsSuccess = updateResponse.UploadResponse?.IsSuccess ?? false,
@@ -912,7 +912,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                              index++)
                         {
                             var packageItem =
-                                PackageItems.FirstOrDefault(item => item.TimestampedGuid.Equals(exitInfo.Timestamp));
+                                PackageItems.FirstOrDefault(item => item.TimestampMilliseconds.Equals(exitInfo.Timestamp));
                             if (packageItem is null)
                             {
                                 if (DateTime.Now - exitInfo.CreateTime < TimeSpan.FromSeconds(20))

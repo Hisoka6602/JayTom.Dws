@@ -190,7 +190,7 @@ namespace JayTom.Dws.License {
 
         public static string GenerateMachineCode() {
             var cpuSerialNumber = string.Empty;
-            var hardDiskId = string.Empty;
+            var hardDiskSerialNumber = string.Empty;
             string machineName;
             string versionString;
             var machineCode = string.Empty;
@@ -207,7 +207,7 @@ namespace JayTom.Dws.License {
                     var obj = (ManagementObject)o;
                     var interfaceType = obj["InterfaceType"]?.ToString();
                     if (interfaceType != null && !interfaceType.Contains("USB")) {
-                        hardDiskId += obj?["SerialNumber"].ToString();
+                        hardDiskSerialNumber += obj?["SerialNumber"].ToString();
                     }
                     else {
                         var s = obj?["SerialNumber"].ToString();
@@ -218,7 +218,7 @@ namespace JayTom.Dws.License {
                 machineName = Environment.MachineName;
                 versionString = Environment.OSVersion.VersionString;
 
-                machineCode = $"{cpuSerialNumber}{hardDiskId}{machineName}{versionString}";
+                machineCode = $"{cpuSerialNumber}{hardDiskSerialNumber}{machineName}{versionString}";
 
                 // DWS-HEX-COMPACT: 许可证机器码必须保持既有的无分隔符格式。
                 machineCode = Convert.ToHexString(MD5.HashData(

@@ -1,10 +1,11 @@
-﻿using JayTom.Dws.Client.Models;
+using JayTom.Dws.Client.Models;
 using JayTom.Dws.PluginInterface;
 using Prism.Commands;
 using Prism.Mvvm;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using PluginType = JayTom.Dws.Plugin.Contracts.PluginType;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 {
@@ -37,7 +38,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 new()
                 {
                     ToolTip = "弹窗插件",
-                    FontIcon = "\xe61d"
+                    FontIcon = "\xe61D"
                 },
                 new()
                 {
@@ -82,7 +83,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 new()
                 {
                     ToolTip = "弹窗工具插件",
-                    FontIcon = "\xe61f"
+                    FontIcon = "\xe61D"
                 }
             };
             _pluginItems = new ObservableCollection<PluginItemInfoModel>()

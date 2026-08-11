@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.IO.Ports;
 using System.Threading.Tasks;
 using JayTom.Dws.Data.LocalLog;
 using System.Collections.Generic;
+using JayTom.Dws.Abstractions.Devices;
 
 namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
     public class SerialPortSettingsInfo {
@@ -22,7 +22,7 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// <summary>
         /// 效验位
         /// </summary>
-        public Parity Parity { get; set; } = Parity.None;
+        public SerialParity Parity { get; set; } = SerialParity.None;
 
         /// <summary>
         /// 数据位
@@ -32,7 +32,7 @@ namespace JayTom.Dws.Domain.Dto.BaseInfoModels {
         /// <summary>
         /// 停止位
         /// </summary>
-        public StopBits StopBits { get; set; } = StopBits.One;
+        public SerialStopBits StopBits { get; set; } = SerialStopBits.One;
 
         /// <summary>
         /// 数据格式

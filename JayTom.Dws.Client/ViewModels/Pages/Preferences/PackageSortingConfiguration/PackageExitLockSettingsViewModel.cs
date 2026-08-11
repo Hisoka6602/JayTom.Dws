@@ -32,7 +32,7 @@ using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
 {
@@ -237,7 +237,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
                     var models = await _excel.ReadExcel<PackageExitLockBindingItemInfoModel>(openFileDialog.FileName, async p =>
                     {
-                        model.Progress = p;
+                        model.Progress = Convert.ToDecimal(p);
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
@@ -249,7 +249,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 }
                             });
                         }
-                    }, async e =>
+                    }, async (Exception e) =>
                     {
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
@@ -343,9 +343,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     var export = await _excel.Export(saveFileDialog.FileName,
                         $"锁格配置列表",
                         "锁格配置列表", PackageExitLockBindingItems?.ToList() ?? new List<PackageExitLockBindingItemInfoModel>(),
-                        new List<string>(), async p =>
+                        new List<string>(), async (int p) =>
                         {
-                            model.Progress = p;
+                            model.Progress = Convert.ToDecimal(p);
                             model.ProgressText = $"{p}%";
                             if (p == 100)
                             {

@@ -95,6 +95,7 @@
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Excel\JayTom.Dws.Excel.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Integrations.Contracts\JayTom.Dws.Integrations.Contracts.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Nvr\JayTom.Dws.Nvr.csproj" />
@@ -163,27 +164,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <!-- Include the files from JayTom.Dws.Nvr\VideoLAN folder -->
-    <Content Include="..\JayTom.Dws.Camera\UsbCameraDll\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\JayTom.Dws.Camera\ffmpegFiles\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="favicon.ico" />
     <Content Include="ico.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="DynamsoftCommon">
-      <HintPath>..\..\..\Dll\DynamsoftCommon.dll</HintPath>
-    </Reference>
-    <Reference Include="NetSDKCS">
-      <HintPath>..\JayTom.Dws.Camera\Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <Target Name="CreateLicenseFolder" AfterTargets="BeforeBuild">
     <!-- 设置要创建的文件夹路径 -->

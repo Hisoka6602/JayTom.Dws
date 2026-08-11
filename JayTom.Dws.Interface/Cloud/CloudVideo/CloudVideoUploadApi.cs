@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
@@ -27,7 +27,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
         }
 
         /*public async Task<CloudUploadResponse> UploadData(string barcode, DateTime scanTime,
-            double weight, string scanNodName, CloudUploadVolumeInfo? volumeInfo = default,
+            decimal weight, string scanNodName, CloudUploadVolumeInfo? volumeInfo = default,
             List<CloudUploadImageInfo>? imageInfos = default, CloudUploadOcrInfo? ocrInfo = default,
             CloudUploadApiInfo? uploadApiInfo = default, CloudUploadSortingInfo? sortingInfo = default,
             List<CloudNvrCameraBindingInfo>? nvrCameraBindingInfos = default,

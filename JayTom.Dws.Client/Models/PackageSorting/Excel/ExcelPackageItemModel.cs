@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -14,13 +14,13 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
     public class ExcelPackageItemModel : BindableBase
     {
         private int _num;
-        private long _timestampedGuid;
+        private long _timestampMilliseconds;
         private string _barcode = string.Empty;
-        private float _weight;
-        private float _length;
-        private float _width;
-        private float _height;
-        private float _volume;
+        private decimal _weight;
+        private decimal _length;
+        private decimal _width;
+        private decimal _height;
+        private decimal _volume;
         private DateTime _scanTime;
         private UploadStatus _requestStatus;
         private string? _barcodeImagePath;
@@ -44,10 +44,11 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         ///包裹Id
         /// </summary>
         [DisplayName("包裹Id"), ExcelInfo(Width = 5000)]
-        public long TimestampedGuid
+        [Newtonsoft.Json.JsonProperty("TimestampedGuid")]
+        public long TimestampMilliseconds
         {
-            get => _timestampedGuid;
-            set => SetProperty(ref _timestampedGuid, value);
+            get => _timestampMilliseconds;
+            set => SetProperty(ref _timestampMilliseconds, value);
         }
 
         /// <summary>
@@ -64,7 +65,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         /// 重量
         /// </summary>
         [DisplayName("重量"), ExcelInfo(Width = 2000)]
-        public float Weight
+        public decimal Weight
         {
             get => _weight;
             set => SetProperty(ref _weight, value);
@@ -74,7 +75,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         /// 长度
         /// </summary>
         [DisplayName("长度"), ExcelInfo(Width = 2000)]
-        public float Length
+        public decimal Length
         {
             get => _length;
             set => SetProperty(ref _length, value);
@@ -84,7 +85,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         /// 宽度
         /// </summary>
         [DisplayName("宽度"), ExcelInfo(Width = 2000)]
-        public float Width
+        public decimal Width
         {
             get => _width;
             set => SetProperty(ref _width, value);
@@ -94,7 +95,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         /// 高度
         /// </summary>
         [DisplayName("高度"), ExcelInfo(Width = 2000)]
-        public float Height
+        public decimal Height
         {
             get => _height;
             set => SetProperty(ref _height, value);
@@ -104,7 +105,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting.Excel
         /// 体积
         /// </summary>
         [DisplayName("体积"), ExcelInfo(Width = 2000)]
-        public float Volume
+        public decimal Volume
         {
             get => _volume;
             set => SetProperty(ref _volume, value);

@@ -1,6 +1,6 @@
 using JayTom.Dws.Abstractions.Results;
 
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 定义插件初始化与服务声明能力，不允许插件直接修改宿主容器。

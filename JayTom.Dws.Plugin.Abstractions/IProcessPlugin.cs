@@ -1,6 +1,6 @@
 using JayTom.Dws.Abstractions.Results;
 
-namespace JayTom.Dws.PluginInterface;
+namespace JayTom.Dws.Plugin.Contracts;
 
 /// <summary>
 /// 定义通用包裹数据处理插件能力。

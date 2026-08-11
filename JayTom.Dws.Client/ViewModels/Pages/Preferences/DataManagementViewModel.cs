@@ -39,7 +39,7 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 {
@@ -57,8 +57,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private int _pageIndex;
         private SnackbarMessageQueue _dataManagementMessageQueue = new(TimeSpan.FromSeconds(2));
         private string _barCode = string.Empty;
-        private float _minWeight;
-        private float _maxWeight;
+        private decimal _minWeight;
+        private decimal _maxWeight;
         private bool _isLoaded;
 
         private ObservableCollection<PackageItemModel> _packageItems = new()
@@ -67,7 +67,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private UploadStatus? _selectedUploadStatus;
         private ObservableCollection<UploadStatus> _uploadStatusList = new(Enum.GetValues(typeof(UploadStatus)).Cast<UploadStatus>());
-        private double _pageMaxHeight;
+        private decimal _pageMaxHeight;
         private VolumeUnit _volumeUnit;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel? _selectExitDefinitionInfo;
@@ -160,7 +160,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// <summary>
         /// 最小重量
         /// </summary>
-        public float MinWeight
+        public decimal MinWeight
         {
             get => _minWeight;
             set => SetProperty(ref _minWeight, value);
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// <summary>
         /// 最大重量
         /// </summary>
-        public float MaxWeight
+        public decimal MaxWeight
         {
             get => _maxWeight;
             set => SetProperty(ref _maxWeight, value);
@@ -317,7 +317,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// <summary>
         /// 最大高度
         /// </summary>
-        public double PageMaxHeight
+        public decimal PageMaxHeight
         {
             get => _pageMaxHeight;
             set => SetProperty(ref _pageMaxHeight, value);
@@ -361,10 +361,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 var parentContainer = PluginInterface.Utils.Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
                 if (parentContainer is not null)
                 {
-                    PageMaxHeight = parentContainer.ActualHeight;
+                    PageMaxHeight = Convert.ToDecimal(parentContainer.ActualHeight);
                     parentContainer.SizeChanged += delegate (object sender, SizeChangedEventArgs args)
                     {
-                        PageMaxHeight = parentContainer.ActualHeight;
+                        PageMaxHeight = Convert.ToDecimal(parentContainer.ActualHeight);
                     };
                 }
                 _isLoaded = true;
@@ -593,13 +593,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                                 var itemModels = infoModels?.Select((s, num) => new ExcelPackageItemModel
                                 {
                                     Num = num + 1 + (i * 500),
-                                    TimestampedGuid = s.PackageTimestamped,
+                                    TimestampMilliseconds = s.PackageTimestamped,
                                     Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
-                                    Weight = (float)(s.WeightInfo?.FormattedWeight ?? 0),
-                                    Length = (float)(s.VolumeInfo?.FormattedLength ?? 0),
-                                    Width = (float)(s.VolumeInfo?.FormattedWidth ?? 0),
-                                    Height = (float)(s.VolumeInfo?.FormattedHeight ?? 0),
-                                    Volume = (float)(s.VolumeInfo?.FormattedVolume ?? 0),
+                                    Weight = (decimal)(s.WeightInfo?.FormattedWeight ?? 0),
+                                    Length = (decimal)(s.VolumeInfo?.FormattedLength ?? 0),
+                                    Width = (decimal)(s.VolumeInfo?.FormattedWidth ?? 0),
+                                    Height = (decimal)(s.VolumeInfo?.FormattedHeight ?? 0),
+                                    Volume = (decimal)(s.VolumeInfo?.FormattedVolume ?? 0),
                                     ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
                                     RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
                                     BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
@@ -700,13 +700,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             var itemModels = infoModels?.Select((s, i) => new PackageItemModel
                             {
                                 Num = i + 1,
-                                TimestampedGuid = s.PackageTimestamped,
+                                TimestampMilliseconds = s.PackageTimestamped,
                                 Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
-                                Weight = (float)(s.WeightInfo?.FormattedWeight ?? 0),
-                                Length = (float)(s.VolumeInfo?.FormattedLength ?? 0),
-                                Width = (float)(s.VolumeInfo?.FormattedWidth ?? 0),
-                                Height = (float)(s.VolumeInfo?.FormattedHeight ?? 0),
-                                Volume = (float)(s.VolumeInfo?.FormattedVolume ?? 0),
+                                Weight = (decimal)(s.WeightInfo?.FormattedWeight ?? 0),
+                                Length = (decimal)(s.VolumeInfo?.FormattedLength ?? 0),
+                                Width = (decimal)(s.VolumeInfo?.FormattedWidth ?? 0),
+                                Height = (decimal)(s.VolumeInfo?.FormattedHeight ?? 0),
+                                Volume = (decimal)(s.VolumeInfo?.FormattedVolume ?? 0),
                                 ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
                                 RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
                                 BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,

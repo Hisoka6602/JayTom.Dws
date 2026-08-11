@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +17,7 @@ namespace JayTom.Dws.Infrastructure.SignalR {
         /// <summary>
         /// 链接Id
         /// </summary>
-        public string ConnectionId { get; }
+        public string ConnectionIdentifier { get; }
 
         /// <summary>
         /// 是否自动重连

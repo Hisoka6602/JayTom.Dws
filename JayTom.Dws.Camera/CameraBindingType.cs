@@ -6,6 +6,9 @@ namespace JayTom.Dws.Camera;
 /// <summary>描述相机可承担的业务用途。</summary>
 [Flags]
 public enum CameraBindingType {
+    /// <summary>未绑定任何业务用途。</summary>
+    None = 0,
+
     /// <summary>扫码相机。</summary>
     [CameraFontIcon("\xe9f5"), CameraBackgroundColor("#4169E1"), Description("扫码相机")]
     ScannerCamera = 1 << 0,

@@ -430,7 +430,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     IsUseWatermark = IsUseWatermark,
                     WatermarkInfo = new WatermarkInfo
                     {
-                        WatermarkColor = System.Drawing.Color.FromArgb(WatermarkColor.A,
+                        WatermarkColor = new JayTom.Dws.Abstractions.Graphics.RgbaColor(WatermarkColor.A,
                             WatermarkColor.R, WatermarkColor.G, WatermarkColor.B),
                         WatermarkFontSize = WatermarkFontSize,
                         WatermarkPosition = WatermarkPosition,

@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using Polly;
 using System;
 using DryIoc;
@@ -22,8 +22,8 @@ using JayTom.Dws.Domain.Repository.LocalConf;
 using JayTom.Dws.Domain.Repository.LocalData;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Client.EventMediators.TriggerPositionEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
 
 namespace JayTom.Dws.Client.Service.ResultOutput
 {
@@ -200,8 +200,8 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                         {
                             BaudRate = nextSettings.SerialPortSettingsInfo.BaudRate,
                             DataBits = nextSettings.SerialPortSettingsInfo.DataBits,
-                            Parity = nextSettings.SerialPortSettingsInfo.Parity,
-                            StopBits = nextSettings.SerialPortSettingsInfo.StopBits,
+                            Parity = (System.IO.Ports.Parity)nextSettings.SerialPortSettingsInfo.Parity,
+                            StopBits = (System.IO.Ports.StopBits)nextSettings.SerialPortSettingsInfo.StopBits,
                             PortName = nextSettings.SerialPortSettingsInfo.PortName,
                         };
                         _serialPort.Open();
@@ -231,8 +231,8 @@ namespace JayTom.Dws.Client.Service.ResultOutput
 
         public event EventHandler<Exception>? OutputFailed;
 
-        public void ExecuteOutput(string barCode, float weight, DateTime scanTime, float length, float width, float height,
-            float volume, string cameraSerialNumber, CancellationToken cancellationToken = default)
+        public void ExecuteOutput(string barCode, decimal weight, DateTime scanTime, decimal length, decimal width, decimal height,
+            decimal volume, string cameraSerialNumber, CancellationToken cancellationToken = default)
         {
             var currentSettings = Volatile.Read(ref _outputSettingsDto);
             if (currentSettings is not null &&
@@ -546,8 +546,8 @@ namespace JayTom.Dws.Client.Service.ResultOutput
         //位置输出(暂缓)
         //Http输出(暂缓)
         //声音输出
-        public string ParseTemplate(string source, string barCode, float weight, DateTime scanTime, float length,
-            float width, float height, float volume, string cameraSerialNumber, bool isWatermark = false)
+        public string ParseTemplate(string source, string barCode, decimal weight, DateTime scanTime, decimal length,
+            decimal width, decimal height, decimal volume, string cameraSerialNumber, bool isWatermark = false)
         {
             return source switch
             {

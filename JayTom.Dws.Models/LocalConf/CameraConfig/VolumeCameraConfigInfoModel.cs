@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,13 +34,13 @@ namespace JayTom.Dws.Data.LocalConf.CameraConfig {
         /// 最小长度
         /// </summary>
         [Column("MinLength"), Required, InsertOrUpdate]
-        public double MinLength { get; set; }
+        public decimal MinLength { get; set; }
 
         /// <summary>
         /// 最大长度
         /// </summary>
         [Column("MaxLength"), Required, InsertOrUpdate]
-        public double MaxLength { get; set; }
+        public decimal MaxLength { get; set; }
 
         /// <summary>
         /// 触发模式

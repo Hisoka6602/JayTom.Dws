@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -17,11 +17,11 @@ using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using InstructionType = JayTom.Dws.Data.Package.InstructionType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
-using SortingExitType = JayTom.Dws.Client.EventMediators.SortingExitType;
+using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
 using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
-using PackageExitUpdateEvent = JayTom.Dws.Client.EventMediators.PackageExitUpdateEvent;
-using PackageAbnormalSortingType = JayTom.Dws.Client.EventMediators.PackageAbnormalSortingType;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
+using PackageAbnormalSortingType = JayTom.Dws.Domain.EventMediators.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -127,14 +127,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 {
                                     exitContentConvert = "00 00";
                                 }
-                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
+                                long instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
                                 //异常口
 
                                 var abnormalExit = packageExitDefinitions.FirstOrDefault(f =>
                                     f is { IsActive: true, Type: ExitType.AbnormalExit });
 
-                                var exitId = instructionMap.Bindings
+                                long? exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
@@ -172,9 +172,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 //匹配实际定义格口
                                 var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
-                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
+                                long instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
-                                var exitId = instructionMap.Bindings
+                                long? exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
@@ -205,9 +205,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 var protocol = CreateProtocol(connectionConfigInfoModel?.CommunicationProtocol);
                                 var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
-                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
+                                long instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
-                                var exitId = instructionMap.Bindings
+                                long? exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;
@@ -240,9 +240,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 var exitContentConvert = protocol?.ExitContentConvert(instructionInfoModel.InstructionContent) ?? instructionInfoModel.InstructionContent;
 
-                                var instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
+                                long instructionBindingId = instructionMap.Instructions.FirstOrDefault(f =>
                                     f.Instruction.Equals(exitContentConvert))?.InstructionBindingId ?? 0;
-                                var exitId = instructionMap.Bindings
+                                long? exitId = instructionMap.Bindings
                                     .FirstOrDefault(f =>
                                         f.Id.Equals(instructionBindingId))
                                     ?.ExitId;

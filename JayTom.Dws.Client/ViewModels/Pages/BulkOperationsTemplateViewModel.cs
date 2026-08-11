@@ -22,7 +22,7 @@ using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Client.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -171,9 +171,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         var export = await _excel.Export(saveFileDialog.FileName,
                             ExcelTitle,
                             SheetName, items,
-                            new List<string>(), async p =>
+                            new List<string>(), async (int p) =>
                             {
-                                model.Progress = p;
+                                model.Progress = Convert.ToDecimal(p);
                                 model.ProgressText = $"{p}%";
                                 if (p == 100)
                                 {
@@ -237,7 +237,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
                     var readExcel = await _excel.ReadExcel<T>(openFileDialog.FileName, async p =>
                     {
-                        model.Progress = p;
+                        model.Progress = Convert.ToDecimal(p);
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
@@ -249,7 +249,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                                 }
                             });
                         }
-                    }, async e =>
+                    }, async (Exception e) =>
                     {
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
@@ -316,7 +316,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 刷新数据
         /// </summary>
-        public async void RefreshData()
+        public async Task RefreshDataAsync()
         {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
@@ -334,6 +334,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 }
             });
         }
+
+        /// <summary>从同步命令入口请求刷新。</summary>
+        protected void RefreshData() => _ = RefreshDataAsync();
 
         protected abstract Task RefreshDataProcess();
 

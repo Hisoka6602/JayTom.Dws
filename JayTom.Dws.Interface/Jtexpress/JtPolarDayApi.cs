@@ -1,10 +1,8 @@
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using NLog;
 
@@ -30,6 +28,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
         private const string DeviceInfoPath = "/polarDay/upload/deviceInfo";
 
         /// <summary>
+        /// 交叉带图片上传到本地适配服务的相对地址。
+        /// </summary>
+        private const string SortingImagePath =
+            "/polarDay/upload/sortingImage";
+
+        /// <summary>
         /// 目标格口查询相对地址。
         /// </summary>
         private const string QueryChutePath = "/polarDay/query/queryChute";
@@ -47,13 +51,13 @@ namespace JayTom.Dws.Interface.Jtexpress {
             "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
 
         /// <summary>
-        /// 极昼扫描图片服务正式地址。
+        /// 旧配置兼容字段默认值；DWS 不再访问此地址。
         /// </summary>
         public const string DefaultImageServiceBaseUrl =
             "https://opa.jtexpress.com.cn";
 
         /// <summary>
-        /// 图片默认关联出仓扫描。
+        /// 旧配置兼容字段默认值；图片扫描类型由本地服务配置。
         /// </summary>
         public const int DefaultImageScanType = 104;
 
@@ -97,24 +101,9 @@ namespace JayTom.Dws.Interface.Jtexpress {
         private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>
-        /// 图片服务登录互斥锁，避免并发重复刷新 Token。
-        /// </summary>
-        private readonly SemaphoreSlim _imageLoginGate = new(1, 1);
-
-        /// <summary>
         /// 当前参数快照。
         /// </summary>
         private ApiParameter _parameters = new();
-
-        /// <summary>
-        /// 当前图片服务登录信息。
-        /// </summary>
-        private string _imageAuthToken = string.Empty;
-
-        /// <summary>
-        /// 图片服务 Token 获取时间的 Unix 毫秒时间戳。
-        /// </summary>
-        private long _imageLoginTimestamp;
 
         /// <summary>
         /// 初始化极昼接口。
@@ -203,11 +192,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
 
             var snapshot = parameter.Clone();
-            var previous = Interlocked.Exchange(ref _parameters, snapshot);
-            if (!HasSameImageLoginSettings(previous, snapshot)) {
-                Interlocked.Exchange(ref _imageAuthToken, string.Empty);
-                Interlocked.Exchange(ref _imageLoginTimestamp, 0);
-            }
+            Interlocked.Exchange(ref _parameters, snapshot);
             return Task.FromResult(
                 new KeyValuePair<bool, string>(true, string.Empty));
         }
@@ -242,11 +227,11 @@ namespace JayTom.Dws.Interface.Jtexpress {
             var context = other as UploadContext ?? new UploadContext();
             var parameters = Volatile.Read(ref _parameters);
             var imagePath = EmptyToNull(context.HalfPath);
-            if (imageInfo?.Image is { } image &&
-                HasCompleteImageUploadConfiguration(parameters)) {
+            if (imageInfo?.Image is { } image) {
                 try {
                     var imageContent =
-                        JtPolarDayScanImageProcessor.CreateUploadContent(image);
+                        JtPolarDayScanImageProcessor.CreateUploadContent(
+                            image.As<System.Drawing.Image>());
                     imagePath = await UploadScanImageAsync(
                             barcode,
                             scanTime,
@@ -464,7 +449,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
         }
 
         /// <summary>
-        /// 申请极昼图片上传链接、上传图片并返回短链接。
+        /// 将图片上传到本地适配服务并返回 packageInfo.halfPath。
         /// </summary>
         private async Task<string> UploadScanImageAsync(
             string barcode,
@@ -478,310 +463,34 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     "极昼扫描图片超过接口允许的最大大小");
             }
 
-            var authToken = await EnsureImageLoggedInAsync(
-                    parameters,
-                    token)
-                .ConfigureAwait(false);
-            var requestData = new[] {
-                new {
-                    size = imageContent.Length,
-                    fileName = CreateImageFileName(
-                        barcode,
-                        scanTime,
-                        parameters.ImageScanType),
-                    scanType = parameters.ImageScanType,
-                    waybillNo = NormalizeBarcode(barcode)
-                }
+            var requestData = new {
+                waybillNo = NormalizeBarcode(barcode),
+                scanTime = scanTime.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                contentBase64 = Convert.ToBase64String(imageContent)
             };
-            var responseContent = await PostImageServiceJsonAsync(
-                    CombineUrl(
-                        parameters.ImageServiceBaseUrl,
-                        "/opa/smart/scan/getUploadUrl"),
+            var response = await ExecuteRequestAsync(
+                    SortingImagePath,
                     requestData,
+                    parameters,
                     parameters.ImageUploadTimeoutMilliseconds,
-                    authToken,
+                    EvaluateDeviceInfoResponse,
                     token)
                 .ConfigureAwait(false);
-            var response = ParseSuccessfulOpaResponse(
-                responseContent,
-                "获取极昼图片上传链接失败");
-            var data = GetOpaData(response);
-            var link = data is JsonArray array
-                ? array.FirstOrDefault() as JsonObject
-                : data as JsonObject;
-            var uploadUrl = GetJsonString(link, "uploadUrl");
-            var shortUrl = GetJsonString(link, "shortUrl");
-            var contentType = GetJsonString(link, "contentType");
-            if (string.IsNullOrWhiteSpace(uploadUrl) ||
-                string.IsNullOrWhiteSpace(shortUrl) ||
-                string.IsNullOrWhiteSpace(contentType)) {
+            if (!response.IsSuccess) {
                 throw new InvalidOperationException(
-                    "极昼图片上传链接响应缺少 uploadUrl、shortUrl 或 contentType");
+                    $"本地交叉带图片暂存失败:{response.ExceptionMsg}");
             }
 
-            await PutImageContentAsync(
-                    uploadUrl,
-                    contentType,
-                    imageContent,
-                    parameters.ImageUploadTimeoutMilliseconds,
-                    token)
-                .ConfigureAwait(false);
-            return shortUrl;
-        }
-
-        /// <summary>
-        /// 获取有效的极昼图片服务登录 Token。
-        /// </summary>
-        private async Task<string> EnsureImageLoggedInAsync(
-            ApiParameter parameters,
-            CancellationToken token) {
-            var currentToken = Volatile.Read(ref _imageAuthToken);
-            if (IsImageLoginValid(
-                    currentToken,
-                    Volatile.Read(ref _imageLoginTimestamp))) {
-                return currentToken;
-            }
-
-            var entered = await _imageLoginGate.WaitAsync(
-                    TimeSpan.FromSeconds(30),
-                    token)
-                .ConfigureAwait(false);
-            if (!entered) {
-                throw new TimeoutException("等待极昼图片服务登录超时");
-            }
-
-            try {
-                currentToken = Volatile.Read(ref _imageAuthToken);
-                if (IsImageLoginValid(
-                        currentToken,
-                        Volatile.Read(ref _imageLoginTimestamp))) {
-                    return currentToken;
-                }
-
-                // DWS-HEX-COMPACT: 极昼 OPA 登录协议要求使用无分隔符的小写 MD5 密码摘要。
-                var passwordHash = Convert.ToHexStringLower(
-                    MD5.HashData(
-                        Encoding.UTF8.GetBytes(parameters.ImagePassword)));
-                var loginRequest = new {
-                    account = parameters.ImageAccount,
-                    password = passwordHash,
-                    appKey = parameters.ImageAppKey,
-                    appSecret = parameters.ImageAppSecret
-                };
-                var responseContent = await PostImageServiceJsonAsync(
-                        CombineUrl(
-                            parameters.ImageServiceBaseUrl,
-                            "/opa/smartLogin"),
-                        loginRequest,
-                        parameters.ImageUploadTimeoutMilliseconds,
-                        null,
-                        token)
-                    .ConfigureAwait(false);
-                var response = ParseSuccessfulOpaResponse(
-                    responseContent,
-                    "极昼图片服务登录失败");
-                var loginData = GetOpaData(response) as JsonObject;
-                currentToken = GetJsonString(loginData, "token");
-                if (string.IsNullOrWhiteSpace(currentToken)) {
-                    throw new InvalidOperationException(
-                        "极昼图片服务登录响应缺少 Token");
-                }
-
-                if (!HasSameImageLoginSettings(
-                        Volatile.Read(ref _parameters),
-                        parameters)) {
-                    throw new InvalidOperationException(
-                        "极昼图片服务配置已更新，本次登录结果已丢弃");
-                }
-
-                Interlocked.Exchange(
-                    ref _imageLoginTimestamp,
-                    DateTimeOffset.Now.ToUnixTimeMilliseconds());
-                Interlocked.Exchange(ref _imageAuthToken, currentToken);
-                return currentToken;
-            }
-            finally {
-                _imageLoginGate.Release();
-            }
-        }
-
-        /// <summary>
-        /// 发送极昼图片服务 JSON 请求。
-        /// </summary>
-        private async Task<string> PostImageServiceJsonAsync<TRequest>(
-            string requestUrl,
-            TRequest requestData,
-            int timeoutMilliseconds,
-            string? authToken,
-            CancellationToken token) {
-            var requestBytes = JsonSerializer.SerializeToUtf8Bytes(
-                requestData,
-                JsonOptions);
-            using var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                requestUrl) {
-                Content = new ByteArrayContent(requestBytes)
-            };
-            request.Content.Headers.ContentType =
-                new MediaTypeHeaderValue("application/json");
-            if (!string.IsNullOrWhiteSpace(authToken)) {
-                request.Content.Headers.TryAddWithoutValidation(
-                    "authToken",
-                    authToken);
-            }
-
-            using var timeoutSource =
-                CancellationTokenSource.CreateLinkedTokenSource(token);
-            timeoutSource.CancelAfter(timeoutMilliseconds);
-            using var client =
-                _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
-            using var response = await client.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    timeoutSource.Token)
-                .ConfigureAwait(false);
-            var responseContent = await response.Content
-                .ReadAsStringAsync(timeoutSource.Token)
-                .ConfigureAwait(false);
-            if (response.StatusCode is < HttpStatusCode.OK or
-                >= HttpStatusCode.MultipleChoices) {
-                throw new HttpRequestException(
-                    $"极昼图片服务 HTTP {(int)response.StatusCode}:{responseContent}",
-                    null,
-                    response.StatusCode);
-            }
-
-            return responseContent;
-        }
-
-        /// <summary>
-        /// 将图片二进制内容写入极昼返回的预签名地址。
-        /// </summary>
-        private async Task PutImageContentAsync(
-            string uploadUrl,
-            string contentType,
-            byte[] imageContent,
-            int timeoutMilliseconds,
-            CancellationToken token) {
-            if (!MediaTypeHeaderValue.TryParse(
-                    contentType,
-                    out var mediaTypeHeader)) {
+            using var document = JsonDocument.Parse(
+                response.ResponseContent);
+            if (!document.RootElement.TryGetProperty("data", out var data) ||
+                !data.TryGetProperty("halfPath", out var halfPathElement) ||
+                string.IsNullOrWhiteSpace(halfPathElement.GetString())) {
                 throw new InvalidOperationException(
-                    $"极昼返回了无效的图片内容类型:{contentType}");
+                    "本地交叉带图片暂存响应缺少data.halfPath");
             }
 
-            using var timeoutSource =
-                CancellationTokenSource.CreateLinkedTokenSource(token);
-            timeoutSource.CancelAfter(timeoutMilliseconds);
-            using var request = new HttpRequestMessage(
-                HttpMethod.Put,
-                uploadUrl) {
-                Content = new ByteArrayContent(imageContent)
-            };
-            request.Content.Headers.ContentType = mediaTypeHeader;
-            using var client =
-                _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
-            using var response = await client.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    timeoutSource.Token)
-                .ConfigureAwait(false);
-            if (response.StatusCode == HttpStatusCode.OK) {
-                return;
-            }
-
-            var responseContent = await response.Content
-                .ReadAsStringAsync(timeoutSource.Token)
-                .ConfigureAwait(false);
-            throw new HttpRequestException(
-                $"极昼图片上传失败，HTTP {(int)response.StatusCode}:{responseContent}",
-                null,
-                response.StatusCode);
-        }
-
-        /// <summary>
-        /// 创建长度不超过协议限制的唯一 JPEG 文件名。
-        /// </summary>
-        private static string CreateImageFileName(
-            string barcode,
-            DateTime scanTime,
-            int scanType) {
-            var barcodePart = new StringBuilder(32);
-            foreach (var character in barcode) {
-                if (char.IsLetterOrDigit(character) ||
-                    character is '-' or '_') {
-                    barcodePart.Append(character);
-                }
-
-                if (barcodePart.Length == barcodePart.Capacity) {
-                    break;
-                }
-            }
-
-            if (barcodePart.Length == 0) {
-                barcodePart.Append("waybill");
-            }
-
-            return $"{barcodePart}_{scanTime:yyyyMMddHHmmssfff}_{scanType}_{Guid.NewGuid():N}.jpg";
-        }
-
-        /// <summary>
-        /// 解析成功的 OPA 应答，业务失败时抛出明确异常。
-        /// </summary>
-        private static JsonObject ParseSuccessfulOpaResponse(
-            string responseContent,
-            string defaultMessage) {
-            var response = JsonNode.Parse(responseContent) as JsonObject ??
-                           throw new JsonException("极昼图片服务应答不是 JSON 对象");
-            var isSuccess = response["succ"] is JsonValue successValue &&
-                            successValue.TryGetValue<bool>(out var success) &&
-                            success;
-            if (!isSuccess) {
-                throw new InvalidOperationException(
-                    GetJsonString(response, "msg") ?? defaultMessage);
-            }
-
-            return response;
-        }
-
-        /// <summary>
-        /// 获取 OPA data 节点，兼容对象和 JSON 字符串两种返回格式。
-        /// </summary>
-        private static JsonNode? GetOpaData(JsonObject response) {
-            var data = response["data"];
-            if (data is not JsonValue value ||
-                !value.TryGetValue<string>(out var json) ||
-                string.IsNullOrWhiteSpace(json)) {
-                return data;
-            }
-
-            return JsonNode.Parse(json);
-        }
-
-        /// <summary>
-        /// 安全读取 JSON 字符串字段。
-        /// </summary>
-        private static string? GetJsonString(
-            JsonObject? value,
-            string propertyName) {
-            return value?[propertyName] is JsonValue propertyValue &&
-                   propertyValue.TryGetValue<string>(out var text)
-                ? text
-                : null;
-        }
-
-        /// <summary>
-        /// 判断图片 Token 是否仍在安全有效期内。
-        /// </summary>
-        private static bool IsImageLoginValid(
-            string token,
-            long loginTimestamp) {
-            var elapsedMilliseconds =
-                DateTimeOffset.Now.ToUnixTimeMilliseconds() - loginTimestamp;
-            return !string.IsNullOrWhiteSpace(token) &&
-                   loginTimestamp > 0 &&
-                   elapsedMilliseconds >= 0 &&
-                   elapsedMilliseconds < TimeSpan.FromHours(20).TotalMilliseconds;
+            return halfPathElement.GetString()!;
         }
 
         /// <summary>
@@ -903,7 +612,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 IsSuccess = isSuccess,
                 RequestTime = requestTime,
                 ResponseTime = DateTime.Now,
-                Duration = stopwatch.Elapsed.TotalSeconds,
+                DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 ApiParameters = CreateRedactedParameterJson(parameters),
                 RequestUrl = requestUrl,
                 ExceptionMsg = exceptionMessage,
@@ -1079,20 +788,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 return "极昼超时和重试参数无效";
             }
 
-            var imageCredentialCount = CountImageCredentials(parameters);
-            if (imageCredentialCount is > 0 and < 4) {
-                return "极昼图片账号、密码、AppKey 和 AppSecret 必须同时填写";
-            }
-
-            if (imageCredentialCount == 4 &&
-                string.IsNullOrWhiteSpace(parameters.ImageServiceBaseUrl)) {
-                return "极昼图片服务地址不能为空";
-            }
-
-            if (parameters.ImageScanType is < 101 or > 107) {
-                return "极昼图片扫描类型只能为 101 到 107";
-            }
-
             if (parameters.OperateType is < 1 or > 3) {
                 return "极昼操作类型只能为 1、2 或 3";
             }
@@ -1140,68 +835,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
             }
 
             return string.Empty;
-        }
-
-        /// <summary>
-        /// 统计已填写的图片服务凭据数量。
-        /// </summary>
-        private static int CountImageCredentials(ApiParameter parameters) {
-            var count = 0;
-            if (!string.IsNullOrWhiteSpace(parameters.ImageAccount)) {
-                count++;
-            }
-
-            if (!string.IsNullOrWhiteSpace(parameters.ImagePassword)) {
-                count++;
-            }
-
-            if (!string.IsNullOrWhiteSpace(parameters.ImageAppKey)) {
-                count++;
-            }
-
-            if (!string.IsNullOrWhiteSpace(parameters.ImageAppSecret)) {
-                count++;
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// 判断图片上传所需参数是否完整。
-        /// </summary>
-        private static bool HasCompleteImageUploadConfiguration(
-            ApiParameter parameters) {
-            return CountImageCredentials(parameters) == 4 &&
-                   !string.IsNullOrWhiteSpace(
-                       parameters.ImageServiceBaseUrl);
-        }
-
-        /// <summary>
-        /// 判断两份参数是否使用同一组图片登录信息。
-        /// </summary>
-        private static bool HasSameImageLoginSettings(
-            ApiParameter left,
-            ApiParameter right) {
-            return string.Equals(
-                       left.ImageServiceBaseUrl,
-                       right.ImageServiceBaseUrl,
-                       StringComparison.OrdinalIgnoreCase) &&
-                   string.Equals(
-                       left.ImageAccount,
-                       right.ImageAccount,
-                       StringComparison.Ordinal) &&
-                   string.Equals(
-                       left.ImagePassword,
-                       right.ImagePassword,
-                       StringComparison.Ordinal) &&
-                   string.Equals(
-                       left.ImageAppKey,
-                       right.ImageAppKey,
-                       StringComparison.Ordinal) &&
-                   string.Equals(
-                       left.ImageAppSecret,
-                       right.ImageAppSecret,
-                       StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1292,10 +925,6 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 new {
                     parameters.BaseUrl,
                     parameters.AppKey,
-                    parameters.ImageServiceBaseUrl,
-                    parameters.ImageAccount,
-                    parameters.ImageAppKey,
-                    parameters.ImageScanType,
                     parameters.ImageUploadTimeoutMilliseconds,
                     parameters.SiteCode,
                     parameters.EquipmentCode,
@@ -1343,39 +972,39 @@ namespace JayTom.Dws.Interface.Jtexpress {
             public string AppSecret { get; set; } = string.Empty;
 
             /// <summary>
-            /// 极昼图片服务基础地址。
+            /// 旧配置兼容字段；当前图片只上传本地服务，不读取此值。
             /// </summary>
             public string ImageServiceBaseUrl { get; set; } =
                 DefaultImageServiceBaseUrl;
 
             /// <summary>
-            /// 极昼图片服务登录账号。
+            /// 旧配置兼容字段；当前图片登录由本地服务负责。
             /// </summary>
             public string ImageAccount { get; set; } = string.Empty;
 
             /// <summary>
-            /// 极昼图片服务登录密码。
+            /// 旧配置兼容字段；当前图片登录由本地服务负责。
             /// </summary>
             public string ImagePassword { get; set; } = string.Empty;
 
             /// <summary>
-            /// 极昼图片服务应用标识。
+            /// 旧配置兼容字段；当前图片登录由本地服务负责。
             /// </summary>
             public string ImageAppKey { get; set; } = string.Empty;
 
             /// <summary>
-            /// 极昼图片服务应用密钥。
+            /// 旧配置兼容字段；当前图片登录由本地服务负责。
             /// </summary>
             public string ImageAppSecret { get; set; } = string.Empty;
 
             /// <summary>
-            /// 图片关联的扫描类型。
+            /// 旧配置兼容字段；图片扫描类型由本地服务配置。
             /// </summary>
             public int ImageScanType { get; set; } =
                 DefaultImageScanType;
 
             /// <summary>
-            /// 图片登录、链接申请和二进制上传超时毫秒数。
+            /// 图片上传到本地兼容服务的超时毫秒数。
             /// </summary>
             public int ImageUploadTimeoutMilliseconds { get; set; } =
                 10000;
