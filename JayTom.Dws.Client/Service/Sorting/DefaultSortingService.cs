@@ -1,4 +1,5 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Packages;
 using System;
 using DryIoc;
 using System.Linq;
@@ -47,6 +48,8 @@ namespace JayTom.Dws.Client.Service.Sorting
     public class DefaultSortingService : ISortingService, IAsyncDisposable
     {
         private readonly ISettingsStore _settingsStore;
+        /// <summary>提供运行期包裹会话，用于核对 API 响应和待发送格口指令的包裹身份。</summary>
+        private readonly IPackageSessionStore _packageSessionStore;
         private readonly ILogisticsRegexRepository _logisticsRegexRepository;
         private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
         private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
@@ -73,15 +76,14 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
         /// <summary>
-        /// 串行执行分拣工作的通道，避免为每个包裹创建阻塞任务。
+        /// 按到期时间调度分拣工作的通道，避免一个包裹的配置延迟阻塞后续包裹。
         /// </summary>
-        private readonly Channel<Func<Task>> _sortingWorkChannel =
-            Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(2048)
+        private readonly Channel<(Func<Task> Work, long DueTimestamp)> _sortingWorkChannel =
+            Channel.CreateUnbounded<(Func<Task> Work, long DueTimestamp)>(new UnboundedChannelOptions
             {
                 SingleReader = true,
                 SingleWriter = false,
-                AllowSynchronousContinuations = false,
-                FullMode = BoundedChannelFullMode.Wait
+                AllowSynchronousContinuations = false
             });
         /// <summary>
         /// 控制分拣工作消费者的生命周期。
@@ -106,6 +108,10 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// </summary>
         private readonly ConcurrentDictionary<string, Func<FormulaNumber, FormulaNumber, FormulaNumber, FormulaNumber, bool>> _volumeFormulaCache =
             new(StringComparer.Ordinal);
+        /// <summary>保护 API 响应的一次性消费状态。</summary>
+        private readonly object _apiCorrelationGate = new();
+        /// <summary>记录已经消费 API 响应的包裹创建时间，防止重试或重复响应再次赋格口。</summary>
+        private readonly HashSet<long> _consumedApiCorrelations = [];
         /// <summary>
         /// 用户可配正则的最长单次匹配时间。
         /// </summary>
@@ -175,6 +181,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         public event EventHandler<string>? ClearExceptionEvent;
 
         public DefaultSortingService(ISettingsStore settingsStore,
+            IPackageSessionStore packageSessionStore,
            ILogisticsRegexRepository logisticsRegexRepository,
             ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
             IPackageExitDefinitionRepository packageExitDefinitionRepository,
@@ -199,6 +206,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             IGrayscaleService grayscaleService)
         {
             _settingsStore = settingsStore;
+            _packageSessionStore = packageSessionStore;
             _logisticsRegexRepository = logisticsRegexRepository;
             _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
@@ -222,6 +230,8 @@ namespace JayTom.Dws.Client.Service.Sorting
             _stackedPackageService = stackedPackageService;
             _grayscaleService = grayscaleService;
             _sortingWorker = Task.Run(ProcessSortingWorkAsync);
+            _packageSessionStore.PackageRemoved += (_, args) =>
+                RemoveConsumedApiCorrelation(args.RemovedPackage.CreateTime.Ticks);
 
             //事件
             _sortingConnectionService.HeartbeatError += delegate (object? sender, Exception exception)
@@ -385,6 +395,17 @@ namespace JayTom.Dws.Client.Service.Sorting
                 {
                     if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting)
                     {
+                        if (!TryConsumeApiCorrelation(model, out var rejectionReason))
+                        {
+                            NLog.LogManager.GetCurrentClassLogger().Error(
+                                $"拒绝未通过包裹身份校验的 API 格口响应:{rejectionReason}");
+                            OnExceptionOccurred(new ExceptionEventArgs
+                            {
+                                ExceptionMessage = $"API 格口响应与运行包裹不匹配，已禁止发送:{rejectionReason}"
+                            });
+                            return;
+                        }
+
                         ExecuteSorting(new SortingParam
                         {
                             Timestamp = model.Timestamp,
@@ -731,7 +752,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             QueueSortingWork(() => ExceptionSortingAsync(param, abnormalSortingType, token));
         }
 
-        private async Task ExceptionSortingAsync(
+        private Task ExceptionSortingAsync(
             SortingParam param,
             PackageCloudAbnormalSortingType abnormalSortingType,
             CancellationToken token)
@@ -770,11 +791,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                             w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
                         ?.ToList();
 
-                    await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(), sortingInstructionBindingInfoModel.ExitId ?? 0,
-                        sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
-                        new InstructionsAttach
+                    var attach = new InstructionsAttach
                         {
                             BarCode = param.BarCode,
                             ExitName = packageExitDefinitionInfoModel.ExitName,
@@ -793,10 +810,33 @@ namespace JayTom.Dws.Client.Service.Sorting
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
                             LinkedCarCount = param.LinkedCarCount
-                        });
+                        };
+                    attach.ValidateBeforeSend = () =>
+                        IsCurrentPackageIdentity(attach, out var reason) ? null : reason;
+                    QueueSortingWork(
+                        () =>
+                        {
+                            if (!IsCurrentPackageIdentity(attach, out var rejectionReason))
+                            {
+                                NLog.LogManager.GetCurrentClassLogger().Error(
+                                    $"发送前包裹身份复核失败，已禁止异常格口指令:{rejectionReason}");
+                                return Task.CompletedTask;
+                            }
+
+                            _sortingConnectionService.SendInstructions(
+                                param.Tag ?? new object(),
+                                sortingInstructionBindingInfoModel.ExitId ?? 0,
+                                sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
+                                attach);
+                            return Task.CompletedTask;
+                        },
+                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.DelaySendMilliseconds));
                     //回调分拣消息
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         public void BarcodeSorting(SortingParam param, CancellationToken token = default)
@@ -1105,7 +1145,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             QueueSortingWork(() => SubSortingAsync(param, token));
         }
 
-        private async Task SubSortingAsync(
+        private Task SubSortingAsync(
             SortingParam param,
             CancellationToken token)
         {
@@ -1115,7 +1155,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             {
                 //走异常口
                 ExceptionSorting(param, PackageCloudAbnormalSortingType.StackedPackage, token);
-                return;
+                return Task.CompletedTask;
             }
             var packageExitDefinitions = Volatile.Read(ref _packageExitDefinitionInfos);
             var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
@@ -1145,7 +1185,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                         if (_packageExitLockSettingsDto.IsAutoExceptionSorting)
                         {
                             ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
-                            return;
+                            return Task.CompletedTask;
                         }
                     }
                 }
@@ -1172,12 +1212,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                     var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
                             w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
                         ?.ToList();
-                    await Task.Delay(sortingInstructionBindingInfoModel.DelaySendMilliseconds, token);
-
-                    _sortingConnectionService.SendInstructions(param.Tag ?? new object(), sortingInstructionBindingInfoModel.ExitId ?? 0,
-                        sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
-                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
-                        new InstructionsAttach
+                    var attach = new InstructionsAttach
                         {
                             BarCode = param.BarCode,
                             ExitName = effectiveExitDefinition.ExitName ?? string.Empty,
@@ -1196,7 +1231,28 @@ namespace JayTom.Dws.Client.Service.Sorting
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
                             LinkedCarCount = param.LinkedCarCount
-                        });
+                        };
+                    attach.ValidateBeforeSend = () =>
+                        IsCurrentPackageIdentity(attach, out var reason) ? null : reason;
+                    QueueSortingWork(
+                        () =>
+                        {
+                            if (!IsCurrentPackageIdentity(attach, out var rejectionReason))
+                            {
+                                NLog.LogManager.GetCurrentClassLogger().Error(
+                                    $"发送前包裹身份复核失败，已禁止格口指令:{rejectionReason}");
+                                return Task.CompletedTask;
+                            }
+
+                            _sortingConnectionService.SendInstructions(
+                                param.Tag ?? new object(),
+                                sortingInstructionBindingInfoModel.ExitId ?? 0,
+                                sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
+                                attach);
+                            return Task.CompletedTask;
+                        },
+                        TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.DelaySendMilliseconds));
                     //回调分拣消息
                     //NLog.LogManager.GetCurrentClassLogger().Error($"SubSorting:{param.LinkedCarCount}");
                 }
@@ -1210,6 +1266,116 @@ namespace JayTom.Dws.Client.Service.Sorting
             {
                 //走异常口
                 ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>严格核对 API 响应与活动包裹，并原子地确保同一包裹只消费一次响应。</summary>
+        private bool TryConsumeApiCorrelation(ApiResponseReceived response, out string rejectionReason)
+        {
+            var timestampMatches = _packageSessionStore.GetPackages(pair =>
+                pair.Value.Timestamp == response.Timestamp);
+            if (timestampMatches.Count != 1)
+            {
+                rejectionReason = $"时间戳匹配到 {timestampMatches.Count} 个活动包裹:Timestamp={response.Timestamp}";
+                return false;
+            }
+
+            var activePackage = timestampMatches[0];
+            if (activePackage.CreateTime != response.PackageCreationTime ||
+                !ReferenceEquals(
+                    activePackage,
+                    _packageSessionStore.GetPackage(response.PackageCreationTime)))
+            {
+                rejectionReason = $"创建时间未指向同一个活动包裹:Timestamp={response.Timestamp}";
+                return false;
+            }
+
+            if (!IsCurrentPackageIdentity(activePackage, response, out rejectionReason))
+            {
+                return false;
+            }
+
+            lock (_apiCorrelationGate)
+            {
+                if (!_consumedApiCorrelations.Add(response.PackageCreationTime.Ticks))
+                {
+                    rejectionReason = $"同一包裹的 API 响应已消费:Timestamp={response.Timestamp}";
+                    return false;
+                }
+            }
+
+            rejectionReason = string.Empty;
+            return true;
+        }
+
+        /// <summary>核对活动包裹与 API 响应携带的完整身份。</summary>
+        private static bool IsCurrentPackageIdentity(
+            PackageInfo? package,
+            ApiResponseReceived response,
+            out string rejectionReason)
+        {
+            if (package is null)
+            {
+                rejectionReason = $"活动包裹已不存在:Timestamp={response.Timestamp}";
+                return false;
+            }
+
+            lock (package.SyncRoot)
+            {
+                if (!package.IsCompleted ||
+                    package.Timestamp != response.Timestamp ||
+                    package.Guid != response.Guid ||
+                    package.CreateTime.Ticks != response.PackageCreationTime.Ticks ||
+                    package.BarCodeInfo is null ||
+                    !string.Equals(package.BarCodeInfo.Barcode, response.Barcode, StringComparison.Ordinal) ||
+                    package.BarCodeInfo.ScanTime.Ticks != response.ScanTime.Ticks)
+                {
+                    rejectionReason = $"活动包裹身份已变化:Timestamp={response.Timestamp},Guid={response.Guid},Barcode={response.Barcode}";
+                    return false;
+                }
+            }
+
+            rejectionReason = string.Empty;
+            return true;
+        }
+
+        /// <summary>在配置延时结束后，根据指令附件再次核对活动包裹身份。</summary>
+        private bool IsCurrentPackageIdentity(InstructionsAttach attach, out string rejectionReason)
+        {
+            var package = _packageSessionStore.GetPackage(attach.PackageCreationTime);
+            if (package is null)
+            {
+                rejectionReason = $"活动包裹已不存在:Timestamp={attach.Timestamp}";
+                return false;
+            }
+
+            lock (package.SyncRoot)
+            {
+                if (!package.IsCompleted ||
+                    package.Timestamp != attach.Timestamp ||
+                    package.Guid != attach.Guid ||
+                    package.CreateTime.Ticks != attach.PackageCreationTime.Ticks ||
+                    package.BarCodeInfo is null ||
+                    !string.Equals(package.BarCodeInfo.Barcode, attach.BarCode, StringComparison.Ordinal) ||
+                    package.BarCodeInfo.ScanTime.Ticks != attach.ScanTime?.Ticks)
+                {
+                    rejectionReason = $"活动包裹身份与待发指令不一致:Timestamp={attach.Timestamp},Guid={attach.Guid},Barcode={attach.BarCode}";
+                    return false;
+                }
+            }
+
+            rejectionReason = string.Empty;
+            return true;
+        }
+
+        /// <summary>包裹离开活动会话后清理一次性消费状态，保持集合有界。</summary>
+        private void RemoveConsumedApiCorrelation(long creationTimeTicks)
+        {
+            lock (_apiCorrelationGate)
+            {
+                _consumedApiCorrelations.Remove(creationTimeTicks);
             }
         }
 
@@ -1538,9 +1704,12 @@ namespace JayTom.Dws.Client.Service.Sorting
             };
         }
 
-        private void QueueSortingWork(Func<Task> work)
+        private void QueueSortingWork(Func<Task> work, TimeSpan delay = default)
         {
-            if (!_sortingWorkChannel.Writer.TryWrite(work))
+            var normalizedDelay = delay > TimeSpan.Zero ? delay : TimeSpan.Zero;
+            var dueTimestamp = Stopwatch.GetTimestamp() +
+                               (long)(normalizedDelay.TotalSeconds * Stopwatch.Frequency);
+            if (!_sortingWorkChannel.Writer.TryWrite((work, dueTimestamp)))
             {
                 OnExceptionOccurred(new ExceptionEventArgs
                 {
@@ -1551,11 +1720,43 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         private async Task ProcessSortingWorkAsync()
         {
+            var pending = new PriorityQueue<(Func<Task> Work, long DueTimestamp), long>();
             try
             {
-                await foreach (var work in _sortingWorkChannel.Reader.ReadAllAsync(
-                                   _sortingWorkerCancellation.Token))
+                var token = _sortingWorkerCancellation.Token;
+                while (!token.IsCancellationRequested)
                 {
+                    while (_sortingWorkChannel.Reader.TryRead(out var queuedWork))
+                    {
+                        pending.Enqueue(queuedWork, queuedWork.DueTimestamp);
+                    }
+
+                    if (pending.Count == 0)
+                    {
+                        var queuedWork = await _sortingWorkChannel.Reader.ReadAsync(token);
+                        pending.Enqueue(queuedWork, queuedWork.DueTimestamp);
+                        continue;
+                    }
+
+                    pending.TryPeek(out _, out var dueTimestamp);
+                    var remaining = Stopwatch.GetElapsedTime(
+                        Stopwatch.GetTimestamp(),
+                        dueTimestamp);
+                    if (remaining > TimeSpan.Zero)
+                    {
+                        using var waitCancellation =
+                            CancellationTokenSource.CreateLinkedTokenSource(token);
+                        var waitForEarlierWork = _sortingWorkChannel.Reader
+                            .WaitToReadAsync(waitCancellation.Token)
+                            .AsTask();
+                        await Task.WhenAny(
+                            waitForEarlierWork,
+                            Task.Delay(remaining, waitCancellation.Token));
+                        waitCancellation.Cancel();
+                        continue;
+                    }
+
+                    var work = pending.Dequeue().Work;
                     try
                     {
                         await work();

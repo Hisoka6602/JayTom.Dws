@@ -11,10 +11,10 @@ namespace JayTom.Dws.Tests;
 public sealed class JtPolarDayApiTests
 {
     /// <summary>
-    /// 本地图片暂存失败不能阻断 scanInfo 和 packageInfo 设备报文。
+    /// 本地图片暂存失败时不得继续发送无图 scanInfo 和 packageInfo。
     /// </summary>
     [Fact]
-    public async Task DeviceInfoStillUploadsWhenLocalImageStagingFails()
+    public async Task DeviceInfoDoesNotUploadWhenLocalImageStagingFails()
     {
         var requestPaths = new List<string>();
         using var handler = new StubHttpMessageHandler(request =>
@@ -33,33 +33,35 @@ public sealed class JtPolarDayApiTests
         Assert.True(parameterResult.Key, parameterResult.Value);
 
         using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
-        await api.UploadInBackground(
-            "JT5513378378679",
-            1,
-            new DateTime(2026, 8, 10, 16, 38, 38),
-            imageInfo: new UploadImageInfo
-            {
-                Image = image,
-                CameraSerialNumber = "CAM01"
-            },
-            other: new JtPolarDayApi.UploadContext
-            {
-                CarNum = "84",
-                GridNo = "05",
-                GridCode = "01",
-                FallTime = new DateTime(2026, 8, 10, 16, 38, 41)
-            });
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => api.UploadInBackground(
+                "JT5513378378679",
+                1,
+                new DateTime(2026, 8, 10, 16, 38, 38),
+                imageInfo: new UploadImageInfo
+                {
+                    Image = image,
+                    CameraSerialNumber = "CAM01"
+                },
+                other: new JtPolarDayApi.UploadContext
+                {
+                    CarNum = "84",
+                    GridNo = "05",
+                    GridCode = "01",
+                    FallTime = new DateTime(2026, 8, 10, 16, 38, 41)
+                }));
 
+        Assert.Contains("图片上传失败", exception.Message, StringComparison.Ordinal);
         Assert.Contains(
             requestPaths,
             path => path.EndsWith(
                 "/polarDay/upload/sortingImage",
                 StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(
-            2,
-            requestPaths.Count(path => path.EndsWith(
+        Assert.DoesNotContain(
+            requestPaths,
+            path => path.EndsWith(
                 "/polarDay/upload/deviceInfo",
-                StringComparison.OrdinalIgnoreCase)));
+                StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>

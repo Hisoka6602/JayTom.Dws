@@ -9,6 +9,7 @@ using TouchSocket.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Threading.Channels;
 using System.ComponentModel.DataAnnotations;
 using JayTom.Dws.Plugin;
 
@@ -36,6 +37,23 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         /// 按客户端隔离的固定长度消息分帧缓冲区。
         /// </summary>
         private readonly ConcurrentDictionary<string, ReceiveBufferState> _receiveBuffers = new();
+        /// <summary>
+        /// 收包回调只拆帧和入队，协议解析及业务订阅在专用消费者中执行。
+        /// 设备指令不允许因队列繁忙被丢弃或反向阻塞 Socket 回调。
+        /// </summary>
+        private readonly Channel<(string ClientKey, byte[] Frame, DateTime ReceivedTime)> _receivedFrames =
+            Channel.CreateUnbounded<(string ClientKey, byte[] Frame, DateTime ReceivedTime)>(new UnboundedChannelOptions {
+                SingleReader = true,
+                SingleWriter = false,
+                AllowSynchronousContinuations = false
+            });
+        /// <summary>严格按入队顺序发布完整帧的专用消费者。</summary>
+        private readonly Task _receivedFrameWorker;
+
+        /// <summary>创建 TCP 服务端并启动专用收帧消费者。</summary>
+        public TouchSocketTcpServer() {
+            _receivedFrameWorker = ProcessReceivedFramesAsync();
+        }
 
         public async Task<bool> Connect(string ipAddress, int port, int timeOut = 1000, FormatType dataType = FormatType.Ascii, int dataLen = 0, CancellationToken token = default) {
             DataLen = dataLen;
@@ -61,7 +79,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                     _tcpService = new TcpService();
                     _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                         try {
-                            HandleReceivedBytes(client.ID, block.Buffer, block.Len);
+                            HandleReceivedBytes(client.ID, block.Buffer, block.Len, DateTime.Now);
                             block.Clear();
                         }
                         catch (Exception e) {
@@ -113,7 +131,7 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
                         _tcpService = new TcpService();
                         _tcpService.Received += delegate (SocketClient client, ByteBlock block, IRequestInfo info) {
                             try {
-                                HandleReceivedBytes(client.ID, block.Buffer, block.Len);
+                                HandleReceivedBytes(client.ID, block.Buffer, block.Len, DateTime.Now);
                                 block.Clear();
                             }
                             catch (Exception e) {
@@ -347,7 +365,11 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
         /// <summary>
         /// 处理指定客户端的 TCP 粘包和拆包。
         /// </summary>
-        private void HandleReceivedBytes(string clientKey, byte[] buffer, int length) {
+        private void HandleReceivedBytes(
+            string clientKey,
+            byte[] buffer,
+            int length,
+            DateTime receivedTime) {
             if (length <= 0) {
                 return;
             }
@@ -382,13 +404,30 @@ namespace JayTom.Dws.Plugin.Tcp.TcpServer {
             }
 
             foreach (var frame in frames) {
-                OnCommunication(new CommunicationInfo {
-                    Content = FormatType == FormatType.Ascii
-                        ? Encoding.Default.GetString(frame)
-                        : HexDataFormatter.Format(frame),
-                    Time = DateTime.Now,
-                    Type = CommunicationType.Receive
-                });
+                if (!_receivedFrames.Writer.TryWrite(
+                    (clientKey, frame, receivedTime))) {
+                    OnException(new InvalidOperationException(
+                        $"TCP服务端接收帧队列已停止，客户端 {clientKey} 的完整报文未能入队"));
+                }
+            }
+        }
+
+        /// <summary>按入队顺序发布完整帧，避免 Socket 回调执行协议和业务逻辑。</summary>
+        private async Task ProcessReceivedFramesAsync() {
+            await foreach (var receivedFrame in _receivedFrames.Reader.ReadAllAsync()
+                               .ConfigureAwait(false)) {
+                try {
+                    OnCommunication(new CommunicationInfo {
+                        Content = FormatType == FormatType.Ascii
+                            ? Encoding.Default.GetString(receivedFrame.Frame)
+                            : HexDataFormatter.Format(receivedFrame.Frame),
+                        Time = receivedFrame.ReceivedTime,
+                        Type = CommunicationType.Receive
+                    });
+                }
+                catch (Exception exception) {
+                    OnException(exception);
+                }
             }
         }
 

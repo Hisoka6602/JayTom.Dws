@@ -19,6 +19,7 @@ using JayTom.Dws.Domain.Dto.ApiDto;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Application.Workflows;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Domain.DownstreamProtocols;
@@ -46,19 +47,22 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly ISortingService _sortingService;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExternalDataService _externalDataService;
-        private CreatePackageSettingsDto _createPackageSettingsDto = new();
+        private volatile CreatePackageSettingsDto _createPackageSettingsDto = new();
         private readonly ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
         /// <summary>
         /// 复用用户配置的条码正则，避免在相机热回调中重复编译。
         /// </summary>
         private readonly ConcurrentDictionary<string, Regex> _regexCache = new(StringComparer.Ordinal);
-        private BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
-        private readonly SemaphoreSlim _createPackageSlim = new(1, 1);
+        private volatile BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
+        /// <summary>串行处理创建、扫码、空读、回调和赋值的关键队列。</summary>
+        private readonly NonBlockingOrderedDispatcher<Action> _packageEventDispatcher;
+        /// <summary>隔离日志、UI、持久化、API和输出订阅者的通知队列。</summary>
+        private readonly NonBlockingOrderedDispatcher<Action> _packageNotificationDispatcher;
         private DateTime _lastNoReadTime = DateTime.MinValue;
         private ICamera[] _cameras = [];
         private int _isWindowsClose;
-        private WeightSettingsDto _weightSettingsDto = new();
-        private WdtWmsApiDto _wdtWmsApiDto = new();
+        private volatile WeightSettingsDto _weightSettingsDto = new();
+        private volatile WdtWmsApiDto _wdtWmsApiDto = new();
 
         public YunShanPackageBackgroundService(IPackageSessionStore packageSessionStore,
             IDeviceService deviceService,
@@ -75,18 +79,31 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _sortingService = sortingService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _externalDataService = externalDataService;
+            _packageEventDispatcher = new NonBlockingOrderedDispatcher<Action>(
+                static work =>
+                {
+                    work();
+                },
+                static (_, exception) => QueueError("执行关键包裹事件失败", exception));
+            _packageNotificationDispatcher = new NonBlockingOrderedDispatcher<Action>(
+                static notification =>
+                {
+                    notification();
+                },
+                static (_, exception) => QueueError("发布包裹通知失败", exception));
             _deviceService.CameraInitialized += (_, cameras) =>
             {
                 Volatile.Write(ref _cameras, [.. cameras]);
             };
 
             //条码返回
-            _deviceService.BarcodeScanned += async delegate (object? sender, BarcodeReadEventArgs args)
+            _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args)
             {
-                //验证多条码
-                try
+                if (!TryQueuePackageEvent(() =>
                 {
-                    await _createPackageSlim.WaitAsync();
+                    //验证多条码
+                    try
+                    {
                     if (Volatile.Read(ref _cameras)
                             .Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1)
                     {
@@ -162,12 +179,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 },
                                 Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image),
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                            {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                                PackageInfo = packageInfo
-                            });
+                            ProcessPackageTrigger(packageInfo);
                         }
                         else
                         {
@@ -192,12 +204,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 {
                                     replacedImage?.Dispose();
                                 }
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                                {
-                                    IsSuccess = true,
-                                    TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
-                                    PackageInfo = packageInfo,
-                                });
+                                ProcessPackageValueChanged(
+                                    packageInfo,
+                                    TriggerPositionEnum.BarCodeSetValueAfter);
                             }
                             else
                             {
@@ -205,28 +214,28 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             }
                         }
                     }
-                }
-                catch (Exception exception)
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理相机条码事件失败", exception);
+                    }
+                }, "相机条码"))
                 {
-                    QueueError("处理相机条码事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
+                    args.Image?.Dispose();
                 }
             };
             //空包裹
-            _deviceService.BarcodeMissed += async delegate (object? sender, BarcodeReadEventArgs args)
+            _deviceService.BarcodeMissed += delegate (object? sender, BarcodeReadEventArgs args)
             {
-                await Task.Yield();
-                if (!_createPackageSettingsDto.IsUseNoRead)
+                if (!TryQueuePackageEvent(() =>
                 {
-                    args.Image?.Dispose();
-                    return;
-                }
-                try
-                {
-                    await _createPackageSlim.WaitAsync();
+                    if (!_createPackageSettingsDto.IsUseNoRead)
+                    {
+                        args.Image?.Dispose();
+                        return;
+                    }
+                    try
+                    {
                     if (Volatile.Read(ref _cameras)
                             .Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1)
                     {
@@ -301,12 +310,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 },
                                 Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image),
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                            {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                                PackageInfo = packageInfo
-                            });
+                            ProcessPackageTrigger(packageInfo);
                         }
                         else
                         {
@@ -331,12 +335,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 {
                                     replacedImage?.Dispose();
                                 }
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                                {
-                                    IsSuccess = true,
-                                    TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
-                                    PackageInfo = packageInfo
-                                });
+                                ProcessPackageValueChanged(
+                                    packageInfo,
+                                    TriggerPositionEnum.BarCodeSetValueAfter);
                             }
                             else
                             {
@@ -344,22 +345,23 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             }
                         }
                     }
-                }
-                catch (Exception exception)
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理相机空读事件失败", exception);
+                    }
+                }, "相机空读"))
                 {
-                    QueueError("处理相机空读事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
+                    args.Image?.Dispose();
                 }
             };
             //下位机创建包裹
-            _sortingService.CreatePackageEvent += async delegate (object? sender, PackageInstructionEventArgs args)
+            _sortingService.CreatePackageEvent += delegate (object? sender, PackageInstructionEventArgs args)
             {
-                try
+                TryQueuePackageEvent(() =>
                 {
-                    await _createPackageSlim.WaitAsync();
+                    try
+                    {
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.LowerMachineCreation) ==
                         PackageCreationMethodsEnum.LowerMachineCreation)
                     {
@@ -375,13 +377,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 CreateTime = args.InstructionTime,
                             };
 
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                            {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                                PackageInfo = packageInfo
-                            });
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            ProcessPackageTrigger(packageInfo);
+                            QueueInstructionNotification(new InstructionReceived
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -396,31 +393,26 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     }
                                 },
                                 ConnectionName = args.ConnectionName,
-                            });
+                            }, "创建指令");
                         }
                     }
-                }
-                catch (Exception exception)
-                {
-                    QueueError("处理下位机创建包裹事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
-                }
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理下位机创建包裹事件失败", exception);
+                    }
+                }, "下位机创建包裹");
             };
             //下位机(移除包裹)
-            _sortingService.RemovePackageEvent += async delegate (object? sender, PackageInstructionEventArgs args)
+            _sortingService.RemovePackageEvent += delegate (object? sender, PackageInstructionEventArgs args)
             {
                 /*//测试,记得删
                 return;*/
 
-                try
+                TryQueuePackageEvent(() =>
                 {
-                    await Task.Delay(200);
-                    await _createPackageSlim.WaitAsync();
-                    //测试间隔200,记得删掉
-
+                    try
+                    {
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse)
                     {
@@ -428,7 +420,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
 
                         if (packageInfo is not null)
                         {
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            QueueInstructionNotification(new InstructionReceived
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -443,7 +435,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     },
                                 },
                                 ConnectionName = args.ConnectionName,
-                            });
+                            }, "分拣完成指令");
                             /*EventAggregator.Instance.Publish(new CallBackPackageInfo {
                                 CallBackTime = DateTime.Now,
                                 PackageCreateTime = keyValuePair.Value.CreateTime,
@@ -464,32 +456,29 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     {
                         QueueError($"关键字节转数字失败:{args.Keyword}");
                     }
-                }
-                catch (Exception exception)
-                {
-                    QueueError("处理下位机移除包裹事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
-                }
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理下位机移除包裹事件失败", exception);
+                    }
+                }, "下位机移除包裹");
 
                 //其他协议
             };
             //下位机(包裹异常)
-            _sortingService.PackageException += async (sender, args) =>
+            _sortingService.PackageException += (sender, args) =>
             {
-                try
+                TryQueuePackageEvent(() =>
                 {
-                    await Task.Delay(500);
-                    await _createPackageSlim.WaitAsync();
+                    try
+                    {
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse)
                     {
                         var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
                         if (packageInfo is not null)
                         {
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            QueueInstructionNotification(new InstructionReceived
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -504,25 +493,23 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     }
                                 },
                                 ConnectionName = args.ConnectionName,
-                            });
+                            }, "包裹异常指令");
                         }
                     }
-                }
-                catch (Exception exception)
-                {
-                    QueueError("处理包裹异常事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
-                }
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理包裹异常事件失败", exception);
+                    }
+                }, "下位机包裹异常");
             };
             //外部全量数据
-            _externalDataService.ContentInputReceived += async (sender, args) =>
+            _externalDataService.ContentInputReceived += (sender, args) =>
             {
-                try
+                TryQueuePackageEvent(() =>
                 {
-                    await _createPackageSlim.WaitAsync();
+                    try
+                    {
                     var barCode = "NoRead";
                     var replace = _wdtWmsApiDto.AnyStartCodes.Replace(";", "|");
 
@@ -587,12 +574,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             IsImageSaveRequested = true,
                         };
 
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent
-                        {
-                            IsSuccess = true,
-                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                            PackageInfo = packageInfo
-                        });
+                        ProcessPackageTrigger(packageInfo);
                     }
                     else
                     {
@@ -625,35 +607,30 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 };
                                 packageInfo.Other = boxBarCode;
                             }
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent
-                            {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.ExternalDataInputAfter,
-                                PackageInfo = packageInfo
-                            });
+                            ProcessPackageValueChanged(
+                                packageInfo,
+                                TriggerPositionEnum.ExternalDataInputAfter);
                         }
                     }
-                }
-                catch (Exception exception)
-                {
-                    QueueError("处理外部数据输入事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
-                }
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理外部数据输入事件失败", exception);
+                    }
+                }, "外部数据输入");
             };
             //称重
-            _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args)
+            _deviceService.StableWeight += delegate (object? sender, StableWeightEventArgs args)
             {
                 if (args.Weight <= 0)
                 {
                     return;
                 }
 
-                try
+                TryQueuePackageEvent(() =>
                 {
-                    await _createPackageSlim.WaitAsync();
+                    try
+                    {
                     var packageInfo =
                         _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
                             _packageSessionStore.GetPackage(f => f.Value is { IsCompleted: false, WeightInfo: null }) :
@@ -673,12 +650,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             }
                         };
                         //-----
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                        {
-                            IsSuccess = true,
-                            TriggerPosition = TriggerPositionEnum.PackageTrigger,
-                            PackageInfo = packageInfo
-                        });
+                        ProcessPackageTrigger(packageInfo);
                     }
                     else
                     {
@@ -694,23 +666,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     WeighingMode = WeighingMode.Static
                                 };
                             }
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                            {
-                                IsSuccess = true,
-                                TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
-                                PackageInfo = packageInfo
-                            });
+                            ProcessPackageValueChanged(
+                                packageInfo,
+                                TriggerPositionEnum.WeightSetValueAfter);
                         }
                     }
-                }
-                catch (Exception exception)
-                {
-                    QueueError("处理称重事件失败", exception);
-                }
-                finally
-                {
-                    _createPackageSlim.Release();
-                }
+                    }
+                    catch (Exception exception)
+                    {
+                        QueueError("处理称重事件失败", exception);
+                    }
+                }, "稳定重量");
             };
             //配置更改
             EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
@@ -751,70 +717,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     //其他设置
                 }
             });
-            //创建包裹后触发
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(item =>
-            {
-                if (item is { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { } packageInfo })
-                {
-                    var info = _packageSessionStore.GetLastPackage(f => f is { Value: not null });
-
-                    if (info is not null &&
-                        packageInfo.CreateTime.Subtract(info.CreateTime).TotalMilliseconds <
-                        _createPackageSettingsDto.PackageCreationInterval)
-                    {
-                        packageInfo.TakeImage()?.Dispose();
-                        return;
-                    }
-
-                    packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds();
-                    //判断是否称重
-                    if (_weightSettingsDto.Mode == WeightMode.None)
-                    {
-                        packageInfo.WeightInfo = new WeightInfoModel();
-                    }
-                    //判断是否需要体积(直接不使用)
-                    packageInfo.VolumeInfo = new VolumeInfoModel();
-                    //添加包裹
-                    var packageRemoveTimers = new List<PackageTimer>();
-                    if (_createPackageSettingsDto is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 })
-                    {
-                        packageRemoveTimers.Add(new PackageRemoveTimer()
-                        {
-                            Description = "空包裹过期",
-                            Predicate = w => w.Value.BarCodeInfo == null,
-                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.EmptyPackageExpiryTime)
-                        });
-                    }
-                    if (_createPackageSettingsDto is { IsUsePackageExpiry: true, PackageExpiryTime: > 0 })
-                    {
-                        packageRemoveTimers.Add(new PackageRemoveTimer()
-                        {
-                            Description = "包裹超过生存周期",
-                            RemovalTimeSpan = TimeSpan.FromMilliseconds(_createPackageSettingsDto.PackageExpiryTime)
-                        });
-                    }
-                    _packageSessionStore.AddPackage(packageInfo, packageRemoveTimers);
-                    var addedPackage = _packageSessionStore.GetPackage(
-                        pair => pair.Key.Equals(packageInfo.CreateTime));
-                    if (!ReferenceEquals(addedPackage, packageInfo))
-                    {
-                        packageInfo.TakeImage()?.Dispose();
-                        packageInfo.DisposeTimers();
-                        return;
-                    }
-                    //触发创建包裹事件
-                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                    {
-                        IsSuccess = true,
-                        TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
-                        PackageInfo = packageInfo
-                    });
-                }
-                else if (item is { PackageInfo: { BarCodeInfo: not null, WeightInfo: not null } info, TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter or TriggerPositionEnum.WeightSetValueAfter or TriggerPositionEnum.ExternalDataInputAfter })
-                {
-                    _packageSessionStore.CompletePackage(f => f.Key.Equals(info.CreateTime));
-                }
-            });
             //程序停止
             EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
             {
@@ -831,13 +733,14 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             //移除包裹事件
             _packageSessionStore.PackageRemoved += (sender, args) =>
             {
-                EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                {
-                    IsSuccess = true,
-                    TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
-                    PackageInfo = args.RemovedPackage,
-                    Description = args.Description
-                });
+                QueuePackageNotification(() =>
+                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                    {
+                        IsSuccess = true,
+                        TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
+                        PackageInfo = args.RemovedPackage,
+                        Description = args.Description
+                    }), "移除包裹");
             };
             _packageSessionStore.PackageCompleted += (sender, args) =>
             {
@@ -846,7 +749,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     args.CompletedPackage?.WeightInfo is not null &&
                     args.CompletedPackage?.VolumeInfo is not null)
                 {
-                    EventAggregator.Instance.Publish(args.CompletedPackage);
+                    QueuePackageNotification(
+                        () => EventAggregator.Instance.Publish(args.CompletedPackage),
+                        "包裹完成");
                 }
             };
             EventAggregator.Instance.Subscribe<WindowsAction>(item =>
@@ -873,17 +778,135 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             });
         }
 
-        private async Task SwapSettingsAsync(Action update)
+        /// <summary>
+        /// 在关键队列内同步完成防抖、会话创建和400毫秒计时器启动；通知随后异步发布。
+        /// </summary>
+        private void ProcessPackageTrigger(PackageInfo packageInfo)
         {
-            await _createPackageSlim.WaitAsync();
-            try
+            var info = _packageSessionStore.GetLastPackage(f => f is { Value: not null });
+            if (info is not null &&
+                packageInfo.CreateTime.Subtract(info.CreateTime).TotalMilliseconds <
+                _createPackageSettingsDto.PackageCreationInterval)
             {
-                update();
+                packageInfo.TakeImage()?.Dispose();
+                return;
             }
-            finally
+
+            packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime)
+                .ToUnixTimeMilliseconds();
+            if (_weightSettingsDto.Mode == WeightMode.None)
             {
-                _createPackageSlim.Release();
+                packageInfo.WeightInfo = new WeightInfoModel();
             }
+            packageInfo.VolumeInfo = new VolumeInfoModel();
+
+            var packageRemoveTimers = new List<PackageTimer>();
+            if (_createPackageSettingsDto is
+                { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 })
+            {
+                packageRemoveTimers.Add(new PackageRemoveTimer
+                {
+                    Description = "空包裹过期",
+                    Predicate = pair => pair.Value.BarCodeInfo == null,
+                    RemovalTimeSpan = TimeSpan.FromMilliseconds(
+                        _createPackageSettingsDto.EmptyPackageExpiryTime)
+                });
+            }
+            if (_createPackageSettingsDto is
+                { IsUsePackageExpiry: true, PackageExpiryTime: > 0 })
+            {
+                packageRemoveTimers.Add(new PackageRemoveTimer
+                {
+                    Description = "包裹超过生存周期",
+                    RemovalTimeSpan = TimeSpan.FromMilliseconds(
+                        _createPackageSettingsDto.PackageExpiryTime)
+                });
+            }
+
+            _packageSessionStore.AddPackage(packageInfo, packageRemoveTimers);
+            var addedPackage = _packageSessionStore.GetPackage(
+                pair => pair.Key.Equals(packageInfo.CreateTime));
+            if (!ReferenceEquals(addedPackage, packageInfo))
+            {
+                packageInfo.TakeImage()?.Dispose();
+                packageInfo.DisposeTimers();
+                return;
+            }
+
+            QueueTriggerNotification(
+                packageInfo,
+                TriggerPositionEnum.PackageTrigger,
+                "包裹触发");
+            QueueTriggerNotification(
+                packageInfo,
+                TriggerPositionEnum.CreateTimePackageAfter,
+                "创建包裹完成");
+        }
+
+        /// <summary>在关键队列内完成包裹，并将赋值通知移出热路径。</summary>
+        private void ProcessPackageValueChanged(
+            PackageInfo packageInfo,
+            TriggerPositionEnum triggerPosition)
+        {
+            if (packageInfo.BarCodeInfo is not null && packageInfo.WeightInfo is not null)
+            {
+                _packageSessionStore.CompletePackage(
+                    pair => pair.Key.Equals(packageInfo.CreateTime));
+            }
+            QueueTriggerNotification(packageInfo, triggerPosition, "包裹赋值");
+        }
+
+        /// <summary>构造并排队一个不阻塞关键包裹状态的触发通知。</summary>
+        private void QueueTriggerNotification(
+            PackageInfo packageInfo,
+            TriggerPositionEnum triggerPosition,
+            string description)
+        {
+            QueuePackageNotification(() =>
+                EventAggregator.Instance.Publish(new TriggerPositionEvent
+                {
+                    IsSuccess = true,
+                    TriggerPosition = triggerPosition,
+                    PackageInfo = packageInfo
+                }), description);
+        }
+
+        /// <summary>将创建、回调和异常指令的日志及持久化通知移出关键队列。</summary>
+        private void QueueInstructionNotification(
+            InstructionReceived instruction,
+            string description)
+        {
+            QueuePackageNotification(
+                () => EventAggregator.Instance.Publish(instruction),
+                description);
+        }
+
+        /// <summary>立即将关键包裹工作加入有序队列，绝不等待消费者。</summary>
+        private bool TryQueuePackageEvent(Action work, string description)
+        {
+            if (_packageEventDispatcher.TryEnqueue(work))
+            {
+                return true;
+            }
+
+            QueueError($"关键包裹队列已停止，工作未入队:{description}");
+            return false;
+        }
+
+        /// <summary>将非关键通知移出包裹状态变更热路径。</summary>
+        private void QueuePackageNotification(Action notification, string description)
+        {
+            if (!_packageNotificationDispatcher.TryEnqueue(notification))
+            {
+                QueueError($"包裹通知队列已停止，通知未入队:{description}");
+            }
+        }
+
+        /// <summary>使用原子引用替换不可变配置快照，不占用关键包裹队列。</summary>
+        private static Task SwapSettingsAsync(Action update)
+        {
+            update();
+            return Task.CompletedTask;
         }
 
         private bool IsRegexMatch(string input, string pattern)
@@ -1016,6 +1039,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             Interlocked.Exchange(ref _isWindowsClose, 1);
+            await _packageEventDispatcher.DisposeAsync();
+            await _packageNotificationDispatcher.DisposeAsync();
             foreach (var cameraSerialNumber in _barCodeFrameInfoItem.Keys)
             {
                 if (_barCodeFrameInfoItem.TryRemove(cameraSerialNumber, out var frameInfo))

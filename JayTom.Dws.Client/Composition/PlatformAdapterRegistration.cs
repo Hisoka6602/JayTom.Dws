@@ -100,7 +100,7 @@ internal static class PlatformAdapterRegistration {
     private static void AddLongRunningHttpClient(IServiceCollection services, string clientName) {
         services.AddHttpClient(clientName, client => client.Timeout = RequestTimeout)
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler {
-                MaxConnectionsPerServer = 100,
+                MaxConnectionsPerServer = 600,
                 ConnectTimeout = TimeSpan.FromSeconds(15),
                 PooledConnectionLifetime = TimeSpan.FromMinutes(10),
                 PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),

@@ -21,6 +21,7 @@ using System.Threading.Channels;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Application.Workflows;
 using JayTom.Dws.Domain.EventMediators;
 using JayTom.Dws.Domain.DownstreamProtocols;
 using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
@@ -55,6 +56,24 @@ namespace JayTom.Dws.Client.Service.Sorting
         private readonly ConcurrentDictionary<string, Channel<string>> _replyChannels =
             new(StringComparer.Ordinal);
         private readonly SemaphoreSlim _connectionLifecycleGate = new(1, 1);
+        /// <summary>按物理连接串行发送，同一连接保持请求应答顺序，不同连接可以并行。</summary>
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _connectionSendGates =
+            new(StringComparer.Ordinal);
+        /// <summary>
+        /// 严格按到达顺序处理接收报文。TCP/串口回调只入队，不执行协议、包裹、日志或 UI 代码。
+        /// </summary>
+        private readonly NonBlockingOrderedDispatcher<(
+            string ConnectionName,
+            string Content,
+            DateTime Time,
+            CommunicationType Type,
+            FormatType FormatType)>
+            _receivedCommunicationDispatcher;
+        /// <summary>
+        /// 通信日志和界面通知独立排队，任何订阅者耗时都不能反压协议解析与指令分发。
+        /// </summary>
+        private readonly NonBlockingOrderedDispatcher<ConnectionCommunicationMessageInfo>
+            _communicationNotificationDispatcher;
 
         /// <summary>
         /// 判断至少一个已配置的分拣连接当前是否可用。
@@ -80,6 +99,18 @@ namespace JayTom.Dws.Client.Service.Sorting
             _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
             _sortingInstructionRepository = sortingInstructionRepository;
             _tcpConfigRepository = tcpConfigRepository;
+            _communicationNotificationDispatcher =
+                new NonBlockingOrderedDispatcher<ConnectionCommunicationMessageInfo>(
+                    PublishCommunicationNotification,
+                    (_, exception) => OnCommunicationExceptionEvent(exception));
+            _receivedCommunicationDispatcher = new NonBlockingOrderedDispatcher<(
+                string ConnectionName,
+                string Content,
+                DateTime Time,
+                CommunicationType Type,
+                FormatType FormatType)>(
+                ProcessIncomingCommunication,
+                (_, exception) => OnCommunicationExceptionEvent(exception));
 
             //_communicationConnectionConfigRepository
             //获取对应连接
@@ -156,14 +187,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                     };
                     sortingSerialPort.Communication += delegate (object? sender, CommunicationInfo info)
                     {
-                        OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
-                        {
-                            Type = info.Type,
-                            Time = info.Time,
-                            Content = info.Content,
-                            ConnectionName = connectionName,
-                            FormatType = info.FormatType
-                        });
+                        EnqueueIncomingCommunication(connectionName, info);
                     };
                     sortingSerialPort.HeartbeatError += delegate (object? sender, Exception exception)
                     {
@@ -291,18 +315,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                         };
                         sortingTcp.Communication += delegate (object? sender, CommunicationInfo communicationInfo)
                         {
-                            OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
-                            {
-                                Type = communicationInfo.Type,
-                                Time = communicationInfo.Time,
-                                Content = communicationInfo.Content,
-                                ConnectionName = connectionName,
-                                FormatType = communicationInfo.FormatType
-                            });
-                            if (communicationInfo.Type == CommunicationType.Receive)
-                            {
-                                EnqueueReply(connectionName, communicationInfo.Content);
-                            }
+                            EnqueueIncomingCommunication(connectionName, communicationInfo);
                         };
                         sortingTcp.Connected += (sender, s) =>
                         {
@@ -398,18 +411,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                         };
                         sortingTcp.Communication += delegate (object? sender, CommunicationInfo communicationInfo)
                         {
-                            OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
-                            {
-                                Type = communicationInfo.Type,
-                                Time = communicationInfo.Time,
-                                Content = communicationInfo.Content,
-                                ConnectionName = connectionName,
-                                FormatType = communicationInfo.FormatType
-                            });
-                            if (communicationInfo.Type == CommunicationType.Receive)
-                            {
-                                EnqueueReply(connectionName, communicationInfo.Content);
-                            }
+                            EnqueueIncomingCommunication(connectionName, communicationInfo);
                         };
                         sortingTcp.Connected += (sender, s) =>
                         {
@@ -482,7 +484,18 @@ namespace JayTom.Dws.Client.Service.Sorting
             await _connectionLifecycleGate.WaitAsync();
             try
             {
-                return ReleaseConnectionCore(connectionName);
+                var sendGate = _connectionSendGates.GetOrAdd(
+                    connectionName,
+                    static _ => new SemaphoreSlim(1, 1));
+                await sendGate.WaitAsync();
+                try
+                {
+                    return ReleaseConnectionCore(connectionName);
+                }
+                finally
+                {
+                    sendGate.Release();
+                }
             }
             finally
             {
@@ -531,28 +544,45 @@ namespace JayTom.Dws.Client.Service.Sorting
             await _connectionLifecycleGate.WaitAsync();
             try
             {
-                foreach (var connectionInfo in _connectionInfos)
+                var sendGates = _connectionInfos.Keys
+                    .Select(connectionName => _connectionSendGates.GetOrAdd(
+                        connectionName,
+                        static _ => new SemaphoreSlim(1, 1)))
+                    .Distinct()
+                    .ToArray();
+                foreach (var sendGate in sendGates)
                 {
-                    switch (connectionInfo.Value)
+                    await sendGate.WaitAsync();
+                }
+
+                try
+                {
+                    foreach (var connectionInfo in _connectionInfos)
                     {
-                        case { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }:
-                            {
+                        switch (connectionInfo.Value)
+                        {
+                            case { Type: CommunicationsType.SerialPort, SortingSerialPort: not null }:
                                 connectionInfo.Value.SortingSerialPort.Dispose();
                                 break;
-                            }
-                        case { Type: CommunicationsType.TCP, SortingTcp: not null }:
-                            {
+                            case { Type: CommunicationsType.TCP, SortingTcp: not null }:
                                 connectionInfo.Value.SortingTcp.Dispose();
                                 break;
-                            }
+                        }
+                    }
+                    _connectionInfos.Clear();
+                    foreach (var connectionName in _replyChannels.Keys)
+                    {
+                        RemoveReplyChannel(connectionName);
+                    }
+                    return new KeyValuePair<bool, string>(true, "连接释放成功");
+                }
+                finally
+                {
+                    foreach (var sendGate in sendGates)
+                    {
+                        sendGate.Release();
                     }
                 }
-                _connectionInfos.Clear();
-                foreach (var connectionName in _replyChannels.Keys)
-                {
-                    RemoveReplyChannel(connectionName);
-                }
-                return new KeyValuePair<bool, string>(true, "连接释放成功");
             }
             finally
             {
@@ -572,6 +602,50 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         public event EventHandler<ConnectionInfo>? Disconnected;
 
+        /// <summary>
+        /// 将设备通信事件复制到关键接收队列；该方法不等待锁、协议、日志或业务订阅者。
+        /// </summary>
+        private void EnqueueIncomingCommunication(
+            string connectionName,
+            CommunicationInfo communicationInfo)
+        {
+            var incoming = (
+                connectionName,
+                communicationInfo.Content,
+                communicationInfo.Time,
+                communicationInfo.Type,
+                communicationInfo.FormatType);
+            if (!_receivedCommunicationDispatcher.TryEnqueue(incoming))
+            {
+                OnCommunicationExceptionEvent(new InvalidOperationException(
+                    $"分拣接收队列已停止，连接 {connectionName} 的报文未能入队"));
+            }
+        }
+
+        /// <summary>由单消费者严格按收到顺序执行协议解析和后续事件。</summary>
+        private void ProcessIncomingCommunication((
+            string ConnectionName,
+            string Content,
+            DateTime Time,
+            CommunicationType Type,
+            FormatType FormatType) incoming)
+        {
+            if (incoming.Type == CommunicationType.Receive)
+            {
+                EnqueueReply(incoming.ConnectionName, incoming.Content);
+            }
+
+            OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo
+            {
+                Type = incoming.Type,
+                Time = incoming.Time,
+                Content = incoming.Content,
+                ConnectionName = incoming.ConnectionName,
+                FormatType = incoming.FormatType
+            });
+
+        }
+
         public void SendInstructions(
             object tag,
             long exitId,
@@ -579,7 +653,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             TimeSpan interval,
             InstructionsAttach attach)
         {
-            QueueConnectionWork(() => SendInstructionsAsync(
+            QueueConnectionWork(ResolveConnectionName(exitId), () => SendInstructionsAsync(
                 tag,
                 exitId,
                 instructions,
@@ -594,6 +668,8 @@ namespace JayTom.Dws.Client.Service.Sorting
             TimeSpan interval,
             InstructionsAttach attach)
         {
+            EnsurePackageIdentityBeforeSend(attach, exitId);
+
             if (exitId > 0)
             {
                 long? connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
@@ -612,6 +688,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                             {
                                 foreach (var instruction in instructions)
                                 {
+                                    EnsurePackageIdentityBeforeSend(attach, exitId);
                                     var isSend = false;
                                     var sendTime = DateTime.Now;
                                     if (connection is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null })
@@ -627,6 +704,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                 message = connection.DeviceCommunicationProtocol.EncodeData(FunctionType.SendExit, tag,
                                                     instruction, attach);
                                             }
+                                            EnsurePackageIdentityBeforeSend(attach, exitId);
                                             connection.SortingSerialPort.Send(message);
 
                                             OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
@@ -661,6 +739,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                     instruction, attach);
                                             }
 
+                                            EnsurePackageIdentityBeforeSend(attach, exitId);
                                             var sendMessage = await SendTcpMessage(connection, message);
                                             OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                             {
@@ -740,7 +819,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             TimeSpan interval,
             InstructionsAttach attach)
         {
-            QueueConnectionWork(() => SendInstructionsAsync(
+            QueueConnectionWork(ResolveConnectionName(exitId), () => SendInstructionsAsync(
                 tag,
                 exitId,
                 instructions,
@@ -755,6 +834,8 @@ namespace JayTom.Dws.Client.Service.Sorting
             TimeSpan interval,
             InstructionsAttach attach)
         {
+            EnsurePackageIdentityBeforeSend(attach, exitId);
+
             if (exitId > 0)
             {
                 long? connectionId = _packageExitDefinitionInfoModels.FirstOrDefault(f => f.Id.Equals(exitId))
@@ -773,6 +854,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                             {
                                 foreach (var instruction in instructions)
                                 {
+                                    EnsurePackageIdentityBeforeSend(attach, exitId);
                                     var isSend = false;
                                     var sendTime = DateTime.Now;
                                     if (connection is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null })
@@ -791,6 +873,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                                                 var executeAsync = await retryPolicy.ExecuteAsync(async () =>
                                                 {
+                                                    EnsurePackageIdentityBeforeSend(attach, exitId);
                                                     //效验协议
                                                     var message = instruction.Instruction;
                                                     if (connection.DeviceCommunicationProtocol is not null)
@@ -798,6 +881,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                         message = connection.DeviceCommunicationProtocol.EncodeData(FunctionType.SendExit, tag,
                                                             instruction.Instruction, attach);
                                                     }
+                                                    EnsurePackageIdentityBeforeSend(attach, exitId);
                                                     connection.SortingSerialPort.Send(message);
                                                     OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                     {
@@ -831,6 +915,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                     message = connection.DeviceCommunicationProtocol.EncodeData(FunctionType.SendExit, tag,
                                                         instruction.Instruction, attach);
                                                 }
+                                                EnsurePackageIdentityBeforeSend(attach, exitId);
                                                 connection.SortingSerialPort.Send(message);
                                                 OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                 {
@@ -867,6 +952,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                                                 var executeAsync = await retryPolicy.ExecuteAsync(async () =>
                                                 {
+                                                    EnsurePackageIdentityBeforeSend(attach, exitId);
                                                     //效验协议
                                                     var message = instruction.Instruction;
                                                     if (connection.DeviceCommunicationProtocol is not null)
@@ -875,6 +961,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                             instruction.Instruction, attach);
                                                     }
 
+                                                    EnsurePackageIdentityBeforeSend(attach, exitId);
                                                     var sendMessage = await SendTcpMessage(connection, message);
                                                     OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                     {
@@ -913,6 +1000,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                         instruction.Instruction, attach);
                                                 }
 
+                                                EnsurePackageIdentityBeforeSend(attach, exitId);
                                                 var sendMessage = await SendTcpMessage(connection, message);
                                                 OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                 {
@@ -988,18 +1076,22 @@ namespace JayTom.Dws.Client.Service.Sorting
             InstructionsAttach attach,
             CancellationToken token = default)
         {
-            QueueConnectionWork(() => SendPreSignalAsync(num, attach, token));
+            var connectionName = _connectionInfos.Keys.FirstOrDefault();
+            QueueConnectionWork(
+                connectionName,
+                () => SendPreSignalAsync(connectionName, num, attach, token));
         }
 
         private async Task SendPreSignalAsync(
+            string? connectionName,
             int num,
             InstructionsAttach attach,
             CancellationToken token)
         {
-            //获取第一个连接
-            var (key, value) = _connectionInfos.FirstOrDefault();
-            if (key is not null && value is not null)
+            if (!string.IsNullOrEmpty(connectionName) &&
+                _connectionInfos.TryGetValue(connectionName, out var value))
             {
+                var key = connectionName;
                 var isSend = false;
                 var sendTime = DateTime.Now;
                 if (value is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null })
@@ -1110,19 +1202,22 @@ namespace JayTom.Dws.Client.Service.Sorting
             InstructionsAttach attach,
             CancellationToken token = default)
         {
-            QueueConnectionWork(() =>
-                SendPackageInfoCompletedSignalAsync(num, attach, token));
+            var connectionName = _connectionInfos.Keys.FirstOrDefault();
+            QueueConnectionWork(
+                connectionName,
+                () => SendPackageInfoCompletedSignalAsync(connectionName, num, attach, token));
         }
 
         private async Task SendPackageInfoCompletedSignalAsync(
+            string? connectionName,
             int num,
             InstructionsAttach attach,
             CancellationToken token)
         {
-            //获取第一个连接
-            var (key, value) = _connectionInfos.FirstOrDefault();
-            if (key is not null && value is not null)
+            if (!string.IsNullOrEmpty(connectionName) &&
+                _connectionInfos.TryGetValue(connectionName, out var value))
             {
+                var key = connectionName;
                 var isSend = false;
                 var sendTime = DateTime.Now;
                 if (value is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null })
@@ -1233,18 +1328,22 @@ namespace JayTom.Dws.Client.Service.Sorting
             InstructionsAttach info,
             CancellationToken token = default)
         {
-            QueueConnectionWork(() => SendPackageCenterAsync(num, info, token));
+            var connectionName = _connectionInfos.Keys.FirstOrDefault();
+            QueueConnectionWork(
+                connectionName,
+                () => SendPackageCenterAsync(connectionName, num, info, token));
         }
 
         private async Task SendPackageCenterAsync(
+            string? connectionName,
             int num,
             InstructionsAttach info,
             CancellationToken token)
         {
-            //获取第一个连接
-            var (key, value) = _connectionInfos.FirstOrDefault();
-            if (key is not null && value is not null)
+            if (!string.IsNullOrEmpty(connectionName) &&
+                _connectionInfos.TryGetValue(connectionName, out var value))
             {
+                var key = connectionName;
                 var isSend = false;
                 var sendTime = DateTime.Now;
                 if (value is { Type: CommunicationsType.SerialPort, SortingSerialPort: not null })
@@ -1350,14 +1449,63 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
         }
 
-        private void QueueConnectionWork(Func<Task> work)
+        /// <summary>根据格口解析其绑定的下位机连接名称。</summary>
+        private string? ResolveConnectionName(long exitId)
         {
-            _ = RunConnectionWorkAsync(work);
+            if (exitId <= 0)
+            {
+                return null;
+            }
+
+            long? connectionId = _packageExitDefinitionInfoModels
+                .FirstOrDefault(exit => exit.Id == exitId)?
+                .CommunicationConnectionId;
+            return connectionId > 0
+                ? _connectionConfigInfoModels
+                    .FirstOrDefault(connection => connection.Id == connectionId)?
+                    .ConnectionName
+                : null;
         }
 
-        private async Task RunConnectionWorkAsync(Func<Task> work)
+        /// <summary>在每次下位机写入和重试前执行调用方提供的包裹身份复核。</summary>
+        private static void EnsurePackageIdentityBeforeSend(InstructionsAttach attach, long exitId)
         {
+            if (attach.ValidateBeforeSend is not null &&
+                (exitId <= 0 || attach.ExitId != exitId))
+            {
+                throw new InvalidOperationException(
+                    $"发送前格口复核失败，已禁止格口指令:目标格口={attach.ExitId},实际格口={exitId}");
+            }
+
+            var rejectionReason = attach.ValidateBeforeSend?.Invoke();
+            if (!string.IsNullOrEmpty(rejectionReason))
+            {
+                throw new InvalidOperationException(
+                    $"发送前包裹身份复核失败，已禁止格口指令:{rejectionReason}");
+            }
+        }
+
+        private void QueueConnectionWork(string? connectionName, Func<Task> work)
+        {
+            _ = RunConnectionWorkAsync(connectionName, work);
+        }
+
+        private async Task RunConnectionWorkAsync(string? connectionName, Func<Task> work)
+        {
+            SemaphoreSlim sendGate;
             await _connectionLifecycleGate.WaitAsync();
+            try
+            {
+                sendGate = _connectionSendGates.GetOrAdd(
+                    connectionName ?? string.Empty,
+                    static _ => new SemaphoreSlim(1, 1));
+            }
+            finally
+            {
+                _connectionLifecycleGate.Release();
+            }
+
+            await sendGate.WaitAsync();
             try
             {
                 await work();
@@ -1374,7 +1522,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
             finally
             {
-                _connectionLifecycleGate.Release();
+                sendGate.Release();
             }
         }
 
@@ -1386,17 +1534,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                 {
                     e.Content = HexDataFormatter.Normalize(e.Content);
                 }
-                CommunicationInfoEvent?.Invoke(this, e);
-                if (e is { Type: CommunicationType.Send, ExitName: null })
-                {
-                    EventAggregator.Instance.Publish(new SortingLogInfoModel
-                    {
-                        CreateTime = e.Time,
-                        Message = $"连接:{e.ConnectionName},发送内容:{e.Content}",
-                        Type = LogType.Information,
-                    });
-                }
-                else if (e.Type == CommunicationType.Receive)
+                if (e.Type == CommunicationType.Receive)
                 {
                     var tryGetValue = _connectionInfos.TryGetValue(e.ConnectionName, out var connection);
                     if (tryGetValue && connection is not null)
@@ -1424,12 +1562,12 @@ namespace JayTom.Dws.Client.Service.Sorting
                             }
                         }
                     }
-                    EventAggregator.Instance.Publish(new SortingLogInfoModel
-                    {
-                        CreateTime = e.Time,
-                        Message = $"连接:{e.ConnectionName},接收内容:{e.Content}",
-                        Type = LogType.Information,
-                    });
+                }
+
+                if (!_communicationNotificationDispatcher.TryEnqueue(e))
+                {
+                    OnCommunicationExceptionEvent(new InvalidOperationException(
+                        $"通信通知队列已停止，连接 {e.ConnectionName} 的日志未能入队"));
                 }
             }
             catch (Exception exception)
@@ -1438,6 +1576,31 @@ namespace JayTom.Dws.Client.Service.Sorting
                     .Error(exception, $"处理分拣通信数据失败:{e.ConnectionName}");
                 OnCommunicationExceptionEvent(exception);
             }
+        }
+
+        /// <summary>在非关键队列中执行通信事件订阅者、日志和界面通知。</summary>
+        private void PublishCommunicationNotification(ConnectionCommunicationMessageInfo e)
+        {
+            CommunicationInfoEvent?.Invoke(this, e);
+            if (e is { Type: CommunicationType.Send, ExitName: null })
+            {
+                EventAggregator.Instance.Publish(new SortingLogInfoModel
+                {
+                    CreateTime = e.Time,
+                    Message = $"连接:{e.ConnectionName},发送内容:{e.Content}",
+                    Type = LogType.Information,
+                });
+            }
+            else if (e.Type == CommunicationType.Receive)
+            {
+                EventAggregator.Instance.Publish(new SortingLogInfoModel
+                {
+                    CreateTime = e.Time,
+                    Message = $"连接:{e.ConnectionName},接收内容:{e.Content}",
+                    Type = LogType.Information,
+                });
+            }
+
         }
 
         protected virtual void OnCommunicationExceptionEvent(Exception e)

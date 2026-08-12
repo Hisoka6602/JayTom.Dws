@@ -244,10 +244,12 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     throw;
                 }
                 catch (Exception exception) {
-                    Logger.Warn(
+                    Logger.Error(
                         exception,
-                        $"极昼扫描图片上传失败，继续发送设备报文:{barcode}");
-                    imagePath = EmptyToNull(context.HalfPath);
+                        $"极昼扫描图片上传失败，本次不发送设备报文并等待重试:{barcode}");
+                    throw new InvalidOperationException(
+                        "极昼扫描图片上传失败，未发送设备报文",
+                        exception);
                 }
             }
 

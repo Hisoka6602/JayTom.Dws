@@ -169,6 +169,7 @@ namespace JayTom.Dws.Client
         /// <summary>建立单实例约束并注册全局异常处理。</summary>
         protected override void OnStartup(StartupEventArgs e)
         {
+            ConfigureRealtimeThreadPool();
             NLog.LogManager.GetCurrentClassLogger().Info("OnStartup开始");
             _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
             if (!createdNew)
@@ -204,6 +205,18 @@ namespace JayTom.Dws.Client
             base.OnStartup(e);
 
             NLog.LogManager.GetCurrentClassLogger().Info("OnStartup结束");
+        }
+
+        /// <summary>
+        /// 预留足够的工作线程和异步 I/O 完成线程，避免 600 路 API 并发扩容期间饿死设备事件。
+        /// </summary>
+        private static void ConfigureRealtimeThreadPool()
+        {
+            ThreadPool.GetMinThreads(out var workerThreads, out var completionPortThreads);
+            var minimumThreads = Math.Max(64, Environment.ProcessorCount * 8);
+            ThreadPool.SetMinThreads(
+                Math.Max(workerThreads, minimumThreads),
+                Math.Max(completionPortThreads, minimumThreads));
         }
 
         /// <summary>

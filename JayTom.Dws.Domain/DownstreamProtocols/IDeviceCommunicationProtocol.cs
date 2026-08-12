@@ -252,6 +252,11 @@ namespace JayTom.Dws.Domain.DownstreamProtocols {
     public class InstructionsAttach {
 
         /// <summary>
+        /// 真正写入下位机前执行的包裹身份复核；返回空表示通过，否则为拒绝原因。
+        /// </summary>
+        public Func<string?>? ValidateBeforeSend { get; set; }
+
+        /// <summary>
         /// 条码关联时间戳
         /// </summary>
         public long Timestamp { get; set; }

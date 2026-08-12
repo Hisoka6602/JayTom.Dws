@@ -108,6 +108,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// 单类接口任务允许排队的最大数量。
         /// </summary>
         private const int MaxQueueLength = 10_000;
+        /// <summary>包裹格口 API 查询的最大并发数。</summary>
+        private const int ApiQueryMaxConcurrency = 600;
         /// <summary>
         /// 用于唤醒接口任务消费者的合并信号。
         /// </summary>
@@ -537,24 +539,37 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             while (!stoppingToken.IsCancellationRequested && !_isWindowsClose)
             {
                 await _workSignal.WaitAsync(TimeSpan.FromMilliseconds(250), stoppingToken);
-                // 所有队列都由这一个工作器消费，避免未跟踪任务重入同一包裹。
-                SubmitItemInfo? inFlightSubmit = null;
                 SavedImageInfo? inFlightSavedImage = null;
                 try
                 {
                     //需要判断用户选择的接口和参数设置
-                    var tryDequeue = _submitItems.TryDequeue(out var info);
-
-                    if (tryDequeue && info is not null)
+                    var submitBatch = new List<SubmitItemInfo>(ApiQueryMaxConcurrency);
+                    while (submitBatch.Count < ApiQueryMaxConcurrency &&
+                           _submitItems.TryDequeue(out var queuedSubmit) &&
+                           queuedSubmit is not null)
                     {
-                        inFlightSubmit = info;
-                        //上传
-                        //判断上传接口
-                        {
-                            IDataUploader uploader;
-                            UploadResponse? uploadResponse = null;
-                            switch (_apiSettingsDto?.Type)
+                        submitBatch.Add(queuedSubmit);
+                    }
+
+                    if (submitBatch.Count > 0)
+                    {
+                        await Parallel.ForEachAsync(
+                            submitBatch,
+                            new ParallelOptions
                             {
+                                MaxDegreeOfParallelism = ApiQueryMaxConcurrency,
+                                CancellationToken = stoppingToken
+                            },
+                            async (info, submitToken) =>
+                        {
+                            try
+                            {
+                                // 每个并发工作项从注册表创建独立上传器，避免共享可变接口参数。
+                                IDataUploader uploader;
+                                UploadResponse? uploadResponse = null;
+                                var apiType = _apiSettingsDto?.Type;
+                                switch (apiType)
+                                {
                                 case ApiType.None:
                                     break;
 
@@ -673,7 +688,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             info.Length, info.Width,
                                             info.Height, info.Volume,
                                             null, null,
-                                            null, stoppingToken);
+                                            null, submitToken);
                                         break;
                                     }
                                 case ApiType.JtExpressApi:
@@ -1047,31 +1062,40 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     }
                                     break;
                             }
-                            if (_apiSettingsDto?.Type is not null &&
-                                _apiSettingsDto.Type != ApiType.None)
-                            {
-                                //临时单线程
-                                EventAggregator.Instance.Publish(new ApiResponseReceived
+                                if (apiType is not null && apiType != ApiType.None)
                                 {
-                                    Guid = info.Guid,
-                                    Barcode = info.Barcode,
-                                    ScanTime = info.ScanTime,
-                                    UploadResponse = uploadResponse,
-                                    PackageCreationInstruction = info.PackageCreationInstruction,
-                                    PackageCreationTime = info.PackageCreationTime,
-                                    IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
-                                    IsStackedPackage = info.IsStackedPackage ?? false,
-                                    Timestamp = info.Timestamp,
-                                    LinkedCarCount = info.LinkedCarCount
-                                });
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
-                                {
-                                    IsSuccess = uploadResponse?.IsSuccess ?? false,
-                                    TriggerPosition = TriggerPositionEnum.HttpOutput
-                                });
+                                    EventAggregator.Instance.Publish(new ApiResponseReceived
+                                    {
+                                        Guid = info.Guid,
+                                        Barcode = info.Barcode,
+                                        ScanTime = info.ScanTime,
+                                        UploadResponse = uploadResponse,
+                                        PackageCreationInstruction = info.PackageCreationInstruction,
+                                        PackageCreationTime = info.PackageCreationTime,
+                                        IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
+                                        IsStackedPackage = info.IsStackedPackage ?? false,
+                                        Timestamp = info.Timestamp,
+                                        LinkedCarCount = info.LinkedCarCount
+                                    });
+                                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                    {
+                                        IsSuccess = uploadResponse?.IsSuccess ?? false,
+                                        TriggerPosition = TriggerPositionEnum.HttpOutput
+                                    });
+                                }
                             }
-                        }
-                        inFlightSubmit = null;
+                            catch (OperationCanceledException) when (submitToken.IsCancellationRequested)
+                            {
+                                throw;
+                            }
+                            catch (Exception exception)
+                            {
+                                RequeueWork(_submitItems, info);
+                                LogManager.GetCurrentClassLogger().Error(
+                                    exception,
+                                    $"API 查询失败，已重新排队:Timestamp={info.Timestamp},Barcode={info.Barcode}");
+                            }
+                        });
                     }
 
                     //取出图片
@@ -1228,10 +1252,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
                 catch (Exception e)
                 {
-                    if (inFlightSubmit is not null)
-                    {
-                        RequeueWork(_submitItems, inFlightSubmit);
-                    }
                     if (inFlightSavedImage is not null)
                     {
                         RequeueWork(_savedImageItems, inFlightSavedImage);
@@ -1871,10 +1891,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     out SavedImageInfo? savedImageInfo);
                                 if (savedImageInfo is null &&
                                     _imageStorageService.ImageSettingsDto?
-                                        .IsSaveBarcodeImage == true &&
-                                    DateTime.Now.Subtract(packageInfo.CreateTime)
-                                        .TotalSeconds < 8)
+                                        .IsSaveBarcodeImage == true)
                                 {
+                                    // 条码图片可能晚于真实落格事件保存完成。只要现场启用了
+                                    // 条码图，就持续保留该票并等待 ImageSaved 事件写入缓存；
+                                    // 绝不因包裹创建已超过固定秒数而发送无图卸车报文。
                                     packageValue.Value.WaitSubmitTime =
                                         DateTime.Now.AddMilliseconds(200);
                                     return;
@@ -1882,6 +1903,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                                 using var image = LoadImageSnapshot(
                                     savedImageInfo?.FilePath);
+                                if (image is null &&
+                                    _imageStorageService.ImageSettingsDto?
+                                        .IsSaveBarcodeImage == true)
+                                {
+                                    // ImageSaved 已到达但文件可能仍被占用或暂时不可读；
+                                    // 继续等待，避免把空 Image 交给接口后形成无图卸车。
+                                    packageValue.Value.WaitSubmitTime =
+                                        DateTime.Now.AddMilliseconds(200);
+                                    return;
+                                }
+
                                 var cameraSerialNumber =
                                     savedImageInfo?.CameraSerialNumber ??
                                     packageInfo.BarCodeInfo?.SerialNumber ??

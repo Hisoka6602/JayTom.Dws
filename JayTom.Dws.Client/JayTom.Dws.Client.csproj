@@ -15,6 +15,8 @@
     <DelaySign>False</DelaySign>
     <IncludeSymbols>False</IncludeSymbols>
     <ApplicationIcon>ico.ico</ApplicationIcon>
+    <!-- 独立堆并行回收，降低高密度图片和 600 路 API 任务对实时指令的 GC 停顿。 -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Fonts\FiraCode-Bold.ttf" />

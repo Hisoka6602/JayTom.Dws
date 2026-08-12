@@ -59,6 +59,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// 单类持久化任务允许排队的最大数量。
         /// </summary>
         private const int MaxQueueLength = 10_000;
+        /// <summary>
+        /// 指令可能早于包裹主记录到达；在该窗口内暂存，避免密集流量下丢失创建指令。
+        /// </summary>
+        private static readonly TimeSpan InstructionAssociationTimeout = TimeSpan.FromMinutes(10);
+        /// <summary>按包裹时间戳保存尚未能关联主记录的下位机指令。</summary>
+        private readonly Dictionary<long, Queue<(InstructionReceived Instruction, long EnqueuedAt)>>
+            _pendingInstructions = [];
+        /// <summary>当前暂存且尚未关联到包裹主记录的指令总数。</summary>
+        private int _pendingInstructionCount;
         /// <summary>统一记录持久化工作项的有限重试状态。</summary>
         private readonly RetryAttemptTracker _retryTracker = new(5);
 
@@ -182,6 +191,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         {
                             LogManager.GetCurrentClassLogger().Error($"数据保存失败,正在重试...");
                             RequeueWork(_insertItems, insertModel);
+                        }
+                        else
+                        {
+                            ReleasePendingInstructions(insertModel.PackageTimestamped);
                         }
                     }
                     inFlightInsert = null;
@@ -379,7 +392,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         }
                         else
                         {
-                            RequeueWork(_instructionItems, sortingModel);
+                            StoreInstructionWaitingForPackage(sortingModel);
                         }
                     }
                     inFlightInstruction = null;
@@ -527,6 +540,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         }
                     }
                     inFlightExitUpdate = null;
+                    RemoveExpiredPendingInstructions();
                     if (HasPendingWork())
                     {
                         SignalWork();
@@ -606,6 +620,65 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
             Interlocked.Exchange(ref _retryRequested, 1);
             EnqueueWork(queue, item);
+        }
+
+        /// <summary>
+        /// 包裹主记录的插入依赖条码、重量等数据，通常晚于 FC12 指令。暂存后在主记录插入成功时回灌，
+        /// 避免用短间隔轮询占用持久化消费者。
+        /// </summary>
+        private void StoreInstructionWaitingForPackage(InstructionReceived item)
+        {
+            if (_pendingInstructionCount >= MaxQueueLength)
+            {
+                LogManager.GetCurrentClassLogger().Error(
+                    $"待关联指令达到上限 {MaxQueueLength}，拒绝新任务:Timestamp={item.Timestamp}");
+                return;
+            }
+
+            if (!_pendingInstructions.TryGetValue(item.Timestamp, out var instructions))
+            {
+                instructions = new Queue<(InstructionReceived Instruction, long EnqueuedAt)>();
+                _pendingInstructions[item.Timestamp] = instructions;
+            }
+            instructions.Enqueue((item, Stopwatch.GetTimestamp()));
+            _pendingInstructionCount++;
+        }
+
+        /// <summary>主记录插入成功后立即恢复此前暂存的同包裹指令。</summary>
+        private void ReleasePendingInstructions(long packageTimestamp)
+        {
+            if (!_pendingInstructions.Remove(packageTimestamp, out var instructions))
+            {
+                return;
+            }
+
+            while (instructions.TryDequeue(out var pending))
+            {
+                _pendingInstructionCount--;
+                EnqueueWork(_instructionItems, pending.Instruction);
+            }
+        }
+
+        /// <summary>清理始终没有生成主记录的孤立指令，保持暂存集合有界。</summary>
+        private void RemoveExpiredPendingInstructions()
+        {
+            var now = Stopwatch.GetTimestamp();
+            foreach (var pair in _pendingInstructions.ToArray())
+            {
+                while (pair.Value.TryPeek(out var pending) &&
+                       Stopwatch.GetElapsedTime(pending.EnqueuedAt, now) > InstructionAssociationTimeout)
+                {
+                    pair.Value.Dequeue();
+                    _pendingInstructionCount--;
+                    LogManager.GetCurrentClassLogger().Error(
+                        $"指令等待包裹主记录超时，停止关联:Timestamp={pending.Instruction.Timestamp},SortingCode={pending.Instruction.SortingCode}");
+                }
+
+                if (pair.Value.Count == 0)
+                {
+                    _pendingInstructions.Remove(pair.Key);
+                }
+            }
         }
 
         /// <summary>
