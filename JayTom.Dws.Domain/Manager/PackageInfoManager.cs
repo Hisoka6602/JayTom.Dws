@@ -12,6 +12,16 @@ namespace JayTom.Dws.Domain.Manager {
 
     public static class PackageInfoManager {
         private static readonly ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
+        /// <summary>维护稳定的包裹创建顺序，避免热路径每次查找都对并发快照重新排序。</summary>
+        private static readonly SortedSet<DateTime> _packageOrder = [];
+        /// <summary>仅保存未赋值包裹，条码绑定可直接取得队首而无需扫描全部会话。</summary>
+        private static readonly SortedSet<DateTime> _unassignedPackageOrder = [];
+        /// <summary>按下位机序号直接定位包裹，避免回调热路径扫描全部会话。</summary>
+        private static readonly Dictionary<long, DateTime> _packageIdIndex = [];
+        /// <summary>保护创建顺序索引的一致性。</summary>
+        private static readonly object _packageOrderGate = new();
+        /// <summary>保存可原子读取的当前包裹数量。</summary>
+        private static int _packageCount;
 
         /// <summary>
         /// 包裹移除
@@ -57,12 +67,48 @@ namespace JayTom.Dws.Domain.Manager {
         /// <returns>是否成功添加。</returns>
         public static bool TryAddPackage(PackageInfo package, List<PackageTimer> removeTimers) {
             lock (package.SyncRoot) {
-                if (!_packageInfos.TryAdd(package.CreateTime, package)) {
-                    return false;
+                lock (_packageOrderGate) {
+                    if (!_packageInfos.TryAdd(package.CreateTime, package)) {
+                        return false;
+                    }
+                    _packageOrder.Add(package.CreateTime);
+                    if (package.BarCodeInfo is null) {
+                        _unassignedPackageOrder.Add(package.CreateTime);
+                    }
+                    if (package.Guid != 0) {
+                        if (_packageIdIndex.TryGetValue(package.Guid, out var existingKey) &&
+                            existingKey != package.CreateTime) {
+                            _packageInfos.TryRemove(package.CreateTime, out _);
+                            _packageOrder.Remove(package.CreateTime);
+                            _unassignedPackageOrder.Remove(package.CreateTime);
+                            return false;
+                        }
+                        _packageIdIndex[package.Guid] = package.CreateTime;
+                    }
+                    Interlocked.Increment(ref _packageCount);
                 }
 
-                package.StartTimers(_packageInfos, removeTimers);
-                return true;
+                try {
+                    package.StartTimers(_packageInfos, removeTimers);
+                    return true;
+                }
+                catch {
+                    // 计时器启动失败时不能留下一个永不按规则到期的半初始化会话。
+                    ((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos).Remove(
+                        new KeyValuePair<DateTime, PackageInfo>(package.CreateTime, package));
+                    lock (_packageOrderGate) {
+                        _packageOrder.Remove(package.CreateTime);
+                        _unassignedPackageOrder.Remove(package.CreateTime);
+                        if (package.Guid != 0 &&
+                            _packageIdIndex.TryGetValue(package.Guid, out var indexedKey) &&
+                            indexedKey == package.CreateTime) {
+                            _packageIdIndex.Remove(package.Guid);
+                        }
+                    }
+                    Interlocked.Decrement(ref _packageCount);
+                    package.DisposeTimers();
+                    throw;
+                }
             }
         }
 
@@ -100,6 +146,16 @@ namespace JayTom.Dws.Domain.Manager {
                 info = tryRemove ? current : null;
             }
             if (tryRemove && info is not null) {
+                Interlocked.Decrement(ref _packageCount);
+                lock (_packageOrderGate) {
+                    _packageOrder.Remove(createTime);
+                    _unassignedPackageOrder.Remove(createTime);
+                    if (info.Guid != 0 &&
+                        _packageIdIndex.TryGetValue(info.Guid, out var indexedKey) &&
+                        indexedKey == createTime) {
+                        _packageIdIndex.Remove(info.Guid);
+                    }
+                }
                 OnPackageRemoved(new PackageRemovedEventArgs(info, description));
             }
 
@@ -113,7 +169,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="description"></param>
         /// <returns></returns>
         public static bool RemovePackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate, string description = "手动移除") {
-            foreach (var pair in _packageInfos.OrderBy(item => item.Key)) {
+            foreach (var key in GetOrderedKeys()) {
+                if (!_packageInfos.TryGetValue(key, out var value)) {
+                    continue;
+                }
+                var pair = new KeyValuePair<DateTime, PackageInfo>(key, value);
                 PackageInfo? removedPackage = null;
                 lock (pair.Value.SyncRoot) {
                     if (!predicate(pair)) {
@@ -126,6 +186,16 @@ namespace JayTom.Dws.Domain.Manager {
                 }
 
                 if (removedPackage is not null) {
+                    Interlocked.Decrement(ref _packageCount);
+                    lock (_packageOrderGate) {
+                        _packageOrder.Remove(pair.Key);
+                        _unassignedPackageOrder.Remove(pair.Key);
+                        if (removedPackage.Guid != 0 &&
+                            _packageIdIndex.TryGetValue(removedPackage.Guid, out var indexedKey) &&
+                            indexedKey == pair.Key) {
+                            _packageIdIndex.Remove(removedPackage.Guid);
+                        }
+                    }
                     OnPackageRemoved(new PackageRemovedEventArgs(removedPackage, description));
                     return true;
                 }
@@ -140,8 +210,12 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="predicate"></param>
         /// <returns></returns>
         public static bool PackageExists(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
-            foreach (var pair in _packageInfos) {
-                lock (pair.Value.SyncRoot) {
+            foreach (var key in GetOrderedKeys()) {
+                if (!_packageInfos.TryGetValue(key, out var package)) {
+                    continue;
+                }
+                var pair = new KeyValuePair<DateTime, PackageInfo>(key, package);
+                lock (package.SyncRoot) {
                     if (predicate(pair)) {
                         return true;
                     }
@@ -162,18 +236,18 @@ namespace JayTom.Dws.Domain.Manager {
                 return null;
             }
 
-            PackageInfo? result = null;
-            var resultKey = DateTime.MaxValue;
-            foreach (var pair in _packageInfos) {
-                lock (pair.Value.SyncRoot) {
-                    if (pair.Key < resultKey && predicate(pair)) {
-                        result = pair.Value;
-                        resultKey = pair.Key;
+            foreach (var key in GetOrderedKeys()) {
+                if (!_packageInfos.TryGetValue(key, out var package)) {
+                    continue;
+                }
+                var pair = new KeyValuePair<DateTime, PackageInfo>(key, package);
+                lock (package.SyncRoot) {
+                    if (predicate(pair)) {
+                        return package;
                     }
                 }
             }
-
-            return result;
+            return null;
         }
 
         /// <summary>
@@ -187,18 +261,20 @@ namespace JayTom.Dws.Domain.Manager {
                 return null;
             }
 
-            PackageInfo? result = null;
-            var resultKey = DateTime.MinValue;
-            foreach (var pair in _packageInfos) {
-                lock (pair.Value.SyncRoot) {
-                    if (pair.Key > resultKey && predicate(pair)) {
-                        result = pair.Value;
-                        resultKey = pair.Key;
+            var keys = GetOrderedKeys();
+            for (var index = keys.Length - 1; index >= 0; index--) {
+                var key = keys[index];
+                if (!_packageInfos.TryGetValue(key, out var package)) {
+                    continue;
+                }
+                var pair = new KeyValuePair<DateTime, PackageInfo>(key, package);
+                lock (package.SyncRoot) {
+                    if (predicate(pair)) {
+                        return package;
                     }
                 }
             }
-
-            return result;
+            return null;
         }
 
         /// <summary>以设备或 TCP 观测时间为基准，原子选择并更新一个未赋值包裹。</summary>
@@ -208,6 +284,7 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="minimumAssignmentMilliseconds">赋值时间窗口下限，单位毫秒。</param>
         /// <param name="maximumAssignmentMilliseconds">赋值时间窗口上限，单位毫秒。</param>
         /// <param name="emptyPackageExpiryMilliseconds">空包裹删除时间，到达该时间后不再允许赋值。</param>
+        /// <param name="processingAt">程序实际处理条码的时间，用于阻止排队后的过期条码错配。</param>
         /// <param name="assignment">在包裹锁内执行的赋值操作。</param>
         /// <returns>赋值成功的包裹，无合适包裹时返回空。</returns>
         public static PackageInfo? TryBindBarcode(
@@ -217,6 +294,7 @@ namespace JayTom.Dws.Domain.Manager {
             int minimumAssignmentMilliseconds,
             int maximumAssignmentMilliseconds,
             int? emptyPackageExpiryMilliseconds,
+            DateTime processingAt,
             Action<PackageInfo> assignment) {
             ArgumentNullException.ThrowIfNull(assignment);
 
@@ -230,33 +308,20 @@ namespace JayTom.Dws.Domain.Manager {
             }
 
             var observedTicks = observedAt.Ticks;
+            var processingTicks = processingAt.Ticks;
             while (!_packageInfos.IsEmpty) {
                 KeyValuePair<DateTime, PackageInfo>? selected = null;
-                var selectedTicks = queueOrder == BarcodeQueueOrderEnum.TimeAscending
-                    ? long.MaxValue
-                    : long.MinValue;
-
-                foreach (var pair in _packageInfos) {
-                    var createTicks = pair.Key.Ticks;
-                    var ageTicks = observedTicks - createTicks;
-                    if (ageTicks < 0 || ageTicks >= emptyPackageExpiryTicks ||
-                        (enforceAssignmentInterval &&
-                         (ageTicks < minimumTicks || ageTicks > maximumTicks))) {
-                        continue;
-                    }
-
-                    lock (pair.Value.SyncRoot) {
-                        if (pair.Value.BarCodeInfo is not null) {
-                            continue;
+                lock (_packageOrderGate) {
+                    while (_unassignedPackageOrder.Count > 0) {
+                        var key = queueOrder == BarcodeQueueOrderEnum.TimeAscending
+                            ? _unassignedPackageOrder.Min
+                            : _unassignedPackageOrder.Max;
+                        if (_packageInfos.TryGetValue(key, out var package) &&
+                            package.BarCodeInfo is null) {
+                            selected = new KeyValuePair<DateTime, PackageInfo>(key, package);
+                            break;
                         }
-
-                        var isBetter = queueOrder == BarcodeQueueOrderEnum.TimeAscending
-                            ? createTicks < selectedTicks
-                            : createTicks > selectedTicks;
-                        if (isBetter) {
-                            selected = pair;
-                            selectedTicks = createTicks;
-                        }
+                        _unassignedPackageOrder.Remove(key);
                     }
                 }
 
@@ -264,6 +329,7 @@ namespace JayTom.Dws.Domain.Manager {
                     return null;
                 }
 
+                var expiredWhileQueued = false;
                 lock (candidate.Value.SyncRoot) {
                     if (!_packageInfos.TryGetValue(candidate.Key, out var current) ||
                         !ReferenceEquals(current, candidate.Value) ||
@@ -272,15 +338,35 @@ namespace JayTom.Dws.Domain.Manager {
                     }
 
                     var ageTicks = observedTicks - candidate.Key.Ticks;
-                    if (ageTicks < 0 || ageTicks >= emptyPackageExpiryTicks ||
-                        (enforceAssignmentInterval &&
-                         (ageTicks < minimumTicks || ageTicks > maximumTicks))) {
-                        continue;
+                    var processingAgeTicks = processingTicks - candidate.Key.Ticks;
+                    if (ageTicks < 0) {
+                        return null;
                     }
-
-                    assignment(current);
-                    return current;
+                    if (ageTicks >= emptyPackageExpiryTicks ||
+                        processingAgeTicks >= emptyPackageExpiryTicks) {
+                        // 不再检查后续包裹；晚到条码跳过过期队首会让后续包裹整体错位。
+                        expiredWhileQueued = true;
+                    }
+                    else if (enforceAssignmentInterval &&
+                        (ageTicks < minimumTicks || ageTicks > maximumTicks)) {
+                        return null;
+                    }
+                    else {
+                        assignment(current);
+                        lock (_packageOrderGate) {
+                            _unassignedPackageOrder.Remove(candidate.Key);
+                        }
+                        return current;
+                    }
                 }
+
+                if (expiredWhileQueued) {
+                    RemovePackage(
+                        candidate.Key,
+                        "空包裹过期优先，拒绝晚到条码",
+                        pair => pair.Value.BarCodeInfo is null);
+                }
+                return null;
             }
 
             return null;
@@ -296,6 +382,17 @@ namespace JayTom.Dws.Domain.Manager {
             return package;
         }
 
+        /// <summary>按下位机序号直接获取仍在运行的包裹。</summary>
+        public static PackageInfo? GetPackageById(long packageId) {
+            DateTime createTime;
+            lock (_packageOrderGate) {
+                if (!_packageIdIndex.TryGetValue(packageId, out createTime)) {
+                    return null;
+                }
+            }
+            return GetPackage(createTime);
+        }
+
         /// <summary>
         /// 获取包裹
         /// </summary>
@@ -303,7 +400,11 @@ namespace JayTom.Dws.Domain.Manager {
         /// <returns></returns>
         public static List<PackageInfo> GetPackages(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) {
             var packages = new List<PackageInfo>();
-            foreach (var pair in _packageInfos.OrderBy(item => item.Key)) {
+            foreach (var key in GetOrderedKeys()) {
+                if (!_packageInfos.TryGetValue(key, out var value)) {
+                    continue;
+                }
+                var pair = new KeyValuePair<DateTime, PackageInfo>(key, value);
                 lock (pair.Value.SyncRoot) {
                     if (predicate(pair)) {
                         packages.Add(pair.Value);
@@ -319,7 +420,22 @@ namespace JayTom.Dws.Domain.Manager {
         /// </summary>
         /// <returns></returns>
         public static int GetPackageCount() {
-            return _packageInfos.Count;
+            return Math.Max(0, Volatile.Read(ref _packageCount));
+        }
+
+        /// <summary>以常数时间判断当前是否存在尚未赋值的包裹。</summary>
+        public static bool HasUnassignedPackage() {
+            lock (_packageOrderGate) {
+                while (_unassignedPackageOrder.Count > 0) {
+                    var key = _unassignedPackageOrder.Min;
+                    if (_packageInfos.TryGetValue(key, out var package) &&
+                        package.BarCodeInfo is null) {
+                        return true;
+                    }
+                    _unassignedPackageOrder.Remove(key);
+                }
+                return false;
+            }
         }
 
         /// <summary>
@@ -340,8 +456,33 @@ namespace JayTom.Dws.Domain.Manager {
                 }
 
                 if (info is not null) {
+                    Interlocked.Decrement(ref _packageCount);
+                    lock (_packageOrderGate) {
+                        _packageOrder.Remove(key);
+                        _unassignedPackageOrder.Remove(key);
+                        if (info.Guid != 0 &&
+                            _packageIdIndex.TryGetValue(info.Guid, out var indexedKey) &&
+                            indexedKey == key) {
+                            _packageIdIndex.Remove(info.Guid);
+                        }
+                    }
                     OnPackageRemoved(new PackageRemovedEventArgs(info, "清空全部包裹"));
                 }
+            }
+            lock (_packageOrderGate) {
+                if (_packageInfos.IsEmpty) {
+                    _packageOrder.Clear();
+                    _unassignedPackageOrder.Clear();
+                    _packageIdIndex.Clear();
+                    Volatile.Write(ref _packageCount, 0);
+                }
+            }
+        }
+
+        /// <summary>获取按创建时间升序排列的稳定键快照。</summary>
+        private static DateTime[] GetOrderedKeys() {
+            lock (_packageOrderGate) {
+                return [.. _packageOrder];
             }
         }
 
@@ -417,7 +558,17 @@ namespace JayTom.Dws.Domain.Manager {
         /// <summary>
         /// 条码信息
         /// </summary>
-        public BarCodeInfoModel? BarCodeInfo { get; set; }
+        /// <summary>保存通过原子读写发布的条码信息引用。</summary>
+        private BarCodeInfoModel? _barCodeInfo;
+
+        /// <summary>
+        /// 条码信息使用原子引用发布，使匹配热路径可以无锁跳过已赋值包裹；
+        /// 实际赋值仍由包裹锁保护。
+        /// </summary>
+        public BarCodeInfoModel? BarCodeInfo {
+            get => Volatile.Read(ref _barCodeInfo);
+            set => Volatile.Write(ref _barCodeInfo, value);
+        }
 
         /// <summary>
         /// 体积信息
@@ -576,25 +727,55 @@ namespace JayTom.Dws.Domain.Manager {
         public void StartTimers(ConcurrentDictionary<DateTime, PackageInfo> packageInfos, List<PackageTimer> removeTimers) {
             lock (SyncRoot) {
                 foreach (var timer in removeTimers) {
+                    var monotonicElapsed = Stopwatch.GetElapsedTime(
+                        CreatedAtMonotonicTimestamp,
+                        Stopwatch.GetTimestamp());
+                    var wallElapsed = DateTime.Now.Subtract(CreateTime);
+                    var elapsedSinceCreation = wallElapsed > monotonicElapsed
+                        ? wallElapsed
+                        : monotonicElapsed;
+                    if (elapsedSinceCreation < TimeSpan.Zero) {
+                        elapsedSinceCreation = TimeSpan.Zero;
+                    }
                     switch (timer) {
                         case PackageRemoveTimer packageRemoveTimer:
-                            packageRemoveTimer.PackageRemovalTimer = new Timer(RemoveFromCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer), packageRemoveTimer.RemovalTimeSpan, Timeout.InfiniteTimeSpan);
+                            packageRemoveTimer.PackageRemovalTimer = PackageTimerScheduler.Schedule(
+                                GetRemainingDueTime(
+                                    packageRemoveTimer.RemovalTimeSpan,
+                                    elapsedSinceCreation),
+                                () => RemoveFromCollection(new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>(packageInfos, packageRemoveTimer)));
                             PackageRemoveTimers.Add(packageRemoveTimer);
                             break;
 
                         case PackCompletedTimer packCompletedTimer:
-                            packCompletedTimer.CompletTimer = new Timer(CompletedCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer), packCompletedTimer.CompletTimeSpan, Timeout.InfiniteTimeSpan);
+                            packCompletedTimer.CompletTimer = PackageTimerScheduler.Schedule(
+                                GetRemainingDueTime(
+                                    packCompletedTimer.CompletTimeSpan,
+                                    elapsedSinceCreation),
+                                () => CompletedCollection(new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackCompletedTimer>(packageInfos, packCompletedTimer)));
                             PackCompletedTimers.Add(packCompletedTimer);
                             break;
 
                         case PackageAssignmentTimer packageAssignmentTimer:
-                            packageAssignmentTimer.AssignmentTimer = new Timer(AssignmentCollection, new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>(packageInfos, packageAssignmentTimer), packageAssignmentTimer.AssignmentTimeSpan, Timeout.InfiniteTimeSpan);
+                            packageAssignmentTimer.AssignmentTimer = PackageTimerScheduler.Schedule(
+                                GetRemainingDueTime(
+                                    packageAssignmentTimer.AssignmentTimeSpan,
+                                    elapsedSinceCreation),
+                                () => AssignmentCollection(new Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageAssignmentTimer>(packageInfos, packageAssignmentTimer)));
                             PackageAssignmentTimers.Add(packageAssignmentTimer);
                             break;
                     }
                 }
             }
         }
+
+        /// <summary>扣除包裹在进入会话前已经消耗的时间，保证到期时间以机械创建时刻为准。</summary>
+        private static TimeSpan GetRemainingDueTime(
+            TimeSpan configuredDueTime,
+            TimeSpan elapsedSinceCreation) =>
+            configuredDueTime > elapsedSinceCreation
+                ? configuredDueTime - elapsedSinceCreation
+                : TimeSpan.Zero;
 
         public ImageHandle? TakeImage() {
             lock (SyncRoot) {
@@ -677,8 +858,7 @@ namespace JayTom.Dws.Domain.Manager {
                             var keepTimer = assignmentTimer.AssignmentCallback(current);
                             if (keepTimer) {
                                 assignmentTimer.AssignmentTimer?.Change(
-                                    assignmentTimer.AssignmentTimeSpan,
-                                    Timeout.InfiniteTimeSpan);
+                                    assignmentTimer.AssignmentTimeSpan);
                                 return;
                             }
                         }
@@ -695,7 +875,7 @@ namespace JayTom.Dws.Domain.Manager {
     /// </summary>
     public class PackageAssignmentTimer : PackageTimer {
         public TimeSpan AssignmentTimeSpan { get; set; }
-        internal Timer? AssignmentTimer { get; set; }
+        internal PackageScheduledCallback? AssignmentTimer { get; set; }
 
         // 回调方法，接收PackageInfo参数，返回是否继续保留计时器
         public Func<PackageInfo, bool>? AssignmentCallback { get; set; }
@@ -706,7 +886,7 @@ namespace JayTom.Dws.Domain.Manager {
     /// </summary>
     public class PackageRemoveTimer : PackageTimer {
         public TimeSpan RemovalTimeSpan { get; set; }
-        internal Timer? PackageRemovalTimer { get; set; }
+        internal PackageScheduledCallback? PackageRemovalTimer { get; set; }
         public string Description { get; set; } = string.Empty;
 
         /// <summary>可选的过期调度器，用于将过期移除与包裹修改串行化；返回 false 时由计时器就地移除。</summary>
@@ -718,7 +898,7 @@ namespace JayTom.Dws.Domain.Manager {
     /// </summary>
     public class PackCompletedTimer : PackageTimer {
         public TimeSpan CompletTimeSpan { get; set; }
-        internal Timer? CompletTimer { get; set; }
+        internal PackageScheduledCallback? CompletTimer { get; set; }
     }
 
     public class PackageTimer {

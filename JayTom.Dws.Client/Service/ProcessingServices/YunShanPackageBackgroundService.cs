@@ -48,7 +48,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExternalDataService _externalDataService;
         private volatile CreatePackageSettingsDto _createPackageSettingsDto = new();
-        private readonly ConcurrentDictionary<string, BarCodeFrameInfo> _barCodeFrameInfoItem = new();
+        /// <summary>仅由包裹关键线程访问的有序多相机组帧，允许慢相机补入对应的较早机械包裹。</summary>
+        private readonly List<MultiCameraFrameGroup> _multiCameraFrameGroups = [];
+        /// <summary>使用单调时钟精确唤醒多相机融合期限，避免100ms轮询造成尾延迟。</summary>
+        private readonly MonotonicDeadlineScheduler _multiCameraDeadlineScheduler;
         /// <summary>
         /// 复用用户配置的条码正则，避免在相机热回调中重复编译。
         /// </summary>
@@ -58,6 +61,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly NonBlockingOrderedDispatcher<Action> _packageEventDispatcher;
         /// <summary>隔离日志、UI、持久化、API和输出订阅者的通知队列。</summary>
         private readonly NonBlockingOrderedDispatcher<Action> _packageNotificationDispatcher;
+        /// <summary>包裹完成后优先发布给格口 API，不与日志、UI和图片通知排同一队列。</summary>
+        private readonly NonBlockingOrderedDispatcher<PackageInfo> _packageCompletionDispatcher;
         private DateTime _lastNoReadTime = DateTime.MinValue;
         private ICamera[] _cameras = [];
         /// <summary>缓存当前扫描相机数量，避免每个条码事件都遍历设备集合。</summary>
@@ -83,18 +88,29 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _sortingService = sortingService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _externalDataService = externalDataService;
+            _multiCameraDeadlineScheduler = new MonotonicDeadlineScheduler(
+                "MultiCameraDeadlines",
+                ThreadPriority.AboveNormal);
             _packageEventDispatcher = new NonBlockingOrderedDispatcher<Action>(
                 static work =>
                 {
                     work();
                 },
-                static (_, exception) => QueueError("执行关键包裹事件失败", exception));
+                static (_, exception) => QueueError("执行关键包裹事件失败", exception),
+                "PackageCritical",
+                ThreadPriority.AboveNormal);
+            _packageCompletionDispatcher = new NonBlockingOrderedDispatcher<PackageInfo>(
+                static package => EventAggregator.Instance.PublishPackage(package),
+                static (_, exception) => QueueError("发布包裹完成事件失败", exception),
+                "PackageCompletion",
+                ThreadPriority.AboveNormal);
             _packageNotificationDispatcher = new NonBlockingOrderedDispatcher<Action>(
                 static notification =>
                 {
                     notification();
                 },
-                static (_, exception) => QueueError("发布包裹通知失败", exception));
+                static (_, exception) => QueueError("发布包裹通知失败", exception),
+                "PackageNotification");
             _deviceService.CameraInitialized += (_, cameras) =>
             {
                 var snapshot = new ICamera[cameras.Count];
@@ -138,14 +154,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image)
                         };
 
-                        _barCodeFrameInfoItem.AddOrUpdate(
-                            args.CameraSerialNumber,
-                            barCodeFrameInfo,
-                            (_, oldValue) =>
-                            {
-                                oldValue.Image?.Dispose();
-                                return barCodeFrameInfo;
-                            });
+                        AcceptMultiCameraFrame(args.CameraSerialNumber, barCodeFrameInfo);
                     }
                     else
                     {
@@ -171,6 +180,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         }
 
                         JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage = null;
+                        var hadPendingPackage = _packageSessionStore.HasUnassignedPackage();
                         var packageInfo = TryBindBarcode(args.ScanTime, package =>
                         {
                             replacedImage = package.Image;
@@ -187,7 +197,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         });
 
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
-                            == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null)
+                            == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null &&
+                            !hadPendingPackage)
                         {
                             //支持扫码创建
                             packageInfo = new PackageInfo()
@@ -264,23 +275,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             },
                             Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image)
                         };
-                        _barCodeFrameInfoItem.AddOrUpdate(
-                            args.CameraSerialNumber,
-                            barCodeFrameInfo,
-                            (_, oldValue) =>
-                            {
-                                if (!string.Equals(
-                                        oldValue.BarCodeInfo?.Barcode,
-                                        "noread",
-                                        StringComparison.OrdinalIgnoreCase))
-                                {
-                                    barCodeFrameInfo.Image?.Dispose();
-                                    return oldValue;
-                                }
-
-                                oldValue.Image?.Dispose();
-                                return barCodeFrameInfo;
-                            });
+                        AcceptMultiCameraFrame(args.CameraSerialNumber, barCodeFrameInfo);
                     }
                     else
                     {
@@ -298,6 +293,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             }
                         }
                         JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage = null;
+                        var hadPendingPackage = _packageSessionStore.HasUnassignedPackage();
                         var packageInfo = TryBindBarcode(args.ScanTime, package =>
                         {
                             replacedImage = package.Image;
@@ -313,7 +309,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             package.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
                         });
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
-                            PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null)
+                            PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null &&
+                            !hadPendingPackage)
                         {
                             //扫码相机创建
 
@@ -425,7 +422,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse)
                     {
-                        var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
+                        var packageInfo = _packageSessionStore.GetPackageById(num);
 
                         if (packageInfo is not null)
                         {
@@ -484,7 +481,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     var tryParse = int.TryParse(args.Keyword, out var num);
                     if (tryParse)
                     {
-                        var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
+                        var packageInfo = _packageSessionStore.GetPackageById(num);
                         if (packageInfo is not null)
                         {
                             QueueInstructionNotification(new InstructionReceived
@@ -542,6 +539,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     var formattedLength = Convert.ToDecimal(args.Length);
                     var formattedVolume = Convert.ToDecimal(args.Volume);
                     var formattedWidth = Convert.ToDecimal(args.Width);
+                    // 只要当前仍有待赋值包裹，绑定失败就必须拒绝本次输入，不能把同一机械包裹
+                    // 再创建成下一条记录，否则后续所有条码都会整体错位。
+                    var hadPendingPackage = _packageSessionStore.HasUnassignedPackage();
                     var packageInfo = TryBindBarcode(receivedAt, package =>
                     {
                         package.BarCodeInfo = new BarCodeInfoModel
@@ -571,7 +571,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         package.Other = boxBarCode;
                     });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
-                        PackageCreationMethodsEnum.TcpInput && packageInfo is null)
+                        PackageCreationMethodsEnum.TcpInput && packageInfo is null &&
+                        !hadPendingPackage)
                     {
                         packageInfo = new PackageInfo
                         {
@@ -754,13 +755,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _packageSessionStore.PackageCompleted += (sender, args) =>
             {
                 //执行输出
-                if (args.CompletedPackage?.BarCodeInfo is not null &&
-                    args.CompletedPackage?.WeightInfo is not null &&
-                    args.CompletedPackage?.VolumeInfo is not null)
+                var completedPackage = args.CompletedPackage;
+                if (completedPackage?.BarCodeInfo is not null &&
+                    completedPackage.WeightInfo is not null &&
+                    completedPackage.VolumeInfo is not null)
                 {
+                    if (!_packageCompletionDispatcher.TryEnqueue(completedPackage))
+                    {
+                        QueueError("包裹完成队列已停止，完成事件未入队");
+                    }
                     QueuePackageNotification(
-                        () => EventAggregator.Instance.Publish(args.CompletedPackage),
-                        "包裹完成");
+                        () => EventAggregator.Instance.Publish(completedPackage),
+                        "包裹完成普通通知");
                 }
             };
             EventAggregator.Instance.Subscribe<WindowsAction>(item =>
@@ -802,7 +808,212 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 settings.MinimumAssignmentTime,
                 settings.MaximumAssignmentTime,
                 emptyPackageExpiryMilliseconds,
+                DateTime.Now,
                 assignment);
+        }
+
+        /// <summary>接收同一机械包裹的单相机帧，并在相机齐备或冲突时立即完成融合。</summary>
+        private void AcceptMultiCameraFrame(
+            string cameraSerialNumber,
+            BarCodeFrameInfo frame)
+        {
+            var frameScanTime = frame.BarCodeInfo?.ScanTime ?? DateTime.Now;
+            var mergeTimeoutTicks = Math.Max(
+                1L,
+                (long)_barcodeFilterSettingsDto.MergeTimeout) *
+                TimeSpan.TicksPerMillisecond;
+            var configuredCreationInterval =
+                _createPackageSettingsDto.PackageCreationInterval;
+            // 创建间隔为 0 表示关闭该防抖，不能因此把多相机关联窗口收窄到 0.5ms。
+            // 启用防抖时最多采用半个机械周期，避免把相邻包裹的相机帧合并在一起。
+            var maximumCorrelationTicks = configuredCreationInterval > 0
+                ? Math.Min(
+                    mergeTimeoutTicks,
+                    Math.Max(1L, (long)configuredCreationInterval) *
+                    TimeSpan.TicksPerMillisecond / 2L)
+                : mergeTimeoutTicks;
+            MultiCameraFrameGroup? targetGroup = null;
+            var nearestDifference = long.MaxValue;
+            for (var index = 0; index < _multiCameraFrameGroups.Count; index++)
+            {
+                var candidate = _multiCameraFrameGroups[index];
+                if (candidate.Frames.ContainsKey(cameraSerialNumber))
+                {
+                    continue;
+                }
+                var timeDifference = Math.Abs(
+                    frameScanTime.Ticks - candidate.AnchorScanTime.Ticks);
+                if (timeDifference > maximumCorrelationTicks)
+                {
+                    continue;
+                }
+                if (frame.Frame > 0 && candidate.FrameNumber == frame.Frame)
+                {
+                    targetGroup = candidate;
+                    break;
+                }
+                if (timeDifference < nearestDifference)
+                {
+                    nearestDifference = timeDifference;
+                    targetGroup = candidate;
+                }
+            }
+            if (targetGroup is null)
+            {
+                targetGroup = new MultiCameraFrameGroup
+                {
+                    AnchorScanTime = frameScanTime,
+                    FrameNumber = frame.Frame,
+                    ExpectedCameraCount = Math.Max(
+                        1,
+                        Volatile.Read(ref _scannerCameraCount))
+                };
+                _multiCameraFrameGroups.Add(targetGroup);
+            }
+
+            targetGroup.Frames.Add(cameraSerialNumber, frame);
+            var barcode = frame.BarCodeInfo?.Barcode;
+            if (!IsNoReadBarcode(barcode))
+            {
+                targetGroup.ValidBarcode ??= barcode;
+                if (!string.Equals(
+                        targetGroup.ValidBarcode,
+                        barcode,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    targetGroup.HasBarcodeConflict = true;
+                }
+            }
+            if (targetGroup.Frames.Count == 1)
+            {
+                var mergeTimeout = TimeSpan.FromMilliseconds(
+                    Math.Max(1, _barcodeFilterSettingsDto.MergeTimeout));
+                targetGroup.Deadline = _multiCameraDeadlineScheduler.Schedule(
+                    mergeTimeout,
+                    () => TryQueuePackageEvent(
+                        () => CompleteMultiCameraGroup(targetGroup),
+                        "多相机融合到期"));
+            }
+            if (targetGroup.Frames.Count >= targetGroup.ExpectedCameraCount ||
+                targetGroup.HasBarcodeConflict)
+            {
+                CompleteMultiCameraGroup(targetGroup);
+            }
+        }
+
+        /// <summary>选择单个有序相机组的唯一有效条码；冲突时拒绝整组，避免错配。</summary>
+        private void CompleteMultiCameraGroup(MultiCameraFrameGroup frameGroup)
+        {
+            if (!_multiCameraFrameGroups.Remove(frameGroup))
+            {
+                return;
+            }
+            frameGroup.Deadline?.Dispose();
+            frameGroup.Deadline = null;
+            if (frameGroup.Frames.Count == 0)
+            {
+                return;
+            }
+
+            if (frameGroup.Frames.Count < frameGroup.ExpectedCameraCount)
+            {
+                DisposeMultiCameraGroup(frameGroup.Frames.Values, null);
+                QueueError(
+                    $"多相机帧未到齐，已拒绝赋值:{frameGroup.Frames.Count}/{frameGroup.ExpectedCameraCount}");
+                return;
+            }
+
+            var selected = default(BarCodeFrameInfo);
+            var fallback = default(BarCodeFrameInfo);
+            var oldestScanTime = DateTime.MaxValue;
+            foreach (var item in frameGroup.Frames.Values)
+            {
+                fallback ??= item;
+                var itemScanTime = item.BarCodeInfo?.ScanTime;
+                if (itemScanTime.HasValue && itemScanTime.Value < oldestScanTime)
+                {
+                    oldestScanTime = itemScanTime.Value;
+                }
+                if (!IsNoReadBarcode(item.BarCodeInfo?.Barcode) &&
+                    (selected is null || selected.Image is null && item.Image is not null))
+                {
+                    selected = item;
+                }
+            }
+            selected ??= fallback!;
+            if (oldestScanTime == DateTime.MaxValue)
+            {
+                oldestScanTime = DateTime.Now;
+            }
+            if (frameGroup.HasBarcodeConflict)
+            {
+                DisposeMultiCameraGroup(frameGroup.Frames.Values, null);
+                QueueError("多相机同组条码冲突，已拒绝赋值");
+                return;
+            }
+
+            // 同一机械触发的多相机帧存在天然先后差；匹配包裹必须使用组内首帧时间，
+            // 不能使用较慢相机的条码帧时间把本来位于窗口内的包裹推到 400ms 之外。
+            var scanTime = oldestScanTime;
+            var hadPendingPackage = _packageSessionStore.HasUnassignedPackage();
+            JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage = null;
+            var package = TryBindBarcode(scanTime, target =>
+            {
+                replacedImage = target.Image;
+                target.BarCodeInfo = selected.BarCodeInfo;
+                target.Image = selected.Image;
+            });
+            if (package is null &&
+                !hadPendingPackage &&
+                (_createPackageSettingsDto.PackageCreationMethods &
+                    PackageCreationMethodsEnum.ScanBarcodeCamera) ==
+                PackageCreationMethodsEnum.ScanBarcodeCamera)
+            {
+                package = new PackageInfo
+                {
+                    Guid = selected.Timestamp,
+                    BarCodeInfo = selected.BarCodeInfo,
+                    Image = selected.Image
+                };
+                ProcessPackageTrigger(package);
+            }
+            else if (package is not null)
+            {
+                replacedImage?.Dispose();
+                ProcessPackageValueChanged(package, TriggerPositionEnum.BarCodeSetValueAfter);
+            }
+            else
+            {
+                QueueBarcodeAssignmentRejected("multi-camera", scanTime);
+            }
+            DisposeMultiCameraGroup(
+                frameGroup.Frames.Values,
+                package is null ? null : selected);
+        }
+
+        /// <summary>判断条码是否表示空读或过滤占位值。</summary>
+        private static bool IsNoReadBarcode(string? barcode) =>
+            string.IsNullOrWhiteSpace(barcode) ||
+            string.Equals(barcode, "noread", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(barcode, "filtered", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>释放多相机组中未转交给包裹的图像所有权。</summary>
+        private static void DisposeMultiCameraGroup(
+            IEnumerable<BarCodeFrameInfo> group,
+            BarCodeFrameInfo? retained)
+        {
+            foreach (var frame in group)
+            {
+                if (!ReferenceEquals(frame, retained))
+                {
+                    frame.Image?.Dispose();
+                }
+            }
+            if (retained is null)
+            {
+                return;
+            }
+            retained.Image = null;
         }
 
         /// <summary>将超出赋值窗口的诊断信息移交到非关键通知队列。</summary>
@@ -1105,15 +1316,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             Interlocked.Exchange(ref _isWindowsClose, 1);
+            _multiCameraDeadlineScheduler.Dispose();
             await _packageEventDispatcher.DisposeAsync();
+            await _packageCompletionDispatcher.DisposeAsync();
             await _packageNotificationDispatcher.DisposeAsync();
-            foreach (var cameraSerialNumber in _barCodeFrameInfoItem.Keys)
+            foreach (var group in _multiCameraFrameGroups)
             {
-                if (_barCodeFrameInfoItem.TryRemove(cameraSerialNumber, out var frameInfo))
+                group.Deadline?.Dispose();
+                foreach (var frameInfo in group.Frames.Values)
                 {
                     frameInfo.Image?.Dispose();
                 }
             }
+            _multiCameraFrameGroups.Clear();
             _regexCache.Clear();
             await base.StopAsync(cancellationToken);
         }

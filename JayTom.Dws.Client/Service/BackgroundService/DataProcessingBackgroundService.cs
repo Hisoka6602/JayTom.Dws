@@ -49,16 +49,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly IImageRepository _imageRepository;
         private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
         private readonly IExitInfoRepository _exitInfoRepository;
-        private readonly BoundedWorkQueue<PackageInfoModel> _insertItems = new(MaxQueueLength);
-        private readonly BoundedWorkQueue<ApiResponseReceived> _updateResponseItems = new(MaxQueueLength);
-        private readonly BoundedWorkQueue<SavedImageInfo> _savedImageItems = new(MaxQueueLength);
-        private readonly BoundedWorkQueue<InstructionReceived> _instructionItems = new(MaxQueueLength);
-        private readonly BoundedWorkQueue<ExceptionSortingReceived> _exceptionSortingItems = new(MaxQueueLength);
-        private readonly BoundedWorkQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new(MaxQueueLength);
-        /// <summary>
-        /// 单类持久化任务允许排队的最大数量。
-        /// </summary>
-        private const int MaxQueueLength = 10_000;
+        private readonly LosslessWorkQueue<PackageInfoModel> _insertItems = new();
+        private readonly LosslessWorkQueue<ApiResponseReceived> _updateResponseItems = new();
+        private readonly LosslessWorkQueue<SavedImageInfo> _savedImageItems = new();
+        private readonly LosslessWorkQueue<InstructionReceived> _instructionItems = new();
+        private readonly LosslessWorkQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
+        private readonly LosslessWorkQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
         /// <summary>包裹主记录每次 SQLite 提交允许合并的最大数量。</summary>
         private const int PackageInsertBatchSize = 64;
         /// <summary>
@@ -70,7 +66,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _pendingInstructions = [];
         /// <summary>当前暂存且尚未关联到包裹主记录的指令总数。</summary>
         private int _pendingInstructionCount;
-        /// <summary>统一记录持久化工作项的有限重试状态。</summary>
+        /// <summary>记录持久化工作项的重试次数，用于诊断长期故障但不丢弃数据。</summary>
         private readonly RetryAttemptTracker _retryTracker = new(5);
 
         /// <summary>
@@ -113,7 +109,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     ScanTime = args.ScanTime,
                 });
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(item =>
+            EventAggregator.Instance.SubscribePackage<PackageInfo>(item =>
             {
                 if (item is { } model)
                 {
@@ -128,7 +124,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item =>
+            EventAggregator.Instance.SubscribePackage<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
@@ -615,12 +611,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <typeparam name="T">队列元素类型。</typeparam>
         /// <param name="queue">目标并发队列。</param>
         /// <param name="item">需要持久化的数据。</param>
-        private void EnqueueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
+        private void EnqueueWork<T>(LosslessWorkQueue<T> queue, T item) where T : class
         {
             if (!queue.TryEnqueue(item))
             {
                 LogManager.GetCurrentClassLogger().Error(
-                    $"数据持久化队列已达到上限 {MaxQueueLength}，拒绝新任务:{typeof(T).Name}");
+                    $"数据持久化队列已经停止，工作未入队:{typeof(T).Name}");
                 return;
             }
             SignalWork();
@@ -629,13 +625,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>
         /// 将失败工作重新入队并请求短暂退避。
         /// </summary>
-        private void RequeueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
+        private void RequeueWork<T>(LosslessWorkQueue<T> queue, T item) where T : class
         {
-            if (!_retryTracker.TryRegisterFailure(item, out _))
+            var isWithinInitialRetryWindow =
+                _retryTracker.TryRegisterFailure(item, out var attempt);
+            if (!isWithinInitialRetryWindow &&
+                (attempt == _retryTracker.MaxAttempts + 1 || attempt % 100 == 0))
             {
-                LogManager.GetCurrentClassLogger().Error(
-                    $"数据持久化任务超过最大重试次数 {_retryTracker.MaxAttempts}，已转为错误日志:{typeof(T).Name}");
-                return;
+                LogManager.GetCurrentClassLogger().Warn(
+                    $"数据持久化任务持续失败但将保留重试:{typeof(T).Name},Attempt={attempt}");
             }
             Interlocked.Exchange(ref _retryRequested, 1);
             EnqueueWork(queue, item);
@@ -647,13 +645,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         private void StoreInstructionWaitingForPackage(InstructionReceived item)
         {
-            if (_pendingInstructionCount >= MaxQueueLength)
-            {
-                LogManager.GetCurrentClassLogger().Error(
-                    $"待关联指令达到上限 {MaxQueueLength}，拒绝新任务:Timestamp={item.Timestamp}");
-                return;
-            }
-
             if (!_pendingInstructions.TryGetValue(item.Timestamp, out var instructions))
             {
                 instructions = new Queue<(InstructionReceived Instruction, long EnqueuedAt)>();

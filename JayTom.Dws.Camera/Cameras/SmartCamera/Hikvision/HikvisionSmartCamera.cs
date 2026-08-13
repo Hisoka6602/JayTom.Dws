@@ -16,7 +16,6 @@ using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.Concurrency;
 using JayTom.Dws.Camera.FilterContainer;
@@ -36,10 +35,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
         private long _frameNo = 0;
-        /// <summary>海康拉帧节流使用的八十毫秒单调时钟刻度。</summary>
-        private static readonly long MinimumFrameIntervalTicks = Math.Max(1L, Stopwatch.Frequency * 80 / 1000);
-        /// <summary>最近一次接收帧的单调时钟刻度。</summary>
-        private long _lastAcceptedFrameTimestamp;
         /// <summary>脱离 SDK 拉帧线程执行图像解码和事件发布的无损顺序调度器。</summary>
         private LosslessOrderedDispatcher<HikvisionCapturedFrame>? _frameDispatcher;
 
@@ -489,7 +484,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         private void HandleBarcodeReading(Bitmap? bmp, MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfo,
             MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 stBcrResult, DateTime scanTime, long timestamp,
-            long frameNo) {
+            long frameNo,
+            List<BarcodeTriggeredEventArgs>? filteredBarcodes = null) {
             try {
                 //智能相机没有纯图像回调,暂时先写在这里
                 if (this.BindingType is CameraBindingType.OcrCamera) {
@@ -510,7 +506,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     }
                 }
                 else {
-                    var thumbnailImage = GenerateThumbnail(bmp);
+                    var thumbnailImage = IsOriginalImageOut
+                        ? GenerateThumbnail(bmp)
+                        : bmp is null
+                            ? null
+                            : new Bitmap(bmp);
                     if (stBcrResult.nCodeNum > 0) {
                         //画区域
                         if (IsShowBarcodeBorder && thumbnailImage is not null &&
@@ -533,8 +533,22 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             }
                         }
 
-                        var barcodeTriggeredEventArgsList = FilterBarcodes(stBcrResult, scanTime, timestamp, bmp, thumbnailImage,
-                            stFrameInfo, frameNo);
+                        var barcodeTriggeredEventArgsList = filteredBarcodes ??
+                            FilterBarcodes(
+                                stBcrResult,
+                                scanTime,
+                                timestamp,
+                                bmp,
+                                thumbnailImage,
+                                stFrameInfo,
+                                frameNo);
+                        if (filteredBarcodes is not null) {
+                            AttachBarcodeImages(
+                                barcodeTriggeredEventArgsList,
+                                bmp,
+                                thumbnailImage,
+                                stFrameInfo);
+                        }
                         if (barcodeTriggeredEventArgsList.Count > 0) {
                             foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
                                 OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
@@ -752,6 +766,27 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// <summary>在独立长驻线程中按收帧顺序执行图像解码、过滤和事件发布。</summary>
         private void ProcessCapturedFrame(HikvisionCapturedFrame frame) {
             using (frame.Buffer) {
+                if (BindingType != CameraBindingType.OcrCamera &&
+                    !HasFrameConsumer(frame.BarcodeResult)) {
+                    return;
+                }
+
+                List<BarcodeTriggeredEventArgs>? filteredBarcodes = null;
+                if (BindingType != CameraBindingType.OcrCamera &&
+                    frame.BarcodeResult.nCodeNum > 0) {
+                    filteredBarcodes = FilterBarcodes(
+                        frame.BarcodeResult,
+                        frame.ScanTime,
+                        frame.Timestamp,
+                        null,
+                        null,
+                        frame.FrameInfo,
+                        frame.FrameNo);
+                    if (filteredBarcodes.Count == 0 && !IsRealtimeImageEnabled) {
+                        return;
+                    }
+                }
+
                 var bitmap = GetBitmap(frame.Buffer.Buffer, frame.Buffer.Length, frame.FrameInfo);
                 HandleBarcodeReading(
                     bitmap,
@@ -759,8 +794,21 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     frame.BarcodeResult,
                     frame.ScanTime,
                     frame.Timestamp,
-                    frame.FrameNo);
+                    frame.FrameNo,
+                    filteredBarcodes);
             }
+        }
+
+        /// <summary>在构造 Bitmap 前判断 SDK 元数据是否存在任何业务或预览消费者。</summary>
+        private bool HasFrameConsumer(
+            MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 barcodeResult) {
+            if (IsRealtimeImageEnabled && RealtimeImage is not null) {
+                return true;
+            }
+            if (barcodeResult.nCodeNum <= 0) {
+                return TriggerMode == TriggerMode.Hardware && NotBarcodeHitEvent is not null;
+            }
+            return BarcodeReadTriggered is not null;
         }
 
         private async Task BarcodeCallbackThread(CancellationToken token) {
@@ -796,13 +844,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     }
 
                     var frameNo = Interlocked.Increment(ref _frameNo);
-                    var monotonicTimestamp = Stopwatch.GetTimestamp();
-                    var previousTimestamp = Volatile.Read(ref _lastAcceptedFrameTimestamp);
-                    if (previousTimestamp != 0 &&
-                        monotonicTimestamp - previousTimestamp < MinimumFrameIntervalTicks) {
-                        continue;
-                    }
-                    Volatile.Write(ref _lastAcceptedFrameTimestamp, monotonicTimestamp);
                     var barcodeResult =
                         (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(
                             Marshal.PtrToStructure(
@@ -866,7 +907,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             });
                         }
                         else {
-                            areaCoordinates.Add(default);
+                            areaCoordinates.Add(new Point {
+                                X = (int)barcodeInfo.pt[pointIndex].x,
+                                Y = (int)barcodeInfo.pt[pointIndex].y
+                            });
                         }
                     }
 
@@ -912,6 +956,34 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
 
             return triggeredEventArgsList;
+        }
+
+        /// <summary>在元数据过滤完成后一次性附加图像并把原始坐标缩放到输出位图。</summary>
+        private void AttachBarcodeImages(
+            List<BarcodeTriggeredEventArgs> barcodes,
+            Bitmap? bitmap,
+            Bitmap? thumbnail,
+            MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 frameInfo) {
+            for (var index = 0; index < barcodes.Count; index++) {
+                var barcode = barcodes[index];
+                if (bitmap is { Width: > 0, Height: > 0 } &&
+                    frameInfo.nWidth > 0 && frameInfo.nHeight > 0 &&
+                    barcode.AreaCoords is not null) {
+                    for (var pointIndex = 0; pointIndex < barcode.AreaCoords.Count; pointIndex++) {
+                        var point = barcode.AreaCoords[pointIndex];
+                        barcode.AreaCoords[pointIndex] = new Point {
+                            X = (int)(point.X * (long)bitmap.Width / frameInfo.nWidth),
+                            Y = (int)(point.Y * (long)bitmap.Height / frameInfo.nHeight)
+                        };
+                    }
+                }
+                barcode.Image = index > 0 && bitmap is not null
+                    ? new Bitmap(bitmap)
+                    : bitmap;
+                barcode.ThumbImage = (index > 0 || IsRealtimeImageEnabled) && thumbnail is not null
+                    ? new Bitmap(thumbnail)
+                    : thumbnail;
+            }
         }
 
         /// <summary>

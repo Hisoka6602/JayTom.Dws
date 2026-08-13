@@ -34,6 +34,43 @@ public sealed class CameraBarcodeFilterTests {
         Assert.Equal(1, passed);
     }
 
+    /// <summary>验证预编译基础正则仍保持原有的放行和规则过滤语义。</summary>
+    [Fact]
+    public void ValidateData_BasicRegex_PreservesFilteringSemantics() {
+        BarCodeFilterContainer.ResetFilter();
+        var filter = CreateFilter(TimeSpan.FromSeconds(1));
+        filter.BarCodeFilterMode = BarCodeFilterMode.BasicFilter;
+        filter.Pattern = "^JT[0-9]+$";
+        var observationTime = new DateTime(2026, 8, 13, 8, 0, 0, DateTimeKind.Local);
+
+        Assert.True(Validate(filter, "JT100", observationTime).IsValidationPassed);
+        var rejected = Validate(filter, "SF100", observationTime.AddMilliseconds(1));
+        Assert.False(rejected.IsValidationPassed);
+        Assert.Equal(FilteredCategory.RuleFiltered, rejected.FilteredCategory);
+    }
+
+    /// <summary>验证多个相机线程共享已编译正则时，替换结果保持一致。</summary>
+    [Fact]
+    public void RegexReplace_ConcurrentCalls_ReturnConsistentResults() {
+        var filter = CreateFilter(TimeSpan.FromSeconds(1));
+        filter.IsUseCustomRegexReplacement = true;
+        filter.CustomRegexReplacementItems = [
+            new CustomRegexReplacementItemInfo {
+                RegexPattern = "^0+",
+                ReplaceContent = string.Empty
+            }
+        ];
+        var mismatches = 0;
+
+        Parallel.For(0, 128, _ => {
+            if (!string.Equals(filter.RegexReplace("000JT100"), "JT100", StringComparison.Ordinal)) {
+                Interlocked.Increment(ref mismatches);
+            }
+        });
+
+        Assert.Equal(0, mismatches);
+    }
+
     /// <summary>创建关闭规则过滤、仅启用时间去重的测试过滤器。</summary>
     private static BarCodeFilterContainer CreateFilter(TimeSpan expiration) {
         return new BarCodeFilterContainer {

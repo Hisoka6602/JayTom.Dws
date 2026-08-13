@@ -60,6 +60,7 @@ public interface IPackageSessionStore {
     /// <param name="minimumAssignmentMilliseconds">赋值时间窗口下限，单位毫秒。</param>
     /// <param name="maximumAssignmentMilliseconds">赋值时间窗口上限，单位毫秒。</param>
     /// <param name="emptyPackageExpiryMilliseconds">空包裹删除时间，到达该时间后删除规则优先。</param>
+    /// <param name="processingAt">程序实际处理条码的时间。</param>
     /// <param name="assignment">在包裹锁内执行的赋值操作。</param>
     /// <returns>赋值成功的包裹，无合适包裹时返回空。</returns>
     PackageInfo? TryBindBarcode(
@@ -69,12 +70,18 @@ public interface IPackageSessionStore {
         int minimumAssignmentMilliseconds,
         int maximumAssignmentMilliseconds,
         int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
         Action<PackageInfo> assignment);
 
     /// <summary>根据创建时间获取包裹。</summary>
     /// <param name="createTime">包裹创建时间。</param>
     /// <returns>匹配的包裹，找不到时返回空。</returns>
     PackageInfo? GetPackage(DateTime createTime);
+
+    /// <summary>按下位机包裹序号直接获取运行会话。</summary>
+    /// <param name="packageId">下位机包裹序号。</param>
+    /// <returns>匹配的包裹，不存在时返回空。</returns>
+    PackageInfo? GetPackageById(long packageId);
 
     /// <summary>获取所有符合条件的包裹快照。</summary>
     /// <param name="predicate">筛选条件。</param>
@@ -84,6 +91,9 @@ public interface IPackageSessionStore {
     /// <summary>获取当前包裹数量。</summary>
     /// <returns>包裹数量。</returns>
     int GetPackageCount();
+
+    /// <summary>判断当前是否存在尚未赋值的包裹。</summary>
+    bool HasUnassignedPackage();
 
     /// <summary>清理全部包裹并释放其资源。</summary>
     void ClearAllPackages();

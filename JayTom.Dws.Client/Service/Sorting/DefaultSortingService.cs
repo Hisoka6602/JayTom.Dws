@@ -1,5 +1,6 @@
 using JayTom.Dws.Application.Configuration;
 using JayTom.Dws.Application.Packages;
+using JayTom.Dws.Application.Workflows;
 using System;
 using DryIoc;
 using System.Linq;
@@ -23,7 +24,6 @@ using JayTom.Dws.Interface.Cloud;
 using MathNet.Numerics.RootFinding;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Domain.EventMediators;
@@ -78,21 +78,9 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>
         /// 按到期时间调度分拣工作的通道，避免一个包裹的配置延迟阻塞后续包裹。
         /// </summary>
-        private readonly Channel<(Func<Task> Work, long DueTimestamp)> _sortingWorkChannel =
-            Channel.CreateUnbounded<(Func<Task> Work, long DueTimestamp)>(new UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = false,
-                AllowSynchronousContinuations = false
-            });
-        /// <summary>
-        /// 控制分拣工作消费者的生命周期。
-        /// </summary>
-        private readonly CancellationTokenSource _sortingWorkerCancellation = new();
-        /// <summary>
-        /// 持续消费分拣工作通道的后台任务。
-        /// </summary>
-        private readonly Task _sortingWorker;
+        private readonly MonotonicDeadlineScheduler _sortingDeadlineScheduler;
+        /// <summary>按提交顺序执行已经到期的分拣工作，避免线程池饥饿影响格口响应。</summary>
+        private readonly NonBlockingOrderedDispatcher<Func<Task>> _sortingDispatcher;
         /// <summary>
         /// 用户配置正则的编译缓存。
         /// </summary>
@@ -233,7 +221,22 @@ namespace JayTom.Dws.Client.Service.Sorting
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
             _grayscaleService = grayscaleService;
-            _sortingWorker = Task.Run(ProcessSortingWorkAsync);
+            _sortingDeadlineScheduler = new MonotonicDeadlineScheduler(
+                "SortingDeadlines",
+                ThreadPriority.AboveNormal);
+            _sortingDispatcher = new NonBlockingOrderedDispatcher<Func<Task>>(
+                static work => ExecuteSortingWork(work),
+                (_, exception) =>
+                {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(exception, "分拣任务执行失败");
+                    OnExceptionOccurred(new ExceptionEventArgs
+                    {
+                        ExceptionMessage = exception.Message
+                    });
+                },
+                "SortingWork",
+                ThreadPriority.AboveNormal);
             _packageSessionStore.PackageRemoved += (_, args) =>
                 RemoveConsumedApiCorrelation(args.RemovedPackage.CreateTime.Ticks);
 
@@ -362,7 +365,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                 _ = ReloadPackageExitDefinitionsAsync();
             });
             //触发方式
-            EventAggregator.Instance.Subscribe<PackageInfo>(item =>
+            EventAggregator.Instance.SubscribePackage<PackageInfo>(item =>
             {
                 if (item is { } model)
                 {
@@ -393,7 +396,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                 }
             });
             //Api触发
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item =>
+            EventAggregator.Instance.SubscribePackage<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
@@ -1064,8 +1067,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                 #endregion 邮政额外定制
             }
-            var apiRule = Volatile.Read(ref _apiRuleSnapshots)
-                .FirstOrDefault(rule => ValidateApiRule(param.ApiResponse, rule.Definition));
+            var apiRule = FindApiRule(param.ApiResponse);
             if (apiRule is not null)
             {
                 Volatile.Read(ref _apiSortingLookup)
@@ -1349,55 +1351,95 @@ namespace JayTom.Dws.Client.Service.Sorting
             _consumedApiCorrelations.TryRemove(creationTimeTicks, out _);
         }
 
-        private bool ValidateApiRule(UploadResponse apiResponse, ApiRuleJsonDto? apiRuleJsonDto)
+        /// <summary>按配置优先级查找首条匹配规则，并让全部 JSON 规则共享一次响应解析。</summary>
+        private ApiRuleSnapshot? FindApiRule(UploadResponse apiResponse)
         {
+            JsonDocument? responseDocument = null;
+            var responseParseAttempted = false;
             try
             {
-                if (apiRuleJsonDto is not null)
+                foreach (var snapshot in Volatile.Read(ref _apiRuleSnapshots))
                 {
-                    if (apiRuleJsonDto.ResponseStatus == (apiResponse.IsSuccess ? UploadStatus.Succeeded : UploadStatus.Failed))
+                    var definition = snapshot.Definition;
+                    JsonElement? responseRoot = null;
+                    if (definition is { IsUseStringComparison: true, IsUseJsonField: true })
                     {
-                        //判断查找方式
-                        if (!apiRuleJsonDto.IsUseStringComparison)
-                        {
-                            return true;
+                        if (!responseParseAttempted) {
+                            responseDocument = TryParseApiResponse(apiResponse.ResponseContent);
+                            responseParseAttempted = true;
                         }
-                        else
-                        {
-                            if (apiRuleJsonDto.IsUseStringSearch)
-                            {
-                                return apiRuleJsonDto.SearchDirection == SearchDirection.Forward
-                                    ? apiResponse.ResponseContent.IndexOf(apiRuleJsonDto.SearchStringContent, StringComparison.Ordinal) >= 0
-                                    : apiResponse.ResponseContent.LastIndexOf(apiRuleJsonDto.SearchStringContent, StringComparison.Ordinal) >= 0;
-                            }
-                            else if (apiRuleJsonDto.IsUseJsonField)
-                            {
-                                var resultContent = Regex.Unescape(apiResponse.ResponseContent);
-                                var replace = Regex.Replace(resultContent, @"[\u0000-\u001D\b]", "");
-                                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(replace));
-                                var tryParseValue = JsonDocument.TryParseValue(ref reader, out var document);
-                                if (tryParseValue && document is not null)
-                                {
-                                    using (document)
-                                    {
-                                    var fieldValue = FindFieldValue(document.RootElement, apiRuleJsonDto.JsonField, apiRuleJsonDto.SearchDirection);
-                                    if (fieldValue.HasValue)
-                                    {
-                                        return fieldValue.Value.ToString()?.Equals(apiRuleJsonDto.JsonFieldValue) == true;
-                                    }
-                                    }
-                                }
-                            }
-                        }
+                        responseRoot = responseDocument?.RootElement;
+                    }
+
+                    if (ValidateApiRule(apiResponse, definition, responseRoot)) {
+                        return snapshot;
                     }
                 }
             }
             catch (Exception e)
             {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                Console.WriteLine(e);
+                NLog.LogManager.GetCurrentClassLogger().Error(e, "匹配 API 分拣规则失败");
             }
-            return false;
+            finally {
+                responseDocument?.Dispose();
+            }
+
+            return null;
+        }
+
+        /// <summary>使用已经共享解析的响应文档校验单条 API 规则。</summary>
+        private static bool ValidateApiRule(
+            UploadResponse apiResponse,
+            ApiRuleJsonDto? definition,
+            JsonElement? responseRoot) {
+            if (definition is null ||
+                definition.ResponseStatus !=
+                (apiResponse.IsSuccess ? UploadStatus.Succeeded : UploadStatus.Failed)) {
+                return false;
+            }
+            if (!definition.IsUseStringComparison) {
+                return true;
+            }
+            if (definition.IsUseStringSearch) {
+                return definition.SearchDirection == SearchDirection.Forward
+                    ? apiResponse.ResponseContent.IndexOf(
+                        definition.SearchStringContent,
+                        StringComparison.Ordinal) >= 0
+                    : apiResponse.ResponseContent.LastIndexOf(
+                        definition.SearchStringContent,
+                        StringComparison.Ordinal) >= 0;
+            }
+            if (!definition.IsUseJsonField || responseRoot is null) {
+                return false;
+            }
+
+            var fieldValue = FindFieldValue(
+                responseRoot.Value,
+                definition.JsonField,
+                definition.SearchDirection);
+            return fieldValue.HasValue &&
+                string.Equals(
+                    fieldValue.Value.ToString(),
+                    definition.JsonFieldValue,
+                    StringComparison.Ordinal);
+        }
+
+        /// <summary>清理接口响应中的控制字符并只解析一次 JSON 文档。</summary>
+        private static JsonDocument? TryParseApiResponse(string responseContent) {
+            try {
+                var unescapedContent = Regex.Unescape(responseContent);
+                var sanitizedContent = Regex.Replace(
+                    unescapedContent,
+                    @"[\u0000-\u001D\b]",
+                    string.Empty);
+                return JsonDocument.Parse(sanitizedContent);
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException or System.Text.Json.JsonException) {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Warn(exception, "API 响应不是有效 JSON");
+                return null;
+            }
         }
 
         /// <summary>在配置加载阶段完成 API 规则反序列化、优先级排序和格口索引构建。</summary>
@@ -1582,23 +1624,23 @@ namespace JayTom.Dws.Client.Service.Sorting
                             {
                                 foreach (var property in element.EnumerateObject())
                                 {
-                                    stack.Push(direction == SearchDirection.Forward
-                                        ? property.Value
-                                        : property.Value.Clone());
+                                    stack.Push(property.Value);
                                 }
 
                                 break;
                             }
                         case JsonValueKind.Array:
                             {
-                                var array = element.EnumerateArray().ToList();
-                                if (direction == SearchDirection.Backward)
-                                {
-                                    array.Reverse();
+                                var length = element.GetArrayLength();
+                                if (direction == SearchDirection.Forward) {
+                                    for (var index = 0; index < length; index++) {
+                                        stack.Push(element[index]);
+                                    }
                                 }
-                                foreach (var arrayElement in array)
-                                {
-                                    stack.Push(arrayElement);
+                                else {
+                                    for (var index = length - 1; index >= 0; index--) {
+                                        stack.Push(element[index]);
+                                    }
                                 }
 
                                 break;
@@ -1707,9 +1749,20 @@ namespace JayTom.Dws.Client.Service.Sorting
         private void QueueSortingWork(Func<Task> work, TimeSpan delay = default)
         {
             var normalizedDelay = delay > TimeSpan.Zero ? delay : TimeSpan.Zero;
-            var dueTimestamp = Stopwatch.GetTimestamp() +
-                               (long)(normalizedDelay.TotalSeconds * Stopwatch.Frequency);
-            if (!_sortingWorkChannel.Writer.TryWrite((work, dueTimestamp)))
+            if (normalizedDelay == TimeSpan.Zero)
+            {
+                EnqueueSortingWork(work);
+                return;
+            }
+            _sortingDeadlineScheduler.Schedule(
+                normalizedDelay,
+                () => EnqueueSortingWork(work));
+        }
+
+        /// <summary>将已经到期的分拣任务移交到独立高优先级工作线程。</summary>
+        private void EnqueueSortingWork(Func<Task> work)
+        {
+            if (!_sortingDispatcher.TryEnqueue(work))
             {
                 OnExceptionOccurred(new ExceptionEventArgs
                 {
@@ -1718,68 +1771,17 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
         }
 
-        private async Task ProcessSortingWorkAsync()
+        /// <summary>在分拣专属线程上同步观察异步任务完成，保持严格顺序。</summary>
+        private static void ExecuteSortingWork(Func<Task> work)
         {
-            var pending = new PriorityQueue<(Func<Task> Work, long DueTimestamp), long>();
-            try
+            var awaiter = work().ConfigureAwait(false).GetAwaiter();
+            if (!awaiter.IsCompleted)
             {
-                var token = _sortingWorkerCancellation.Token;
-                while (!token.IsCancellationRequested)
-                {
-                    while (_sortingWorkChannel.Reader.TryRead(out var queuedWork))
-                    {
-                        pending.Enqueue(queuedWork, queuedWork.DueTimestamp);
-                    }
-
-                    if (pending.Count == 0)
-                    {
-                        var queuedWork = await _sortingWorkChannel.Reader.ReadAsync(token);
-                        pending.Enqueue(queuedWork, queuedWork.DueTimestamp);
-                        continue;
-                    }
-
-                    pending.TryPeek(out _, out var dueTimestamp);
-                    var remaining = Stopwatch.GetElapsedTime(
-                        Stopwatch.GetTimestamp(),
-                        dueTimestamp);
-                    if (remaining > TimeSpan.Zero)
-                    {
-                        using var waitCancellation =
-                            CancellationTokenSource.CreateLinkedTokenSource(token);
-                        var waitForEarlierWork = _sortingWorkChannel.Reader
-                            .WaitToReadAsync(waitCancellation.Token)
-                            .AsTask();
-                        await Task.WhenAny(
-                            waitForEarlierWork,
-                            Task.Delay(remaining, waitCancellation.Token));
-                        waitCancellation.Cancel();
-                        continue;
-                    }
-
-                    var work = pending.Dequeue().Work;
-                    try
-                    {
-                        await work();
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // 调用方取消时停止当前发送，不污染后续分拣任务。
-                    }
-                    catch (Exception e)
-                    {
-                        NLog.LogManager.GetCurrentClassLogger()
-                            .Error(e, "分拣任务执行失败");
-                        OnExceptionOccurred(new ExceptionEventArgs
-                        {
-                            ExceptionMessage = e.Message
-                        });
-                    }
-                }
+                using var completed = new AutoResetEvent(false);
+                awaiter.UnsafeOnCompleted(() => completed.Set());
+                completed.WaitOne();
             }
-            catch (OperationCanceledException) when (_sortingWorkerCancellation.IsCancellationRequested)
-            {
-                // 服务释放时终止后台消费者。
-            }
+            awaiter.GetResult();
         }
 
         /// <summary>
@@ -1787,17 +1789,8 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// </summary>
         public async ValueTask DisposeAsync()
         {
-            _sortingWorkChannel.Writer.TryComplete();
-            _sortingWorkerCancellation.Cancel();
-            try
-            {
-                await _sortingWorker.ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // 正常释放路径。
-            }
-            _sortingWorkerCancellation.Dispose();
+            _sortingDeadlineScheduler.Dispose();
+            await _sortingDispatcher.DisposeAsync().ConfigureAwait(false);
             _lifecycleGate.Dispose();
         }
 

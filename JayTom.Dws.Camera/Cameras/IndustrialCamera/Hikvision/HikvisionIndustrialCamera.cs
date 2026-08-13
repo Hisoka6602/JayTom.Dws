@@ -796,8 +796,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             long frameNo) {
             PooledFrameBuffer? buffer = null;
             try {
-                if (output.stImage.enImageType == MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP ||
-                    output.stImage.pImageBuf == IntPtr.Zero || output.stImage.nImageLen == 0) {
+                if (output.stImage.pImageBuf == IntPtr.Zero || output.stImage.nImageLen == 0) {
                     return;
                 }
 
@@ -832,12 +831,14 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             DateTime scanTime,
             long timestamp,
             long frameNo) {
-            if (MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP != stOutput.stImage.enImageType) {
-                var bitmap = GetBitmap(stOutput, frameBuffer);
+            {
+                if (!HasFrameConsumer(stOutput)) {
+                    return;
+                }
 
-                var thumbnailImage = GenerateThumbnail(bitmap);
                 var validationResults = new List<ValidationResult>(
                     checked((int)stOutput.stCodeList.nCodeNum));
+                var hasEmittableBarcode = false;
                 for (var i = 0; i < stOutput.stCodeList.nCodeNum; ++i) {
                     if (stOutput.stCodeList.stCodeInfo == null) continue;
                     var mvidCodeInfo = stOutput.stCodeList.stCodeInfo[i];
@@ -846,7 +847,19 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         ScanTime = scanTime
                     });
                     validationResults.Add(validateData);
+                    hasEmittableBarcode |= validateData.IsValidationPassed ||
+                        !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent);
                 }
+                if (!hasEmittableBarcode && !IsRealtimeImageEnabled) {
+                    return;
+                }
+
+                var bitmap = GetBitmap(stOutput, frameBuffer);
+                var thumbnailImage = IsOriginalImageOut
+                    ? GenerateThumbnail(bitmap)
+                    : bitmap is null
+                        ? null
+                        : new Bitmap(bitmap);
                 if (0 != stOutput.stCodeList.nCodeNum && BindingType != CameraBindingType.PanoramaCamera) {
                     if (IsShowBarcodeBorder && thumbnailImage is not null && thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
                         stOutput.stCodeList.stCodeInfo is { Length: > 0 }) {
@@ -994,6 +1007,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 return null;
             }
 
+            if (frameInfo.enImageType is
+                MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP or
+                MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_JPEG) {
+                return CameraImageProcessing.DecodeCompressedFrame(frameBuffer, frameLength);
+            }
+
             var isMonochrome =
                 MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == frameInfo.enImageType;
             var stride = checked(frameInfo.nWidth * (isMonochrome ? 1 : 3));
@@ -1012,6 +1031,17 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
+        /// <summary>在构造位图前判断工业相机帧是否存在条码或实时预览消费者。</summary>
+        private bool HasFrameConsumer(MVIDCodeReader.MVID_CAM_OUTPUT_INFO output) {
+            if (IsRealtimeImageEnabled && RealtimeImage is not null) {
+                return true;
+            }
+
+            return BindingType != CameraBindingType.PanoramaCamera &&
+                output.stCodeList.nCodeNum > 0 &&
+                BarcodeRead is not null;
+        }
+
         private Bitmap? ConvertPointerToImage(MVIDCodeReader.MVID_IMAGE_INFO pFrameInfo) {
             if (pFrameInfo.pImageBuf == IntPtr.Zero || pFrameInfo.nImageLen == 0 ||
                 pFrameInfo.nWidth <= 0 || pFrameInfo.nHeight <= 0) {
@@ -1019,6 +1049,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
 
             var sourceLength = checked((int)pFrameInfo.nImageLen);
+            if (pFrameInfo.enImageType is
+                MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_BMP or
+                MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_JPEG) {
+                return CameraImageProcessing.DecodeCompressedFrame(
+                    pFrameInfo.pImageBuf,
+                    sourceLength);
+            }
             var isMonochrome =
                 MVIDCodeReader.MVID_IMAGE_TYPE.MVID_IMAGE_MONO8 == pFrameInfo.enImageType;
             var stride = checked(pFrameInfo.nWidth * (isMonochrome ? 1 : 3));

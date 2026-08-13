@@ -38,7 +38,8 @@ internal sealed class LosslessOrderedDispatcher<T> : IDisposable {
         _exceptionHandler = exceptionHandler;
         _worker = new Thread(Process) {
             IsBackground = true,
-            Name = $"CameraFrame-{typeof(T).Name}"
+            Name = $"CameraFrame-{typeof(T).Name}",
+            Priority = ThreadPriority.AboveNormal
         };
         _worker.Start();
     }

@@ -34,13 +34,24 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
     /// <summary>创建单消费者、严格保持写入顺序的非阻塞调度器。</summary>
     public NonBlockingOrderedDispatcher(
         Action<T> handler,
-        Action<T, Exception>? exceptionHandler = null)
+        Action<T, Exception>? exceptionHandler = null,
+        string? workerName = null,
+        ThreadPriority workerPriority = ThreadPriority.Normal)
     {
         ArgumentNullException.ThrowIfNull(handler);
         _handler = handler;
         _exceptionHandler = exceptionHandler;
         _worker = Task.Factory.StartNew(
-            Process,
+            () =>
+            {
+                if (!string.IsNullOrWhiteSpace(workerName) &&
+                    Thread.CurrentThread.Name is null)
+                {
+                    Thread.CurrentThread.Name = workerName;
+                }
+                Thread.CurrentThread.Priority = workerPriority;
+                Process();
+            },
             CancellationToken.None,
             TaskCreationOptions.LongRunning,
             TaskScheduler.Default);

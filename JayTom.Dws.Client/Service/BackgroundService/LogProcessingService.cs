@@ -267,7 +267,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
             _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"相机:{args.CameraSerialNumber}获取到条码[{args.Barcode}]",
@@ -276,12 +276,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.VolumeCaptured += delegate (object? sender, VolumeCapturedEventArgs args)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"相机,获取体积信息:{args.Length},{args.Width},{args.Height}",
                 });
-                EventAggregator.Instance.Publish(new VolumeLogInfoModel()
+                _volumeLogItems.Enqueue(new VolumeLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"获取体积信息:{args.Length},{args.Width},{args.Height}",
@@ -290,7 +290,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraBound += delegate (object? sender, CameraFinderItemInfoModel model)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"相机:{model.SerialNumber},绑定到{model.BoundType}",
@@ -299,7 +299,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraEnumerationRefreshed += delegate (object? sender, IReadOnlyList<CameraFinderItemInfoModel> list)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"枚举相机",
@@ -307,7 +307,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraDisconnected += delegate (object? sender, IReadOnlyList<ICamera> list)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Warning,
                     Message = $"相机断开连接",
@@ -315,7 +315,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraFault += delegate (object? sender, IReadOnlyList<ICamera> list)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Exception,
                     Message = $"相机故障",
@@ -323,7 +323,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraException += delegate (object? sender, DeviceExceptionEventArgs args)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Exception,
                     Message = args.Exception?.Message ?? string.Empty,
@@ -331,7 +331,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraUnbound += delegate (object? sender, CameraFinderItemInfoModel model)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"相机已解绑",
@@ -340,7 +340,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.BarcodeMissed += delegate (object? sender, BarcodeReadEventArgs args)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Warning,
                     Message = $"相机:{args.CameraSerialNumber}光电触发但未识别到条码",
@@ -349,7 +349,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.PanoramaCaptured += delegate (object? sender, PanoramaCaptureEventArgs args)
             {
-                EventAggregator.Instance.Publish(new CameraLogInfoModel()
+                _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"相机截取到全景图",
@@ -493,7 +493,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.BarCodeSetValueAfter, PackageInfo.BarCodeInfo: not null })
                     {
-                        _diagnosticLogItems.Enqueue($"{trigger.PackageInfo.BarCodeInfo.BindTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {trigger.PackageInfo.BarCodeInfo?.Barcode}");
+                        var barcodeInfo = trigger.PackageInfo.BarCodeInfo;
+                        var createToScanMilliseconds =
+                            (barcodeInfo.ScanTime.Ticks - trigger.PackageInfo.CreateTime.Ticks) /
+                            TimeSpan.TicksPerMillisecond;
+                        var scanToBindMilliseconds =
+                            (barcodeInfo.BindTime.Ticks - barcodeInfo.ScanTime.Ticks) /
+                            TimeSpan.TicksPerMillisecond;
+                        var createToBindMilliseconds =
+                            (barcodeInfo.BindTime.Ticks - trigger.PackageInfo.CreateTime.Ticks) /
+                            TimeSpan.TicksPerMillisecond;
+                        _diagnosticLogItems.Enqueue(
+                            $"{barcodeInfo.BindTime:yyyy-MM-dd HH:mm:ss.fff}--[分拣]-[序号:{trigger.PackageInfo.Guid}]-[条码赋值] {barcodeInfo.Barcode}" +
+                            $" -[采集时间:{barcodeInfo.ScanTime:yyyy-MM-dd HH:mm:ss.fff}]" +
+                            $"-[创建到采集:{createToScanMilliseconds}ms]" +
+                            $"-[采集到绑定:{scanToBindMilliseconds}ms]" +
+                            $"-[创建到绑定:{createToBindMilliseconds}ms]");
                     }
                     else if (trigger is { TriggerPosition: TriggerPositionEnum.WeightSetValueAfter, PackageInfo.WeightInfo: not null })
                     {

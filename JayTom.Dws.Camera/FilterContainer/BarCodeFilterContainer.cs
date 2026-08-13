@@ -20,6 +20,9 @@ namespace JayTom.Dws.Camera.FilterContainer {
         /// 限制单次正则匹配的最长执行时间，防止灾难性回溯阻塞采集线程。
         /// </summary>
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(250);
+        /// <summary>按表达式复用已编译正则，避免每个条码重复走全局正则缓存和解释路径。</summary>
+        private static readonly ConcurrentDictionary<string, Regex> RegexCache =
+            new(StringComparer.Ordinal);
         private int _maxSize;
 
         /// <summary>
@@ -79,7 +82,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
         public bool InsertOrUpdate(BarCodeFilterInfo data) {
             if (!string.IsNullOrEmpty(Pattern)) {
                 try {
-                    if (!Regex.IsMatch(data.BarCode, Pattern, RegexOptions.CultureInvariant, RegexTimeout)) {
+                    if (!GetRegex(Pattern).IsMatch(data.BarCode)) {
                         return false;
                     }
                 }
@@ -104,8 +107,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
             if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
                 if (!string.IsNullOrEmpty(Pattern)) {
                     try {
-                        if (!Regex.IsMatch(barCodeFilterInfo.BarCode, Pattern,
-                                RegexOptions.CultureInvariant, RegexTimeout)) {
+                        if (!GetRegex(Pattern).IsMatch(barCodeFilterInfo.BarCode)) {
                             return new ValidationResult {
                                 IsValidationPassed = false,
                                 FilteredCategory = FilteredCategory.RuleFiltered,
@@ -127,11 +129,8 @@ namespace JayTom.Dws.Camera.FilterContainer {
                     try {
                         var matches = false;
                         for (var index = 0; index < CustomRegularExpressionItems.Count; index++) {
-                            if (Regex.IsMatch(
-                                    barCodeFilterInfo.BarCode,
-                                    CustomRegularExpressionItems[index],
-                                    RegexOptions.CultureInvariant,
-                                    RegexTimeout)) {
+                            if (GetRegex(CustomRegularExpressionItems[index])
+                                .IsMatch(barCodeFilterInfo.BarCode)) {
                                 matches = true;
                                 break;
                             }
@@ -253,12 +252,8 @@ namespace JayTom.Dws.Camera.FilterContainer {
                 try {
                     for (var index = 0; index < CustomRegexReplacementItems.Count; index++) {
                         var item = CustomRegexReplacementItems[index];
-                        replacedBarcode = Regex.Replace(
-                            replacedBarcode,
-                            item.RegexPattern,
-                            item.ReplaceContent,
-                            RegexOptions.CultureInvariant,
-                            RegexTimeout);
+                        replacedBarcode = GetRegex(item.RegexPattern)
+                            .Replace(replacedBarcode, item.ReplaceContent);
                     }
                     return replacedBarcode;
                 }
@@ -274,6 +269,16 @@ namespace JayTom.Dws.Camera.FilterContainer {
         /// </summary>
         public static void ResetFilter() {
             Container.Clear();
+        }
+
+        /// <summary>获取线程安全的已编译正则快照。</summary>
+        private static Regex GetRegex(string pattern) {
+            return RegexCache.GetOrAdd(
+                pattern,
+                static value => new Regex(
+                    value,
+                    RegexOptions.CultureInvariant | RegexOptions.Compiled,
+                    RegexTimeout));
         }
     }
 

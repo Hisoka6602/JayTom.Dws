@@ -57,6 +57,7 @@ public sealed class PackageSessionStore : IPackageSessionStore {
         int minimumAssignmentMilliseconds,
         int maximumAssignmentMilliseconds,
         int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
         Action<PackageInfo> assignment) =>
         PackageInfoManager.TryBindBarcode(
             observedAt,
@@ -65,11 +66,16 @@ public sealed class PackageSessionStore : IPackageSessionStore {
             minimumAssignmentMilliseconds,
             maximumAssignmentMilliseconds,
             emptyPackageExpiryMilliseconds,
+            processingAt,
             assignment);
 
     /// <summary>按创建时间获取包裹会话。</summary>
     public PackageInfo? GetPackage(DateTime createTime) =>
         PackageInfoManager.GetPackage(createTime);
+
+    /// <summary>按下位机包裹序号直接获取运行会话。</summary>
+    public PackageInfo? GetPackageById(long packageId) =>
+        PackageInfoManager.GetPackageById(packageId);
 
     /// <summary>获取匹配的包裹会话快照。</summary>
     public List<PackageInfo> GetPackages(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) =>
@@ -77,6 +83,9 @@ public sealed class PackageSessionStore : IPackageSessionStore {
 
     /// <summary>获取当前包裹会话数量。</summary>
     public int GetPackageCount() => PackageInfoManager.GetPackageCount();
+
+    /// <summary>判断是否存在尚未赋值的运行包裹。</summary>
+    public bool HasUnassignedPackage() => PackageInfoManager.HasUnassignedPackage();
 
     /// <summary>清理全部包裹会话。</summary>
     public void ClearAllPackages() => PackageInfoManager.ClearAllPackages();

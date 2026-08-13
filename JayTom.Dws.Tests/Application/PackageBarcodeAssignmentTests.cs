@@ -23,6 +23,58 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         _store.ClearAllPackages();
     }
 
+    /// <summary>确认下位机序号索引在添加和移除之间保持一致。</summary>
+    [Fact]
+    public void PackageIdIndex_TracksActivePackageLifetime()
+    {
+        var package = new PackageInfo
+        {
+            Guid = 987654,
+            CreateTime = DateTime.Now
+        };
+        Assert.True(_store.TryAddPackage(package, []));
+
+        Assert.Same(package, _store.GetPackageById(package.Guid));
+        Assert.True(_store.RemovePackage(package.CreateTime, "test"));
+        Assert.Null(_store.GetPackageById(package.Guid));
+    }
+
+    /// <summary>确认重复下位机序号不会产生两个可被回调混淆的运行包裹。</summary>
+    [Fact]
+    public void DuplicatePackageId_IsRejected()
+    {
+        var first = new PackageInfo
+        {
+            Guid = 123456,
+            CreateTime = DateTime.Now
+        };
+        var second = new PackageInfo
+        {
+            Guid = first.Guid,
+            CreateTime = first.CreateTime.AddTicks(1)
+        };
+
+        Assert.True(_store.TryAddPackage(first, []));
+        Assert.False(_store.TryAddPackage(second, []));
+        Assert.Same(first, _store.GetPackageById(first.Guid));
+        Assert.Equal(1, _store.GetPackageCount());
+    }
+
+    /// <summary>已赋值但尚未移除的包裹不能阻止扫码创建下一包裹。</summary>
+    [Fact]
+    public void HasUnassignedPackage_IgnoresAlreadyAssignedActivePackage()
+    {
+        var package = new PackageInfo
+        {
+            CreateTime = DateTime.Now,
+            BarCodeInfo = new BarCodeInfoModel { Barcode = "JT-ASSIGNED" }
+        };
+        _store.AddPackage(package, []);
+
+        Assert.Equal(1, _store.GetPackageCount());
+        Assert.False(_store.HasUnassignedPackage());
+    }
+
     /// <summary>条码与新包裹间隔不足 150ms 时，必须绑定到符合窗口的上一个包裹。</summary>
     [Fact]
     public void TryBindBarcode_SkipsTooYoungPackageAndBindsEligiblePredecessor()
@@ -104,6 +156,63 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         Assert.Equal(shouldBind, package.BarCodeInfo is not null);
     }
 
+    /// <summary>条码虽然及时采集，但处理时已越过空包裹期限时必须拒绝并删除。</summary>
+    [Fact]
+    public void TryBindBarcode_ProcessingDelayPastExpiryRejectsCapturedBarcode()
+    {
+        var createdAt = new DateTime(2026, 8, 13, 10, 0, 0, DateTimeKind.Local);
+        var package = new PackageInfo { CreateTime = createdAt };
+        _store.AddPackage(package, []);
+
+        var bound = Bind(
+            createdAt.AddMilliseconds(300),
+            "JT-LATE-PROCESSING",
+            emptyPackageExpiryMilliseconds: 400,
+            processingAt: createdAt.AddMilliseconds(450));
+
+        Assert.Null(bound);
+        Assert.Null(_store.GetPackage(createdAt));
+    }
+
+    /// <summary>过期队首被删除后，同一个晚到条码不得顺延赋给后续包裹。</summary>
+    [Fact]
+    public void TryBindBarcode_ExpiredHeadDoesNotSpillIntoFollowingPackage()
+    {
+        var firstCreatedAt = new DateTime(2026, 8, 13, 10, 0, 0, DateTimeKind.Local);
+        var secondCreatedAt = firstCreatedAt.AddMilliseconds(250);
+        var first = new PackageInfo { CreateTime = firstCreatedAt };
+        var second = new PackageInfo { CreateTime = secondCreatedAt };
+        _store.AddPackage(first, []);
+        _store.AddPackage(second, []);
+
+        var bound = Bind(
+            firstCreatedAt.AddMilliseconds(350),
+            "JT-MUST-NOT-SPILL",
+            emptyPackageExpiryMilliseconds: 400,
+            processingAt: firstCreatedAt.AddMilliseconds(450));
+
+        Assert.Null(bound);
+        Assert.Null(second.BarCodeInfo);
+    }
+
+    /// <summary>早于包裹创建的条码不得绑定，也不得把尚未到达的包裹误删。</summary>
+    [Fact]
+    public void TryBindBarcode_ObservedBeforeCreationKeepsFuturePackage()
+    {
+        var createdAt = new DateTime(2026, 8, 13, 10, 0, 1, DateTimeKind.Local);
+        var package = new PackageInfo { CreateTime = createdAt };
+        _store.AddPackage(package, []);
+
+        var bound = Bind(
+            createdAt.AddMilliseconds(-10),
+            "JT-EARLY-OBSERVATION",
+            emptyPackageExpiryMilliseconds: 400,
+            processingAt: createdAt.AddMilliseconds(10));
+
+        Assert.Null(bound);
+        Assert.Same(package, _store.GetPackage(createdAt));
+    }
+
     /// <summary>过期已触发但尚在关键队列排队时，已赋值包裹不得被旧的空包裹判定删除。</summary>
     [Fact]
     public async Task Expiration_RevalidatesEmptyPredicateAfterQueuedBarcodeAssignment()
@@ -137,6 +246,64 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         Assert.Equal("JT-RACE-SAFE", package.BarCodeInfo?.Barcode);
     }
 
+    /// <summary>确认延迟加入会话的包裹按机械创建时刻到期，而不是重新获得完整生命周期。</summary>
+    [Fact]
+    public async Task Expiration_SubtractsDelayBeforeSessionRegistration()
+    {
+        var package = new PackageInfo
+        {
+            CreateTime = DateTime.Now.AddMilliseconds(-300)
+        };
+        var expired = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        _store.AddPackage(package,
+        [
+            new PackageRemoveTimer
+            {
+                Description = "test-expiry",
+                RemovalTimeSpan = TimeSpan.FromMilliseconds(400),
+                Predicate = pair => pair.Value.BarCodeInfo is null,
+                TryDispatch = removal =>
+                {
+                    removal();
+                    expired.TrySetResult();
+                    return true;
+                }
+            }
+        ]);
+
+        await expired.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Null(_store.GetPackage(package.CreateTime));
+    }
+
+    /// <summary>无锁候选扫描在并发调用下仍只能成功赋值一次，不得把后到条码覆盖到同一包裹。</summary>
+    [Fact]
+    public void TryBindBarcode_ConcurrentAssignmentsBindPackageOnlyOnce()
+    {
+        var createdAt = new DateTime(2026, 8, 13, 10, 0, 0, DateTimeKind.Local);
+        var package = new PackageInfo { CreateTime = createdAt };
+        _store.AddPackage(package, []);
+        var observedAt = new DateTime(
+            createdAt.Ticks + 200L * TimeSpan.TicksPerMillisecond,
+            createdAt.Kind);
+        var results = new PackageInfo?[64];
+
+        Parallel.For(0, results.Length, index =>
+            results[index] = Bind(observedAt, $"JT-CONCURRENT-{index}"));
+
+        var successfulAssignments = 0;
+        foreach (var result in results)
+        {
+            if (result is not null)
+            {
+                successfulAssignments++;
+            }
+        }
+        Assert.Equal(1, successfulAssignments);
+        Assert.NotNull(package.BarCodeInfo);
+    }
+
     /// <summary>清理测试会话及定时器。</summary>
     public void Dispose()
     {
@@ -149,7 +316,8 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         string barcode,
         int? emptyPackageExpiryMilliseconds = null,
         int minimumAssignmentMilliseconds = DefaultMinimumAssignmentMilliseconds,
-        int maximumAssignmentMilliseconds = DefaultMaximumAssignmentMilliseconds) =>
+        int maximumAssignmentMilliseconds = DefaultMaximumAssignmentMilliseconds,
+        DateTime? processingAt = null) =>
         _store.TryBindBarcode(
             observedAt,
             BarcodeQueueOrderEnum.TimeAscending,
@@ -157,6 +325,7 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
             minimumAssignmentMilliseconds,
             maximumAssignmentMilliseconds,
             emptyPackageExpiryMilliseconds,
+            processingAt ?? observedAt,
             package => package.BarCodeInfo = new BarCodeInfoModel
             {
                 Barcode = barcode,

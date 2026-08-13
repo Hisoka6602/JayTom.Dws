@@ -80,7 +80,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly ISettingsStore _settingsStore;
         private readonly IImageStorageService _imageStorageService;
         private readonly IMemoryCache _memoryCache;
-        private readonly BoundedWorkQueue<SubmitItemInfo> _submitItems = new(MaxQueueLength);
+        private readonly LosslessWorkQueue<SubmitItemInfo> _submitItems = new();
         private ApiSettingsDto? _apiSettingsDto;
         private static DefaultApi.DefaultApiParameters _defaultApiParameters = new();
         private static SzjyApi.ApiParameter _szjyApiParam = new();
@@ -100,32 +100,35 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private static ZhuoYanScmApi.ApiParameters _zhuoYanScmApiParam = new();
         private static JushuitanErpApi.ApiParameters _jushuitanErpParam = new();
         private static ZhouYiApi.ApiParameters _zhouYiApiParam = new();
-        private readonly BoundedWorkQueue<SavedImageInfo> _savedImageItems = new(MaxQueueLength);
+        private readonly LosslessWorkQueue<SavedImageInfo> _savedImageItems = new();
         /*private ConcurrentQueue<CallBackPackageInfo> _callBackItems = new();
         private ConcurrentDictionary<long, SortingExitReceived> _sortingExitItems = new();*/
-        private readonly BoundedWorkQueue<PackageAggregationInfo> _packageAggregationInfoItems = new(MaxQueueLength);
+        private readonly LosslessWorkQueue<PackageAggregationInfo> _packageAggregationInfoItems = new();
         /// <summary>
         /// 单类接口任务允许排队的最大数量。
         /// </summary>
         private const int MaxQueueLength = 10_000;
         /// <summary>包裹格口 API 查询的最大并发数。</summary>
         private const int ApiQueryMaxConcurrency = 600;
-        /// <summary>
-        /// 最多保留两个滚动批次：当前批次出现慢请求时，下一批仍可立即填补释放的并发槽，
-        /// 同时避免把整个一万条队列都提前展开为等待信号量的任务。
-        /// </summary>
-        private const int MaxActiveSubmitBatches = 2;
+        /// <summary>单包裹 API 请求的最大活动数，与 HTTP 连接池上限保持一致。</summary>
+        private const int MaxActiveSubmitRequests = ApiQueryMaxConcurrency;
         /// <summary>跨批次共享的 API 并发槽，完成一个请求后立即允许下一包裹补位。</summary>
         private readonly SemaphoreSlim _apiQueryGate = new(
             ApiQueryMaxConcurrency,
             ApiQueryMaxConcurrency);
-        /// <summary>记录仍在执行的 API 批次，确保停机时能够观察异常并等待收尾。</summary>
-        private readonly ConcurrentDictionary<Task, byte> _activeSubmitBatches = new();
+        /// <summary>记录仍在执行的单包裹 API 请求，确保停机时能够观察异常并等待收尾。</summary>
+        private readonly ConcurrentDictionary<Task, byte> _activeSubmitRequests = new();
+        /// <summary>活动 API 请求数；热路径使用原子计数，避免读取并发字典 Count。</summary>
+        private int _activeSubmitRequestCount;
+        /// <summary>串行发布 API 格口响应，同时避免 HTTP 完成线程等待订阅者。</summary>
+        private readonly NonBlockingOrderedDispatcher<ApiResponseReceived> _apiResponseDispatcher;
+        /// <summary>隔离API响应的日志和界面订阅者，避免拖慢格口计算与落库通道。</summary>
+        private readonly NonBlockingOrderedDispatcher<ApiResponseReceived> _apiResponseNotificationDispatcher;
         /// <summary>
         /// 用于唤醒接口任务消费者的合并信号。
         /// </summary>
         private readonly SemaphoreSlim _workSignal = new(0, 1);
-        /// <summary>统一记录接口工作项的有限重试状态。</summary>
+        /// <summary>记录接口工作项的重试次数，用于诊断长期故障但不丢弃请求。</summary>
         private readonly RetryAttemptTracker _retryTracker = new(5);
         private readonly SemaphoreSlim _settingsUpdateGate = new(1, 1);
         private readonly ConcurrentDictionary<long, PackageSubmissionPushInfo> _packageSubmissionPushItems = new();
@@ -148,8 +151,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _settingsStore = settingsStore;
             _imageStorageService = imageStorageService;
             _memoryCache = memoryCache;
+            _apiResponseDispatcher = new NonBlockingOrderedDispatcher<ApiResponseReceived>(
+                static response => EventAggregator.Instance.PublishPackage(response),
+                static (_, exception) => LogManager.GetCurrentClassLogger()
+                    .Error(exception, "发布 API 格口响应失败"),
+                "ApiResponses",
+                ThreadPriority.AboveNormal);
+            _apiResponseNotificationDispatcher =
+                new NonBlockingOrderedDispatcher<ApiResponseReceived>(
+                    static response =>
+                    {
+                        EventAggregator.Instance.Publish(response);
+                        EventAggregator.Instance.Publish(new TriggerPositionEvent
+                        {
+                            IsSuccess = response.UploadResponse?.IsSuccess ?? false,
+                            TriggerPosition = TriggerPositionEnum.HttpOutput
+                        });
+                    },
+                    static (_, exception) => LogManager.GetCurrentClassLogger()
+                        .Error(exception, "发布 API 普通通知失败"),
+                    "ApiResponseNotifications");
             //包裹信息完成
-            EventAggregator.Instance.Subscribe<PackageInfo>(item =>
+            EventAggregator.Instance.SubscribePackage<PackageInfo>(item =>
             {
                 if (item is { BarCodeInfo: not null } model)
                 {
@@ -487,7 +510,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item =>
+            EventAggregator.Instance.SubscribePackage<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
@@ -554,26 +577,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 try
                 {
                     //需要判断用户选择的接口和参数设置
-                    var submitBatch = new List<SubmitItemInfo>(ApiQueryMaxConcurrency);
-                    while (_activeSubmitBatches.Count < MaxActiveSubmitBatches &&
-                           submitBatch.Count < ApiQueryMaxConcurrency &&
+                    // 每个活动任务只承载一个包裹，使任意请求完成后都能立即补入下一个包裹。
+                    // 否则慢请求会占住整个批次，把 600 路滚动并发退化为活动批次数并发。
+                    var submitRequestStarted = false;
+                    while (Volatile.Read(ref _activeSubmitRequestCount) < MaxActiveSubmitRequests &&
                            _submitItems.TryDequeue(out var queuedSubmit) &&
                            queuedSubmit is not null)
                     {
-                        submitBatch.Add(queuedSubmit);
-                    }
-
-                    if (submitBatch.Count > 0)
-                    {
-                        var submitBatchTask = Parallel.ForEachAsync(
-                            submitBatch,
-                            new ParallelOptions
-                            {
-                                MaxDegreeOfParallelism = ApiQueryMaxConcurrency,
-                                CancellationToken = stoppingToken
-                            },
-                            async (info, submitToken) =>
+                        submitRequestStarted = true;
+                        // 直接启动异步 HTTP 流程，避免先进入线程池再排队一次。
+                        // 请求在首次异步 I/O 前只执行轻量参数快照和序列化。
+                        Func<Task> startSubmitRequest = async () =>
                         {
+                            var info = queuedSubmit;
+                            var submitToken = stoppingToken;
                             await _apiQueryGate.WaitAsync(submitToken).ConfigureAwait(false);
                             try
                             {
@@ -607,7 +624,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
 
                                         break;
@@ -643,7 +660,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -666,7 +683,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -689,7 +706,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -723,7 +740,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
 
                                         break;
@@ -792,7 +809,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -815,7 +832,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -838,7 +855,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -861,7 +878,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                         break;
                                     }
@@ -884,7 +901,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                     }
 
@@ -909,7 +926,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                     }
 
@@ -935,7 +952,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                     }
                                     break;
@@ -975,7 +992,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                                      info.Other, cancellationTokenSource.Token);
                                             }
 
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                             return new UploadResponse()
                                             {
                                                 ExceptionMsg = value
@@ -1046,7 +1063,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                     }
                                     break;
@@ -1070,14 +1087,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             {
                                                 ExceptionMsg = value
                                             };
-                                            Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                         }
                                     }
                                     break;
                             }
                                 if (apiType is not null && apiType != ApiType.None)
                                 {
-                                    EventAggregator.Instance.Publish(new ApiResponseReceived
+                                    var apiResponse = new ApiResponseReceived
                                     {
                                         Guid = info.Guid,
                                         Barcode = info.Barcode,
@@ -1089,12 +1106,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                         IsStackedPackage = info.IsStackedPackage ?? false,
                                         Timestamp = info.Timestamp,
                                         LinkedCarCount = info.LinkedCarCount
-                                    });
-                                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                    };
+                                    if (!_apiResponseDispatcher.TryEnqueue(apiResponse))
                                     {
-                                        IsSuccess = uploadResponse?.IsSuccess ?? false,
-                                        TriggerPosition = TriggerPositionEnum.HttpOutput
-                                    });
+                                        throw new InvalidOperationException("API 响应队列已停止");
+                                    }
+                                    if (!_apiResponseNotificationDispatcher.TryEnqueue(apiResponse))
+                                    {
+                                        LogManager.GetCurrentClassLogger().Error(
+                                            "API 普通通知队列已停止");
+                                    }
+                                    _retryTracker.Forget(info);
                                 }
                             }
                             catch (OperationCanceledException) when (submitToken.IsCancellationRequested)
@@ -1103,7 +1125,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             }
                             catch (Exception exception)
                             {
-                                RequeueWork(_submitItems, info);
+                                await RequeueWorkAfterDelayAsync(
+                                    _submitItems,
+                                    info,
+                                    submitToken);
                                 LogManager.GetCurrentClassLogger().Error(
                                     exception,
                                     $"API 查询失败，已重新排队:Timestamp={info.Timestamp},Barcode={info.Barcode}");
@@ -1112,9 +1137,19 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             {
                                 _apiQueryGate.Release();
                             }
-                        });
-                        _activeSubmitBatches.TryAdd(submitBatchTask, 0);
-                        _ = ObserveSubmitBatchAsync(submitBatchTask);
+                        };
+                        var submitRequestTask = startSubmitRequest();
+                        if (_activeSubmitRequests.TryAdd(submitRequestTask, 0))
+                        {
+                            Interlocked.Increment(ref _activeSubmitRequestCount);
+                            _ = ObserveSubmitRequestAsync(submitRequestTask);
+                        }
+                    }
+
+                    // 一次合并唤醒直接填满全部可用槽，避免逐项等待让配置的600路并发长期空闲。
+                    if (submitRequestStarted)
+                    {
+                        continue;
                     }
 
                     //取出图片
@@ -1259,7 +1294,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
                                 else
                                 {
-                                    Console.WriteLine("设置参数失败!");
+                                            LogManager.GetCurrentClassLogger().Error("API 设置参数失败");
                                 }
                                 break;
                         }
@@ -1280,7 +1315,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 finally
                 {
                     if ((!_submitItems.IsEmpty &&
-                         _activeSubmitBatches.Count < MaxActiveSubmitBatches) ||
+                         Volatile.Read(ref _activeSubmitRequestCount) < MaxActiveSubmitRequests) ||
                         !_savedImageItems.IsEmpty ||
                         !_packageAggregationInfoItems.IsEmpty)
                     {
@@ -1289,15 +1324,23 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             }
 
-            await Task.WhenAll(_activeSubmitBatches.Keys).ConfigureAwait(false);
+            await Task.WhenAll(_activeSubmitRequests.Keys).ConfigureAwait(false);
         }
 
-        /// <summary>观察后台 API 批次的异常并从活动集合清理，避免形成批次屏障。</summary>
-        private async Task ObserveSubmitBatchAsync(Task submitBatch)
+        /// <summary>停止后台任务并有序释放 API 响应发布队列。</summary>
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken).ConfigureAwait(false);
+            await _apiResponseDispatcher.DisposeAsync().ConfigureAwait(false);
+            await _apiResponseNotificationDispatcher.DisposeAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>观察后台 API 请求的异常并从活动集合清理，释放滚动并发槽位。</summary>
+        private async Task ObserveSubmitRequestAsync(Task submitRequest)
         {
             try
             {
-                await submitBatch.ConfigureAwait(false);
+                await submitRequest.ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -1309,7 +1352,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
             finally
             {
-                _activeSubmitBatches.TryRemove(submitBatch, out _);
+                if (_activeSubmitRequests.TryRemove(submitRequest, out _))
+                {
+                    Interlocked.Decrement(ref _activeSubmitRequestCount);
+                }
                 if (!_submitItems.IsEmpty)
                 {
                     SignalWork();
@@ -1318,14 +1364,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         }
 
         /// <summary>
-        /// 将接口工作加入有界并发队列并唤醒消费者。
+        /// 将接口工作加入不可丢弃的非阻塞队列并唤醒消费者。
         /// </summary>
-        private void EnqueueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
+        private void EnqueueWork<T>(LosslessWorkQueue<T> queue, T item) where T : class
         {
             if (!queue.TryEnqueue(item))
             {
                 LogManager.GetCurrentClassLogger().Error(
-                    $"接口提交队列已达到上限 {MaxQueueLength}，拒绝新任务:{typeof(T).Name}");
+                    $"接口提交队列已经停止，工作未入队:{typeof(T).Name}");
                 return;
             }
 
@@ -1333,18 +1379,39 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         }
 
         /// <summary>
-        /// 对失败的接口工作执行有限次数重试。
+        /// 对失败的接口工作持续重试；调用方负责统一退避，网络抖动不能造成包裹请求丢失。
         /// </summary>
-        private void RequeueWork<T>(BoundedWorkQueue<T> queue, T item) where T : class
+        private void RequeueWork<T>(LosslessWorkQueue<T> queue, T item) where T : class
         {
-            if (!_retryTracker.TryRegisterFailure(item, out _))
-            {
-                LogManager.GetCurrentClassLogger().Error(
-                    $"接口任务超过最大重试次数 {_retryTracker.MaxAttempts}，停止重试:{typeof(T).Name}");
-                return;
-            }
-
+            RegisterRetry(item);
             EnqueueWork(queue, item);
+        }
+
+        /// <summary>带指数退避重新排队 API 请求，避免服务端故障时 600 个槽位形成重试风暴。</summary>
+        private async Task RequeueWorkAfterDelayAsync<T>(
+            LosslessWorkQueue<T> queue,
+            T item,
+            CancellationToken token) where T : class
+        {
+            var attempt = RegisterRetry(item);
+            var exponent = Math.Min(Math.Max(0, attempt - 1), 7);
+            var delayMilliseconds = Math.Min(5_000, 50 * (1 << exponent));
+            await Task.Delay(delayMilliseconds, token).ConfigureAwait(false);
+            EnqueueWork(queue, item);
+        }
+
+        /// <summary>登记失败次数并按稀疏频率报告长期重试。</summary>
+        private int RegisterRetry<T>(T item) where T : class
+        {
+            var isWithinInitialRetryWindow =
+                _retryTracker.TryRegisterFailure(item, out var attempt);
+            if (!isWithinInitialRetryWindow &&
+                (attempt == _retryTracker.MaxAttempts + 1 || attempt % 100 == 0))
+            {
+                LogManager.GetCurrentClassLogger().Warn(
+                    $"接口任务持续失败但将保留重试:{typeof(T).Name},Attempt={attempt}");
+            }
+            return attempt;
         }
 
         /// <summary>

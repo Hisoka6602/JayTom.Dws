@@ -294,11 +294,19 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         /// <summary>在独立长驻线程中按收帧顺序执行图像、过滤和事件处理。</summary>
         private void ProcessCapturedFrame(WayzimIndustrialCapturedFrame frame) {
             using (frame.Buffer) {
+                var results = FilterBarcodes(frame.Image, frame.ScanTime);
+                var hasBarcodeConsumer = BarcodeRead is not null && results.Count > 0;
+                var hasRealtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
+                if (!hasBarcodeConsumer && !hasRealtimeConsumer) {
+                    return;
+                }
+
                 var bitmap = GetBitmap(frame.Image, frame.Buffer.Buffer, frame.Buffer.Length);
                 if (bitmap is not null) {
                     PublishFrame(
                         frame.Image,
                         bitmap,
+                        results,
                         frame.SerialNumber,
                         frame.ScanTime,
                         frame.FrameNo);
@@ -312,35 +320,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         private void PublishFrame(
             ImageModelCpp image,
             Bitmap bitmap,
+            List<(string Barcode, List<Point> AreaCoords)> results,
             string serialNumber,
             DateTime scanTime,
             long frameNo) {
             var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
-            var codeModels = BindingType == CameraBindingType.PanoramaCamera
-                ? []
-                : image.CodeModels ?? [];
-            var results = new List<(string Barcode, List<Point> AreaCoords)>(codeModels.Length);
-            foreach (var codeInfo in codeModels) {
-                var barcode = Encoding.ASCII.GetString(codeInfo.strCode).TrimEnd('\0');
-                if (string.IsNullOrWhiteSpace(barcode)) {
-                    continue;
-                }
-
-                var validation = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
-                    BarCode = barcode,
-                    ScanTime = scanTime
-                });
-                if (validation.IsValidationPassed ||
-                    !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                    results.Add((
-                        _barCodeFilterContainer.RegexReplace(
-                            validation.IsValidationPassed
-                                ? barcode
-                                : _barCodeFilterContainer.FilterOutContent),
-                        ConvertPoint(codeInfo)));
-                }
-            }
-
             var barcodeConsumerCount = BarcodeRead is null ? 0 : results.Count;
             var realtimeConsumerCount = IsRealtimeImageEnabled && RealtimeImage is not null ? 1 : 0;
             if (barcodeConsumerCount + realtimeConsumerCount == 0) {
@@ -396,6 +380,37 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                     ThumbImage = realtimeThumbnail
                 });
             }
+        }
+
+        /// <summary>在创建 Bitmap 前过滤 SDK 已返回的条码元数据，跳过无消费者的重复帧图像转换。</summary>
+        private List<(string Barcode, List<Point> AreaCoords)> FilterBarcodes(
+            ImageModelCpp image,
+            DateTime scanTime) {
+            var codeModels = BindingType == CameraBindingType.PanoramaCamera
+                ? []
+                : image.CodeModels ?? [];
+            var results = new List<(string Barcode, List<Point> AreaCoords)>(codeModels.Length);
+            foreach (var codeInfo in codeModels) {
+                var barcode = Encoding.ASCII.GetString(codeInfo.strCode).TrimEnd('\0');
+                if (string.IsNullOrWhiteSpace(barcode)) {
+                    continue;
+                }
+
+                var validation = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
+                    BarCode = barcode,
+                    ScanTime = scanTime
+                });
+                if (validation.IsValidationPassed ||
+                    !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
+                    results.Add((
+                        _barCodeFilterContainer.RegexReplace(
+                            validation.IsValidationPassed
+                                ? barcode
+                                : _barCodeFilterContainer.FilterOutContent),
+                        ConvertPoint(codeInfo)));
+                }
+            }
+            return results;
         }
 
         public async Task<KeyValuePair<bool, string>> Stop() {
