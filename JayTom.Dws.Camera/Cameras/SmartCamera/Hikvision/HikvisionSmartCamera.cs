@@ -16,7 +16,9 @@ using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Camera.Concurrency;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
@@ -34,7 +36,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private MvCodeReader.MV_CODEREADER_DEVICE_INFO _structure;
         private CancellationTokenSource _tokenSource = new();
         private long _frameNo = 0;
-        private MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 _stFrameInfo = new();
+        /// <summary>海康拉帧节流使用的八十毫秒单调时钟刻度。</summary>
+        private static readonly long MinimumFrameIntervalTicks = Math.Max(1L, Stopwatch.Frequency * 80 / 1000);
+        /// <summary>最近一次接收帧的单调时钟刻度。</summary>
+        private long _lastAcceptedFrameTimestamp;
+        /// <summary>脱离 SDK 拉帧线程执行图像解码和事件发布的无损顺序调度器。</summary>
+        private LosslessOrderedDispatcher<HikvisionCapturedFrame>? _frameDispatcher;
 
         /// <summary>
         /// Ocr图像队列
@@ -46,8 +53,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private CancellationTokenSource? _ocrCancellationTokenSource;
         private readonly SemaphoreSlim _drawSlim = new(1);
         public CameraInfo? Info { get; private set; } = new();
-        private TimeSpan _lockTimeSpan = TimeSpan.FromMilliseconds(500);
-        private DateTime _lockDateTime = DateTime.Now;
 
         //过滤器
         private BarCodeFilterContainer _barCodeFilterContainer = new();
@@ -263,6 +268,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     //获取参数Gain
                     //获取参数AcquisitionFrameRate
                     //注册回调函数
+                    EnsureFrameDispatcher();
                     _tokenSource = new CancellationTokenSource();
                     _barcodeThread = Task.Run(() => BarcodeCallbackThread(_tokenSource.Token));
 
@@ -427,6 +433,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     _barcodeThread.Dispose();
                     _barcodeThread = null;
                 }
+                _frameDispatcher?.Dispose();
+                _frameDispatcher = null;
                 //置空对象
                 _mvCodeReader = null;
                 OnCameraDisconnected(new CameraConnectionEventArgs() {
@@ -472,14 +480,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// <param name="pstFrameInfoEx2"></param>
         /// <param name="pUser"></param>
         public void ImageCallbackFunc(IntPtr pData, IntPtr pstFrameInfoEx2, IntPtr pUser) {
-            _stFrameInfo = (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(Marshal.PtrToStructure(pstFrameInfoEx2, typeof(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ?? new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2());
-            var stBcrResult = (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(_stFrameInfo.UnparsedBcrList.pstCodeListEx2, typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ?? new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
-            var bitmap = GetBitmap(pData, _stFrameInfo);
-            HandleBarcodeReading(bitmap, _stFrameInfo, stBcrResult);
+            var scanTime = DateTime.Now;
+            var frameInfo = (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(Marshal.PtrToStructure(pstFrameInfoEx2, typeof(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)) ?? new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2());
+            var barcodeResult = (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(Marshal.PtrToStructure(frameInfo.UnparsedBcrList.pstCodeListEx2, typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ?? new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
+            var frameNo = Interlocked.Increment(ref _frameNo);
+            QueueCapturedFrame(pData, frameInfo, barcodeResult, scanTime, frameNo);
         }
 
         private void HandleBarcodeReading(Bitmap? bmp, MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfo,
-            MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 stBcrResult) {
+            MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 stBcrResult, DateTime scanTime, long timestamp,
+            long frameNo) {
             try {
                 //智能相机没有纯图像回调,暂时先写在这里
                 if (this.BindingType is CameraBindingType.OcrCamera) {
@@ -501,18 +511,17 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 }
                 else {
                     var thumbnailImage = GenerateThumbnail(bmp);
-                    //Bitmap? thumbnailImage = null;
-                    //返回条码
-                    var scanTime = DateTime.Now;
-                    var localTime = new DateTimeOffset(scanTime).ToLocalTime();
-                    var timestamp = localTime.ToUnixTimeMilliseconds();
                     if (stBcrResult.nCodeNum > 0) {
                         //画区域
                         if (IsShowBarcodeBorder && thumbnailImage is not null &&
                             thumbnailImage.PixelFormat != PixelFormat.Format8bppIndexed &&
-                            stBcrResult.stBcrInfoEx2?.Any() == true) {
+                            stBcrResult.stBcrInfoEx2 is { Length: > 0 }) {
                             using var g = Graphics.FromImage(thumbnailImage);
-                            for (var i = 0; i < stBcrResult.stBcrInfoEx2.Length; i++) {
+                            using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
+                            var barcodeCount = Math.Min(
+                                checked((int)stBcrResult.nCodeNum),
+                                stBcrResult.stBcrInfoEx2.Length);
+                            for (var i = 0; i < barcodeCount; i++) {
                                 var points = new Point[4];
                                 for (var j = 0; j < 4; ++j) {
                                     points[j].X = (int)(stBcrResult.stBcrInfoEx2[i].pt[j].x *
@@ -520,15 +529,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     points[j].Y = (int)(stBcrResult.stBcrInfoEx2[i].pt[j].y *
                                         (float)(thumbnailImage.Size.Height) / stFrameInfo.nHeight);
                                 }
-
-                                using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
                                 g.DrawPolygon(pen, points);
                             }
                         }
 
                         var barcodeTriggeredEventArgsList = FilterBarcodes(stBcrResult, scanTime, timestamp, bmp, thumbnailImage,
-                            stFrameInfo);
-                        if (barcodeTriggeredEventArgsList.Any()) {
+                            stFrameInfo, frameNo);
+                        if (barcodeTriggeredEventArgsList.Count > 0) {
                             foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
                                 OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
                             }
@@ -551,8 +558,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     ? new Bitmap(thumbnailImage)
                                     : thumbnailImage,
                                 CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                                ScanTime = DateTime.Now,
-                                FrameNo = _frameNo
+                                ScanTime = scanTime,
+                                FrameNo = frameNo
                             });
                         }
                         else {
@@ -573,7 +580,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
             catch (Exception e) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception($"解析帧数据异常:{JsonConvert.SerializeObject(e)}")
+                    Exception = new Exception("解析帧数据异常", e)
                 });
             }
         }
@@ -698,6 +705,64 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
+        /// <summary>确保图像解码和事件发布运行在独立的相机帧处理线程上。</summary>
+        private void EnsureFrameDispatcher() {
+            _frameDispatcher ??= new LosslessOrderedDispatcher<HikvisionCapturedFrame>(
+                ProcessCapturedFrame,
+                (frame, exception) => {
+                    frame.Buffer.Dispose();
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new Exception("后台处理海康扫码帧异常", exception)
+                    });
+                });
+        }
+
+        /// <summary>仅复制 SDK 指针数据并立即入队，不在拉帧线程执行解码、缩略图或用户事件。</summary>
+        private void QueueCapturedFrame(
+            IntPtr source,
+            MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 frameInfo,
+            MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 barcodeResult,
+            DateTime scanTime,
+            long frameNo) {
+            PooledFrameBuffer? buffer = null;
+            try {
+                EnsureFrameDispatcher();
+                buffer = PooledFrameBuffer.CopyFrom(source, checked((int)frameInfo.nFrameLen));
+                var frame = new HikvisionCapturedFrame(
+                    buffer,
+                    frameInfo,
+                    barcodeResult,
+                    scanTime,
+                    new DateTimeOffset(scanTime).ToUnixTimeMilliseconds(),
+                    frameNo);
+                if (_frameDispatcher?.TryEnqueue(frame) == true) {
+                    buffer = null;
+                }
+            }
+            catch (Exception exception) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception("复制海康扫码帧异常", exception)
+                });
+            }
+            finally {
+                buffer?.Dispose();
+            }
+        }
+
+        /// <summary>在独立长驻线程中按收帧顺序执行图像解码、过滤和事件发布。</summary>
+        private void ProcessCapturedFrame(HikvisionCapturedFrame frame) {
+            using (frame.Buffer) {
+                var bitmap = GetBitmap(frame.Buffer.Buffer, frame.Buffer.Length, frame.FrameInfo);
+                HandleBarcodeReading(
+                    bitmap,
+                    frame.FrameInfo,
+                    frame.BarcodeResult,
+                    frame.ScanTime,
+                    frame.Timestamp,
+                    frame.FrameNo);
+            }
+        }
+
         private async Task BarcodeCallbackThread(CancellationToken token) {
             var pData = IntPtr.Zero;
             var stFrameInfoEx2 = new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2();
@@ -719,6 +784,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         continue;
                     }
 
+                    var scanTime = DateTime.Now;
                     stFrameInfoEx2 =
                         (MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2)(
                             Marshal.PtrToStructure(
@@ -729,20 +795,23 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         continue;
                     }
 
-                    if (DateTime.Now.Subtract(_lockDateTime).TotalMilliseconds >= 80) {
-                        _lockDateTime = DateTime.Now;
-                        var barcodeResult =
-                            (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(
-                                Marshal.PtrToStructure(
-                                    stFrameInfoEx2.UnparsedBcrList.pstCodeListEx2,
-                                    typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ??
-                                new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
-                        if (!(IsHideNoRead && barcodeResult.nCodeNum < 1)) {
-                            var bitmap = GetBitmap(pData, stFrameInfoEx2);
-                            HandleBarcodeReading(bitmap, stFrameInfoEx2, barcodeResult);
-                        }
+                    var frameNo = Interlocked.Increment(ref _frameNo);
+                    var monotonicTimestamp = Stopwatch.GetTimestamp();
+                    var previousTimestamp = Volatile.Read(ref _lastAcceptedFrameTimestamp);
+                    if (previousTimestamp != 0 &&
+                        monotonicTimestamp - previousTimestamp < MinimumFrameIntervalTicks) {
+                        continue;
                     }
-                    Interlocked.Increment(ref _frameNo);
+                    Volatile.Write(ref _lastAcceptedFrameTimestamp, monotonicTimestamp);
+                    var barcodeResult =
+                        (MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)(
+                            Marshal.PtrToStructure(
+                                stFrameInfoEx2.UnparsedBcrList.pstCodeListEx2,
+                                typeof(MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2)) ??
+                            new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2());
+                    if (!(IsHideNoRead && barcodeResult.nCodeNum < 1)) {
+                        QueueCapturedFrame(pData, stFrameInfoEx2, barcodeResult, scanTime, frameNo);
+                    }
                 }
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) {
@@ -750,7 +819,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception($"取码回调线程异常:{JsonConvert.SerializeObject(e)}")
+                    Exception = new Exception("取码回调线程异常", e)
                 });
             }
             finally {
@@ -760,69 +829,76 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public List<BarcodeTriggeredEventArgs> FilterBarcodes(MvCodeReader.
             MV_CODEREADER_RESULT_BCR_EX2 stBcrResultEx2, DateTime scanTime, long timestamp,
-            Bitmap? bmp, Bitmap? thumbnailImage, MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfoEx2) {
-            var barcodeTriggeredEventArgsList = new List<BarcodeTriggeredEventArgs>();
+            Bitmap? bmp, Bitmap? thumbnailImage, MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfoEx2,
+            long? capturedFrameNo = null) {
+            var barcodeInfos = stBcrResultEx2.stBcrInfoEx2;
+            if (barcodeInfos is null || barcodeInfos.Length == 0 || stBcrResultEx2.nCodeNum <= 0) {
+                return [];
+            }
 
-            //识别到条码调用
-            char[] nullChars = ['\0'];
-            //需要设置触发时间才能过滤
-            for (var i = 0; i < stBcrResultEx2.nCodeNum; i++) {
-                var barcode = Encoding.Default
-                    .GetString(stBcrResultEx2.stBcrInfoEx2?[i].chCode ?? [])
-                    ?.TrimEnd(nullChars);
+            var barcodeCount = Math.Min(
+                checked((int)stBcrResultEx2.nCodeNum),
+                barcodeInfos.Length);
+            var triggeredEventArgsList = new List<BarcodeTriggeredEventArgs>(barcodeCount);
+            var emittedBarcodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            BarcodeTriggeredEventArgs? firstCandidate = null;
+            var serialNumber = Info?.SerialNumber ?? string.Empty;
+            var frameNo = capturedFrameNo ?? Interlocked.Read(ref _frameNo);
+            for (var i = 0; i < barcodeCount; i++) {
+                var barcodeInfo = barcodeInfos[i];
+                var barcode = Encoding.Default.GetString(barcodeInfo.chCode ?? []).TrimEnd('\0');
                 var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
                     BarCode = string.IsNullOrWhiteSpace(barcode) ? "NoRead" : barcode,
                     ScanTime = scanTime
                 });
                 if (validateData.IsValidationPassed || !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
-                    if (stBcrResultEx2.stBcrInfoEx2 is not null /*&&
-                                                    bmp is { Size: { Width: > 0, Height: > 0 } } &&
-                                                    stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 }*/) {
-                        barcodeTriggeredEventArgsList.Add(new BarcodeTriggeredEventArgs() {
-                            Timestamp = timestamp,
-                            TotalProcCost =
-                                (int)(stBcrResultEx2.stBcrInfoEx2[i].nTotalProcCost),
-                            AlgoCost = stBcrResultEx2.stBcrInfoEx2[i].sAlgoCost,
-                            Ppm = stBcrResultEx2.stBcrInfoEx2[i].sPPM,
-                            BarType = GetBarType(
-                                (MvCodeReader.MV_CODEREADER_CODE_TYPE)stBcrResultEx2
-                                    .stBcrInfoEx2[i]
-                                    .nBarType),
-                            Barcode = _barCodeFilterContainer.RegexReplace((validateData.IsValidationPassed ? barcode : _barCodeFilterContainer.FilterOutContent) ?? "NoRead"),
-                            Image = bmp,
-                            ThumbImage = (Bitmap?)thumbnailImage,
-                            AppearCount = stBcrResultEx2.stBcrInfoEx2[i].sAppearCount,
-                            Angle = stBcrResultEx2.stBcrInfoEx2[i].nAngle,
-                            CodeIdentifier = stBcrResultEx2.stBcrInfoEx2[i].nSubPackageId.ToString(),
-                            Len = (int)stBcrResultEx2.stBcrInfoEx2[i].nLen,
-                            CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                            ScanTime = scanTime,
-                            AreaCoords = [.. Enumerable.Range(0, 4).Select(s => {
-                                if (bmp is { Size: { Width: > 0, Height: > 0 } } &&
-                                    stFrameInfoEx2 is { nWidth: > 0, nHeight: > 0 } &&
-                                    stBcrResultEx2.stBcrInfoEx2.Length > i) {
-                                    var x = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].x * (float)(bmp.Size.Width) / stFrameInfoEx2.nWidth);
-                                    var y = (int)(stBcrResultEx2.stBcrInfoEx2[i].pt[s].y * (float)(bmp.Size.Height) / stFrameInfoEx2.nHeight);
+                    var outputBarcode = _barCodeFilterContainer.RegexReplace(
+                        (validateData.IsValidationPassed
+                            ? barcode
+                            : _barCodeFilterContainer.FilterOutContent) ?? "NoRead");
+                    var areaCoordinates = new List<Point>(4);
+                    for (var pointIndex = 0; pointIndex < 4; pointIndex++) {
+                        if (bmp is { Width: > 0, Height: > 0 } &&
+                            stFrameInfoEx2.nWidth > 0 && stFrameInfoEx2.nHeight > 0) {
+                            areaCoordinates.Add(new Point {
+                                X = (int)(barcodeInfo.pt[pointIndex].x * (float)bmp.Width / stFrameInfoEx2.nWidth),
+                                Y = (int)(barcodeInfo.pt[pointIndex].y * (float)bmp.Height / stFrameInfoEx2.nHeight)
+                            });
+                        }
+                        else {
+                            areaCoordinates.Add(default);
+                        }
+                    }
 
-                                    return new Point { X = x, Y = y };
-                                }
-
-                                return default;
-                            })],
-                            FrameNo = _frameNo
-                        });
+                    var eventArgs = new BarcodeTriggeredEventArgs {
+                        Timestamp = timestamp,
+                        TotalProcCost = (int)barcodeInfo.nTotalProcCost,
+                        AlgoCost = barcodeInfo.sAlgoCost,
+                        Ppm = barcodeInfo.sPPM,
+                        BarType = GetBarType((MvCodeReader.MV_CODEREADER_CODE_TYPE)barcodeInfo.nBarType),
+                        Barcode = outputBarcode,
+                        Image = bmp,
+                        ThumbImage = thumbnailImage,
+                        AppearCount = barcodeInfo.sAppearCount,
+                        Angle = barcodeInfo.nAngle,
+                        CodeIdentifier = barcodeInfo.nSubPackageId.ToString(),
+                        Len = (int)barcodeInfo.nLen,
+                        CameraSerialNumber = serialNumber,
+                        ScanTime = scanTime,
+                        AreaCoords = areaCoordinates,
+                        FrameNo = frameNo
+                    };
+                    firstCandidate ??= eventArgs;
+                    if (!outputBarcode.Equals(
+                            _barCodeFilterContainer.FilterOutContent,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        emittedBarcodes.Add(outputBarcode)) {
+                        triggeredEventArgsList.Add(eventArgs);
                     }
                 }
-
-                //_barCodeFilterContainer.FilterOutContent
             }
-            var triggeredEventArgsList = barcodeTriggeredEventArgsList
-                ?.Where(b => !b.Barcode.Equals(_barCodeFilterContainer.FilterOutContent, StringComparison.OrdinalIgnoreCase))
-                ?.GroupBy(b => b.Barcode, StringComparer.OrdinalIgnoreCase) // 按条码分组（忽略大小写）
-                ?.Select(g => g.First()) // 对每个分组取第一个条码
-                ?.ToList() ?? new List<BarcodeTriggeredEventArgs>();
-            if (triggeredEventArgsList.Any() != true && barcodeTriggeredEventArgsList?.Any() == true) {
-                triggeredEventArgsList.Add(barcodeTriggeredEventArgsList.FirstOrDefault() ?? new BarcodeTriggeredEventArgs());
+            if (triggeredEventArgsList.Count == 0 && firstCandidate is not null) {
+                triggeredEventArgsList.Add(firstCandidate);
             }
 
             for (var index = 0; index < triggeredEventArgsList.Count; index++) {
@@ -1074,15 +1150,15 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// <param name="pData"></param>
         /// <param name="stFrameInfoEx2"></param>
         /// <returns></returns>
-        private Bitmap? GetBitmap(nint pData,
+        private Bitmap? GetBitmap(byte[] frameBuffer, int frameLength,
             MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 stFrameInfoEx2) {
             try {
                 Bitmap? bitmap = null;
                 switch (stFrameInfoEx2.enPixelType) {
                     case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Mono8: {
                             bitmap = CameraImageProcessing.CopyPackedFrame(
-                                pData,
-                                checked((int)stFrameInfoEx2.nFrameLen),
+                                frameBuffer,
+                                frameLength,
                                 stFrameInfoEx2.nWidth,
                                 stFrameInfoEx2.nHeight,
                                 PixelFormat.Format8bppIndexed,
@@ -1091,8 +1167,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         }
                     case MvCodeReader.MvCodeReaderGvspPixelType.PixelType_CodeReader_Gvsp_Jpeg: {
                             bitmap = CameraImageProcessing.DecodeCompressedFrame(
-                                pData,
-                                checked((int)stFrameInfoEx2.nFrameLen));
+                                frameBuffer,
+                                frameLength);
                             break;
                         }
                 }

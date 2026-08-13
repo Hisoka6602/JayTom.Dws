@@ -89,6 +89,43 @@ namespace JayTom.Dws.Domain.Dto {
         /// 最大赋值间隔
         /// </summary>
         public int MaximumAssignmentTime { get; set; }
+
+        /// <summary>
+        /// 校验创建包裹及条码赋值配置，所有时间边界均使用客户端提供的值。
+        /// </summary>
+        /// <param name="validationMessage">配置无效时返回可直接展示的原因。</param>
+        /// <returns>配置可以安全用于运行时热路径时返回 <see langword="true"/>。</returns>
+        public bool TryValidate(out string validationMessage) {
+            if (PackageCreationInterval < 0) {
+                validationMessage = "最小创建包裹间隔不能小于 0ms";
+                return false;
+            }
+
+            if (IsUsePackageExpiry && PackageExpiryTime <= 0) {
+                validationMessage = "启用包裹过期后，包裹有效时间必须大于 0ms";
+                return false;
+            }
+
+            if (IsUseEmptyPackageExpiry && EmptyPackageExpiryTime <= 0) {
+                validationMessage = "启用空包裹过期后，空包裹有效时间必须大于 0ms";
+                return false;
+            }
+
+            if (IsUseBarcodeAssignmentInterval) {
+                if (MinimumAssignmentTime < 0 || MaximumAssignmentTime <= 0) {
+                    validationMessage = "条码赋值最小间隔不能小于 0ms，最大间隔必须大于 0ms";
+                    return false;
+                }
+
+                if (MaximumAssignmentTime < MinimumAssignmentTime) {
+                    validationMessage = "条码赋值最大间隔不能小于最小间隔";
+                    return false;
+                }
+            }
+
+            validationMessage = string.Empty;
+            return true;
+        }
     }
 
     public enum BarcodeHandlingMethodEnum {

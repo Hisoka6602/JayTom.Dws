@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
+using JayTom.Dws.Camera.Concurrency;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
@@ -33,6 +34,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         /// 图像回调线程
         /// </summary>
         private Task? _imageCallbackThread;
+        /// <summary>脱离快仓工业相机拉帧线程执行图像处理和事件发布的无损顺序调度器。</summary>
+        private LosslessOrderedDispatcher<WayzimIndustrialCapturedFrame>? _frameDispatcher;
 
         private CancellationTokenSource? _cancellationTokenSource;
 
@@ -173,9 +176,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             }
             if (BindingType == CameraBindingType.ScannerCamera && _imageCallbackThread is null) {
                 _cancellationTokenSource = new CancellationTokenSource();
-                _imageCallbackThread = Task.Run(
+                EnsureFrameDispatcher();
+                _imageCallbackThread = Task.Factory.StartNew(
                     () => ProcessFramesAsync(_cancellationTokenSource.Token),
-                    _cancellationTokenSource.Token);
+                    _cancellationTokenSource.Token,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default).Unwrap();
             }
             OnCameraStarted(new CameraStartedEventArgs() {
                 CameraInfo = this.Info,
@@ -211,10 +217,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                         continue;
                     }
 
-                    var bitmap = GetBitmap(image);
-                    if (bitmap is not null) {
-                        PublishFrame(image, bitmap, cameraInfo.SerialNumber);
-                    }
+                    QueueCapturedFrame(
+                        image,
+                        cameraInfo.SerialNumber,
+                        DateTime.Now,
+                        Interlocked.Increment(ref _frameNo));
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) {
                     return;
@@ -231,11 +238,83 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             }
         }
 
+        /// <summary>确保快仓工业相机图像处理运行在独立长驻线程上。</summary>
+        private void EnsureFrameDispatcher() {
+            _frameDispatcher ??= new LosslessOrderedDispatcher<WayzimIndustrialCapturedFrame>(
+                ProcessCapturedFrame,
+                (frame, exception) => {
+                    frame.Buffer.Dispose();
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new Exception("后台处理快仓工业相机扫码帧异常", exception)
+                    });
+                });
+        }
+
+        /// <summary>在拉帧线程内只复制 SDK 帧数据，并立即释放厂商帧句柄。</summary>
+        private void QueueCapturedFrame(
+            ImageModelCpp image,
+            string serialNumber,
+            DateTime scanTime,
+            long frameNo) {
+            PooledFrameBuffer? buffer = null;
+            try {
+                EnsureFrameDispatcher();
+                buffer = PooledFrameBuffer.CopyFrom(image.ImageData, checked((int)image.DataLen));
+                var copiedImage = image;
+                if (image.CodeModels is { Length: > 0 } codeModels) {
+                    copiedImage.CodeModels = new BarCodeModelCpp[codeModels.Length];
+                    for (var index = 0; index < codeModels.Length; index++) {
+                        var codeModel = codeModels[index];
+                        codeModel.strCode = codeModel.strCode?.ToArray() ?? [];
+                        codeModel.stCornerPt = codeModel.stCornerPt?.ToArray() ?? [];
+                        copiedImage.CodeModels[index] = codeModel;
+                    }
+                }
+                copiedImage.ImageData = IntPtr.Zero;
+                var frame = new WayzimIndustrialCapturedFrame(
+                    buffer,
+                    copiedImage,
+                    serialNumber,
+                    scanTime,
+                    frameNo);
+                if (_frameDispatcher?.TryEnqueue(frame) == true) {
+                    buffer = null;
+                }
+            }
+            catch (Exception exception) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception("复制快仓工业相机扫码帧异常", exception)
+                });
+            }
+            finally {
+                buffer?.Dispose();
+            }
+        }
+
+        /// <summary>在独立长驻线程中按收帧顺序执行图像、过滤和事件处理。</summary>
+        private void ProcessCapturedFrame(WayzimIndustrialCapturedFrame frame) {
+            using (frame.Buffer) {
+                var bitmap = GetBitmap(frame.Image, frame.Buffer.Buffer, frame.Buffer.Length);
+                if (bitmap is not null) {
+                    PublishFrame(
+                        frame.Image,
+                        bitmap,
+                        frame.SerialNumber,
+                        frame.ScanTime,
+                        frame.FrameNo);
+                }
+            }
+        }
+
         /// <summary>
         /// 过滤并发布当前帧，确保每个事件消费者拥有独立图像。
         /// </summary>
-        private void PublishFrame(ImageModelCpp image, Bitmap bitmap, string serialNumber) {
-            var scanTime = DateTime.Now;
+        private void PublishFrame(
+            ImageModelCpp image,
+            Bitmap bitmap,
+            string serialNumber,
+            DateTime scanTime,
+            long frameNo) {
             var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
             var codeModels = BindingType == CameraBindingType.PanoramaCamera
                 ? []
@@ -304,7 +383,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                     CameraSerialNumber = serialNumber,
                     ScanTime = scanTime,
                     AreaCoords = results[index].AreaCoords,
-                    FrameNo = _frameNo
+                    FrameNo = frameNo
                 });
             }
 
@@ -317,7 +396,6 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                     ThumbImage = realtimeThumbnail
                 });
             }
-            _frameNo++;
         }
 
         public async Task<KeyValuePair<bool, string>> Stop() {
@@ -333,6 +411,8 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                     _imageCallbackThread.Dispose();
                     _imageCallbackThread = null;
                 }
+                _frameDispatcher?.Dispose();
+                _frameDispatcher = null;
                 var icamStopCamera = ICAMAPI.ICAM_StopCamera(checked((int)this.Info.Id));
                 if (icamStopCamera == 0) {
                     OnCameraStopped(new CameraStoppedEventArgs {
@@ -546,6 +626,33 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = e
                 });
+                return null;
+            }
+        }
+
+        /// <summary>从已经脱离 SDK 帧句柄生命周期的托管缓冲区构造位图。</summary>
+        private Bitmap? GetBitmap(ImageModelCpp image, byte[] frameBuffer, int frameLength) {
+            try {
+                var pixelFormat = image.Type switch {
+                    ImageType.IMAGE_MONO => PixelFormat.Format8bppIndexed,
+                    ImageType.IMAGE_RGB24 => PixelFormat.Format24bppRgb,
+                    _ => PixelFormat.Undefined
+                };
+                if (pixelFormat == PixelFormat.Undefined) {
+                    return null;
+                }
+
+                var bytesPerPixel = pixelFormat == PixelFormat.Format8bppIndexed ? 1 : 3;
+                return CameraImageProcessing.CopyPackedFrame(
+                    frameBuffer,
+                    frameLength,
+                    image.Width,
+                    image.Height,
+                    pixelFormat,
+                    checked(image.Width * bytesPerPixel));
+            }
+            catch (Exception exception) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception });
                 return null;
             }
         }

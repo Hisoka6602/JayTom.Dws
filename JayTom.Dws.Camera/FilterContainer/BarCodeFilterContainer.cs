@@ -5,12 +5,17 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace JayTom.Dws.Camera.FilterContainer {
 
     public class BarCodeFilterContainer {
         private static readonly ConcurrentDictionary<string, BarCodeFilterInfo> Container = new();
+        /// <summary>限制全表过期清理的执行频率，避免每个条码都扫描整个去重容器。</summary>
+        private static readonly long CleanupIntervalTicks = Math.Max(1L, Stopwatch.Frequency / 4);
+        /// <summary>最近一次全表过期清理使用的单调时钟刻度。</summary>
+        private static long _lastCleanupTimestamp;
         /// <summary>
         /// 限制单次正则匹配的最长执行时间，防止灾难性回溯阻塞采集线程。
         /// </summary>
@@ -27,7 +32,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
                     throw new ArgumentException("容器大小必须大于等于零");
                 }
                 _maxSize = value;
-                CleanupContainer();
+                CleanupContainer(true, null);
             }
         }
 
@@ -91,12 +96,11 @@ namespace JayTom.Dws.Camera.FilterContainer {
                 insertedOrUpdated = false;
                 return data;
             });
-            CleanupContainer();
+            CleanupContainer(false, data.ScanTime);
             return insertedOrUpdated;
         }
 
         public ValidationResult ValidateData(BarCodeFilterInfo barCodeFilterInfo) {
-            CleanupContainer();
             if (BarCodeFilterMode == BarCodeFilterMode.BasicFilter) {
                 if (!string.IsNullOrEmpty(Pattern)) {
                     try {
@@ -119,12 +123,20 @@ namespace JayTom.Dws.Camera.FilterContainer {
                 }
             }
             else if (BarCodeFilterMode == BarCodeFilterMode.CustomRegexFilter) {
-                if (CustomRegularExpressionItems.Any()) {
+                if (CustomRegularExpressionItems.Count > 0) {
                     try {
-                        var any = CustomRegularExpressionItems.Any(a =>
-                            Regex.IsMatch(barCodeFilterInfo.BarCode, a,
-                                RegexOptions.CultureInvariant, RegexTimeout));
-                        if (!any) {
+                        var matches = false;
+                        for (var index = 0; index < CustomRegularExpressionItems.Count; index++) {
+                            if (Regex.IsMatch(
+                                    barCodeFilterInfo.BarCode,
+                                    CustomRegularExpressionItems[index],
+                                    RegexOptions.CultureInvariant,
+                                    RegexTimeout)) {
+                                matches = true;
+                                break;
+                            }
+                        }
+                        if (!matches) {
                             return new ValidationResult {
                                 IsValidationPassed = false,
                                 FilteredCategory = FilteredCategory.RuleFiltered,
@@ -132,7 +144,7 @@ namespace JayTom.Dws.Camera.FilterContainer {
                             };
                         }
                     }
-                    catch (Exception e) {
+                    catch (Exception) {
                         return new ValidationResult {
                             IsValidationPassed = false,
                             FilteredCategory = FilteredCategory.RuleFiltered,
@@ -142,18 +154,9 @@ namespace JayTom.Dws.Camera.FilterContainer {
                 }
             }
 
-            //后面加的
-            var codeFilterInfo = Get(barCodeFilterInfo.BarCode);
-            if (codeFilterInfo != null) {
-                return new ValidationResult {
-                    IsValidationPassed = false,
-                    FilteredCategory = FilteredCategory.TimeFiltered,
-                    BarCode = barCodeFilterInfo.BarCode
-                };
-            }
-            //----------
             barCodeFilterInfo.ExpirationTime ??= ExpirationTime;
-            var tryAdd = Container.TryAdd(barCodeFilterInfo.BarCode, barCodeFilterInfo);
+            var tryAdd = TryAddAfterRemovingExpired(barCodeFilterInfo);
+            CleanupContainer(false, barCodeFilterInfo.ScanTime);
             return new ValidationResult {
                 IsValidationPassed = tryAdd,
                 FilteredCategory = tryAdd ? FilteredCategory.None : FilteredCategory.TimeFiltered,
@@ -161,31 +164,82 @@ namespace JayTom.Dws.Camera.FilterContainer {
             };
         }
 
-        private void CleanupContainer() {
-            if (MaxSize > 0) {
-                if (Container.Count <= _maxSize) {
-                    return;
+        /// <summary>原子检查当前条码的去重窗口，并在旧记录过期后写入新记录。</summary>
+        private bool TryAddAfterRemovingExpired(BarCodeFilterInfo candidate) {
+            while (true) {
+                if (!Container.TryGetValue(candidate.BarCode, out var existing)) {
+                    return Container.TryAdd(candidate.BarCode, candidate);
                 }
-                var oldestEntries = Container.OrderBy(kvp => kvp.Value.ScanTime)
-                    .Take(Container.Count - _maxSize);
-                foreach (var entry in oldestEntries) {
-                    Container.TryRemove(entry.Key, out _);
+
+                if (MaxSize > 0 || !IsExpired(existing, candidate.ScanTime)) {
+                    return false;
+                }
+
+                if (Container.TryRemove(
+                        new KeyValuePair<string, BarCodeFilterInfo>(candidate.BarCode, existing))) {
+                    continue;
                 }
             }
-            else {
-                //删除过期的
-                var pairs = Container.Where(w =>
-                    DateTime.Now.Subtract(w.Value.ScanTime).TotalMilliseconds > w.Value?.ExpirationTime.Value.TotalMilliseconds);
-                foreach (var pair in pairs) {
-                    Container.TryRemove(pair.Key, out _);
+        }
+
+        /// <summary>判断去重记录在指定时间是否已经过期。</summary>
+        private static bool IsExpired(BarCodeFilterInfo value, DateTime now) {
+            var expiration = value.ExpirationTime ?? TimeSpan.Zero;
+            return now - value.ScanTime > expiration;
+        }
+
+        /// <summary>按容量或低频机会策略清理去重容器，避免常态热路径执行全表扫描。</summary>
+        private void CleanupContainer(bool force, DateTime? referenceTime) {
+            if (MaxSize > 0) {
+                while (Container.Count > _maxSize) {
+                    KeyValuePair<string, BarCodeFilterInfo>? oldest = null;
+                    foreach (var pair in Container) {
+                        if (oldest is null || pair.Value.ScanTime < oldest.Value.Value.ScanTime) {
+                            oldest = pair;
+                        }
+                    }
+
+                    if (oldest is null || !Container.TryRemove(oldest.Value)) {
+                        break;
+                    }
+                }
+                return;
+            }
+
+            var timestamp = Stopwatch.GetTimestamp();
+            var previous = Volatile.Read(ref _lastCleanupTimestamp);
+            if (!force && timestamp - previous < CleanupIntervalTicks) {
+                return;
+            }
+            if (!force && Interlocked.CompareExchange(
+                    ref _lastCleanupTimestamp,
+                    timestamp,
+                    previous) != previous) {
+                return;
+            }
+            if (force) {
+                Volatile.Write(ref _lastCleanupTimestamp, timestamp);
+            }
+
+            var now = referenceTime ?? DateTime.Now;
+            foreach (var pair in Container) {
+                if (IsExpired(pair.Value, now)) {
+                    Container.TryRemove(pair);
                 }
             }
         }
 
         public BarCodeFilterInfo? Get(string barCode) {
-            CleanupContainer();
-            Container.TryGetValue(barCode, out var value);
-            return value;
+            while (Container.TryGetValue(barCode, out var value)) {
+                if (MaxSize > 0 || !IsExpired(value, DateTime.Now)) {
+                    return value;
+                }
+                if (!Container.TryRemove(new KeyValuePair<string, BarCodeFilterInfo>(barCode, value))) {
+                    continue;
+                }
+            }
+            CleanupContainer(false, DateTime.Now);
+            return null;
         }
 
         /// <summary>
@@ -194,12 +248,18 @@ namespace JayTom.Dws.Camera.FilterContainer {
         /// <param name="barCode"></param>
         /// <returns></returns>
         public string RegexReplace(string barCode) {
-            if (IsUseCustomRegexReplacement && CustomRegexReplacementItems.Any()) {
+            if (IsUseCustomRegexReplacement && CustomRegexReplacementItems.Count > 0) {
                 var replacedBarcode = barCode;
                 try {
-                    replacedBarcode = CustomRegexReplacementItems.Aggregate(replacedBarcode,
-                        (current, item) => Regex.Replace(current, item.RegexPattern, item.ReplaceContent,
-                            RegexOptions.CultureInvariant, RegexTimeout));
+                    for (var index = 0; index < CustomRegexReplacementItems.Count; index++) {
+                        var item = CustomRegexReplacementItems[index];
+                        replacedBarcode = Regex.Replace(
+                            replacedBarcode,
+                            item.RegexPattern,
+                            item.ReplaceContent,
+                            RegexOptions.CultureInvariant,
+                            RegexTimeout);
+                    }
                     return replacedBarcode;
                 }
                 catch (Exception e) {

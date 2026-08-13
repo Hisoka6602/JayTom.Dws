@@ -60,6 +60,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly NonBlockingOrderedDispatcher<Action> _packageNotificationDispatcher;
         private DateTime _lastNoReadTime = DateTime.MinValue;
         private ICamera[] _cameras = [];
+        /// <summary>缓存当前扫描相机数量，避免每个条码事件都遍历设备集合。</summary>
+        private int _scannerCameraCount;
+        /// <summary>关键队列中最后一次成功创建包裹的时间键。</summary>
+        private long _lastAcceptedPackageCreateTicks = DateTime.MinValue.Ticks;
         private int _isWindowsClose;
         private volatile WeightSettingsDto _weightSettingsDto = new();
         private volatile WdtWmsApiDto _wdtWmsApiDto = new();
@@ -93,7 +97,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 static (_, exception) => QueueError("发布包裹通知失败", exception));
             _deviceService.CameraInitialized += (_, cameras) =>
             {
-                Volatile.Write(ref _cameras, [.. cameras]);
+                var snapshot = new ICamera[cameras.Count];
+                var scannerCameraCount = 0;
+                for (var index = 0; index < cameras.Count; index++)
+                {
+                    var camera = cameras[index];
+                    snapshot[index] = camera;
+                    if (camera.BindingType == CameraBindingType.ScannerCamera)
+                    {
+                        scannerCameraCount++;
+                    }
+                }
+                Volatile.Write(ref _cameras, snapshot);
+                Volatile.Write(ref _scannerCameraCount, scannerCameraCount);
             };
 
             //条码返回
@@ -104,8 +120,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     //验证多条码
                     try
                     {
-                    if (Volatile.Read(ref _cameras)
-                            .Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1)
+                    if (Volatile.Read(ref _scannerCameraCount) > 1)
                     {
                         var barCodeFrameInfo = new BarCodeFrameInfo()
                         {
@@ -155,11 +170,21 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             return;
                         }
 
-                        var packageInfo =
-                            _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                _packageSessionStore.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                                _packageSessionStore.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
-                                                                       args.ScanTime.Subtract(f.Value.CreateTime).TotalMilliseconds > 100);
+                        JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage = null;
+                        var packageInfo = TryBindBarcode(args.ScanTime, package =>
+                        {
+                            replacedImage = package.Image;
+                            package.BarCodeInfo = new BarCodeInfoModel()
+                            {
+                                Barcode = args.Barcode,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera,
+                                BindTime = DateTime.Now
+                            };
+                            package.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
+                        });
 
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera)
                             == PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null)
@@ -185,21 +210,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         {
                             if (packageInfo is not null)
                             {
-                                JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage;
-                                lock (packageInfo.SyncRoot)
-                                {
-                                    replacedImage = packageInfo.Image;
-                                    packageInfo.BarCodeInfo = new BarCodeInfoModel()
-                                    {
-                                        Barcode = args.Barcode,
-                                        SerialNumber = args.CameraSerialNumber,
-                                        DisplayIdentifier = args.CameraSerialNumber,
-                                        ScanTime = args.ScanTime,
-                                        Source = SourceType.Camera,
-                                        BindTime = DateTime.Now
-                                    };
-                                    packageInfo.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
-                                }
                                 if (!ReferenceEquals(replacedImage, args.Image))
                                 {
                                     replacedImage?.Dispose();
@@ -211,6 +221,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             else
                             {
                                 args.Image?.Dispose();
+                                QueueBarcodeAssignmentRejected("camera", args.ScanTime);
                             }
                         }
                     }
@@ -236,8 +247,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     }
                     try
                     {
-                    if (Volatile.Read(ref _cameras)
-                            .Count(c => c.BindingType == CameraBindingType.ScannerCamera) > 1)
+                    if (Volatile.Read(ref _scannerCameraCount) > 1)
                     {
                         var barCodeFrameInfo = new BarCodeFrameInfo()
                         {
@@ -287,10 +297,21 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 _lastNoReadTime = args.ScanTime;
                             }
                         }
-                        var packageInfo =
-                            _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                                _packageSessionStore.GetPackage(f => f.Value is { BarCodeInfo: null }) :
-                                _packageSessionStore.GetLastPackage(f => f.Value is { BarCodeInfo: null });
+                        JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage = null;
+                        var packageInfo = TryBindBarcode(args.ScanTime, package =>
+                        {
+                            replacedImage = package.Image;
+                            package.BarCodeInfo = new BarCodeInfoModel()
+                            {
+                                Barcode = args.Barcode,
+                                SerialNumber = args.CameraSerialNumber,
+                                DisplayIdentifier = args.CameraSerialNumber,
+                                ScanTime = args.ScanTime,
+                                Source = SourceType.Camera,
+                                BindTime = DateTime.Now
+                            };
+                            package.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
+                        });
                         if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.ScanBarcodeCamera) ==
                             PackageCreationMethodsEnum.ScanBarcodeCamera && packageInfo is null)
                         {
@@ -316,21 +337,6 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         {
                             if (packageInfo is not null)
                             {
-                                JayTom.Dws.Abstractions.Imaging.ImageHandle? replacedImage;
-                                lock (packageInfo.SyncRoot)
-                                {
-                                    replacedImage = packageInfo.Image;
-                                    packageInfo.BarCodeInfo = new BarCodeInfoModel()
-                                    {
-                                        Barcode = args.Barcode,
-                                        SerialNumber = args.CameraSerialNumber,
-                                        DisplayIdentifier = args.CameraSerialNumber,
-                                        ScanTime = args.ScanTime,
-                                        Source = SourceType.Camera,
-                                        BindTime = DateTime.Now
-                                    };
-                                    packageInfo.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
-                                }
                                 if (!ReferenceEquals(replacedImage, args.Image))
                                 {
                                     replacedImage?.Dispose();
@@ -342,6 +348,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             else
                             {
                                 args.Image?.Dispose();
+                                QueueBarcodeAssignmentRejected("camera-noread", args.ScanTime);
                             }
                         }
                     }
@@ -377,23 +384,25 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 CreateTime = args.InstructionTime,
                             };
 
-                            ProcessPackageTrigger(packageInfo);
-                            QueueInstructionNotification(new InstructionReceived
+                            if (ProcessPackageTrigger(packageInfo))
                             {
-                                Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
-                                IsCreatedByLowerMachine = true,
-                                SortingCode = packageInfo.Guid.ToString(),
-                                InstructionInfos = new List<InstructionInfoModel>()
+                                QueueInstructionNotification(new InstructionReceived
                                 {
-                                    new()
+                                    Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
+                                    IsCreatedByLowerMachine = true,
+                                    SortingCode = packageInfo.Guid.ToString(),
+                                    InstructionInfos = new List<InstructionInfoModel>()
                                     {
-                                        InstructionContent = args.Instruction,
-                                        InstructionGeneratedTime = args.InstructionTime,
-                                        InstructionType = InstructionType.CreatePackage
-                                    }
-                                },
-                                ConnectionName = args.ConnectionName,
-                            }, "创建指令");
+                                        new()
+                                        {
+                                            InstructionContent = args.Instruction,
+                                            InstructionGeneratedTime = args.InstructionTime,
+                                            InstructionType = InstructionType.CreatePackage
+                                        }
+                                    },
+                                    ConnectionName = args.ConnectionName,
+                                }, "创建指令");
+                            }
                         }
                     }
                     }
@@ -526,19 +535,41 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     barCode = strings.FirstOrDefault(f => !f.Equals(boxBarCode)) ?? "NoRead";
                     /*barCode = strings.FirstOrDefault(f =>
                         !string.IsNullOrEmpty(replace) && !Regex.IsMatch(f, $"(^(?={replace}).*)")) ?? "NoRead";*/
-                    var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    var packageInfo =
-                        _createPackageSettingsDto.BarcodeQueueOrder == BarcodeQueueOrderEnum.TimeAscending ?
-                            _packageSessionStore.GetPackage(f => f.Value is { BarCodeInfo: null } &&
-                                                               (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
-                                                                (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
-                                                                 DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
-                                                               )) :
-                            _packageSessionStore.GetLastPackage(f => f.Value is { BarCodeInfo: null } &&
-                                                                   (!_createPackageSettingsDto.IsUseBarcodeAssignmentInterval ||
-                                                                    (DateTime.Now.Subtract(f.Key).TotalMilliseconds >= _createPackageSettingsDto.MinimumAssignmentTime &&
-                                                                     DateTime.Now.Subtract(f.Key).TotalMilliseconds <= _createPackageSettingsDto.MaximumAssignmentTime)
-                                                                   ));
+                    var receivedAt = args.ReceiveTime == default ? DateTime.Now : args.ReceiveTime;
+                    var timestamp = new DateTimeOffset(receivedAt).ToUnixTimeMilliseconds();
+                    // 先完成可失败的转换，避免在包裹锁内停留或产生部分赋值。
+                    var formattedHeight = Convert.ToDecimal(args.Height);
+                    var formattedLength = Convert.ToDecimal(args.Length);
+                    var formattedVolume = Convert.ToDecimal(args.Volume);
+                    var formattedWidth = Convert.ToDecimal(args.Width);
+                    var packageInfo = TryBindBarcode(receivedAt, package =>
+                    {
+                        package.BarCodeInfo = new BarCodeInfoModel
+                        {
+                            Barcode = barCode,
+                            ScanTime = receivedAt,
+                            BindTime = DateTime.Now,
+                            Source = SourceType.Input,
+                        };
+                        package.WeightInfo = new WeightInfoModel
+                        {
+                            CreateTime = receivedAt,
+                            FormattedWeight = args.Weight,
+                            SourceType = SourceType.Input,
+                            OriginalText = args.SourceContent
+                        };
+                        package.VolumeInfo = new VolumeInfoModel
+                        {
+                            CreateTime = receivedAt,
+                            FormattedHeight = formattedHeight,
+                            FormattedLength = formattedLength,
+                            FormattedVolume = formattedVolume,
+                            FormattedWidth = formattedWidth,
+                            SourceType = SourceType.Input,
+                            OriginalText = args.SourceContent
+                        };
+                        package.Other = boxBarCode;
+                    });
                     if ((_createPackageSettingsDto.PackageCreationMethods & PackageCreationMethodsEnum.TcpInput) ==
                         PackageCreationMethodsEnum.TcpInput && packageInfo is null)
                     {
@@ -548,28 +579,29 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             BarCodeInfo = new BarCodeInfoModel
                             {
                                 Barcode = barCode,
-                                ScanTime = DateTime.Now,
+                                ScanTime = receivedAt,
+                                BindTime = DateTime.Now,
                                 Source = SourceType.Input,
                             },
                             WeightInfo = new WeightInfoModel
                             {
-                                CreateTime = DateTime.Now,
+                                CreateTime = receivedAt,
                                 FormattedWeight = args.Weight,
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             },
                             VolumeInfo = new VolumeInfoModel
                             {
-                                CreateTime = DateTime.Now,
-                                FormattedHeight = Convert.ToDecimal(args.Height),
-                                FormattedLength = Convert.ToDecimal(args.Length),
-                                FormattedVolume = Convert.ToDecimal(args.Volume),
-                                FormattedWidth = Convert.ToDecimal(args.Width),
+                                CreateTime = receivedAt,
+                                FormattedHeight = formattedHeight,
+                                FormattedLength = formattedLength,
+                                FormattedVolume = formattedVolume,
+                                FormattedWidth = formattedWidth,
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             },
                             Other = boxBarCode,
-                            CreateTime = DateTime.Now,
+                            CreateTime = receivedAt,
                             IsCreatedByLowerMachine = false,
                             IsImageSaveRequested = true,
                         };
@@ -580,36 +612,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     {
                         if (packageInfo is not null)
                         {
-                            lock (packageInfo.SyncRoot)
-                            {
-                                packageInfo.BarCodeInfo = new BarCodeInfoModel
-                                {
-                                    Barcode = barCode,
-                                    ScanTime = DateTime.Now,
-                                    Source = SourceType.Input,
-                                };
-                                packageInfo.WeightInfo = new WeightInfoModel
-                                {
-                                    CreateTime = DateTime.Now,
-                                    FormattedWeight = args.Weight,
-                                    SourceType = SourceType.Input,
-                                    OriginalText = args.SourceContent
-                                };
-                                packageInfo.VolumeInfo = new VolumeInfoModel
-                                {
-                                    CreateTime = DateTime.Now,
-                                    FormattedHeight = Convert.ToDecimal(args.Height),
-                                    FormattedLength = Convert.ToDecimal(args.Length),
-                                    FormattedVolume = Convert.ToDecimal(args.Volume),
-                                    FormattedWidth = Convert.ToDecimal(args.Width),
-                                    SourceType = SourceType.Input,
-                                    OriginalText = args.SourceContent
-                                };
-                                packageInfo.Other = boxBarCode;
-                            }
                             ProcessPackageValueChanged(
                                 packageInfo,
                                 TriggerPositionEnum.ExternalDataInputAfter);
+                        }
+                        else
+                        {
+                            QueueBarcodeAssignmentRejected("external-tcp", receivedAt);
                         }
                     }
                     }
@@ -689,7 +698,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             {
                                 var settings = await _settingsStore.GetAsync<CreatePackageSettingsDto>(model.SettingsName) ??
                                                new CreatePackageSettingsDto();
-                                await SwapSettingsAsync(() => _createPackageSettingsDto = settings);
+                                ActivateCreatePackageSettings(settings, "运行期刷新");
                                 break;
                             }
                         case "WeightSettings":
@@ -778,30 +787,68 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             });
         }
 
-        /// <summary>
-        /// 在关键队列内同步完成防抖、会话创建和400毫秒计时器启动；通知随后异步发布。
-        /// </summary>
-        private void ProcessPackageTrigger(PackageInfo packageInfo)
+        /// <summary>按设备观测时间在配置窗口内原子绑定条码。</summary>
+        private PackageInfo? TryBindBarcode(DateTime observedAt, Action<PackageInfo> assignment)
         {
-            var info = _packageSessionStore.GetLastPackage(f => f is { Value: not null });
-            if (info is not null &&
-                packageInfo.CreateTime.Subtract(info.CreateTime).TotalMilliseconds <
-                _createPackageSettingsDto.PackageCreationInterval)
+            var settings = _createPackageSettingsDto;
+            var emptyPackageExpiryMilliseconds =
+                settings is { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 }
+                    ? settings.EmptyPackageExpiryTime
+                    : (int?)null;
+            return _packageSessionStore.TryBindBarcode(
+                observedAt,
+                settings.BarcodeQueueOrder,
+                settings.IsUseBarcodeAssignmentInterval,
+                settings.MinimumAssignmentTime,
+                settings.MaximumAssignmentTime,
+                emptyPackageExpiryMilliseconds,
+                assignment);
+        }
+
+        /// <summary>将超出赋值窗口的诊断信息移交到非关键通知队列。</summary>
+        private void QueueBarcodeAssignmentRejected(string source, DateTime observedAt)
+        {
+            var settings = _createPackageSettingsDto;
+            var minimumAssignmentTime = settings.MinimumAssignmentTime;
+            var maximumAssignmentTime = settings.MaximumAssignmentTime;
+            var intervalEnabled = settings.IsUseBarcodeAssignmentInterval;
+            var pendingCount = _packageEventDispatcher.PendingCount;
+            QueuePackageNotification(() =>
+                EventAggregator.Instance.Publish(new AppLogInfoModel
+                {
+                    CreateTime = DateTime.Now,
+                    Type = LogType.Warning,
+                    Message =
+                        $"条码赋值被拒绝;来源={source},观测时间={observedAt:O}," +
+                        $"窗口={minimumAssignmentTime}-{maximumAssignmentTime}ms," +
+                        $"已启用={intervalEnabled},关键队列待处理数={pendingCount}"
+                }), "条码赋值拒绝");
+        }
+
+        private bool ProcessPackageTrigger(PackageInfo packageInfo)
+        {
+            var createPackageSettings = _createPackageSettingsDto;
+            var previousCreateTicks = _lastAcceptedPackageCreateTicks;
+            var creationIntervalTicks = Math.Max(
+                0L,
+                (long)createPackageSettings.PackageCreationInterval *
+                TimeSpan.TicksPerMillisecond);
+            if (packageInfo.CreateTime.Ticks - previousCreateTicks < creationIntervalTicks)
             {
                 packageInfo.TakeImage()?.Dispose();
-                return;
+                return false;
             }
 
             packageInfo.Timestamp = new DateTimeOffset(packageInfo.CreateTime)
                 .ToUnixTimeMilliseconds();
             if (_weightSettingsDto.Mode == WeightMode.None)
             {
-                packageInfo.WeightInfo = new WeightInfoModel();
+                packageInfo.WeightInfo ??= new WeightInfoModel();
             }
-            packageInfo.VolumeInfo = new VolumeInfoModel();
+            packageInfo.VolumeInfo ??= new VolumeInfoModel();
 
             var packageRemoveTimers = new List<PackageTimer>();
-            if (_createPackageSettingsDto is
+            if (createPackageSettings is
                 { IsUseEmptyPackageExpiry: true, EmptyPackageExpiryTime: > 0 })
             {
                 packageRemoveTimers.Add(new PackageRemoveTimer
@@ -809,29 +856,31 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     Description = "空包裹过期",
                     Predicate = pair => pair.Value.BarCodeInfo == null,
                     RemovalTimeSpan = TimeSpan.FromMilliseconds(
-                        _createPackageSettingsDto.EmptyPackageExpiryTime)
+                        createPackageSettings.EmptyPackageExpiryTime),
+                    TryDispatch = removal =>
+                        TryQueuePackageEvent(removal, "空包裹过期")
                 });
             }
-            if (_createPackageSettingsDto is
+            if (createPackageSettings is
                 { IsUsePackageExpiry: true, PackageExpiryTime: > 0 })
             {
                 packageRemoveTimers.Add(new PackageRemoveTimer
                 {
                     Description = "包裹超过生存周期",
                     RemovalTimeSpan = TimeSpan.FromMilliseconds(
-                        _createPackageSettingsDto.PackageExpiryTime)
+                        createPackageSettings.PackageExpiryTime),
+                    TryDispatch = removal =>
+                        TryQueuePackageEvent(removal, "包裹超过生存周期")
                 });
             }
 
-            _packageSessionStore.AddPackage(packageInfo, packageRemoveTimers);
-            var addedPackage = _packageSessionStore.GetPackage(
-                pair => pair.Key.Equals(packageInfo.CreateTime));
-            if (!ReferenceEquals(addedPackage, packageInfo))
+            if (!_packageSessionStore.TryAddPackage(packageInfo, packageRemoveTimers))
             {
                 packageInfo.TakeImage()?.Dispose();
                 packageInfo.DisposeTimers();
-                return;
+                return false;
             }
+            _lastAcceptedPackageCreateTicks = packageInfo.CreateTime.Ticks;
 
             QueueTriggerNotification(
                 packageInfo,
@@ -841,6 +890,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 packageInfo,
                 TriggerPositionEnum.CreateTimePackageAfter,
                 "创建包裹完成");
+            // 扫码或外部全量数据直接创建时，数据可能在入会话前就已齐全；立即完成，避免等待不存在的后续赋值事件。
+            _packageSessionStore.CompletePackage(packageInfo.CreateTime);
+            return true;
         }
 
         /// <summary>在关键队列内完成包裹，并将赋值通知移出热路径。</summary>
@@ -850,8 +902,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         {
             if (packageInfo.BarCodeInfo is not null && packageInfo.WeightInfo is not null)
             {
-                _packageSessionStore.CompletePackage(
-                    pair => pair.Key.Equals(packageInfo.CreateTime));
+                _packageSessionStore.CompletePackage(packageInfo.CreateTime);
             }
             QueueTriggerNotification(packageInfo, triggerPosition, "包裹赋值");
         }
@@ -909,6 +960,20 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             return Task.CompletedTask;
         }
 
+        /// <summary>仅激活通过校验的创建包裹配置，刷新失败时继续使用上一份稳定快照。</summary>
+        private void ActivateCreatePackageSettings(
+            CreatePackageSettingsDto settings,
+            string source)
+        {
+            if (!settings.TryValidate(out var validationMessage))
+            {
+                QueueError($"创建包裹配置无效，已保留上一份配置;来源={source};原因={validationMessage}");
+                return;
+            }
+
+            _createPackageSettingsDto = settings;
+        }
+
         private bool IsRegexMatch(string input, string pattern)
         {
             var regex = _regexCache.GetOrAdd(
@@ -927,7 +992,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             {
                 //读配置
 
-                _createPackageSettingsDto = await _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+                var createPackageSettings = await _settingsStore.GetAsync<CreatePackageSettingsDto>("CreatePackageSettings", stoppingToken) ?? new CreatePackageSettingsDto();
+                ActivateCreatePackageSettings(createPackageSettings, "启动加载");
                 _barcodeFilterSettingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>("BarcodeFilterSettings", stoppingToken) ?? new BarcodeFilterSettingsDto();
                 _weightSettingsDto = await _settingsStore.GetAsync<WeightSettingsDto>("WeightSettings", stoppingToken) ?? new WeightSettingsDto();
                 _wdtWmsApiDto = await _settingsStore.GetAsync<WdtWmsApiDto>("WdtWmsApiParameters", stoppingToken) ?? new WdtWmsApiDto();

@@ -46,45 +46,53 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                try
                 {
-                    var deserializeObject = await _settingsStore.GetAsync<CreatePackageSettingsDto>(SettingsName) ?? new CreatePackageSettingsDto();
-                    CreatePackageSettingsInfo = new CreatePackageSettingsInfoModel()
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
                     {
-                        IsUseEmptyPackageExpiry = deserializeObject.IsUseEmptyPackageExpiry,
-                        EmptyPackageExpiryTime = deserializeObject.EmptyPackageExpiryTime,
-                        IsUsePackageExpiry = deserializeObject.IsUsePackageExpiry,
-                        PackageExpiryTime = deserializeObject.PackageExpiryTime,
-                        BarcodeHandlingMethod = deserializeObject.BarcodeHandlingMethod,
-                        PackageCreationMethods = deserializeObject.PackageCreationMethods,
-                        IsUseNoRead = deserializeObject.IsUseNoRead,
-                        BarcodeQueueOrder = deserializeObject.BarcodeQueueOrder,
-                        PackageRemoveMethods = deserializeObject.PackageRemoveMethods,
-                        ClearPackageQueueOnStop = deserializeObject.ClearPackageQueueOnStop,
-                        IsUseNoReadFilter = deserializeObject.IsUseNoReadFilter,
-                        FilterInterval = deserializeObject.FilterInterval,
-                        PackageCreationInterval = deserializeObject.PackageCreationInterval,
-                        MaximumAssignmentTime = deserializeObject.MaximumAssignmentTime,
-                        MinimumAssignmentTime = deserializeObject.MinimumAssignmentTime,
-                        IsUseBarcodeAssignmentInterval = deserializeObject.IsUseBarcodeAssignmentInterval,
-                        PackageCreationMethodItems = new ObservableCollection<PackageCreationMethodItemInfoModel>(Enum.GetValues(typeof(PackageCreationMethodsEnum))
+                        var deserializeObject = await _settingsStore.GetAsync<CreatePackageSettingsDto>(SettingsName) ?? new CreatePackageSettingsDto();
+                        CreatePackageSettingsInfo = new CreatePackageSettingsInfoModel()
+                        {
+                            IsUseEmptyPackageExpiry = deserializeObject.IsUseEmptyPackageExpiry,
+                            EmptyPackageExpiryTime = deserializeObject.EmptyPackageExpiryTime,
+                            IsUsePackageExpiry = deserializeObject.IsUsePackageExpiry,
+                            PackageExpiryTime = deserializeObject.PackageExpiryTime,
+                            BarcodeHandlingMethod = deserializeObject.BarcodeHandlingMethod,
+                            PackageCreationMethods = deserializeObject.PackageCreationMethods,
+                            IsUseNoRead = deserializeObject.IsUseNoRead,
+                            BarcodeQueueOrder = deserializeObject.BarcodeQueueOrder,
+                            PackageRemoveMethods = deserializeObject.PackageRemoveMethods,
+                            ClearPackageQueueOnStop = deserializeObject.ClearPackageQueueOnStop,
+                            IsUseNoReadFilter = deserializeObject.IsUseNoReadFilter,
+                            FilterInterval = deserializeObject.FilterInterval,
+                            PackageCreationInterval = deserializeObject.PackageCreationInterval,
+                            MaximumAssignmentTime = deserializeObject.MaximumAssignmentTime,
+                            MinimumAssignmentTime = deserializeObject.MinimumAssignmentTime,
+                            IsUseBarcodeAssignmentInterval = deserializeObject.IsUseBarcodeAssignmentInterval,
+                            PackageCreationMethodItems = new ObservableCollection<PackageCreationMethodItemInfoModel>(Enum.GetValues(typeof(PackageCreationMethodsEnum))
+                                .Cast<PackageCreationMethodsEnum>()
+                                .ToList().Select(s => new PackageCreationMethodItemInfoModel
+                                {
+                                    DisplayName = s.GetDescription(),
+                                    EnumValue = s,
+                                })?.ToList() ?? new List<PackageCreationMethodItemInfoModel>())
+                        };
+                        var includedEnums = Enum.GetValues(typeof(PackageCreationMethodsEnum))
                             .Cast<PackageCreationMethodsEnum>()
-                            .ToList().Select(s => new PackageCreationMethodItemInfoModel
-                            {
-                                DisplayName = s.GetDescription(),
-                                EnumValue = s,
-                            })?.ToList() ?? new List<PackageCreationMethodItemInfoModel>())
-                    };
-                    var includedEnums = Enum.GetValues(typeof(PackageCreationMethodsEnum))
-                        .Cast<PackageCreationMethodsEnum>()
-                        .Where(e => deserializeObject.PackageCreationMethods.HasFlag(e))
-                        .ToList();
-                    foreach (var infoModel in includedEnums.Select(methodsEnum => CreatePackageSettingsInfo.PackageCreationMethodItems.FirstOrDefault(f =>
-                                 f.EnumValue.Equals(methodsEnum))).OfType<PackageCreationMethodItemInfoModel>())
-                    {
-                        infoModel.IsChecked = true;
-                    }
-                });
+                            .Where(e => deserializeObject.PackageCreationMethods.HasFlag(e))
+                            .ToList();
+                        foreach (var infoModel in includedEnums.Select(methodsEnum => CreatePackageSettingsInfo.PackageCreationMethodItems.FirstOrDefault(f =>
+                                     f.EnumValue.Equals(methodsEnum))).OfType<PackageCreationMethodItemInfoModel>())
+                        {
+                            infoModel.IsChecked = true;
+                        }
+                    });
+                }
+                catch (Exception exception)
+                {
+                    _isLoaded = false;
+                    MessageQueue.Enqueue($"加载创建包裹配置失败:{exception.Message}");
+                }
             }
         }
 
@@ -96,7 +104,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (_deviceService.RunningStatus)
             {
                 IsSavingInProgress = false;
-                base.MessageQueue.Enqueue($"设备工作中,无法设置");
+                base.MessageQueue.Enqueue("设备工作中，无法修改创建包裹配置");
                 return false;
             }
             CreatePackageSettingsInfo.PackageCreationMethods = 0;
@@ -104,7 +112,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 CreatePackageSettingsInfo.PackageCreationMethods |= item.EnumValue;
             }
-            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName,new CreatePackageSettingsDto()
+            var settings = new CreatePackageSettingsDto()
                 {
                     IsUseEmptyPackageExpiry = CreatePackageSettingsInfo.IsUseEmptyPackageExpiry,
                     EmptyPackageExpiryTime = CreatePackageSettingsInfo.EmptyPackageExpiryTime,
@@ -122,7 +130,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     MaximumAssignmentTime = CreatePackageSettingsInfo.MaximumAssignmentTime,
                     MinimumAssignmentTime = CreatePackageSettingsInfo.MinimumAssignmentTime,
                     IsUseBarcodeAssignmentInterval = CreatePackageSettingsInfo.IsUseBarcodeAssignmentInterval
-                });
+                };
+            if (!settings.TryValidate(out var validationMessage))
+            {
+                base.MessageQueue.Enqueue(validationMessage);
+                return false;
+            }
+
+            var insertOrUpdate = await _settingsStore.SaveAsync(SettingsName, settings);
             base.MessageQueue.Enqueue($"{(insertOrUpdate ? Languages.Language.ResourceManager.GetString("SaveSuccessful") :
                 Languages.Language.ResourceManager.GetString("SaveFailed"))}");
             return insertOrUpdate;

@@ -1,4 +1,5 @@
 using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Domain.Dto;
 
 namespace JayTom.Dws.Application.Packages;
 
@@ -22,6 +23,10 @@ public sealed class PackageSessionStore : IPackageSessionStore {
     public void AddPackage(PackageInfo package, List<PackageTimer> timers) =>
         PackageInfoManager.AddPackage(package, timers);
 
+    /// <summary>尝试添加包裹会话，避免添加后再次扫描集合确认。</summary>
+    public bool TryAddPackage(PackageInfo package, List<PackageTimer> timers) =>
+        PackageInfoManager.TryAddPackage(package, timers);
+
     /// <summary>按创建时间移除包裹会话。</summary>
     public bool RemovePackage(DateTime createTime, string description = "手动移除") =>
         PackageInfoManager.RemovePackage(createTime, description);
@@ -44,6 +49,24 @@ public sealed class PackageSessionStore : IPackageSessionStore {
     public PackageInfo? GetLastPackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) =>
         PackageInfoManager.GetLastPackage(predicate);
 
+    /// <summary>按观测时间原子绑定条码到符合条件的包裹会话。</summary>
+    public PackageInfo? TryBindBarcode(
+        DateTime observedAt,
+        BarcodeQueueOrderEnum queueOrder,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        Action<PackageInfo> assignment) =>
+        PackageInfoManager.TryBindBarcode(
+            observedAt,
+            queueOrder,
+            enforceAssignmentInterval,
+            minimumAssignmentMilliseconds,
+            maximumAssignmentMilliseconds,
+            emptyPackageExpiryMilliseconds,
+            assignment);
+
     /// <summary>按创建时间获取包裹会话。</summary>
     public PackageInfo? GetPackage(DateTime createTime) =>
         PackageInfoManager.GetPackage(createTime);
@@ -61,4 +84,8 @@ public sealed class PackageSessionStore : IPackageSessionStore {
     /// <summary>完成首个匹配的包裹会话。</summary>
     public void CompletePackage(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) =>
         PackageInfoManager.CompletedPackage(predicate);
+
+    /// <summary>按创建时间直接完成包裹会话。</summary>
+    public void CompletePackage(DateTime createTime) =>
+        PackageInfoManager.CompletedPackage(createTime);
 }

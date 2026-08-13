@@ -159,6 +159,9 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
     public class ExternalContentInputEventArgs : EventArgs
     {
 
+        /// <summary>TCP 数据进入本进程时记录的接收时间，用于排除队列延迟对包裹匹配的影响。</summary>
+        public DateTime ReceiveTime { get; set; } = DateTime.Now;
+
         /// <summary>
         /// 条码
         /// </summary>

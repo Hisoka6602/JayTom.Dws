@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Camera.FilterContainer;
+using JayTom.Dws.Camera.Concurrency;
 using static JayTom.Dws.Camera.Cameras.SmartCamera.Irayple.DaHuaSmartCamera;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
@@ -32,6 +33,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         private CameraDataService? _cameraDataService;
 
         private long _frameNo = 0;
+        /// <summary>脱离快仓 SDK 回调执行图像解码和事件发布的无损顺序调度器。</summary>
+        private LosslessOrderedDispatcher<WayzimCapturedFrame>? _frameDispatcher;
 
         /// <summary>
         /// 固定端口
@@ -127,6 +130,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     return new KeyValuePair<bool, string>(false, "设备已在运行中");
                 }
 
+                EnsureFrameDispatcher();
                 _cameraDataService = GWCameraService.GetCameraInstance(checked((int)(Info?.Id ?? 0)), ReaultCallBack, null, ref errorMsg, port);
                 if (!errorMsg.Equals(string.Empty)) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -152,22 +156,74 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             return new KeyValuePair<bool, string>(false, "Info is null");
         }
 
+        /// <summary>确保快仓回调只负责复制数据，后续图像处理由独立长驻线程完成。</summary>
+        private void EnsureFrameDispatcher() {
+            _frameDispatcher ??= new LosslessOrderedDispatcher<WayzimCapturedFrame>(
+                ProcessCapturedFrame,
+                (frame, exception) => {
+                    frame.Buffer.Dispose();
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new Exception("后台处理快仓扫码帧异常", exception)
+                    });
+                });
+        }
+
         /// <summary>
         /// 接收数据
         /// </summary>
         /// <param name="infostruct"></param>
         /// <param name="tag"></param>
         private void ReaultCallBack(ResultInfoStruct infostruct, object tag) {
-            Bitmap? bitmap = null;
+            PooledFrameBuffer? buffer = null;
             var scanTime = DateTime.Now;
-            var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
             try {
-                var codeInfos = infostruct.CodeInfo.CodeInfos ?? [];
+                if (infostruct.ImageInfo is not { Size: > 0, ImageType: ImageTypes.JPEG } ||
+                    infostruct.ImageInfo.ImageBytes is not { Length: > 0 } imageBytes) {
+                    return;
+                }
+
+                EnsureFrameDispatcher();
+                var frameLength = Math.Min(infostruct.ImageInfo.Size, imageBytes.Length);
+                buffer = PooledFrameBuffer.CopyFrom(imageBytes, frameLength);
+                var codeInfo = infostruct.CodeInfo;
+                if (codeInfo.CodeInfos is { Count: > 0 } sourceCodeInfos) {
+                    var copiedCodeInfos = new List<CodeInfo>(sourceCodeInfos.Count);
+                    for (var index = 0; index < sourceCodeInfos.Count; index++) {
+                        var copiedCodeInfo = sourceCodeInfos[index];
+                        copiedCodeInfo.PtCorner = copiedCodeInfo.PtCorner?.ToArray() ?? [];
+                        copiedCodeInfos.Add(copiedCodeInfo);
+                    }
+                    codeInfo.CodeInfos = copiedCodeInfos;
+                }
+                var frame = new WayzimCapturedFrame(
+                    buffer,
+                    codeInfo,
+                    scanTime,
+                    new DateTimeOffset(scanTime).ToUnixTimeMilliseconds(),
+                    Interlocked.Increment(ref _frameNo));
+                if (_frameDispatcher?.TryEnqueue(frame) == true) {
+                    buffer = null;
+                }
+            }
+            catch (Exception exception) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception });
+            }
+            finally {
+                buffer?.Dispose();
+            }
+        }
+
+        /// <summary>在独立长驻线程中按收帧顺序处理快仓扫码帧。</summary>
+        private void ProcessCapturedFrame(WayzimCapturedFrame frame) {
+            Bitmap? bitmap = null;
+            using (frame.Buffer) {
+            try {
+                var codeInfos = frame.CodeInfo.CodeInfos ?? [];
                 var results = new List<(string Barcode, List<Point> AreaCoords)>(codeInfos.Count);
                 foreach (var codeInfo in codeInfos) {
                     var validation = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo {
                         BarCode = string.IsNullOrWhiteSpace(codeInfo.Code) ? "NoRead" : codeInfo.Code,
-                        ScanTime = scanTime
+                        ScanTime = frame.ScanTime
                     });
                     if (validation.IsValidationPassed ||
                         !string.IsNullOrWhiteSpace(_barCodeFilterContainer.FilterOutContent)) {
@@ -186,11 +242,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 if (barcodeConsumerCount == 0 && !noReadConsumer && !realtimeConsumer) {
                     return;
                 }
-                if (infostruct.ImageInfo is not { Size: > 0, ImageType: ImageTypes.JPEG }) {
-                    return;
-                }
 
-                bitmap = ConvertByteArrayToBitmap(infostruct.ImageInfo.ImageBytes);
+                bitmap = CameraImageProcessing.DecodeCompressedFrame(frame.Buffer.Buffer, frame.Buffer.Length);
                 var thumbnailImage = GenerateThumbnail(bitmap);
                 if (bitmap is null || thumbnailImage is null) {
                     bitmap?.Dispose();
@@ -199,8 +252,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 }
 
                 if (IsShowBarcodeBorder && results.Count > 0) {
-                    int.TryParse(infostruct.CodeInfo.ResolutionX, out var imageWidth);
-                    int.TryParse(infostruct.CodeInfo.ResolutionY, out var imageHeight);
+                    int.TryParse(frame.CodeInfo.ResolutionX, out var imageWidth);
+                    int.TryParse(frame.CodeInfo.ResolutionY, out var imageHeight);
                     using var graphics = Graphics.FromImage(thumbnailImage);
                     using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
                     foreach (var result in results) {
@@ -222,26 +275,26 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     : thumbnailImage;
                 if (noReadConsumer) {
                     OnNotBarcodeHitEvent(new BarcodeReadEventArgs {
-                        Timestamp = timestamp,
+                        Timestamp = frame.Timestamp,
                         Barcode = "NoRead",
                         Image = bitmap,
                         ThumbImage = thumbnailImage,
                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                        ScanTime = scanTime,
-                        FrameNo = _frameNo
+                        ScanTime = frame.ScanTime,
+                        FrameNo = frame.FrameNo
                     });
                 }
                 for (var index = 0; index < barcodeConsumerCount; index++) {
                     var isLast = index == barcodeConsumerCount - 1;
                     OnBarcodeReadTriggered(new BarcodeTriggeredEventArgs {
-                        Timestamp = timestamp,
+                        Timestamp = frame.Timestamp,
                         Barcode = results[index].Barcode,
                         Image = isLast ? bitmap : new Bitmap(bitmap),
                         ThumbImage = isLast ? thumbnailImage : new Bitmap(thumbnailImage),
                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
-                        ScanTime = scanTime,
+                        ScanTime = frame.ScanTime,
                         AreaCoords = results[index].AreaCoords,
-                        FrameNo = _frameNo
+                        FrameNo = frame.FrameNo
                     });
                 }
                 if (primaryConsumerCount == 0) {
@@ -250,7 +303,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 bitmap = null;
                 if (realtimeConsumer) {
                     OnRealtimeImage(new RealtimeImageEventArgs {
-                        Timestamp = timestamp,
+                        Timestamp = frame.Timestamp,
                         ThumbImage = realtimeThumbnail
                     });
                 }
@@ -262,20 +315,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 bitmap?.Dispose();
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception });
             }
-            finally {
-                Interlocked.Increment(ref _frameNo);
-                infostruct.CodeInfo = default;
-            }
-        }
-
-        private Bitmap? ConvertByteArrayToBitmap(byte[] imageData) {
-            try {
-                using var stream = new MemoryStream(imageData, false);
-                using var image = Image.FromStream(stream, true);
-                return new Bitmap(image);
-            }
-            catch (Exception) {
-                return null;
             }
         }
 
@@ -312,6 +351,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             await Task.Yield();
             try {
                 _cameraDataService?.Dispose();
+                _cameraDataService = null;
+                _frameDispatcher?.Dispose();
+                _frameDispatcher = null;
                 OnCameraDisconnected(new CameraConnectionEventArgs() {
                     CameraInfo = Info
                 });

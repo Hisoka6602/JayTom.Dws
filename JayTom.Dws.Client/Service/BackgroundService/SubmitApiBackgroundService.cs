@@ -111,6 +111,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>包裹格口 API 查询的最大并发数。</summary>
         private const int ApiQueryMaxConcurrency = 600;
         /// <summary>
+        /// 最多保留两个滚动批次：当前批次出现慢请求时，下一批仍可立即填补释放的并发槽，
+        /// 同时避免把整个一万条队列都提前展开为等待信号量的任务。
+        /// </summary>
+        private const int MaxActiveSubmitBatches = 2;
+        /// <summary>跨批次共享的 API 并发槽，完成一个请求后立即允许下一包裹补位。</summary>
+        private readonly SemaphoreSlim _apiQueryGate = new(
+            ApiQueryMaxConcurrency,
+            ApiQueryMaxConcurrency);
+        /// <summary>记录仍在执行的 API 批次，确保停机时能够观察异常并等待收尾。</summary>
+        private readonly ConcurrentDictionary<Task, byte> _activeSubmitBatches = new();
+        /// <summary>
         /// 用于唤醒接口任务消费者的合并信号。
         /// </summary>
         private readonly SemaphoreSlim _workSignal = new(0, 1);
@@ -544,7 +555,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 {
                     //需要判断用户选择的接口和参数设置
                     var submitBatch = new List<SubmitItemInfo>(ApiQueryMaxConcurrency);
-                    while (submitBatch.Count < ApiQueryMaxConcurrency &&
+                    while (_activeSubmitBatches.Count < MaxActiveSubmitBatches &&
+                           submitBatch.Count < ApiQueryMaxConcurrency &&
                            _submitItems.TryDequeue(out var queuedSubmit) &&
                            queuedSubmit is not null)
                     {
@@ -553,7 +565,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                     if (submitBatch.Count > 0)
                     {
-                        await Parallel.ForEachAsync(
+                        var submitBatchTask = Parallel.ForEachAsync(
                             submitBatch,
                             new ParallelOptions
                             {
@@ -562,6 +574,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             },
                             async (info, submitToken) =>
                         {
+                            await _apiQueryGate.WaitAsync(submitToken).ConfigureAwait(false);
                             try
                             {
                                 // 每个并发工作项从注册表创建独立上传器，避免共享可变接口参数。
@@ -1095,7 +1108,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     exception,
                                     $"API 查询失败，已重新排队:Timestamp={info.Timestamp},Barcode={info.Barcode}");
                             }
+                            finally
+                            {
+                                _apiQueryGate.Release();
+                            }
                         });
+                        _activeSubmitBatches.TryAdd(submitBatchTask, 0);
+                        _ = ObserveSubmitBatchAsync(submitBatchTask);
                     }
 
                     //取出图片
@@ -1260,11 +1279,40 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
                 finally
                 {
-                    if (!_submitItems.IsEmpty || !_savedImageItems.IsEmpty ||
+                    if ((!_submitItems.IsEmpty &&
+                         _activeSubmitBatches.Count < MaxActiveSubmitBatches) ||
+                        !_savedImageItems.IsEmpty ||
                         !_packageAggregationInfoItems.IsEmpty)
                     {
                         SignalWork();
                     }
+                }
+            }
+
+            await Task.WhenAll(_activeSubmitBatches.Keys).ConfigureAwait(false);
+        }
+
+        /// <summary>观察后台 API 批次的异常并从活动集合清理，避免形成批次屏障。</summary>
+        private async Task ObserveSubmitBatchAsync(Task submitBatch)
+        {
+            try
+            {
+                await submitBatch.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // 服务停止时并发请求使用统一取消令牌退出。
+            }
+            catch (Exception exception)
+            {
+                LogManager.GetCurrentClassLogger().Error(exception, "API 并发批次执行失败");
+            }
+            finally
+            {
+                _activeSubmitBatches.TryRemove(submitBatch, out _);
+                if (!_submitItems.IsEmpty)
+                {
+                    SignalWork();
                 }
             }
         }

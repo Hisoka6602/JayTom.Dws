@@ -37,7 +37,7 @@ namespace JayTom.Dws.Client.Models.PackageSorting
         private bool _isUseNoReadFilter;
         private int _filterInterval = 100;
         private bool _isGroupBarCode;
-        private int _packageCreationInterval;
+        private int _packageCreationInterval = 150;
         private bool _isUseBarcodeAssignmentInterval;
         private int _minimumAssignmentTime;
         private int _maximumAssignmentTime;

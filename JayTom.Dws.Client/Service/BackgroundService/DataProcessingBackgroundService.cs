@@ -59,6 +59,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// 单类持久化任务允许排队的最大数量。
         /// </summary>
         private const int MaxQueueLength = 10_000;
+        /// <summary>包裹主记录每次 SQLite 提交允许合并的最大数量。</summary>
+        private const int PackageInsertBatchSize = 64;
         /// <summary>
         /// 指令可能早于包裹主记录到达；在该窗口内暂存，避免密集流量下丢失创建指令。
         /// </summary>
@@ -173,7 +175,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
             while (!stoppingToken.IsCancellationRequested && Volatile.Read(ref _isWindowsClose) == 0)
             {
-                PackageInfoModel? inFlightInsert = null;
+                List<PackageInfoModel>? inFlightInsertBatch = null;
                 ApiResponseReceived? inFlightResponse = null;
                 SavedImageInfo? inFlightSavedImage = null;
                 InstructionReceived? inFlightInstruction = null;
@@ -182,22 +184,36 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 try
                 {
                     await _workSignal.WaitAsync(stoppingToken);
-                    var tryDequeue = _insertItems.TryDequeue(out var insertModel);
-                    inFlightInsert = insertModel;
-                    if (tryDequeue && insertModel is not null)
+                    var insertBatch = new List<PackageInfoModel>(PackageInsertBatchSize);
+                    while (insertBatch.Count < PackageInsertBatchSize &&
+                           _insertItems.TryDequeue(out var insertModel))
                     {
-                        var insert = await _packageRepository.Insert(insertModel, stoppingToken);
-                        if (!insert)
+                        insertBatch.Add(insertModel);
+                    }
+                    if (insertBatch.Count > 0)
+                    {
+                        inFlightInsertBatch = insertBatch;
+                        var inserted = await _packageRepository.InsertPackageRange(
+                            insertBatch,
+                            stoppingToken);
+                        if (!inserted)
                         {
-                            LogManager.GetCurrentClassLogger().Error($"数据保存失败,正在重试...");
-                            RequeueWork(_insertItems, insertModel);
+                            LogManager.GetCurrentClassLogger().Error($"数据批量保存失败,正在重试...");
+                            foreach (var package in insertBatch)
+                            {
+                                RequeueWork(_insertItems, package);
+                            }
                         }
                         else
                         {
-                            ReleasePendingInstructions(insertModel.PackageTimestamped);
+                            foreach (var package in insertBatch)
+                            {
+                                _retryTracker.Forget(package);
+                                ReleasePendingInstructions(package.PackageTimestamped);
+                            }
                         }
                     }
-                    inFlightInsert = null;
+                    inFlightInsertBatch = null;
 
                     var dequeue = _updateResponseItems.TryDequeue(out var responseModel);
                     inFlightResponse = responseModel;
@@ -556,9 +572,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
                 catch (Exception e)
                 {
-                    if (inFlightInsert is not null)
+                    if (inFlightInsertBatch is not null)
                     {
-                        RequeueWork(_insertItems, inFlightInsert);
+                        foreach (var package in inFlightInsertBatch)
+                        {
+                            RequeueWork(_insertItems, package);
+                        }
                     }
                     if (inFlightResponse is not null)
                     {

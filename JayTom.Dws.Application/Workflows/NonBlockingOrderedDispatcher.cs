@@ -10,7 +10,9 @@ namespace JayTom.Dws.Application.Workflows;
 public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
 {
     /// <summary>保存待处理工作项的无界内存队列。</summary>
-    private readonly BlockingCollection<T> _queue = new(new ConcurrentQueue<T>());
+    private readonly ConcurrentQueue<T> _queue = new();
+    /// <summary>合并密集写入的唤醒信号，避免每个工作项都经过阻塞集合计数。</summary>
+    private readonly AutoResetEvent _workAvailable = new(false);
     /// <summary>按顺序执行工作项的处理器。</summary>
     private readonly Action<T> _handler;
     /// <summary>隔离单项处理异常的可选回调。</summary>
@@ -19,6 +21,10 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
     private readonly Task _worker;
     /// <summary>尚未执行完成的工作项计数。</summary>
     private long _pendingCount;
+    /// <summary>正在越过停机边界的生产者数量。</summary>
+    private int _writersInFlight;
+    /// <summary>零表示消费者可能休眠；一表示已唤醒或正在连续排空队列。</summary>
+    private int _wakeScheduled;
     /// <summary>零表示接收工作，一表示停止中，二表示已经释放。</summary>
     private int _disposeState;
 
@@ -51,47 +57,72 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
             return false;
         }
 
-        Interlocked.Increment(ref _pendingCount);
-        try
+        Interlocked.Increment(ref _writersInFlight);
+        if (Volatile.Read(ref _disposeState) != 0)
         {
-            if (_queue.TryAdd(item))
-            {
-                return true;
-            }
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or ObjectDisposedException)
-        {
-            // CompleteAdding 与写入并发时视为队列已经停止。
+            Interlocked.Decrement(ref _writersInFlight);
+            return false;
         }
 
-        Interlocked.Decrement(ref _pendingCount);
-        return false;
+        try
+        {
+            Interlocked.Increment(ref _pendingCount);
+            _queue.Enqueue(item);
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _writersInFlight);
+        }
+
+        // 一个活跃周期仅执行一次内核唤醒；消费者随后连续排空密集写入。
+        if (Interlocked.Exchange(ref _wakeScheduled, 1) == 0)
+        {
+            _workAvailable.Set();
+        }
+        return true;
     }
 
     /// <summary>持续读取并按写入顺序执行工作项。</summary>
     private void Process()
     {
-        foreach (var item in _queue.GetConsumingEnumerable())
+        while (true)
         {
-            try
-            {
-                _handler(item);
-            }
-            catch (Exception exception)
+            while (_queue.TryDequeue(out var item))
             {
                 try
                 {
-                    _exceptionHandler?.Invoke(item, exception);
+                    _handler(item);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    // 错误上报不能终止关键工作队列。
+                    try
+                    {
+                        _exceptionHandler?.Invoke(item, exception);
+                    }
+                    catch
+                    {
+                        // 错误上报不能终止关键工作队列。
+                    }
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref _pendingCount);
                 }
             }
-            finally
+
+            if (Volatile.Read(ref _disposeState) != 0 && _queue.IsEmpty)
             {
-                Interlocked.Decrement(ref _pendingCount);
+                return;
             }
+
+            Volatile.Write(ref _wakeScheduled, 0);
+            if (!_queue.IsEmpty)
+            {
+                Volatile.Write(ref _wakeScheduled, 1);
+                continue;
+            }
+
+            _workAvailable.WaitOne();
         }
     }
 
@@ -100,13 +131,19 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
     {
         if (Interlocked.CompareExchange(ref _disposeState, 1, 0) == 0)
         {
-            _queue.CompleteAdding();
+            var spinWait = new SpinWait();
+            while (Volatile.Read(ref _writersInFlight) != 0)
+            {
+                spinWait.SpinOnce();
+            }
+
+            _workAvailable.Set();
         }
 
         await _worker.ConfigureAwait(false);
         if (Interlocked.Exchange(ref _disposeState, 2) != 2)
         {
-            _queue.Dispose();
+            _workAvailable.Dispose();
         }
     }
 }

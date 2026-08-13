@@ -96,6 +96,29 @@ public static class CameraImageProcessing {
         }
     }
 
+    /// <summary>从托管帧缓冲区复制紧凑像素数据，供脱离 SDK 回调后的后台帧处理使用。</summary>
+    public static unsafe Bitmap? CopyPackedFrame(
+        byte[]? source,
+        int sourceLength,
+        int width,
+        int height,
+        PixelFormat pixelFormat,
+        int sourceStride = 0) {
+        if (source is null || sourceLength <= 0 || sourceLength > source.Length) {
+            return null;
+        }
+
+        fixed (byte* sourcePointer = source) {
+            return CopyPackedFrame(
+                (IntPtr)sourcePointer,
+                sourceLength,
+                width,
+                height,
+                pixelFormat,
+                sourceStride);
+        }
+    }
+
     /// <summary>
     /// 使用低开销绘制管线创建固定尺寸缩略图，不修改或接管源图像。
     /// </summary>

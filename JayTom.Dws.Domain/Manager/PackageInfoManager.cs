@@ -45,13 +45,24 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="package"></param>
         /// <param name="removeTimers"></param>
         public static void AddPackage(PackageInfo package, List<PackageTimer> removeTimers) {
+            if (!TryAddPackage(package, removeTimers)) {
+                throw new InvalidOperationException(
+                    $"包裹创建时间键重复，未加入运行会话：{package.CreateTime:O}");
+            }
+        }
+
+        /// <summary>尝试按创建时间键添加包裹，成功后才启动生命周期计时器。</summary>
+        /// <param name="package">待添加包裹。</param>
+        /// <param name="removeTimers">生命周期计时器。</param>
+        /// <returns>是否成功添加。</returns>
+        public static bool TryAddPackage(PackageInfo package, List<PackageTimer> removeTimers) {
             lock (package.SyncRoot) {
                 if (!_packageInfos.TryAdd(package.CreateTime, package)) {
-                    throw new InvalidOperationException(
-                        $"包裹创建时间键重复，未加入运行会话：{package.CreateTime:O}");
+                    return false;
                 }
 
                 package.StartTimers(_packageInfos, removeTimers);
+                return true;
             }
         }
 
@@ -61,7 +72,18 @@ namespace JayTom.Dws.Domain.Manager {
         /// <param name="createTime"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        public static bool RemovePackage(DateTime createTime, string description = "手动移除") {
+        public static bool RemovePackage(DateTime createTime, string description = "手动移除") =>
+            RemovePackage(createTime, description, null);
+
+        /// <summary>在同一包裹锁内校验条件并移除包裹，避免过期回调删除已并发赋值的包裹。</summary>
+        /// <param name="createTime">包裹创建时间。</param>
+        /// <param name="description">移除原因。</param>
+        /// <param name="predicate">需在锁内重新校验的移除条件。</param>
+        /// <returns>是否成功移除。</returns>
+        public static bool RemovePackage(
+            DateTime createTime,
+            string description,
+            Func<KeyValuePair<DateTime, PackageInfo>, bool>? predicate) {
             if (!_packageInfos.TryGetValue(createTime, out var current)) {
                 return false;
             }
@@ -69,8 +91,12 @@ namespace JayTom.Dws.Domain.Manager {
             PackageInfo? info;
             bool tryRemove;
             lock (current.SyncRoot) {
-                tryRemove = ((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos)
-                    .Remove(new KeyValuePair<DateTime, PackageInfo>(createTime, current));
+                var pair = new KeyValuePair<DateTime, PackageInfo>(createTime, current);
+                if (predicate is not null && !predicate(pair)) {
+                    return false;
+                }
+
+                tryRemove = ((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos).Remove(pair);
                 info = tryRemove ? current : null;
             }
             if (tryRemove && info is not null) {
@@ -175,6 +201,91 @@ namespace JayTom.Dws.Domain.Manager {
             return result;
         }
 
+        /// <summary>以设备或 TCP 观测时间为基准，原子选择并更新一个未赋值包裹。</summary>
+        /// <param name="observedAt">条码被设备或通讯层观测到的时间。</param>
+        /// <param name="queueOrder">包裹选择顺序。</param>
+        /// <param name="enforceAssignmentInterval">是否校验赋值时间窗口。</param>
+        /// <param name="minimumAssignmentMilliseconds">赋值时间窗口下限，单位毫秒。</param>
+        /// <param name="maximumAssignmentMilliseconds">赋值时间窗口上限，单位毫秒。</param>
+        /// <param name="emptyPackageExpiryMilliseconds">空包裹删除时间，到达该时间后不再允许赋值。</param>
+        /// <param name="assignment">在包裹锁内执行的赋值操作。</param>
+        /// <returns>赋值成功的包裹，无合适包裹时返回空。</returns>
+        public static PackageInfo? TryBindBarcode(
+            DateTime observedAt,
+            BarcodeQueueOrderEnum queueOrder,
+            bool enforceAssignmentInterval,
+            int minimumAssignmentMilliseconds,
+            int maximumAssignmentMilliseconds,
+            int? emptyPackageExpiryMilliseconds,
+            Action<PackageInfo> assignment) {
+            ArgumentNullException.ThrowIfNull(assignment);
+
+            var minimumTicks = Math.Max(0L, (long)minimumAssignmentMilliseconds * TimeSpan.TicksPerMillisecond);
+            var maximumTicks = (long)maximumAssignmentMilliseconds * TimeSpan.TicksPerMillisecond;
+            var emptyPackageExpiryTicks = emptyPackageExpiryMilliseconds is > 0
+                ? (long)emptyPackageExpiryMilliseconds.Value * TimeSpan.TicksPerMillisecond
+                : long.MaxValue;
+            if (enforceAssignmentInterval && maximumTicks < minimumTicks) {
+                return null;
+            }
+
+            var observedTicks = observedAt.Ticks;
+            while (!_packageInfos.IsEmpty) {
+                KeyValuePair<DateTime, PackageInfo>? selected = null;
+                var selectedTicks = queueOrder == BarcodeQueueOrderEnum.TimeAscending
+                    ? long.MaxValue
+                    : long.MinValue;
+
+                foreach (var pair in _packageInfos) {
+                    var createTicks = pair.Key.Ticks;
+                    var ageTicks = observedTicks - createTicks;
+                    if (ageTicks < 0 || ageTicks >= emptyPackageExpiryTicks ||
+                        (enforceAssignmentInterval &&
+                         (ageTicks < minimumTicks || ageTicks > maximumTicks))) {
+                        continue;
+                    }
+
+                    lock (pair.Value.SyncRoot) {
+                        if (pair.Value.BarCodeInfo is not null) {
+                            continue;
+                        }
+
+                        var isBetter = queueOrder == BarcodeQueueOrderEnum.TimeAscending
+                            ? createTicks < selectedTicks
+                            : createTicks > selectedTicks;
+                        if (isBetter) {
+                            selected = pair;
+                            selectedTicks = createTicks;
+                        }
+                    }
+                }
+
+                if (selected is not { } candidate) {
+                    return null;
+                }
+
+                lock (candidate.Value.SyncRoot) {
+                    if (!_packageInfos.TryGetValue(candidate.Key, out var current) ||
+                        !ReferenceEquals(current, candidate.Value) ||
+                        current.BarCodeInfo is not null) {
+                        continue;
+                    }
+
+                    var ageTicks = observedTicks - candidate.Key.Ticks;
+                    if (ageTicks < 0 || ageTicks >= emptyPackageExpiryTicks ||
+                        (enforceAssignmentInterval &&
+                         (ageTicks < minimumTicks || ageTicks > maximumTicks))) {
+                        continue;
+                    }
+
+                    assignment(current);
+                    return current;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// 获取包裹
         /// </summary>
@@ -243,8 +354,16 @@ namespace JayTom.Dws.Domain.Manager {
             var packageInfo = GetPackage(predicate);
             if (packageInfo == null) return;
 
+            CompletedPackage(packageInfo.CreateTime);
+        }
+
+        /// <summary>按创建时间键直接完成包裹，避免已知主键时再次扫描全部会话。</summary>
+        /// <param name="createTime">包裹创建时间。</param>
+        public static void CompletedPackage(DateTime createTime) {
+            if (!_packageInfos.TryGetValue(createTime, out var packageInfo)) return;
+
             lock (packageInfo.SyncRoot) {
-                if (!_packageInfos.TryGetValue(packageInfo.CreateTime, out var current) ||
+                if (!_packageInfos.TryGetValue(createTime, out var current) ||
                     !ReferenceEquals(current, packageInfo)) {
                     return;
                 }
@@ -499,23 +618,24 @@ namespace JayTom.Dws.Domain.Manager {
         private void RemoveFromCollection(object? state) {
             if (state is not null) {
                 var (packageInfos, removeTimer) = (Tuple<ConcurrentDictionary<DateTime, PackageInfo>, PackageRemoveTimer>)state;
-                if (!packageInfos.TryGetValue(CreateTime, out var current)) {
+                /// <summary>在串行队列中重新校验并执行包裹移除。</summary>
+                void RemovePackage() {
+                    if (packageInfos.TryGetValue(CreateTime, out _)) {
+                        PackageInfoManager.RemovePackage(
+                            CreateTime,
+                            removeTimer.Description,
+                            removeTimer.Predicate);
+                    }
+
                     removeTimer.PackageRemovalTimer?.Dispose();
+                }
+
+                if (removeTimer.TryDispatch is not null &&
+                    removeTimer.TryDispatch(RemovePackage)) {
                     return;
                 }
 
-                lock (current.SyncRoot) {
-                    if (removeTimer.Predicate is not null &&
-                        !removeTimer.Predicate(
-                            new KeyValuePair<DateTime, PackageInfo>(CreateTime, current))) {
-                        removeTimer.PackageRemovalTimer?.Dispose();
-                        return;
-                    }
-                }
-
-                if (PackageInfoManager.RemovePackage(CreateTime, removeTimer.Description)) {
-                    removeTimer.PackageRemovalTimer?.Dispose();
-                }
+                RemovePackage();
             }
         }
 
@@ -588,6 +708,9 @@ namespace JayTom.Dws.Domain.Manager {
         public TimeSpan RemovalTimeSpan { get; set; }
         internal Timer? PackageRemovalTimer { get; set; }
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>可选的过期调度器，用于将过期移除与包裹修改串行化；返回 false 时由计时器就地移除。</summary>
+        public Func<Action, bool>? TryDispatch { get; set; }
     }
 
     /// <summary>

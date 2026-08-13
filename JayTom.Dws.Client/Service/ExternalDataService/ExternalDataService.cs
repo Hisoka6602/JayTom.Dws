@@ -249,7 +249,8 @@ namespace JayTom.Dws.Client.Service.ExternalDataService
                 //默认分隔符= '|'
                 var inputEventArgs = new ExternalContentInputEventArgs
                 {
-                    SourceContent = e.Content
+                    SourceContent = e.Content,
+                    ReceiveTime = e.Time
                 };
                 try
                 {

@@ -664,15 +664,31 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 batch.Add(item);
             }
 
-            var saved = batch.Count == 1
-                ? await repository.Insert(batch[0], token)
-                : await repository.InsertRange(batch, token);
+            bool saved;
+            try
+            {
+                saved = batch.Count == 1
+                    ? await repository.Insert(batch[0], token)
+                    : await repository.InsertRange(batch, token);
+            }
+            catch
+            {
+                RequeueBatch(queue, batch);
+                throw;
+            }
+
             if (!saved)
             {
-                foreach (var item in batch)
-                {
-                    queue.Enqueue(item);
-                }
+                RequeueBatch(queue, batch);
+            }
+        }
+
+        /// <summary>数据库写入失败后恢复整个批次，避免瞬时异常造成已出队日志丢失。</summary>
+        private static void RequeueBatch<T>(BoundedLogQueue<T> queue, List<T> batch)
+        {
+            foreach (var item in batch)
+            {
+                queue.Enqueue(item);
             }
         }
 

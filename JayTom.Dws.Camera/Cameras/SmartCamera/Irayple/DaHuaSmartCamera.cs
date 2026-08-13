@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Camera.FilterContainer;
+using JayTom.Dws.Camera.Concurrency;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
@@ -30,6 +31,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         private BarCodeFilterContainer _barCodeFilterContainer = new();
 
         private long _frameNo = 0;
+        /// <summary>脱离华睿 SDK 回调执行块解析、图像处理和事件发布的无损顺序调度器。</summary>
+        private LosslessOrderedDispatcher<DaHuaCapturedFrame>? _frameDispatcher;
 
         /// <summary>
         /// 摄像头对象
@@ -209,9 +212,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
                 var open = _device.Open();
                 if (open) {
+                    EnsureFrameDispatcher();
                     //码流回调事件
                     _device.StreamGrabber.ImageGrabbed += delegate (object? sender, GrabbedEventArgs args) {
-                        GrabResultDecode(args.GrabResult);
+                        QueueCapturedFrame(args.GrabResult, DateTime.Now);
                     };
                     OnCameraStarted(new CameraStartedEventArgs() {
                         CameraInfo = this.Info,
@@ -238,6 +242,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             await Task.Yield();
             if (_device is not null) {
                 _device?.ShutdownGrab();
+                _frameDispatcher?.Dispose();
+                _frameDispatcher = null;
                 _device?.Close();
                 //_device?.Dispose();
                 _device = null;
@@ -321,14 +327,43 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             BarCodeFilterContainer.ResetFilter();
         }
 
+        /// <summary>确保华睿 SDK 回调后的重处理运行在独立长驻线程上。</summary>
+        private void EnsureFrameDispatcher() {
+            _frameDispatcher ??= new LosslessOrderedDispatcher<DaHuaCapturedFrame>(
+                frame => GrabResultDecode(frame.RawData, frame.ScanTime, frame.FrameNo),
+                (_, exception) => OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception("后台处理华睿扫码帧异常", exception)
+                }));
+        }
+
+        /// <summary>在 SDK 回调入口立即克隆帧，并以原始观测时间无等待入队。</summary>
+        private void QueueCapturedFrame(IGrabbedRawData rawData, DateTime scanTime) {
+            try {
+                EnsureFrameDispatcher();
+                var frame = new DaHuaCapturedFrame(
+                    rawData.Clone(),
+                    scanTime,
+                    Interlocked.Increment(ref _frameNo));
+                if (_frameDispatcher?.TryEnqueue(frame) != true) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new InvalidOperationException("华睿相机帧处理器已经停止。")
+                    });
+                }
+            }
+            catch (Exception exception) {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception("克隆华睿扫码帧异常", exception)
+                });
+            }
+        }
+
         /// <summary>
         /// 解码
         /// </summary>
         /// <param name="grabbedRawData"></param>
-        private void GrabResultDecode(IGrabbedRawData grabbedRawData) {
+        private void GrabResultDecode(IGrabbedRawData grabbedRawData, DateTime scanTime, long frameNo) {
             Bitmap? bitmap = null;
             try {
-                var scanTime = DateTime.Now;
                 var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
                 var barcodeInfo = new List<DaHuaBarcodeInfo>();
                 var chunkData = grabbedRawData.ChunkData;
@@ -359,9 +394,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     using var graphics = Graphics.FromImage(thumbnailImage);
                     using var pen = new Pen(BarcodeBorderColor, BarcodeBorderSize);
                     foreach (var barcode in barcodeInfo) {
-                        var points = barcode.BarcodeRegionCoordinates.Select(point => new Point(
-                            point.X * thumbnailImage.Width / Math.Max(1, _originalWidth),
-                            point.Y * thumbnailImage.Height / Math.Max(1, _originalHeight))).ToArray();
+                        var points = new Point[barcode.BarcodeRegionCoordinates.Count];
+                        for (var pointIndex = 0; pointIndex < points.Length; pointIndex++) {
+                            var point = barcode.BarcodeRegionCoordinates[pointIndex];
+                            points[pointIndex] = new Point(
+                                point.X * thumbnailImage.Width / Math.Max(1, _originalWidth),
+                                point.Y * thumbnailImage.Height / Math.Max(1, _originalHeight));
+                        }
                         if (points.Length >= 3) {
                             graphics.DrawPolygon(pen, points);
                         }
@@ -380,7 +419,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             ThumbImage = thumbnailImage,
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                             ScanTime = scanTime,
-                            FrameNo = _frameNo
+                            FrameNo = frameNo
                         });
                 }
                 for (var index = 0; index < barcodeConsumerCount; index++) {
@@ -395,7 +434,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                         ScanTime = scanTime,
                         AreaCoords = barcode.BarcodeRegionCoordinates,
-                        FrameNo = _frameNo
+                        FrameNo = frameNo
                     });
                 }
 
@@ -418,9 +457,6 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = e
                 });
-            }
-            finally {
-                Interlocked.Increment(ref _frameNo);
             }
         }
 

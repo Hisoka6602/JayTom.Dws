@@ -109,9 +109,8 @@ namespace JayTom.Dws.Client.Service.Sorting
         private readonly ConcurrentDictionary<string, Func<FormulaNumber, FormulaNumber, FormulaNumber, FormulaNumber, bool>> _volumeFormulaCache =
             new(StringComparer.Ordinal);
         /// <summary>保护 API 响应的一次性消费状态。</summary>
-        private readonly object _apiCorrelationGate = new();
         /// <summary>记录已经消费 API 响应的包裹创建时间，防止重试或重复响应再次赋格口。</summary>
-        private readonly HashSet<long> _consumedApiCorrelations = [];
+        private readonly ConcurrentDictionary<long, byte> _consumedApiCorrelations = new();
         /// <summary>
         /// 用户可配正则的最长单次匹配时间。
         /// </summary>
@@ -148,6 +147,11 @@ namespace JayTom.Dws.Client.Service.Sorting
         private List<WeightRuleInfoModel> _weightRuleInfoModels = new();
         private List<ApiRuleInfoModel> _apiRuleInfoModels = new();
         private List<ApiSortingInfoModel> _apiSortingInfoModels = new();
+        /// <summary>预解析并按优先级排序的 API 格口规则快照。</summary>
+        private ApiRuleSnapshot[] _apiRuleSnapshots = [];
+        /// <summary>按 API 分拣配置主键索引目标格口，避免响应热路径线性查找。</summary>
+        private IReadOnlyDictionary<long, ApiSortingInfoModel> _apiSortingLookup =
+            new Dictionary<long, ApiSortingInfoModel>();
         private List<CommunicationConnectionConfigInfoModel> _connectionConfigInfoModels = new();
 
         #endregion 配置
@@ -626,6 +630,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                     _weightRuleInfoModels = await _weightRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                     _apiRuleInfoModels = await _apiRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
                     _apiSortingInfoModels = await _apiSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
+                    RebuildApiRuleSnapshot();
 
                     _connectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(
                         s => s.Id > 0, token);
@@ -1059,30 +1064,12 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                 #endregion 邮政额外定制
             }
-            var apiRuleInfoModel = _apiRuleInfoModels
-                ?.Select(o =>
-                {
-                    try
-                    {
-                        var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(o.JsonContent);
-                        return new { ApiRuleInfo = o, ApiRuleJsonDto = apiRuleJsonDto };
-                    }
-                    catch (Exception e)
-                    {
-                        return new { ApiRuleInfo = o, ApiRuleJsonDto = (ApiRuleJsonDto)null };
-                    }
-                })
-                ?.OrderByDescending(x => x.ApiRuleJsonDto?.IsUseStringComparison ?? false)
-                ?.ThenByDescending(x => x.ApiRuleJsonDto?.IsUseJsonField ?? false)
-                ?.ThenByDescending(x => x.ApiRuleJsonDto?.IsUseStringSearch ?? false)
-                ?.ThenBy(x => x.ApiRuleJsonDto?.ResponseStatus ?? UploadStatus.NotUploaded)
-                ?.Select(x => x.ApiRuleInfo)
-                ?.ToList()
-                ?.FirstOrDefault(f =>
-                    ValidateApiRule(param.ApiResponse, f.JsonContent));
-            if (apiRuleInfoModel != null)
+            var apiRule = Volatile.Read(ref _apiRuleSnapshots)
+                .FirstOrDefault(rule => ValidateApiRule(param.ApiResponse, rule.Definition));
+            if (apiRule is not null)
             {
-                var apiSortingInfoModel = _apiSortingInfoModels.FirstOrDefault(f => f.Id.Equals(apiRuleInfoModel.ApiSortingId));
+                Volatile.Read(ref _apiSortingLookup)
+                    .TryGetValue(apiRule.Rule.ApiSortingId, out var apiSortingInfoModel);
                 if (apiSortingInfoModel is not null)
                 {
                     param.ExitId = apiSortingInfoModel.ExitId;
@@ -1274,21 +1261,10 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>严格核对 API 响应与活动包裹，并原子地确保同一包裹只消费一次响应。</summary>
         private bool TryConsumeApiCorrelation(ApiResponseReceived response, out string rejectionReason)
         {
-            var timestampMatches = _packageSessionStore.GetPackages(pair =>
-                pair.Value.Timestamp == response.Timestamp);
-            if (timestampMatches.Count != 1)
+            var activePackage = _packageSessionStore.GetPackage(response.PackageCreationTime);
+            if (activePackage is null)
             {
-                rejectionReason = $"时间戳匹配到 {timestampMatches.Count} 个活动包裹:Timestamp={response.Timestamp}";
-                return false;
-            }
-
-            var activePackage = timestampMatches[0];
-            if (activePackage.CreateTime != response.PackageCreationTime ||
-                !ReferenceEquals(
-                    activePackage,
-                    _packageSessionStore.GetPackage(response.PackageCreationTime)))
-            {
-                rejectionReason = $"创建时间未指向同一个活动包裹:Timestamp={response.Timestamp}";
+                rejectionReason = $"创建时间未指向活动包裹:Timestamp={response.Timestamp}";
                 return false;
             }
 
@@ -1297,13 +1273,10 @@ namespace JayTom.Dws.Client.Service.Sorting
                 return false;
             }
 
-            lock (_apiCorrelationGate)
+            if (!_consumedApiCorrelations.TryAdd(response.PackageCreationTime.Ticks, 0))
             {
-                if (!_consumedApiCorrelations.Add(response.PackageCreationTime.Ticks))
-                {
-                    rejectionReason = $"同一包裹的 API 响应已消费:Timestamp={response.Timestamp}";
-                    return false;
-                }
+                rejectionReason = $"同一包裹的 API 响应已消费:Timestamp={response.Timestamp}";
+                return false;
             }
 
             rejectionReason = string.Empty;
@@ -1373,18 +1346,13 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>包裹离开活动会话后清理一次性消费状态，保持集合有界。</summary>
         private void RemoveConsumedApiCorrelation(long creationTimeTicks)
         {
-            lock (_apiCorrelationGate)
-            {
-                _consumedApiCorrelations.Remove(creationTimeTicks);
-            }
+            _consumedApiCorrelations.TryRemove(creationTimeTicks, out _);
         }
 
-        private bool ValidateApiRule(UploadResponse apiResponse, string json)
+        private bool ValidateApiRule(UploadResponse apiResponse, ApiRuleJsonDto? apiRuleJsonDto)
         {
             try
             {
-                var apiRuleJsonDto = JsonConvert.DeserializeObject<ApiRuleJsonDto>(json);
-
                 if (apiRuleJsonDto is not null)
                 {
                     if (apiRuleJsonDto.ResponseStatus == (apiResponse.IsSuccess ? UploadStatus.Succeeded : UploadStatus.Failed))
@@ -1430,6 +1398,38 @@ namespace JayTom.Dws.Client.Service.Sorting
                 Console.WriteLine(e);
             }
             return false;
+        }
+
+        /// <summary>在配置加载阶段完成 API 规则反序列化、优先级排序和格口索引构建。</summary>
+        private void RebuildApiRuleSnapshot()
+        {
+            var snapshots = _apiRuleInfoModels
+                .Select(rule => new ApiRuleSnapshot(rule, TryParseApiRule(rule.JsonContent)))
+                .Where(snapshot => snapshot.Definition is not null)
+                .OrderByDescending(snapshot => snapshot.Definition!.IsUseStringComparison)
+                .ThenByDescending(snapshot => snapshot.Definition!.IsUseJsonField)
+                .ThenByDescending(snapshot => snapshot.Definition!.IsUseStringSearch)
+                .ThenBy(snapshot => snapshot.Definition!.ResponseStatus)
+                .ToArray();
+            var sortingLookup = _apiSortingInfoModels
+                .GroupBy(sorting => sorting.Id)
+                .ToDictionary(group => group.Key, group => group.Last());
+            Volatile.Write(ref _apiRuleSnapshots, snapshots);
+            Volatile.Write(ref _apiSortingLookup, sortingLookup);
+        }
+
+        /// <summary>解析单条 API 规则；无效配置在加载阶段隔离，不进入响应热路径。</summary>
+        private static ApiRuleJsonDto? TryParseApiRule(string json)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<ApiRuleJsonDto>(json);
+            }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "API 分拣规则解析失败");
+                return null;
+            }
         }
 
         private bool ValidateOcrRule(PackageOcrInfo ocrInfo, string json)

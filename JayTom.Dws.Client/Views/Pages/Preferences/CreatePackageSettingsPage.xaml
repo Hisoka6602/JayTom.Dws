@@ -280,7 +280,7 @@
                         Foreground="DarkGray"
                         Text="是否使用条码赋值间隔:" />
                     <ToggleButton
-                        Name="IsUseNoReadFilterToggleButton"
+                        Name="IsUseBarcodeAssignmentIntervalToggleButton"
                         materialDesign:ToggleButtonAssist.SwitchTrackOffBackground="DarkGray"
                         materialDesign:ToggleButtonAssist.SwitchTrackOnBackground="DodgerBlue"
                         Focusable="False"
@@ -288,7 +288,7 @@
                         Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                 </StackPanel>
 
-                <StackPanel IsEnabled="{Binding ElementName=IsUseNoReadFilterToggleButton, Path=IsChecked}" Orientation="Horizontal">
+                <StackPanel IsEnabled="{Binding ElementName=IsUseBarcodeAssignmentIntervalToggleButton, Path=IsChecked}" Orientation="Horizontal">
                     <!--  图标  -->
                     <TextBlock
                         Margin="5,0"
@@ -351,6 +351,11 @@
                         </Border>
                     </StackPanel>
                 </StackPanel>
+                <TextBlock
+                    Margin="5,0,0,3"
+                    FontSize="11"
+                    Foreground="DarkGray"
+                    Text="时间边界使用此处保存值；空包裹到期时删除优先。" />
                 <StackPanel
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"

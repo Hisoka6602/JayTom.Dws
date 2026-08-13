@@ -189,6 +189,27 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             return insert;
         }
 
+        /// <summary>在单次 SQLite 提交中插入一批包裹图，并同步填充短期缓存。</summary>
+        public async Task<bool> InsertPackageRange(
+            List<PackageInfoModel> entities,
+            CancellationToken token = default) {
+            if (entities.Count == 0) {
+                return true;
+            }
+
+            var inserted = await base.InsertRange(entities, token);
+            if (!inserted) {
+                return false;
+            }
+
+            foreach (var entity in entities) {
+                _cache.Set(entity.PackageTimestamped, entity, new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2)));
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// 从数据库读取包裹并写入短期内存缓存。
         /// </summary>

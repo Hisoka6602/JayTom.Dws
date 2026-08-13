@@ -9,6 +9,29 @@ namespace JayTom.Dws.Tests;
 /// 验证相机图像热路径的复制、解码和缩略图行为。
 /// </summary>
 public sealed class CameraImageProcessingTests {
+    /// <summary>验证托管帧缓冲区可以在脱离 SDK 指针后按行复制为独立位图。</summary>
+    [Fact]
+    public void CopyPackedFrame_FromManagedBuffer_CopiesPixels() {
+        var pixels = new byte[] {
+            1, 2,
+            3, 4
+        };
+
+        using var bitmap = CameraImageProcessing.CopyPackedFrame(
+            pixels,
+            pixels.Length,
+            2,
+            2,
+            PixelFormat.Format8bppIndexed,
+            2);
+
+        Assert.NotNull(bitmap);
+        Assert.Equal(2, bitmap.Width);
+        Assert.Equal(2, bitmap.Height);
+        pixels.AsSpan().Clear();
+        Assert.NotEqual(Color.FromArgb(255, 0, 0, 0), bitmap.GetPixel(0, 0));
+    }
+
     /// <summary>验证紧凑像素行不会被目标步长破坏。</summary>
     [Fact]
     public void CopyPackedFrame_CopiesRowsWithoutStrideCorruption() {

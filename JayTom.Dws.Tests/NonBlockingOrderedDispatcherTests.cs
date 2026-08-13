@@ -58,4 +58,33 @@ public sealed class NonBlockingOrderedDispatcherTests
 
         Assert.Equal(Enumerable.Range(0, itemCount), processed);
     }
+
+    /// <summary>并发生产结束后，释放必须排空全部工作且待处理计数归零。</summary>
+    [Fact]
+    public async Task DisposeAsync_DrainsConcurrentProducersAndResetsPendingCount()
+    {
+        const int producerCount = 8;
+        const int itemsPerProducer = 5_000;
+        var processedCount = 0;
+        var dispatcher = new NonBlockingOrderedDispatcher<int>(_ =>
+            Interlocked.Increment(ref processedCount));
+
+        await Task.WhenAll(Enumerable.Range(0, producerCount).Select(producer =>
+            Task.Factory.StartNew(
+                () =>
+                {
+                    for (var index = 0; index < itemsPerProducer; index++)
+                    {
+                        Assert.True(dispatcher.TryEnqueue(producer * itemsPerProducer + index));
+                    }
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default)));
+        await dispatcher.DisposeAsync();
+
+        Assert.Equal(producerCount * itemsPerProducer, processedCount);
+        Assert.Equal(0, dispatcher.PendingCount);
+        Assert.False(dispatcher.TryEnqueue(-1));
+    }
 }

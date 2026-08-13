@@ -49,6 +49,12 @@ namespace JayTom.Dws.Domain.Repository.LocalData {
         /// <returns></returns>
         Task<PackageInfoModel?> GetMemoryCachePackageInfo(long packageTimestamped, CancellationToken token = default);
 
+        /// <summary>批量插入包裹主记录，并在成功后更新运行时缓存。</summary>
+        /// <param name="entities">待插入的包裹主记录。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>是否整批插入成功。</returns>
+        Task<bool> InsertPackageRange(List<PackageInfoModel> entities, CancellationToken token = default);
+
         /// <summary>
         /// 更新缓存
         /// </summary>
