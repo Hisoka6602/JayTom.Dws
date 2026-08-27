@@ -9,7 +9,7 @@ on:
         default: ''
         type: string
       machine_code:
-        description: 目标 DWS 设备“授权设置”页面显示的 32 位机器码
+        description: 目标 DWS 设备“授权设置”页面显示的 64 位 SHA-256 机器码
         required: true
         type: string
       customer_name:
@@ -96,8 +96,12 @@ jobs:
 
             $effectiveLicenseCode = $builder.ToString()
             $licenseCodeWasGenerated = $true
-          } else {
-            Write-Host "::add-mask::$effectiveLicenseCode"
+          }
+          Write-Host "::add-mask::$effectiveLicenseCode"
+
+          $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
+          if ($machineCode -notmatch '^[A-F0-9]{64}$') {
+            throw '机器码必须是目标 DWS 客户端显示的 64 位十六进制 SHA-256 值。'
           }
 
           $normalizedOutputName = $env:OUTPUT_NAME.Trim()
@@ -108,9 +112,9 @@ jobs:
           $artifactDirectory = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath 'artifacts\license'
           $outputPath = Join-Path -Path $artifactDirectory -ChildPath $normalizedOutputName
 
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
+          & "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
             -LicenseCode $effectiveLicenseCode `
-            -MachineCode $env:INPUT_MACHINE_CODE `
+            -MachineCode $machineCode `
             -CustomerName $env:INPUT_CUSTOMER_NAME `
             -ExpirationDate $env:INPUT_EXPIRATION_DATE `
             -MaxBindingScannerCount $env:INPUT_MAX_BINDING_SCANNER_COUNT `
@@ -119,17 +123,17 @@ jobs:
             -IsAvailable $env:INPUT_IS_AVAILABLE `
             -OutputPath $outputPath
 
-          $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
-          $summaryLicenseCode = if ($licenseCodeWasGenerated) { $effectiveLicenseCode } else { '使用手动输入值' }
+          $summaryLicenseCode = if ($licenseCodeWasGenerated) { '已随机生成（已隐藏）' } else { '使用手动输入值（已隐藏）' }
+          $summaryCustomer = $env:INPUT_CUSTOMER_NAME.Replace("`r", ' ').Replace("`n", ' ')
           $summary = @"
           ### DWS 生产授权文件已生成
 
           - 授权码：$summaryLicenseCode
           - 机器码：$machineCode
-          - 客户名称：$env:INPUT_CUSTOMER_NAME
+          - 客户名称：$summaryCustomer
           - 到期时间：$env:INPUT_EXPIRATION_DATE
           - 产物文件：$normalizedOutputName
-          - 使用方式：下载本次工作流 artifact，将 `$normalizedOutputName` 放入 DWS 程序目录的 `License` 文件夹。
+          - 使用方式：下载本次工作流 artifact，将 $normalizedOutputName 放入 DWS 程序目录的 License 文件夹。
           "@
 
           $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8

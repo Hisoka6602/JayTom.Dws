@@ -62,7 +62,7 @@ internal sealed partial record LicenseGenerationRequest(
         }
         var machineCode = arguments.GetRequired("--machine-code").Trim().ToUpperInvariant();
         if (!MachineCodeRegex().IsMatch(machineCode)) {
-            throw new ArgumentException("机器码必须是 32 位十六进制字符串。");
+            throw new ArgumentException("机器码必须是 64 位十六进制字符串。");
         }
 
         var customerName = arguments.GetRequired("--customer-name").Trim();
@@ -144,7 +144,7 @@ internal sealed partial record LicenseGenerationRequest(
     /// 获取机器码格式校验表达式。
     /// </summary>
     /// <returns>机器码格式校验表达式。</returns>
-    [GeneratedRegex("^[A-F0-9]{32}$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^[A-F0-9]{64}$", RegexOptions.CultureInvariant)]
     private static partial Regex MachineCodeRegex();
 }
 

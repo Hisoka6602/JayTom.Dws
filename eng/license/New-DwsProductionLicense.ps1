@@ -11,7 +11,7 @@ param(
     [string] $LicenseCode = '',
 
     [Parameter(Mandatory = $true)]
-    [ValidatePattern('^[A-Fa-f0-9]{32}$')]
+    [ValidatePattern('^[A-Fa-f0-9]{64}$')]
     [string] $MachineCode,
 
     [Parameter(Mandatory = $true)]
@@ -79,7 +79,8 @@ if ([string]::IsNullOrWhiteSpace($LicenseCode)) {
     }
 
     $LicenseCode = $builder.ToString()
-    Write-Host ('授权码未填写，已自动生成：{0}' -f $LicenseCode)
+    Write-Host "::add-mask::$LicenseCode"
+    Write-Host '授权码未填写，已自动生成（内容已隐藏）。'
 }
 
 if ([string]::IsNullOrWhiteSpace($outputDirectory)) {
