@@ -1,9 +1,9 @@
 using System.Linq;
 using Newtonsoft.Json;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
 
@@ -14,7 +14,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
 
         public async Task<T?> FirstOrDefaultEntity<T>(string keyName, CancellationToken token) where T : class {
             try {
-                var configInfoModels = await base.MemoryCacheData();
+                var configInfoModels = await base.MemoryCacheData(token);
                 var configInfoModel = configInfoModels.FirstOrDefault(f => f.ConfigName.Equals(keyName));
                 if (configInfoModel is not null) {
                     return JsonConvert.DeserializeObject<T>(configInfoModel.Value);
@@ -29,7 +29,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
 
         public async Task<string> FirstOrDefaultJsonEntity(string keyName, CancellationToken token = default) {
             try {
-                var configInfoModels = await base.MemoryCacheData();
+                var configInfoModels = await base.MemoryCacheData(token);
                 var configInfoModel = configInfoModels.FirstOrDefault(f => f.ConfigName.Equals(keyName));
                 if (configInfoModel is not null) {
                     return configInfoModel.Value;

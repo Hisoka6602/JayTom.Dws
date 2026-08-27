@@ -11,19 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Legacy.Contracts\JayTom.Dws.Legacy.Contracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- 迁移期以链接文件保留 Git 历史；实现的程序集所有权已经归于 Application。 -->
-    <Compile Include="..\JayTom.Dws.Domain\Service\CloudApi\CloudService.cs"
-             Link="Services\Cloud\CloudService.cs" />
-    <Compile Include="..\JayTom.Dws.Domain\Service\LicenseApi\LicenseApplicationService.cs"
-             Link="Services\Licensing\LicenseApplicationService.cs" />
-    <Compile Include="..\JayTom.Dws.Domain\Service\LicenseApi\LicenseCodeService.cs"
-             Link="Services\Licensing\LicenseCodeService.cs" />
-    <Compile Include="..\JayTom.Dws.Domain\Service\LicenseApi\LicenseLogService.cs"
-             Link="Services\Licensing\LicenseLogService.cs" />
-    <Compile Include="..\JayTom.Dws.Domain\Service\LicenseApi\LicenseUserService.cs"
-             Link="Services\Licensing\LicenseUserService.cs" />
-  </ItemGroup>
 </Project>

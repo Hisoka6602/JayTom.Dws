@@ -5,25 +5,25 @@ using System.Text;
 using Prism.Commands;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Application.Logs;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Domain.Repository.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
-using JayTom.Dws.Infrastructure.Repository.LocalLog;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 {
 
     public class WeighingLogPageViewModel : BindableBase
     {
-        private readonly IWeighingLogRepository _weighingLogRepository;
+        private readonly ILogQueryService<WeighingLogInfoModel> _logQueryService;
         private string _details = string.Empty;
         private bool _isLoaded;
         private int _pageCount;
@@ -38,9 +38,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         private ObservableCollection<WeighingLogItemModel> _weighingLogItems = new();
         private SnackbarMessageQueue _weighingLogMessageQueue = new(TimeSpan.FromSeconds(2));
 
-        public WeighingLogPageViewModel(IWeighingLogRepository weighingLogRepository)
+        public WeighingLogPageViewModel(ILogQueryService<WeighingLogInfoModel> logQueryService)
         {
-            _weighingLogRepository = weighingLogRepository;
+            _logQueryService = logQueryService;
         }
 
         public SnackbarMessageQueue WeighingLogMessageQueue
@@ -69,7 +69,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         private async void ClickDelegate(WeighingLogItemModel obj)
         {
             //显示详细信息
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 Details = string.Join("\n", new List<string>()
                 {
@@ -252,7 +252,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void ClearSearchCriteriaDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 StartTime =
                     EndTime = null;
@@ -283,7 +283,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void OpenDateTimeDialogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var dataTimeEditor = new DataTimeEditor();
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
@@ -348,16 +348,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void ClearMessageDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
                 {
                     model.Identifier = "WeighingLogDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                    DialogHost.Show(loadingDialog, model.Identifier)
+                        .Forget("显示称重日志清理进度对话框");
                     await Task.Delay(500);
-                    var total = await _weighingLogRepository.Total(s => s.Id > 0);
-                    await _weighingLogRepository.DeleteCount(total);
+                    await _logQueryService.ClearAsync();
                     WeighingLogItems.Clear();
                     Details = string.Empty;
                     PageIndex = PageCount = 0;
@@ -372,36 +372,28 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         private async void LoadData(int pageIndex)
         {
             const int pageSize = 500;
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
                 {
                     model.Identifier = "WeighingLogDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                    DialogHost.Show(loadingDialog, model.Identifier)
+                        .Forget("显示称重日志加载进度对话框");
                     await Task.Delay(500);
                     WeighingLogItems.Clear();
                     Details = string.Empty;
-                    var total = await _weighingLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
-                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
-                        (SelectLogType == null || s.Type == SelectLogType) &&
-                        (SelectCommunicationType == null || s.CommunicationType == SelectCommunicationType) &&
-                        (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)));
-                    if (total > 0)
+                    var result = await _logQueryService.SearchAsync(
+                        new LogQuery(StartTime, EndTime, SelectLogType, Message, CommunicationType: SelectCommunicationType),
+                        pageIndex - 1,
+                        pageSize);
+                    if (result.Total > 0)
                     {
-                        PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
-                        var selectOrderByDescending = await _weighingLogRepository.SelectOrderByDescending(s =>
-                                (StartTime == null || s.CreateTime >= StartTime.Value) &&
-                                (EndTime == null || s.CreateTime <= EndTime.Value) &&
-                                (SelectLogType == null || s.Type == SelectLogType) &&
-                                (SelectCommunicationType == null || s.CommunicationType == SelectCommunicationType) &&
-                                (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
-                            pageIndex - 1, pageSize);
+                        PageCount = result.Total / pageSize + (result.Total % pageSize > 0 ? 1 : 0);
 
-                        if (selectOrderByDescending?.Any() == true)
+                        if (result.Items.Count > 0)
                         {
-                            var cameraLogItemModels = selectOrderByDescending.Select(s => new WeighingLogItemModel()
+                            var cameraLogItemModels = result.Items.Select(s => new WeighingLogItemModel()
                             {
                                 ClickCommand = ClickCommand,
                                 CreateTime = s.CreateTime,

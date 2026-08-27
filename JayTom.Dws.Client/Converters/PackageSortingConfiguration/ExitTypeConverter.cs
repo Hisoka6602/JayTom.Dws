@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Windows.Data;
 using System.Globalization;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
 {

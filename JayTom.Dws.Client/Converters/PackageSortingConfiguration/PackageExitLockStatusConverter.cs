@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Windows.Data;
@@ -6,7 +6,7 @@ using System.Globalization;
 using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
 {

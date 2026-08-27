@@ -16,12 +16,12 @@ namespace JayTom.Dws.PluginInterface {
         /// <summary>
         /// 弹窗前事件
         /// </summary>
-        event EventHandler<object> DialogOpening;
+        event EventHandler<PluginWpfEventArgs> DialogOpening;
 
         /// <summary>
         /// 弹窗后事件
         /// </summary>
-        event EventHandler<object> DialogOpened;
+        event EventHandler<PluginWpfEventArgs> DialogOpened;
 
         /// <summary>
         /// 关闭弹窗
@@ -33,6 +33,6 @@ namespace JayTom.Dws.PluginInterface {
         /// </summary>
         /// <param name="message"></param>
         /// <param name="token"></param>
-        void ShowDialog(object message, CancellationToken token = default);
+        void ShowDialog(PluginDialogRequest message, CancellationToken token = default);
     }
 }

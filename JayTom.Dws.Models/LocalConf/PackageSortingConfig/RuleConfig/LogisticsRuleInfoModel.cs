@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig {
+namespace JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig {
 
     [Table("Conf_LogisticsRuleInfo", Schema = "dbo")]
     public class LogisticsRuleInfoModel : BasePackageSortingConfig {

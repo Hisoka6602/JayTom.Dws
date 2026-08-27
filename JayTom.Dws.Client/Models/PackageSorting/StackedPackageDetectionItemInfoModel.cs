@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 

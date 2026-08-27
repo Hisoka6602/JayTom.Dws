@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.ConnectionParams;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
+namespace JayTom.Dws.Models.LocalConf.PackageSortingConfig {
 
     [Table("Conf_CommunicationConnectionConfigInfo", Schema = "dbo")]
     public class CommunicationConnectionConfigInfoModel : BasePackageSortingConfig {

@@ -7,11 +7,11 @@ using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using System.IO.Compression;
 using System.Net.Http.Headers;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Integrations.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface.Routdata {
+namespace JayTom.Dws.Integrations.Routdata {
 
     public class RoutDataApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -170,7 +170,7 @@ namespace JayTom.Dws.Interface.Routdata {
             try {
                 //using var httpClient = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip });
 
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
                 HttpResponseMessage message;
@@ -288,7 +288,7 @@ namespace JayTom.Dws.Interface.Routdata {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = requestContent,

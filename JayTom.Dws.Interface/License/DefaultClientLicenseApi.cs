@@ -3,7 +3,7 @@ using System.Text;
 using JayTom.Dws.Abstractions.Results;
 using Newtonsoft.Json;
 
-namespace JayTom.Dws.Interface.License;
+namespace JayTom.Dws.Integrations.License;
 
 /// <summary>通过远程授权服务创建、激活并下载客户端授权文件。</summary>
 public sealed class DefaultClientLicenseApi : IClientLicenseApi {

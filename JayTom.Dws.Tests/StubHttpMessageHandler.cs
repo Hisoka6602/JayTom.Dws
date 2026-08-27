@@ -11,12 +11,19 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
     /// <summary>
     /// 用于创建测试响应的回调。
     /// </summary>
-    private readonly Func<HttpRequestMessage, HttpResponseMessage> _responseFactory;
+    private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _responseFactory;
 
     /// <summary>
     /// 创建测试消息处理器。
     /// </summary>
     public StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
+    {
+        _responseFactory = (request, _) => Task.FromResult(responseFactory(request));
+    }
+
+    /// <summary>创建支持异步等待和取消的测试消息处理器。</summary>
+    public StubHttpMessageHandler(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseFactory)
     {
         _responseFactory = responseFactory;
     }
@@ -48,7 +55,7 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
             ? string.Empty
             : await request.Content.ReadAsStringAsync(cancellationToken);
         RequestContents.Add(LastRequestContent);
-        return _responseFactory(request);
+        return await _responseFactory(request, cancellationToken);
     }
 
     /// <summary>

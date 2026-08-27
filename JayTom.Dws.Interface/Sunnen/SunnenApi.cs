@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface.Sunnen {
+namespace JayTom.Dws.Integrations.Sunnen {
 
     public class SunnenApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -49,7 +49,7 @@ namespace JayTom.Dws.Interface.Sunnen {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =
@@ -97,7 +97,7 @@ namespace JayTom.Dws.Interface.Sunnen {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Interface.Sunnen {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =
@@ -178,7 +178,7 @@ namespace JayTom.Dws.Interface.Sunnen {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

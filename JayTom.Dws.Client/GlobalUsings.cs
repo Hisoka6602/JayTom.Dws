@@ -1,6 +1,11 @@
 global using JayTom.Dws.Abstractions.Text;
-global using JayTom.Dws.Domain.EventMediators;
+global using JayTom.Dws.Application.Events;
+global using JayTom.Dws.Client.Events;
 global using JayTom.Dws.Abstractions.Devices;
 global using JayTom.Dws.Abstractions.Imaging;
 global using JayTom.Dws.Plugin.Contracts;
+global using JayTom.Dws.Integrations.Contracts;
 global using JayTom.Dws.Application.Packages;
+global using JayTom.Dws.Client.Presentation;
+global using DialogHost = JayTom.Dws.Client.Presentation.UserDialogService;
+global using UiThread = JayTom.Dws.Client.Presentation.UiThread;

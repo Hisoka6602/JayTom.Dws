@@ -1,4 +1,8 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.SortingInstructions;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Communications;
+using JayTom.Dws.Application.SortingConfigurations;
 using JayTom.Dws.Application.Packages;
 using JayTom.Dws.Application.Workflows;
 using System;
@@ -6,70 +10,71 @@ using DryIoc;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
-using System.Text.Json;
 using System.Threading;
 using System.Diagnostics;
-using JayTom.Dws.Interface;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Integrations;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
 using System.Linq.Dynamic.Core;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Packages;
 using System.Collections.Generic;
 using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Integrations.Cloud;
 using MathNet.Numerics.RootFinding;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.BackgroundService;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using UploadResponse = JayTom.Dws.Integrations.Contracts.UploadResponse;
 using FormulaNumber = System.Decimal;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using SortingExitType = JayTom.Dws.Application.Events.SortingExitType;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PushAlternateExitSorterEvent = JayTom.Dws.Domain.EventMediators.PushAlternateExitSorterEvent;
+using PushAlternateExitSorterEvent = JayTom.Dws.Application.Events.PushAlternateExitSorterEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {
 
     public class DefaultSortingService : ISortingService, IAsyncDisposable
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
         /// <summary>提供运行期包裹会话，用于核对 API 响应和待发送格口指令的包裹身份。</summary>
         private readonly IPackageSessionStore _packageSessionStore;
-        private readonly ILogisticsRegexRepository _logisticsRegexRepository;
-        private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IBarCodeSortingRepository _barCodeSortingRepository;
-        private readonly IBarCodeRegexRepository _barCodeRegexRepository;
-        private readonly ILogisticsSortingRepository _logisticsSortingRepository;
-        private readonly ILogisticsRuleRepository _logisticsRuleRepository;
-        private readonly IOcrSortingRepository _ocrSortingRepository;
-        private readonly IOcrRuleRepository _ocrRuleRepository;
-        private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
-        private readonly ISortingInstructionRepository _sortingInstructionRepository;
-        private readonly IVolumeSortingRepository _volumeSortingRepository;
-        private readonly IWeightSortingRepository _weightSortingRepository;
-        private readonly IVolumeRuleRepository _volumeRuleRepository;
-        private readonly IWeightRuleRepository _weightRuleRepository;
-        private readonly IApiSortingRepository _apiSortingRepository;
+        private readonly ISortingRuleCatalog<LogisticsRegexInfoModel> _logisticsRegexRepository;
+        private readonly ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> _logisticsCodeRecognitionRepository;
+        private readonly IPackageExitManagement _packageExitDefinitionRepository;
+        private readonly ISortingConfigurationCatalog<BarCodeSortingInfoModel> _barCodeSortingRepository;
+        private readonly ISortingRuleCatalog<BarCodeRegexInfoModel> _barCodeRegexRepository;
+        private readonly ISortingConfigurationCatalog<LogisticsSortingInfoModel> _logisticsSortingRepository;
+        private readonly ISortingRuleCatalog<LogisticsRuleInfoModel> _logisticsRuleRepository;
+        private readonly ISortingConfigurationCatalog<OcrSortingInfoModel> _ocrSortingRepository;
+        private readonly ISortingRuleCatalog<OcrRuleInfoModel> _ocrRuleRepository;
+        private readonly ISortingInstructionBindingCatalog _sortingInstructionBindingRepository;
+        private readonly ISortingInstructionBindingCatalog _sortingInstructionRepository;
+        private readonly ISortingConfigurationCatalog<VolumeSortingInfoModel> _volumeSortingRepository;
+        private readonly ISortingConfigurationCatalog<WeightSortingInfoModel> _weightSortingRepository;
+        private readonly ISortingRuleCatalog<VolumeRuleInfoModel> _volumeRuleRepository;
+        private readonly ISortingRuleCatalog<WeightRuleInfoModel> _weightRuleRepository;
+        private readonly ISortingConfigurationCatalog<ApiSortingInfoModel> _apiSortingRepository;
         private readonly ISortingConnectionService _sortingConnectionService;
-        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
+        private readonly ICommunicationConfigurationCatalog _communicationConnectionConfigRepository;
 
-        private readonly IApiRuleRepository _apiRuleRepository;
+        private readonly ISortingRuleCatalog<ApiRuleInfoModel> _apiRuleRepository;
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
         private readonly IGrayscaleService _grayscaleService;
@@ -80,7 +85,9 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// </summary>
         private readonly MonotonicDeadlineScheduler _sortingDeadlineScheduler;
         /// <summary>按提交顺序执行已经到期的分拣工作，避免线程池饥饿影响格口响应。</summary>
-        private readonly NonBlockingOrderedDispatcher<Func<Task>> _sortingDispatcher;
+        private readonly AsyncOrderedDispatcher<Func<Task>> _sortingDispatcher;
+        /// <summary>最近一次报告分拣队列性能水位的单调时钟时间戳。</summary>
+        private long _lastSortingPerformanceReportTimestamp = Stopwatch.GetTimestamp();
         /// <summary>
         /// 用户配置正则的编译缓存。
         /// </summary>
@@ -99,6 +106,12 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>保护 API 响应的一次性消费状态。</summary>
         /// <summary>记录已经消费 API 响应的包裹创建时间，防止重试或重复响应再次赋格口。</summary>
         private readonly ConcurrentDictionary<long, byte> _consumedApiCorrelations = new();
+        /// <summary>暂存设备已启动但分拣配置尚未就绪期间到达的完成与 API 事件。</summary>
+        private readonly Queue<PendingSortingEvent> _pendingStartupEvents = new();
+        /// <summary>仅在启动切换期间保护暂存事件和就绪标记。</summary>
+        private readonly object _startupEventGate = new();
+        /// <summary>一表示分拣配置和物理连接已经就绪，可以消费事件。</summary>
+        private int _eventProcessingReady;
         /// <summary>
         /// 用户可配正则的最长单次匹配时间。
         /// </summary>
@@ -106,6 +119,14 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         //private ConcurrentDictionary<DateTime, long> _stackedPackageGuidItems = new();
         private SortingMethodDto _sortingMethodDto = new();
+
+        private SortingMethodDto CurrentSortingMethod =>
+            Volatile.Read(ref _sortingMethodDto);
+
+        /// <summary>获取当前分拣模式是否要求写入物理格口指令。</summary>
+        public bool RequiresSortingInstruction =>
+            Volatile.Read(ref _eventProcessingReady) == 0 ||
+            CurrentSortingMethod.SortMode != SortMode.None;
 
         private PackageExitLockSettingsDto _packageExitLockSettingsDto = new();
 
@@ -119,27 +140,30 @@ namespace JayTom.Dws.Client.Service.Sorting
         private LogisticsRegexInfoModel[] _logisticsRegexInfos = [];
         private LogisticsCodeRecognitionInfoModel[] _logisticsCodeRecognitionInfos =
             [];
-        private PackageExitDefinitionInfoModel[] _packageExitDefinitionInfos =
-            [];
+        /// <summary>一次性发布的格口配置与索引快照，杜绝配置切换时的新旧版本混读。</summary>
+        private SortingExitSnapshot _exitSnapshot = SortingExitSnapshot.Empty;
         private List<BarCodeSortingInfoModel> _barCodeSortingInfoModels = new();
         private List<BarCodeRegexInfoModel> _barCodeRegexInfos = new();
         private List<LogisticsSortingInfoModel> _logisticsSortingInfoModels = new();
         private List<LogisticsRuleInfoModel> _logisticsRuleInfoModels = new();
         private List<OcrSortingInfoModel> _ocrSortingInfoModels = new();
         private List<OcrRuleInfoModel> _ocrRuleInfoModels = new();
-        private List<SortingInstructionBindingInfoModel> _sortingInstructionBindingInfoModels = new();
-        private List<SortingInstructionInfoModel> _sortingInstructionInfoModels = new();
+        /// <summary>按格口编号直接定位已启用的指令绑定。</summary>
+        private IReadOnlyDictionary<long, SortingInstructionBindingInfoModel>
+            _sortingInstructionBindingByExit =
+                new Dictionary<long, SortingInstructionBindingInfoModel>();
+        /// <summary>按绑定编号保存预分组的指令数组。</summary>
+        private IReadOnlyDictionary<long, SortingInstructionInfoModel[]>
+            _sortingInstructionsByBinding =
+                new Dictionary<long, SortingInstructionInfoModel[]>();
         private List<VolumeSortingInfoModel> _volumeSortingInfoModels = new();
         private List<WeightSortingInfoModel> _weightSortingInfoModels = new();
         private List<VolumeRuleInfoModel> _volumeRuleInfoModels = new();
         private List<WeightRuleInfoModel> _weightRuleInfoModels = new();
-        private List<ApiRuleInfoModel> _apiRuleInfoModels = new();
-        private List<ApiSortingInfoModel> _apiSortingInfoModels = new();
-        /// <summary>预解析并按优先级排序的 API 格口规则快照。</summary>
-        private ApiRuleSnapshot[] _apiRuleSnapshots = [];
-        /// <summary>按 API 分拣配置主键索引目标格口，避免响应热路径线性查找。</summary>
-        private IReadOnlyDictionary<long, ApiSortingInfoModel> _apiSortingLookup =
-            new Dictionary<long, ApiSortingInfoModel>();
+        /// <summary>拥有 API 规则解析和目标格口索引的独立组件。</summary>
+        private readonly ApiSortingRuleEvaluator _apiRuleEvaluator = new();
+        /// <summary>按模式定位兼容分拣策略的注册表。</summary>
+        private readonly LegacySortingStrategyRegistry _strategyRegistry;
         private List<CommunicationConnectionConfigInfoModel> _connectionConfigInfoModels = new();
 
         #endregion 配置
@@ -174,29 +198,31 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         public DefaultSortingService(ISettingsStore settingsStore,
             IPackageSessionStore packageSessionStore,
-           ILogisticsRegexRepository logisticsRegexRepository,
-            ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IBarCodeSortingRepository barCodeSortingRepository,
-            IBarCodeRegexRepository barCodeRegexRepository,
-            ILogisticsSortingRepository logisticsSortingRepository,
-            ILogisticsRuleRepository logisticsRuleRepository,
-            IOcrSortingRepository ocrSortingRepository,
-            IOcrRuleRepository ocrRuleRepository,
-            ISortingInstructionBindingRepository sortingInstructionBindingRepository,
-            ISortingInstructionRepository sortingInstructionRepository,
-            IVolumeSortingRepository volumeSortingRepository,
-            IWeightSortingRepository weightSortingRepository,
-            IVolumeRuleRepository volumeRuleRepository,
-            IWeightRuleRepository weightRuleRepository,
-            IApiSortingRepository apiSortingRepository,
+           ISortingRuleCatalog<LogisticsRegexInfoModel> logisticsRegexRepository,
+            ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> logisticsCodeRecognitionRepository,
+            IPackageExitManagement packageExitDefinitionRepository,
+            ISortingConfigurationCatalog<BarCodeSortingInfoModel> barCodeSortingRepository,
+            ISortingRuleCatalog<BarCodeRegexInfoModel> barCodeRegexRepository,
+            ISortingConfigurationCatalog<LogisticsSortingInfoModel> logisticsSortingRepository,
+            ISortingRuleCatalog<LogisticsRuleInfoModel> logisticsRuleRepository,
+            ISortingConfigurationCatalog<OcrSortingInfoModel> ocrSortingRepository,
+            ISortingRuleCatalog<OcrRuleInfoModel> ocrRuleRepository,
+            ISortingInstructionBindingCatalog sortingInstructionBindingRepository,
+            ISortingInstructionBindingCatalog sortingInstructionRepository,
+            ISortingConfigurationCatalog<VolumeSortingInfoModel> volumeSortingRepository,
+            ISortingConfigurationCatalog<WeightSortingInfoModel> weightSortingRepository,
+            ISortingRuleCatalog<VolumeRuleInfoModel> volumeRuleRepository,
+            ISortingRuleCatalog<WeightRuleInfoModel> weightRuleRepository,
+            ISortingConfigurationCatalog<ApiSortingInfoModel> apiSortingRepository,
            ISortingConnectionService sortingConnectionService,
-           ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
-            IApiRuleRepository apiRuleRepository,
+           ICommunicationConfigurationCatalog communicationConnectionConfigRepository,
+            ISortingRuleCatalog<ApiRuleInfoModel> apiRuleRepository,
             IExitMonitor exitMonitor,
             IStackedPackageService stackedPackageService,
-            IGrayscaleService grayscaleService)
+            IGrayscaleService grayscaleService,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
             _packageSessionStore = packageSessionStore;
             _logisticsRegexRepository = logisticsRegexRepository;
@@ -221,11 +247,21 @@ namespace JayTom.Dws.Client.Service.Sorting
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
             _grayscaleService = grayscaleService;
+            _strategyRegistry = new LegacySortingStrategyRegistry(
+            [
+                new(SortMode.BarcodeSorting, BarcodeSorting),
+                new(SortMode.WeightSorting, WeightSorting),
+                new(SortMode.VolumeSorting, VolumeSorting),
+                new(SortMode.LogisticsSorting, LogisticsSorting),
+                new(SortMode.OcrSorting, OcrSorting),
+                new(SortMode.ApiResponseSorting, ApiResponseSorting),
+                new(SortMode.CombinedWorkflowSorting, CombinedWorkflowSorting)
+            ]);
             _sortingDeadlineScheduler = new MonotonicDeadlineScheduler(
                 "SortingDeadlines",
                 ThreadPriority.AboveNormal);
-            _sortingDispatcher = new NonBlockingOrderedDispatcher<Func<Task>>(
-                static work => ExecuteSortingWork(work),
+            _sortingDispatcher = new AsyncOrderedDispatcher<Func<Task>>(
+                static work => work(),
                 (_, exception) =>
                 {
                     NLog.LogManager.GetCurrentClassLogger()
@@ -234,9 +270,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                     {
                         ExceptionMessage = exception.Message
                     });
-                },
-                "SortingWork",
-                ThreadPriority.AboveNormal);
+                });
             _packageSessionStore.PackageRemoved += (_, args) =>
                 RemoveConsumedApiCorrelation(args.RemovedPackage.CreateTime.Ticks);
 
@@ -352,108 +386,67 @@ namespace JayTom.Dws.Client.Service.Sorting
                 }
             };
             //格口更改
-            EventAggregator.Instance.Subscribe<LogisticsCodeRecognitionInfoModel>(models =>
+            _eventBus.Subscribe<LogisticsCodeRecognitionInfoModel>(models =>
             {
-                _ = ReloadLogisticsCodeRecognitionAsync();
+                ReloadLogisticsCodeRecognitionAsync()
+                    .Forget("重新加载物流识别配置");
             });
-            EventAggregator.Instance.Subscribe<LogisticsRegexInfoModel>(models =>
+            _eventBus.Subscribe<LogisticsRegexInfoModel>(models =>
             {
-                _ = ReloadLogisticsRegexAsync();
+                ReloadLogisticsRegexAsync()
+                    .Forget("重新加载物流正则配置");
             });
-            EventAggregator.Instance.Subscribe<PackageExitDefinitionInfoModel>(models =>
+            _eventBus.Subscribe<PackageExitDefinitionInfoModel>(models =>
             {
-                _ = ReloadPackageExitDefinitionsAsync();
+                ReloadPackageExitDefinitionsAsync()
+                    .Forget("重新加载格口配置");
+            });
+            _eventBus.Subscribe<SortingInstructionBindingInfoModel>(changedBinding =>
+            {
+                ReloadInstructionLookupsAsync()
+                    .Forget("重新加载指令索引");
+            });
+            _eventBus.Subscribe<SortingInstructionInfoModel>(changedInstruction =>
+            {
+                ReloadInstructionLookupsAsync()
+                    .Forget("重新加载指令绑定索引");
             });
             //触发方式
-            EventAggregator.Instance.SubscribePackage<PackageInfo>(item =>
+            _eventBus.SubscribePackage<PackageInfo>(item =>
             {
                 if (item is { } model)
                 {
-                    //不包含Api
-                    if (_sortingMethodDto.SortMode != SortMode.None &&
-                        _sortingMethodDto.SortMode != SortMode.ApiResponseSorting &&
-                        _sortingMethodDto.SortMode != SortMode.CombinedWorkflowSorting &&
-                        _sortingMethodDto.SortMode != SortMode.OcrSorting)
+                    if (!TryQueueStartupEvent(new PendingSortingEvent(model, null)))
                     {
-                        ExecuteSorting(new SortingParam()
-                        {
-                            Guid = model.Guid,
-                            BarCode = model.BarCodeInfo?.Barcode ?? string.Empty,
-                            Height = (decimal)(model.VolumeInfo?.FormattedHeight ?? 0),
-                            ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                            Weight = (decimal)(model.WeightInfo?.FormattedWeight ?? 0),
-                            Length = (decimal)(model.VolumeInfo?.FormattedLength ?? 0),
-                            Width = (decimal)(model.VolumeInfo?.FormattedWidth ?? 0),
-                            Volume = (decimal)(model.VolumeInfo?.FormattedVolume ?? 0),
-                            PackageCreationTime = model.CreateTime,
-                            PackageCreationInstruction = model.PackageCreationInstruction,
-                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                            IsStackedPackage = model.IsStackedPackage ?? false,
-                            LinkedCarCount = model.LinkedCarCount,
-                            Timestamp = model.Timestamp,
-                        });
+                        ProcessCompletedPackageForSorting(model);
                     }
                 }
             });
             //Api触发
-            EventAggregator.Instance.SubscribePackage<ApiResponseReceived>(item =>
+            _eventBus.SubscribePackage<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
-                    if (_sortingMethodDto.SortMode == SortMode.ApiResponseSorting)
+                    if (!TryQueueStartupEvent(new PendingSortingEvent(null, model)))
                     {
-                        if (!TryConsumeApiCorrelation(model, out var rejectionReason))
-                        {
-                            NLog.LogManager.GetCurrentClassLogger().Error(
-                                $"拒绝未通过包裹身份校验的 API 格口响应:{rejectionReason}");
-                            OnExceptionOccurred(new ExceptionEventArgs
-                            {
-                                ExceptionMessage = $"API 格口响应与运行包裹不匹配，已禁止发送:{rejectionReason}"
-                            });
-                            return;
-                        }
-
-                        ExecuteSorting(new SortingParam
-                        {
-                            Timestamp = model.Timestamp,
-                            Guid = model.Guid,
-                            BarCode = model.Barcode ?? string.Empty,
-                            ScanTime = model.ScanTime,
-                            PackageCreationTime = model.PackageCreationTime,
-                            PackageCreationInstruction = model.PackageCreationInstruction,
-                            IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
-                            ApiResponse = model.UploadResponse ?? new UploadResponse(),
-                            IsStackedPackage = model.IsStackedPackage,
-                            LinkedCarCount = model.LinkedCarCount
-                        });
+                        ProcessApiResponseForSorting(model);
                     }
                 }
             });
             //Ocr触发
-            EventAggregator.Instance.Subscribe<PackageOcrInfo>(item =>
+            _eventBus.Subscribe<PackageOcrInfo>(item =>
             {
                 if (item is { } model)
                 {
-                    if (_sortingMethodDto.SortMode == SortMode.OcrSorting)
+                    if (!TryQueueStartupEvent(new PendingSortingEvent(null, null, model)))
                     {
-                        ExecuteSorting(new SortingParam
-                        {
-                            Guid = model.RecognitionTimestamp,
-                            BarCode = model.BarCode ?? string.Empty,
-                            ScanTime = model.RecognitionTime,
-                            PackageCreationTime = model.RecognitionTime,
-                            PackageCreationInstruction = null,
-                            IsCreatedByLowerMachine = false,
-                            OcrInfo = model,
-                            IsStackedPackage = model.IsStackedPackage,
-                            Timestamp = model.RecognitionTimestamp,
-                        });
+                        ProcessOcrForSorting(model);
                     }
                 }
             });
 
             //备用格口分拣
-            EventAggregator.Instance.Subscribe<PushAlternateExitSorterEvent>(item =>
+            _eventBus.Subscribe<PushAlternateExitSorterEvent>(item =>
             {
                 if (item is { } model)
                 {
@@ -485,36 +478,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         public void ExecuteSorting(SortingParam param, CancellationToken token = default)
         {
-            switch (_sortingMethodDto.SortMode)
-            {
-                case SortMode.BarcodeSorting:
-                    BarcodeSorting(param, token);
-                    break;
-
-                case SortMode.WeightSorting:
-                    WeightSorting(param, token);
-                    break;
-
-                case SortMode.VolumeSorting:
-                    VolumeSorting(param, token);
-                    break;
-
-                case SortMode.LogisticsSorting:
-                    LogisticsSorting(param, token);
-                    break;
-
-                case SortMode.OcrSorting:
-                    OcrSorting(param, token);
-                    break;
-
-                case SortMode.ApiResponseSorting:
-                    ApiResponseSorting(param, token);
-                    break;
-
-                case SortMode.CombinedWorkflowSorting:
-                    CombinedWorkflowSorting(param, token);
-                    break;
-            }
+            _strategyRegistry.TryExecute(CurrentSortingMethod.SortMode, param, token);
         }
 
         public bool IsConnected => _sortingConnectionService.IsConnected;
@@ -566,6 +530,160 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         public bool RunningStatus { get; private set; }
 
+        /// <summary>在分拣服务就绪前按到达顺序暂存完成、API 和 OCR 事件。</summary>
+        private bool TryQueueStartupEvent(PendingSortingEvent pendingEvent)
+        {
+            if (Volatile.Read(ref _eventProcessingReady) == 1)
+            {
+                return false;
+            }
+
+            lock (_startupEventGate)
+            {
+                if (_eventProcessingReady == 1)
+                {
+                    return false;
+                }
+
+                _pendingStartupEvents.Enqueue(pendingEvent);
+                return true;
+            }
+        }
+
+        /// <summary>原子切换到运行状态并在当前线程按到达顺序排空启动期事件。</summary>
+        private void ActivateSortingEventProcessing()
+        {
+            lock (_startupEventGate)
+            {
+                Volatile.Write(ref _eventProcessingReady, 2);
+            }
+
+            while (true)
+            {
+                PendingSortingEvent pendingEvent;
+                lock (_startupEventGate)
+                {
+                    if (_pendingStartupEvents.Count == 0)
+                    {
+                        Volatile.Write(ref _eventProcessingReady, 1);
+                        return;
+                    }
+                    pendingEvent = _pendingStartupEvents.Dequeue();
+                }
+
+                try
+                {
+                    if (pendingEvent.CompletedPackage is not null)
+                    {
+                        ProcessCompletedPackageForSorting(pendingEvent.CompletedPackage);
+                    }
+                    else if (pendingEvent.ApiResponse is not null)
+                    {
+                        ProcessApiResponseForSorting(pendingEvent.ApiResponse);
+                    }
+                    else if (pendingEvent.OcrInfo is not null)
+                    {
+                        ProcessOcrForSorting(pendingEvent.OcrInfo);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    NLog.LogManager.GetCurrentClassLogger()
+                        .Error(exception, "消费启动期分拣事件失败");
+                }
+            }
+        }
+
+        /// <summary>按当前配置消费一个已完成包裹；无分拣模式时明确释放生命周期等待。</summary>
+        private void ProcessCompletedPackageForSorting(PackageInfo model)
+        {
+            var sortingMethod = CurrentSortingMethod;
+            if (sortingMethod.SortMode == SortMode.None)
+            {
+                model.MarkSortingInstructionNotRequired();
+                return;
+            }
+
+            model.MarkSortingInstructionExpected();
+            if (sortingMethod.SortMode != SortMode.ApiResponseSorting &&
+                sortingMethod.SortMode != SortMode.CombinedWorkflowSorting &&
+                sortingMethod.SortMode != SortMode.OcrSorting)
+            {
+                ExecuteSorting(new SortingParam
+                {
+                    Guid = model.Guid,
+                    BarCode = model.BarCodeInfo?.Barcode ?? string.Empty,
+                    Height = (decimal)(model.VolumeInfo?.FormattedHeight ?? 0),
+                    ScanTime = model.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                    Weight = (decimal)(model.WeightInfo?.FormattedWeight ?? 0),
+                    Length = (decimal)(model.VolumeInfo?.FormattedLength ?? 0),
+                    Width = (decimal)(model.VolumeInfo?.FormattedWidth ?? 0),
+                    Volume = (decimal)(model.VolumeInfo?.FormattedVolume ?? 0),
+                    PackageCreationTime = model.CreateTime,
+                    PackageCreationInstruction = model.PackageCreationInstruction,
+                    IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
+                    IsStackedPackage = model.IsStackedPackage ?? false,
+                    LinkedCarCount = model.LinkedCarCount,
+                    Timestamp = model.Timestamp
+                });
+            }
+        }
+
+        /// <summary>消费 API 响应前执行活动包裹的完整身份与一次性消费校验。</summary>
+        private void ProcessApiResponseForSorting(ApiResponseReceived model)
+        {
+            if (CurrentSortingMethod.SortMode != SortMode.ApiResponseSorting)
+            {
+                return;
+            }
+            if (!TryConsumeApiCorrelation(model, out var rejectionReason))
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(
+                    $"拒绝未通过包裹身份校验的 API 格口响应:{rejectionReason}");
+                OnExceptionOccurred(new ExceptionEventArgs
+                {
+                    ExceptionMessage = $"API 格口响应与运行包裹不匹配，已禁止发送:{rejectionReason}"
+                });
+                return;
+            }
+
+            ExecuteSorting(new SortingParam
+            {
+                Timestamp = model.Timestamp,
+                Guid = model.Guid,
+                BarCode = model.Barcode ?? string.Empty,
+                ScanTime = model.ScanTime,
+                PackageCreationTime = model.PackageCreationTime,
+                PackageCreationInstruction = model.PackageCreationInstruction,
+                IsCreatedByLowerMachine = model.IsCreatedByLowerMachine,
+                ApiResponse = model.UploadResponse ?? new UploadResponse(),
+                IsStackedPackage = model.IsStackedPackage,
+                LinkedCarCount = model.LinkedCarCount
+            });
+        }
+
+        /// <summary>按当前 OCR 分拣模式消费识别结果。</summary>
+        private void ProcessOcrForSorting(PackageOcrInfo model)
+        {
+            if (CurrentSortingMethod.SortMode != SortMode.OcrSorting)
+            {
+                return;
+            }
+
+            ExecuteSorting(new SortingParam
+            {
+                Guid = model.RecognitionTimestamp,
+                BarCode = model.BarCode ?? string.Empty,
+                ScanTime = model.RecognitionTime,
+                PackageCreationTime = model.RecognitionTime,
+                PackageCreationInstruction = null,
+                IsCreatedByLowerMachine = false,
+                OcrInfo = model,
+                IsStackedPackage = model.IsStackedPackage,
+                Timestamp = model.RecognitionTimestamp
+            });
+        }
+
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken token = default)
         {
             await _lifecycleGate.WaitAsync(token);
@@ -594,49 +712,47 @@ namespace JayTom.Dws.Client.Service.Sorting
                 try
                 {
                     _apiSettingsDto = await _settingsStore.GetAsync<ApiSettingsDto>("ApiSettings", token) ?? new ApiSettingsDto();
-                    _sortingMethodDto = await _settingsStore.GetAsync<SortingMethodDto>("SortingMethodSettings", token) ?? new SortingMethodDto();
+                    Volatile.Write(
+                        ref _sortingMethodDto,
+                        await _settingsStore.GetAsync<SortingMethodDto>("SortingMethodSettings", token) ??
+                        new SortingMethodDto());
                     _stackedPackageDetectionSettingsDto = await _settingsStore.GetAsync<StackedPackageDetectionSettingsDto>("StackedPackageDetectionSettings", token) ?? new StackedPackageDetectionSettingsDto();
 
                     _packageExitLockSettingsDto = await _settingsStore.GetAsync<PackageExitLockSettingsDto>("PackageExitLockSettings", token) ?? new PackageExitLockSettingsDto();
 
-                    Volatile.Write(
-                        ref _packageExitDefinitionInfos,
-                        [.. (await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.Id, token))]);
+                    PublishExitDefinitionSnapshot(
+                        [.. (await _packageExitDefinitionRepository.ListAsync(token))]);
 
                     Volatile.Write(
                         ref _logisticsCodeRecognitionInfos,
-                        [.. (await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0, o => o.Id, token))]);
+                        [.. (await _logisticsCodeRecognitionRepository.ListAsync(token))]);
                     Volatile.Write(
                         ref _logisticsRegexInfos,
-                        [.. (await _logisticsRegexRepository.Select(s => s.Id > 0, o => o.CreateTime, token))]);
-                    _barCodeSortingInfoModels = await _barCodeSortingRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _barCodeRegexInfos = await _barCodeRegexRepository.Select(s => s.Id > 0,
-                        o => o.Id, token);
-                    _logisticsSortingInfoModels = await _logisticsSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
-                    _logisticsRuleInfoModels = await _logisticsRuleRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _ocrSortingInfoModels = await _ocrSortingRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _ocrRuleInfoModels = await _ocrRuleRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
+                        [.. (await _logisticsRegexRepository.ListAsync(token))]);
+                    _barCodeSortingInfoModels = [.. await _barCodeSortingRepository.ListAsync(token)];
+                    _barCodeRegexInfos = [.. await _barCodeRegexRepository.ListAsync(token)];
+                    _logisticsSortingInfoModels = [.. await _logisticsSortingRepository.ListAsync(token)];
+                    _logisticsRuleInfoModels = [.. await _logisticsRuleRepository.ListAsync(token)];
+                    _ocrSortingInfoModels = [.. await _ocrSortingRepository.ListAsync(token)];
+                    _ocrRuleInfoModels = [.. await _ocrRuleRepository.ListAsync(token)];
 
-                    _sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _sortingInstructionInfoModels = await _sortingInstructionRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _volumeSortingInfoModels = await _volumeSortingRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _volumeRuleInfoModels = await _volumeRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
-                    _weightSortingInfoModels = await _weightSortingRepository.Select(s => s.Id > 0,
-                        o => o.CreateTime, token);
-                    _weightRuleInfoModels = await _weightRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
-                    _apiRuleInfoModels = await _apiRuleRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
-                    _apiSortingInfoModels = await _apiSortingRepository.Select(s => s.Id > 0, o => o.CreateTime, token);
-                    RebuildApiRuleSnapshot();
+                    var sortingInstructionBindings =
+                        await _sortingInstructionBindingRepository.ListAsync(token);
+                    var sortingInstructions =
+                        await _sortingInstructionRepository.ListInstructionsAsync(token);
+                    RebuildInstructionLookup(
+                        sortingInstructionBindings,
+                        sortingInstructions);
+                    _volumeSortingInfoModels = [.. await _volumeSortingRepository.ListAsync(token)];
+                    _volumeRuleInfoModels = [.. await _volumeRuleRepository.ListAsync(token)];
+                    _weightSortingInfoModels = [.. await _weightSortingRepository.ListAsync(token)];
+                    _weightRuleInfoModels = [.. await _weightRuleRepository.ListAsync(token)];
+                    var apiRules = await _apiRuleRepository.ListAsync(token);
+                    var apiSorting = await _apiSortingRepository.ListAsync(token);
+                    _apiRuleEvaluator.Replace(apiRules, apiSorting);
 
-                    _connectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(
-                        s => s.Id > 0, token);
+                    _connectionConfigInfoModels =
+                        [.. await _communicationConnectionConfigRepository.ListWithDetailsAsync(token)];
 
                     await _sortingConnectionService.ConfigurationInitializer();
                     var (key, value) = await _exitMonitor.Start(token);
@@ -711,6 +827,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                 }
 
                 RunningStatus = true;
+                ActivateSortingEventProcessing();
                 return new KeyValuePair<bool, string>(true, "已启动");
             }
             return new KeyValuePair<bool, string>(true, "已启动,无需再次启动");
@@ -734,6 +851,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// </summary>
         private async Task<KeyValuePair<bool, string>> StopCore(CancellationToken token)
         {
+            Volatile.Write(ref _eventProcessingReady, 0);
             try
             {
                 //停止
@@ -765,26 +883,25 @@ namespace JayTom.Dws.Client.Service.Sorting
             PackageCloudAbnormalSortingType abnormalSortingType,
             CancellationToken token)
         {
-            EventAggregator.Instance.Publish(new ExceptionSortingReceived
+            _eventBus.Publish(new ExceptionSortingReceived
             {
                 ScanTime = param.ScanTime,
                 BarCode = param.BarCode,
                 Timestamp = param.Timestamp,
                 PackageCloudAbnormalSortingType = abnormalSortingType
             });
-            var packageExitDefinitions = Volatile.Read(ref _packageExitDefinitionInfos);
-            var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f =>
-                f is { Type: ExitType.AbnormalExit, IsActive: true });
+            var packageExitDefinitionInfoModel = Volatile.Read(ref _exitSnapshot).ActiveAbnormalExit;
             if (packageExitDefinitionInfoModel is not null)
             {
                 //执行分拣
                 //判断指令提交方式
-                var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                    f.ExitId.Equals(packageExitDefinitionInfoModel.Id));
+                Volatile.Read(ref _sortingInstructionBindingByExit).TryGetValue(
+                    packageExitDefinitionInfoModel.Id,
+                    out var sortingInstructionBindingInfoModel);
 
                 if (sortingInstructionBindingInfoModel is not null)
                 {
-                    EventAggregator.Instance.Publish(new SortingExitReceived
+                    _eventBus.Publish(new SortingExitReceived
                     {
                         ScanTime = param.ScanTime,
                         BarCode = param.BarCode,
@@ -795,9 +912,9 @@ namespace JayTom.Dws.Client.Service.Sorting
                         Type = packageExitDefinitionInfoModel.Type,
                         SortingParam = param
                     });
-                    var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                            w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                        ?.ToList();
+                    Volatile.Read(ref _sortingInstructionsByBinding).TryGetValue(
+                        sortingInstructionBindingInfoModel.Id,
+                        out var sortingInstructionInfoModels);
 
                     var attach = new InstructionsAttach
                         {
@@ -813,7 +930,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                             ScanTime = param.ScanTime,
                             ExitId = packageExitDefinitionInfoModel.Id,
                             //先忽略物流
-                            SortingMode = _sortingMethodDto?.SortMode ?? SortMode.None,
+                            SortingMode = CurrentSortingMethod.SortMode,
                             PackageCreationTime = param.PackageCreationTime,
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
@@ -821,6 +938,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                         };
                     attach.ValidateBeforeSend = () =>
                         IsCurrentPackageIdentity(attach, out var reason) ? null : reason;
+                    attach.OnSendSucceeded = () => MarkSortingInstructionSent(attach);
                     QueueSortingWork(
                         () =>
                         {
@@ -834,7 +952,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                             _sortingConnectionService.SendInstructions(
                                 param.Tag ?? new object(),
                                 sortingInstructionBindingInfoModel.ExitId ?? 0,
-                                sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                            sortingInstructionInfoModels ?? [],
                                 TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                                 attach);
                             return Task.CompletedTask;
@@ -1067,21 +1185,11 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                 #endregion 邮政额外定制
             }
-            var apiRule = FindApiRule(param.ApiResponse);
-            if (apiRule is not null)
+            long? exitId = _apiRuleEvaluator.ResolveExitId(param.ApiResponse);
+            if (exitId is not null)
             {
-                Volatile.Read(ref _apiSortingLookup)
-                    .TryGetValue(apiRule.Rule.ApiSortingId, out var apiSortingInfoModel);
-                if (apiSortingInfoModel is not null)
-                {
-                    param.ExitId = apiSortingInfoModel.ExitId;
-                    SubSorting(param, token);
-                }
-                else
-                {
-                    //走异常口
-                    ExceptionSorting(param, PackageCloudAbnormalSortingType.NoPhysicalMailbox, token);
-                }
+                param.ExitId = exitId.Value;
+                SubSorting(param, token);
             }
             else
             {
@@ -1146,18 +1254,25 @@ namespace JayTom.Dws.Client.Service.Sorting
                 ExceptionSorting(param, PackageCloudAbnormalSortingType.StackedPackage, token);
                 return Task.CompletedTask;
             }
-            var packageExitDefinitions = Volatile.Read(ref _packageExitDefinitionInfos);
-            var packageExitDefinitionInfoModel = packageExitDefinitions.FirstOrDefault(f => f.Id.Equals(param.ExitId) &&
-                f is { IsActive: true });
+            var exitSnapshot = Volatile.Read(ref _exitSnapshot);
+            exitSnapshot.ExitLookup.TryGetValue(
+                param.ExitId,
+                out var packageExitDefinitionInfoModel);
+            if (packageExitDefinitionInfoModel is { IsActive: false })
+            {
+                packageExitDefinitionInfoModel = null;
+            }
             if (packageExitDefinitionInfoModel is not null)
             {
                 var effectiveExitDefinition = packageExitDefinitionInfoModel;
+                var effectiveExitIdentifier = packageExitDefinitionInfoModel.Id;
                 if (packageExitDefinitionInfoModel.IsLockExit || param.IsAlternateExitInstruction)
                 {
                     //判断备用格口
 
-                    var alternateExitDefinition = packageExitDefinitions.FirstOrDefault(f => f is { IsLockExit: false, IsActive: true } &&
-                        f.Pid == packageExitDefinitionInfoModel.Id);
+                    exitSnapshot.AlternateExitByParent.TryGetValue(
+                        packageExitDefinitionInfoModel.Id,
+                        out var alternateExitDefinition);
                     /*if (exitDefinitionInfoModel is null || _packageExitLockSettingsDto.IsAutoExceptionSorting) {
                         ExceptionSorting(param, PackageCloudAbnormalSortingType.LockExit, token);
                         return;
@@ -1166,7 +1281,8 @@ namespace JayTom.Dws.Client.Service.Sorting
                     if (alternateExitDefinition is not null)
                     {
                         effectiveExitDefinition = alternateExitDefinition;
-                        param.ExitId = alternateExitDefinition.Id;
+                        effectiveExitIdentifier = alternateExitDefinition.Id;
+                        param.ExitId = effectiveExitIdentifier;
                     }
                     else
                     {
@@ -1179,18 +1295,19 @@ namespace JayTom.Dws.Client.Service.Sorting
                     }
                 }
 
-                var sortingInstructionBindingInfoModel = _sortingInstructionBindingInfoModels.FirstOrDefault(f =>
-                    f.ExitId.Equals(param.ExitId));
+                Volatile.Read(ref _sortingInstructionBindingByExit).TryGetValue(
+                    effectiveExitIdentifier,
+                    out var sortingInstructionBindingInfoModel);
                 if (sortingInstructionBindingInfoModel is not null)
                 {
                     //回调格口信息
-                    EventAggregator.Instance.Publish(new SortingExitReceived
+                    _eventBus.Publish(new SortingExitReceived
                     {
                         ScanTime = param.ScanTime,
                         BarCode = param.BarCode,
                         Timestamp = param.Timestamp,
                         ExitName = effectiveExitDefinition.ExitName ?? string.Empty,
-                        ExitId = param.ExitId,
+                        ExitId = effectiveExitIdentifier,
                         ExitType = SortingExitType.PhysicalExit,
                         Type = effectiveExitDefinition.Type,
                         SortingParam = param
@@ -1198,9 +1315,9 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                     //执行分拣
                     //判断指令提交方式
-                    var sortingInstructionInfoModels = _sortingInstructionInfoModels.Where(w =>
-                            w.InstructionBindingId.Equals(sortingInstructionBindingInfoModel.Id))
-                        ?.ToList();
+                    Volatile.Read(ref _sortingInstructionsByBinding).TryGetValue(
+                        sortingInstructionBindingInfoModel.Id,
+                        out var sortingInstructionInfoModels);
                     var attach = new InstructionsAttach
                         {
                             BarCode = param.BarCode,
@@ -1213,9 +1330,9 @@ namespace JayTom.Dws.Client.Service.Sorting
                             Width = param.Width,
                             Weight = param.Weight,
                             ScanTime = param.ScanTime,
-                            ExitId = param.ExitId,
+                            ExitId = effectiveExitIdentifier,
                             //先忽略物流
-                            SortingMode = _sortingMethodDto?.SortMode ?? SortMode.None,
+                            SortingMode = CurrentSortingMethod.SortMode,
                             PackageCreationTime = param.PackageCreationTime,
                             PackageCreationInstruction = param.PackageCreationInstruction ?? string.Empty,
                             IsCreatedByLowerMachine = param.IsCreatedByLowerMachine,
@@ -1223,6 +1340,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                         };
                     attach.ValidateBeforeSend = () =>
                         IsCurrentPackageIdentity(attach, out var reason) ? null : reason;
+                    attach.OnSendSucceeded = () => MarkSortingInstructionSent(attach);
                     QueueSortingWork(
                         () =>
                         {
@@ -1235,8 +1353,8 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                             _sortingConnectionService.SendInstructions(
                                 param.Tag ?? new object(),
-                                sortingInstructionBindingInfoModel.ExitId ?? 0,
-                                sortingInstructionInfoModels ?? new List<SortingInstructionInfoModel>(),
+                                effectiveExitIdentifier,
+                                sortingInstructionInfoModels ?? [],
                                 TimeSpan.FromMilliseconds(sortingInstructionBindingInfoModel.SendIntervalMilliseconds),
                                 attach);
                             return Task.CompletedTask;
@@ -1345,134 +1463,23 @@ namespace JayTom.Dws.Client.Service.Sorting
             return true;
         }
 
-        /// <summary>包裹离开活动会话后清理一次性消费状态，保持集合有界。</summary>
+        /// <summary>在物理连接确认全部指令已写入后更新对应活动包裹的生命周期状态。</summary>
+        private void MarkSortingInstructionSent(InstructionsAttach attach)
+        {
+            var package = _packageSessionStore.GetPackage(attach.PackageCreationTime);
+            if (package is not null &&
+                IsCurrentPackageIdentity(attach, out _))
+            {
+                package.MarkSortingInstructionSent();
+            }
+        }
+
+        /// <summary>包裹离开活动会话后清理一次性 API 消费状态。</summary>
         private void RemoveConsumedApiCorrelation(long creationTimeTicks)
         {
             _consumedApiCorrelations.TryRemove(creationTimeTicks, out _);
         }
 
-        /// <summary>按配置优先级查找首条匹配规则，并让全部 JSON 规则共享一次响应解析。</summary>
-        private ApiRuleSnapshot? FindApiRule(UploadResponse apiResponse)
-        {
-            JsonDocument? responseDocument = null;
-            var responseParseAttempted = false;
-            try
-            {
-                foreach (var snapshot in Volatile.Read(ref _apiRuleSnapshots))
-                {
-                    var definition = snapshot.Definition;
-                    JsonElement? responseRoot = null;
-                    if (definition is { IsUseStringComparison: true, IsUseJsonField: true })
-                    {
-                        if (!responseParseAttempted) {
-                            responseDocument = TryParseApiResponse(apiResponse.ResponseContent);
-                            responseParseAttempted = true;
-                        }
-                        responseRoot = responseDocument?.RootElement;
-                    }
-
-                    if (ValidateApiRule(apiResponse, definition, responseRoot)) {
-                        return snapshot;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                NLog.LogManager.GetCurrentClassLogger().Error(e, "匹配 API 分拣规则失败");
-            }
-            finally {
-                responseDocument?.Dispose();
-            }
-
-            return null;
-        }
-
-        /// <summary>使用已经共享解析的响应文档校验单条 API 规则。</summary>
-        private static bool ValidateApiRule(
-            UploadResponse apiResponse,
-            ApiRuleJsonDto? definition,
-            JsonElement? responseRoot) {
-            if (definition is null ||
-                definition.ResponseStatus !=
-                (apiResponse.IsSuccess ? UploadStatus.Succeeded : UploadStatus.Failed)) {
-                return false;
-            }
-            if (!definition.IsUseStringComparison) {
-                return true;
-            }
-            if (definition.IsUseStringSearch) {
-                return definition.SearchDirection == SearchDirection.Forward
-                    ? apiResponse.ResponseContent.IndexOf(
-                        definition.SearchStringContent,
-                        StringComparison.Ordinal) >= 0
-                    : apiResponse.ResponseContent.LastIndexOf(
-                        definition.SearchStringContent,
-                        StringComparison.Ordinal) >= 0;
-            }
-            if (!definition.IsUseJsonField || responseRoot is null) {
-                return false;
-            }
-
-            var fieldValue = FindFieldValue(
-                responseRoot.Value,
-                definition.JsonField,
-                definition.SearchDirection);
-            return fieldValue.HasValue &&
-                string.Equals(
-                    fieldValue.Value.ToString(),
-                    definition.JsonFieldValue,
-                    StringComparison.Ordinal);
-        }
-
-        /// <summary>清理接口响应中的控制字符并只解析一次 JSON 文档。</summary>
-        private static JsonDocument? TryParseApiResponse(string responseContent) {
-            try {
-                var unescapedContent = Regex.Unescape(responseContent);
-                var sanitizedContent = Regex.Replace(
-                    unescapedContent,
-                    @"[\u0000-\u001D\b]",
-                    string.Empty);
-                return JsonDocument.Parse(sanitizedContent);
-            }
-            catch (Exception exception) when (
-                exception is ArgumentException or System.Text.Json.JsonException) {
-                NLog.LogManager.GetCurrentClassLogger()
-                    .Warn(exception, "API 响应不是有效 JSON");
-                return null;
-            }
-        }
-
-        /// <summary>在配置加载阶段完成 API 规则反序列化、优先级排序和格口索引构建。</summary>
-        private void RebuildApiRuleSnapshot()
-        {
-            var snapshots = _apiRuleInfoModels
-                .Select(rule => new ApiRuleSnapshot(rule, TryParseApiRule(rule.JsonContent)))
-                .Where(snapshot => snapshot.Definition is not null)
-                .OrderByDescending(snapshot => snapshot.Definition!.IsUseStringComparison)
-                .ThenByDescending(snapshot => snapshot.Definition!.IsUseJsonField)
-                .ThenByDescending(snapshot => snapshot.Definition!.IsUseStringSearch)
-                .ThenBy(snapshot => snapshot.Definition!.ResponseStatus)
-                .ToArray();
-            var sortingLookup = _apiSortingInfoModels
-                .GroupBy(sorting => sorting.Id)
-                .ToDictionary(group => group.Key, group => group.Last());
-            Volatile.Write(ref _apiRuleSnapshots, snapshots);
-            Volatile.Write(ref _apiSortingLookup, sortingLookup);
-        }
-
-        /// <summary>解析单条 API 规则；无效配置在加载阶段隔离，不进入响应热路径。</summary>
-        private static ApiRuleJsonDto? TryParseApiRule(string json)
-        {
-            try
-            {
-                return JsonConvert.DeserializeObject<ApiRuleJsonDto>(json);
-            }
-            catch (Exception exception)
-            {
-                NLog.LogManager.GetCurrentClassLogger().Error(exception, "API 分拣规则解析失败");
-                return null;
-            }
-        }
 
         private bool ValidateOcrRule(PackageOcrInfo ocrInfo, string json)
         {
@@ -1567,7 +1574,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             if (param.ApiResponse.ExceptionMsg.Contains("接口访问返回超时"))
             {
-                EventAggregator.Instance.Publish(new ExceptionSortingReceived
+                _eventBus.Publish(new ExceptionSortingReceived
                 {
                     ScanTime = param.ScanTime,
                     BarCode = param.BarCode,
@@ -1577,7 +1584,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
             else if (param.ApiResponse.ExceptionMsg.Contains("接口访问异常"))
             {
-                EventAggregator.Instance.Publish(new ExceptionSortingReceived
+                _eventBus.Publish(new ExceptionSortingReceived
                 {
                     ScanTime = param.ScanTime,
                     BarCode = param.BarCode,
@@ -1587,7 +1594,7 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
             else if (param.BarCode.ToLower().Equals("noread"))
             {
-                EventAggregator.Instance.Publish(new ExceptionSortingReceived
+                _eventBus.Publish(new ExceptionSortingReceived
                 {
                     ScanTime = param.ScanTime,
                     BarCode = param.BarCode,
@@ -1597,74 +1604,11 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
         }
 
-        private static JsonElement? FindFieldValue(JsonElement root, string fieldName, SearchDirection direction = SearchDirection.Forward)
-        {
-            try
-            {
-                var stack = new Stack<JsonElement>();
-                stack.Push(root);
-
-                JsonElement? lastMatch = null;
-
-                while (stack.Count > 0)
-                {
-                    var element = stack.Pop();
-
-                    switch (element.ValueKind)
-                    {
-                        case JsonValueKind.Object when element.TryGetProperty(fieldName, out var field):
-                            lastMatch = field;
-                            if (direction == SearchDirection.Forward)
-                            {
-                                continue;
-                            }
-                            break;
-
-                        case JsonValueKind.Object:
-                            {
-                                foreach (var property in element.EnumerateObject())
-                                {
-                                    stack.Push(property.Value);
-                                }
-
-                                break;
-                            }
-                        case JsonValueKind.Array:
-                            {
-                                var length = element.GetArrayLength();
-                                if (direction == SearchDirection.Forward) {
-                                    for (var index = 0; index < length; index++) {
-                                        stack.Push(element[index]);
-                                    }
-                                }
-                                else {
-                                    for (var index = length - 1; index >= 0; index--) {
-                                        stack.Push(element[index]);
-                                    }
-                                }
-
-                                break;
-                            }
-                    }
-                }
-
-                return lastMatch;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-
-            return null;
-        }
-
         private async Task ReloadLogisticsCodeRecognitionAsync()
         {
             try
             {
-                var items = await _logisticsCodeRecognitionRepository.Select(
-                    item => item.Id > 0,
-                    item => item.Id);
+                var items = await _logisticsCodeRecognitionRepository.ListAsync();
                 Volatile.Write(ref _logisticsCodeRecognitionInfos, [.. items]);
             }
             catch (Exception e)
@@ -1678,9 +1622,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             try
             {
-                var items = await _logisticsRegexRepository.Select(
-                    item => item.Id > 0,
-                    item => item.CreateTime);
+                var items = await _logisticsRegexRepository.ListAsync();
                 Volatile.Write(ref _logisticsRegexInfos, [.. items]);
             }
             catch (Exception e)
@@ -1694,10 +1636,8 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             try
             {
-                var items = await _packageExitDefinitionRepository.Select(
-                    item => item.Id > 0,
-                    item => item.Id);
-                Volatile.Write(ref _packageExitDefinitionInfos, [.. items]);
+                var items = await _packageExitDefinitionRepository.ListAsync();
+                PublishExitDefinitionSnapshot([.. items]);
             }
             catch (Exception e)
             {
@@ -1706,23 +1646,86 @@ namespace JayTom.Dws.Client.Service.Sorting
             }
         }
 
+        /// <summary>在配置变化后异步重建格口指令只读索引。</summary>
+        private async Task ReloadInstructionLookupsAsync()
+        {
+            try
+            {
+                var bindingsTask = _sortingInstructionBindingRepository.ListAsync();
+                var instructionsTask = _sortingInstructionRepository.ListInstructionsAsync();
+                await Task.WhenAll(bindingsTask, instructionsTask).ConfigureAwait(false);
+                RebuildInstructionLookup(
+                    await bindingsTask.ConfigureAwait(false),
+                    await instructionsTask.ConfigureAwait(false));
+            }
+            catch (Exception e)
+            {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Error(e, "刷新格口指令索引失败");
+            }
+        }
+
         private void ReplaceExitLockStatus(PackageExitDefinitionInfoModel changedStatus)
         {
-            PackageExitDefinitionInfoModel[] current;
-            PackageExitDefinitionInfoModel[] updated;
+            SortingExitSnapshot current;
+            SortingExitSnapshot updated;
             do
             {
-                current = Volatile.Read(ref _packageExitDefinitionInfos);
-                updated = [.. current
+                current = Volatile.Read(ref _exitSnapshot);
+                var updatedItems = current.Items
                     .Select(item => item.Id == changedStatus.Id
                         ? CloneExitDefinition(item, changedStatus.IsLockExit)
-                        : item)];
+                        : item)
+                    .ToArray();
+                updated = BuildExitDefinitionSnapshot(updatedItems);
             } while (!ReferenceEquals(
                          Interlocked.CompareExchange(
-                             ref _packageExitDefinitionInfos,
+                             ref _exitSnapshot,
                              updated,
                              current),
                          current));
+        }
+
+        /// <summary>一次性编译格口到绑定及绑定到指令的查询快照。</summary>
+        private void RebuildInstructionLookup(
+            IEnumerable<SortingInstructionBindingInfoModel> bindings,
+            IEnumerable<SortingInstructionInfoModel> instructions)
+        {
+            var bindingByExit = bindings
+                .Where(binding => binding is { IsActive: true, ExitId: not null })
+                .GroupBy(binding => binding.ExitId!.Value)
+                .ToDictionary(group => group.Key, group => group.Last());
+            var instructionsByBinding = instructions
+                .GroupBy(instruction => instruction.InstructionBindingId)
+                .ToDictionary(group => group.Key, group => group.ToArray());
+            Volatile.Write(ref _sortingInstructionBindingByExit, bindingByExit);
+            Volatile.Write(ref _sortingInstructionsByBinding, instructionsByBinding);
+        }
+
+        /// <summary>原子发布格口数组及其派生查询索引。</summary>
+        private void PublishExitDefinitionSnapshot(PackageExitDefinitionInfoModel[] items)
+        {
+            Volatile.Write(ref _exitSnapshot, BuildExitDefinitionSnapshot(items));
+        }
+
+        /// <summary>根据格口数组构建可一次性原子发布的完整查询快照。</summary>
+        private static SortingExitSnapshot BuildExitDefinitionSnapshot(
+            PackageExitDefinitionInfoModel[] items)
+        {
+            var exitLookup = items
+                .GroupBy(item => item.Id)
+                .ToDictionary(group => group.Key, group => group.Last());
+            var alternateExitByParent = items
+                .Where(item => item is { IsLockExit: false, IsActive: true })
+                .GroupBy(item => item.Pid)
+                .ToDictionary(group => group.Key, group => group.First());
+            var activeAbnormalExit = items.FirstOrDefault(item => item is
+                { Type: ExitType.AbnormalExit, IsActive: true });
+            return new SortingExitSnapshot(
+                items,
+                exitLookup,
+                alternateExitByParent,
+                activeAbnormalExit);
         }
 
         private static PackageExitDefinitionInfoModel CloneExitDefinition(
@@ -1769,19 +1772,33 @@ namespace JayTom.Dws.Client.Service.Sorting
                     ExceptionMessage = "分拣任务队列已停止，任务未执行"
                 });
             }
+            ReportSortingPerformanceWatermarkIfDue();
         }
 
-        /// <summary>在分拣专属线程上同步观察异步任务完成，保持严格顺序。</summary>
-        private static void ExecuteSortingWork(Func<Task> work)
+        /// <summary>低频报告分拣计算队列排队、执行和积压水位。</summary>
+        private void ReportSortingPerformanceWatermarkIfDue()
         {
-            var awaiter = work().ConfigureAwait(false).GetAwaiter();
-            if (!awaiter.IsCompleted)
+            var now = Stopwatch.GetTimestamp();
+            var previous = Volatile.Read(ref _lastSortingPerformanceReportTimestamp);
+            if (Stopwatch.GetElapsedTime(previous, now) < TimeSpan.FromMinutes(1) ||
+                Interlocked.CompareExchange(
+                    ref _lastSortingPerformanceReportTimestamp,
+                    now,
+                    previous) != previous)
             {
-                using var completed = new AutoResetEvent(false);
-                awaiter.UnsafeOnCompleted(() => completed.Set());
-                completed.WaitOne();
+                return;
             }
-            awaiter.GetResult();
+
+            var queueDelay = _sortingDispatcher.TakeMaximumQueueDelayMicroseconds();
+            var handlerDuration = _sortingDispatcher.TakeMaximumHandlerDurationMicroseconds();
+            var pending = _sortingDispatcher.PendingCount;
+            if (queueDelay < 50_000 && handlerDuration < 50_000 && pending <= 32)
+            {
+                return;
+            }
+
+            NLog.LogManager.GetCurrentClassLogger().Warn(
+                $"分拣热路径性能水位(us):排队={queueDelay},执行={handlerDuration},待处理={pending}");
         }
 
         /// <summary>
@@ -1812,6 +1829,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                     RegexTimeout));
             return regex.IsMatch(input ?? string.Empty);
         }
+
 
         protected virtual void OnCreatePackageEvent(PackageInstructionEventArgs e)
         {

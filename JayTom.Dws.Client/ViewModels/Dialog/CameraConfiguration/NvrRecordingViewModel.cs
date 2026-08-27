@@ -1,4 +1,6 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.PackageHistory;
+using JayTom.Dws.Application.CameraConfigurations;
 using System;
 using System.IO;
 using Prism.Mvvm;
@@ -13,28 +15,27 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.ComponentModel;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using JayTom.Dws.Plugin.Speech;
 using System.Windows.Threading;
 using NPOI.SS.Formula.Functions;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using System.Windows.Controls.Primitives;
 using JayTom.Dws.Client.Models.DataModels;
-using JayTom.Dws.Domain.Dto.LocalVideoDto;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.LocalVideoDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.VideoSettingModel;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Client.Attributes.WinClientAttributes;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR.DaHuatechNVR;
@@ -44,8 +45,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
 
     public class NvrRecordingViewModel : BindableBase
     {
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
-        private readonly IPackageRepository _packageRepository;
+        private readonly ICameraConfigurationCatalog<NvrCameraBindingInfoModel> _nvrCameraBindingRepository;
+        private readonly IPackageHistoryQueryService _packageHistory;
         private readonly ISettingsStore _settingsStore;
         private ObservableCollection<VideoPlayerModel> _videoPlayerItems = new();
 
@@ -92,12 +93,13 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         private PackageItemModel _packageItemModel = new();
         private VideoPlaybackSettingsInfoModel _videoPlaybackSettingsInfo = new();
 
-        public NvrRecordingViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
-            IPackageRepository packageRepository,
+        public NvrRecordingViewModel(
+            ICameraConfigurationCatalog<NvrCameraBindingInfoModel> nvrCameraBindingRepository,
+            IPackageHistoryQueryService packageHistory,
             ISettingsStore settingsStore)
         {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
-            _packageRepository = packageRepository;
+            _packageHistory = packageHistory;
             _settingsStore = settingsStore;
         }
 
@@ -278,7 +280,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 VideoLengthInSeconds = settingsDto.VideoLengthInSeconds,
             };
 
-            var (b, packageInfoModel) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageTimestamped.Equals(PackageItemModel.TimestampMilliseconds));
+            var packageInfoModel = await _packageHistory.FindByTimestampAsync(PackageItemModel.TimestampMilliseconds);
 
             var serialNumber = packageInfoModel?.BarCodeInfo?.SerialNumber;
             if (serialNumber is null)
@@ -360,7 +362,8 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
 
                     if (players.Count > 0)
                     {
-                        _daHuatechNvr.LogOut(players[0].IpAddress);
+                        _daHuatechNvr.LogOut(players[0].IpAddress)
+                            .Forget("退出录像机连接");
                     }
                 }
             }
@@ -403,7 +406,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                     await Task.WhenAll(VideoPlayerItems.Select(async item =>
                     {
                         item.IsBuffering = true;
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                        await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                         {
                             var (key, value) = await _daHuatechNvr.QueryVideoFile(item.IpAddress,
                                 item.Channel, CurrentTime, EndTime, (int)SelectPlaybackStream);
@@ -418,7 +421,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                                     {
                                         if (info.LoadSize > _loadedSize)
                                         {
-                                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                            await UiThread.Dispatcher.InvokeAsync(() =>
                                             {
                                                 _loadedSize = Math.Max(_loadedSize, info.LoadSize);
                                                 if (item.IsBuffering)
@@ -690,7 +693,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                              StartTime.AddSeconds(-2), EndTime, (int)SelectPlaybackStream,
                              saveFileDialog.FileName, async info =>
                              {
-                                 await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                                 await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                                  {
                                      if (info.IsDownloadComplete)
                                      {

@@ -5,26 +5,29 @@ using System.Linq;
 using System.Drawing;
 using System.Threading;
 using System.Globalization;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Abstractions.Integrations.Ftp;
 using JayTom.Dws.Abstractions.Imaging;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Domain.Converters;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
+using JayTom.Dws.Application.Workflows;
 using WatermarkPosition = JayTom.Dws.Plugin.SaveImage.WatermarkPosition;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.ImageService
 {
 
-    public class DefaultImageStorageService : IImageStorageService
+    public class DefaultImageStorageService : IImageStorageService, IAsyncDisposable
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         /// <summary>
         /// 用于清除水印和文件名中控制字符的复用正则。
         /// </summary>
@@ -33,17 +36,28 @@ namespace JayTom.Dws.Client.Service.ImageService
         private readonly ISaveImage _saveImage;
         private readonly ISettingsStore _settingsStore;
         private readonly IFtp _ftp;
+        /// <summary>限制长时间 FTP 故障期间保留在内存中的远程上传任务数量。</summary>
+        private const long MaximumPendingFtpUploads = 4_096;
+        /// <summary>隔离本地存图与远程 FTP 网络延迟的顺序上传器。</summary>
+        private readonly AsyncOrderedDispatcher<FtpUploadWork> _ftpUploadDispatcher;
+        /// <summary>停止 FTP 上传工作器时使用的取消源。</summary>
+        private readonly CancellationTokenSource _ftpShutdown = new();
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private readonly SemaphoreSlim _saveSemaphore = new(1, 1);
         private VolumeSettingsDto? _volumeSettingsDto;
 
         public DefaultImageStorageService(ISaveImage saveImage, ISettingsStore settingsStore,
-            IFtp ftp)
+            IFtp ftp,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _saveImage = saveImage;
             _settingsStore = settingsStore;
             _ftp = ftp;
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings =>
+            _ftpUploadDispatcher = new AsyncOrderedDispatcher<FtpUploadWork>(
+                ProcessFtpUploadAsync,
+                (_, exception) => OnImageSaveFailed(exception));
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async settings =>
             {
                 switch (settings)
                 {
@@ -53,17 +67,6 @@ namespace JayTom.Dws.Client.Service.ImageService
                             try
                             {
                                 ImageSettingsDto = await _settingsStore.GetAsync<ImageSettingsDto>(model.SettingsName) ?? new ImageSettingsDto();
-                                if (ImageSettingsDto.IsFtpUploadEnabled && !_ftp.IsConnected)
-                                {
-                                    var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
-                                        ImageSettingsDto.FtpInfo.Port,
-                                        ImageSettingsDto.FtpInfo.Username,
-                                        ImageSettingsDto.FtpInfo.Password);
-                                    if (!key)
-                                    {
-                                        OnImageSaveFailed(new Exception(value));
-                                    }
-                                }
                             }
                             catch (Exception exception)
                             {
@@ -93,7 +96,14 @@ namespace JayTom.Dws.Client.Service.ImageService
             });
         }
 
-        public ImageSettingsDto? ImageSettingsDto { get; private set; }
+        /// <summary>保存可原子替换的存图配置，单次保存全程使用同一版本。</summary>
+        private ImageSettingsDto? _imageSettingsDto;
+
+        public ImageSettingsDto? ImageSettingsDto
+        {
+            get => Volatile.Read(ref _imageSettingsDto);
+            private set => Volatile.Write(ref _imageSettingsDto, value);
+        }
 
         public event EventHandler<Exception>? ImageSaveFailed;
 
@@ -124,25 +134,19 @@ namespace JayTom.Dws.Client.Service.ImageService
             var drawingImage = image.As<Image>();
             try
             {
-                ImageSettingsDto ??= await _settingsStore
-                    .GetAsync<ImageSettingsDto>("SaveImageSettings", cancellationToken)
-                    ?? new ImageSettingsDto();
+                var imageSettings = ImageSettingsDto;
+                if (imageSettings is null)
+                {
+                    imageSettings = await _settingsStore
+                        .GetAsync<ImageSettingsDto>("SaveImageSettings", cancellationToken)
+                        ?? new ImageSettingsDto();
+                    ImageSettingsDto = imageSettings;
+                }
                 var configurationLockTaken = false;
                 try
                 {
                     await _semaphore.WaitAsync(cancellationToken);
                     configurationLockTaken = true;
-                    if (ImageSettingsDto.IsFtpUploadEnabled && !_ftp.IsConnected)
-                    {
-                        var (key, value) = await _ftp.Connect(ImageSettingsDto.FtpInfo.IpAddress,
-                            ImageSettingsDto.FtpInfo.Port,
-                            ImageSettingsDto.FtpInfo.Username,
-                            ImageSettingsDto.FtpInfo.Password, cancellationToken);
-                        if (!key)
-                        {
-                            OnImageSaveFailed(new Exception(value));
-                        }
-                    }
                     _volumeSettingsDto ??= await _settingsStore
                         .GetAsync<VolumeSettingsDto>("VolumeSettings", cancellationToken)
                         ?? new VolumeSettingsDto();
@@ -162,7 +166,7 @@ namespace JayTom.Dws.Client.Service.ImageService
                 {
                     await _saveSemaphore.WaitAsync(cancellationToken);
                     saveLockTaken = true;
-                var pathList = ImageSettingsDto.SubDirectoryTemplate?
+                var pathList = imageSettings.SubDirectoryTemplate?
                     .Where(w => w is { ApplicationType: ItemApplicationType.SubDirectory, Type: 1 })?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                         volume, cameraSerialNumber))?
@@ -173,9 +177,9 @@ namespace JayTom.Dws.Client.Service.ImageService
                     return;
                 }
 
-                var fullPath = $"{ImageSettingsDto.ImageRootDirectory}\\{string.Join("\\", pathList)}";
+                var fullPath = $"{imageSettings.ImageRootDirectory}\\{string.Join("\\", pathList)}";
                 //解析图片命名模板
-                var imageNaminglist = ImageSettingsDto.ImageNamingTemplate
+                var imageNaminglist = imageSettings.ImageNamingTemplate
                     ?.Where(w => w.ApplicationType == ItemApplicationType.ImageNaming)?
                     .Select(s => ParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                         volume, cameraSerialNumber))
@@ -189,10 +193,10 @@ namespace JayTom.Dws.Client.Service.ImageService
                 var imageName = string.Join("_", imageNaminglist);
                 WatermarkParams? watermarkParams = null;
                 //判断是否需要水印
-                if (ImageSettingsDto.IsUseWatermark)
+                if (imageSettings.IsUseWatermark)
                 {
                     //解析水印模板(使用图片命名解析)
-                    var watermarkList = ImageSettingsDto.WatermarkInfo.ItemTemplate
+                    var watermarkList = imageSettings.WatermarkInfo.ItemTemplate
                         ?.Where(w => w.ApplicationType == ItemApplicationType.Watermark)?
                         .Select(s => WatermarkParseTemplate(s.Content, type, barCode, weight, scanTime, length, width, height,
                             volume, cameraSerialNumber, true))
@@ -204,18 +208,18 @@ namespace JayTom.Dws.Client.Service.ImageService
                     }
                     watermarkParams = new WatermarkParams()
                     {
-                        FontSize = ImageSettingsDto.WatermarkInfo.WatermarkFontSize,
-                        WatermarkColor = Color.FromArgb(ImageSettingsDto.WatermarkInfo.WatermarkColor.A,
-                            ImageSettingsDto.WatermarkInfo.WatermarkColor.R,
-                            ImageSettingsDto.WatermarkInfo.WatermarkColor.G,
-                            ImageSettingsDto.WatermarkInfo.WatermarkColor.B),
-                        WatermarkPosition = (WatermarkPosition)ImageSettingsDto.WatermarkInfo.WatermarkPosition,
+                        FontSize = imageSettings.WatermarkInfo.WatermarkFontSize,
+                        WatermarkColor = Color.FromArgb(imageSettings.WatermarkInfo.WatermarkColor.A,
+                            imageSettings.WatermarkInfo.WatermarkColor.R,
+                            imageSettings.WatermarkInfo.WatermarkColor.G,
+                            imageSettings.WatermarkInfo.WatermarkColor.B),
+                        WatermarkPosition = (WatermarkPosition)imageSettings.WatermarkInfo.WatermarkPosition,
                         WatermarkContent = watermarkList
                     };
                 }
 
                 //判断是否保存原图
-                if (ImageSettingsDto.IsSaveOriginalImage)
+                if (imageSettings.IsSaveOriginalImage)
                 {
                     var (key, value) = await _saveImage.SaveOriginalImage(drawingImage, imageName, fullPath, watermarkParams,
                         cancellationToken);
@@ -264,27 +268,30 @@ namespace JayTom.Dws.Client.Service.ImageService
                 }
 
                 //判断是否需要上传Ftp
-                if (ImageSettingsDto.IsFtpUploadEnabled)
+                if (imageSettings.IsFtpUploadEnabled)
                 {
                     var path = $"{fullPath}\\{imageName}.{"jpg"}";
                     if (File.Exists(path))
                     {
-                        var (key, value) = await _ftp.UploadFile(path,
-                            path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty),
-                            cancellationToken);
-                        if (!key)
+                        var ftpInfo = imageSettings.FtpInfo;
+                        if (_ftpUploadDispatcher.PendingCount >= MaximumPendingFtpUploads)
                         {
-                            throw new InvalidOperationException(value);
+                            OnImageSaveFailed(new InvalidOperationException(
+                                $"FTP 上传积压已达到保护上限 {MaximumPendingFtpUploads}，" +
+                                $"本地图片已保留:{path}"));
                         }
-                        else
+                        else if (!_ftpUploadDispatcher.TryEnqueue(new FtpUploadWork(
+                                path,
+                                path.Replace(
+                                    imageSettings.ImageRootDirectory,
+                                    string.Empty),
+                                ftpInfo.IpAddress,
+                                ftpInfo.Port,
+                                ftpInfo.Username,
+                                ftpInfo.Password)))
                         {
-                            EventAggregator.Instance.Publish(new FtpLogInfoModel()
-                            {
-                                Type = LogType.Information,
-                                CreateTime = DateTime.Now,
-                                Message = $"FTP上传:{path.Replace(ImageSettingsDto.ImageRootDirectory, string.Empty)}",
-                                FtpCommunicationType = FtpCommunicationType.Upload
-                            });
+                            OnImageSaveFailed(new InvalidOperationException(
+                                "FTP 上传队列已经停止"));
                         }
                     }
                     else
@@ -311,6 +318,53 @@ namespace JayTom.Dws.Client.Service.ImageService
             {
                 image.Dispose();
             }
+        }
+
+        /// <summary>在低优先级专用线程中连接 FTP 并上传已落盘文件。</summary>
+        private async Task ProcessFtpUploadAsync(FtpUploadWork work)
+        {
+            var token = _ftpShutdown.Token;
+            token.ThrowIfCancellationRequested();
+            if (!_ftp.IsConnected)
+            {
+                var (connected, message) = await _ftp.Connect(
+                        work.Server,
+                        work.Port,
+                        work.Username,
+                        work.Password,
+                        token);
+                if (!connected)
+                {
+                    throw new InvalidOperationException(message);
+                }
+            }
+
+            var (uploaded, uploadMessage) = await _ftp.UploadFile(
+                    work.LocalPath,
+                    work.RemotePath,
+                    token);
+            if (!uploaded)
+            {
+                throw new InvalidOperationException(uploadMessage);
+            }
+
+            _eventBus.Publish(new FtpLogInfoModel
+            {
+                Type = LogType.Information,
+                CreateTime = DateTime.Now,
+                Message = $"FTP上传:{work.RemotePath}",
+                FtpCommunicationType = FtpCommunicationType.Upload
+            });
+        }
+
+        /// <summary>停止远程上传器并释放图像服务持有的同步资源。</summary>
+        public async ValueTask DisposeAsync()
+        {
+            _ftpShutdown.Cancel();
+            await _ftpUploadDispatcher.DisposeAsync().ConfigureAwait(false);
+            _ftpShutdown.Dispose();
+            _saveSemaphore.Dispose();
+            _semaphore.Dispose();
         }
 
         public string ParseTemplate(string source, SaveImageType type, string barCode, decimal weight, DateTime scanTime, decimal length,

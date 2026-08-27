@@ -80,6 +80,7 @@
 
   <ItemGroup>
     <PackageReference Include="DryIoc.Microsoft.DependencyInjection.Extension" />
+    <PackageReference Include="FFmpeg.AutoGen" />
     <PackageReference Include="gong-wpf-dragdrop" />
     <PackageReference Include="LottieSharp" />
     <PackageReference Include="MaterialDesignThemes" />
@@ -100,8 +101,8 @@
     <ProjectReference Include="..\JayTom.Dws.Integrations.Contracts\JayTom.Dws.Integrations.Contracts.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
-    <ProjectReference Include="..\JayTom.Dws.Nvr\JayTom.Dws.Nvr.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin.Abstractions\JayTom.Dws.Plugin.Abstractions.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Plugin.Runtime\JayTom.Dws.Plugin.Runtime.csproj" />
     <ProjectReference Include="..\JayTom.Dws.PluginInterface\JayTom.Dws.PluginInterface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
@@ -158,6 +159,10 @@
     <None Update="Nlog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\eng\native-assets.win-x64.json" Link="native-assets.win-x64.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
     <None Update="Sound\fail.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -204,6 +209,15 @@
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
                              Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- ONNX Runtime 已复制到应用根目录；移除项目引用链额外带入的相同 RID 嵌套副本。 -->
+  <Target Name="RemoveDuplicateRuntimeNativeAssetsFromPublish"
+          AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('runtimes\win-x64\native\onnxruntime'))" />
     </ItemGroup>
   </Target>
 </Project>

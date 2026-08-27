@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalData {
+namespace JayTom.Dws.Models.LocalData {
 
     [Table("Data_SoundInfo", Schema = "dbo")]
     public class SoundInfoModel : BaseModel {
@@ -21,7 +21,11 @@ namespace JayTom.Dws.Data.LocalData {
         /// <summary>
         /// 声音文件
         /// </summary>
-        [Column("SoundFile"), Required, InsertOrUpdate]
+        [NotMapped]
         public byte[]? SoundFile { get; set; }
+
+        /// <summary>数据库外部声音文件的稳定引用。</summary>
+        [Column("SoundFileReference"), Required, InsertOrUpdate]
+        public string SoundFileReference { get; set; } = string.Empty;
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace JayTom.Dws.Data {
+namespace JayTom.Dws.Models {
 
     /// <summary>定义统一使用 64 位整数主键的持久化实体。</summary>
     public interface IEntity {

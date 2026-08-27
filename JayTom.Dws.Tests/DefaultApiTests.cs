@@ -1,4 +1,4 @@
-using JayTom.Dws.Interface;
+using JayTom.Dws.Integrations;
 using Newtonsoft.Json.Linq;
 
 namespace JayTom.Dws.Tests;

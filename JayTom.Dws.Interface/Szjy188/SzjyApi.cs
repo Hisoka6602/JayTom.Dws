@@ -10,11 +10,11 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Interface.WeciMexicoDv;
+using JayTom.Dws.Integrations.WeciMexicoDv;
 using System.Reflection.PortableExecutable;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using static JayTom.Dws.Integrations.Szjy188.SzjyApi;
 
-namespace JayTom.Dws.Interface.Szjy188 {
+namespace JayTom.Dws.Integrations.Szjy188 {
 
     public class SzjyApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -88,7 +88,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     var stringAsync = await httpClient.GetStringAsync($"{ApiParameters.Url}{method}?{urlJoin}", token);
 
@@ -126,7 +126,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = $"{ApiParameters.Url}{method}?{urlJoin}",
@@ -199,7 +199,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     var stringAsync = await httpClient.GetStringAsync($"{ApiParameters.Url}{method}?{urlJoin}", token);
 
@@ -237,7 +237,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = $"{ApiParameters.Url}{method}?{urlJoin}",
@@ -291,7 +291,7 @@ namespace JayTom.Dws.Interface.Szjy188 {
                 password = passWord,
             };
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     HttpResponseMessage message;
                     using (Stream dataStream =

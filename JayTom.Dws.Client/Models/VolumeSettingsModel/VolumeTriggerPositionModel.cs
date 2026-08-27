@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel

@@ -18,33 +18,34 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf;
 using Size = System.Windows.Size;
 using System.Windows.Media.Imaging;
-using JayTom.Dws.Domain.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
 using Point = System.Windows.Point;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Service.SyncSettings;
 using JayTom.Dws.Client.Models.AppSettingModel;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
-using RemoteAction = JayTom.Dws.Domain.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Domain.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using RemoteAction = JayTom.Dws.Application.Events.RemoteAction;
+using RemoteCommand = JayTom.Dws.Application.Events.RemoteCommand;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels
 {
 
     public class MainWindowViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IRegionManager _regionManager;
         private readonly IDialogService _dialogService;
         private readonly ISettingsStore _settingsStore;
@@ -78,8 +79,10 @@ namespace JayTom.Dws.Client.ViewModels
         public MainWindowViewModel(IRegionManager regionManager,
             IDialogService dialogService,
             ISettingsStore settingsStore,
-            ISyncSettingsService syncSettingsService)
+            ISyncSettingsService syncSettingsService,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _regionManager = regionManager;
             _dialogService = dialogService;
             _settingsStore = settingsStore;
@@ -102,7 +105,7 @@ namespace JayTom.Dws.Client.ViewModels
                     OpenCommand = OpenHomeToolCommand
                 }
             };
-            EventAggregator.Instance.Subscribe<RemoteAction>(async item =>
+            _eventBus.SubscribeAsync<RemoteAction>(async item =>
             {
                 if (item is RemoteAction remoteAction)
                 {
@@ -114,7 +117,7 @@ namespace JayTom.Dws.Client.ViewModels
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async item =>
             {
                 if (item is SettingsChangedEvent { SettingsName: "SyncSettingsSettings" } syncSettingsSettings)
                 {
@@ -247,15 +250,16 @@ namespace JayTom.Dws.Client.ViewModels
         /// <param name="obj"></param>
         private async void PageSwitchingDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
-                _regionManager.Regions["ContentRegion"].RequestNavigate(obj.ToString());
+                _regionManager.Navigate(
+                    NavigationRequest.To(NavigationRegions.Content, obj?.ToString()));
             });
         }
 
         private void CloseWinDelegate(object obj)
         {
-            EventAggregator.Instance.Publish(new WindowsAction
+            _eventBus.Publish(new WindowsAction
             {
                 Type = WindowsActionType.Close
             });
@@ -268,14 +272,14 @@ namespace JayTom.Dws.Client.ViewModels
             {
                 if (window.WindowState == WindowState.Maximized)
                 {
-                    EventAggregator.Instance.Publish(new WindowsAction
+                    _eventBus.Publish(new WindowsAction
                     {
                         Type = WindowsActionType.Restore
                     });
                     window.WindowState = WindowState.Normal;
                     return;
                 }
-                EventAggregator.Instance.Publish(new WindowsAction
+                _eventBus.Publish(new WindowsAction
                 {
                     Type = WindowsActionType.Maximize
                 });
@@ -299,7 +303,7 @@ namespace JayTom.Dws.Client.ViewModels
                             (window.ActualHeight - _menuButtonSizeize.Height) / 2);
                     visualChild.Visibility = Visibility.Visible;
                 }
-                EventAggregator.Instance.Publish(new WindowsAction
+                _eventBus.Publish(new WindowsAction
                 {
                     Type = WindowsActionType.Activate
                 });
@@ -325,7 +329,7 @@ namespace JayTom.Dws.Client.ViewModels
                 }
                 catch (Exception e)
                 {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    _eventBus.Publish(new AppLogInfoModel
                     {
                         CreateTime = DateTime.Now,
                         Message = $"加载程序配置错误:{e.Message}",
@@ -334,7 +338,7 @@ namespace JayTom.Dws.Client.ViewModels
                 }
             }
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 NLog.LogManager.GetCurrentClassLogger().Info("进入主页加载");
                 if (otherSettings is not null)
@@ -400,11 +404,11 @@ namespace JayTom.Dws.Client.ViewModels
             });
 
             // 等待启动页完成首帧渲染，避免菜单动画在窗口真正显示前就已经结束。
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+            await UiThread.Dispatcher.InvokeAsync(
                 () => { },
                 System.Windows.Threading.DispatcherPriority.ContextIdle);
             await Task.Delay(300).ConfigureAwait(false);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 IsLoaded = true;
             });
@@ -417,7 +421,7 @@ namespace JayTom.Dws.Client.ViewModels
                 if (!_syncSettingsService.IsConnected)
                 {
                     var (key, value) = await _syncSettingsService.Connect(_syncSettingsDto.Url).ConfigureAwait(false);
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         MainMessageQueue.Enqueue($"同步配置连接{(key ? "成功" : "失败")}");
                     }, System.Windows.Threading.DispatcherPriority.Background);
@@ -477,7 +481,7 @@ namespace JayTom.Dws.Client.ViewModels
         {
             if (obj is Window window)
             {
-                EventAggregator.Instance.Publish(new WindowsAction
+                _eventBus.Publish(new WindowsAction
                 {
                     Type = WindowsActionType.Minimize
                 });
@@ -516,7 +520,7 @@ namespace JayTom.Dws.Client.ViewModels
                     MainMessageQueue.Enqueue(insertOrUpdate ? Languages.Language.ResourceManager.GetString("切换语言成功提示") : Languages.Language.ResourceManager.GetString("切换语言失败提示"));
                 }
 
-                EventAggregator.Instance.Publish(new AppLogInfoModel
+                _eventBus.Publish(new AppLogInfoModel
                 {
                     CreateTime = DateTime.Now,
                     Message = $"切换语言:{model.DisplayName}",

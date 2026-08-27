@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
 namespace JayTom.Dws.Client.Models.PackageSorting

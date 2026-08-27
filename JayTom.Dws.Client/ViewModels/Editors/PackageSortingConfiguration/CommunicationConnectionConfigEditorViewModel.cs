@@ -6,11 +6,11 @@ using Prism.Commands;
 using System.IO.Ports;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
@@ -301,7 +301,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
         private async void PortUpdateDelegate()
         {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
@@ -358,7 +358,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());

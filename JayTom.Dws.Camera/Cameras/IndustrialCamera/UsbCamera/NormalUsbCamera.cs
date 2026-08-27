@@ -109,7 +109,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (_usbBarCodeReader != null) {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
@@ -259,7 +259,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (_usbBarCodeReader is not null) {
                 var (key, value) = await _usbBarCodeReader.Start();
@@ -303,42 +303,35 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
             }
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
-            //设置参数
-            if (_usbBarCodeReader is not null) {
-                foreach (var parameter in parameters) {
-                    switch (parameter.Key) {
-                        case "BarcodeReaderParameter": {
-                                //读码器参数
-                                var (key, value) = _usbBarCodeReader.ApplyBarcodeReaderSettingsAsync(
-                                    (BarcodeReaderSettings)parameter.Value).GetAwaiter().GetResult();
-                                if (!key) {
-                                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                        Exception = new Exception(value)
-                                    });
-                                }
-
-                                break;
-                            }
-                        case "UsbCameraParameter": {
-                                //相机参数
-                                var (key, value) = _usbBarCodeReader.SetUsbCameraParameter(
-                                    (Dictionary<UsbCameraParameter, object>)parameter.Value).GetAwaiter().GetResult();
-                                if (!key) {
-                                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                        Exception = new Exception(value)
-                                    });
-                                }
-
-                                break;
-                            }
-                    }
-                }
-            }
-            else {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
+            ArgumentNullException.ThrowIfNull(settings);
+            if (_usbBarCodeReader is null) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = new Exception("设备未初始化")
                 });
+                return;
+            }
+
+            if (settings.BarcodeReader is not null) {
+                var (key, value) = await _usbBarCodeReader.ApplyBarcodeReaderSettingsAsync(
+                    settings.BarcodeReader,
+                    cancellationToken);
+                if (!key) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception(value)
+                    });
+                }
+            }
+
+            if (settings.UsbCamera is not null) {
+                var (key, value) = await _usbBarCodeReader.ApplyUsbCameraSettingsAsync(
+                    settings.UsbCamera,
+                    cancellationToken);
+                if (!key) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception(value)
+                    });
+                }
             }
         }
 
@@ -346,10 +339,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
 
         public void StartRealTimeImage() {
             IsRealtimeImageEnabled = true;
+            if (_usbBarCodeReader is not null) {
+                _usbBarCodeReader.CaptureSkippedFrames = true;
+            }
         }
 
         public void StopRealTimeImage() {
             IsRealtimeImageEnabled = false;
+            if (_usbBarCodeReader is not null) {
+                _usbBarCodeReader.CaptureSkippedFrames = false;
+            }
         }
 
         public event EventHandler<PhotoTakenEventArgs>? PhotoTaken;

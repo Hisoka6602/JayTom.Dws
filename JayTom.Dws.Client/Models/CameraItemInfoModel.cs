@@ -12,7 +12,7 @@ using System.Windows.Threading;
 using System.Windows.Media.Imaging;
 using System.Collections.Generic;
 using Image = System.Windows.Controls.Image;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Models
 {

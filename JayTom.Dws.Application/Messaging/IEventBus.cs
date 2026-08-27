@@ -7,18 +7,21 @@ public interface IEventBus
     void Publish<TEvent>(TEvent eventData);
 
     /// <summary>订阅普通应用事件。</summary>
-    void Subscribe<TEvent>(Action<TEvent> handler);
+    IDisposable Subscribe<TEvent>(Action<TEvent> handler);
 
     /// <summary>
     /// 注册按发布顺序串行执行的异步订阅者；每个订阅者最多缓存 256 个待处理事件，超限时拒绝最新事件并记录错误。
     /// </summary>
-    void SubscribeAsync<TEvent>(Func<TEvent, Task> handler);
+    IDisposable SubscribeAsync<TEvent>(Func<TEvent, Task> handler);
 
     /// <summary>在发布线程同步调用高频包裹事件订阅者。</summary>
     void PublishPackage<TEvent>(TEvent eventData);
 
     /// <summary>订阅高频包裹事件。</summary>
-    void SubscribePackage<TEvent>(Action<TEvent> handler);
+    IDisposable SubscribePackage<TEvent>(Action<TEvent> handler);
+
+    /// <summary>注册按发布顺序串行执行的异步高频包裹事件订阅者。</summary>
+    IDisposable SubscribePackageAsync<TEvent>(Func<TEvent, Task> handler);
 
     /// <summary>取消普通应用事件订阅。</summary>
     void Unsubscribe<TEvent>(Action<TEvent> handler);

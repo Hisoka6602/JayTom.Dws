@@ -302,10 +302,6 @@ namespace JayTom.Dws.Infrastructure.IComputer {
             return Task.Run(GetCpuInfo);
         }
 
-        public NetworkInfo GetNetworkInfo() {
-            return GetNetworkInfoAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
         public async Task<NetworkInfo> GetNetworkInfoAsync() {
             var sample = await GetNetworkSampleTask().ConfigureAwait(false);
             return sample.NetworkInfo;

@@ -1,4 +1,8 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
 using NLog;
 using System;
 using System.Linq;
@@ -7,27 +11,28 @@ using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
+using JayTom.Dws.Legacy.Contracts.Packages;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Models.LocalLog;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Application.Workflows;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices
 {
@@ -37,6 +42,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
     /// </summary>
     public class YunShanPackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IDeviceService _deviceService;
         /// <summary>
         /// 获取运行期包裹会话存储。
@@ -45,7 +52,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly IImageStorageService _imageStorageService;
         private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
         private readonly IExternalDataService _externalDataService;
         private volatile CreatePackageSettingsDto _createPackageSettingsDto = new();
         /// <summary>仅由包裹关键线程访问的有序多相机组帧，允许慢相机补入对应的较早机械包裹。</summary>
@@ -56,6 +63,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         /// 复用用户配置的条码正则，避免在相机热回调中重复编译。
         /// </summary>
         private readonly ConcurrentDictionary<string, Regex> _regexCache = new(StringComparer.Ordinal);
+        /// <summary>仅跟踪已完成且等待安全清理的包裹，避免每 100ms 扫描全部活动会话。</summary>
+        private readonly ConcurrentQueue<PackageInfo> _packagesAwaitingCleanup = new();
+        /// <summary>维护待清理队列的 O(1) 近似长度，避免热循环枚举分段队列。</summary>
+        private int _packagesAwaitingCleanupCount;
         private volatile BarcodeFilterSettingsDto _barcodeFilterSettingsDto = new();
         /// <summary>串行处理创建、扫码、空读、回调和赋值的关键队列。</summary>
         private readonly NonBlockingOrderedDispatcher<Action> _packageEventDispatcher;
@@ -63,8 +74,11 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly NonBlockingOrderedDispatcher<Action> _packageNotificationDispatcher;
         /// <summary>包裹完成后优先发布给格口 API，不与日志、UI和图片通知排同一队列。</summary>
         private readonly NonBlockingOrderedDispatcher<PackageInfo> _packageCompletionDispatcher;
+        /// <summary>包裹完成后立即转交条码图片，消除每 100ms 仅处理一张图片的轮询吞吐上限。</summary>
+        private readonly NonBlockingOrderedDispatcher<PackageInfo> _imageHandoffDispatcher;
         private DateTime _lastNoReadTime = DateTime.MinValue;
-        private ICamera[] _cameras = [];
+        private IReadOnlyDictionary<string, ICamera> _camerasBySerialNumber =
+            new Dictionary<string, ICamera>(StringComparer.Ordinal);
         /// <summary>缓存当前扫描相机数量，避免每个条码事件都遍历设备集合。</summary>
         private int _scannerCameraCount;
         /// <summary>关键队列中最后一次成功创建包裹的时间键。</summary>
@@ -72,15 +86,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private int _isWindowsClose;
         private volatile WeightSettingsDto _weightSettingsDto = new();
         private volatile WdtWmsApiDto _wdtWmsApiDto = new();
+        /// <summary>最近一次输出关键队列性能水位的单调时钟时间戳。</summary>
+        private long _lastPerformanceReportTimestamp = Stopwatch.GetTimestamp();
 
         public YunShanPackageBackgroundService(IPackageSessionStore packageSessionStore,
             IDeviceService deviceService,
             IImageStorageService imageStorageService,
             ISettingsStore settingsStore,
             ISortingService sortingService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            IExternalDataService externalDataService)
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            IExternalDataService externalDataService,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _packageSessionStore = packageSessionStore;
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
@@ -96,35 +114,45 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 {
                     work();
                 },
-                static (_, exception) => QueueError("执行关键包裹事件失败", exception),
+                (_, exception) => QueueError("执行关键包裹事件失败", exception),
                 "PackageCritical",
                 ThreadPriority.AboveNormal);
             _packageCompletionDispatcher = new NonBlockingOrderedDispatcher<PackageInfo>(
-                static package => EventAggregator.Instance.PublishPackage(package),
-                static (_, exception) => QueueError("发布包裹完成事件失败", exception),
+                package => _eventBus.PublishPackage(package),
+                (_, exception) => QueueError("发布包裹完成事件失败", exception),
                 "PackageCompletion",
                 ThreadPriority.AboveNormal);
+            _imageHandoffDispatcher = new NonBlockingOrderedDispatcher<PackageInfo>(
+                ProcessCompletedPackageImage,
+                (_, exception) => QueueError("转交包裹条码图片失败", exception),
+                "PackageImageHandoff");
             _packageNotificationDispatcher = new NonBlockingOrderedDispatcher<Action>(
                 static notification =>
                 {
                     notification();
                 },
-                static (_, exception) => QueueError("发布包裹通知失败", exception),
+                (_, exception) => QueueError("发布包裹通知失败", exception),
                 "PackageNotification");
             _deviceService.CameraInitialized += (_, cameras) =>
             {
-                var snapshot = new ICamera[cameras.Count];
+                var cameraLookup = new Dictionary<string, ICamera>(
+                    cameras.Count,
+                    StringComparer.Ordinal);
                 var scannerCameraCount = 0;
                 for (var index = 0; index < cameras.Count; index++)
                 {
                     var camera = cameras[index];
-                    snapshot[index] = camera;
+                    var serialNumber = camera.Info?.SerialNumber;
+                    if (!string.IsNullOrWhiteSpace(serialNumber))
+                    {
+                        cameraLookup[serialNumber] = camera;
+                    }
                     if (camera.BindingType == CameraBindingType.ScannerCamera)
                     {
                         scannerCameraCount++;
                     }
                 }
-                Volatile.Write(ref _cameras, snapshot);
+                Volatile.Write(ref _camerasBySerialNumber, cameraLookup);
                 Volatile.Write(ref _scannerCameraCount, scannerCameraCount);
             };
 
@@ -442,7 +470,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 },
                                 ConnectionName = args.ConnectionName,
                             }, "分拣完成指令");
-                            /*EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                            /*_eventBus.Publish(new CallBackPackageInfo {
                                 CallBackTime = DateTime.Now,
                                 PackageCreateTime = keyValuePair.Value.CreateTime,
                                 PackageInfo = keyValuePair.Value,
@@ -689,7 +717,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }, "稳定重量");
             };
             //配置更改
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async item =>
             {
                 if (item is { } model)
                 {
@@ -728,7 +756,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }
             });
             //程序停止
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            _eventBus.Subscribe<ApplicationStatusChanged>(item =>
             {
                 if (item is { } info)
                 {
@@ -744,7 +772,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _packageSessionStore.PackageRemoved += (sender, args) =>
             {
                 QueuePackageNotification(() =>
-                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                    _eventBus.Publish(new TriggerPositionEvent()
                     {
                         IsSuccess = true,
                         TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
@@ -760,16 +788,29 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     completedPackage.WeightInfo is not null &&
                     completedPackage.VolumeInfo is not null)
                 {
+                    if (_sortingService.RequiresSortingInstruction)
+                    {
+                        completedPackage.MarkSortingInstructionExpected();
+                    }
+                    if (_createPackageSettingsDto.PackageRemoveMethods ==
+                        PackageRemoveMethodsEnum.FillInformation)
+                    {
+                        EnqueuePackageForCleanup(completedPackage);
+                    }
+                    if (!_imageHandoffDispatcher.TryEnqueue(completedPackage))
+                    {
+                        QueueError("包裹图片转交队列已停止，图片未入队");
+                    }
                     if (!_packageCompletionDispatcher.TryEnqueue(completedPackage))
                     {
                         QueueError("包裹完成队列已停止，完成事件未入队");
                     }
                     QueuePackageNotification(
-                        () => EventAggregator.Instance.Publish(completedPackage),
+                        () => _eventBus.Publish(completedPackage),
                         "包裹完成普通通知");
                 }
             };
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
@@ -783,9 +824,9 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         /// </summary>
         /// <param name="message">错误说明。</param>
         /// <param name="exception">可选的异常信息。</param>
-        private static void QueueError(string message, Exception? exception = null)
+        private void QueueError(string message, Exception? exception = null)
         {
-            EventAggregator.Instance.Publish(new AppLogInfoModel
+            _eventBus.Publish(new AppLogInfoModel
             {
                 CreateTime = DateTime.Now,
                 Type = LogType.Exception,
@@ -1025,7 +1066,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             var intervalEnabled = settings.IsUseBarcodeAssignmentInterval;
             var pendingCount = _packageEventDispatcher.PendingCount;
             QueuePackageNotification(() =>
-                EventAggregator.Instance.Publish(new AppLogInfoModel
+                _eventBus.Publish(new AppLogInfoModel
                 {
                     CreateTime = DateTime.Now,
                     Type = LogType.Warning,
@@ -1069,7 +1110,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     RemovalTimeSpan = TimeSpan.FromMilliseconds(
                         createPackageSettings.EmptyPackageExpiryTime),
                     TryDispatch = removal =>
-                        TryQueuePackageEvent(removal, "空包裹过期")
+                        TryQueuePriorityPackageEvent(removal, "空包裹过期")
                 });
             }
             if (createPackageSettings is
@@ -1125,7 +1166,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             string description)
         {
             QueuePackageNotification(() =>
-                EventAggregator.Instance.Publish(new TriggerPositionEvent
+                _eventBus.Publish(new TriggerPositionEvent
                 {
                     IsSuccess = true,
                     TriggerPosition = triggerPosition,
@@ -1139,7 +1180,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             string description)
         {
             QueuePackageNotification(
-                () => EventAggregator.Instance.Publish(instruction),
+                () => _eventBus.Publish(instruction),
                 description);
         }
 
@@ -1152,6 +1193,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             }
 
             QueueError($"关键包裹队列已停止，工作未入队:{description}");
+            return false;
+        }
+
+        /// <summary>把已到期的空包裹删除放入最高优先级，避免被密集相机或赋值事件压在队尾。</summary>
+        private bool TryQueuePriorityPackageEvent(Action work, string description)
+        {
+            if (_packageEventDispatcher.TryEnqueuePriority(work))
+            {
+                return true;
+            }
+
+            QueueError($"关键包裹优先队列已停止，工作未入队:{description}");
             return false;
         }
 
@@ -1196,6 +1249,71 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             return regex.IsMatch(input);
         }
 
+        /// <summary>在独立图片转交线程中把已完成包裹的图像所有权移交给存图服务。</summary>
+        private void ProcessCompletedPackageImage(PackageInfo packageInfo)
+        {
+            ImageMessageInfo? imageMessage = null;
+            JayTom.Dws.Abstractions.Imaging.ImageHandle? image = null;
+            lock (packageInfo.SyncRoot)
+            {
+                if (packageInfo.Image is null && !packageInfo.IsImageSaveRequested)
+                {
+                    packageInfo.MarkImageSaveRequested();
+                    return;
+                }
+                if (packageInfo.Image is not null && !packageInfo.IsImageSaveRequested)
+                {
+                    Volatile.Read(ref _camerasBySerialNumber).TryGetValue(
+                        packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
+                        out var camera);
+                    image = packageInfo.TakeImage();
+                    imageMessage = new ImageMessageInfo
+                    {
+                        PackageTimestamped = packageInfo.Timestamp,
+                        BarCode = packageInfo.BarCodeInfo?.Barcode ?? string.Empty,
+                        CameraSerialNumber = packageInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
+                        Weight = (decimal)(packageInfo.WeightInfo?.FormattedWeight ?? 0),
+                        Height = (decimal)(packageInfo.VolumeInfo?.FormattedHeight ?? 0),
+                        Image = image,
+                        Length = (decimal)(packageInfo.VolumeInfo?.FormattedLength ?? 0),
+                        Width = (decimal)(packageInfo.VolumeInfo?.FormattedWidth ?? 0),
+                        Volume = (decimal)(packageInfo.VolumeInfo?.FormattedVolume ?? 0),
+                        ScanTime = packageInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
+                        Type = SaveImageType.BarcodeImage,
+                        CameraName = camera?.Info?.Name ?? string.Empty,
+                        CameraCustomName = camera?.Info?.CustomName ?? string.Empty
+                    };
+                    packageInfo.MarkImageSaveRequested();
+                }
+            }
+
+            if (imageMessage is null)
+            {
+                return;
+            }
+
+            try
+            {
+                _eventBus.Publish(imageMessage);
+            }
+            catch
+            {
+                lock (packageInfo.SyncRoot)
+                {
+                    if (packageInfo.Image is null)
+                    {
+                        packageInfo.Image = image;
+                    }
+                    else
+                    {
+                        image?.Dispose();
+                    }
+                    packageInfo.ResetImageSaveRequest();
+                }
+                throw;
+            }
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             //逻辑->外部数据回传后判断是否包含箱子码和包裹条码->如果有则上传并分拣->则上传错误码让它去异常口
@@ -1219,87 +1337,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
                 try
                 {
+                    ReportPerformanceWatermarks();
                     if (_packageSessionStore.GetPackageCount() > 0 && _deviceService.RunningStatus)
                     {
-                        //判断存图路径等于空
-                        var codeInfo = _packageSessionStore.GetPackage(f => f.Value is
-                        {
-                            IsImageSaveRequested: false,
-                            BarCodeInfo: not null, IsCompleted: true
-                        });
-                        //存图
-                        if (codeInfo is not null)
-                        {
-                            ImageMessageInfo? imageMessage = null;
-                            JayTom.Dws.Abstractions.Imaging.ImageHandle? image = null;
-                            lock (codeInfo.SyncRoot)
-                            {
-                                if (codeInfo.Image is not null && !codeInfo.IsImageSaveRequested)
-                                {
-                                    var camera = Volatile.Read(ref _cameras).FirstOrDefault(item =>
-                                        string.Equals(
-                                            item.Info?.SerialNumber,
-                                            codeInfo.BarCodeInfo?.SerialNumber,
-                                            StringComparison.Ordinal));
-                                    image = codeInfo.TakeImage();
-                                    imageMessage = new ImageMessageInfo
-                                    {
-                                        PackageTimestamped = codeInfo.Timestamp,
-                                        BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
-                                        CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
-                                        Weight = (decimal)(codeInfo.WeightInfo?.FormattedWeight ?? 0),
-                                        Height = (decimal)(codeInfo.VolumeInfo?.FormattedHeight ?? 0),
-                                        Image = image,
-                                        Length = (decimal)(codeInfo.VolumeInfo?.FormattedLength ?? 0),
-                                        Width = (decimal)(codeInfo.VolumeInfo?.FormattedWidth ?? 0),
-                                        Volume = (decimal)(codeInfo.VolumeInfo?.FormattedVolume ?? 0),
-                                        ScanTime = codeInfo.BarCodeInfo?.ScanTime ?? DateTime.Now,
-                                        Type = SaveImageType.BarcodeImage,
-                                        CameraName = camera?.Info?.Name ?? string.Empty,
-                                        CameraCustomName = camera?.Info?.CustomName ?? string.Empty,
-                                    };
-                                    codeInfo.MarkImageSaveRequested();
-                                }
-                            }
-                            if (imageMessage is not null)
-                            {
-                                try
-                                {
-                                    EventAggregator.Instance.Publish(imageMessage);
-                                }
-                                catch
-                                {
-                                    lock (codeInfo.SyncRoot)
-                                    {
-                                        if (codeInfo.Image is null)
-                                        {
-                                            codeInfo.Image = image;
-                                        }
-                                        else
-                                        {
-                                            image?.Dispose();
-                                        }
-                                        codeInfo.ResetImageSaveRequest();
-                                    }
-                                    throw;
-                                }
-                            }
-                        }
-
-                        //移除包裹
                         if (_createPackageSettingsDto.PackageRemoveMethods ==
                             PackageRemoveMethodsEnum.FillInformation)
                         {
-                            var packageInfos = _packageSessionStore.GetPackages(w =>
-                                w.Value is { IsCompleted: true, IsImageSaveRequested: true } &&
-                                (w.Value.PanoramaCameraImageInfo.All(info => info.IsExists) ||
-                                 DateTime.Now.Subtract(w.Value.CreateTime)
-                                     .TotalMinutes > 5)) ?? new List<PackageInfo>();
-
-                            foreach (var kvp in packageInfos)
-                            {
-                                _packageSessionStore.RemovePackage(kvp.CreateTime, "填充完整信息移除");
-                            }
+                            RemoveCompletedPackagesReadyForCleanup();
                         }
                     }
                 }
@@ -1308,6 +1352,93 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 }
             }
+        }
+
+        /// <summary>每分钟异步报告一次关键队列的最大排队和执行耗时水位。</summary>
+        /// <summary>仅检查已完成包裹队列的队首并移除满足图片和格口生命周期条件的包裹。</summary>
+        private void RemoveCompletedPackagesReadyForCleanup()
+        {
+            var now = DateTime.Now;
+            var attempts = Math.Min(Volatile.Read(ref _packagesAwaitingCleanupCount), 4096);
+            while (attempts-- > 0 &&
+                   _packagesAwaitingCleanup.TryDequeue(out var packageInfo))
+            {
+                Interlocked.Decrement(ref _packagesAwaitingCleanupCount);
+                var activePackage = _packageSessionStore.GetPackage(packageInfo.CreateTime);
+                if (!ReferenceEquals(activePackage, packageInfo))
+                {
+                    continue;
+                }
+
+                var panoramaReady = packageInfo.PanoramaCameraImageInfo.All(info => info.IsExists) ||
+                    now.Subtract(packageInfo.CreateTime).TotalMinutes > 5;
+                if (!packageInfo.IsImageSaveRequested ||
+                    packageInfo.IsWaitingForSortingInstruction ||
+                    !panoramaReady)
+                {
+                    EnqueuePackageForCleanup(packageInfo);
+                    continue;
+                }
+
+                _packageSessionStore.RemovePackage(
+                    packageInfo.CreateTime,
+                    "填充完整信息移除");
+            }
+        }
+
+        private void EnqueuePackageForCleanup(PackageInfo packageInfo)
+        {
+            _packagesAwaitingCleanup.Enqueue(packageInfo);
+            Interlocked.Increment(ref _packagesAwaitingCleanupCount);
+        }
+
+        private void ReportPerformanceWatermarks()
+        {
+            var now = Stopwatch.GetTimestamp();
+            var previous = Volatile.Read(ref _lastPerformanceReportTimestamp);
+            if (Stopwatch.GetElapsedTime(previous, now) < TimeSpan.FromMinutes(1) ||
+                Interlocked.CompareExchange(
+                    ref _lastPerformanceReportTimestamp,
+                    now,
+                    previous) != previous)
+            {
+                return;
+            }
+
+            var eventQueueDelay = _packageEventDispatcher.TakeMaximumQueueDelayMicroseconds();
+            var eventHandlerDuration = _packageEventDispatcher.TakeMaximumHandlerDurationMicroseconds();
+            var completionQueueDelay = _packageCompletionDispatcher.TakeMaximumQueueDelayMicroseconds();
+            var completionHandlerDuration = _packageCompletionDispatcher.TakeMaximumHandlerDurationMicroseconds();
+            var imageQueueDelay = _imageHandoffDispatcher.TakeMaximumQueueDelayMicroseconds();
+            var imageHandlerDuration = _imageHandoffDispatcher.TakeMaximumHandlerDurationMicroseconds();
+            var notificationQueueDelay = _packageNotificationDispatcher.TakeMaximumQueueDelayMicroseconds();
+            var notificationHandlerDuration = _packageNotificationDispatcher.TakeMaximumHandlerDurationMicroseconds();
+            if (eventQueueDelay < 50_000 && eventHandlerDuration < 50_000 &&
+                completionQueueDelay < 50_000 && completionHandlerDuration < 50_000 &&
+                imageQueueDelay < 50_000 && imageHandlerDuration < 50_000 &&
+                notificationQueueDelay < 50_000 && notificationHandlerDuration < 50_000 &&
+                _packageEventDispatcher.PendingCount == 0 &&
+                _packageCompletionDispatcher.PendingCount == 0 &&
+                _imageHandoffDispatcher.PendingCount == 0 &&
+                _packageNotificationDispatcher.PendingCount == 0)
+            {
+                return;
+            }
+
+            QueuePackageNotification(() => _eventBus.Publish(new AppLogInfoModel
+            {
+                CreateTime = DateTime.Now,
+                Type = LogType.Warning,
+                Message =
+                    $"热路径性能水位(us):包裹排队={eventQueueDelay},包裹执行={eventHandlerDuration}," +
+                    $"完成排队={completionQueueDelay},完成执行={completionHandlerDuration}," +
+                    $"图片排队={imageQueueDelay},图片执行={imageHandlerDuration}," +
+                    $"通知排队={notificationQueueDelay},通知执行={notificationHandlerDuration};" +
+                    $"当前待处理={_packageEventDispatcher.PendingCount}/" +
+                    $"{_packageCompletionDispatcher.PendingCount}/" +
+                    $"{_imageHandoffDispatcher.PendingCount}/" +
+                    $"{_packageNotificationDispatcher.PendingCount}"
+            }), "热路径性能水位");
         }
 
         /// <summary>
@@ -1319,6 +1450,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _multiCameraDeadlineScheduler.Dispose();
             await _packageEventDispatcher.DisposeAsync();
             await _packageCompletionDispatcher.DisposeAsync();
+            await _imageHandoffDispatcher.DisposeAsync();
             await _packageNotificationDispatcher.DisposeAsync();
             foreach (var group in _multiCameraFrameGroups)
             {

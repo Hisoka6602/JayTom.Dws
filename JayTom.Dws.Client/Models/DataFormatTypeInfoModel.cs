@@ -1,5 +1,5 @@
-﻿using Prism.Mvvm;
-using JayTom.Dws.Data.LocalLog;
+using Prism.Mvvm;
+using JayTom.Dws.Models.LocalLog;
 
 namespace JayTom.Dws.Client.Models
 {

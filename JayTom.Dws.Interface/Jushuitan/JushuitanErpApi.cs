@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using static Org.BouncyCastle.Bcpg.Attr.ImageAttrib;
 
-namespace JayTom.Dws.Interface.Jushuitan {
+namespace JayTom.Dws.Integrations.Jushuitan {
 
     public class JushuitanErpApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -60,7 +60,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 var sign = GenerateSign(parameters, _parameters.AppSecret);
                 parameters["sign"] = sign;
                 // 发请求
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
                 using var content = new FormUrlEncodedContent(parameters);
@@ -104,7 +104,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(parameters),
@@ -155,7 +155,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 var sign = GenerateSign(parameters, _parameters.AppSecret);
                 parameters["sign"] = sign;
                 // 发请求
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
                 using var content = new FormUrlEncodedContent(parameters);
@@ -199,7 +199,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(parameters),
@@ -289,7 +289,7 @@ namespace JayTom.Dws.Interface.Jushuitan {
                 var sign = GenerateSign(parameters, _parameters.AppSecret);
                 parameters["sign"] = sign;
                 // 发请求
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(5000);
 
                 using var content = new FormUrlEncodedContent(parameters);

@@ -65,7 +65,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                 {
                     info.Dispose();
                 }
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     ChannelItems.AddRange(Enumerable.Range(1, IpcNvrItemInfo.ChannelCount).Select(s =>
                         new PreviewViewChannelInfo
@@ -155,7 +155,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
                     {
                         _baseDaHuatech.RegisterRealtimePreviewCallback(IpcNvrItemInfo.SerialNumber, obj.ChannelNumber, previewViewItemInfo.RealtimePreviewCallback);
 
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             NvrPreviewViewItems.Add(previewViewItemInfo);
                         });

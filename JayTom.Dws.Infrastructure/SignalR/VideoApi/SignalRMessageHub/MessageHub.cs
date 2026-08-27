@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
-using JayTom.Dws.Domain.Service.VideoApi;
+using JayTom.Dws.Legacy.Contracts.Services.VideoApi;
 
 namespace JayTom.Dws.Infrastructure.SignalR.VideoApi.SignalRMessageHub {
 

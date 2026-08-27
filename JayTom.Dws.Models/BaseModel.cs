@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data {
+namespace JayTom.Dws.Models {
 
     public class BaseModel : IEntity {
 

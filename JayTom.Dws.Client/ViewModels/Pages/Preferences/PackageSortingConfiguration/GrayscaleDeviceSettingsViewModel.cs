@@ -5,15 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
 
@@ -24,7 +24,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     {
         private GrayscaleDeviceInfoModel _grayscaleDeviceInfo = new();
 
-        public GrayscaleDeviceSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public GrayscaleDeviceSettingsViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -116,7 +116,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<GrayscaleDeviceSettingsDto>(SettingsName) ??
                                   new GrayscaleDeviceSettingsDto();

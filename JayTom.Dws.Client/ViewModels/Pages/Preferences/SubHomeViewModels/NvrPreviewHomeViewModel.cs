@@ -1,4 +1,5 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.CameraConfigurations;
 using System;
 using Prism.Mvvm;
 using System.Linq;
@@ -8,30 +9,32 @@ using Prism.Commands;
 using System.Threading;
 using System.Windows.Input;
 using System.Windows.Media;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Models.Cameras.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.NVR;
-using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
+using ApplicationStatus = JayTom.Dws.Application.Events.ApplicationStatus;
+using ApplicationStatusChanged = JayTom.Dws.Application.Events.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
 {
 
     public class NvrPreviewHomeViewModel : BindableBase
     {
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
+        private readonly ICameraConfigurationCatalog<NvrCameraBindingInfoModel> _nvrCameraBindingRepository;
         private readonly ISettingsStore _settingsStore;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
+        private readonly ICameraConfigurationCatalog<IpcNvrConfigInfoModel> _ipcNvrConfigRepository;
         private ObservableCollection<NvrPreviewViewItemInfo> _nvrPreviewViewItems = new();
         private BaseDaHuatech? _baseDaHuatech;
         private static SemaphoreSlim _runningSemaphoreSlim = new(1, 1);
@@ -42,20 +45,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
             set => SetProperty(ref _nvrPreviewViewItems, value);
         }
 
-        public NvrPreviewHomeViewModel(INvrCameraBindingRepository nvrCameraBindingRepository,
+        public NvrPreviewHomeViewModel(
+            ICameraConfigurationCatalog<NvrCameraBindingInfoModel> nvrCameraBindingRepository,
             ISettingsStore settingsStore,
-            IIpcNvrConfigRepository ipcNvrConfigRepository)
+            ICameraConfigurationCatalog<IpcNvrConfigInfoModel> ipcNvrConfigRepository,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _settingsStore = settingsStore;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _baseDaHuatech ??= BaseDaHuatech.CreateInstance();
 
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(async item =>
+            _eventBus.SubscribeAsync<ApplicationStatusChanged>(async item =>
             {
                 if (item is { } info)
                 {
-                    if (info.Status == JayTom.Dws.Domain.EventMediators.ApplicationStatus.Start)
+                    if (info.Status == JayTom.Dws.Application.Events.ApplicationStatus.Start)
                     {
                         try
                         {
@@ -69,7 +75,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                                 .ToList();
                             foreach (var model in infoModels)
                             {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                                 {
                                     var serialNumber = ipcNvrConfigInfoModels.FirstOrDefault(f => f.Username.Equals(model.Username) &&
                                             f.IpAddress.Equals(model.IpAddress) &&
@@ -144,14 +150,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                             _runningSemaphoreSlim.Release();
                         }
                     }
-                    else if (info.Status == JayTom.Dws.Domain.EventMediators.ApplicationStatus.Stop)
+                    else if (info.Status == JayTom.Dws.Application.Events.ApplicationStatus.Stop)
                     {
                         //停止
                         try
                         {
                             await _runningSemaphoreSlim.WaitAsync();
                             await Task.Delay(300);
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 var itemInfos = NvrPreviewViewItems.Where(w => w.VideoFrame != null).ToList();
                                 foreach (var itemInfo in itemInfos)

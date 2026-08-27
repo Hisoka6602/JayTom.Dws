@@ -11,6 +11,7 @@ using System.Globalization;
 using JayTom.Dws.Plugin.WeighingScale;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using static JayTom.Dws.Plugin.WeighingScale.WeighingScale;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Plugin.Scale.StaticScale {
 
@@ -45,6 +46,11 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
         //private static int _stableWeightCount = 0;
 
         public void Dispose() {
+            TaskCleanup.Observe(DisposeCoreAsync(), OnExcepted);
+        }
+
+        /// <summary>异步等待称重工作器退出后释放串口。</summary>
+        private async Task DisposeCoreAsync() {
             _tokenSource.Cancel();
             try {
                 var tasks = new List<Task>(2);
@@ -54,7 +60,7 @@ namespace JayTom.Dws.Plugin.Scale.StaticScale {
                 if (_sendTask is not null) {
                     tasks.Add(_sendTask);
                 }
-                Task.WhenAll(tasks).GetAwaiter().GetResult();
+                await Task.WhenAll(tasks);
             }
             catch (OperationCanceledException) {
             }

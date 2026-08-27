@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace JayTom.Dws.Camera.Concurrency;
 
@@ -8,7 +9,7 @@ namespace JayTom.Dws.Camera.Concurrency;
 /// <typeparam name="T">相机工作项类型。</typeparam>
 internal sealed class LosslessOrderedDispatcher<T> : IDisposable {
     /// <summary>保存待处理相机工作项的无界队列。</summary>
-    private readonly ConcurrentQueue<T> _queue = new();
+    private readonly ConcurrentQueue<QueuedCameraItem<T>> _queue = new();
     /// <summary>合并密集帧写入的线程唤醒，避免逐帧阻塞集合同步。</summary>
     private readonly AutoResetEvent _workAvailable = new(false);
     /// <summary>在独立线程上执行的工作项处理器。</summary>
@@ -25,6 +26,8 @@ internal sealed class LosslessOrderedDispatcher<T> : IDisposable {
     private int _writersInFlight;
     /// <summary>零表示工作线程可能休眠；一表示已唤醒或正在连续排空帧。</summary>
     private int _wakeScheduled;
+    /// <summary>最近一次报告慢帧排队或处理的单调时钟时间戳。</summary>
+    private long _lastSlowFrameReportTimestamp;
 
     /// <summary>获取当前尚未处理完成的工作项数量。</summary>
     public long PendingCount => Interlocked.Read(ref _pendingCount);
@@ -58,7 +61,7 @@ internal sealed class LosslessOrderedDispatcher<T> : IDisposable {
 
         try {
             Interlocked.Increment(ref _pendingCount);
-            _queue.Enqueue(item);
+            _queue.Enqueue(new QueuedCameraItem<T>(item, Stopwatch.GetTimestamp()));
         }
         finally {
             Interlocked.Decrement(ref _writersInFlight);
@@ -74,24 +77,31 @@ internal sealed class LosslessOrderedDispatcher<T> : IDisposable {
     /// <summary>持续读取并按生产顺序执行相机工作项。</summary>
     private void Process() {
         while (true) {
-            while (_queue.TryDequeue(out var item)) {
+            while (_queue.TryDequeue(out var queuedItem)) {
+                var handlerStartedAt = Stopwatch.GetTimestamp();
                 try {
-                    _handler(item);
+                    _handler(queuedItem.Item);
                 }
                 catch (Exception exception) {
                     try {
-                        _exceptionHandler?.Invoke(item, exception);
+                        _exceptionHandler?.Invoke(queuedItem.Item, exception);
                     }
                     catch {
                         // 错误上报失败不能终止相机帧处理线程。
                     }
                 }
                 finally {
+                    ReportSlowFrameIfRequired(
+                        queuedItem.EnqueuedAtTimestamp,
+                        handlerStartedAt,
+                        Stopwatch.GetTimestamp());
                     Interlocked.Decrement(ref _pendingCount);
                 }
             }
 
-            if (Volatile.Read(ref _disposeState) != 0 && _queue.IsEmpty) {
+            if (Volatile.Read(ref _disposeState) != 0 &&
+                Volatile.Read(ref _writersInFlight) == 0 &&
+                _queue.IsEmpty) {
                 return;
             }
 
@@ -103,6 +113,41 @@ internal sealed class LosslessOrderedDispatcher<T> : IDisposable {
 
             _workAvailable.WaitOne();
         }
+    }
+
+    /// <summary>以每分钟最多一条的频率记录超过 50ms 的相机排队或处理耗时。</summary>
+    private void ReportSlowFrameIfRequired(
+        long enqueuedAtTimestamp,
+        long handlerStartedAt,
+        long handlerCompletedAt) {
+        var queueDelay = Stopwatch.GetElapsedTime(
+            enqueuedAtTimestamp,
+            handlerStartedAt);
+        var handlerDuration = Stopwatch.GetElapsedTime(
+            handlerStartedAt,
+            handlerCompletedAt);
+        if (queueDelay < TimeSpan.FromMilliseconds(50) &&
+            handlerDuration < TimeSpan.FromMilliseconds(50)) {
+            return;
+        }
+
+        var previous = Volatile.Read(ref _lastSlowFrameReportTimestamp);
+        if (previous != 0 &&
+            Stopwatch.GetElapsedTime(previous, handlerCompletedAt) < TimeSpan.FromMinutes(1)) {
+            return;
+        }
+        if (Interlocked.CompareExchange(
+                ref _lastSlowFrameReportTimestamp,
+                handlerCompletedAt,
+                previous) != previous) {
+            return;
+        }
+
+        NLog.LogManager.GetCurrentClassLogger().Warn(
+            $"相机帧处理性能水位:类型={typeof(T).Name}," +
+            $"排队={queueDelay.TotalMilliseconds:0.###}ms," +
+            $"处理={handlerDuration.TotalMilliseconds:0.###}ms," +
+            $"待处理={PendingCount}");
     }
 
     /// <summary>停止接收新工作项，并等待已经入队的帧全部按顺序处理完成。</summary>

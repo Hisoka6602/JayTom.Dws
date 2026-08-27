@@ -1,0 +1,2208 @@
+{
+  "schemaVersion": 1,
+  "batch": "stage-2",
+  "generatedAt": "2026-08-14",
+  "completionRule": "An item is Verified only when implementation evidence and an executable automated verification are both registered.",
+  "items": [
+    {
+      "id": "S2-001",
+      "category": "Legacy boundary migration",
+      "title": "将历史 DTO 从 Domain 迁入 Legacy.Contracts",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-002",
+      "category": "Legacy boundary migration",
+      "title": "将历史仓储契约从 Domain 迁入 Legacy.Contracts",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-003",
+      "category": "Legacy boundary migration",
+      "title": "将持久化实体命名空间统一为 Models",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-004",
+      "category": "Legacy boundary migration",
+      "title": "将历史服务契约隔离到 Legacy.Contracts.Services",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-005",
+      "category": "Legacy boundary migration",
+      "title": "将应用服务实现移出 Domain 命名空间",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-006",
+      "category": "Legacy boundary migration",
+      "title": "将下位机协议隔离到 Legacy.Contracts.DownstreamProtocols",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-007",
+      "category": "Legacy boundary migration",
+      "title": "将历史包裹管理契约隔离到 Legacy.Contracts.Packages",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-008",
+      "category": "Legacy boundary migration",
+      "title": "移除 Domain 对历史事件聚合文件的所有权",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-009",
+      "category": "Legacy boundary migration",
+      "title": "建立旧 Domain 命名空间零回流门禁",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-010",
+      "category": "Legacy boundary migration",
+      "title": "建立兼容层可删除性与单向依赖边界",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Legacy.Contracts/JayTom.Dws.Legacy.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/DomainIsolationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-011",
+      "category": "Physical module boundaries",
+      "title": "新建平台无关 Camera.Contracts 项目",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-012",
+      "category": "Physical module boundaries",
+      "title": "新建独立 Plugin.Runtime 项目",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-013",
+      "category": "Physical module boundaries",
+      "title": "保持 Plugin.Abstractions 只承载稳定契约",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-014",
+      "category": "Physical module boundaries",
+      "title": "保持 Camera.Contracts 使用净 net10.0",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-015",
+      "category": "Physical module boundaries",
+      "title": "将插件加载实现从契约程序集移出",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-016",
+      "category": "Physical module boundaries",
+      "title": "将相机厂商 SDK 留在 Camera 适配层",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-017",
+      "category": "Physical module boundaries",
+      "title": "将外部集成契约归入 Integrations.Contracts",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-018",
+      "category": "Physical module boundaries",
+      "title": "将持久化模型物理归入 Models 项目",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-019",
+      "category": "Physical module boundaries",
+      "title": "将兼容契约物理归入 Legacy.Contracts 项目",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-020",
+      "category": "Physical module boundaries",
+      "title": "将新增项目纳入解决方案与依赖白名单",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/ProjectDependencyTests.cs"
+    },
+    {
+      "id": "S2-021",
+      "category": "Application use-case pipeline",
+      "title": "建立统一 Application Command 管道",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-022",
+      "category": "Application use-case pipeline",
+      "title": "在命令执行前集中运行输入校验",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-023",
+      "category": "Application use-case pipeline",
+      "title": "为幂等命令建立稳定幂等键契约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-024",
+      "category": "Application use-case pipeline",
+      "title": "在管道中读取并返回幂等结果",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-025",
+      "category": "Application use-case pipeline",
+      "title": "仅在成功后持久化幂等结果",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-026",
+      "category": "Application use-case pipeline",
+      "title": "为事务命令建立显式标记契约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-027",
+      "category": "Application use-case pipeline",
+      "title": "事务命令缺少 UnitOfWork 时返回结构化错误",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-028",
+      "category": "Application use-case pipeline",
+      "title": "在成功事务命令后统一提交工作单元",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-029",
+      "category": "Application use-case pipeline",
+      "title": "在用例边界记录成功失败和耗时",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-030",
+      "category": "Application use-case pipeline",
+      "title": "在用例边界传播关联标识与取消令牌",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/UseCases/ApplicationCommandPipeline.cs",
+        "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    },
+    {
+      "id": "S2-031",
+      "category": "Domain model",
+      "title": "为包裹聚合引入强类型 PackageId",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-032",
+      "category": "Domain model",
+      "title": "将包裹生命周期转换封装在聚合内",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-033",
+      "category": "Domain model",
+      "title": "将条码赋值规则封装为领域行为",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-034",
+      "category": "Domain model",
+      "title": "将重量和尺寸表达为不可变值对象",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-035",
+      "category": "Domain model",
+      "title": "以不可变领域事件记录包裹状态变化",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-036",
+      "category": "Domain model",
+      "title": "为分拣规则建立强类型匹配模型",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-037",
+      "category": "Domain model",
+      "title": "为出口锁建立独立聚合边界",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-038",
+      "category": "Domain model",
+      "title": "为设备身份建立不可变 DeviceDescriptor",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-039",
+      "category": "Domain model",
+      "title": "为授权状态建立 LicenseAggregate",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-040",
+      "category": "Domain model",
+      "title": "以整数饱和算法实现领域重试策略",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Domain/Packages/PackageAggregate.cs",
+        "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    },
+    {
+      "id": "S2-041",
+      "category": "Stable contracts and results",
+      "title": "用 OperationResult 统一预期失败返回",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-042",
+      "category": "Stable contracts and results",
+      "title": "以稳定错误码替代异常文本判断",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-043",
+      "category": "Stable contracts and results",
+      "title": "保持结果错误对象不可变",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-044",
+      "category": "Stable contracts and results",
+      "title": "为二进制资产建立强类型引用",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-045",
+      "category": "Stable contracts and results",
+      "title": "为相机帧建立显式所有权租约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-046",
+      "category": "Stable contracts and results",
+      "title": "为相机能力建立只读能力快照",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-047",
+      "category": "Stable contracts and results",
+      "title": "为相机工厂建立平台无关契约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-048",
+      "category": "Stable contracts and results",
+      "title": "为插件事件建立强类型 EventArgs",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-049",
+      "category": "Stable contracts and results",
+      "title": "从插件公共契约移除 Exception 对象",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-050",
+      "category": "Stable contracts and results",
+      "title": "为外部调用保留取消令牌契约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Results/OperationResult.cs",
+        "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/ResultContractTests.cs"
+    },
+    {
+      "id": "S2-051",
+      "category": "Persistence and assets",
+      "title": "建立数据库外二进制资产存储端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-052",
+      "category": "Persistence and assets",
+      "title": "将声音内容从 EF 映射中移除",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-053",
+      "category": "Persistence and assets",
+      "title": "将物流图标内容从 EF 映射中移除",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-054",
+      "category": "Persistence and assets",
+      "title": "数据库只保存稳定资产引用",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-055",
+      "category": "Persistence and assets",
+      "title": "按受控分类目录保存二进制资产",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-056",
+      "category": "Persistence and assets",
+      "title": "使用临时文件和原子替换写入资产",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-057",
+      "category": "Persistence and assets",
+      "title": "限制单个资产最大写入尺寸",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-058",
+      "category": "Persistence and assets",
+      "title": "限制调用方读取资产的最大尺寸",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-059",
+      "category": "Persistence and assets",
+      "title": "阻止资产引用逃逸受控根目录",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-060",
+      "category": "Persistence and assets",
+      "title": "在默认配置与输出流程接入资产存储",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Storage/FileBinaryAssetStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    },
+    {
+      "id": "S2-061",
+      "category": "Database evolution",
+      "title": "区分 SQLite 空库基线与旧库升级",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-062",
+      "category": "Database evolution",
+      "title": "空库按当前 EF 模型一次性建表",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-063",
+      "category": "Database evolution",
+      "title": "空库创建后写入完整迁移历史",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-064",
+      "category": "Database evolution",
+      "title": "避免对当前模型重复执行加列迁移",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-065",
+      "category": "Database evolution",
+      "title": "旧库升级前探测可选模块表",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-066",
+      "category": "Database evolution",
+      "title": "旧库升级前探测目标列是否存在",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-067",
+      "category": "Database evolution",
+      "title": "以幂等方式增加声音资产引用列",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-068",
+      "category": "Database evolution",
+      "title": "以幂等方式增加物流声音引用列",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-069",
+      "category": "Database evolution",
+      "title": "以幂等方式增加物流图标引用列",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-070",
+      "category": "Database evolution",
+      "title": "保留旧 INTEGER REAL 数据库原位兼容",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Migrations/SqliteSchemaMigrator.cs",
+        "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs"
+    },
+    {
+      "id": "S2-071",
+      "category": "Configuration and secrets",
+      "title": "建立版本化配置包络",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-072",
+      "category": "Configuration and secrets",
+      "title": "建立配置版本迁移运行器",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-073",
+      "category": "Configuration and secrets",
+      "title": "建立配置模块与节描述目录",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-074",
+      "category": "Configuration and secrets",
+      "title": "在应用层集中执行配置校验",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-075",
+      "category": "Configuration and secrets",
+      "title": "通过 UnitOfWork 原子提交配置",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-076",
+      "category": "Configuration and secrets",
+      "title": "建立 ISecretStore 敏感配置端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-077",
+      "category": "Configuration and secrets",
+      "title": "使用 AES-256-GCM 加密敏感配置",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-078",
+      "category": "Configuration and secrets",
+      "title": "从外部密钥提供器读取配置密钥",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-079",
+      "category": "Configuration and secrets",
+      "title": "使用原子文件替换保存密文",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-080",
+      "category": "Configuration and secrets",
+      "title": "对无效密钥引用返回结构化错误",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Infrastructure/Configuration/EncryptedFileSecretStore.cs",
+        "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    },
+    {
+      "id": "S2-081",
+      "category": "Messaging and events",
+      "title": "为集成事件建立版本化包络",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-082",
+      "category": "Messaging and events",
+      "title": "为集成事件建立分区序号",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-083",
+      "category": "Messaging and events",
+      "title": "为集成事件携带 CorrelationId",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-084",
+      "category": "Messaging and events",
+      "title": "定义事务 Outbox 写入端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-085",
+      "category": "Messaging and events",
+      "title": "定义 Outbox 有界领取端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-086",
+      "category": "Messaging and events",
+      "title": "定义幂等 Inbox 开始处理端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-087",
+      "category": "Messaging and events",
+      "title": "定义 Inbox 完成标记端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-088",
+      "category": "Messaging and events",
+      "title": "定义死信持久化端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-089",
+      "category": "Messaging and events",
+      "title": "定义死信可控重放端口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-090",
+      "category": "Messaging and events",
+      "title": "保持异步事件订阅有界且可释放",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Messaging/IReliableMessagingStore.cs",
+        "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Application/EventAggregatorTests.cs"
+    },
+    {
+      "id": "S2-091",
+      "category": "Client service composition",
+      "title": "将生产后台服务清单集中到组合模块",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-092",
+      "category": "Client service composition",
+      "title": "从生产注册中排除测试后台服务",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-093",
+      "category": "Client service composition",
+      "title": "将启动顺序显式编码到服务描述",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-094",
+      "category": "Client service composition",
+      "title": "将停止顺序固定为依赖逆序",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-095",
+      "category": "Client service composition",
+      "title": "用 ApplicationLifecycleCoordinator 缩减 App 启动职责",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-096",
+      "category": "Client service composition",
+      "title": "用 HostedServiceSupervisor 统一监督后台服务",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-097",
+      "category": "Client service composition",
+      "title": "后台服务重启使用新实例",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-098",
+      "category": "Client service composition",
+      "title": "后台故障重启应用有界退避",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-099",
+      "category": "Client service composition",
+      "title": "稳定运行窗口后重置失败计数",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-100",
+      "category": "Client service composition",
+      "title": "将平台适配器注册集中到单一入口",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Composition/HostedWorkflowRegistration.cs",
+        "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/CompositionBoundaryTests.cs"
+    },
+    {
+      "id": "S2-101",
+      "category": "ViewModel boundaries",
+      "title": "禁止 ViewModel 直接依赖 DbContext",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-102",
+      "category": "ViewModel boundaries",
+      "title": "禁止 ViewModel 直接依赖仓储契约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-103",
+      "category": "ViewModel boundaries",
+      "title": "禁止 ViewModel 直接构造设备实现",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-104",
+      "category": "ViewModel boundaries",
+      "title": "列表操作统一忙碌与取消状态",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-105",
+      "category": "ViewModel boundaries",
+      "title": "批量操作统一重入保护",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-106",
+      "category": "ViewModel boundaries",
+      "title": "导航参数改用强类型 NavigationRequest",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-107",
+      "category": "ViewModel boundaries",
+      "title": "对话交互统一通过 UserDialogService",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-108",
+      "category": "ViewModel boundaries",
+      "title": "磁盘信息改由 IDiskInventory 端口提供",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-109",
+      "category": "ViewModel boundaries",
+      "title": "属性变更统一通过 SetProperty",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-110",
+      "category": "ViewModel boundaries",
+      "title": "建立 ViewModel 文件规模回归预算",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs",
+        "JayTom.Dws.Client/ViewModels/Pages/ListOperationBaseViewModel.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/PresentationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-111",
+      "category": "WPF presentation ownership",
+      "title": "将 WindowsAction 物理归还 Client",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-112",
+      "category": "WPF presentation ownership",
+      "title": "将 WindowsActionType 物理归还 Client",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-113",
+      "category": "WPF presentation ownership",
+      "title": "Application 不再拥有窗口操作事件",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-114",
+      "category": "WPF presentation ownership",
+      "title": "业务事件与窗口事件分开目录",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-115",
+      "category": "WPF presentation ownership",
+      "title": "窗口事件只被桌面进程消费",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-116",
+      "category": "WPF presentation ownership",
+      "title": "UI 线程切换集中封装到 UiThread",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-117",
+      "category": "WPF presentation ownership",
+      "title": "区域导航键集中为稳定常量",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-118",
+      "category": "WPF presentation ownership",
+      "title": "页面目标集中为稳定常量",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-119",
+      "category": "WPF presentation ownership",
+      "title": "WPF 对话实现隐藏在展示服务后",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-120",
+      "category": "WPF presentation ownership",
+      "title": "用架构测试锁定事件文件单类型原则",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Client/Events/WindowsAction.cs",
+        "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EventOwnershipArchitectureTests.cs"
+    },
+    {
+      "id": "S2-121",
+      "category": "External integrations",
+      "title": "将集成公共命名空间统一为 Integrations.Contracts",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-122",
+      "category": "External integrations",
+      "title": "将供应商实现统一归入 Integrations 适配命名空间",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-123",
+      "category": "External integrations",
+      "title": "外部 HTTP 客户端使用集中命名",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-124",
+      "category": "External integrations",
+      "title": "外部参数使用不可变契约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-125",
+      "category": "External integrations",
+      "title": "集中校验集成韧性选项",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-126",
+      "category": "External integrations",
+      "title": "统一集成超时策略",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-127",
+      "category": "External integrations",
+      "title": "仅对幂等请求启用自动重试",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-128",
+      "category": "External integrations",
+      "title": "集中实现断路保护",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-129",
+      "category": "External integrations",
+      "title": "外部参数日志统一递归脱敏",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-130",
+      "category": "External integrations",
+      "title": "使用无真实网络沙箱测试集成边界",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Integrations.Contracts/JayTom.Dws.Integrations.Contracts.csproj",
+        "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/IntegrationArchitectureTests.cs"
+    },
+    {
+      "id": "S2-131",
+      "category": "Camera and OCR",
+      "title": "相机公共契约移除 System.Drawing",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-132",
+      "category": "Camera and OCR",
+      "title": "相机公共契约移除厂商 SDK 类型",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-133",
+      "category": "Camera and OCR",
+      "title": "相机帧通过 ReadOnlyMemory 暴露数据",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-134",
+      "category": "Camera and OCR",
+      "title": "相机帧租约实现幂等释放",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-135",
+      "category": "Camera and OCR",
+      "title": "相机帧校验正长度",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-136",
+      "category": "Camera and OCR",
+      "title": "相机帧校验正宽高",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-137",
+      "category": "Camera and OCR",
+      "title": "相机帧校验有效步幅",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-138",
+      "category": "Camera and OCR",
+      "title": "相机帧通道显式声明容量",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-139",
+      "category": "Camera and OCR",
+      "title": "相机帧通道显式声明背压策略",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-140",
+      "category": "Camera and OCR",
+      "title": "旧 NVR 适配实现隔离到 Legacy 命名空间",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Camera.Contracts/CameraContracts.cs",
+        "JayTom.Dws.Tests/CameraContractsTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/CameraContractsTests.cs"
+    },
+    {
+      "id": "S2-141",
+      "category": "Plugin runtime security",
+      "title": "插件契约与运行时实现物理分离",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-142",
+      "category": "Plugin runtime security",
+      "title": "插件包加载前校验清单大小",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-143",
+      "category": "Plugin runtime security",
+      "title": "插件程序集加载前校验 SHA-256",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-144",
+      "category": "Plugin runtime security",
+      "title": "插件包使用 RSA-PSS SHA-256 验签",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-145",
+      "category": "Plugin runtime security",
+      "title": "插件签名覆盖全部安全相关清单字段",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-146",
+      "category": "Plugin runtime security",
+      "title": "插件签名字段使用规范化 JSON",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-147",
+      "category": "Plugin runtime security",
+      "title": "插件信任根由宿主外部注入",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-148",
+      "category": "Plugin runtime security",
+      "title": "插件权限必须命中宿主允许清单",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-149",
+      "category": "Plugin runtime security",
+      "title": "插件签名密钥支持撤销",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-150",
+      "category": "Plugin runtime security",
+      "title": "插件密钥标识拒绝路径穿越字符",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Plugin.Runtime/PluginPackageVerifier.cs",
+        "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    },
+    {
+      "id": "S2-151",
+      "category": "Concurrency and resources",
+      "title": "有序分发器使用有界 Channel",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-152",
+      "category": "Concurrency and resources",
+      "title": "非阻塞入队显式返回背压结果",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-153",
+      "category": "Concurrency and resources",
+      "title": "无损工作队列使用等待式背压",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-154",
+      "category": "Concurrency and resources",
+      "title": "异步订阅处理器支持释放",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-155",
+      "category": "Concurrency and resources",
+      "title": "释放时停止接受新事件",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-156",
+      "category": "Concurrency and resources",
+      "title": "后台任务异常统一被观察",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-157",
+      "category": "Concurrency and resources",
+      "title": "仓储信号量使用共享租约",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-158",
+      "category": "Concurrency and resources",
+      "title": "信号量租约释放保持幂等",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-159",
+      "category": "Concurrency and resources",
+      "title": "单调截止时间避免墙上时钟跳变",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-160",
+      "category": "Concurrency and resources",
+      "title": "重试次数与稳定窗口分别建模",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Application/Workflows/NonBlockingOrderedDispatcher.cs",
+        "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/NonBlockingOrderedDispatcherTests.cs"
+    },
+    {
+      "id": "S2-161",
+      "category": "License security",
+      "title": "许可证改用版本化签名包络",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-162",
+      "category": "License security",
+      "title": "许可证使用 RSA-PSS SHA-256 签名",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-163",
+      "category": "License security",
+      "title": "生产验证只接受外部公钥信任根",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-164",
+      "category": "License security",
+      "title": "许可证生成只接受显式私钥",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-165",
+      "category": "License security",
+      "title": "许可证支持 SigningKeyId 轮换",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-166",
+      "category": "License security",
+      "title": "许可证支持已撤销密钥集合",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-167",
+      "category": "License security",
+      "title": "许可证密钥标识拒绝路径穿越",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-168",
+      "category": "License security",
+      "title": "许可证文件限制最大读取尺寸",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-169",
+      "category": "License security",
+      "title": "机器标识使用稳定 SHA-256 摘要",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-170",
+      "category": "License security",
+      "title": "许可证时间校验通过 TimeProvider 注入",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.License/LicenseManager.cs",
+        "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    },
+    {
+      "id": "S2-171",
+      "category": "Observability and resilience",
+      "title": "建立统一 ActivitySource",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-172",
+      "category": "Observability and resilience",
+      "title": "建立统一 Meter",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-173",
+      "category": "Observability and resilience",
+      "title": "统一记录操作成功计数",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-174",
+      "category": "Observability and resilience",
+      "title": "统一记录操作失败计数",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-175",
+      "category": "Observability and resilience",
+      "title": "统一记录操作耗时直方图",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-176",
+      "category": "Observability and resilience",
+      "title": "使用 AsyncLocal 传播 CorrelationId",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-177",
+      "category": "Observability and resilience",
+      "title": "结构化日志字段使用稳定常量",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-178",
+      "category": "Observability and resilience",
+      "title": "敏感字段通过统一脱敏器处理",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-179",
+      "category": "Observability and resilience",
+      "title": "重试退避设置上限并避免浮点溢出",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-180",
+      "category": "Observability and resilience",
+      "title": "核心业务时间通过可替换时钟获取",
+      "status": "Verified",
+      "evidence": [
+        "JayTom.Dws.Abstractions/Observability/DwsDiagnostics.cs",
+        "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs"
+    },
+    {
+      "id": "S2-181",
+      "category": "Build and repository governance",
+      "title": "CI 使用 Release 配置构建完整解决方案",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-182",
+      "category": "Build and repository governance",
+      "title": "CI 运行完整测试项目",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-183",
+      "category": "Build and repository governance",
+      "title": "CI 运行代码质量守卫",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-184",
+      "category": "Build and repository governance",
+      "title": "CI 发布桌面产物",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-185",
+      "category": "Build and repository governance",
+      "title": "CI 验证发布产物完整性",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-186",
+      "category": "Build and repository governance",
+      "title": "NuGet 版本集中到 Directory.Packages.props",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-187",
+      "category": "Build and repository governance",
+      "title": "启用 NuGet 安全审计",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-188",
+      "category": "Build and repository governance",
+      "title": "新增项目必须登记模块所有者",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-189",
+      "category": "Build and repository governance",
+      "title": "公开实现数量使用零增长预算",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-190",
+      "category": "Build and repository governance",
+      "title": "数据库质量基线只允许审计后更新",
+      "status": "Verified",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/EngineeringGovernanceTests.cs"
+    },
+    {
+      "id": "S2-191",
+      "category": "Tests and closure governance",
+      "title": "为第二批改造建立精确 200 项机器台账",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-192",
+      "category": "Tests and closure governance",
+      "title": "第二批台账编号必须连续且唯一",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-193",
+      "category": "Tests and closure governance",
+      "title": "第二批每项状态必须为 Verified",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-194",
+      "category": "Tests and closure governance",
+      "title": "第二批每项必须登记代码证据",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-195",
+      "category": "Tests and closure governance",
+      "title": "第二批每项必须登记自动化验证",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-196",
+      "category": "Tests and closure governance",
+      "title": "台账证据路径必须真实存在",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-197",
+      "category": "Tests and closure governance",
+      "title": "台账验证文件必须包含可执行 Fact",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-198",
+      "category": "Tests and closure governance",
+      "title": "人类可读台账必须覆盖全部编号",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-199",
+      "category": "Tests and closure governance",
+      "title": "架构策略覆盖 Camera.Contracts 与 Plugin.Runtime",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    },
+    {
+      "id": "S2-200",
+      "category": "Tests and closure governance",
+      "title": "全量构建测试与质量守卫作为最终关闭门",
+      "status": "Verified",
+      "evidence": [
+        "eng/ArchitecturePolicy.json",
+        "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+      ],
+      "verification": "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    }
+  ]
+}

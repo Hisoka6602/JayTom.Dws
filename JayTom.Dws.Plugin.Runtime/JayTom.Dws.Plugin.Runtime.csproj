@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 插件运行时负责发现、隔离、校验和卸载，不向插件 ABI 泄漏宿主实现。 -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>JayTom.Dws.Plugin.Runtime</AssemblyName>
+    <RootNamespace>JayTom.Dws.Plugin.Runtime</RootNamespace>
+    <Description>受约束的 DWS 插件发现、信任验证和隔离加载运行时。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Plugin.Abstractions\JayTom.Dws.Plugin.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

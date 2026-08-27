@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Model;
+using JayTom.Dws.Legacy.Contracts.Model;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices;
 

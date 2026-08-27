@@ -5,23 +5,25 @@ using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Windows.Controls;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
 {
 
     public class SortingMethodViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
 
         private ObservableCollection<SortModeInfoModel> _sortModeItems = new()
@@ -72,8 +74,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private SnackbarMessageQueue _sortingMethodMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public SortingMethodViewModel(ISettingsStore settingsStore)
+        public SortingMethodViewModel(ISettingsStore settingsStore,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
         }
 
@@ -110,7 +114,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             }
             else
             {
-                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                _eventBus.Publish(new SettingsChangedEvent
                 {
                     SettingsName = "SortingMethodSettings"
                 });
@@ -127,7 +131,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore
                         .GetAsync<SortingMethodDto>("SortingMethodSettings");

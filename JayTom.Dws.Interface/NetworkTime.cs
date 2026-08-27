@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface {
+namespace JayTom.Dws.Integrations {
     public class NetworkTime : INetworkTime {
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -16,7 +16,7 @@ namespace JayTom.Dws.Interface {
         }
 
         public async Task<DateTimeOffset> GetLocalTimeAsync(CancellationToken cancellationToken = default) {
-            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
             var resultContent = await httpClient
                 .GetStringAsync("http://worldtimeapi.org/api/ip", cancellationToken)

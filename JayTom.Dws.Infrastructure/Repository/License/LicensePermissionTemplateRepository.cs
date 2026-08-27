@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.License;
+using JayTom.Dws.Models.License;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.Repository.License;
+using JayTom.Dws.Legacy.Contracts.Repositories.License;
 
 namespace JayTom.Dws.Infrastructure.Repository.License {
 

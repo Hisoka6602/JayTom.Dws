@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using static JayTom.Dws.Interface.Szjy188.SzjyApi;
+using static JayTom.Dws.Integrations.Szjy188.SzjyApi;
 
-namespace JayTom.Dws.Interface.Wdt {
+namespace JayTom.Dws.Integrations.Wdt {
 
     public class WdtFlagshipApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -73,7 +73,7 @@ namespace JayTom.Dws.Interface.Wdt {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -119,7 +119,7 @@ namespace JayTom.Dws.Interface.Wdt {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(ApiParameters),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(ApiParameters),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(objects),
@@ -182,7 +182,7 @@ namespace JayTom.Dws.Interface.Wdt {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -228,7 +228,7 @@ namespace JayTom.Dws.Interface.Wdt {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(ApiParameters),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(ApiParameters),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(objects),

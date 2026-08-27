@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Models.LocalConf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalData {
 

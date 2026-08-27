@@ -44,8 +44,6 @@ namespace JayTom.Dws.Infrastructure.IComputer {
         /// 获取网络速度
         /// </summary>
         /// <returns></returns>
-        public NetworkInfo GetNetworkInfo();
-
         /// <summary>
         /// 异步获取网络速度
         /// </summary>

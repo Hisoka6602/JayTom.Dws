@@ -11,18 +11,17 @@ using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Application.CameraConfigurations;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
 {
 
     public class NvrWatermarkConfigEditorViewModel : BindableBase
     {
-        private readonly INvrWatermarkConfigRepository _nvrWatermarkConfigRepository;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
+        private readonly ICameraConfigurationCatalog<NvrWatermarkConfigInfoModel> _nvrWatermarkConfigRepository;
+        private readonly ICameraConfigurationCatalog<IpcNvrConfigInfoModel> _ipcNvrConfigRepository;
         private IpcNvrItemInfoModel _ipcNvrItemInfo = new();
         private string _identifier = string.Empty;
         private string _message = string.Empty;
@@ -35,8 +34,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
         private SnackbarMessageQueue _nvrWatermarkConfigEditorMessageQueue = new(TimeSpan.FromSeconds(1));
         private bool _isUseWatermark;
 
-        public NvrWatermarkConfigEditorViewModel(INvrWatermarkConfigRepository nvrWatermarkConfigRepository,
-            IIpcNvrConfigRepository ipcNvrConfigRepository)
+        public NvrWatermarkConfigEditorViewModel(
+            ICameraConfigurationCatalog<NvrWatermarkConfigInfoModel> nvrWatermarkConfigRepository,
+            ICameraConfigurationCatalog<IpcNvrConfigInfoModel> ipcNvrConfigRepository)
         {
             _nvrWatermarkConfigRepository = nvrWatermarkConfigRepository;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
@@ -130,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 ChannelIdItems = new ObservableCollection<int>(
                     Enumerable.Range(1, IpcNvrItemInfo.ChannelCount)

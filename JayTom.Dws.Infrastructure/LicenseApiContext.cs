@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection.Emit;
-using JayTom.Dws.Data.License;
+using JayTom.Dws.Models.License;
 using System.Collections.Generic;
-using JayTom.Dws.Data.VideoApiData;
+using JayTom.Dws.Models.VideoApiData;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {

@@ -1,5 +1,5 @@
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Integrations;
 using JayTom.Dws.Client.Extensions;
 using JayTom.Dws.Abstractions.Integrations;
 using JayTom.Dws.Application.Configuration;
@@ -11,11 +11,11 @@ using System.Net.Http;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
-using JayTom.Dws.Interface.Wdt;
+using JayTom.Dws.Integrations.Wdt;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -34,7 +34,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public WdtWmsApiPageViewModel(IProviderRegistry<IDataUploader> providerRegistry,
             IDialogService dialogService,
-            ISettingsStore settingsStore) : base(settingsStore)
+            ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _providerRegistry = providerRegistry;
             _dialogService = dialogService;
@@ -108,7 +108,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore.GetAsync<WdtWmsApiDto>(SettingsName) ?? new WdtWmsApiDto();
                     WdtWmsApiInfo = new WdtWmsApiInfo()
@@ -133,7 +133,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsUploading)
             {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //上传
                     var wdtWmsApi = _providerRegistry.Resolve<WdtWmsApi>(ApiType.WdtWmsApi);

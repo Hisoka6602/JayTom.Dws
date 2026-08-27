@@ -1,29 +1,30 @@
 using System;
+using JayTom.Dws.Application.Logs;
 using DryIoc;
 using System.Linq;
 using System.Text;
 using JayTom.Dws.Ocr;
 using System.Threading;
 using JayTom.Dws.Camera;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Domain.Repository;
-using JayTom.Dws.Domain.Repository.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Repositories;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Application.Events.TriggerPositionEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
@@ -34,18 +35,20 @@ namespace JayTom.Dws.Client.Service.BackgroundService
     /// </summary>
     public class LogProcessingService : Microsoft.Extensions.Hosting.BackgroundService
     {
-        private readonly IAppLogRepository _appLogRepository;
-        private readonly ICameraLogRepository _cameraLogRepository;
-        private readonly ISortingLogRepository _sortingLogRepository;
-        private readonly IWeighingLogRepository _weighingLogRepository;
-        private readonly IVolumeLogRepository _volumeLogRepository;
-        private readonly IApiLogRepository _apiLogRepository;
-        private readonly IOutputLogRepository _outputLogRepository;
-        private readonly IInputLogRepository _inputLogRepository;
-        private readonly IOcrLogRepository _ocrLogRepository;
-        private readonly IFtpLogRepository _ftpLogRepository;
-        private readonly ICleanupLogRepository _cleanupLogRepository;
-        private readonly IExceptionLogRepository _exceptionLogRepository;
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
+        private readonly ILogSink<AppLogInfoModel> _appLogRepository;
+        private readonly ILogSink<CameraLogInfoModel> _cameraLogRepository;
+        private readonly ILogSink<SortingLogInfoModel> _sortingLogRepository;
+        private readonly ILogSink<WeighingLogInfoModel> _weighingLogRepository;
+        private readonly ILogSink<VolumeLogInfoModel> _volumeLogRepository;
+        private readonly ILogSink<ApiLogInfoModel> _apiLogRepository;
+        private readonly ILogSink<OutputLogInfoModel> _outputLogRepository;
+        private readonly ILogSink<InputLogInfoModel> _inputLogRepository;
+        private readonly ILogSink<OcrLogInfoModel> _ocrLogRepository;
+        private readonly ILogSink<FtpLogInfoModel> _ftpLogRepository;
+        private readonly ILogSink<LogCleaningLogInfoModel> _cleanupLogRepository;
+        private readonly ILogSink<ExceptionLogInfoModel> _exceptionLogRepository;
         private readonly IDeviceService _deviceService;
         private readonly IExternalDataService _externalDataService;
         private readonly ISortingService _sortingService;
@@ -74,29 +77,37 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// 缓存需要由后台循环写出的诊断日志文本。
         /// </summary>
         private readonly BoundedLogQueue<string> _diagnosticLogItems = new(MaxPendingDiagnosticLogs);
+        /// <summary>日志到达时立即唤醒批量刷新循环。</summary>
+        private readonly SemaphoreSlim _flushSignal = new(0, 1);
+        /// <summary>合并高频日志生产者的重复唤醒信号。</summary>
+        private int _flushSignalArmed;
+        /// <summary>标记日志服务已经释放，阻止晚到事件触碰已释放的信号量。</summary>
+        private int _isDisposed;
         private int _isWindowsClose;
         /// <summary>最近一次统计日志丢弃数量的单调时钟时间戳。</summary>
         private long _lastDroppedLogReportTimestamp;
 
         //LogCleaningLogInfoModel
-        public LogProcessingService(IAppLogRepository appLogRepository,
-            ICameraLogRepository cameraLogRepository,
-            ISortingLogRepository sortingLogRepository,
-            IWeighingLogRepository weighingLogRepository,
-            IVolumeLogRepository volumeLogRepository,
-            IApiLogRepository apiLogRepository,
-            IOutputLogRepository outputLogRepository,
-            IInputLogRepository inputLogRepository,
-            IOcrLogRepository ocrLogRepository,
-            IFtpLogRepository ftpLogRepository,
-            ICleanupLogRepository cleanupLogRepository,
-            IExceptionLogRepository exceptionLogRepository,
+        public LogProcessingService(ILogSink<AppLogInfoModel> appLogRepository,
+            ILogSink<CameraLogInfoModel> cameraLogRepository,
+            ILogSink<SortingLogInfoModel> sortingLogRepository,
+            ILogSink<WeighingLogInfoModel> weighingLogRepository,
+            ILogSink<VolumeLogInfoModel> volumeLogRepository,
+            ILogSink<ApiLogInfoModel> apiLogRepository,
+            ILogSink<OutputLogInfoModel> outputLogRepository,
+            ILogSink<InputLogInfoModel> inputLogRepository,
+            ILogSink<OcrLogInfoModel> ocrLogRepository,
+            ILogSink<FtpLogInfoModel> ftpLogRepository,
+            ILogSink<LogCleaningLogInfoModel> cleanupLogRepository,
+            ILogSink<ExceptionLogInfoModel> exceptionLogRepository,
             IDeviceService deviceService,
             IExternalDataService externalDataService,
             ISortingService sortingService,
             IExitMonitor exitMonitor,
-            IStackedPackageService stackedPackageService)
+            IStackedPackageService stackedPackageService,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _appLogRepository = appLogRepository;
             _cameraLogRepository = cameraLogRepository;
             _sortingLogRepository = sortingLogRepository;
@@ -114,7 +125,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _sortingService = sortingService;
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(item =>
+            ConfigureQueueSignals();
+            _eventBus.Subscribe<SettingsChangedEvent>(item =>
             {
                 if (item is { } model)
                 {
@@ -126,7 +138,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //异常日志
-            EventAggregator.Instance.Subscribe<ExceptionLogInfoModel>(item =>
+            _eventBus.Subscribe<ExceptionLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -135,7 +147,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //程序运行日志
-            EventAggregator.Instance.Subscribe<AppLogInfoModel>(item =>
+            _eventBus.Subscribe<AppLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -145,7 +157,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //相机日志
-            EventAggregator.Instance.Subscribe<CameraLogInfoModel>(item =>
+            _eventBus.Subscribe<CameraLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -154,7 +166,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //分拣日志
-            EventAggregator.Instance.Subscribe<SortingLogInfoModel>(item =>
+            _eventBus.Subscribe<SortingLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -165,7 +177,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             });
 
             //称重日志队列
-            EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(item =>
+            _eventBus.Subscribe<WeighingLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -175,7 +187,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //体积日志队列
-            EventAggregator.Instance.Subscribe<VolumeLogInfoModel>(item =>
+            _eventBus.Subscribe<VolumeLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -185,7 +197,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //Api日志队列
-            EventAggregator.Instance.Subscribe<ApiLogInfoModel>(item =>
+            _eventBus.Subscribe<ApiLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -199,7 +211,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //输出日志队列
-            EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item =>
+            _eventBus.Subscribe<OutputLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -209,7 +221,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //输入日志队列
-            EventAggregator.Instance.Subscribe<InputLogInfoModel>(item =>
+            _eventBus.Subscribe<InputLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -222,7 +234,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //Ocr日志队列
-            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(item =>
+            _eventBus.Subscribe<OcrLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -232,7 +244,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //Ftp日志队列
-            EventAggregator.Instance.Subscribe<FtpLogInfoModel>(item =>
+            _eventBus.Subscribe<FtpLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -242,7 +254,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //清理记录队列
-            EventAggregator.Instance.Subscribe<LogCleaningLogInfoModel>(item =>
+            _eventBus.Subscribe<LogCleaningLogInfoModel>(item =>
             {
                 if (item is { } model)
                 {
@@ -251,17 +263,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     _logCleaningLogItems.Enqueue(model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    _eventBus.Publish(new AppLogInfoModel
                     {
                         CreateTime = DateTime.Now,
                         Message = "程序关闭",
                         Type = LogType.Information
                     });
                     Interlocked.Exchange(ref _isWindowsClose, 1);
+                    SignalFlush();
                 }
             });
 
@@ -359,13 +372,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             //Ocr
             _deviceService.OcrContentRecognized += delegate (object? sender, OcrResult args)
             {
-                EventAggregator.Instance.Publish(new OcrLogInfoModel()
+                _eventBus.Publish(new OcrLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"Ocr获取到条码[{args.BarCode}]",
                     CameraSerialNumber = args.CameraSerialNumber,
                     BarCode = args.BarCode,
-                    ElapsedTime = args.ElapsedTime,
+                    ElapsedTime = args.ElapsedMilliseconds,
                     RecipientAddress = args.RecipientAddress,
                     RecipientName = args.RecipientName,
                     RecipientPhone = args.RecipientPhone,
@@ -383,7 +396,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             //磅秤
             _deviceService.ScaleConnected += delegate (object? sender, ScaleConnectedEventArgs args)
             {
-                EventAggregator.Instance.Publish(new WeighingLogInfoModel()
+                _eventBus.Publish(new WeighingLogInfoModel()
                 {
                     Type = LogType.Information,
                     Message = $"磅秤已连接",
@@ -393,7 +406,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _deviceService.ScaleDisconnected += delegate (object? sender, ScaleDisconnectedEventArgs args)
             {
 
-                EventAggregator.Instance.Publish(new WeighingLogInfoModel()
+                _eventBus.Publish(new WeighingLogInfoModel()
                 {
                     Type = LogType.Warning,
                     Message = $"磅秤已断开",
@@ -402,7 +415,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args)
             {
-                /*EventAggregator.Instance.Publish(new WeighingLogInfoModel() {
+                /*_eventBus.Publish(new WeighingLogInfoModel() {
                     Type = LogType.Information,
                     FormatWeight = args.FormattedWeight,
                     Source = args.OriginalContent,
@@ -414,7 +427,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _externalDataService.ContentInputReceived += (sender, args) =>
             {
                 //外部输入输入
-                EventAggregator.Instance.Publish(new InputLogInfoModel()
+                _eventBus.Publish(new InputLogInfoModel()
                 {
                     Type = LogType.Information,
                     DataSourceType = DataSourceType.ExternalInput,
@@ -428,7 +441,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _exitMonitor.UnLockExitEvent += (sender, model) => {
                 NLog.LogManager.GetCurrentClassLogger().Info($"{model.CreateTime:yyyy-MM-dd HH:mm:ss.fff}--[锁格]-[格口号:{model.ExitName}]解锁");
             };*/
-            EventAggregator.Instance.Subscribe<InstructionReceived>(item =>
+            _eventBus.Subscribe<InstructionReceived>(item =>
             {
                 if (item is { } model && model.InstructionInfos?.Any() == true
                     )
@@ -478,7 +491,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position =>
+            _eventBus.Subscribe<TriggerPositionEvent>(position =>
             {
                 //创建包裹
                 if (position is { } trigger)
@@ -522,11 +535,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             });
 
             //http
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item =>
+            _eventBus.Subscribe<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
-                    EventAggregator.Instance.Publish(new ApiLogInfoModel()
+                    _eventBus.Publish(new ApiLogInfoModel()
                     {
                         Type = model.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
                         ApiParameters = model.UploadResponse?.ApiParameters ?? string.Empty,
@@ -552,15 +565,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using var flushTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
             try
             {
-                while (await flushTimer.WaitForNextTickAsync(stoppingToken) &&
+                while (!stoppingToken.IsCancellationRequested &&
                        Volatile.Read(ref _isWindowsClose) == 0)
                 {
                     try
                     {
+                        await _flushSignal.WaitAsync(
+                            TimeSpan.FromMilliseconds(50),
+                            stoppingToken).ConfigureAwait(false);
+                        Volatile.Write(ref _flushSignalArmed, 0);
                         await FlushAllQueuesAsync(stoppingToken).ConfigureAwait(false);
+                        if (HasPendingLogs())
+                        {
+                            SignalFlush();
+                        }
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                     {
@@ -580,6 +600,59 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             {
                 await FlushPendingLogsOnShutdownAsync().ConfigureAwait(false);
             }
+        }
+
+        /// <summary>把全部日志分类队列连接到同一个无计数累积唤醒信号。</summary>
+        private void ConfigureQueueSignals()
+        {
+            _exceptionItems.SetEnqueuedCallback(SignalFlush);
+            _appLogItems.SetEnqueuedCallback(SignalFlush);
+            _cameraLogItems.SetEnqueuedCallback(SignalFlush);
+            _sortingLogItems.SetEnqueuedCallback(SignalFlush);
+            _weighingLogItems.SetEnqueuedCallback(SignalFlush);
+            _volumeLogItems.SetEnqueuedCallback(SignalFlush);
+            _apiLogInfoItems.SetEnqueuedCallback(SignalFlush);
+            _outputLogItems.SetEnqueuedCallback(SignalFlush);
+            _inputLogItems.SetEnqueuedCallback(SignalFlush);
+            _ocrLogItems.SetEnqueuedCallback(SignalFlush);
+            _ftpLogItems.SetEnqueuedCallback(SignalFlush);
+            _logCleaningLogItems.SetEnqueuedCallback(SignalFlush);
+            _diagnosticLogItems.SetEnqueuedCallback(SignalFlush);
+        }
+
+        /// <summary>非阻塞地通知后台刷新器已有日志到达。</summary>
+        private void SignalFlush()
+        {
+            if (Volatile.Read(ref _isDisposed) != 0)
+            {
+                return;
+            }
+
+            if (Interlocked.Exchange(ref _flushSignalArmed, 1) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                _flushSignal.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+                Volatile.Write(ref _flushSignalArmed, 1);
+            }
+            catch (ObjectDisposedException)
+            {
+                Volatile.Write(ref _isDisposed, 1);
+            }
+        }
+
+        /// <summary>释放日志刷新器拥有的唤醒句柄。</summary>
+        public override void Dispose()
+        {
+            Interlocked.Exchange(ref _isDisposed, 1);
+            _flushSignal.Dispose();
+            base.Dispose();
         }
 
         /// <summary>按固定小批次刷新全部数据库日志和诊断文本队列。</summary>
@@ -664,7 +737,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <param name="token">取消令牌。</param>
         private static async Task FlushBatchAsync<T>(
             BoundedLogQueue<T> queue,
-            IRepository<T> repository,
+            ILogSink<T> sink,
             CancellationToken token) where T : class
         {
             if (queue.IsEmpty)
@@ -682,9 +755,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             bool saved;
             try
             {
-                saved = batch.Count == 1
-                    ? await repository.Insert(batch[0], token)
-                    : await repository.InsertRange(batch, token);
+                saved = await sink.WriteAsync(batch, token);
             }
             catch
             {

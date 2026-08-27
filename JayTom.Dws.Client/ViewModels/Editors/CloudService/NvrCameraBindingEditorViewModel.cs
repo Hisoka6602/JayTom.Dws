@@ -11,21 +11,23 @@ using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
 using JayTom.Dws.Client.Models.CloudSettingModel;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
 {
 
     public class NvrCameraBindingEditorViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IDeviceService _deviceService;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<NvrCameraBindingInfoModel> _nvrCameraBindingRepository;
         private string _identifier = string.Empty;
         private string _message = string.Empty;
         private int _channel;
@@ -55,9 +57,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
         private string _password = string.Empty;
 
         public NvrCameraBindingEditorViewModel(IDeviceService deviceService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository)
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            ICameraConfigurationCatalog<NvrCameraBindingInfoModel> nvrCameraBindingRepository,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
@@ -145,7 +149,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
 
         private async void SelectedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 foreach (var bindingItem in NvrCameraBindingItems)
                 {
@@ -159,7 +163,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
         private async void LoadedDelegate(object obj)
         {
             //加载扫码相机
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 NvrCameraBindingItems.Clear();
                 if (_deviceService.CameraItems?.Any() != true &&
@@ -204,7 +208,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
         {
             //保存到表
             //先删除
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var list = NvrCameraBindingItems.Where(w => w.IsBinding).Select(s => s.CameraSerialNumber)?.ToList() ??
                            new List<string>();
@@ -240,7 +244,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CloudService
                 }
                 else
                 {
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    _eventBus.Publish(new SettingsChangedEvent
                     {
                         SettingsName = "NvrCameraBindingInfoModel"
                     });

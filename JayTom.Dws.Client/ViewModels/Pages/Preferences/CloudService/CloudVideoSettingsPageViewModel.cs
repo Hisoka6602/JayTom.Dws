@@ -9,21 +9,21 @@ using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Domain.Dto.AppDto;
+using JayTom.Dws.Integrations.Cloud;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.CloudDto;
+using JayTom.Dws.Legacy.Contracts.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.LogsItemModels;
 using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Client.Models.CloudSettingModel;
@@ -38,16 +38,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         private SemaphoreSlim _logSlim = new(1);
 
-        public CloudVideoSettingsPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public CloudVideoSettingsPageViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
-            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(async item =>
+            _eventBus.SubscribeAsync<CloudVideoUploadMessage>(async item =>
             {
                 if (item is { } model)
                 {
                     try
                     {
                         await _logSlim.WaitAsync();
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             LogItems.Insert(0, new BaseLogItemModel()
                             {
@@ -67,14 +67,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<CloudVideoUploadRetryMessage>(async item =>
+            _eventBus.SubscribeAsync<CloudVideoUploadRetryMessage>(async item =>
             {
                 if (item is { } model)
                 {
                     try
                     {
                         await _logSlim.WaitAsync();
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             LogItems.Insert(0, new BaseLogItemModel()
                             {
@@ -154,7 +154,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
 
         private async void ClearLogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(LogItems.Clear);
+            await UiThread.Dispatcher.InvokeAsync(LogItems.Clear);
         }
     }
 }

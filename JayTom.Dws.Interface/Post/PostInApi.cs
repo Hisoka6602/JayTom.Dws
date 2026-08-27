@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 
-namespace JayTom.Dws.Interface.Post {
+namespace JayTom.Dws.Integrations.Post {
 
     /// <summary>
     /// 揽投机构
@@ -128,7 +128,7 @@ namespace JayTom.Dws.Interface.Post {
                     data = stringWriter.ToString();
                 }*/
 
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -183,7 +183,7 @@ namespace JayTom.Dws.Interface.Post {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = data,
@@ -247,7 +247,7 @@ namespace JayTom.Dws.Interface.Post {
                     serializer.Serialize(xmlWriter, envelope, namespaces);
                     data = stringWriter.ToString();
                 }*/
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.Timeout);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -301,7 +301,7 @@ namespace JayTom.Dws.Interface.Post {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = data,
@@ -375,7 +375,7 @@ namespace JayTom.Dws.Interface.Post {
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
-                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -413,7 +413,7 @@ namespace JayTom.Dws.Interface.Post {
                     stopwatch.Stop();
                     response = new UploadResponse() {
                         ExceptionMsg = exceptionMsg,
-                        ApiParameters = JsonConvert.SerializeObject(this),
+                        ApiParameters = IntegrationParameterSerializer.Serialize(this),
                         IsSuccess = isSuccess,
                         DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                         RequestContent = data,
@@ -469,7 +469,7 @@ namespace JayTom.Dws.Interface.Post {
         </web:getYJLG>
     </soapenv:Body>
 </soapenv:Envelope>";
-                        using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                        using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                         httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                         HttpResponseMessage message;
                         await using (Stream dataStream =
@@ -507,7 +507,7 @@ namespace JayTom.Dws.Interface.Post {
                         stopwatch.Stop();
                         response = new UploadResponse() {
                             ExceptionMsg = exceptionMsg,
-                            ApiParameters = JsonConvert.SerializeObject(this),
+                            ApiParameters = IntegrationParameterSerializer.Serialize(this),
                             IsSuccess = isSuccess,
                             DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                             RequestContent = data,
@@ -557,7 +557,7 @@ namespace JayTom.Dws.Interface.Post {
         </web:getYJSM>
     </soapenv:Body>
 </soapenv:Envelope>";
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -595,7 +595,7 @@ namespace JayTom.Dws.Interface.Post {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = data,
@@ -678,7 +678,7 @@ namespace JayTom.Dws.Interface.Post {
                     Parameters?.CsbInfo.Ak ?? string.Empty,
                     Parameters?.CsbInfo.Sk ?? string.Empty, null, boby);
 
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.CsbInfo?.Timeout ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -721,7 +721,7 @@ namespace JayTom.Dws.Interface.Post {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = data,

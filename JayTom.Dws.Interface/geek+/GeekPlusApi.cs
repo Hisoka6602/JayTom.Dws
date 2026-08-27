@@ -13,12 +13,12 @@ using System.Security.Policy;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Integrations.Cloud;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 
-namespace JayTom.Dws.Interface.geek_ {
+namespace JayTom.Dws.Integrations.geek_ {
 
     public class GeekPlusApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -80,7 +80,7 @@ namespace JayTom.Dws.Interface.geek_ {
 
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 HttpResponseMessage message;
@@ -127,7 +127,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -172,7 +172,7 @@ namespace JayTom.Dws.Interface.geek_ {
 
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 HttpResponseMessage message;
@@ -219,7 +219,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -298,7 +298,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 }
 
                 //using var httpClient = new HttpClient();
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 3000);
                 httpClient.DefaultRequestHeaders.Add("Authorization", hashString);
                 var message = await httpClient.PostAsync($"{Parameters?.BaseUrl}{method}", formData, token);
@@ -330,7 +330,7 @@ namespace JayTom.Dws.Interface.geek_ {
                 stopwatch.Stop();
                 var response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

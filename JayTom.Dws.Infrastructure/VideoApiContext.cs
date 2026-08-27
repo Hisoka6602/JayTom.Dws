@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
-using JayTom.Dws.Data.ServerData;
-using JayTom.Dws.Data.VideoApiData;
+using JayTom.Dws.Models.ServerData;
+using JayTom.Dws.Models.VideoApiData;
 using Microsoft.EntityFrameworkCore;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Infrastructure {
 

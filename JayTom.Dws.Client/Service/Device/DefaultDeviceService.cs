@@ -1,4 +1,7 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Application.CameraConfigurations;
 using System;
 using System.IO;
 using System.Linq;
@@ -7,7 +10,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
 using Newtonsoft.Json.Linq;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
@@ -17,17 +20,17 @@ using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Abstractions.Results;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using CameraType = JayTom.Dws.Camera.CameraType;
-using JayTom.Dws.Domain.Dto.CameraConfiguration;
+using JayTom.Dws.Legacy.Contracts.Dto.CameraConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Irayple;
@@ -37,25 +40,27 @@ using JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera;
 using TcpConnectParam = JayTom.Dws.Plugin.Scale.TcpConnectParam;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.Device
 {
 
     public class DefaultDeviceService : IDeviceService
     {
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
-        private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<PanoramaCameraConfigInfoModel> _panoramaCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<VolumeCameraConfigInfoModel> _volumeCameraConfigRepository;
         private readonly ISettingsStore _settingsStore;
         private readonly IDynamicScale _dynamicScale;
         private readonly IStaticScale _staticScale;
         private readonly IOcr _ocr;
-        private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<UsbCameraConfigInfoModel> _usbCameraConfigRepository;
         private readonly IKeyboardDeviceManager _keyboardDeviceManager;
         private readonly SemaphoreSlim _deviceLifecycleGate = new(1, 1);
         /// <summary>
@@ -226,16 +231,35 @@ namespace JayTom.Dws.Client.Service.Device
             }
         }
 
+        /// <summary>根据当前 SDK 配置发现 IPC 与 NVR 设备。</summary>
+        public async Task<IReadOnlyList<CameraInfo>> DiscoverSecurityCamerasAsync(
+            CancellationToken token = default)
+        {
+            CameraSdkSelectorDto selector = await _settingsStore
+                .GetAsync<CameraSdkSelectorDto>("CameraSdkSelector", token)
+                .ConfigureAwait(false) ?? new CameraSdkSelectorDto();
+            if (!selector.IsUseDaHuaSecurityCameraSdk)
+            {
+                return [];
+            }
+
+            return await Task.Run<IReadOnlyList<CameraInfo>>(async () =>
+                await new DaHuatechSecurityCamera().EnumerateCameras().ConfigureAwait(false) ?? [], token)
+                .ConfigureAwait(false);
+        }
+
         public event EventHandler<CameraFinderItemInfoModel>? CameraBound;
 
-        public DefaultDeviceService(IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository,
+        public DefaultDeviceService(ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            ICameraConfigurationCatalog<PanoramaCameraConfigInfoModel> panoramaCameraConfigRepository,
+            ICameraConfigurationCatalog<VolumeCameraConfigInfoModel> volumeCameraConfigRepository,
             ISettingsStore settingsStore, IDynamicScale dynamicScale,
             IStaticScale staticScale, IOcr ocr,
-            IUsbCameraConfigRepository usbCameraConfigRepository,
-            IKeyboardDeviceManager keyboardDeviceManager)
+            ICameraConfigurationCatalog<UsbCameraConfigInfoModel> usbCameraConfigRepository,
+            IKeyboardDeviceManager keyboardDeviceManager,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
             _panoramaCameraConfigRepository = panoramaCameraConfigRepository;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
@@ -374,7 +398,7 @@ namespace JayTom.Dws.Client.Service.Device
             {
                 OnRealTimeKeyReceived(s);
             };
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async settings =>
             {
                 if (settings is SettingsChangedEvent { SettingsName: "BarcodeFilterSettings" })
                 {
@@ -625,34 +649,35 @@ namespace JayTom.Dws.Client.Service.Device
                     }
                 }
 
+                if (_cameraSdkSelectorDto?.IsUsbCameraSdk == true && camera is NormalUsbCamera)
+                {
+                    await camera.ApplySettingsAsync(
+                        new CameraRuntimeSettings
+                        {
+                            UsbCamera = await GetUsbCameraSettings(
+                                camera.Info?.SerialNumber ?? string.Empty),
+                            BarcodeReader = await GetBarcodeReaderSettings()
+                        },
+                        token);
+                }
+                else if (camera is DaHuatechSecurityCamera &&
+                         camera.BindingType == CameraBindingType.ScannerCamera)
+                {
+                    await camera.ApplySettingsAsync(
+                        new CameraRuntimeSettings
+                        {
+                            BarcodeReader = await GetBarcodeReaderSettings()
+                        },
+                        token);
+                }
+
                 await Task.Delay(100, token);
-                var (cameraStarted, cameraStartMessage) = await camera.Start(string.Empty);
+                var (cameraStarted, cameraStartMessage) = await camera.Start(token);
                 if (!cameraStarted)
                 {
                     startupErrors.Add(
                         $"相机[{camera.Info?.CustomName ?? camera.Info?.SerialNumber ?? camera.SdkName}]启动失败:{cameraStartMessage}");
                     continue;
-                }
-
-                if (_cameraSdkSelectorDto?.IsUsbCameraSdk == true && camera is NormalUsbCamera usbCamera)
-                {
-                    var usbCameraParameter = await GetUsbCameraParameter(usbCamera.Info?.SerialNumber ?? string.Empty) ?? new Dictionary<UsbCameraParameter, object>();
-                    var barcodeReaderParameter = await GetBarcodeReaderSettings();
-                    var dictionary = new Dictionary<string, object>()
-                    {
-                        {"UsbCameraParameter", usbCameraParameter},
-                        {"BarcodeReaderParameter", barcodeReaderParameter}
-                    };
-                    usbCamera.SetParameters(dictionary);
-                }
-                else if (camera is DaHuatechSecurityCamera ipcCamera && camera.BindingType == CameraBindingType.ScannerCamera)
-                {
-                    var barcodeReaderParameter = await GetBarcodeReaderSettings();
-                    var dictionary = new Dictionary<string, object>()
-                    {
-                        {"BarcodeReaderParameter", barcodeReaderParameter}
-                    };
-                    ipcCamera.SetParameters(dictionary);
                 }
             }
             //连接磅秤
@@ -1205,7 +1230,7 @@ namespace JayTom.Dws.Client.Service.Device
                             }
 
                             //初始化
-                            var (b, s) = await camera.Initialize(cameraInfo);
+                            var (b, s) = await camera.Initialize(cameraInfo, token);
                             if (!b)
                             {
                                 OnDeviceException(new DeviceExceptionEventArgs()
@@ -1561,7 +1586,7 @@ namespace JayTom.Dws.Client.Service.Device
             return null;
         }
 
-        private async Task<Dictionary<UsbCameraParameter, object>?> GetUsbCameraParameter(string serialNumber)
+        private async Task<UsbCameraSettings?> GetUsbCameraSettings(string serialNumber)
         {
             try
             {
@@ -1570,52 +1595,38 @@ namespace JayTom.Dws.Client.Service.Device
                         f.SerialNumber.Equals(serialNumber));
                 if (usbCameraConfigInfoModel is not null)
                 {
-                    var dictionary = new Dictionary<UsbCameraParameter, object>();
-                    //曝光度
-                    if (usbCameraConfigInfoModel.IsCustomExposureEnabled)
+                    return new UsbCameraSettings
                     {
-                        dictionary.Add(UsbCameraParameter.Exposure, usbCameraConfigInfoModel.Exposure);
-                    }
-                    //亮度
-                    if (usbCameraConfigInfoModel.IsCustomBrightnessEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.Brightness, usbCameraConfigInfoModel.Brightness);
-                    }
-                    //对比度
-                    if (usbCameraConfigInfoModel.IsCustomContrastEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.Contrast, usbCameraConfigInfoModel.Contrast);
-                    }
-                    //色调
-                    if (usbCameraConfigInfoModel.IsCustomHueEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.Hue, usbCameraConfigInfoModel.Hue);
-                    }
-                    //锐度
-                    if (usbCameraConfigInfoModel.IsCustomSharpnessEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.Sharpness, usbCameraConfigInfoModel.Sharpness);
-                    }
-                    //伽马值
-                    if (usbCameraConfigInfoModel.IsCustomGammaEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.Gamma, usbCameraConfigInfoModel.Gamma);
-                    }
-                    //白平衡
-                    if (usbCameraConfigInfoModel.IsCustomWhiteBalanceEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.WhiteBalance, usbCameraConfigInfoModel.WhiteBalance);
-                    }
-                    //背光补偿
-                    if (usbCameraConfigInfoModel.IsCustomBacklightCompensationEnabled)
-                    {
-                        dictionary.Add(UsbCameraParameter.BklightComp, usbCameraConfigInfoModel.BklightComp);
-                    }
-                    return dictionary;
+                        Exposure = usbCameraConfigInfoModel.IsCustomExposureEnabled
+                            ? usbCameraConfigInfoModel.Exposure
+                            : null,
+                        Brightness = usbCameraConfigInfoModel.IsCustomBrightnessEnabled
+                            ? usbCameraConfigInfoModel.Brightness
+                            : null,
+                        Contrast = usbCameraConfigInfoModel.IsCustomContrastEnabled
+                            ? usbCameraConfigInfoModel.Contrast
+                            : null,
+                        Hue = usbCameraConfigInfoModel.IsCustomHueEnabled
+                            ? usbCameraConfigInfoModel.Hue
+                            : null,
+                        Sharpness = usbCameraConfigInfoModel.IsCustomSharpnessEnabled
+                            ? usbCameraConfigInfoModel.Sharpness
+                            : null,
+                        Gamma = usbCameraConfigInfoModel.IsCustomGammaEnabled
+                            ? usbCameraConfigInfoModel.Gamma
+                            : null,
+                        WhiteBalance = usbCameraConfigInfoModel.IsCustomWhiteBalanceEnabled
+                            ? usbCameraConfigInfoModel.WhiteBalance
+                            : null,
+                        BacklightCompensation = usbCameraConfigInfoModel.IsCustomBacklightCompensationEnabled
+                            ? usbCameraConfigInfoModel.BklightComp
+                            : null
+                    };
                 }
             }
             catch (Exception e)
             {
+                NLog.LogManager.GetCurrentClassLogger().Error(e);
             }
 
             return null;
@@ -1723,14 +1734,7 @@ namespace JayTom.Dws.Client.Service.Device
 
         protected virtual void OnOcrContentRecognized(OcrResult e)
         {
-            try
-            {
-                OcrContentRecognized?.Invoke(this, e);
-            }
-            finally
-            {
-                e.TakeCropImage()?.Dispose();
-            }
+            OcrContentRecognized?.Invoke(this, e);
         }
 
         protected virtual void OnAuthenticationExceptionOccurred(AuthenticationExceptionEventArgs e)

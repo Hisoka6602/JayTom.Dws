@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.VideoApiData {
+namespace JayTom.Dws.Models.VideoApiData {
 
     [Table("Data_VideoBarCodeInfo", Schema = "dbo")]
     public class VideoBarCodeInfoModel : BaseModel {

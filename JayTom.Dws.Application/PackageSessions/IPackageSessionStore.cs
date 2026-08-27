@@ -1,5 +1,6 @@
-using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Packages;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Domain.Packages;
 
 namespace JayTom.Dws.Application.Packages;
 
@@ -87,6 +88,9 @@ public interface IPackageSessionStore {
     /// <param name="predicate">筛选条件。</param>
     /// <returns>包裹快照集合。</returns>
     List<PackageInfo> GetPackages(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate);
+
+    /// <summary>获取不包含可变领域实体引用的活动会话快照。</summary>
+    IReadOnlyList<PackageSessionSnapshot> GetSnapshot();
 
     /// <summary>获取当前包裹数量。</summary>
     /// <returns>包裹数量。</returns>

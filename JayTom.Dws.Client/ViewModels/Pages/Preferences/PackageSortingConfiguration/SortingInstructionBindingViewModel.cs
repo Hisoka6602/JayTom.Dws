@@ -1,4 +1,7 @@
 using System;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.SortingInstructions;
+using JayTom.Dws.Application.Messaging;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -11,16 +14,16 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Domain.DownstreamProtocols;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
 {
@@ -28,22 +31,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     //分拣指令绑定页面
     public class SortingInstructionBindingViewModel : BulkOperationsTemplateViewModel<SortingInstructionBindingItemInfoModel>
     {
-        private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
-        private readonly ISortingInstructionRepository _sortingInstructionRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly ISortingInstructionBindingCatalog _bindingCatalog;
+        private readonly IPackageExitCatalog _packageExitCatalog;
 
         private readonly ISortingConnectionService _sortingConnectionService;
 
         private ObservableCollection<SortingInstructionBindingItemInfoModel> _sortingInstructionBindingItems = new();
 
-        public SortingInstructionBindingViewModel(ISortingInstructionBindingRepository sortingInstructionBindingRepository,
-            ISortingInstructionRepository sortingInstructionRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel, ISortingConnectionService sortingConnectionService) : base(excel)
+        public SortingInstructionBindingViewModel(ISortingInstructionBindingCatalog bindingCatalog,
+            IPackageExitCatalog packageExitCatalog,
+            IExcel excel, ISortingConnectionService sortingConnectionService,
+            IEventBus eventBus) : base(eventBus, excel)
         {
-            _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
-            _sortingInstructionRepository = sortingInstructionRepository;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _bindingCatalog = bindingCatalog;
+            _packageExitCatalog = packageExitCatalog;
 
             _sortingConnectionService = sortingConnectionService;
 
@@ -61,7 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var bindingEditor = new SortingInstructionBindingEditor();
 
@@ -79,14 +80,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         bool canActive = true;
                         if (model.SortingInstructionBindingItemInfo.IsActive)
                         {
-                            var orDefault = await _sortingInstructionBindingRepository.FirstOrDefault(f =>
-                                f.ExitId.Equals(model.SelectExitDefinitionInfo.Id) &&
-                                f.IsActive);
-                            canActive = orDefault is null;
+                            canActive = await _bindingCatalog.CanActivateAsync(model.SelectExitDefinitionInfo.Id);
                         }
 
                         //添加到数据库
-                        var insertOrUpdate = await _sortingInstructionBindingRepository.InsertDetailAsync(new SortingInstructionBindingInfoModel()
+                        var insertOrUpdate = await _bindingCatalog.AddAsync(new SortingInstructionBindingInfoModel()
                         {
                             CreateTime = DateTime.Now,
                             DelaySendMilliseconds = model.SortingInstructionBindingItemInfo.DelaySendMilliseconds,
@@ -109,7 +107,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         {
                             MessageQueue.Enqueue("保存成功");
                             RefreshData();
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -141,12 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is SortingInstructionBindingItemInfoModel item)
             {
-                var sortingInstructionBindingInfoModel = await _sortingInstructionBindingRepository.
-                    FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (sortingInstructionBindingInfoModel is not null)
-                {
-                    return await _sortingInstructionBindingRepository.Delete(sortingInstructionBindingInfoModel);
-                }
+                return await _bindingCatalog.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -156,7 +149,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is SortingInstructionBindingItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var bindingEditor = new SortingInstructionBindingEditor();
 
@@ -176,14 +169,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             bool canActive = true;
                             if (model.SortingInstructionBindingItemInfo.IsActive)
                             {
-                                var orDefault = await _sortingInstructionBindingRepository.FirstOrDefault(f =>
-                                    f.ExitId.Equals(model.SelectExitDefinitionInfo.Id) &&
-                                    f.IsActive);
-                                canActive = orDefault is null;
+                                canActive = await _bindingCatalog.CanActivateAsync(
+                                    model.SelectExitDefinitionInfo.Id,
+                                    model.SortingInstructionBindingItemInfo.Id);
                             }
 
                             //添加到数据库
-                            var insertOrUpdate = await _sortingInstructionBindingRepository.UpdateDetailAsync(new SortingInstructionBindingInfoModel()
+                            var insertOrUpdate = await _bindingCatalog.UpdateAsync(new SortingInstructionBindingInfoModel()
                             {
                                 CreateTime = DateTime.Now,
                                 DelaySendMilliseconds = model.SortingInstructionBindingItemInfo.DelaySendMilliseconds,
@@ -207,7 +199,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             {
                                 MessageQueue.Enqueue("保存成功");
                                 RefreshData();
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -249,15 +241,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void ActiveDelegate(SortingInstructionBindingItemInfoModel obj)
         {
-            var model = await _sortingInstructionBindingRepository.FirstOrDefault(f => f.Id.Equals(obj.Id));
-            if (model is not null)
+            var update = await _bindingCatalog.SetActiveAsync(obj.Id, obj.IsActive);
+            if (!update)
             {
-                model.IsActive = obj.IsActive;
-                var update = await _sortingInstructionBindingRepository.Update(model);
-                if (!update)
-                {
-                    MessageQueue.Enqueue("保存失败");
-                }
+                MessageQueue.Enqueue("保存失败");
                 return;
             }
             obj.IsActive = !obj.IsActive;
@@ -265,16 +252,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task ClearProcess()
         {
-            var sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.Select(s => s.Id > 0,
-                o => o.Id);
-            await _sortingInstructionBindingRepository.DeleteRange(sortingInstructionBindingInfoModels);
+            await _bindingCatalog.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
-            var models = await _sortingInstructionBindingRepository.
-                InstructionBindings(s => s.Id > 0);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            var models = await _bindingCatalog.ListAsync();
             SortingInstructionBindingItems.Clear();
             var infoModels = models?.Select((s, i) => new SortingInstructionBindingItemInfoModel
             {
@@ -310,10 +294,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var selectIds = SortingInstructionBindingItems.Where(w => w.IsSelect)
                 .Select(s => s.Id).ToList();
-            var sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository
-                .Select(s => selectIds.Contains(s.Id),
-                o => o.Id);
-            await _sortingInstructionBindingRepository.DeleteRange(sortingInstructionBindingInfoModels);
+            await _bindingCatalog.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<SortingInstructionBindingItemInfoModel> ExportProcess()
@@ -341,8 +322,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (items?.Any() == true)
             {
-                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+                var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
                 var dateTime = DateTime.Now;
                 var sortingInstructionBindingInfoModels = items
                     .Select(s => new SortingInstructionBindingInfoModel
@@ -379,7 +359,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     .ToList();
 
                 //批量添加
-                return await _sortingInstructionBindingRepository.InsertRangeDetailAsync(sortingInstructionBindingInfoModels);
+                return await _bindingCatalog.AddRangeAsync(sortingInstructionBindingInfoModels);
             }
 
             return false;

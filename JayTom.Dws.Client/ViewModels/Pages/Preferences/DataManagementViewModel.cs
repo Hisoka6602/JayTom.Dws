@@ -1,4 +1,7 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.PackageHistory;
+using JayTom.Dws.Application.UseCases;
 using System;
 using DryIoc;
 using System.IO;
@@ -11,46 +14,47 @@ using System.Threading;
 using JayTom.Dws.Plugin;
 using System.Diagnostics;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
-using Microsoft.EntityFrameworkCore;
 using LibreHardwareMonitor.Hardware;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 {
 
     public class DataManagementViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IDialogService _dialogService;
         private readonly IExcel _excel;
         private readonly ISettingsStore _settingsStore;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IPackageRepository _packageRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
+        private readonly IApplicationQueryHandler<SearchPackageHistoryQuery, PackageHistoryPage> _packageHistoryQuery;
         private DateTime? _startTime;
         private DateTime? _endTime;
         private int _pageCount;
@@ -75,21 +79,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         public DataManagementViewModel(IDialogService dialogService,
             IExcel excel,
             ISettingsStore settingsStore,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IPackageRepository packageRepository)
+            IPackageExitCatalog packageExitCatalog,
+            IApplicationQueryHandler<SearchPackageHistoryQuery, PackageHistoryPage> packageHistoryQuery,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _dialogService = dialogService;
             _excel = excel;
             _settingsStore = settingsStore;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _packageRepository = packageRepository;
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info =>
+            _packageExitCatalog = packageExitCatalog;
+            _packageHistoryQuery = packageHistoryQuery;
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async info =>
             {
                 if (info is SettingsChangedEvent model)
                 {
                     if (model.SettingsName.Equals("VolumeSettings"))
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                        await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                         {
                             //临时写在这里加载配置，后续修改通过事件通知
                             var volumeSettingsDto = await _settingsStore
@@ -333,10 +339,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void LoadedDelegate(Page obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
             PackageExitDefinitionItems.Clear();
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel
@@ -377,7 +382,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void OpenDateTimeDialogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var dataTimeEditor = new DataTimeEditor();
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)
@@ -463,7 +468,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 try
                 {
-                    Process.Start("explorer.exe", $"/select,\"{obj.BarcodeImagePath}\"");
+                    var startInfo = new ProcessStartInfo("explorer.exe")
+                    {
+                        UseShellExecute = false
+                    };
+                    startInfo.ArgumentList.Add("/select,");
+                    startInfo.ArgumentList.Add(Path.GetFullPath(obj.BarcodeImagePath));
+                    Process.Start(startInfo);
                 }
                 catch (Exception ex)
                 {
@@ -518,7 +529,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void ClearSearchCriteriaDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 StartTime = null;
                 EndTime = null;
@@ -569,7 +580,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     model.FilePath = saveFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
+                    DialogHost.Show(exportDialog, model.Identifier)
+                        .Forget("显示数据导出进度对话框");
                     //如果页数超过1页则从数据库获取数据(未完成)  ExcelPackageItemModel
                     // var packageItemModels = new List<PackageItemModel>();
                     var packageItemModels = new List<ExcelPackageItemModel>();
@@ -577,16 +589,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     {
                         for (var i = 0; i < PageCount; i++)
                         {
-                            var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
-                               s.BarCodeInfo != null && s.WeightInfo != null &&
-                               (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
-                               (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
-                               (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
-                               (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
-                               (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
-                               (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
-                               (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
-                           o => o.PackageCreateTime, i, 500, new CancellationToken(false));
+                            var result = await _packageHistoryQuery.HandleAsync(
+                                new SearchPackageHistoryQuery(
+                                    new PackageHistoryQuery(
+                                    StartTime,
+                                    EndTime,
+                                    BarCode,
+                                    SelectExitDefinitionInfo?.ExitName,
+                                    MinWeight,
+                                    MaxWeight,
+                                    SelectedUploadStatus),
+                                    i,
+                                    500));
+                            var infoModels = result.Items;
 
                             if (infoModels?.Any() == true)
                             {
@@ -624,7 +639,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             model.ProgressText = $"{p}%";
                             if (p == 100)
                             {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                await UiThread.Dispatcher.InvokeAsync(() =>
                                 {
                                     if (DialogHost.IsDialogOpen(model.Identifier))
                                     {
@@ -638,7 +653,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         });
                     if (!export)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             if (DialogHost.IsDialogOpen(model.Identifier))
                             {
@@ -658,42 +673,35 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         {
             const int pageSize = 500;
             //这里的查询要分开锁，不然显示有卡顿
-            System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
                 {
                     model.Identifier = "DataManagementDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                    DialogHost.Show(loadingDialog, model.Identifier)
+                        .Forget("显示数据加载进度对话框");
                     await Task.Delay(500);
                     PackageItems.Clear();
                     //获取格口集合
-                    var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
+                    var exitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
                     //获取条数
-                    var total = await _packageRepository.Total(s =>
-                            s.BarCodeInfo != null && s.WeightInfo != null &&
-
-                            (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
-                            (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
-                            (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
-                            (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
-                            (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
-                            (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
-                            (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
-                        new CancellationToken(false));
-                    if (total > 0)
+                    var result = await _packageHistoryQuery.HandleAsync(
+                        new SearchPackageHistoryQuery(
+                            new PackageHistoryQuery(
+                            StartTime,
+                            EndTime,
+                            BarCode,
+                            SelectExitDefinitionInfo?.ExitName,
+                            MinWeight,
+                            MaxWeight,
+                            SelectedUploadStatus),
+                            pageIndex - 1,
+                            pageSize));
+                    if (result.Total > 0)
                     {
-                        PageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
-                        var (key, infoModels) = await _packageRepository.SelectPackageOrderByDescending(s =>
-                                s.BarCodeInfo != null && s.WeightInfo != null &&
-                                (StartTime == null || s.BarCodeInfo.ScanTime >= StartTime) &&
-                                (EndTime == null || s.BarCodeInfo.ScanTime <= EndTime) &&
-                                (string.IsNullOrWhiteSpace(BarCode) || EF.Functions.Like(s.BarCodeInfo.Barcode, "%" + BarCode + "%")) &&
-                                (SelectExitDefinitionInfo == null || (s.ExitInfo != null && s.ExitInfo.PhysicalExit.Equals(SelectExitDefinitionInfo.ExitName))) &&
-                                (MinWeight <= 0 || s.WeightInfo.FormattedWeight >= MinWeight) &&
-                                (MaxWeight <= 0 || s.WeightInfo.FormattedWeight <= MaxWeight) &&
-                                (SelectedUploadStatus == null || (s.UploadInfo != null && s.UploadInfo.RequestStatus.Equals(SelectedUploadStatus))),
-                            o => o.PackageCreateTime, pageIndex - 1, pageSize, new CancellationToken(false));
+                        PageCount = result.Total / pageSize + (result.Total % pageSize > 0 ? 1 : 0);
+                        var infoModels = result.Items;
 
                         if (infoModels?.Any() == true)
                         {
@@ -781,11 +789,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                                     PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
                                     TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
                                 },
-                                IsUploadedToCloudVideo = s.CloudVideoUploadInfo is { UploadTime: not null }
+                                IsUploadedToCloudVideo = s.IsUploadedToCloudVideo
                             })?.ToList();
                             await Task.Delay(100);
                             PackageItems.AddRange(itemModels);
-                            DataManagementMessageQueue?.Enqueue($"共查询到:{total}条数据,显示{PackageItems?.Count}条");
+                            DataManagementMessageQueue?.Enqueue($"共查询到:{result.Total}条数据,显示{PackageItems?.Count}条");
                         }
                         else
                         {
@@ -827,5 +835,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 await DialogHost.Show(nvrRecordingDialog, model.Identifier);
             }
         }
+
     }
 }

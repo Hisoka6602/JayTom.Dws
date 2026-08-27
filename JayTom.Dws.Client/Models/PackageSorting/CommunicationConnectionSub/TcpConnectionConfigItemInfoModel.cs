@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub
 {

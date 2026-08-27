@@ -1,6 +1,6 @@
-﻿using JayTom.Dws.Client.Models.SettingsCommomModels;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Client.Models.SettingsCommomModels;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 using Prism.Mvvm;
 
 namespace JayTom.Dws.Client.Models.VolumeSettingsModel

@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams {
+namespace JayTom.Dws.Models.LocalConf.PackageSortingConfig.ConnectionParams {
 
     [Table("Conf_TcpConnectionConfigInfo", Schema = "dbo")]
     public class TcpConnectionConfigInfoModel : BasePackageSortingConfig {

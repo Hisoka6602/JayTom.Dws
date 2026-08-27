@@ -158,15 +158,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     if (!_regionManager.Regions.ContainsRegionWithName("PackageSortingRegion"))
                     {
                         //创建区域(用于视觉树以外控件)
-                        RegionManager.SetRegionName(obj, "PackageSortingRegion");
+                        RegionManager.SetRegionName(obj, NavigationRegions.PackageSorting.Name);
                         RegionManager.SetRegionManager(obj, _regionManager);
                     }
-                    _regionManager.Regions["PackageSortingRegion"].RequestNavigate("PackageExitDefinitionPage");
+                    _regionManager.Navigate(
+                        new NavigationRequest(
+                            NavigationRegions.PackageSorting,
+                            NavigationDestinations.PackageExitDefinition));
                 });
             }
         }
@@ -178,7 +181,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void MenuClickDelegate(MenuItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!obj.PageClassName.Equals(string.Empty))
                 {
@@ -189,8 +192,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
                     obj.IsSelected = true;
 
-                    _regionManager?.Regions?["PackageSortingRegion"]
-                        ?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
+                    _regionManager.Navigate(
+                        NavigationRequest.To(NavigationRegions.PackageSorting, obj.PageClassName));
                 }
             }, DispatcherPriority.Background);
         }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.Nvr {
 
@@ -34,7 +35,7 @@ namespace JayTom.Dws.Camera.Nvr {
 
         public event EventHandler<Exception>? DeviceExcepted;
 
-        public Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public Task<KeyValuePair<bool, string>> Initialize(CancellationToken cancellationToken = default) {
             _baseDaHuatech = BaseDaHuatech.CreateInstance();
             if (_baseDaHuatech is null) {
                 return Task.FromResult(new KeyValuePair<bool, string>(false, "创建NVR对象失败,请检查是否使用了对应的SDK和文件是否齐全"));
@@ -104,15 +105,18 @@ namespace JayTom.Dws.Camera.Nvr {
         }
 
         public void Dispose() {
-            foreach (var info in _devInfo) {
-                if (info.Value is not null && _baseDaHuatech is not null) {
-                    //停止实时预览
-                    //停止下载
-                    //停止回放
-                    //登出
-                    _baseDaHuatech.LogOut(info.Key).GetAwaiter().GetResult();
-                }
+            TaskCleanup.Observe(DisposeCoreAsync(), OnDeviceExcepted);
+        }
+
+        /// <summary>异步登出全部 NVR 设备，避免同步阻塞释放线程。</summary>
+        private async Task DisposeCoreAsync() {
+            if (_baseDaHuatech is null) {
+                return;
             }
+
+            await Task.WhenAll(_devInfo
+                .Where(info => info.Value is not null)
+                .Select(info => _baseDaHuatech.LogOut(info.Key)));
         }
 
         protected virtual void OnDeviceExcepted(Exception e) {

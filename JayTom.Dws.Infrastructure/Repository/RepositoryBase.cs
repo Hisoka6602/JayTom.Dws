@@ -5,9 +5,9 @@ using System.ComponentModel;
 using EFCore.BulkExtensions;
 using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
-using JayTom.Dws.Data.Attributes;
-using JayTom.Dws.Domain.Repository;
-using JayTom.Dws.Data.VideoApiData;
+using JayTom.Dws.Models.Attributes;
+using JayTom.Dws.Legacy.Contracts.Repositories;
+using JayTom.Dws.Models.VideoApiData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -24,19 +24,6 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public RepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache)
             : base(contextFactory, cache) {
-        }
-
-        public virtual async Task<int> ExecuteSqlAsync(string sql, CancellationToken token) {
-            ArgumentException.ThrowIfNullOrWhiteSpace(sql);
-            await using var concardContext = _contextFactory.CreateDbContext();
-            return await concardContext.Database.ExecuteSqlRawAsync(sql, token);
-        }
-
-        public async Task<List<T>> FromSqlRaw(string sql, CancellationToken token) {
-            ArgumentException.ThrowIfNullOrWhiteSpace(sql);
-            await using var concardContext = _contextFactory.CreateDbContext();
-            return await concardContext.Set<T>().FromSqlRaw(sql).AsNoTracking()
-                .ToListAsync(cancellationToken: token);
         }
 
         public virtual async Task<bool> Insert(T entity, CancellationToken token) {
@@ -197,7 +184,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             IDbContextTransaction? contextTransaction = null;
             try {
                 using var semaphoreLease =
-                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
+                    await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(_transactionSlim, token);
                 var propertyInfos = EntityProperties;
 
                 await using (var concardContext = _contextFactory.CreateDbContext()) {
@@ -318,7 +305,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                     exclude = [.. memberInfos.Select(p => p.Name)];
                 }
                 using var semaphoreLease =
-                    await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(_transactionSlim, token);
+                    await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(_transactionSlim, token);
                 var propertyInfos = EntityProperties;
 
                 await using var concardContext = _contextFactory.CreateDbContext();
@@ -517,18 +504,8 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public virtual async Task<bool> Delete(T entity, CancellationToken token) {
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-                    var propertyInfos = EntityProperties;
-                    var info = propertyInfos?.FirstOrDefault(f =>
-                        f.GetCustomAttribute<DatabaseGeneratedAttribute>() != null);
-                    if (string.IsNullOrEmpty(name) ||
-                        info is null) return false;
-                    var sql = @$" DELETE FROM {name} WHERE {info.Name}={info?.GetValue(entity, null)}";
-                    var executeSqlRawAsync = await concardContext.Database.ExecuteSqlRawAsync(sql, token);
-
-                    return executeSqlRawAsync > 0;
-                }
+                concardContext.Set<T>().Remove(entity);
+                return await concardContext.SaveChangesAsync(token) > 0;
             }
             catch (Win32Exception) {
             }
@@ -572,16 +549,14 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public virtual async Task<int> DeleteCount(int count, CancellationToken token) {
+            if (count <= 0) {
+                return 0;
+            }
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
-                {
-                    var name = typeof(T).GetCustomAttribute<TableAttribute>()?.Name;
-
-                    var sql = @$" DELETE TOP ({count}) {name}";
-                    var executeSqlRawAsync = await concardContext.Database.ExecuteSqlRawAsync(sql, token);
-
-                    return executeSqlRawAsync;
-                }
+                return await concardContext.Set<T>()
+                    .Take(count)
+                    .ExecuteDeleteAsync(cancellationToken: token);
             }
             catch (Win32Exception) {
             }

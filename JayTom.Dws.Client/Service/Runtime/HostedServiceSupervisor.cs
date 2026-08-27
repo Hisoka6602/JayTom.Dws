@@ -1,4 +1,6 @@
 using JayTom.Dws.Application.Resilience;
+using JayTom.Dws.Application.Workflows;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NLog;
 using System;
@@ -35,8 +37,12 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
         WriteIndented = true
     };
 
-    /// <summary>需要统一监督的后台服务。</summary>
-    private readonly IReadOnlyList<IHostedService> _services;
+    /// <summary>用于为每一次服务运行创建独立依赖作用域。</summary>
+    private readonly IServiceScopeFactory _scopeFactory;
+    /// <summary>需要统一监督的后台服务描述。</summary>
+    private readonly IReadOnlyList<SupervisedHostedServiceDescriptor> _serviceDescriptors;
+    /// <summary>保存当前正在运行的服务实例，供关闭流程按逆序停止。</summary>
+    private readonly ConcurrentDictionary<Type, ActiveHostedService> _activeServices = new();
     /// <summary>按服务名称保存当前健康状态。</summary>
     private readonly ConcurrentDictionary<string, string> _serviceStates = new(StringComparer.Ordinal);
     /// <summary>按服务名称保存累计重启次数。</summary>
@@ -58,10 +64,14 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
     /// <summary>标记监督器是否已经启动。</summary>
     private int _isStarted;
 
-    /// <summary>使用依赖注入容器登记的全部后台服务创建监督器。</summary>
-    public HostedServiceSupervisor(IEnumerable<IHostedService> services) {
-        ArgumentNullException.ThrowIfNull(services);
-        _services = services.ToArray();
+    /// <summary>使用依赖注入容器登记的后台服务描述创建监督器。</summary>
+    public HostedServiceSupervisor(
+        IServiceScopeFactory scopeFactory,
+        IEnumerable<SupervisedHostedServiceDescriptor> serviceDescriptors) {
+        ArgumentNullException.ThrowIfNull(scopeFactory);
+        ArgumentNullException.ThrowIfNull(serviceDescriptors);
+        _scopeFactory = scopeFactory;
+        _serviceDescriptors = serviceDescriptors.ToArray();
     }
 
     /// <summary>启动并开始监督全部后台服务。</summary>
@@ -72,20 +82,27 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
 
         _lifetimeCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var lifetimeToken = _lifetimeCancellation.Token;
-        var initialStarts = new TaskCompletionSource[_services.Count];
-        _supervisionTasks = new Task[_services.Count];
+        var initialStarts = new TaskCompletionSource[_serviceDescriptors.Count];
+        _supervisionTasks = new Task[_serviceDescriptors.Count];
 
-        for (var index = 0; index < _services.Count; index++) {
+        for (var index = 0; index < _serviceDescriptors.Count; index++) {
             var initialStart = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             initialStarts[index] = initialStart;
             _supervisionTasks[index] = SuperviseServiceAsync(
-                _services[index],
+                _serviceDescriptors[index],
                 initialStart,
                 lifetimeToken);
         }
 
-        await Task.WhenAll(initialStarts.Select(source => source.Task)).ConfigureAwait(false);
+        try {
+            await Task.WhenAll(initialStarts.Select(source => source.Task)).ConfigureAwait(false);
+        }
+        catch {
+            await _lifetimeCancellation.CancelAsync().ConfigureAwait(false);
+            Interlocked.Exchange(ref _isStarted, 0);
+            throw;
+        }
         _heartbeatTask = RunHeartbeatLoopAsync(lifetimeToken);
         await WriteHeartbeatAsync("Running", cancellationToken).ConfigureAwait(false);
     }
@@ -101,8 +118,11 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
             await lifetimeCancellation.CancelAsync().ConfigureAwait(false);
         }
 
-        foreach (var service in _services.Reverse()) {
-            await StopServiceSafelyAsync(service, cancellationToken).ConfigureAwait(false);
+        foreach (var descriptor in _serviceDescriptors.Reverse()) {
+            if (_activeServices.TryRemove(descriptor.ServiceType, out var activeService)) {
+                await StopServiceSafelyAsync(activeService.Service, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
 
         await ObserveCompletionAsync(_supervisionTasks, cancellationToken).ConfigureAwait(false);
@@ -111,8 +131,8 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
             _heartbeatTask = null;
         }
 
-        foreach (var service in _services) {
-            _serviceStates[service.GetType().Name] = "Stopped";
+        foreach (var descriptor in _serviceDescriptors) {
+            _serviceStates[descriptor.ServiceType.Name] = "Stopped";
         }
 
         try {
@@ -131,22 +151,26 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
 
     /// <summary>持续监督单个服务并在故障后重新启动。</summary>
     private async Task SuperviseServiceAsync(
-        IHostedService service,
+        SupervisedHostedServiceDescriptor descriptor,
         TaskCompletionSource initialStart,
         CancellationToken cancellationToken) {
-        var serviceName = service.GetType().Name;
-        var consecutiveFailures = 0;
+        var serviceName = descriptor.ServiceType.Name;
+        var failureCounter = new StableRunFailureCounter(StableRunDuration);
         var isInitialAttempt = true;
 
         while (!cancellationToken.IsCancellationRequested) {
-            var runStartedTimestamp = 0L;
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var service = (IHostedService)scope.ServiceProvider.GetRequiredService(
+                descriptor.ServiceType);
+            var activeService = new ActiveHostedService(service);
+            _activeServices[descriptor.ServiceType] = activeService;
             try {
                 _serviceStates[serviceName] = isInitialAttempt ? "Starting" : "Restarting";
                 // 启动令牌只约束监督器等待时间；服务自身由 StopAsync 按依赖逆序停止。
                 await service.StartAsync(CancellationToken.None)
                     .WaitAsync(ServiceStartTimeout, cancellationToken)
                     .ConfigureAwait(false);
-                runStartedTimestamp = Stopwatch.GetTimestamp();
+                failureCounter.MarkRunStarted();
                 _serviceStates[serviceName] = "Running";
                 if (!isInitialAttempt) {
                     _restartCounts.AddOrUpdate(serviceName, 1, static (_, count) => count + 1);
@@ -171,26 +195,28 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
                 break;
             }
             catch (Exception exception) {
-                if (runStartedTimestamp != 0 &&
-                    Stopwatch.GetElapsedTime(runStartedTimestamp) >= StableRunDuration) {
-                    consecutiveFailures = 0;
-                }
-
-                consecutiveFailures++;
+                int consecutiveFailures = failureCounter.RegisterFailure();
                 _serviceStates[serviceName] = "Faulted";
-                initialStart.TrySetResult();
+                if (isInitialAttempt) {
+                    initialStart.TrySetException(new InvalidOperationException(
+                        $"后台服务首次启动失败:{serviceName}",
+                        exception));
+                }
                 isInitialAttempt = false;
                 Logger.Error(
                     exception,
                     $"后台服务发生故障，将自动重启。服务:{serviceName}，连续失败:{consecutiveFailures}");
             }
 
+            if (((ICollection<KeyValuePair<Type, ActiveHostedService>>)_activeServices)
+                .Remove(new KeyValuePair<Type, ActiveHostedService>(descriptor.ServiceType, activeService))) {
+                await StopServiceSafelyAsync(service, CancellationToken.None).ConfigureAwait(false);
+            }
             if (cancellationToken.IsCancellationRequested) {
                 break;
             }
 
-            await StopServiceSafelyAsync(service, CancellationToken.None).ConfigureAwait(false);
-            var delay = _restartBackoff.GetDelay(Math.Max(1, consecutiveFailures));
+            var delay = _restartBackoff.GetDelay(Math.Max(1, failureCounter.Count));
             _serviceStates[serviceName] = "Backoff";
             try {
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
@@ -200,7 +226,7 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
             }
         }
 
-        initialStart.TrySetResult();
+        initialStart.TrySetCanceled(cancellationToken);
         _serviceStates[serviceName] = "Stopped";
     }
 
@@ -273,7 +299,7 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
         var restartCounts = _restartCounts
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-        var overallStatus = serviceStates.Count == _services.Count &&
+        var overallStatus = serviceStates.Count == _serviceDescriptors.Count &&
                             serviceStates.Values.All(state => state == "Running")
             ? "Healthy"
             : "Degraded";
@@ -314,4 +340,5 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
     public async ValueTask DisposeAsync() {
         await StopAsync(CancellationToken.None).ConfigureAwait(false);
     }
+
 }

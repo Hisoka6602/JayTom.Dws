@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Data;
 using System.Globalization;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
 {

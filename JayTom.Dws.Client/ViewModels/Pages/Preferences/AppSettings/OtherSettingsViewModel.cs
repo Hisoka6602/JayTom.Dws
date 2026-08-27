@@ -10,15 +10,15 @@ using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Forms;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Security.Principal;
 using System.Windows.Media.Imaging;
-using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.AppSettingModel;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
@@ -33,7 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
         private string _fileName = string.Empty;
         private bool _isLoaded;
 
-        public OtherSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public OtherSettingsViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -109,7 +109,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var otherSettingsDto = await _settingsStore.GetAsync<OtherSettingsDto>(SettingsName);
                     if (otherSettingsDto is not null)
@@ -158,7 +158,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             {
                 if (!string.IsNullOrEmpty(openFileDialog.FileName))
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         Icon = CreateBitmapImage(new Uri(openFileDialog.FileName), 30, 30);
                         FileName = openFileDialog.FileName;

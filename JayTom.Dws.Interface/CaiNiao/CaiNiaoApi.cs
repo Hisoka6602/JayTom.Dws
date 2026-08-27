@@ -11,9 +11,9 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
-using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
+using static JayTom.Dws.Integrations.CaiNiao.CaiNiaoApi;
 
-namespace JayTom.Dws.Interface.CaiNiao {
+namespace JayTom.Dws.Integrations.CaiNiao {
 
     public class CaiNiaoApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -59,7 +59,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -107,7 +107,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -156,7 +156,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -204,7 +204,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -265,7 +265,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
                     },
                 };
                 try {
-                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -315,7 +315,7 @@ namespace JayTom.Dws.Interface.CaiNiao {
             NLog.LogManager.GetCurrentClassLogger().Error($"提交集包报告:格口:{new string([.. packageExit.Where(char.IsDigit)])},包裹数:{packageItems.Count},具体单号:{string.Join(",", packageItems)}");
 
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 5);
                 HttpResponseMessage message;
                 await using (Stream dataStream =

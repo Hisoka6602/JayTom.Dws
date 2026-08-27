@@ -1,6 +1,9 @@
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using MaterialDesignThemes.Wpf;
 using Prism.Commands;
 using Prism.Mvvm;
@@ -13,8 +16,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 {
     public class LogisticsSortingRuleEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
+        private readonly ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> _logisticsCatalog;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
@@ -25,11 +28,11 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private LogisticsCodeRecognitionItemInfoModel _selectLogisticsCodeRecognition = new();
         private ObservableCollection<LogisticsRuleItemInfoModel> _logisticsRuleItems = new();
 
-        public LogisticsSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository)
+        public LogisticsSortingRuleEditorViewModel(IPackageExitCatalog packageExitCatalog,
+            ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> logisticsCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
+            _packageExitCatalog = packageExitCatalog;
+            _logisticsCatalog = logisticsCatalog;
         }
 
         /// <summary>
@@ -99,11 +102,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
-            var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                o => o.ModifyTime);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            var logisticsCodeRecognitionInfoModels = await _logisticsCatalog.ListAsync();
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
@@ -205,7 +206,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void AddLogisticsItemDelegate()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!LogisticsRuleItems.Any(a => a.LogisticsId.Equals(SelectLogisticsCodeRecognition.Id)))
                 {
@@ -229,7 +230,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void DeleteLogisticsItemDelegate(LogisticsRuleItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 LogisticsRuleItems.Remove(obj);
                 //调整Num

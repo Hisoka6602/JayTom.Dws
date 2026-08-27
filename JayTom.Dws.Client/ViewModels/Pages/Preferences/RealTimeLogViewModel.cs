@@ -7,12 +7,12 @@ using System.IO.Ports;
 using System.Threading;
 using System.Windows.Input;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
@@ -20,6 +20,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
     public class RealTimeLogViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private ObservableCollection<BaseLogItemModel> _logItems = new();
         /// <summary>
         /// 待显示日志的有界缓冲队列。
@@ -46,10 +48,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private readonly Task _logUpdateWorker;
 
-        public RealTimeLogViewModel()
+        public RealTimeLogViewModel(
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             //相机日志
-            EventAggregator.Instance.Subscribe<CameraLogInfoModel>(item =>
+            _eventBus.Subscribe<CameraLogInfoModel>(item =>
             {
                 if (item is CameraLogInfoModel model)
                 {
@@ -59,7 +63,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 }
             });
             //分拣日志
-            EventAggregator.Instance.Subscribe<SortingLogInfoModel>(item =>
+            _eventBus.Subscribe<SortingLogInfoModel>(item =>
             {
                 if (item is SortingLogInfoModel model)
                 {
@@ -78,7 +82,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 }
             });
             //称重日志队列
-            EventAggregator.Instance.Subscribe<WeighingLogInfoModel>(item =>
+            _eventBus.Subscribe<WeighingLogInfoModel>(item =>
             {
                 if (item is WeighingLogInfoModel model)
                 {
@@ -88,7 +92,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 }
             });
             //体积日志队列
-            EventAggregator.Instance.Subscribe<VolumeLogInfoModel>(item =>
+            _eventBus.Subscribe<VolumeLogInfoModel>(item =>
             {
                 if (item is VolumeLogInfoModel model)
                 {
@@ -98,7 +102,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 }
             });
             //Api日志队列
-            EventAggregator.Instance.Subscribe<ApiLogInfoModel>(item =>
+            _eventBus.Subscribe<ApiLogInfoModel>(item =>
             {
                 if (item is ApiLogInfoModel model)
                 {
@@ -107,7 +111,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 }
             });
             //Ocr日志
-            EventAggregator.Instance.Subscribe<OcrLogInfoModel>(item =>
+            _eventBus.Subscribe<OcrLogInfoModel>(item =>
             {
                 if (item is OcrLogInfoModel model)
                 {
@@ -115,7 +119,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     OnAddLog(model.CreateTime, $"[Ocr]-{model.Message}");
                 }
             });
-            EventAggregator.Instance.Subscribe<InputLogInfoModel>(item =>
+            _eventBus.Subscribe<InputLogInfoModel>(item =>
             {
                 if (item is InputLogInfoModel model)
                 {
@@ -123,9 +127,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     OnAddLog(model.CreateTime, $"[输入]-{model.Message}");
                 }
             });
-            EventAggregator.Instance.Subscribe<JayTom.Dws.Domain.EventMediators.WindowsAction>(item =>
+            _eventBus.Subscribe<JayTom.Dws.Client.Events.WindowsAction>(item =>
             {
-                if (item is { Type: JayTom.Dws.Domain.EventMediators.WindowsActionType.Close })
+                if (item is { Type: JayTom.Dws.Client.Events.WindowsActionType.Close })
                 {
                     _cancellationTokenSource.Cancel();
                 }
@@ -133,14 +137,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             _logUpdateWorker = Task.Run(ProcessPendingLogs);
 
             /*//输出日志队列
-            EventAggregator.Instance.Subscribe<OutputLogInfoModel>(item => {
+            _eventBus.Subscribe<OutputLogInfoModel>(item => {
                 if (item is OutputLogInfoModel model) {
                     //添加
                     OnAddLog(model.CreateTime, $"[输出]-{model.OutputContent}");
                 }
             });*/
             //Ftp日志队列
-            /*EventAggregator.Instance.Subscribe<FtpLogInfoModel>(item => {
+            /*_eventBus.Subscribe<FtpLogInfoModel>(item => {
                 if (item is FtpLogInfoModel model) {
                     //添加
                     OnAddLog(model.CreateTime, $"[Ftp信息]-{model.Message}");

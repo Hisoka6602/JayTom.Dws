@@ -1,5 +1,5 @@
-﻿using Prism.Mvvm;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using Prism.Mvvm;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 

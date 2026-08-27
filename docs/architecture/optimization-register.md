@@ -27,13 +27,13 @@
 | 21 | 移除 Domain 对 `System.Drawing.Common` 的依赖 | 已完成 | Domain 项目文件与平台中立 DTO |
 | 22 | 移除 Domain 对 `System.IO.Ports` 的依赖 | 已完成 | 串口设置 DTO 改用中立枚举 |
 | 23 | 移除 Domain 对 NLog 的依赖 | 已完成 | Domain 项目文件及服务源码 |
-| 24 | 将视频条码具体服务编译所有权移到 Infrastructure | 已完成 | Infrastructure 链接编译、Domain 排除实现 |
-| 25 | 将云服务具体实现编译所有权移到 Application | 已完成 | Application 项目编译所有权配置 |
-| 26 | 将授权应用服务具体实现归入 Application | 已完成 | Application 项目编译所有权配置 |
+| 24 | 将视频条码具体服务编译所有权移到 Infrastructure | 已完成 | `Infrastructure/Service/VideoApi/VideoBarCodeService.cs` 物理归属 |
+| 25 | 将云服务具体实现编译所有权移到 Application | 已完成 | `Application/Services/Cloud/CloudService.cs` 物理归属 |
+| 26 | 将授权应用服务具体实现归入 Application | 已完成 | `Application/Services/Licensing` 物理归属 |
 | 27 | 将跨层事件契约集中到 Domain | 已完成 | Client 删除重复事件类型并改用统一契约 |
 | 28 | 在 Application 定义消息总线接口 | 已完成 | `Messaging/IEventBus.cs` |
 | 29 | 将 Prism 事件聚合器降为 Client 适配实现 | 已完成 | `EventMediators/EventAggregator.cs` |
-| 30 | 以应用层会话接口替代 Client 对静态包裹管理器的直接访问 | 已完成（兼容迁移） | `PackageSessions/IPackageSessionStore.cs`，Client 零直接引用 |
+| 30 | 以应用层会话接口替代 Client 对静态包裹管理器的直接访问 | 已完成 | `PackageSessions/IPackageSessionStore.cs` 与实例级 `PackageSessionRegistry` |
 | 31 | 复核并移除无业务价值的独立 WPF Host | 已完成 | 解决方案不再包含 `JayTom.Dws.Host.Wpf` |
 | 32 | 将 `App.xaml` 和启动代码归还主程序 | 已完成 | `JayTom.Dws.Client/App.xaml`、`App.xaml.cs` |
 | 33 | 将 Client 保持为唯一桌面可执行程序 | 已完成 | Client `OutputType=WinExe` |
@@ -53,7 +53,7 @@
 | 47 | 统一上下文工厂与缓存依赖的构造注入 | 已完成 | `RepositoryContextBase` 构造函数 |
 | 48 | 统一上下文缓存键校验 | 已完成 | `RepositoryContextBase` 校验逻辑 |
 | 49 | 新建跨平台外部集成契约项目 | 已完成 | `JayTom.Dws.Integrations.Contracts` |
-| 50 | 将上传器契约从供应商实现项目分离 | 已完成 | `IDataUploader`、`IApiUploader` 单一编译所有权 |
+| 50 | 将上传器契约从供应商实现项目分离 | 已完成 | `Integrations.Contracts/IDataUploader.cs`、`IApiUploader.cs` 物理归属 |
 | 51 | 将 API 参数与客户端名称常量归入契约程序集 | 已完成 | `BaseApiParameters`、`ApiHttpClientNames` |
 | 52 | 将网络时间契约归入集成契约程序集 | 已完成 | `INetworkTime` |
 | 53 | 将上传图像参数改为平台无关句柄 | 已完成 | `UploadImageInfo.Image` 使用 `ImageHandle` |
@@ -67,4 +67,4 @@
 
 ## 兼容迁移说明
 
-`PackageSessionStore` 当前在应用层内部委托已有的线程安全 `PackageInfoManager`，目的是不改变包裹计时器和事件语义；Client 的 265 个静态调用点已经全部改为依赖注入接口。遗留实现已被封装在单一适配器之后，可在后续迭代中替换，而不会再次影响展示层。
+`PackageSessionStore` 当前在应用层内部拥有实例级线程安全 `PackageSessionRegistry`；Client 的调用统一使用依赖注入接口。不同应用或测试实例之间不再共享进程全局包裹状态，原有包裹计时器和事件语义由回归测试保护。

@@ -1,4 +1,9 @@
 using NLog;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
+using JayTom.Dws.Application.PackageHistory;
 using System;
 using JayTom.Dws.Application.Workflows;
 using System.Linq;
@@ -6,29 +11,29 @@ using Newtonsoft.Json;
 using System.Threading;
 using System.Diagnostics;
 using static ImTools.ImMap;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
 using System.Windows.Documents;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Integrations.Cloud;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
 using JayTom.Dws.Infrastructure.Repository.LocalData;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using PackageInfo = JayTom.Dws.Domain.Manager.PackageInfo;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
+using PackageInfo = JayTom.Dws.Legacy.Contracts.Packages.PackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using SortingExitType = JayTom.Dws.Application.Events.SortingExitType;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
-using PackageAbnormalSortingType = JayTom.Dws.Domain.EventMediators.PackageAbnormalSortingType;
+using PackageExitUpdateEvent = JayTom.Dws.Application.Events.PackageExitUpdateEvent;
+using PackageAbnormalSortingType = JayTom.Dws.Application.Events.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -38,17 +43,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
     /// </summary>
     public class DataProcessingBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
 
-        //private readonly IPanoramaImageRepository _panoramaImageRepository;
-        private readonly IPackageRepository _packageRepository;
+        private readonly IPackageProcessingPersistence _packagePersistence;
 
         private readonly IImageStorageService _imageStorageService;
 
-        private readonly ISortingRepository _sortingRepository;
-        private readonly IUploadRepository _uploadRepository;
-        private readonly IImageRepository _imageRepository;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly IExitInfoRepository _exitInfoRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
         private readonly LosslessWorkQueue<PackageInfoModel> _insertItems = new();
         private readonly LosslessWorkQueue<ApiResponseReceived> _updateResponseItems = new();
         private readonly LosslessWorkQueue<SavedImageInfo> _savedImageItems = new();
@@ -76,25 +78,30 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>
         /// 标记当前是否包含需要退避后重试的工作。
         /// </summary>
-        private int _retryRequested;
+        /// <summary>在独立单调时钟线程上安排失败持久化任务的重试。</summary>
+        private readonly MonotonicDeadlineScheduler _retryScheduler =
+            new("DataPersistenceRetry", ThreadPriority.BelowNormal);
+        /// <summary>合并密集生产者发出的重复唤醒信号。</summary>
+        private int _workSignalArmed;
+        /// <summary>下一次清理孤立指令的单调时钟时间戳。</summary>
+        private long _nextPendingInstructionCleanupTimestamp;
 
-        private CameraMetadata[] _cameraMetadata = [];
+        private IReadOnlyDictionary<string, CameraMetadata> _cameraMetadata =
+            new Dictionary<string, CameraMetadata>(StringComparer.Ordinal);
         private int _isWindowsClose;
+        /// <summary>标记持久化服务已经释放，阻止晚到事件访问已释放的唤醒句柄。</summary>
+        private int _isDisposed;
 
-        public DataProcessingBackgroundService(IPackageRepository packageRepository,
-            IImageStorageService imageStorageService, ISortingRepository sortingRepository,
-            IUploadRepository uploadRepository,
-            IImageRepository imageRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            IExitInfoRepository exitInfoRepository)
+        public DataProcessingBackgroundService(
+            IPackageProcessingPersistence packagePersistence,
+            IImageStorageService imageStorageService,
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
-            _packageRepository = packageRepository;
+            _eventBus = eventBus;
+            _packagePersistence = packagePersistence;
             _imageStorageService = imageStorageService;
-            _sortingRepository = sortingRepository;
-            _uploadRepository = uploadRepository;
-            _imageRepository = imageRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
-            _exitInfoRepository = exitInfoRepository;
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args)
             {
                 //保存后触发
@@ -109,7 +116,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     ScanTime = args.ScanTime,
                 });
             };
-            EventAggregator.Instance.SubscribePackage<PackageInfo>(item =>
+            _eventBus.SubscribePackage<PackageInfo>(item =>
             {
                 if (item is { } model)
                 {
@@ -124,28 +131,28 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     });
                 }
             });
-            EventAggregator.Instance.SubscribePackage<ApiResponseReceived>(item =>
+            _eventBus.SubscribePackage<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
                     EnqueueWork(_updateResponseItems, model);
                 }
             });
-            EventAggregator.Instance.Subscribe<InstructionReceived>(item =>
+            _eventBus.Subscribe<InstructionReceived>(item =>
             {
                 if (item is { } model)
                 {
                     EnqueueWork(_instructionItems, model);
                 }
             });
-            EventAggregator.Instance.Subscribe<ExceptionSortingReceived>(item =>
+            _eventBus.Subscribe<ExceptionSortingReceived>(item =>
             {
                 if (item is { } model)
                 {
                     EnqueueWork(_exceptionSortingItems, model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
@@ -154,7 +161,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
 
-            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item =>
+            _eventBus.Subscribe<PackageExitUpdateEvent>(item =>
             {
                 if (item is { } info)
                 {
@@ -167,7 +174,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         {
             // 相机名称是配置数据，只在进入持久化循环前加载一次。热循环只查内存快照。
             var cameraConfigs = await _barcodeScannerCameraConfigRepository.MemoryCacheData();
-            Volatile.Write(ref _cameraMetadata, [.. cameraConfigs.Select(camera => new CameraMetadata(camera.SerialNumber, camera.Name, camera.CustomName))]);
+            Volatile.Write(
+                ref _cameraMetadata,
+                cameraConfigs
+                    .GroupBy(camera => camera.SerialNumber, StringComparer.Ordinal)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => new CameraMetadata(
+                            group.Key,
+                            group.Last().Name,
+                            group.Last().CustomName),
+                        StringComparer.Ordinal));
 
             while (!stoppingToken.IsCancellationRequested && Volatile.Read(ref _isWindowsClose) == 0)
             {
@@ -180,6 +197,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 try
                 {
                     await _workSignal.WaitAsync(stoppingToken);
+                    Volatile.Write(ref _workSignalArmed, 0);
                     var insertBatch = new List<PackageInfoModel>(PackageInsertBatchSize);
                     while (insertBatch.Count < PackageInsertBatchSize &&
                            _insertItems.TryDequeue(out var insertModel))
@@ -189,7 +207,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     if (insertBatch.Count > 0)
                     {
                         inFlightInsertBatch = insertBatch;
-                        var inserted = await _packageRepository.InsertPackageRange(
+                        var inserted = await _packagePersistence.AddPackagesAsync(
                             insertBatch,
                             stoppingToken);
                         if (!inserted)
@@ -215,17 +233,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     inFlightResponse = responseModel;
                     if (dequeue && responseModel is not null)
                     {
-                        var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(responseModel.Timestamp, stoppingToken);
+                        var packageInfo = await _packagePersistence.FindCachedPackageAsync(responseModel.Timestamp, stoppingToken);
 
                         //更新
-                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                                f.BarCodeInfo.Barcode.Equals(responseModel.Barcode) &&
-                                f.BarCodeInfo.ScanTime.Equals(responseModel.ScanTime),
-                            stoppingToken);*/
-
                         if (packageInfo is { Id: > 0 } packageInfoModel && responseModel.UploadResponse is not null)
                         {
-                            var insert = await _uploadRepository.Insert(new UploadInfoModel()
+                            var insert = await _packagePersistence.AddUploadAttemptAsync(new UploadInfoModel()
                             {
                                 PackageId = packageInfoModel.Id,
                                 RequestStatus = responseModel.UploadResponse.IsSuccess
@@ -239,7 +252,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 InterfaceParameters = responseModel.UploadResponse.ApiParameters,
                                 RequestUrl = responseModel.UploadResponse.RequestUrl,
                                 ExceptionMessage = responseModel.UploadResponse.ExceptionMsg,
-                                ApiExceptionType = (ApiExceptionType)responseModel.UploadResponse.ApiExceptionType,
+                                ApiExceptionType = (JayTom.Dws.Models.Package.ApiExceptionType)
+                                    responseModel.UploadResponse.ApiExceptionType,
                             }, stoppingToken);
 
                             if (!insert)
@@ -268,17 +282,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         };
                         if (imageType >= 0)
                         {
-                            var packageInfo = await _packageRepository
-                                .GetMemoryCachePackageInfo(savedImageInfo.PackageTimestamp, stoppingToken);
+                            var packageInfo = await _packagePersistence
+                                .FindCachedPackageAsync(savedImageInfo.PackageTimestamp, stoppingToken);
                             if (packageInfo is { Id: > 0 } packageInfoModel)
                             {
-                                var cameraConfigInfoModel = Volatile.Read(ref _cameraMetadata)
-                                    .FirstOrDefault(camera =>
-                                        camera.SerialNumber.Equals(
-                                            savedImageInfo.CameraSerialNumber,
-                                            StringComparison.Ordinal));
+                                Volatile.Read(ref _cameraMetadata).TryGetValue(
+                                    savedImageInfo.CameraSerialNumber,
+                                    out var cameraConfigInfoModel);
 
-                                var insert = await _imageRepository.Insert(new ImageInfoModel()
+                                var insert = await _packagePersistence.AddImageMetadataAsync(new ImageInfoModel()
                                 {
                                     PackageId = packageInfoModel.Id,
                                     CameraName = cameraConfigInfoModel?.Name ?? string.Empty,
@@ -308,17 +320,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     {
                         //取出对应条码id(根据条码、扫码时间)
 
-                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(
-                            f => f.PackageTimestamped.Equals(sortingModel.Timestamp),
-                            stoppingToken);*/
-
-                        var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(sortingModel.Timestamp, stoppingToken);
+                        var packageInfo = await _packagePersistence.FindCachedPackageAsync(sortingModel.Timestamp, stoppingToken);
 
                         if (packageInfo is { Id: > 0 } packageInfoModel)
                         {
-                            /*//判断是否已存在记录
-                            var sortingInfoModel = await _sortingRepository.FirstOrDefault(f =>
-                                f.PackageId.Equals(packageInfoModel.Id), stoppingToken);*/
                             bool isSortingUpdateInfo;
                             var createdSortingInfo = packageInfo.SortingInfo is null;
                             if (packageInfo.SortingInfo is null)
@@ -341,7 +346,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             InstructionGeneratedTime = s.InstructionGeneratedTime,
                                         })?.ToList() ?? new List<InstructionInfoModel>()
                                 };
-                                isSortingUpdateInfo = await _sortingRepository.Insert(packageInfo.SortingInfo, stoppingToken);
+                                isSortingUpdateInfo = await _packagePersistence.AddSortingAsync(packageInfo.SortingInfo, stoppingToken);
                             }
                             else
                             {
@@ -386,7 +391,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 }
 
                                 isSortingUpdateInfo =
-                                    await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
+                                    await _packagePersistence.UpdateSortingAsync(packageInfo.SortingInfo, stoppingToken);
                             }
 
                             if (!isSortingUpdateInfo)
@@ -399,7 +404,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             }
                             else
                             {
-                                _packageRepository.UpDateMemoryCachePackageInfo(packageInfo, stoppingToken);
+                                _packagePersistence.RefreshCachedPackage(packageInfo, stoppingToken);
                             }
                         }
                         else
@@ -414,15 +419,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     inFlightExceptionSorting = exceptionSortingModel;
                     if (isExceptionSorting && exceptionSortingModel is not null)
                     {
-                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.BarCodeInfo != null &&
-                                f.BarCodeInfo.Barcode.Equals(exceptionSortingModel.BarCode) &&
-                                f.BarCodeInfo.ScanTime.Equals(exceptionSortingModel.ScanTime),
-                            stoppingToken);*/
-
-                        var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(exceptionSortingModel.Timestamp, stoppingToken);
-                        /*var sortingInfoModel =
-                            await _sortingRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id),
-                                stoppingToken);*/
+                        var packageInfo = await _packagePersistence.FindCachedPackageAsync(exceptionSortingModel.Timestamp, stoppingToken);
                         if (packageInfo?.SortingInfo is not null)
                         {
                             packageInfo.SortingInfo.AbnormalSortingType =
@@ -430,7 +427,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             packageInfo.SortingInfo.IsAbnormalSorting =
                                 exceptionSortingModel.PackageCloudAbnormalSortingType !=
                                 PackageCloudAbnormalSortingType.None;
-                            var update = await _sortingRepository.Update(packageInfo.SortingInfo, stoppingToken);
+                            var update = await _packagePersistence.UpdateSortingAsync(packageInfo.SortingInfo, stoppingToken);
                             if (!update)
                             {
                                 RequeueWork(_exceptionSortingItems, exceptionSortingModel);
@@ -449,18 +446,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     if (packageExitUpdate && packageExitUpdateModel is not null)
                     {
                         //找到对应的包裹
-                        /*var (key, value) = await _packageRepository.FirstOrDefaultInfo(
-                            f => f.PackageTimestamped.Equals(packageExitUpdateModel.Timestamp),
-                            stoppingToken);*/
-                        var packageInfo = await _packageRepository.GetMemoryCachePackageInfo(packageExitUpdateModel.Timestamp, stoppingToken);
+                        var packageInfo = await _packagePersistence.FindCachedPackageAsync(packageExitUpdateModel.Timestamp, stoppingToken);
                         if (packageInfo is not null)
                         {
                             //更新格口
 
                             //如果出现异常则不再更新
-
-                            /*var model = await _exitInfoRepository.FirstOrDefault(f => f.PackageId.Equals(value.Id),
-                                stoppingToken);*/
 
                             if (packageInfo.ExitInfo is not null)
                             {
@@ -480,11 +471,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                         break;
                                 }
 
-                                var update = await _exitInfoRepository.Update(packageInfo.ExitInfo, stoppingToken);
+                                var update = await _packagePersistence.UpdateExitAsync(packageInfo.ExitInfo, stoppingToken);
                                 if (!update)
                                 {
                                     RequeueWork(_packageExitUpdateItems, packageExitUpdateModel);
-                                    await Task.Delay(TimeSpan.FromMilliseconds(50), stoppingToken);
                                     continue;
                                 }
                             }
@@ -507,12 +497,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     _ => new()
                                 };
 
-                                var insert = await _exitInfoRepository.Insert(packageInfo.ExitInfo, stoppingToken);
+                                var insert = await _packagePersistence.AddExitAsync(packageInfo.ExitInfo, stoppingToken);
                                 if (!insert)
                                 {
                                     packageInfo.ExitInfo = null;
                                     RequeueWork(_packageExitUpdateItems, packageExitUpdateModel);
-                                    await Task.Delay(TimeSpan.FromMilliseconds(50), stoppingToken);
                                     continue;
                                 }
                             }
@@ -522,10 +511,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 packageInfo.ExitInfo?.PackageId > 0)
                             {
                                 //更新异常
-                                /*var sortingInfoModel =
-
-                                    await _sortingRepository.FirstOrDefault(
-                                        f => f.PackageId.Equals(packageInfo.ExitInfo.PackageId), stoppingToken);*/
                                 if (packageInfo.SortingInfo is not null)
                                 {
                                     packageInfo.SortingInfo.AbnormalSortingType =
@@ -533,18 +518,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     packageInfo.SortingInfo.IsAbnormalSorting =
                                         packageExitUpdateModel.PackageAbnormalSortingType !=
                                         PackageAbnormalSortingType.None;
-                                    var sortingUpdated = await _sortingRepository.Update(
+                                    var sortingUpdated = await _packagePersistence.UpdateSortingAsync(
                                         packageInfo.SortingInfo,
                                         stoppingToken);
                                     if (!sortingUpdated)
                                     {
                                         RequeueWork(_packageExitUpdateItems, packageExitUpdateModel);
-                                        await Task.Delay(TimeSpan.FromMilliseconds(50), stoppingToken);
                                         continue;
                                     }
                                 }
                             }
-                            _packageRepository.UpDateMemoryCachePackageInfo(packageInfo, stoppingToken);
+                            _packagePersistence.RefreshCachedPackage(packageInfo, stoppingToken);
                         }
                         else
                         {
@@ -556,10 +540,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     if (HasPendingWork())
                     {
                         SignalWork();
-                    }
-                    if (Interlocked.Exchange(ref _retryRequested, 0) != 0)
-                    {
-                        await Task.Delay(TimeSpan.FromMilliseconds(50), stoppingToken);
                     }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -596,7 +576,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         RequeueWork(_packageExitUpdateItems, inFlightExitUpdate);
                     }
                     NLog.LogManager.GetCurrentClassLogger().Error($"数据存储异常,正在重试:{e}");
-                    await Task.Delay(TimeSpan.FromMilliseconds(50), stoppingToken);
                     if (HasPendingWork())
                     {
                         SignalWork();
@@ -635,8 +614,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 LogManager.GetCurrentClassLogger().Warn(
                     $"数据持久化任务持续失败但将保留重试:{typeof(T).Name},Attempt={attempt}");
             }
-            Interlocked.Exchange(ref _retryRequested, 1);
-            EnqueueWork(queue, item);
+            _retryScheduler.Schedule(
+                TimeSpan.FromMilliseconds(50),
+                () => EnqueueWork(queue, item));
         }
 
         /// <summary>
@@ -673,7 +653,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private void RemoveExpiredPendingInstructions()
         {
             var now = Stopwatch.GetTimestamp();
-            foreach (var pair in _pendingInstructions.ToArray())
+            if (now < Volatile.Read(ref _nextPendingInstructionCleanupTimestamp))
+            {
+                return;
+            }
+            Volatile.Write(
+                ref _nextPendingInstructionCleanupTimestamp,
+                now + Stopwatch.Frequency * 60L);
+
+            List<long>? emptyKeys = null;
+            foreach (var pair in _pendingInstructions)
             {
                 while (pair.Value.TryPeek(out var pending) &&
                        Stopwatch.GetElapsedTime(pending.EnqueuedAt, now) > InstructionAssociationTimeout)
@@ -686,7 +675,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                 if (pair.Value.Count == 0)
                 {
-                    _pendingInstructions.Remove(pair.Key);
+                    (emptyKeys ??= []).Add(pair.Key);
+                }
+            }
+            if (emptyKeys is not null)
+            {
+                foreach (var key in emptyKeys)
+                {
+                    _pendingInstructions.Remove(key);
                 }
             }
         }
@@ -696,7 +692,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         private void SignalWork()
         {
-            if (_workSignal.CurrentCount != 0)
+            if (Volatile.Read(ref _isDisposed) != 0)
+            {
+                return;
+            }
+
+            if (Interlocked.Exchange(ref _workSignalArmed, 1) != 0)
             {
                 return;
             }
@@ -708,7 +709,25 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             catch (SemaphoreFullException)
             {
                 // 其他生产者已经完成通知，无需重复累积。
+                Volatile.Write(ref _workSignalArmed, 1);
             }
+            catch (ObjectDisposedException) when (Volatile.Read(ref _isDisposed) != 0)
+            {
+                // 服务关闭期间允许已在途的事件安静退出。
+            }
+        }
+
+        /// <summary>释放持久化服务拥有的调度器和唤醒句柄。</summary>
+        public override void Dispose()
+        {
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
+            {
+                return;
+            }
+
+            _retryScheduler.Dispose();
+            _workSignal.Dispose();
+            base.Dispose();
         }
 
         /// <summary>

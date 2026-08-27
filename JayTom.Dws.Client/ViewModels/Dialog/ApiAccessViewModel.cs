@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Client.Models.DataModels;
 

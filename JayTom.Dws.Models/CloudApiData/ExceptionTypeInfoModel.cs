@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.CloudApiData {
+namespace JayTom.Dws.Models.CloudApiData {
 
     [Table("Conf_ExceptionTypeInfo", Schema = "dbo")]
     public class ExceptionTypeInfoModel : BaseModel {

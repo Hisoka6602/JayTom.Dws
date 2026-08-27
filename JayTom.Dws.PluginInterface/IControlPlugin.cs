@@ -16,17 +16,17 @@ namespace JayTom.Dws.PluginInterface {
         /// <summary>
         /// 控件显示前事件
         /// </summary>
-        event EventHandler<object> ControlShowing;
+        event EventHandler<PluginWpfEventArgs> ControlShowing;
 
         /// <summary>
         /// 控件显示后事件
         /// </summary>
-        event EventHandler<object> ControlShown;
+        event EventHandler<PluginWpfEventArgs> ControlShown;
 
         /// <summary>
         /// 控件交互事件
         /// </summary>
-        event EventHandler<object> ControlInteraction;
+        event EventHandler<PluginWpfEventArgs> ControlInteraction;
 
         /// <summary>
         /// 显示控件方法
@@ -38,7 +38,9 @@ namespace JayTom.Dws.PluginInterface {
         /// </summary>
         /// <param name="parent">父控件</param>
         /// <param name="token"></param>
-        Task<KeyValuePair<bool, string>> SetParentControl(UserControl parent, CancellationToken token = default);
+        Task<JayTom.Dws.Abstractions.Results.OperationResult<string>> SetParentControl(
+            UserControl parent,
+            CancellationToken token = default);
 
         /// <summary>
         /// 收缩控件方法

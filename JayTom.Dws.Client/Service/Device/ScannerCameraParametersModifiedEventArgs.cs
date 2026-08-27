@@ -1,6 +1,6 @@
 using System;
 using JayTom.Dws.Camera;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.Service.Device;
 

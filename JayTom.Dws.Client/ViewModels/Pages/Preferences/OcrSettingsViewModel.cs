@@ -12,18 +12,18 @@ using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Windows.Forms;
 using System.Windows.Media;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using Pen = System.Drawing.Pen;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using Color = System.Drawing.Color;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.PluginInterface.Utils;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
@@ -44,7 +44,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private Bitmap? _cropImage = null;
 
         public OcrSettingsViewModel(ISettingsStore settingsStore, IOcr ocr,
-            IDeviceService deviceService) : base(settingsStore)
+            IDeviceService deviceService, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _ocr = ocr;
             _deviceService = deviceService;
@@ -136,7 +136,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             };
             if (openFileDialog.ShowDialog() == true)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     OriginalImage = new BitmapImage(new Uri(openFileDialog.FileName));
                     ImageSource = new BitmapImage(new Uri(openFileDialog.FileName));
@@ -151,7 +151,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private async void RefreshDelegate(object obj)
         {
             //判断图片不为空
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 _cropImage = null;
                 if (OriginalImage is not null)
@@ -162,13 +162,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
                     if (image is not null)
                     {
-                        var ocrTemporarilyResult = _ocr.ParseOcrTemporarilyResult((Bitmap)image,
+                        var ocrTemporarilyResult = _ocr.ParseOcrTemporarilyResult(
+                            OcrBitmapAdapter.Encode((Bitmap)image),
                             fullName, OcrSettingsInfo.ConfidenceThreshold, OcrSettingsInfo.RectangleScale);
                         var inPixels = CalculateLineWidthMultiplier(image.Width, image.Height) * 10;
                         Bitmap? rectangleOnImage = null;
                         if (ocrTemporarilyResult is not null)
                         {
-                            _cropImage = ocrTemporarilyResult.CropImage;
+                            _cropImage?.Dispose();
+                            _cropImage = ocrTemporarilyResult.CropImage is null
+                                ? null
+                                : OcrBitmapAdapter.Decode(ocrTemporarilyResult.CropImage);
                             if (ocrTemporarilyResult.CropRectangle is not null)
                             {
                                 //先画出区域
@@ -197,7 +201,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void SaveCropImageDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (_cropImage is null)
                 {
@@ -447,7 +451,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 ?.Select(s => new FileInfo(s))?.Where(w => w.Extension.Contains("onnx"))
                 ?.Select(s1 => s1.Name)?.ToList();
             ModelFiles.AddRange(modelNames);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var ocrSettingsDto = await _settingsStore.GetAsync<OcrSettingsDto>(SettingsName);
 

@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 
-namespace JayTom.Dws.Interface.JdyWms {
+namespace JayTom.Dws.Integrations.JdyWms {
 
     /// <summary>
     /// 筋斗云Wms
@@ -71,7 +71,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
                     HttpResponseMessage message;
                     using (Stream dataStream =
@@ -119,7 +119,7 @@ namespace JayTom.Dws.Interface.JdyWms {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -152,7 +152,7 @@ namespace JayTom.Dws.Interface.JdyWms {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut ?? 3000);
                     HttpResponseMessage message;
                     using (Stream dataStream =
@@ -200,7 +200,7 @@ namespace JayTom.Dws.Interface.JdyWms {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

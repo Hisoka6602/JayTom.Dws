@@ -134,15 +134,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     if (!_regionManager.Regions.ContainsRegionWithName("CameraConfigRegion"))
                     {
                         //创建区域(用于视觉树以外控件)
-                        RegionManager.SetRegionName(obj, "CameraConfigRegion");
+                        RegionManager.SetRegionName(obj, NavigationRegions.CameraConfiguration.Name);
                         RegionManager.SetRegionManager(obj, _regionManager);
                     }
-                    _regionManager.Regions["CameraConfigRegion"].RequestNavigate("CameraFinderPage");
+                    _regionManager.Navigate(
+                        new NavigationRequest(
+                            NavigationRegions.CameraConfiguration,
+                            NavigationDestinations.CameraFinder));
                 });
             }
         }
@@ -154,7 +157,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void MenuClickDelegate(MenuItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!obj.PageClassName.Equals(string.Empty))
                 {
@@ -165,8 +168,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
                     obj.IsSelected = true;
 
-                    _regionManager?.Regions?["CameraConfigRegion"]
-                        ?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
+                    _regionManager.Navigate(
+                        NavigationRequest.To(NavigationRegions.CameraConfiguration, obj.PageClassName));
                 }
             }, DispatcherPriority.Background);
         }

@@ -6,7 +6,7 @@
   <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('JayTom.Dws.'))">
     <!-- 保留历史未使用成员的兼容抑制；异步和可空性问题继续显示为警告，便于逐步清理。 -->
     <NoWarn>$(NoWarn);CS0067;CS0162;CS0168;CS0169;CS0219;CS0414;CS0649</NoWarn>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS4014;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8620;CS8625;CS8629</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8620;CS8625;CS8629</WarningsNotAsErrors>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>

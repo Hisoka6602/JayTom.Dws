@@ -14,10 +14,10 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Interface.License;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
+using JayTom.Dws.Integrations.License;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.AppSettingModel;
@@ -122,17 +122,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var loadingDialog = new LoadingDialog();
                     if (loadingDialog.DataContext is LoadingDialogViewModel model)
                     {
                         model.Identifier = "LicenseDialog";
-                        DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                        DialogHost.Show(loadingDialog, model.Identifier)
+                            .Forget("显示许可证加载进度对话框");
                         await Task.Delay(500);
                         Task.Run(async () =>
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                             {
                                 try
                                 {
@@ -171,7 +172,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                                     }
                                 }
                             }, DispatcherPriority.Background);
-                        });
+                        }).Forget("加载许可证信息");
                     }
                 });
             }
@@ -186,7 +187,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
                 if (!IsRequestingAuthorization)
                 {
                     IsRequestingAuthorization = true;
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                    await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                     {
                         try
                         {
@@ -275,7 +276,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             };
             if (openFileDialog.ShowDialog() == true)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     var licenseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "License");
                     if (!Directory.Exists(licenseDirectory))

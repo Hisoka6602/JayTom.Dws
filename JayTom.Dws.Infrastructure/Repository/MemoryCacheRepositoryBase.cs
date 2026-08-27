@@ -1,6 +1,6 @@
-﻿using NLog;
+using NLog;
 using System.Linq.Expressions;
-using JayTom.Dws.Domain.Repository;
+using JayTom.Dws.Legacy.Contracts.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -31,15 +31,16 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public MemoryCacheRepositoryBase(IDbContextFactory<TContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
-        public async Task<List<T>> MemoryCacheData() {
+        public async Task<List<T>> MemoryCacheData(CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_cache.TryGetValue(CacheKey, out List<T>? cachedItems) &&
                 cachedItems is not null) {
                 return cachedItems;
             }
 
             using var loadLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(
-                    LoadLock, CancellationToken.None);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(
+                    LoadLock, cancellationToken);
             if (_cache.TryGetValue(CacheKey, out cachedItems) &&
                 cachedItems is not null) {
                 return cachedItems;
@@ -56,7 +57,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
                 long observedGeneration;
                 do {
                     observedGeneration = Volatile.Read(ref _cacheGeneration);
-                    items = await query.AsNoTracking().ToListAsync();
+                    items = await query.AsNoTracking().ToListAsync(cancellationToken);
                 } while (observedGeneration != Volatile.Read(ref _cacheGeneration));
 
                 _cache.Set(CacheKey, items, TimeSpan.FromMinutes(5));
@@ -68,18 +69,20 @@ namespace JayTom.Dws.Infrastructure.Repository {
             return new List<T>();
         }
 
-        public void UpdateMemoryCache() {
+        public Task UpdateMemoryCache(CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             try {
                 InvalidateCache();
             }
             catch (Exception e) {
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
+            return Task.CompletedTask;
         }
 
         public override async Task<bool> Insert(T entity, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var insert = await base.Insert(entity, token);
             if (insert) {
                 InvalidateCache();
@@ -93,7 +96,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         /// <summary>批量插入成功后使实体缓存失效。</summary>
         public override async Task<bool> InsertRange(List<T> entities, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var succeeded = await base.InsertRange(entities, token);
             if (succeeded) {
                 InvalidateCache();
@@ -104,7 +107,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public override async Task<bool> Update(T entity, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var update = await base.Update(entity, token);
             if (update) {
                 InvalidateCache();
@@ -114,7 +117,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public override async Task<bool> Delete(T entity, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var delete = await base.Delete(entity, token);
             if (delete) {
                 InvalidateCache();
@@ -124,7 +127,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public override async Task<int> DeleteCount(int count, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var deleteCount = await base.DeleteCount(count, token);
             if (deleteCount > 0) {
                 InvalidateCache();
@@ -135,7 +138,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public override async Task<int> DeleteCount(int count, Expression<Func<T, bool>> @where, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var deleteCount = await base.DeleteCount(count, @where, token);
             if (deleteCount > 0) {
                 InvalidateCache();
@@ -146,7 +149,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public override async Task<bool> DeleteRange(List<T> entities, CancellationToken token = default) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var deleteRange = await base.DeleteRange(entities, token);
             if (deleteRange) {
                 InvalidateCache();
@@ -156,7 +159,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
         public override async Task<bool> InsertOrUpdate(T entity, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var insertOrUpdate = await base.InsertOrUpdate(entity, token);
             if (insertOrUpdate) {
                 InvalidateCache();
@@ -168,7 +171,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         public override async Task<bool> InsertOrUpdateRange(List<T> entities,
             CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var insertOrUpdateRange = await base.InsertOrUpdateRange(entities, token);
             if (insertOrUpdateRange) {
                 InvalidateCache();
@@ -183,7 +186,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             Expression<Func<T, object>> excludeColumns,
             CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var succeeded = await base.InsertOrUpdate(entity, excludeColumns, token);
             if (succeeded) {
                 InvalidateCache();
@@ -198,7 +201,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             Expression<Func<T, object>> excludeColumns,
             CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var succeeded = await base.InsertOrUpdateRange(entities, excludeColumns, token);
             if (succeeded) {
                 InvalidateCache();
@@ -210,7 +213,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
         /// <summary>批量更新成功后使实体缓存失效。</summary>
         public override async Task<bool> UpdateRange(List<T> entities, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var succeeded = await base.UpdateRange(entities, token);
             if (succeeded) {
                 InvalidateCache();
@@ -225,7 +228,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
             Expression<Func<T, object>> excludeColumns,
             CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var succeeded = await base.UpdateRange(entities, excludeColumns, token);
             if (succeeded) {
                 InvalidateCache();
@@ -236,7 +239,7 @@ namespace JayTom.Dws.Infrastructure.Repository {
 
         public override async Task<bool> SyncEntities(List<T> entities, CancellationToken token) {
             using var cacheLease =
-                await global::JayTom.Dws.Infrastructure.SemaphoreLease.EnterAsync(LoadLock, token);
+                await global::JayTom.Dws.Abstractions.Threading.SemaphoreLease.EnterAsync(LoadLock, token);
             var syncEntities = await base.SyncEntities(entities, token);
             if (syncEntities) {
                 InvalidateCache();

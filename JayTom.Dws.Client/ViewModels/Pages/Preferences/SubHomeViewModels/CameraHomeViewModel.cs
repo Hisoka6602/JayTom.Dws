@@ -5,20 +5,19 @@ using System.Text;
 using System.Windows;
 using Prism.Commands;
 using JayTom.Dws.Ocr;
-using JayTom.Dws.Data;
+using JayTom.Dws.Models;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
 {
@@ -26,10 +25,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
     public class CameraHomeViewModel : BindableBase
     {
         private readonly IDeviceService _deviceService;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly IPanoramaCameraConfigRepository _panoramaCameraConfigRepository;
-        private readonly IUsbCameraConfigRepository _usbCameraConfigRepository;
-        private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<PanoramaCameraConfigInfoModel> _panoramaCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<UsbCameraConfigInfoModel> _usbCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<VolumeCameraConfigInfoModel> _volumeCameraConfigRepository;
 
         /// <summary>
         /// 当前可见相机索引，供图像回调无锁查询。
@@ -54,10 +53,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
         }
 
         public CameraHomeViewModel(IDeviceService deviceService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IUsbCameraConfigRepository usbCameraConfigRepository,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository)
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            ICameraConfigurationCatalog<PanoramaCameraConfigInfoModel> panoramaCameraConfigRepository,
+            ICameraConfigurationCatalog<UsbCameraConfigInfoModel> usbCameraConfigRepository,
+            ICameraConfigurationCatalog<VolumeCameraConfigInfoModel> volumeCameraConfigRepository)
         {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
@@ -71,7 +70,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                 if (_visibleCameraItems.TryGetValue(args.CameraInfo?.SerialNumber ?? string.Empty,
                         out var model))
                 {
-                    await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                    await UiThread.Dispatcher.BeginInvoke(() =>
                     {
                         model.IsRealtimeImageEnabled = args.Camera?.IsRealtimeImageEnabled ?? false;
                     }, System.Windows.Threading.DispatcherPriority.Background);
@@ -98,7 +97,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                     .ToDictionary(group => group.Key, group => group.First().CameraDisplayStatus,
                         StringComparer.Ordinal);
 
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     foreach (var item in CameraItems.Concat(HiddenCameraItems).Distinct())
                     {
@@ -142,7 +141,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
             _deviceService.CameraReleased += async delegate (object? sender, string s)
             {
                 _visibleCameraItems.TryRemove(s, out _);
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     var model = CameraItems.FirstOrDefault(f => f.SerialNumber.Equals(s));
                     if (model != null)
@@ -256,7 +255,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
         private async void ImageClickDelegate(CameraItemInfoModel obj)
         {
             //放大图片(用另一个图像框显示、并重新绑定接收图像来源、过渡动画)
-            /*await System.Windows.Application.Current.Dispatcher.BeginInvoke(() => {
+            /*await UiThread.Dispatcher.BeginInvoke(() => {
                 AddNewRow(new BarCodeItemModel() {
                     Barcode = new Random().Next(100000000, 999999999).ToString()
                 });
@@ -427,7 +426,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels
                 {
                     if (!model.IsRealtimeImageEnabled)
                     {
-                        model.TryEnqueueImage(args.Thumbnail, args.RecognitionTimestamp);
+                        var thumbnail = OcrBitmapAdapter.Decode(args.Thumbnail);
+                        if (!model.TryEnqueueImage(thumbnail, args.RecognitionTimestamp))
+                        {
+                            thumbnail.Dispose();
+                        }
                     }
                 }
             }

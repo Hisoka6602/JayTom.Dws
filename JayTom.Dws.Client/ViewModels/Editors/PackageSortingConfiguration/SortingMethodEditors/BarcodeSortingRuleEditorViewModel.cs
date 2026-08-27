@@ -10,14 +10,14 @@ using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.PackageExits;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
 {
 
     public class BarcodeSortingRuleEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
@@ -34,9 +34,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private PackageExitDefinitionItemInfoModel _selectPackageExitDefinitionInfo = new();
         private BarCodeSortingItemInfoModel _barCodeSortingItemInfo = new();
 
-        public BarcodeSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public BarcodeSortingRuleEditorViewModel(IPackageExitCatalog packageExitCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void DeleteRegexDelegate(BarCodeRegexItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 BarCodeRegexItems.Remove(obj);
                 //调整Num
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void SaveRuleDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (IsUseRules)
                 {
@@ -230,7 +230,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ClearConditionsDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 RequiredCharacters =
                         StartCharacter =
@@ -293,10 +293,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>

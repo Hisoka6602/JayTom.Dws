@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
+namespace JayTom.Dws.Models.LocalConf.IpcNvrConfig {
 
     [Table("Conf_NvrWatermarkConfigInfo", Schema = "dbo")]
     public class NvrWatermarkConfigInfoModel : BaseModel {

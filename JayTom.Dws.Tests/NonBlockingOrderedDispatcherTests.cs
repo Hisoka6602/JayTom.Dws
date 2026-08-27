@@ -87,4 +87,74 @@ public sealed class NonBlockingOrderedDispatcherTests
         Assert.Equal(0, dispatcher.PendingCount);
         Assert.False(dispatcher.TryEnqueue(-1));
     }
+
+    /// <summary>停止与生产并发发生时，每个已返回成功的工作项都必须完成，不得丢在停机边界。</summary>
+    [Fact]
+    public async Task DisposeAsync_DrainsEveryItemAcceptedDuringConcurrentStop()
+    {
+        var acceptedCount = 0;
+        var processedCount = 0;
+        var dispatcher = new NonBlockingOrderedDispatcher<int>(_ =>
+            Interlocked.Increment(ref processedCount));
+        using var start = new ManualResetEventSlim(false);
+        using var producersReady = new CountdownEvent(16);
+        using var firstItemAccepted = new ManualResetEventSlim(false);
+        var producers = Enumerable.Range(0, 16)
+            .Select(_ => Task.Factory.StartNew(
+                () =>
+                {
+                    producersReady.Signal();
+                    start.WaitHandle.WaitOne();
+                    while (dispatcher.TryEnqueue(0))
+                    {
+                        Interlocked.Increment(ref acceptedCount);
+                        firstItemAccepted.Set();
+                    }
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default))
+            .ToArray();
+
+        Assert.True(producersReady.WaitHandle.WaitOne(TimeSpan.FromSeconds(5)));
+        start.Set();
+        Assert.True(firstItemAccepted.WaitHandle.WaitOne(TimeSpan.FromSeconds(5)));
+        await dispatcher.DisposeAsync();
+        await Task.WhenAll(producers);
+
+        Assert.Equal(acceptedCount, processedCount);
+        Assert.Equal(0, dispatcher.PendingCount);
+    }
+
+    /// <summary>高优先级工作必须越过尚未执行的普通工作，同时保持优先队列自身顺序。</summary>
+    [Fact]
+    public async Task PriorityItems_OvertakeQueuedNormalItemsInOrder()
+    {
+        using var releaseConsumer = new ManualResetEvent(false);
+        var processed = new List<int>();
+        var completed = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var dispatcher = new NonBlockingOrderedDispatcher<int>(item =>
+        {
+            if (item == 0)
+            {
+                releaseConsumer.WaitOne(TimeSpan.FromSeconds(5));
+            }
+            processed.Add(item);
+            if (processed.Count == 5)
+            {
+                completed.SetResult();
+            }
+        });
+
+        Assert.True(dispatcher.TryEnqueue(0));
+        Assert.True(dispatcher.TryEnqueue(3));
+        Assert.True(dispatcher.TryEnqueue(4));
+        Assert.True(dispatcher.TryEnqueuePriority(1));
+        Assert.True(dispatcher.TryEnqueuePriority(2));
+        releaseConsumer.Set();
+
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal([0, 1, 2, 3, 4], processed);
+    }
 }

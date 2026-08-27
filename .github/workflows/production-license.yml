@@ -1,4 +1,4 @@
-﻿name: 生成 DWS 生产授权文件
+name: 生成 DWS 生产授权文件
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       machine_code:
-        description: 目标 DWS 设备“授权设置”页面显示的 32 位机器码
+        description: 目标 DWS 设备“授权设置”页面显示的 64 位 SHA-256 机器码
         required: true
         type: string
       customer_name:
@@ -40,7 +40,7 @@ on:
         default: true
         type: boolean
       output_name:
-        description: 产物文件名，现场放入 DWS 程序目录的 License 文件夹
+        description: 授权文件名，必须以 .key 结尾
         required: false
         default: License.key
         type: string
@@ -48,9 +48,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: production-license-signing
+  cancel-in-progress: false
+
 jobs:
   generate-license:
-    name: 离线生成授权文件
+    name: 签发并验签生产授权
     runs-on: windows-latest
     environment: production-license
     timeout-minutes: 10
@@ -62,14 +66,21 @@ jobs:
       - name: 安装 .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.301'
+          dotnet-version: '10.0.x'
 
-      - name: 还原授权生成工具依赖
+      - name: 还原授权工具依赖
         shell: pwsh
         run: dotnet restore .\JayTom.Dws.LicenseTool\JayTom.Dws.LicenseTool.csproj -p:Platform=x64
 
-      - name: 离线生成授权文件
+      - name: 构建授权工具
+        shell: pwsh
+        run: dotnet build .\JayTom.Dws.LicenseTool\JayTom.Dws.LicenseTool.csproj -c Release --framework net10.0-windows --no-restore -p:Platform=x64
+
+      - name: 使用生产密钥签发并验签
+        id: generate
         env:
+          DWS_LICENSE_PRIVATE_KEY_PEM: ${{ secrets.DWS_LICENSE_PRIVATE_KEY_PEM }}
+          DWS_LICENSE_PUBLIC_KEY_PEM: ${{ secrets.DWS_LICENSE_PUBLIC_KEY_PEM }}
           INPUT_LICENSE_CODE: ${{ inputs.license_code }}
           INPUT_MACHINE_CODE: ${{ inputs.machine_code }}
           INPUT_CUSTOMER_NAME: ${{ inputs.customer_name }}
@@ -81,10 +92,31 @@ jobs:
           OUTPUT_NAME: ${{ inputs.output_name }}
         shell: pwsh
         run: |
+          Set-StrictMode -Version Latest
           $ErrorActionPreference = 'Stop'
+
+          function ConvertTo-PemText([string] $value, [string] $secretName) {
+            if ([string]::IsNullOrWhiteSpace($value)) {
+              throw "production-license 环境缺少 $secretName Secret。"
+            }
+
+            $normalized = $value.Trim()
+            if (-not $normalized.Contains("`n") -and $normalized.Contains('\n')) {
+              $normalized = $normalized.Replace('\r\n', "`n").Replace('\n', "`n")
+            }
+            if ($normalized -notmatch '^-----BEGIN (?:RSA )?(?:PRIVATE|PUBLIC) KEY-----') {
+              throw "$secretName 不是有效的 PEM 内容。"
+            }
+            return $normalized + [System.Environment]::NewLine
+          }
 
           if (-not [string]::IsNullOrWhiteSpace($env:INPUT_LICENSE_CODE)) {
             Write-Host "::add-mask::$env:INPUT_LICENSE_CODE"
+          }
+
+          $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
+          if ($machineCode -notmatch '^[A-F0-9]{64}$') {
+            throw '机器码必须是目标 DWS 客户端显示的 64 位十六进制 SHA-256 值。'
           }
 
           $normalizedOutputName = $env:OUTPUT_NAME.Trim()
@@ -94,35 +126,64 @@ jobs:
 
           $artifactDirectory = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath 'artifacts\license'
           $outputPath = Join-Path -Path $artifactDirectory -ChildPath $normalizedOutputName
+          $privateKeyPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath 'dws-license-signing-private.pem'
+          $publicKeyPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath 'dws-license-signing-public.pem'
+          $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
 
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
-            -LicenseCode $env:INPUT_LICENSE_CODE `
-            -MachineCode $env:INPUT_MACHINE_CODE `
-            -CustomerName $env:INPUT_CUSTOMER_NAME `
-            -ExpirationDate $env:INPUT_EXPIRATION_DATE `
-            -MaxBindingScannerCount $env:INPUT_MAX_BINDING_SCANNER_COUNT `
-            -AppliedTemplateName $env:INPUT_APPLIED_TEMPLATE_NAME `
-            -Remarks $env:INPUT_REMARKS `
-            -IsAvailable $env:INPUT_IS_AVAILABLE `
-            -OutputPath $outputPath
+          try {
+            $privatePem = ConvertTo-PemText $env:DWS_LICENSE_PRIVATE_KEY_PEM 'DWS_LICENSE_PRIVATE_KEY_PEM'
+            $publicPem = ConvertTo-PemText $env:DWS_LICENSE_PUBLIC_KEY_PEM 'DWS_LICENSE_PUBLIC_KEY_PEM'
+            [System.IO.File]::WriteAllText($privateKeyPath, $privatePem, $utf8WithoutBom)
+            [System.IO.File]::WriteAllText($publicKeyPath, $publicPem, $utf8WithoutBom)
+            $privatePem = $null
+            $publicPem = $null
 
-          $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
+            & "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
+              -LicenseCode $env:INPUT_LICENSE_CODE `
+              -MachineCode $machineCode `
+              -CustomerName $env:INPUT_CUSTOMER_NAME `
+              -ExpirationDate $env:INPUT_EXPIRATION_DATE `
+              -PrivateKeyPath $privateKeyPath `
+              -PublicKeyPath $publicKeyPath `
+              -MaxBindingScannerCount $env:INPUT_MAX_BINDING_SCANNER_COUNT `
+              -AppliedTemplateName $env:INPUT_APPLIED_TEMPLATE_NAME `
+              -Remarks $env:INPUT_REMARKS `
+              -IsAvailable $env:INPUT_IS_AVAILABLE `
+              -OutputPath $outputPath
+          }
+          finally {
+            foreach ($temporaryKeyPath in @($privateKeyPath, $publicKeyPath)) {
+              if (Test-Path -LiteralPath $temporaryKeyPath) {
+                Remove-Item -LiteralPath $temporaryKeyPath -Force
+              }
+            }
+          }
+
+          $manifestPath = Join-Path -Path $artifactDirectory -ChildPath 'license-manifest.json'
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+          "key_id=$($manifest.keyId)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+          $summaryCustomer = $env:INPUT_CUSTOMER_NAME.Replace("`r", ' ').Replace("`n", ' ')
           $summary = @"
-          ### DWS 生产授权文件已生成
+          ### DWS v2 生产授权文件已签发并验签
 
+          - 签名算法：PS256（RSA-PSS / SHA-256）
+          - 签名密钥：$($manifest.keyId)
           - 机器码：$machineCode
-          - 客户名称：$env:INPUT_CUSTOMER_NAME
+          - 客户名称：$summaryCustomer
           - 到期时间：$env:INPUT_EXPIRATION_DATE
-          - 产物文件：$normalizedOutputName
-          - 使用方式：下载本次工作流 artifact，将 `$normalizedOutputName` 放入 DWS 程序目录的 `License` 文件夹。
-          "@
+          - 授权文件：$normalizedOutputName
+          - 信任根：license-trust/$($manifest.keyId).pem
+          - 完整性清单：license-manifest.json
 
+          部署时将授权文件放入程序目录的 `License` 文件夹，并将 `license-trust` 目录放到程序根目录。私钥不会进入 artifact。
+          "@
           $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
-      - name: 上传授权文件产物
+      - name: 上传已验签授权包
         uses: actions/upload-artifact@v4
         with:
-          name: dws-production-license-${{ inputs.machine_code }}
-          path: artifacts/license/*.key
+          name: dws-production-license-${{ steps.generate.outputs.key_id }}-${{ inputs.machine_code }}
+          path: artifacts/license/**
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7

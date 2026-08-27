@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 

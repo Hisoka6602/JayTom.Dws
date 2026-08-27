@@ -9,15 +9,14 @@ using System.Text.Unicode;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Text.Encodings.Web;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
@@ -30,7 +29,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private string _jsonContent = string.Empty;
         private bool _isLoaded;
 
-        public DefaultApiPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public DefaultApiPageViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -62,7 +61,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         private async void AddDataItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 if (!DefaultApiInfo.DataTemplate.Any(a => a.Content.Equals(obj)))
@@ -89,7 +88,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         private async void AddCustomItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 DefaultApiInfo.DataTemplate.Add(new ItemBaseTemplateModel
                 {
@@ -112,7 +111,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (model.ApplicationType == ItemApplicationType.ApiData)
                 {
@@ -169,7 +168,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore.GetAsync<DefaultApiDto>(SettingsName) ?? new DefaultApiDto();
 

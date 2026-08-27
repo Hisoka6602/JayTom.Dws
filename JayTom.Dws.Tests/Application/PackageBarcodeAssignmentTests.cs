@@ -1,26 +1,55 @@
 using JayTom.Dws.Application.Packages;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Legacy.Contracts.Packages;
+using JayTom.Dws.Tests.TestDoubles;
 
 namespace JayTom.Dws.Tests.Application;
 
 /// <summary>验证条码与包裹会话的时间窗口匹配和并发安全性。</summary>
 public sealed class PackageBarcodeAssignmentTests : IDisposable
 {
+    /// <summary>验证包裹创建时间来自可替换业务时钟。</summary>
+    [Fact]
+    public void Package_creation_uses_injected_time_provider()
+    {
+        var clock = new FixedTimeProvider(
+            new DateTimeOffset(2026, 8, 14, 1, 2, 3, TimeSpan.Zero));
+
+        var package = new PackageInfo(clock);
+
+        Assert.Equal(clock.GetLocalNow().DateTime, package.CreateTime);
+    }
+
     /// <summary>测试使用的赋值窗口下界，可按用例覆盖而非依赖生产常量。</summary>
     private const int DefaultMinimumAssignmentMilliseconds = 150;
 
     /// <summary>测试使用的赋值窗口上界，可按用例覆盖而非依赖生产常量。</summary>
     private const int DefaultMaximumAssignmentMilliseconds = 500;
 
-    /// <summary>用于验证全局包裹会话操作的应用层存储。</summary>
+    /// <summary>用于验证单个应用实例包裹会话操作的应用层存储。</summary>
     private readonly PackageSessionStore _store = new();
 
-    /// <summary>每个用例开始前清空全局包裹会话。</summary>
+    /// <summary>每个用例开始前清空当前测试实例的包裹会话。</summary>
     public PackageBarcodeAssignmentTests()
     {
         _store.ClearAllPackages();
+    }
+
+    /// <summary>不同应用实例的会话存储必须彼此隔离，禁止退化为进程全局静态状态。</summary>
+    [Fact]
+    public void PackageSessionStores_OwnIndependentRegistries()
+    {
+        var firstStore = new PackageSessionStore();
+        var secondStore = new PackageSessionStore();
+        var package = new PackageInfo { CreateTime = DateTime.Now };
+
+        firstStore.AddPackage(package, []);
+
+        Assert.Equal(1, firstStore.GetPackageCount());
+        Assert.Equal(0, secondStore.GetPackageCount());
+        Assert.Null(secondStore.GetPackage(package.CreateTime));
+        firstStore.ClearAllPackages();
     }
 
     /// <summary>确认下位机序号索引在添加和移除之间保持一致。</summary>
@@ -135,6 +164,37 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         Assert.Equal(shouldBind, bound is not null);
     }
 
+    /// <summary>倒序模式必须跳过未达到最小间隔的新包裹，并绑定窗口内最新的成熟包裹。</summary>
+    [Fact]
+    public void TryBindBarcode_DescendingOrderSkipsPackageBelowConfiguredMinimum()
+    {
+        var firstCreatedAt = new DateTime(2026, 8, 13, 10, 0, 0, DateTimeKind.Local);
+        var secondCreatedAt = firstCreatedAt.AddMilliseconds(200);
+        var observedAt = firstCreatedAt.AddMilliseconds(250);
+        var first = new PackageInfo { CreateTime = firstCreatedAt };
+        var second = new PackageInfo { CreateTime = secondCreatedAt };
+        _store.AddPackage(first, []);
+        _store.AddPackage(second, []);
+
+        var bound = _store.TryBindBarcode(
+            observedAt,
+            BarcodeQueueOrderEnum.TimeDescending,
+            true,
+            150,
+            500,
+            null,
+            observedAt,
+            package => package.BarCodeInfo = new BarCodeInfoModel
+            {
+                Barcode = "JT-DESCENDING",
+                ScanTime = observedAt,
+                BindTime = observedAt
+            });
+
+        Assert.Same(first, bound);
+        Assert.Null(second.BarCodeInfo);
+    }
+
     /// <summary>条码在400ms边界到达时，即使定时器尚未执行，也必须以空包裹删除为优先。</summary>
     [Theory]
     [InlineData(399, true)]
@@ -192,6 +252,38 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
             processingAt: firstCreatedAt.AddMilliseconds(450));
 
         Assert.Null(bound);
+        Assert.Null(second.BarCodeInfo);
+    }
+
+    /// <summary>倒序模式也必须优先删除过期队首，晚到条码不得赋给后面的成熟包裹。</summary>
+    [Fact]
+    public void TryBindBarcode_DescendingOrderStillRejectsExpiredHeadSpill()
+    {
+        var firstCreatedAt = new DateTime(2026, 8, 13, 10, 0, 0, DateTimeKind.Local);
+        var secondCreatedAt = firstCreatedAt.AddMilliseconds(250);
+        var first = new PackageInfo { CreateTime = firstCreatedAt };
+        var second = new PackageInfo { CreateTime = secondCreatedAt };
+        _store.AddPackage(first, []);
+        _store.AddPackage(second, []);
+        var observedAt = firstCreatedAt.AddMilliseconds(450);
+
+        var bound = _store.TryBindBarcode(
+            observedAt,
+            BarcodeQueueOrderEnum.TimeDescending,
+            true,
+            150,
+            500,
+            400,
+            observedAt,
+            package => package.BarCodeInfo = new BarCodeInfoModel
+            {
+                Barcode = "JT-MUST-NOT-SPILL-DESC",
+                ScanTime = observedAt,
+                BindTime = observedAt
+            });
+
+        Assert.Null(bound);
+        Assert.Null(_store.GetPackage(firstCreatedAt));
         Assert.Null(second.BarCodeInfo);
     }
 
@@ -304,7 +396,22 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         Assert.NotNull(package.BarCodeInfo);
     }
 
-    /// <summary>清理测试会话及定时器。</summary>
+    /// <summary>需要 API 格口指令的包裹必须一直保留到全部指令实际写入物理连接。</summary>
+    [Fact]
+    public void SortingInstructionLifecycle_RemainsPendingUntilPhysicalSendCompletes()
+    {
+        var package = new PackageInfo();
+
+        package.MarkSortingInstructionExpected();
+
+        Assert.True(package.IsWaitingForSortingInstruction);
+
+        package.MarkSortingInstructionSent();
+
+        Assert.False(package.IsWaitingForSortingInstruction);
+    }
+
+    /// <summary>清理测试创建的全局包裹会话和计时资源。</summary>
     public void Dispose()
     {
         _store.ClearAllPackages();

@@ -6,38 +6,42 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Windows.Media;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using System.Windows.Threading;
 using JayTom.Dws.Client.Service;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.Timer;
+using JayTom.Dws.Legacy.Contracts.Dto.Timer;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
 using Microsoft.AspNetCore.Connections;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Application.Configuration;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Application.Audio;
+using JayTom.Dws.Application.Communications;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Client.Models.StatusBarModels;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels
 {
 
     public class StatusBarViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IDeviceService _deviceService;
         private readonly IFtp _ftp;
@@ -49,7 +53,7 @@ namespace JayTom.Dws.Client.ViewModels
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
         private readonly ISortingConnectionService _sortingConnectionService;
-        private readonly ISoundRepository _soundRepository;
+        private readonly ISoundCatalog _soundCatalog;
         private readonly IGrayscaleService _grayscaleService;
         private static readonly SemaphoreSlim UpdateSlim = new(1, 1);
 
@@ -129,16 +133,18 @@ namespace JayTom.Dws.Client.ViewModels
 
         public StatusBarViewModel(IComputerInfoReporter computerInfoReporter,
             IDeviceService deviceService, ISettingsReader settingsReader,
-            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
+            ICommunicationConfigurationCatalog communicationCatalog,
             IFtp ftp, IDynamicScale dynamicScale,
             IStaticScale staticScale, ITcpVolumeInput tcpVolumeInput,
             ITcpContentInput tcpContentInput, ITcpContentOutput tcpContentOutput,
             IExitMonitor exitMonitor,
             IStackedPackageService stackedPackageService,
             ISortingConnectionService sortingConnectionService,
-            ISoundRepository soundRepository,
-            IGrayscaleService grayscaleService)
+            ISoundCatalog soundCatalog,
+            IGrayscaleService grayscaleService,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _computerInfoReporter = computerInfoReporter;
             _deviceService = deviceService;
             _ftp = ftp;
@@ -150,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
             _sortingConnectionService = sortingConnectionService;
-            _soundRepository = soundRepository;
+            _soundCatalog = soundCatalog;
             _grayscaleService = grayscaleService;
             _computerInfoReporter.ComputerInfoReceived += async delegate (object? sender, ComputerInfoModel model)
             {
@@ -211,7 +217,7 @@ namespace JayTom.Dws.Client.ViewModels
                         .Error(exception, "更新状态栏电脑信息失败");
                 }
             };
-            EventAggregator.Instance.Subscribe<TimerDto>(async item =>
+            _eventBus.SubscribeAsync<TimerDto>(async item =>
             {
                 if (item is TimerDto model)
                 {
@@ -219,7 +225,7 @@ namespace JayTom.Dws.Client.ViewModels
                     {
                         if (System.Windows.Application.Current?.Dispatcher is not null)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 //加载到界面内容
                                 FormattedElapsed = model.FormattedElapsed;
@@ -235,7 +241,7 @@ namespace JayTom.Dws.Client.ViewModels
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<CameraItemInfoModel>(async item =>
+            _eventBus.SubscribeAsync<CameraItemInfoModel>(async item =>
             {
                 if (item is CameraItemInfoModel model)
                 {
@@ -244,7 +250,7 @@ namespace JayTom.Dws.Client.ViewModels
                         await UpdateSlim.WaitAsync();
                         if (System.Windows.Application.Current?.Dispatcher is not null)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
                                 if (cameraItemInfoModel is not null)
@@ -272,7 +278,7 @@ namespace JayTom.Dws.Client.ViewModels
                     await UpdateSlim.WaitAsync();
                     if (System.Windows.Application.Current?.Dispatcher is not null)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             var cameraItemInfoModel = CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
                             if (cameraItemInfoModel is not null)
@@ -296,7 +302,7 @@ namespace JayTom.Dws.Client.ViewModels
                     await UpdateSlim.WaitAsync();
                     if (System.Windows.Application.Current?.Dispatcher is not null)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             foreach (var cameraItemInfoModel in list.Select(camera => CameraItems?.FirstOrDefault(f => f.SerialNumber.Equals(camera.Info?.SerialNumber))).OfType<CameraItemInfoModel>())
                             {
@@ -318,7 +324,7 @@ namespace JayTom.Dws.Client.ViewModels
                     await UpdateSlim.WaitAsync();
                     if (System.Windows.Application.Current?.Dispatcher is not null)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             foreach (var camera in list)
                             {
@@ -341,7 +347,7 @@ namespace JayTom.Dws.Client.ViewModels
                     await UpdateSlim.WaitAsync();
                     if (System.Windows.Application.Current?.Dispatcher is not null)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             foreach (var camera in list)
                             {
@@ -370,7 +376,7 @@ namespace JayTom.Dws.Client.ViewModels
                     UpdateSlim.Release();
                 }
             };
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async item =>
             {
                 if (item is SettingsChangedEvent info)
                 {
@@ -452,7 +458,7 @@ namespace JayTom.Dws.Client.ViewModels
                     if (resultOutputSettingsDto.IsUseAudioOutput)
                     {
                         //检测文件是否存在
-                        var total = await _soundRepository.Total(t => t.Id > 0).ConfigureAwait(false);
+                        var total = await _soundCatalog.CountAsync().ConfigureAwait(false);
                         newConnectionItems.Add(new ConnectionItemInfoModel()
                         {
                             ConnectionName = "音频输出",
@@ -495,9 +501,8 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     }
                     //获取下位机连接
-                    var models = await communicationConnectionConfigRepository.
-                        CommunicationConnectionConfigItems(s => s.Id > 0).ConfigureAwait(false);
-                    models.ForEach(f =>
+                    var models = await communicationCatalog.ListWithDetailsAsync().ConfigureAwait(false);
+                    foreach (var f in models)
                     {
                         newConnectionItems.Add(new ConnectionItemInfoModel()
                         {
@@ -505,7 +510,7 @@ namespace JayTom.Dws.Client.ViewModels
                             ConnectionState = ConnectionState.Disconnected,
                             ConnectionType = f.CommunicationType == 1 ? Models.StatusBarModels.ConnectionType.SerialPort : Models.StatusBarModels.ConnectionType.TCP,
                         });
-                    });
+                    }
                     //锁格
                     var packageExitLockSettingsDto = await settingsReader
                                                          .GetAsync<PackageExitLockSettingsDto>("PackageExitLockSettings")
@@ -552,7 +557,7 @@ namespace JayTom.Dws.Client.ViewModels
                         });
                     }
 
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         var itemsToRemove = ConnectionItems.Except(newConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
                         var itemsToAdd = newConnectionItems.Except(ConnectionItems, new ConnectionItemInfoModelComparer()).ToList();
@@ -654,7 +659,8 @@ namespace JayTom.Dws.Client.ViewModels
             }
             else
             {
-                _ = dispatcher.InvokeAsync(updateState, DispatcherPriority.Background);
+                dispatcher.InvokeAsync(updateState, DispatcherPriority.Background)
+                    .Task.Forget("刷新状态栏");
             }
         }
 

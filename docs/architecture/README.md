@@ -30,11 +30,12 @@ flowchart TD
 - WPF 进程入口和组合根只存在于 `Client`；不再维护没有独立部署价值的转发 Host。
 - 供应商 SDK、原生文件和平台对象留在适配项目，不进入核心契约。
 - 持久化注册与上下文生命周期归 `Infrastructure` 所有。
-- Client 不直接访问遗留 `PackageInfoManager`，统一通过 `IPackageSessionStore`。
+- Client 统一通过 `IPackageSessionStore` 访问应用实例独占的包裹会话；生产源码已无静态 `PackageInfoManager`。
 - 项目引用图、禁止包、编译所有权和关键源码边界由测试保护。
 
 ## 索引
 
+- [架构与分层 200 项实施台账](implementation-register-200.md)
 - [60 项实施台账](optimization-register.md)
 - [60 项语义问题整改台账](semantic-remediation-register.md)
 - [既有 SQLite 数据库兼容策略](database-compatibility-policy.md)
@@ -43,3 +44,8 @@ flowchart TD
 - [ADR-0003：持久化边界](adr/0003-persistence-ownership.md)
 - [ADR-0004：集成与设备适配](adr/0004-integration-and-device-adapters.md)
 - [ADR-0005：插件契约与架构治理](adr/0005-plugin-contracts-and-governance.md)
+
+## 第二批实施台账
+
+- [第二批架构与分层 200 项实施台账](implementation-register-stage2-200.md)
+- 机器可读验收源：`eng/ArchitectureStage2Register.json`

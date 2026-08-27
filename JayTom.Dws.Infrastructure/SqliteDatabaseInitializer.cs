@@ -1,5 +1,6 @@
 using System.Data;
 using System.Collections.Concurrent;
+using JayTom.Dws.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {
@@ -56,12 +57,8 @@ namespace JayTom.Dws.Infrastructure {
                     return;
                 }
 
-                // 先兼容历史上由 EnsureCreated 建立、没有迁移历史表的数据库；
-                // 兼容迁移只登记 CLR 类型策略，不修改任何既有业务表或列。
-                context.Database.EnsureCreated();
-                if (context.Database.GetMigrations().Any()) {
-                    context.Database.Migrate();
-                }
+                // 空库只引导一次当前基线；既有数据库的任何演进均由版本化迁移负责。
+                SqliteSchemaMigrator.Apply(context);
                 ConfigurePersistentSettings(context, databasePath);
                 Volatile.Write(ref state.IsInitialized, 1);
             }
@@ -81,7 +78,16 @@ namespace JayTom.Dws.Infrastructure {
 
             try {
                 using var command = connection.CreateCommand();
-                command.CommandText = "PRAGMA journal_mode=WAL; PRAGMA optimize;";
+                command.CommandText = """
+                    PRAGMA journal_mode=WAL;
+                    PRAGMA synchronous=NORMAL;
+                    PRAGMA busy_timeout=30000;
+                    PRAGMA wal_autocheckpoint=1000;
+                    PRAGMA temp_store=MEMORY;
+                    PRAGMA cache_size=-32768;
+                    PRAGMA mmap_size=268435456;
+                    PRAGMA optimize;
+                    """;
                 command.ExecuteNonQuery();
                 if (string.Equals(
                         Path.GetFileName(databasePath),
@@ -112,6 +118,16 @@ namespace JayTom.Dws.Infrastructure {
                     ON Data_ExitInfo (PhysicalExit);
                 CREATE INDEX IF NOT EXISTS IX_Data_UploadInfo_RequestStatus
                     ON Data_UploadInfo (RequestStatus);
+                CREATE INDEX IF NOT EXISTS IX_Data_PackageInfo_PackageTimestamped
+                    ON Data_PackageInfo (PackageTimestamped);
+                CREATE INDEX IF NOT EXISTS IX_Data_InstructionInfo_PackageId
+                    ON Data_InstructionInfo (PackageId);
+                CREATE INDEX IF NOT EXISTS IX_Data_SortingInfo_PackageId
+                    ON Data_SortingInfo (PackageId);
+                CREATE INDEX IF NOT EXISTS IX_Data_ExitInfo_PackageId
+                    ON Data_ExitInfo (PackageId);
+                CREATE INDEX IF NOT EXISTS IX_Data_ImageInfo_PackageId
+                    ON Data_ImageInfo (PackageId);
                 """;
             command.ExecuteNonQuery();
         }

@@ -116,7 +116,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             if (param is CameraInfo cameraInfo) {
                 this.Info = cameraInfo;
                 var tryGetValue = _devInfo.TryGetValue(cameraInfo.SerialNumber, out var devInfo);
@@ -138,7 +138,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (Status == CameraStatus.Initialized) {
                 return new KeyValuePair<bool, string>(true, "不支持实时");
@@ -160,7 +160,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
             return new KeyValuePair<bool, string>(true, string.Empty);
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
         }
 
         public bool IsRealtimeImageEnabled => false;

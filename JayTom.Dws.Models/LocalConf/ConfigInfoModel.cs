@@ -1,8 +1,8 @@
-﻿using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf {
+namespace JayTom.Dws.Models.LocalConf {
 
     [Table("Conf_ConfigInfo", Schema = "dbo")]
     public class ConfigInfoModel : BaseModel {

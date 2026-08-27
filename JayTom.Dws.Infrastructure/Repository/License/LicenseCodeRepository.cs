@@ -4,15 +4,15 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.License;
+using JayTom.Dws.Models.License;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.Repository.License;
+using JayTom.Dws.Legacy.Contracts.Repositories.License;
 using Microsoft.EntityFrameworkCore.Storage;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.License {
 

@@ -12,13 +12,11 @@ using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.BarCodeReader {
 
     public class DynamsoftBarCodeReader : IBarCodeReader {
-        private static string dbrLicenseKeys = "t0075oQAAAIvhAJJ+Mv2OHC+ZyzvrkkYyqMuHRgLktAwWHPtBRExDoEyZOSN3p9eHQ0csZBILJK+DKrBs2QaXyzJtmx0k+YgeciYvcCOd";
-
-        //private static string dntLicenseKeys = "t0071WQAAAIP64uktmNbWzB4BpR9uN81ZcXDga6MZQlXA+n8nb0L8q3jVDPpYvMlRHU7VP2eQUIYACdUYZhZd1ZqZ5cuIySHQErA=";
         private BarcodeReader? _mBarcodeReader;
 
         private PublicRuntimeSettings? _mNormalRuntimeSettings;
@@ -37,6 +35,11 @@ namespace JayTom.Dws.Camera.BarCodeReader {
         private int _scalePercentage = 50;
 
         public void Dispose() {
+            TaskCleanup.Observe(DisposeCoreAsync());
+        }
+
+        /// <summary>异步等待识别工作器退出后释放条码资源。</summary>
+        private async Task DisposeCoreAsync() {
             _stopCancellationTokenSource.Cancel();
             try {
                 _frameSignal.Release();
@@ -45,7 +48,7 @@ namespace JayTom.Dws.Camera.BarCodeReader {
             }
             if (_readerThread != null) {
                 try {
-                    _readerThread.GetAwaiter().GetResult();
+                    await _readerThread;
                 }
                 catch (OperationCanceledException) {
                 }
@@ -423,7 +426,9 @@ namespace JayTom.Dws.Camera.BarCodeReader {
 
         public async Task<bool> InitializeAsync(CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            var ret = BarcodeReader.InitLicense(dbrLicenseKeys, out var errorMsg);
+            string license = DynamsoftLicenseProvider.GetRequired(
+                DynamsoftLicenseProvider.BarcodeReaderEnvironmentVariable);
+            var ret = BarcodeReader.InitLicense(license, out var errorMsg);
             IsInitialized = (ret == EnumErrorCode.DBR_SUCCESS);
             if (!IsInitialized) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"InitLicense Failed:{errorMsg}");

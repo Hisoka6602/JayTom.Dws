@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Windows.Data;
 using System.Globalization;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 
 namespace JayTom.Dws.Client.Converters.ApiConverter
 {

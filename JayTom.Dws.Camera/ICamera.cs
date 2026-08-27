@@ -46,17 +46,21 @@ public interface ICamera : IDisposable {
     /// <summary>收到实时图像时触发。</summary>
     event EventHandler<RealtimeImageEventArgs> RealtimeImage;
 
-    /// <summary>使用厂商参数初始化相机。</summary>
-    Task<KeyValuePair<bool, string>> Initialize(object param);
+    /// <summary>使用已枚举的中立设备信息初始化相机。</summary>
+    Task<KeyValuePair<bool, string>> Initialize(
+        CameraInfo camera,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>使用厂商参数启动相机。</summary>
-    Task<KeyValuePair<bool, string>> Start(object param);
+    /// <summary>启动已经初始化的相机。</summary>
+    Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default);
 
     /// <summary>停止相机。</summary>
     Task<KeyValuePair<bool, string>> Stop();
 
-    /// <summary>设置厂商特定参数。</summary>
-    void SetParameters(Dictionary<string, object> parameters);
+    /// <summary>异步应用强类型运行参数。</summary>
+    Task ApplySettingsAsync(
+        CameraRuntimeSettings settings,
+        CancellationToken cancellationToken = default);
 
     /// <summary>获取是否已启用实时图像。</summary>
     bool IsRealtimeImageEnabled { get; }

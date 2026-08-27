@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.IpcNvrConfig {
+namespace JayTom.Dws.Models.LocalConf.IpcNvrConfig {
 
     //需要有自己单独的仓储
     [Table("Conf_IpcNvrConfigInfo", Schema = "dbo")]

@@ -1,15 +1,15 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Dto.CameraConfiguration;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.CameraConfiguration;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 {
@@ -20,7 +20,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         private ObservableCollection<int> _deblurLevelItems = new([.. Enumerable.Range(0, 10)]);
         private ObservableCollection<int> _textureDetectionSensitivityItems = new([.. Enumerable.Range(0, 10)]);
 
-        public AlgorithmSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public AlgorithmSettingsViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 

@@ -10,7 +10,7 @@ using JayTom.Dws.Plugin.Excel.Attributes;
 using Newtonsoft.Json;
 using NLog;
 
-namespace JayTom.Dws.Interface.Jtexpress {
+namespace JayTom.Dws.Integrations.Jtexpress {
 
     /// <summary>
     /// 极兔旧版 OPA 接口。
@@ -775,7 +775,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 content.Headers.Add("authToken", authToken);
             }
 
-            using var client = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+            using var client = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
             using var message = await client.PostAsync(
                     requestUrl,
                     content,

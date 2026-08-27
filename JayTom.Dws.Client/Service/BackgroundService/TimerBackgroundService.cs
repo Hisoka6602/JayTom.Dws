@@ -4,25 +4,29 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.Timer;
+using JayTom.Dws.Legacy.Contracts.Dto.Timer;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using JayTom.Dws.Application.Events;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
 
     public class TimerBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly DateTime _startTime = DateTime.Now;
         private int _isWindowsClose;
 
-        public TimerBackgroundService()
+        public TimerBackgroundService(
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus = eventBus;
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
@@ -38,7 +42,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                    await timer.WaitForNextTickAsync(stoppingToken))
             {
                 var timeSpan = DateTime.Now.Subtract(_startTime);
-                EventAggregator.Instance.Publish(new TimerDto
+                _eventBus.Publish(new TimerDto
                 {
                     ElapsedMilliseconds = (long)timeSpan.TotalMilliseconds,
                     FormattedElapsed = $"{timeSpan.Days}->{timeSpan.Hours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}",

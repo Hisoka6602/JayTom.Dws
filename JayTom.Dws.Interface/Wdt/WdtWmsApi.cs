@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface.Wdt {
+namespace JayTom.Dws.Integrations.Wdt {
 
     public class WdtWmsApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -69,7 +69,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     resultContent = exceptionMsg = "包装码不能为空!";
                 }
                 else {
-                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -119,7 +119,7 @@ namespace JayTom.Dws.Interface.Wdt {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg ?? string.Empty,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -176,7 +176,7 @@ namespace JayTom.Dws.Interface.Wdt {
                     resultContent = exceptionMsg = "包装码不能为空!";
                 }
                 else {
-                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                    using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                     httpClient.Timeout = TimeSpan.FromMilliseconds(ApiParameters.TimeOut);
                     HttpResponseMessage message;
                     await using (Stream dataStream =
@@ -226,7 +226,7 @@ namespace JayTom.Dws.Interface.Wdt {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg ?? string.Empty,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

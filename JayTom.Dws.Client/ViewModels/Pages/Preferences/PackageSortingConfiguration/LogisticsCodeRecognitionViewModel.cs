@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Threading;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -13,18 +15,20 @@ using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Application.Messaging;
+using JayTom.Dws.Application.Storage;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
 {
@@ -32,16 +36,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     //物流代码识别页面
     public class LogisticsCodeRecognitionViewModel : BulkOperationsTemplateViewModel<LogisticsCodeRecognitionItemInfoModel>
     {
-        private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
+        private readonly ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> _sortingCatalog;
         private readonly ISpeech _speech;
+        private readonly IBinaryAssetStore _assetStore;
         private ObservableCollection<LogisticsCodeRecognitionItemInfoModel> _logisticsCodeRecognitionItems = new();
 
-        public LogisticsCodeRecognitionViewModel(ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
-            ISpeech speech, IExcel excel) : base(excel)
+        public LogisticsCodeRecognitionViewModel(ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> sortingCatalog,
+            ISpeech speech,
+            IBinaryAssetStore assetStore,
+            IExcel excel,
+            IEventBus eventBus) : base(eventBus, excel)
         {
-            _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
+            _sortingCatalog = sortingCatalog;
 
             _speech = speech;
+            _assetStore = assetStore;
         }
 
         public ObservableCollection<LogisticsCodeRecognitionItemInfoModel> LogisticsCodeRecognitionItems
@@ -52,7 +61,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var recognitionEditor = new LogisticsCodeRecognitionEditor();
                 if (recognitionEditor.DataContext is LogisticsCodeRecognitionEditorViewModel model)
@@ -67,18 +76,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
                     if (model.IsOk)
                     {
+                        if (!await PersistPendingAssetsAsync(
+                                model.LogisticsCodeRecognitionItemInfo)) {
+                            MessageQueue.Enqueue("资源保存失败");
+                            return;
+                        }
+
                         //添加到数据库
                         var infoModel = new LogisticsCodeRecognitionInfoModel()
                         {
                             CreateTime = DateTime.Now,
                             IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
-                            IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
+                            IconFileReference = model.LogisticsCodeRecognitionItemInfo.IconFileReference,
                             LogisticsCode = model.LogisticsCodeRecognitionItemInfo.LogisticsCode,
                             LogisticsName = model.LogisticsCodeRecognitionItemInfo.LogisticsName,
                             ModifyTime = model.LogisticsCodeRecognitionItemInfo.ModifyTime,
                             Remarks = model.LogisticsCodeRecognitionItemInfo.Remarks,
                             SoundName = model.LogisticsCodeRecognitionItemInfo.SoundName,
-                            SoundBytes = model.LogisticsCodeRecognitionItemInfo.SoundBytes,
+                            SoundFileReference = model.LogisticsCodeRecognitionItemInfo.SoundFileReference,
                             LogisticsRegexItems = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel
                             {
                                 CreateTime = s.CreateTime,
@@ -86,11 +101,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 RegexPattern = s.RegexPattern,
                             })?.ToList()
                         };
-                        var insertOrUpdate = await _logisticsCodeRecognitionRepository.InsertDetailAsync(infoModel);
+                        var insertOrUpdate = await _sortingCatalog.AddAsync(infoModel);
                         if (insertOrUpdate)
                         {
-                            EventAggregator.Instance.Publish(infoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(infoModel);
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -123,12 +138,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is LogisticsCodeRecognitionItemInfoModel item)
             {
-                var logisticsCodeRecognitionInfoModel = await _logisticsCodeRecognitionRepository.
-                    FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (logisticsCodeRecognitionInfoModel is not null)
-                {
-                    return await _logisticsCodeRecognitionRepository.Delete(logisticsCodeRecognitionInfoModel);
-                }
+                return await _sortingCatalog.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -138,9 +148,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var selectIds = LogisticsCodeRecognitionItems.Where(w => w.IsSelect)
                 .Select(s => s.Id).ToList();
-            var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => selectIds.Contains(s.Id),
-                o => o.Id);
-            await _logisticsCodeRecognitionRepository.DeleteRange(logisticsCodeRecognitionInfoModels);
+            await _sortingCatalog.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<LogisticsCodeRecognitionItemInfoModel> ExportProcess() =>
@@ -194,7 +202,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     .ToList();
 
                 //批量添加
-                return await _logisticsCodeRecognitionRepository.InsertRangeDetailAsync(logisticsCodeRecognitionInfoModels);
+                return await _sortingCatalog.AddRangeAsync(logisticsCodeRecognitionInfoModels);
             }
 
             return false;
@@ -204,7 +212,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is LogisticsCodeRecognitionItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var recognitionEditor = new LogisticsCodeRecognitionEditor();
                     if (recognitionEditor.DataContext is LogisticsCodeRecognitionEditorViewModel model)
@@ -222,19 +230,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
                         if (model.IsOk)
                         {
+                            if (!await PersistPendingAssetsAsync(
+                                    model.LogisticsCodeRecognitionItemInfo)) {
+                                MessageQueue.Enqueue("资源保存失败");
+                                return;
+                            }
+
                             //添加到数据库
                             var infoModel = new LogisticsCodeRecognitionInfoModel()
                             {
                                 Id = model.LogisticsCodeRecognitionItemInfo.Id,
                                 CreateTime = DateTime.Now,
                                 IconName = model.LogisticsCodeRecognitionItemInfo.IconName,
-                                IconBytes = model.LogisticsCodeRecognitionItemInfo.Icon?.ImageSourceToByteArray(),
+                                IconFileReference = model.LogisticsCodeRecognitionItemInfo.IconFileReference,
                                 LogisticsCode = model.LogisticsCodeRecognitionItemInfo.LogisticsCode,
                                 LogisticsName = model.LogisticsCodeRecognitionItemInfo.LogisticsName,
                                 ModifyTime = model.LogisticsCodeRecognitionItemInfo.ModifyTime,
                                 Remarks = model.LogisticsCodeRecognitionItemInfo.Remarks,
                                 SoundName = model.LogisticsCodeRecognitionItemInfo.SoundName,
-                                SoundBytes = model.LogisticsCodeRecognitionItemInfo.SoundBytes,
+                                SoundFileReference = model.LogisticsCodeRecognitionItemInfo.SoundFileReference,
                                 LogisticsRegexItems = model.LogisticsRegexItems.Select(s => new LogisticsRegexInfoModel
                                 {
                                     CreateTime = s.CreateTime,
@@ -242,12 +256,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     RegexPattern = s.RegexPattern,
                                 })?.ToList()
                             };
-                            var insertOrUpdate = await _logisticsCodeRecognitionRepository.UpdateDetailAsync(infoModel);
+                            var insertOrUpdate = await _sortingCatalog.UpdateAsync(infoModel);
                             if (insertOrUpdate)
                             {
                                 MessageQueue.Enqueue("保存成功");
                                 RefreshData();
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -272,24 +286,31 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void PlaySoundDelegate(LogisticsCodeRecognitionItemInfoModel obj)
         {
-            if (obj.SoundBytes?.Length > 0)
+            var bytes = obj.SoundBytes;
+            if ((bytes is null || bytes.Length == 0) &&
+                !string.IsNullOrWhiteSpace(obj.SoundFileReference)) {
+                var asset = await _assetStore.ReadAsync(
+                    new BinaryAssetReference(obj.SoundFileReference),
+                    16 * 1024 * 1024,
+                    CancellationToken.None);
+                bytes = asset.Value;
+            }
+
+            if (bytes?.Length > 0)
             {
-                await _speech.PlayByteFile(obj.SoundBytes);
+                await _speech.PlayByteFile(bytes);
             }
         }
 
         protected override async Task ClearProcess()
         {
-            var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                o => o.Id);
-            await _logisticsCodeRecognitionRepository.DeleteRange(logisticsCodeRecognitionInfoModels);
+            await _sortingCatalog.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
             await Task.Delay(300);
-            var models = await _logisticsCodeRecognitionRepository.
-                LogisticsCodes(s => s.Id > 0);
+            var models = await _sortingCatalog.ListAsync();
             LogisticsCodeRecognitionItems.Clear();
             var infoModels = models?.Select((s, i) => new LogisticsCodeRecognitionItemInfoModel
             {
@@ -300,10 +321,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 Remarks = s.Remarks,
                 Icon = s.IconBytes?.ByteArrayToImageSource(),
                 IconName = s.IconName,
+                IconFileReference = s.IconFileReference,
                 LogisticsCode = s.LogisticsCode,
                 LogisticsName = s.LogisticsName,
                 SoundName = s.SoundName,
-                SoundBytes = s.SoundBytes,
+                SoundFileReference = s.SoundFileReference,
                 LogisticsRegexItems = new ObservableCollection<LogisticsRegexItemInfoModel>(s.LogisticsRegexItems?.Select((s1, i1) => new LogisticsRegexItemInfoModel
                 {
                     CreateTime = s1.CreateTime,
@@ -316,7 +338,60 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                 }).ToList() ?? new List<LogisticsRegexItemInfoModel>()),
                 RegexPattern = string.Join("\n", s.LogisticsRegexItems?.Select(s2 => s2.RegexPattern) ?? Array.Empty<string>())
             })?.ToList();
+            if (infoModels is not null) {
+                foreach (var item in infoModels) {
+                    if (!string.IsNullOrWhiteSpace(item.SoundFileReference)) {
+                        var sound = await _assetStore.ReadAsync(
+                            new BinaryAssetReference(item.SoundFileReference),
+                            16 * 1024 * 1024,
+                            CancellationToken.None);
+                        item.SoundBytes = sound.Value;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(item.IconFileReference)) {
+                        var icon = await _assetStore.ReadAsync(
+                            new BinaryAssetReference(item.IconFileReference),
+                            8 * 1024 * 1024,
+                            CancellationToken.None);
+                        item.Icon = icon.Value?.ByteArrayToImageSource();
+                    }
+                }
+            }
             LogisticsCodeRecognitionItems.AddRange(infoModels);
+        }
+
+        private async Task<bool> PersistPendingAssetsAsync(
+            LogisticsCodeRecognitionItemInfoModel item) {
+            if (item.SoundBytes is { Length: > 0 }) {
+                await using var stream = new MemoryStream(item.SoundBytes, writable: false);
+                var saved = await _assetStore.SaveAsync(
+                    "sorting-sounds",
+                    item.SoundName ?? "sound.bin",
+                    stream,
+                    CancellationToken.None);
+                if (!saved.IsSuccess) {
+                    return false;
+                }
+
+                item.SoundFileReference = saved.Value.Value;
+            }
+
+            var iconBytes = item.Icon?.ImageSourceToByteArray();
+            if (iconBytes is { Length: > 0 }) {
+                await using var stream = new MemoryStream(iconBytes, writable: false);
+                var saved = await _assetStore.SaveAsync(
+                    "sorting-icons",
+                    string.IsNullOrWhiteSpace(item.IconName) ? "icon.png" : item.IconName,
+                    stream,
+                    CancellationToken.None);
+                if (!saved.IsSuccess) {
+                    return false;
+                }
+
+                item.IconFileReference = saved.Value.Value;
+            }
+
+            return true;
         }
 
         protected override bool IsSelectAnyItem() => LogisticsCodeRecognitionItems.Any(a => a.IsSelect);

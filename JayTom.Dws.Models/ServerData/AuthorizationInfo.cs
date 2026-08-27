@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.ServerData {
+namespace JayTom.Dws.Models.ServerData {
 
     [Table("Data_AuthorizationInfo", Schema = "dbo")]
     public class AuthorizationInfo : BaseModel {

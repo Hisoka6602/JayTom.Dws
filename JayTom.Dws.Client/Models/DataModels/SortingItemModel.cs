@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using Newtonsoft.Json.Serialization;
 using System.Collections.ObjectModel;
 

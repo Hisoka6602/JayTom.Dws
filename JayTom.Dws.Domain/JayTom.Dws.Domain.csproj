@@ -9,28 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Service\CloudApi\CloudService.cs" />
-    <Compile Remove="Service\LicenseApi\LicenseApplicationService.cs" />
-    <Compile Remove="Service\LicenseApi\LicenseCodeService.cs" />
-    <Compile Remove="Service\LicenseApi\LicenseLogService.cs" />
-    <Compile Remove="Service\LicenseApi\LicenseUserService.cs" />
-    <Compile Remove="Service\VideoApi\VideoBarCodeService.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
-    <ProjectReference Include="..\JayTom.Dws.Models\JayTom.Dws.Models.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Repository\LocalConf\CloudConfig\" />
-    <Folder Include="Repository\LocalConf\IpcNvrConfig\" />
-    <Folder Include="Repository\VideoApi\" />
-    <Folder Include="Service\VideoApi\" />
   </ItemGroup>
 
 </Project>

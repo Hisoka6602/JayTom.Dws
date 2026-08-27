@@ -8,10 +8,10 @@ using System.Windows;
 using Newtonsoft.Json;
 using JayTom.Dws.Plugin;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,7 +20,7 @@ using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.BarcodeFilterSettingsModel;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -39,7 +39,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private string _replacedBarcode = string.Empty;
 
         public BarcodeFilterSettingsPageViewModel(ISettingsStore settingsStore,
-            IExcel excel) : base(settingsStore)
+            IExcel excel, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _excel = excel;
         }
@@ -131,7 +131,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private async void CustomRegexFilterDeleteDelegate(CustomRegexFilterItemInfoModel item)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 BarcodeFilterSettingsInfo.CustomRegexFilterItems.Remove(item);
                 for (var i = 0; i < BarcodeFilterSettingsInfo.CustomRegexFilterItems.Count; i++)
@@ -146,7 +146,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private async void CustomRegexReplacementDeleteDelegate(CustomRegexReplacementItemInfoModel item)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Remove(item);
                 for (var i = 0; i < BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Count; i++)
@@ -161,7 +161,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private async void CustomRegexReplacementTestDelegate()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 var replacedBarcode = CustomRegexReplacementTestBarcode;
                 try
@@ -182,7 +182,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             var infoModels = await ImportDelegate<CustomRegexReplacementItemInfoModel>();
             if (infoModels.Any())
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     var existingRegexPatterns = BarcodeFilterSettingsInfo.CustomRegexReplacementItems.Select(item => item.RegexPattern);
                     var distinctInfoModels = infoModels
@@ -209,7 +209,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             var infoModels = await ImportDelegate<CustomRegexFilterItemInfoModel>();
             if (infoModels.Any())
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     var existingRegexPatterns = BarcodeFilterSettingsInfo.CustomRegexFilterItems.Select(item => item.RegexPattern);
                     var distinctInfoModels = infoModels
@@ -249,7 +249,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private async void CustomRegexFilterClearClearDelegate()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 BarcodeFilterSettingsInfo.CustomRegexFilterItems?.Clear();
             });
@@ -260,7 +260,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private async void CustomRegexReplacementClearDelegate()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 BarcodeFilterSettingsInfo.CustomRegexReplacementItems?.Clear();
             });
@@ -378,7 +378,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void TestDelegate()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (BarcodeFilterSettingsInfo.BarCodeFilterOptions == BarCodeFilterOptions.BasicFilter)
                 {
@@ -464,7 +464,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore.GetAsync<BarcodeFilterSettingsDto>(SettingsName) ??
                                       new BarcodeFilterSettingsDto();
@@ -525,7 +525,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         private async void UpdateRegularExpression()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 var regularChars = new List<string>();
                 //不能包含
@@ -633,7 +633,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     model.FilePath = saveFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
+                    DialogHost.Show(exportDialog, model.Identifier)
+                        .Forget("显示条码过滤导出进度对话框");
                     try
                     {
                         var export = await _excel.Export(saveFileDialog.FileName,
@@ -645,7 +646,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                                 model.ProgressText = $"{p}%";
                                 if (p == 100)
                                 {
-                                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                    await UiThread.Dispatcher.InvokeAsync(() =>
                                     {
                                         if (DialogHost.IsDialogOpen(model.Identifier))
                                         {
@@ -659,7 +660,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             });
                         if (!export)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -697,7 +698,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                     model.FilePath = openFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
+                    DialogHost.Show(exportDialog, model.Identifier)
+                        .Forget("显示条码过滤导入进度对话框");
 
                     var readExcel = await _excel.ReadExcel<T>(openFileDialog.FileName, async p =>
                     {
@@ -705,7 +707,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -715,7 +717,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         }
                     }, async (Exception e) =>
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             if (DialogHost.IsDialogOpen(model.Identifier))
                             {

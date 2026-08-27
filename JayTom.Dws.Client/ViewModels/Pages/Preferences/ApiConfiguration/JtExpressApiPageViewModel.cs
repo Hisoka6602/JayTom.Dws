@@ -1,5 +1,5 @@
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Integrations;
 using JayTom.Dws.Client.Extensions;
 using JayTom.Dws.Abstractions.Integrations;
 using JayTom.Dws.Application.Configuration;
@@ -14,13 +14,12 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Interface.Jtexpress;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
+using JayTom.Dws.Integrations.Jtexpress;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -120,7 +119,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private bool _isLoggingIn;
 
         public JtExpressApiPageViewModel(ISettingsStore settingsStore,
-            IProviderRegistry<IDataUploader> providerRegistry) : base(settingsStore)
+            IProviderRegistry<IDataUploader> providerRegistry, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _providerRegistry = providerRegistry;
         }
@@ -286,7 +285,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore.GetAsync<JtExpressDto>(SettingsName) ?? new JtExpressDto();
 

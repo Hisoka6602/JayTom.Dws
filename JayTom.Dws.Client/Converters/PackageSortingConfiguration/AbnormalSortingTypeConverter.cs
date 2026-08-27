@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using TouchSocket.Core;
 using System.Windows.Data;
 using System.Globalization;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Converters.PackageSortingConfiguration
 {

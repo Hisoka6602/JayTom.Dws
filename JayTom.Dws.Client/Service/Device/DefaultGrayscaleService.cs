@@ -1,14 +1,14 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 
 namespace JayTom.Dws.Client.Service.Device
@@ -158,7 +158,8 @@ namespace JayTom.Dws.Client.Service.Device
         {
             if (param is int carNum)
             {
-                _ = SendCarNumberAsync(carNum, token);
+                SendCarNumberAsync(carNum, token)
+                    .Forget("发送灰度车号");
             }
         }
 

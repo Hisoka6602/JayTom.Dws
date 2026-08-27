@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
@@ -97,7 +98,12 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         }
 
         public void Dispose() {
-            StopVolumeCapture().GetAwaiter().GetResult();
+            TaskCleanup.Observe(DisposeCoreAsync());
+        }
+
+        /// <summary>异步停止体积采集后释放设备与辅助进程。</summary>
+        private async Task DisposeCoreAsync() {
+            await StopVolumeCapture();
             CloseDevice();//关闭设备
             KillProcess();//关闭后台应用程序
             _isInitialized = false;

@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Linq;
 using JayTom.Dws.Application.Configuration;
 using System.Text;
 using Newtonsoft.Json;
 using TouchSocket.Core;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Abstractions.Integrations.Ftp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Repository.LocalLog;
-using JayTom.Dws.Domain.Service.CacheCleanup;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Services.CacheCleanup;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 
 namespace JayTom.Dws.Infrastructure.Service {
 

@@ -1,8 +1,8 @@
-﻿using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
+namespace JayTom.Dws.Models.LocalConf.PackageSortingConfig {
 
     [Table("Conf_SortingInstructionInfo", Schema = "dbo")]
     public class SortingInstructionInfoModel : BasePackageSortingConfig {

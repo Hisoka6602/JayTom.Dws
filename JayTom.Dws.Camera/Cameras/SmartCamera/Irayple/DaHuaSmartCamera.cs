@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Camera.Concurrency;
+using JayTom.Dws.Abstractions.Threading;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
@@ -71,7 +72,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         }
 
         public void Dispose() {
-            Stop().GetAwaiter().GetResult();
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步停止相机后发布注销事件。</summary>
+        private async Task DisposeCoreAsync() {
+            await Stop();
             OnCameraUnregistered(new CameraUnregisteredEventArgs() {
                 CameraInfo = this.Info
             });
@@ -125,7 +132,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (param is CameraInfo info) {
                 this.Info = info;
@@ -202,7 +209,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             //打开设备
             if (_device is not null) {
@@ -254,7 +261,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
             return new KeyValuePair<bool, string>(true, "设备停止成功!");
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 

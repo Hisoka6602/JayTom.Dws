@@ -4,20 +4,20 @@ using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Models.Package;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.PackageExits;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
 {
 
     public class ApiSortingRuleEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
@@ -35,9 +35,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private ApiSortingItemInfoModel _apiSortingItemInfo = new();
         private SearchDirection _searchDirection = SearchDirection.Forward;
 
-        public ApiSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public ApiSortingRuleEditorViewModel(IPackageExitCatalog packageExitCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void DeleteJsonDelegate(ApiRuleItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 ApiRuleItems.Remove(obj);
                 //调整Num
@@ -194,7 +194,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void AddJsonDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 var apiRuleJsonDto = new ApiRuleJsonDto()
                 {
@@ -227,7 +227,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ClearConditionsDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 IsUseStringComparison = false;
 
@@ -285,9 +285,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>

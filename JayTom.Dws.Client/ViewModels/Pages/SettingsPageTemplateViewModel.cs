@@ -1,4 +1,5 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Messaging;
 using System;
 using Prism.Mvvm;
 using System.Linq;
@@ -7,19 +8,19 @@ using Prism.Commands;
 using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 using JayTom.Dws.Client.Service.SyncSettings;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
@@ -27,13 +28,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages
     public abstract class SettingsPageTemplateViewModel : BindableBase
     {
         protected readonly ISettingsStore _settingsStore;
+        /// <summary>发布设置变更等应用事件。</summary>
+        protected readonly IEventBus _eventBus;
 
         private bool _isSavingInProgress;
         private SnackbarMessageQueue _messageQueue = new(TimeSpan.FromSeconds(2));
 
-        protected SettingsPageTemplateViewModel(ISettingsStore settingsStore)
+        protected SettingsPageTemplateViewModel(
+            ISettingsStore settingsStore,
+            IEventBus eventBus)
         {
             _settingsStore = settingsStore;
+            _eventBus = eventBus;
         }
 
         public ICommand LoadedCommand => new DelegateCommand<object>(LoadedDelegate);
@@ -65,7 +71,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// </summary>
         public ICommand SaveSettingsCommand => new DelegateCommand(SaveDelegate);
 
-        private void SaveDelegate() => _ = SaveAsync();
+        private void SaveDelegate() => SaveAsync().Forget("保存设置");
 
         /// <summary>异步保存当前设置。</summary>
         public virtual async Task SaveAsync()
@@ -82,7 +88,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 if (settingsProcess)
                 {
                     //通知事件
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    _eventBus.Publish(new SettingsChangedEvent
                     {
                         SettingsName = SettingsName,
                         IsLocallySaved = true

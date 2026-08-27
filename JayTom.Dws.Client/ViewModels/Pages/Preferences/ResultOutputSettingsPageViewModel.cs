@@ -1,6 +1,9 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Audio;
+using JayTom.Dws.Application.Storage;
 using System;
 using System.IO;
+using System.Threading;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -8,17 +11,17 @@ using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Forms;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using JayTom.Dws.Client.Models.ResultOutputSettingsModel;
@@ -28,7 +31,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
     public class ResultOutputSettingsPageViewModel : SettingsPageTemplateViewModel
     {
-        private readonly ISoundRepository _soundRepository;
+        private readonly ISoundCatalog _soundCatalog;
+        private readonly IBinaryAssetStore _assetStore;
 
         private ObservableCollection<ItemBaseTemplateModel> _outputItems = new()
         {
@@ -232,10 +236,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private DataFormatTypeInfoModel _selectDataFormat = new();
 
-        public ResultOutputSettingsPageViewModel(ISoundRepository soundRepository,
-            ISettingsStore settingsStore) : base(settingsStore)
+        public ResultOutputSettingsPageViewModel(ISoundCatalog soundCatalog,
+            ISettingsStore settingsStore,
+            IBinaryAssetStore assetStore,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
-            _soundRepository = soundRepository;
+            _soundCatalog = soundCatalog;
+            _assetStore = assetStore;
         }
 
         /// <summary>
@@ -374,7 +381,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (model.ApplicationType == ItemApplicationType.ResultData)
                 {
@@ -398,7 +405,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddOutputItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 var count = OutputItems.Count;
@@ -516,7 +523,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void BarCodeKeyDownDelegate(System.Windows.Input.KeyEventArgs obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 LocationOutputSettingsInfo.BarcodeOutputKey = obj.Key.ToString();
             });
@@ -526,7 +533,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void WeightKeyDownDelegate(System.Windows.Input.KeyEventArgs obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 LocationOutputSettingsInfo.WeightOutputKey = obj.Key.ToString();
             });
@@ -544,7 +551,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             };
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     SoundFilePath = openFileDialog.FileName;
                 });
@@ -560,17 +567,34 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 //加载遮罩,加载锁
 
-                var update = await _soundRepository.InsertOrUpdate(new SoundInfoModel()
+                await using var stream = new FileStream(
+                    SoundFilePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    64 * 1024,
+                    FileOptions.Asynchronous | FileOptions.SequentialScan);
+                var asset = await _assetStore.SaveAsync(
+                    "sounds",
+                    Path.GetFileName(SoundFilePath),
+                    stream,
+                    CancellationToken.None);
+                if (!asset.IsSuccess) {
+                    base.MessageQueue.Enqueue(asset.ErrorMessage);
+                    return;
+                }
+
+                var update = await _soundCatalog.SaveAsync(new SoundInfoModel()
                 {
                     SoundName = new FileInfo(SoundFilePath).Name,
-                    SoundFile = await File.ReadAllBytesAsync(SoundFilePath)
+                    SoundFileReference = asset.Value.Value
                 });
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     if (update)
                     {
                         Sounds.Clear();
-                        var soundInfoModels = await _soundRepository.Select(w => w.Id > 0, o => o.Id);
+                        var soundInfoModels = await _soundCatalog.ListAsync();
                         if (soundInfoModels?.Any() == true)
                         {
                             Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));
@@ -670,11 +694,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //加载音频列表
                     Sounds.Clear();
-                    var soundInfoModels = await _soundRepository.Select(w => w.Id > 0, o => o.Id);
+                    var soundInfoModels = await _soundCatalog.ListAsync();
                     if (soundInfoModels?.Any() == true)
                     {
                         Sounds.AddRange(soundInfoModels.Select(s => s.SoundName));

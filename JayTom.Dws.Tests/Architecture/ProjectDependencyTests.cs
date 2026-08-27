@@ -28,7 +28,8 @@ public sealed class ProjectDependencyTests {
     [InlineData("JayTom.Dws.Plugin.Abstractions", "JayTom.Dws.Interface")]
     [InlineData("JayTom.Dws.Domain", "JayTom.Dws.Interface")]
     [InlineData("JayTom.Dws.Domain", "JayTom.Dws.Plugin")]
-    [InlineData("JayTom.Dws.Domain", "JayTom.Dws.Data")]
+    [InlineData("JayTom.Dws.Domain", "JayTom.Dws.Models")]
+    [InlineData("JayTom.Dws.Domain", "JayTom.Dws.Legacy.Contracts")]
     [InlineData("JayTom.Dws.Interface", "JayTom.Dws.Plugin")]
     [InlineData("JayTom.Dws.Infrastructure", "JayTom.Dws.Plugin")]
     public void Inner_projects_must_not_reference_outer_projects(string projectName, string forbiddenReference) {

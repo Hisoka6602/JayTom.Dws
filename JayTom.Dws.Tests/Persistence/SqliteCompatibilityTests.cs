@@ -1,4 +1,4 @@
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using JayTom.Dws.Infrastructure;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,32 @@ namespace JayTom.Dws.Tests.Persistence;
 
 /// <summary>验证既有 SQLite 文件可在 long 与 decimal 业务语义下原位使用。</summary>
 public sealed class SqliteCompatibilityTests {
+    /// <summary>验证全新空库可建立基线结构并登记版本化迁移。</summary>
+    [Fact]
+    public async Task EmptyDatabase_BootstrapsSchemaBeforeApplyingMigrations() {
+        var databasePath = Path.Combine(
+            Path.GetTempPath(),
+            $"jaytom-dws-empty-{Guid.NewGuid():N}.db");
+
+        try {
+            var options = new DbContextOptionsBuilder<SqliteContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+            await using (var context = new SqliteContext(options)) {
+                Assert.True(await context.Set<PackageInfoModel>().AnyAsync() == false);
+            }
+
+            await using var connection = new SqliteConnection($"Data Source={databasePath};Pooling=False");
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory;";
+            Assert.Equal(4L, Convert.ToInt64(await command.ExecuteScalarAsync()));
+        }
+        finally {
+            DeleteDatabaseArtifacts(databasePath);
+        }
+    }
+
     /// <summary>验证旧 INTEGER/REAL 列可读写且初始化不会重建业务表。</summary>
     [Fact]
     public async Task LegacyDatabase_RemainsStructurallyCompatible() {

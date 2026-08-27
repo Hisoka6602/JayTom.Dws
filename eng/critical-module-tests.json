@@ -1,0 +1,51 @@
+{
+  "modules": {
+    "package-domain": [
+      "JayTom.Dws.Tests/Domain/PackageAggregateTests.cs",
+      "JayTom.Dws.Tests/Application/PackageBarcodeAssignmentTests.cs",
+      "JayTom.Dws.Tests/Domain/StageTwoDomainModelTests.cs"
+    ],
+    "application-use-cases": [
+      "JayTom.Dws.Tests/Application/ApplicationUseCaseTests.cs",
+      "JayTom.Dws.Tests/Application/ResultContractTests.cs",
+      "JayTom.Dws.Tests/Application/ApplicationCommandPipelineTests.cs"
+    ],
+    "eventing-and-concurrency": [
+      "JayTom.Dws.Tests/Application/EventAggregatorTests.cs",
+      "JayTom.Dws.Tests/AsyncOrderedDispatcherTests.cs",
+      "JayTom.Dws.Tests/Application/SemaphoreLeaseTests.cs"
+    ],
+    "persistence": [
+      "JayTom.Dws.Tests/Persistence/SqliteCompatibilityTests.cs",
+      "JayTom.Dws.Tests/Infrastructure/FileBinaryAssetStoreTests.cs"
+    ],
+    "camera-adapters": [
+      "JayTom.Dws.Tests/CameraAdapterContractTests.cs",
+      "JayTom.Dws.Tests/CameraBarcodeFilterTests.cs",
+      "JayTom.Dws.Tests/CameraContractsTests.cs"
+    ],
+    "external-adapters": [
+      "JayTom.Dws.Tests/IntegrationBoundaryTests.cs",
+      "JayTom.Dws.Tests/DefaultApiTests.cs",
+      "JayTom.Dws.Tests/JtPolarDayApiTests.cs"
+    ],
+    "plugins": [
+      "JayTom.Dws.Tests/Plugin/PluginRuntimeTests.cs",
+      "JayTom.Dws.Tests/Application/PluginManifestValidatorTests.cs",
+      "JayTom.Dws.Tests/Plugin/PluginPackageVerifierTests.cs"
+    ],
+    "observability-and-performance": [
+      "JayTom.Dws.Tests/Observability/ObservabilityContractTests.cs",
+      "JayTom.Dws.Tests/Performance/PerformanceBaselineTests.cs"
+    ],
+    "configuration-and-secrets": [
+      "JayTom.Dws.Tests/Infrastructure/EncryptedFileSecretStoreTests.cs"
+    ],
+    "license-security": [
+      "JayTom.Dws.Tests/License/LicenseSecurityTests.cs"
+    ],
+    "architecture-governance": [
+      "JayTom.Dws.Tests/Architecture/StageTwoImplementationRegisterTests.cs"
+    ]
+  }
+}

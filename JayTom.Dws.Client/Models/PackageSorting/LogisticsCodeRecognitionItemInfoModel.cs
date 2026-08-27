@@ -17,6 +17,8 @@ namespace JayTom.Dws.Client.Models.PackageSorting
         private string _regexPattern = string.Empty;
         private string? _soundName;
         private string _iconName = string.Empty;
+        private string? _soundFileReference;
+        private string? _iconFileReference;
         private ObservableCollection<LogisticsRegexItemInfoModel> _logisticsRegexItems = new();
 
         /// <summary>
@@ -58,6 +60,13 @@ namespace JayTom.Dws.Client.Models.PackageSorting
             set => SetProperty(ref _soundName, value);
         }
 
+        /// <summary>获取或设置数据库外部声音资源引用。</summary>
+        public string? SoundFileReference
+        {
+            get => _soundFileReference;
+            set => SetProperty(ref _soundFileReference, value);
+        }
+
         /// <summary>
         /// 图标
         /// </summary>
@@ -75,6 +84,13 @@ namespace JayTom.Dws.Client.Models.PackageSorting
         {
             get => _iconName;
             set => SetProperty(ref _iconName, value);
+        }
+
+        /// <summary>获取或设置数据库外部图标资源引用。</summary>
+        public string? IconFileReference
+        {
+            get => _iconFileReference;
+            set => SetProperty(ref _iconFileReference, value);
         }
 
         /// <summary>

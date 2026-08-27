@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using NLog;
 
-namespace JayTom.Dws.Interface.Jtexpress {
+namespace JayTom.Dws.Integrations.Jtexpress {
 
     /// <summary>
     /// 极兔极昼小件分拣设备数据上传接口。
@@ -244,12 +244,10 @@ namespace JayTom.Dws.Interface.Jtexpress {
                     throw;
                 }
                 catch (Exception exception) {
-                    Logger.Error(
+                    Logger.Warn(
                         exception,
-                        $"极昼扫描图片上传失败，本次不发送设备报文并等待重试:{barcode}");
-                    throw new InvalidOperationException(
-                        "极昼扫描图片上传失败，未发送设备报文",
-                        exception);
+                        $"极昼扫描图片上传失败，继续发送不含图片的设备报文:{barcode}");
+                    imagePath = null;
                 }
             }
 
@@ -721,7 +719,7 @@ namespace JayTom.Dws.Interface.Jtexpress {
                 CancellationTokenSource.CreateLinkedTokenSource(token);
             timeoutSource.CancelAfter(timeoutMilliseconds);
             using var client =
-                _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
             using var response = await client.SendAsync(
                     request,
                     HttpCompletionOption.ResponseHeadersRead,

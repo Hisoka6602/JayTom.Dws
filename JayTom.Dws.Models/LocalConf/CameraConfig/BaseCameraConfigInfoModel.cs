@@ -1,9 +1,9 @@
-﻿using System.ComponentModel;
-using JayTom.Dws.Data.Attributes;
+using System.ComponentModel;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.CameraConfig {
+namespace JayTom.Dws.Models.LocalConf.CameraConfig {
 
     public class BaseCameraConfigInfoModel : BaseModel {
 

@@ -7,15 +7,12 @@ using JayTom.Dws.Client.Service;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
-using JayTom.Dws.Infrastructure.IComputer;
-using JayTom.Dws.Infrastructure.Service;
-using JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub;
-using JayTom.Dws.Interface;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Interface.Cloud.CloudVideo;
-using JayTom.Dws.Interface.License;
-using JayTom.Dws.Nvr;
-using JayTom.Dws.Nvr.Nvr;
+using JayTom.Dws.Infrastructure.DependencyInjection;
+using JayTom.Dws.Integrations;
+using JayTom.Dws.Integrations.Cloud;
+using JayTom.Dws.Integrations.Cloud.CloudVideo;
+using JayTom.Dws.Integrations.License;
+using JayTom.Dws.Camera.Nvr.Legacy;
 using JayTom.Dws.Ocr;
 using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Plugin;
@@ -30,27 +27,24 @@ using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Plugin.Speech;
 using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
+using JayTom.Dws.Plugin.Contracts;
+using JayTom.Dws.Plugin.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
 using System.IO.Ports;
-using System.Net;
-using System.Net.Http;
+using System.Reflection;
+using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Composition;
 
 /// <summary>集中注册网络、设备与第三方平台适配器。</summary>
 internal static class PlatformAdapterRegistration {
-    /// <summary>旧接口迁移期间使用的兼容客户端名称。</summary>
-    internal const string LegacyHttpClient = "legacy-api";
-    /// <summary>单次外部请求允许占用连接的最长时间。</summary>
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(2);
-
     /// <summary>注册平台和硬件适配器。</summary>
     public static IServiceCollection AddDwsPlatformAdapters(this IServiceCollection services) {
-        AddLongRunningHttpClient(services, LegacyHttpClient);
-        AddLongRunningHttpClient(services, ApiHttpClientNames.ExternalApi);
+        services.AddDwsInfrastructurePlatformAdapters();
+        services.AddDwsIntegrationHttpClient();
         services.AddMemoryCache();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -81,7 +75,6 @@ internal static class PlatformAdapterRegistration {
 
         services.AddSingleton<INetworkTime, NetworkTime>();
         services.AddSingleton<ICertificateValidationService, CertificateValidationService>();
-        services.AddSingleton<IComputer, Infrastructure.IComputer.Computer>();
         services.AddSingleton<ICamera, HikvisionSmartCamera>();
         services.AddSingleton<IOcr, ExpressBillOcr>();
         services.AddSingleton<IDynamicScale, DefaultDynamicScale>();
@@ -91,22 +84,27 @@ internal static class PlatformAdapterRegistration {
         services.AddSingleton<ICloud, CloudVideoUploadApi>();
         services.AddSingleton<INvrManager, DaHuaNvr>();
         services.AddSingleton<IClientLicenseApi, DefaultClientLicenseApi>();
-        services.AddSingleton<ICloudApiClientMessageHub, CloudApiClientMessageHub>();
+        services.AddSingleton<IPluginManifestValidator, PluginManifestValidator>();
+        services.AddSingleton(_ => new PluginTrustOptions {
+            TrustDirectory = Path.Combine(AppContext.BaseDirectory, "plugin-trust"),
+            RevokedKeyIds = ReadEnvironmentSet("DWS_PLUGIN_REVOKED_KEY_IDS"),
+            AllowedPermissions = ReadEnvironmentSet("DWS_PLUGIN_ALLOWED_PERMISSIONS")
+        });
+        services.AddSingleton<IPluginPackageVerifier, PluginPackageVerifier>();
+        services.AddSingleton(provider => new PluginRuntime(
+            provider.GetRequiredService<IPluginManifestValidator>(),
+            Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(1, 0),
+            contractMajorVersion: 1,
+            provider.GetRequiredService<IPluginPackageVerifier>()));
         services.AddDwsUploadProviders();
         return services;
     }
 
-    /// <summary>注册带连接超时、DNS 轮换和空闲连接回收的长期运行 HTTP 客户端。</summary>
-    private static void AddLongRunningHttpClient(IServiceCollection services, string clientName) {
-        services.AddHttpClient(clientName, client => client.Timeout = RequestTimeout)
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler {
-                MaxConnectionsPerServer = 600,
-                ConnectTimeout = TimeSpan.FromSeconds(15),
-                PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
-                AutomaticDecompression = DecompressionMethods.GZip |
-                                         DecompressionMethods.Deflate |
-                                         DecompressionMethods.Brotli
-            });
-    }
+    /// <summary>读取部署环境注入的分号或逗号分隔集合。</summary>
+    private static IReadOnlySet<string> ReadEnvironmentSet(string variableName) =>
+        new HashSet<string>(
+            Environment.GetEnvironmentVariable(variableName)?.Split(
+                [',', ';'],
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [],
+            StringComparer.OrdinalIgnoreCase);
 }

@@ -108,8 +108,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                 ?.Str ?? string.Empty,
                             BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
                                 ?.Coord,
-                            ElapsedTime = stopwatch.ElapsedMilliseconds,
-                            Image = bitmap,
+                            ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
+                            Image = OcrBitmapAdapter.Encode(bitmap),
                             RecipientAddress = result.Data
                                 ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
                                 ?.Str ?? string.Empty,
@@ -155,8 +155,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
             //识别不成功也需要返回图片
             return new OcrResult() {
-                ElapsedTime = long.MinValue,
-                Image = bitmap,
+                ElapsedMilliseconds = long.MinValue,
+                Image = OcrBitmapAdapter.Encode(bitmap),
                 SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
             };
         }
@@ -214,9 +214,9 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                         BarcodeArea = ConvertToRectangleAndOffset(result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
                                             ?.Coord ?? new List<decimal>(), originalTopLeft.X, originalTopLeft.Y),
-                                        ElapsedTime = stopwatch.ElapsedMilliseconds,
-                                        Image = bitmap,
-                                        CropImage = cropImage,
+                                        ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
+                                        Image = OcrBitmapAdapter.Encode(bitmap),
+                                        CropImage = OcrBitmapAdapter.Encode(cropImage),
                                         RecipientAddress = result.Data
                                             ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
                                             ?.Str ?? string.Empty,
@@ -276,9 +276,9 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                 RecognitionTime = DateTime.Now,
                 RecognitionTimestamp = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
                 CropRectangle = cropRectangle,
-                CropImage = cropImage,
-                ElapsedTime = stopwatch.ElapsedMilliseconds,
-                Image = bitmap,
+                CropImage = cropImage is null ? null : OcrBitmapAdapter.Encode(cropImage),
+                ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
+                Image = OcrBitmapAdapter.Encode(bitmap),
                 SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
             };
         }
@@ -320,8 +320,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                                 ?.Str ?? string.Empty,
                             BarcodeArea = result.Data?.FirstOrDefault(f => f.Title?.Key?.Equals("waybill_number") == true)
                                 ?.Coord,
-                            ElapsedTime = stopwatch.ElapsedMilliseconds,
-                            Image = bitmap,
+                            ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
+                            Image = OcrBitmapAdapter.Encode(bitmap),
                             RecipientAddress = result.Data
                                 ?.FirstOrDefault(f => f.Title?.Key?.Equals("recipient_addr") == true)
                                 ?.Str ?? string.Empty,
@@ -368,8 +368,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
             //识别不成功也需要返回图片
             return new OcrResult() {
-                ElapsedTime = long.MinValue,
-                Image = bitmap,
+                ElapsedMilliseconds = long.MinValue,
+                Image = OcrBitmapAdapter.Encode(bitmap),
                 SubmitTimestamp = new DateTimeOffset(submitTimestamp).ToUnixTimeMilliseconds(),
                 CameraSerialNumber = cameraSerialNumber
             };

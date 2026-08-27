@@ -5,17 +5,17 @@ using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
@@ -40,7 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private ObservableCollection<KeyboardDeviceItemInfoModel> _keyboardDeviceItemInfo = new();
 
         public ContentInputSettingsPageViewModel(ISettingsStore settingsStore,
-            IKeyboardDeviceManager keyboardDeviceManager) : base(settingsStore)
+            IKeyboardDeviceManager keyboardDeviceManager, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _keyboardDeviceManager = keyboardDeviceManager;
         }
@@ -141,7 +141,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddInputItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 DataTemplate.Add(new ItemBaseTemplateModel()
@@ -161,7 +161,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddSeparatorItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 DataTemplate.Add(new ItemBaseTemplateModel()
                 {
@@ -180,7 +180,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (model.ApplicationType == ItemApplicationType.DataInput)
                 {
@@ -400,7 +400,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         {
             Task.Run(async () =>
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     KeyboardDeviceItemInfo.Clear();
                     var keyboardDevices = await _keyboardDeviceManager.EnumerateKeyboardDevices();

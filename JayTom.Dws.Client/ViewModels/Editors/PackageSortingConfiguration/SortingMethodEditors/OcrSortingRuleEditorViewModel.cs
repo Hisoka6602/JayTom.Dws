@@ -4,20 +4,20 @@ using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.PackageExits;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors
 {
 
     public class OcrSortingRuleEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
@@ -34,9 +34,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private bool _isUseSenderPhoneNumberValidation;
         private string _senderPhoneNumberEndsWith = string.Empty;
 
-        public OcrSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public OcrSortingRuleEditorViewModel(IPackageExitCatalog packageExitCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void DeleteRegexDelegate(OcrRuleItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 OcrRuleItems.Remove(obj);
                 //调整Num
@@ -191,7 +191,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void AddRegexDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!IsUseRecipientAddressValidation &&
                     !IsUseSenderAddressValidation &&
@@ -233,7 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ClearConditionsDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 IsUseSenderPhoneNumberValidation =
                     IsUseRecipientAddressValidation =
@@ -294,9 +294,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
@@ -327,7 +326,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void StartPositionChangedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 /*EndPosition = StartPosition + Content.Length;*/
             });
@@ -337,7 +336,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void ContentChangedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 /*EndPosition = StartPosition + Content.Length;*/
             });

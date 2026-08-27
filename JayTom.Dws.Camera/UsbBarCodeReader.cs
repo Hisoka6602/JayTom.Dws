@@ -21,12 +21,11 @@ using System.Reflection.Metadata;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.BarCodeReader;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera {
 
-    public class UsbBarCodeReader : IDisposable {
-        private static string dbrLicenseKeys = "t0075oQAAAIvhAJJ+Mv2OHC+ZyzvrkkYyqMuHRgLktAwWHPtBRExDoEyZOSN3p9eHQ0csZBILJK+DKrBs2QaXyzJtmx0k+YgeciYvcCOd";
-        private static string dntLicenseKeys = "t0071WQAAAIP64uktmNbWzB4BpR9uN81ZcXDga6MZQlXA+n8nb0L8q3jVDPpYvMlRHU7VP2eQUIYACdUYZhZd1ZqZ5cuIySHQErA=";
+    public class UsbBarCodeReader : IUsbBarCodeReader {
         private static ConcurrentDictionary<string, UsbCameraInfo> _cameraDictionary = new();
         public UsbCameraStatus UsbCameraStatus { get; private set; } = UsbCameraStatus.Uninitialized;
         public UsbCameraInfo UsbCameraInfo { get; private set; } = new();
@@ -38,6 +37,8 @@ namespace JayTom.Dws.Camera {
         private PublicRuntimeSettings? mNormalRuntimeSettings;
         private bool _isOpend = false;
         private int _recognitionSkipFrames = 4;
+        /// <summary>实时预览启用时保留跳过读码的画面。</summary>
+        private int _captureSkippedFrames;
         private bool _isLicense = false;
 
         private CancellationTokenSource _stopCancellationTokenSource = new();
@@ -45,12 +46,21 @@ namespace JayTom.Dws.Camera {
         /// <summary>通知常驻读码线程已有新帧。</summary>
         private readonly SemaphoreSlim _frameSignal = new(0, 1);
         /// <summary>只保留等待处理的最新一帧。</summary>
-        private Bitmap? _pendingFrame;
+        private PendingUsbFrame? _pendingFrame;
+
+        /// <summary>
+        /// 仅在实时预览开启时保留无需读码的跳帧；生产读码模式下直接在 SDK 回调中丢弃，
+        /// 避免为随后立即释放的帧复制整张位图。
+        /// </summary>
+        public bool CaptureSkippedFrames {
+            get => Volatile.Read(ref _captureSkippedFrames) != 0;
+            set => Volatile.Write(ref _captureSkippedFrames, value ? 1 : 0);
+        }
 
         //图片缩放百分比
         private int _scalePercentage = 0;
 
-        public event EventHandler<BarcodeScannedEventArgs> BarcodeScanned;
+        public event EventHandler<BarcodeScannedEventArgs>? BarcodeScanned;
 
         private int _framenum = 0;
 
@@ -62,10 +72,13 @@ namespace JayTom.Dws.Camera {
         private static CameraManager? _cameraManager;
 
         public UsbBarCodeReader() {
-            //_twainManager = new TwainManager(dntLicenseKeys);
-            _cameraManager ??= new CameraManager(dntLicenseKeys);
+            string dntLicenseKey = DynamsoftLicenseProvider.GetRequired(
+                DynamsoftLicenseProvider.CameraEnvironmentVariable);
+            string dbrLicenseKey = DynamsoftLicenseProvider.GetRequired(
+                DynamsoftLicenseProvider.BarcodeReaderEnvironmentVariable);
+            _cameraManager ??= new CameraManager(dntLicenseKey);
             if (!_isLicense) {
-                EnumErrorCode ret = BarcodeReader.InitLicense(dbrLicenseKeys, out var errorMsg);
+                EnumErrorCode ret = BarcodeReader.InitLicense(dbrLicenseKey, out var errorMsg);
                 if (ret != EnumErrorCode.DBR_SUCCESS) {
                     Console.WriteLine("InitLicense Failed:" + errorMsg);
                 }
@@ -73,8 +86,6 @@ namespace JayTom.Dws.Camera {
                     _isLicense = true;
                 }
             }
-            //mPDFRasterizer = new PDFRasterizer(dntLicenseKeys);
-            //_imageCore = new ImageCore();
         }
 
         /// <summary>
@@ -84,7 +95,8 @@ namespace JayTom.Dws.Camera {
         public static List<UsbCameraInfo> EnumerateCameras() {
             var usbCameraInfos = new List<UsbCameraInfo>();
             try {
-                var cameraManager = new CameraManager(dntLicenseKeys);
+                var cameraManager = new CameraManager(DynamsoftLicenseProvider.GetRequired(
+                    DynamsoftLicenseProvider.CameraEnvironmentVariable));
 
                 //枚举相机
                 //之后需要加一个过滤
@@ -130,10 +142,99 @@ namespace JayTom.Dws.Camera {
         }
 
         /// <summary>
-        /// 设置Usb相机参数
+        /// 异步应用强类型 USB 相机参数。
         /// </summary>
-        /// <param name="parameters"></param>
-        public async Task<KeyValuePair<bool, string>> SetUsbCameraParameter(Dictionary<UsbCameraParameter, object> parameters) {
+        /// <param name="settings">待应用的相机参数。</param>
+        /// <param name="cancellationToken">取消操作的令牌。</param>
+        /// <returns>参数应用结果。</returns>
+        public async Task<KeyValuePair<bool, string>> ApplyUsbCameraSettingsAsync(
+            UsbCameraSettings settings,
+            CancellationToken cancellationToken = default) {
+            ArgumentNullException.ThrowIfNull(settings);
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Yield();
+
+            var (key, _) = _cameraDictionary.FirstOrDefault(
+                pair => pair.Key.Equals(UsbCameraInfo.CameraSerialNumber));
+            if (string.IsNullOrEmpty(key) || _selectCamera is null) {
+                return new KeyValuePair<bool, string>(false, "相机未绑定");
+            }
+
+            try {
+                var resolution = settings.Resolution
+                    ?? UsbCameraInfo.CameraResolutions?
+                        .OrderByDescending(candidate => candidate.Width * candidate.Height)
+                        .FirstOrDefault();
+                if (resolution is { } size) {
+                    _selectCamera.CurrentResolution = new CamResolution(size.Width, size.Height);
+                }
+
+                _selectCamera.Exposure.IfAuto = settings.Exposure is null;
+                if (settings.Exposure is { } exposure) {
+                    _selectCamera.Exposure.Value = exposure;
+                }
+
+                if (settings.Brightness is { } brightness) {
+                    _selectCamera.Brightness.Value = brightness;
+                }
+                if (settings.Contrast is { } contrast) {
+                    _selectCamera.Contrast.Value = contrast;
+                }
+                if (settings.Hue is { } hue) {
+                    _selectCamera.Hue.Value = hue;
+                }
+                if (settings.Saturation is { } saturation) {
+                    _selectCamera.Saturation.Value = saturation;
+                }
+                if (settings.Sharpness is { } sharpness) {
+                    _selectCamera.Sharpness.Value = sharpness;
+                }
+                if (settings.WhiteBalance is { } whiteBalance) {
+                    _selectCamera.WhiteBalance.Value = whiteBalance;
+                }
+                if (settings.BacklightCompensation is { } backlightCompensation) {
+                    _selectCamera.BklightComp.Value = backlightCompensation;
+                }
+                if (settings.Gain is { } gain) {
+                    _selectCamera.Gain.Value = gain;
+                }
+                if (settings.Zoom is { } zoom) {
+                    _selectCamera.Zoom.IfAuto = false;
+                    _selectCamera.Zoom.Value = zoom;
+                }
+                if (settings.Focus is { } focus) {
+                    _selectCamera.Focus.IfAuto = false;
+                    _selectCamera.Focus.Value = focus;
+                }
+                if (settings.Iris is { } iris) {
+                    _selectCamera.Iris.IfAuto = false;
+                    _selectCamera.Iris.Value = iris;
+                }
+                if (settings.Pan is { } pan) {
+                    _selectCamera.Pan.IfAuto = false;
+                    _selectCamera.Pan.Value = pan;
+                }
+                if (settings.Tilt is { } tilt) {
+                    _selectCamera.Tilt.IfAuto = false;
+                    _selectCamera.Tilt.Value = tilt;
+                }
+                if (settings.Roll is { } roll) {
+                    _selectCamera.Roll.IfAuto = false;
+                    _selectCamera.Roll.Value = roll;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                return new KeyValuePair<bool, string>(true, string.Empty);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException) {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception);
+                return new KeyValuePair<bool, string>(false, exception.Message);
+            }
+        }
+
+        /// <summary>兼容旧适配代码的参数转换入口，待厂商枚举适配完全移除后删除。</summary>
+        private async Task<KeyValuePair<bool, string>> SetUsbCameraParameter(
+            Dictionary<UsbCameraParameter, object> parameters) {
             await Task.Yield();
             var (key, value) = _cameraDictionary.FirstOrDefault(f => f.Key.Equals(UsbCameraInfo.CameraSerialNumber));
             if (!string.IsNullOrEmpty(key)) {
@@ -361,7 +462,7 @@ namespace JayTom.Dws.Camera {
                             f.Key == BarcodeReaderParameter.RecognitionSkipFrames)
                         .Value;
                     if (recognitionSkipFrames is int skipFrames) {
-                        _recognitionSkipFrames = skipFrames;
+                        Volatile.Write(ref _recognitionSkipFrames, Math.Max(0, skipFrames));
                     }
 
                     //条码类型
@@ -590,7 +691,8 @@ namespace JayTom.Dws.Camera {
             NLog.LogManager.GetCurrentClassLogger().Error($"调用绑定");
             var (key, value) = _cameraDictionary.FirstOrDefault(f => f.Key.Equals(info.CameraSerialNumber));
             if (!string.IsNullOrEmpty(key)) {
-                _cameraManager ??= new CameraManager(dntLicenseKeys);
+                _cameraManager ??= new CameraManager(DynamsoftLicenseProvider.GetRequired(
+                    DynamsoftLicenseProvider.CameraEnvironmentVariable));
                 UsbCameraInfo = value;
                 _selectCamera = _cameraManager?.SelectCamera(value.CameraName);
                 var orDefault = value.CameraResolutions?.OrderByDescending(o => o.Width * o.Height)?.FirstOrDefault();
@@ -664,8 +766,19 @@ namespace JayTom.Dws.Camera {
         /// <param name="bitmap"></param>
         /// <exception cref="NotImplementedException"></exception>
         private void SelectCameraOnOnFrameCaptrue(Bitmap bitmap) {
-            var previous = Interlocked.Exchange(ref _pendingFrame, FastClone(bitmap));
-            previous?.Dispose();
+            var skipFrames = Math.Max(0, Volatile.Read(ref _recognitionSkipFrames));
+            var shouldDecode = Interlocked.Increment(ref _framenum) > skipFrames;
+            if (shouldDecode) {
+                Interlocked.Exchange(ref _framenum, 0);
+            }
+            else if (!CaptureSkippedFrames) {
+                return;
+            }
+
+            var previous = Interlocked.Exchange(
+                ref _pendingFrame,
+                new PendingUsbFrame(FastClone(bitmap), shouldDecode));
+            previous?.Image.Dispose();
             try {
                 _frameSignal.Release();
             }
@@ -681,7 +794,7 @@ namespace JayTom.Dws.Camera {
                 await _frameSignal.WaitAsync(token).ConfigureAwait(false);
                 var frame = Interlocked.Exchange(ref _pendingFrame, null);
                 if (frame is not null) {
-                    ReadFromFrame(frame, token);
+                    ReadFromFrame(frame.Image, frame.ShouldDecode, token);
                 }
             }
         }
@@ -691,11 +804,10 @@ namespace JayTom.Dws.Camera {
         /// </summary>
         /// <param name="bitmap"></param>
         /// <param name="token"></param>
-        private void ReadFromFrame(Bitmap bitmap, CancellationToken token) {
+        private void ReadFromFrame(Bitmap bitmap, bool shouldDecode, CancellationToken token) {
             try {
                 token.ThrowIfCancellationRequested();
-                if (_framenum >= _recognitionSkipFrames) {
-                    _framenum = 0;
+                if (shouldDecode) {
                     long elapsedMilliseconds = 0;
                     TextResult[]? bars = null;
                     using var scaledBitmap = _scalePercentage is > 0 and < 100
@@ -736,7 +848,6 @@ namespace JayTom.Dws.Camera {
                     });
                 }
 
-                _framenum++;
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) {
                 bitmap.Dispose();
@@ -770,7 +881,7 @@ namespace JayTom.Dws.Camera {
                         }
                         _frameProcessingTask = null;
                     }
-                    Interlocked.Exchange(ref _pendingFrame, null)?.Dispose();
+                    Interlocked.Exchange(ref _pendingFrame, null)?.Image.Dispose();
                     _selectCamera?.Close();
                     _selectCamera?.Dispose();
                     _selectCamera = null;
@@ -795,7 +906,12 @@ namespace JayTom.Dws.Camera {
         /// 释放资源
         /// </summary>
         public void Dispose() {
-            Stop().GetAwaiter().GetResult();
+            TaskCleanup.Observe(DisposeCoreAsync());
+        }
+
+        /// <summary>异步停止 USB 读码器后释放 SDK 资源。</summary>
+        private async Task DisposeCoreAsync() {
+            await Stop();
             //mBarcodeReader?.Recycle();
             mBarcodeReader?.Dispose();
             mBarcodeReader = null;
@@ -942,6 +1058,7 @@ namespace JayTom.Dws.Camera {
         public static Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {
             return CameraImageProcessing.CreateThumbnail(sourceImage, thumbnailWidth, thumbnailHeight);
         }
+
     }
 }
 

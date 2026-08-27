@@ -10,12 +10,13 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface {
+namespace JayTom.Dws.Integrations {
 
     public class DefaultApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
+        /// <summary>负责解释外部响应的业务判定器。</summary>
+        private readonly DefaultApiResponseEvaluator _responseEvaluator = new();
         private DefaultApiParameters _parameters = new();
 
         public DefaultApi(IHttpClientFactory httpClientFactory) {
@@ -61,26 +62,17 @@ namespace JayTom.Dws.Interface {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = _parameters.Timeout;
                 using HttpResponseMessage message = await CreateRequestAsync(httpClient, data, imageInfo,
                     panoramaImageInfos, token).ConfigureAwait(false);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                if (!string.IsNullOrWhiteSpace(resultContent)) {
-                    //临时判断
-                    try {
-                        isSuccess = _parameters.ValidationMode switch {
-                            0 => resultContent.Equals(_parameters.CompleteMatch),
-                            1 => resultContent.Contains(_parameters.StringContains),
-                            2 => Regex.IsMatch(resultContent, _parameters.RegularExpression,
-                                RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(250)),
-                            _ => false
-                        };
-                    }
-                    catch (Exception e) {
-                        Console.WriteLine(e);
-                    }
-                }
+                isSuccess = _responseEvaluator.IsSuccess(
+                    resultContent,
+                    _parameters.ValidationMode,
+                    _parameters.CompleteMatch,
+                    _parameters.StringContains,
+                    _parameters.RegularExpression);
                 //判断是否成功条件
             }
             catch (HttpRequestException e) {
@@ -107,7 +99,7 @@ namespace JayTom.Dws.Interface {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(_parameters),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(_parameters),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

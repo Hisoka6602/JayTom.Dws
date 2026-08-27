@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.Attributes;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.CameraConfig {
+namespace JayTom.Dws.Models.LocalConf.CameraConfig {
 
     [Table("Conf_BarcodeScannerCameraConfigInfo", Schema = "dbo")]
     public class BarcodeScannerCameraConfigInfoModel : BaseCameraConfigInfoModel {

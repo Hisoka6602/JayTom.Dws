@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.Package {
+namespace JayTom.Dws.Models.Package {
 
     [Table("Data_WeightInfo", Schema = "dbo")]
     public class WeightInfoModel : BasePackageForeignKeyInfoModel {

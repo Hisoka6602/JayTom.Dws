@@ -42,6 +42,14 @@ jobs:
         shell: pwsh
         run: dotnet test .\JayTom.Dws.Tests\JayTom.Dws.Tests.csproj -c Release -p:Platform=x64 --no-build --no-restore
 
+      - name: 生成 win-x64 发布产物
+        shell: pwsh
+        run: dotnet publish .\JayTom.Dws.Client\JayTom.Dws.Client.csproj -c Release -p:Platform=x64 --no-restore -o .\artifacts\publish
+
+      - name: 执行干净发布冒烟与重复文件检查
+        shell: pwsh
+        run: .\eng\Test-PublishArtifact.ps1 -PublishDirectory .\artifacts\publish
+
       - name: 检查格式错误
         shell: pwsh
         run: git diff --check

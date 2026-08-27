@@ -7,31 +7,33 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
 using FluentFTP.Helpers;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Packages;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.SerialPort;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
-using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
+using TriggerPositionEvent = JayTom.Dws.Application.Events.TriggerPositionEvent;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {
 
     public class DefaultStackedPackageService : IStackedPackageService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
         private readonly IPackageDetectionSerialPort _packageDetectionSerialPort;
         private readonly IPackageDetectionTcp _packageDetectionTcp;
@@ -45,8 +47,10 @@ namespace JayTom.Dws.Client.Service.Sorting
         private int _isConnected;
 
         public DefaultStackedPackageService(ISettingsStore settingsStore,
-            IPackageDetectionSerialPort packageDetectionSerialPort, IPackageDetectionTcp packageDetectionTcp)
+            IPackageDetectionSerialPort packageDetectionSerialPort, IPackageDetectionTcp packageDetectionTcp,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
             _packageDetectionSerialPort = packageDetectionSerialPort;
             _packageDetectionTcp = packageDetectionTcp;
@@ -153,7 +157,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                     ExceptionMessage = $"监测Tcp连接异常:{s}"
                 });
             };
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(item =>
+            _eventBus.Subscribe<TriggerPositionEvent>(item =>
             {
                 if (item is TriggerPositionEvent { TriggerPosition: TriggerPositionEnum.PackageTrigger } info)
                 {
@@ -384,7 +388,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         {
             if (e.IsStacked)
             {
-                EventAggregator.Instance.Publish(new SortingLogInfoModel
+                _eventBus.Publish(new SortingLogInfoModel
                 {
                     CreateTime = DateTime.Now,
                     Message = $"包裹:[{e.PackageInfo?.Guid:X4}]-[{e.PackageInfo?.BarCodeInfo?.Barcode}],叠包",

@@ -1,14 +1,14 @@
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Integrations;
 using JayTom.Dws.Client.Extensions;
 using JayTom.Dws.Abstractions.Integrations;
 using JayTom.Dws.Application.Configuration;
 using JayTom.Dws.Client.Models;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Interface.Jtexpress;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Integrations.Jtexpress;
 using Newtonsoft.Json;
 using Prism.Commands;
 using Prism.Services.Dialogs;
@@ -62,7 +62,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         public JtPolarDayApiPageViewModel(
             ISettingsStore settingsStore,
             IProviderRegistry<IDataUploader> providerRegistry,
-            IDialogService dialogService) : base(settingsStore)
+            IDialogService dialogService, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             ArgumentNullException.ThrowIfNull(providerRegistry);
             ArgumentNullException.ThrowIfNull(dialogService);

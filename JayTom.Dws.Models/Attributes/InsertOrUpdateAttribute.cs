@@ -1,4 +1,4 @@
-namespace JayTom.Dws.Data.Attributes;
+namespace JayTom.Dws.Models.Attributes;
 
 /// <summary>
 /// 标记批量插入或更新操作中允许更新的实体属性。

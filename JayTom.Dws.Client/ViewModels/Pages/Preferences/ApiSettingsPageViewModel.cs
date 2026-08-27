@@ -5,22 +5,24 @@ using System.Linq;
 using Prism.Commands;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 {
 
     public class ApiSettingsPageViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
 
         private ObservableCollection<ApiTypeInfoModel> _apiTypeItems = new()
@@ -131,8 +133,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private SnackbarMessageQueue _apiSettingsMessageQueue = new(TimeSpan.FromSeconds(2));
         private bool _isLoaded;
 
-        public ApiSettingsPageViewModel(ISettingsStore settingsStore)
+        public ApiSettingsPageViewModel(ISettingsStore settingsStore,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
         }
 
@@ -169,7 +173,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             }
             else
             {
-                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                _eventBus.Publish(new SettingsChangedEvent
                 {
                     SettingsName = "ApiSettings"
                 });
@@ -187,7 +191,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore.GetAsync<ApiSettingsDto>("ApiSettings") ?? new ApiSettingsDto();
                     SelectApiType = ApiTypeItems.FirstOrDefault(f => f.Value == settingsDto.Type);

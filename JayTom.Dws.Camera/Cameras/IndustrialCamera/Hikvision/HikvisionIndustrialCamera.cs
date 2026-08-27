@@ -28,6 +28,7 @@ using Rectangle = System.Drawing.Rectangle;
 using static System.Net.Mime.MediaTypeNames;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
+using JayTom.Dws.Abstractions.Threading;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim;
 
@@ -151,7 +152,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public event EventHandler<CameraUnregisteredEventArgs>? CameraUnregistered;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             //初始化
             await Task.Yield();
             if (_myCodeReader != null) {
@@ -316,7 +317,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 }
 
                 var thumbnail = GenerateThumbnail(bitmap);
-                var result = Ocr?.ParseOcrResult(bitmap);
+                var result = Ocr?.ParseOcrResult(OcrBitmapAdapter.Encode(bitmap));
                 if (result is not null && !string.IsNullOrEmpty(result.BarCode)) {
                     _ocrMissCount = 0;
                     ClearOcrQueue();
@@ -333,26 +334,12 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                                 new Size(bitmap.Width, bitmap.Height),
                                 result);
                         }
-                        result.Thumbnail = thumbnail;
+                        result.Thumbnail = thumbnail is null ? null : OcrBitmapAdapter.Encode(thumbnail);
                         result.BarCode = _barCodeFilterContainer.RegexReplace(result.BarCode);
                         OnOcrContentRecognized(result);
                     }
-                    else {
-                        result.Image?.Dispose();
-                        if (!IsRealtimeImageEnabled) {
-                            thumbnail?.Dispose();
-                        }
-                    }
                 }
                 else {
-                    result?.Image?.Dispose();
-                    if (result?.Image is null) {
-                        bitmap.Dispose();
-                    }
-                    if (!IsRealtimeImageEnabled) {
-                        thumbnail?.Dispose();
-                    }
-
                     _ocrMissCount++;
                     if (_ocrMissCount > 3) {
                         ClearOcrQueue();
@@ -365,6 +352,10 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                         Timestamp = result?.SubmitTimestamp ?? 0
                     });
                 }
+                else {
+                    thumbnail?.Dispose();
+                }
+                bitmap.Dispose();
             }
         }
 
@@ -424,7 +415,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             //设置属性
             //设置图像输出模式
@@ -509,13 +500,21 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         }
 
         public void Dispose() {
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步等待 OCR 工作器退出后释放相机资源。</summary>
+        private async Task DisposeCoreAsync() {
             if (Status != CameraStatus.Uninitialized) {
                 Status = CameraStatus.Paused;
                 _ocrCancellationTokenSource?.Cancel();
-                try {
-                    _ocrThread?.GetAwaiter().GetResult();
-                }
-                catch (OperationCanceledException) {
+                if (_ocrThread is not null) {
+                    try {
+                        await _ocrThread;
+                    }
+                    catch (OperationCanceledException) {
+                    }
                 }
 
                 var nRet = _myCodeReader?.MVID_CR_CAM_StopGrabbing_NET() ?? 0;
@@ -551,7 +550,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             }
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             //设置限定读码之类的参数
         }
 

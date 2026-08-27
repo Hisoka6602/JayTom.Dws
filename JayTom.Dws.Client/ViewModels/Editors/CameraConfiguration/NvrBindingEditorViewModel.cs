@@ -8,28 +8,25 @@ using JayTom.Dws.Camera;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Application.CameraConfigurations;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
 {
     public class NvrBindingEditorViewModel : BindableBase
     {
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly ICameraConfigurationCatalog<IpcNvrConfigInfoModel> _ipcNvrConfigRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<NvrCameraBindingInfoModel> _nvrCameraBindingRepository;
         private readonly IDialogService _dialogService;
 
         private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
@@ -54,9 +51,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
             set => SetProperty(ref field, value);
         } = new();
 
-        public NvrBindingEditorViewModel(IIpcNvrConfigRepository ipcNvrConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository,
+        public NvrBindingEditorViewModel(ICameraConfigurationCatalog<IpcNvrConfigInfoModel> ipcNvrConfigRepository,
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            ICameraConfigurationCatalog<NvrCameraBindingInfoModel> nvrCameraBindingRepository,
             IDialogService dialogService)
         {
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
@@ -98,7 +95,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                     }))
                     ?.ToList();
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     NvrBindingItems.Clear();
                     await Task.Delay(200);
@@ -108,7 +105,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                                  !w.Password.Equals(string.Empty) &&
                                  !w.Brand.Equals(string.Empty)))
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             model.Status = NvrStatus.LoggingIn;
                         });
@@ -130,7 +127,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                         {
                             //大华登录
                             var (key, value) = await baseDaHuatech.LogIn(device.Key.SerialNumber, device.Key.Username, device.Key.Password);
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 foreach (var model in NvrBindingItems.Where(w =>
                                              w.SerialNumber.Equals(device.Key.SerialNumber)))
@@ -149,7 +146,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
             }
             else
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     foreach (var model in NvrBindingItems)
                     {

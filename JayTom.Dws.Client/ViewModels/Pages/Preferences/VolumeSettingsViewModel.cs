@@ -6,21 +6,20 @@ using Prism.Commands;
 using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.VolumeSettingsModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 {
@@ -153,7 +152,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             Value = VolumeUnit.Millimeter
         };
 
-        public VolumeSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public VolumeSettingsViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -285,7 +284,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private async void PortUpdateDelegate()
         {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
@@ -299,7 +298,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (model.ApplicationType == ItemApplicationType.VolumeInput)
                 {
@@ -323,7 +322,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddOutputItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 VolumeSettingsInfo.DataTemplate.Add(new ItemBaseTemplateModel()
@@ -343,7 +342,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddSeparatorItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 VolumeSettingsInfo.DataTemplate.Add(new ItemBaseTemplateModel()
                 {
@@ -419,7 +418,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());

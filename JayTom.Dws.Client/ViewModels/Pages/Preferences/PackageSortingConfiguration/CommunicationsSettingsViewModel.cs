@@ -1,4 +1,6 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Communications;
 using System;
 using Prism.Mvvm;
 using System.Linq;
@@ -7,35 +9,35 @@ using System.Windows;
 using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Models.Package;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.PluginInterface.Utils;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -44,10 +46,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class CommunicationsSettingsViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
         private readonly ISortingService _sortingService;
-        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly ICommunicationConfigurationCatalog _communicationCatalog;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         //private CommunicationsSettingsInfoModel _communicationsSettingsInfo = new();
 
         private ObservableCollection<CommunicationsTypeInfoModel> _communicationsTypeItems = new()
@@ -220,13 +224,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public CommunicationsSettingsViewModel(ISettingsStore settingsStore,
             ISortingService sortingService,
-            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository)
+            ICommunicationConfigurationCatalog communicationCatalog,
+            IPackageExitCatalog packageExitCatalog,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
             _sortingService = sortingService;
-            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _communicationCatalog = communicationCatalog;
+            _packageExitCatalog = packageExitCatalog;
             _sortingService.ExceptionOccurred += delegate (object? sender, ExceptionEventArgs args)
             {
                 CommunicationsSettingsMessageQueue.Enqueue(args.ExceptionMessage);
@@ -371,7 +377,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private async void PortUpdateDelegate()
         {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
@@ -398,7 +404,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var recognitionEditor = new CommunicationConnectionConfigEditor();
                 if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model)
@@ -414,7 +420,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     if (model.IsOk)
                     {
                         //添加到数据库
-                        var insertDetailAsync = await _communicationConnectionConfigRepository.InsertDetailAsync(
+                        var insertDetailAsync = await _communicationCatalog.AddAsync(
                             new CommunicationConnectionConfigInfoModel()
                             {
                                 CommunicationProtocol =
@@ -496,7 +502,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         {
                             CommunicationsSettingsMessageQueue.Enqueue("保存成功");
                             RefreshData();
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -521,7 +527,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void ModifyDelegate(CommunicationConnectionItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var recognitionEditor = new CommunicationConnectionConfigEditor();
                 if (recognitionEditor.DataContext is CommunicationConnectionConfigEditorViewModel model)
@@ -546,7 +552,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     if (model.IsOk)
                     {
                         //更新到数据库
-                        var insertDetailAsync = await _communicationConnectionConfigRepository.UpdateDetailAsync(
+                        var insertDetailAsync = await _communicationCatalog.UpdateAsync(
                             new CommunicationConnectionConfigInfoModel()
                             {
                                 Id = model.CommunicationConnectionItem.Id,
@@ -622,7 +628,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             });
                         CommunicationsSettingsMessageQueue.Enqueue(insertDetailAsync ? "保存成功" : "保存失败");
                         RefreshData();
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent
+                        _eventBus.Publish(new SettingsChangedEvent
                         {
                             SettingsName = SettingsName,
                             IsLocallySaved = true
@@ -642,22 +648,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void DeleteDelegate(CommunicationConnectionItemInfoModel obj)
         {
-            var communicationConnectionConfigInfoModel = await _communicationConnectionConfigRepository.
-                FirstOrDefault(f =>
-                    f.Id.Equals(obj.Id));
-            if (communicationConnectionConfigInfoModel is not null)
+            var delete = await _communicationCatalog.DeleteByIdAsync(obj.Id);
+            if (delete)
             {
-                var delete = await _communicationConnectionConfigRepository.Delete(communicationConnectionConfigInfoModel);
-                if (delete)
+                //刷新列表
+                RefreshData();
+                _eventBus.Publish(new SettingsChangedEvent
                 {
-                    //刷新列表
-                    RefreshData();
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent
-                    {
-                        SettingsName = SettingsName,
-                        IsLocallySaved = true
-                    });
-                }
+                    SettingsName = SettingsName,
+                    IsLocallySaved = true
+                });
             }
         }
 
@@ -665,18 +665,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 model.Identifier = "CommunicationsSettingsDialog";
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.Id);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
 
-            var models = await _communicationConnectionConfigRepository.
-                CommunicationConnectionConfigItems(s => s.Id > 0);
+            var models = await _communicationCatalog.ListWithDetailsAsync();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 CommunicationConnectionItems.Clear();
                 var infoModels = models?.Select((s, i) => new CommunicationConnectionItemInfoModel

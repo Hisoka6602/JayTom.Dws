@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.IO.Ports;
 using Newtonsoft.Json;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
@@ -25,7 +25,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     {
         private SupplyCounterInfoModel _supplyCounterInfo = new();
 
-        public SupplyCounterSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public SupplyCounterSettingsViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -63,7 +63,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<SupplyCounterSettingsDto>(SettingsName) ?? new SupplyCounterSettingsDto();
 

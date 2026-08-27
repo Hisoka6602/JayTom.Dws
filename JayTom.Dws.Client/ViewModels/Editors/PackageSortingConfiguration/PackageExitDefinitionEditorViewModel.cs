@@ -7,16 +7,17 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.Communications;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 {
 
     public class PackageExitDefinitionEditorViewModel : BindableBase
     {
-        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
+        private readonly ICommunicationConfigurationCatalog _communicationCatalog;
         private string _identifier = string.Empty;
         private long _id;
         private string _exitName = string.Empty;
@@ -53,9 +54,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel _selectExitDefinitionInfo = new();
 
-        public PackageExitDefinitionEditorViewModel(ICommunicationConnectionConfigRepository communicationConnectionConfigRepository)
+        public PackageExitDefinitionEditorViewModel(ICommunicationConfigurationCatalog communicationCatalog)
         {
-            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
+            _communicationCatalog = communicationCatalog;
         }
 
         public ObservableCollection<CommunicationConnectionItemInfoModel> CommunicationConnectionItems
@@ -234,7 +235,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var exitTypeInfoModel = ExitTypeItems?.FirstOrDefault(f => f.Value.Equals(Type));
                 if (exitTypeInfoModel is not null)
@@ -242,8 +243,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
                     SelectExitType = exitTypeInfoModel;
                 }
                 CommunicationConnectionItems.Clear();
-                var models = await _communicationConnectionConfigRepository.Select(s => s.Id > 0,
-                    o => o.Id);
+                var models = await _communicationCatalog.ListAsync();
                 var itemInfoModels = models.Select(s => new CommunicationConnectionItemInfoModel()
                 {
                     Id = s.Id,
@@ -262,7 +262,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void ExitTypeSelectionChangedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 MainExitVisibility = SelectExitType.Value == ExitType.ReservedExit ? Visibility.Visible : Visibility.Collapsed;
             });

@@ -1,0 +1,10 @@
+{
+  "packageSessionIndexedOperations": {
+    "operationCount": 10000,
+    "maximumElapsedMilliseconds": 5000
+  },
+  "packageBarcodePipeline": {
+    "operationCount": 1000,
+    "maximumElapsedMilliseconds": 5000
+  }
+}

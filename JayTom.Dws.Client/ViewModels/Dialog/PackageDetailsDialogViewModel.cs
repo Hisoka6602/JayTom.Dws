@@ -8,7 +8,7 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using System.Windows.Controls;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Models.DataModels;
 

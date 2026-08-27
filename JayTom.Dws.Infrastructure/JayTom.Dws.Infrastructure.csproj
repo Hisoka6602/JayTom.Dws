@@ -40,11 +40,7 @@
     <ProjectReference Include="..\JayTom.Dws.Application\JayTom.Dws.Application.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Models\JayTom.Dws.Models.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\JayTom.Dws.Domain\Service\VideoApi\VideoBarCodeService.cs"
-             Link="Service\VideoApi\VideoBarCodeService.cs" />
+    <ProjectReference Include="..\JayTom.Dws.Legacy.Contracts\JayTom.Dws.Legacy.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -12,7 +12,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 {
@@ -20,7 +21,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
     public class BarcodeScannerCameraConfigViewModel : BindableBase
     {
         private readonly IDeviceService _deviceService;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
 
         private ObservableCollection<BarcodeScannerCameraItemInfoModel> _barcodeScannerCameraItems = new();
 
@@ -40,7 +41,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         private bool _eventsSubscribed;
 
         public BarcodeScannerCameraConfigViewModel(IDeviceService deviceService,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository)
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository)
         {
             _deviceService = deviceService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
@@ -55,7 +56,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                             f.SerialNumber.Equals(model.SerialNumber));
                         if (infoModel is not null)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                                 BarcodeScannerCameraItems.Add(new BarcodeScannerCameraItemInfoModel
                                 {
                                     ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
@@ -72,7 +73,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     }
                     catch (Exception exception)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                             BarcodeScannerCameraMessageQueue.Enqueue(
                                 $"加载新绑定扫码相机失败:{exception.Message}"));
                     }
@@ -81,7 +82,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             _cameraUnboundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
             {
                 //解绑相机,更新列表
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     var infoModel =
                         BarcodeScannerCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
@@ -138,7 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 _eventsSubscribed = true;
             }
 
-            _ = LoadCameraItemsAsync();
+            LoadCameraItemsAsync().Forget("加载条码相机列表");
         }
 
         /// <summary>

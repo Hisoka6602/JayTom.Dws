@@ -14,6 +14,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Camera.Concurrency;
+using JayTom.Dws.Abstractions.Threading;
 using static JayTom.Dws.Camera.Cameras.SmartCamera.Irayple.DaHuaSmartCamera;
 
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
@@ -48,7 +49,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         }
 
         public void Dispose() {
-            Stop().GetAwaiter().GetResult();
+            TaskCleanup.Observe(Stop(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
         }
 
         public CameraInfo? Info { get; private set; }
@@ -99,7 +101,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (Status is CameraStatus.Running or CameraStatus.Initialized) {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
@@ -120,7 +122,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             return new KeyValuePair<bool, string>(true, "初始化成功");
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             const int port = 51236;
             var errorMsg = "";
             try {
@@ -179,6 +181,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             try {
                 if (infostruct.ImageInfo is not { Size: > 0, ImageType: ImageTypes.JPEG } ||
                     infostruct.ImageInfo.ImageBytes is not { Length: > 0 } imageBytes) {
+                    return;
+                }
+
+                var hasCodeMetadata = infostruct.CodeInfo.CodeInfos is { Count: > 0 };
+                var hasBarcodeConsumer = hasCodeMetadata && BarcodeReadTriggered is not null;
+                var hasNoReadConsumer = !hasCodeMetadata && NotBarcodeHitEvent is not null;
+                var hasRealtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
+                if (!hasBarcodeConsumer && !hasNoReadConsumer && !hasRealtimeConsumer) {
                     return;
                 }
 
@@ -364,7 +374,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
             }
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                 Exception = new Exception("该SDK无参数设置函数")
             });

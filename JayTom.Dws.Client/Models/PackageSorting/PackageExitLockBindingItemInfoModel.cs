@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting
 {

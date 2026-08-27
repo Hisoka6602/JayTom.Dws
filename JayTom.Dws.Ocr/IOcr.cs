@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -39,14 +40,17 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="imageBytes"></param>
         /// <param name="cameraSerialNumber"></param>
-        Task SubmitImage(Bitmap imageBytes, string cameraSerialNumber);
+        Task SubmitImage(
+            OcrImageFrame image,
+            string cameraSerialNumber,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 解析Ocr
         /// </summary>
         /// <param name="imageBytes"></param>
         /// <returns></returns>
-        OcrResult? ParseOcrResult(Bitmap imageBytes);
+        OcrResult? ParseOcrResult(OcrImageFrame image);
 
         /// <summary>
         /// 临时解析Ocr
@@ -56,7 +60,7 @@ namespace JayTom.Dws.Ocr {
         /// <param name="confidenceThreshold"></param>
         /// <param name="rectangleScale"></param>
         /// <returns></returns>
-        OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath,
+        OcrResult? ParseOcrTemporarilyResult(OcrImageFrame image, string cropImageModelPath,
             decimal confidenceThreshold, decimal rectangleScale);
 
         /// <summary>
@@ -64,7 +68,9 @@ namespace JayTom.Dws.Ocr {
         /// </summary>
         /// <param name="imageBytes"></param>
         /// <returns></returns>
-        Task<OcrResult?> ParseOcrResultAsync(Bitmap imageBytes);
+        Task<OcrResult?> ParseOcrResultAsync(
+            OcrImageFrame image,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 设置OCR参数
@@ -171,27 +177,35 @@ namespace JayTom.Dws.Ocr {
         public DateTime RecognitionTime { get; set; }
 
         /// <summary>
-        /// 获取或设置耗时(ms)
+        /// 获取或设置识别耗时（毫秒）。
         /// </summary>
-        public long ElapsedTime { get; set; }
+        public long ElapsedMilliseconds { get; set; }
+
+        /// <summary>旧版识别耗时字段；仅为二进制迁移保留。</summary>
+        [Obsolete("请改用 ElapsedMilliseconds；该兼容属性将在 v2 删除。", false)]
+        public long ElapsedTime
+        {
+            get => ElapsedMilliseconds;
+            set => ElapsedMilliseconds = value;
+        }
 
         /// <summary>
         /// 获取或设置图片。
         /// </summary>
-        public Bitmap? Image { get; set; }
+        public OcrImageFrame? Image { get; set; }
 
         /// <summary>
         /// 获取或设置缩略图。
         /// </summary>
-        public Bitmap? Thumbnail { get; set; }
+        public OcrImageFrame? Thumbnail { get; set; }
 
         /// <summary>
         /// 获取事件分发期间借用的裁剪图片；需要延长生命周期时调用 <see cref="TakeCropImage"/>。
         /// </summary>
-        public Bitmap? CropImage { get; set; }
+        public OcrImageFrame? CropImage { get; set; }
 
         /// <summary>取得裁剪图片所有权，并从事件参数中移除该图片。</summary>
-        public Bitmap? TakeCropImage() {
+        public OcrImageFrame? TakeCropImage() {
             var image = CropImage;
             CropImage = null;
             return image;

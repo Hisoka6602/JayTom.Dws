@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalLog {
+namespace JayTom.Dws.Models.LocalLog {
     [Table("Log_FtpLogInfo", Schema = "dbo")]
     public class FtpLogInfoModel : BaseLogInfoModel {
 

@@ -1,8 +1,9 @@
 {
   "projectReferences": {
     "JayTom.Dws.Abstractions": [],
-    "JayTom.Dws.Application": ["JayTom.Dws.Abstractions", "JayTom.Dws.Domain"],
-    "JayTom.Dws.Camera": ["JayTom.Dws.Ocr"],
+    "JayTom.Dws.Application": ["JayTom.Dws.Abstractions", "JayTom.Dws.Domain", "JayTom.Dws.Legacy.Contracts"],
+    "JayTom.Dws.Camera.Contracts": ["JayTom.Dws.Abstractions", "JayTom.Dws.Domain"],
+    "JayTom.Dws.Camera": ["JayTom.Dws.Abstractions", "JayTom.Dws.Camera.Contracts", "JayTom.Dws.Ocr"],
     "JayTom.Dws.Client": [
       "JayTom.Dws.Application",
       "JayTom.Dws.Camera",
@@ -11,44 +12,51 @@
       "JayTom.Dws.Integrations.Contracts",
       "JayTom.Dws.Interface",
       "JayTom.Dws.License",
-      "JayTom.Dws.Nvr",
       "JayTom.Dws.Plugin.Abstractions",
+      "JayTom.Dws.Plugin.Runtime",
       "JayTom.Dws.PluginInterface",
       "JayTom.Dws.Plugin"
     ],
-    "JayTom.Dws.Domain": ["JayTom.Dws.Abstractions", "JayTom.Dws.Models"],
+    "JayTom.Dws.Domain": ["JayTom.Dws.Abstractions"],
     "JayTom.Dws.Excel": [],
     "JayTom.Dws.Infrastructure": [
       "JayTom.Dws.Abstractions",
       "JayTom.Dws.Application",
       "JayTom.Dws.Models",
-      "JayTom.Dws.Domain"
+      "JayTom.Dws.Domain",
+      "JayTom.Dws.Legacy.Contracts"
     ],
     "JayTom.Dws.Integrations.Contracts": ["JayTom.Dws.Abstractions"],
     "JayTom.Dws.Interface": ["JayTom.Dws.Abstractions", "JayTom.Dws.Excel", "JayTom.Dws.Integrations.Contracts", "JayTom.Dws.Utils"],
     "JayTom.Dws.License": [],
+    "JayTom.Dws.Legacy.Contracts": ["JayTom.Dws.Abstractions", "JayTom.Dws.Domain", "JayTom.Dws.Models"],
     "JayTom.Dws.LicenseTool": ["JayTom.Dws.License"],
     "JayTom.Dws.Models": [],
-    "JayTom.Dws.Nvr": [],
     "JayTom.Dws.Ocr": [],
     "JayTom.Dws.Plugin.Abstractions": ["JayTom.Dws.Abstractions"],
+    "JayTom.Dws.Plugin.Runtime": ["JayTom.Dws.Plugin.Abstractions"],
     "JayTom.Dws.Plugin": ["JayTom.Dws.Abstractions"],
-    "JayTom.Dws.PluginInterface": ["JayTom.Dws.Plugin.Abstractions"],
+    "JayTom.Dws.PluginInterface": ["JayTom.Dws.Abstractions", "JayTom.Dws.Plugin.Abstractions"],
     "JayTom.Dws.Utils": []
   },
   "targetFrameworks": {
     "JayTom.Dws.Abstractions": "net10.0",
     "JayTom.Dws.Application": "net10.0",
+    "JayTom.Dws.Camera.Contracts": "net10.0",
     "JayTom.Dws.Domain": "net10.0",
     "JayTom.Dws.Integrations.Contracts": "net10.0",
+    "JayTom.Dws.Legacy.Contracts": "net10.0",
     "JayTom.Dws.Models": "net10.0",
-    "JayTom.Dws.Plugin.Abstractions": "net10.0"
+    "JayTom.Dws.Plugin.Abstractions": "net10.0",
+    "JayTom.Dws.Plugin.Runtime": "net10.0"
   },
   "forbiddenPackages": {
     "JayTom.Dws.Abstractions": ["Microsoft.EntityFrameworkCore", "NLog", "Prism.DryIoc"],
     "JayTom.Dws.Application": ["Microsoft.EntityFrameworkCore", "NLog", "Prism.DryIoc", "System.Drawing.Common", "System.IO.Ports"],
+    "JayTom.Dws.Camera.Contracts": ["Microsoft.EntityFrameworkCore", "NLog", "Prism.DryIoc", "System.Drawing.Common", "System.IO.Ports"],
     "JayTom.Dws.Domain": ["Microsoft.EntityFrameworkCore", "NLog", "Prism.DryIoc"],
     "JayTom.Dws.Plugin.Abstractions": ["Microsoft.Extensions.Hosting", "Prism.DryIoc", "System.Drawing.Common"],
+    "JayTom.Dws.Plugin.Runtime": ["Microsoft.Extensions.Hosting", "Prism.DryIoc", "System.Drawing.Common", "System.Windows.Extensions"],
     "JayTom.Dws.Integrations.Contracts": ["Microsoft.EntityFrameworkCore", "NLog", "Prism.DryIoc", "System.Drawing.Common", "System.IO.Ports"]
   }
 }

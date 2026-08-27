@@ -6,7 +6,7 @@ using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using Prism.Commands;
-using JayTom.Dws.Nvr;
+using JayTom.Dws.Camera.Nvr.Legacy;
 using System.Windows;
 using FFmpeg.AutoGen;
 using Vlc.DotNet.Wpf;
@@ -15,7 +15,6 @@ using System.Security;
 using Vlc.DotNet.Core;
 using System.Threading;
 using System.Diagnostics;
-using JayTom.Dws.Nvr.Nvr;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Forms;
@@ -25,14 +24,14 @@ using System.Security.Policy;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using Color = System.Drawing.Color;
 using System.Collections.ObjectModel;
-using JayTom.Dws.Domain.Dto.CloudDto;
+using JayTom.Dws.Legacy.Contracts.Dto.CloudDto;
 using System.Windows.Forms.Integration;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.CloudSettingModel;
 using JayTom.Dws.Client.Views.Editors.CloudService;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
@@ -58,7 +57,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
         private SemaphoreSlim _playSlim = new(1);
 
         public NetworkVideoRecorderPageViewModel(ISettingsStore settingsStore,
-            INvrManager nvrManager) : base(settingsStore)
+            INvrManager nvrManager, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             /*_nvrManager = nvrManager;
             _nvrManager.RealTimePreviewCallback += async delegate (object? sender, RealTimePreviewEventArgs args) {
@@ -266,7 +265,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService
                         NvrClientSettingsInfo.Port,
                         NvrClientSettingsInfo.Username,
                         NvrClientSettingsInfo.Password);
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () => {
+                    await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () => {
                         ChannelItems.Clear();
 
                         if (key) {

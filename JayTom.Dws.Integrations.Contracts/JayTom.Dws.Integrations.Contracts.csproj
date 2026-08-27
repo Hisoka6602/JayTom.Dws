@@ -10,11 +10,4 @@
   <ItemGroup>
     <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\JayTom.Dws.Interface\IDataUploader.cs" Link="IDataUploader.cs" />
-    <Compile Include="..\JayTom.Dws.Interface\IApiUploader.cs" Link="IApiUploader.cs" />
-    <Compile Include="..\JayTom.Dws.Interface\BaseApiParameters.cs" Link="BaseApiParameters.cs" />
-    <Compile Include="..\JayTom.Dws.Interface\ApiHttpClientNames.cs" Link="ApiHttpClientNames.cs" />
-    <Compile Include="..\JayTom.Dws.Interface\INetworkTime.cs" Link="INetworkTime.cs" />
-  </ItemGroup>
 </Project>

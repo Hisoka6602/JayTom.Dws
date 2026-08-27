@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
@@ -42,7 +43,13 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
         }
 
         public void Dispose() {
-            Stop().GetAwaiter().GetResult();
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步停止相机后释放海康体积 SDK。</summary>
+        private async Task DisposeCoreAsync() {
+            await Stop();
             _mCsVolMeasure?.DeInit();
             _mCsVolMeasure = null;
             OnCameraDisconnected(new CameraConnectionEventArgs() {
@@ -121,7 +128,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (_mCsVolMeasure != null) {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
@@ -188,7 +195,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             //设置工作方式
             /*boxWorkMode.Items.Add("0. 不支持");
@@ -315,15 +322,15 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Hikvision {
             return new KeyValuePair<bool, string>(false, "设备未初始化!");
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
-            ArgumentNullException.ThrowIfNull(parameters);
-            if (parameters.TryGetValue(nameof(TakePhotoDelay), out var delayValue)) {
-                TakePhotoDelay = Math.Max(0, Convert.ToInt32(delayValue));
+        public Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
+            ArgumentNullException.ThrowIfNull(settings);
+            if (settings.TakePhotoDelayMilliseconds is { } delay) {
+                TakePhotoDelay = Math.Max(0, delay);
             }
-            if (parameters.TryGetValue(nameof(MeasurementTriggerMode), out var triggerValue) &&
-                Enum.TryParse<MeasurementTriggerMode>(triggerValue?.ToString(), true, out var triggerMode)) {
+            if (settings.MeasurementTriggerMode is { } triggerMode) {
                 MeasurementTriggerMode = triggerMode;
             }
+            return Task.CompletedTask;
         }
 
         public bool IsRealtimeImageEnabled { get; private set; } = true;

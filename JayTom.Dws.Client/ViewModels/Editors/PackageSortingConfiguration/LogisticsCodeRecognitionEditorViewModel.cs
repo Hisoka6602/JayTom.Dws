@@ -6,7 +6,7 @@ using System.Linq;
 using Prism.Commands;
 using System.Windows.Forms;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
@@ -14,14 +14,13 @@ using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 {
 
     public class LogisticsCodeRecognitionEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
         private string _identifier = string.Empty;
         private LogisticsCodeRecognitionItemInfoModel _logisticsCodeRecognitionItemInfo = new();
 
@@ -39,11 +38,6 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
         private bool _isOk;
         private string _soundFilePath = string.Empty;
         private string _exceptionContent = string.Empty;
-
-        public LogisticsCodeRecognitionEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
-        {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
-        }
 
         /// <summary>
         /// 窗口标识
@@ -166,7 +160,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void DeleteRegexDelegate(LogisticsRegexItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 LogisticsRegexItems.Remove(obj);
                 //调整Num
@@ -201,7 +195,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
             {
                 if (!string.IsNullOrEmpty(openFileDialog.FileName))
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         LogisticsCodeRecognitionItemInfo.Icon = CreateBitmapImage(new Uri(openFileDialog.FileName), 30, 30);
                         LogisticsCodeRecognitionItemInfo.IconName = new FileInfo(openFileDialog.FileName).Name;
@@ -225,7 +219,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
             };
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     SoundFilePath = new FileInfo(openFileDialog.FileName).Name;
                     LogisticsCodeRecognitionItemInfo.SoundBytes = await File.ReadAllBytesAsync(openFileDialog.FileName);
@@ -241,7 +235,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void SaveRuleDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 var regularChars = new List<string>();
                 //不能包含
@@ -280,15 +274,15 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
                 {
                     switch (CharacterType)
                     {
-                        case Domain.Dto.CharacterType.Alphanumeric:
+                        case JayTom.Dws.Legacy.Contracts.Dto.CharacterType.Alphanumeric:
                             regularChars.Add("(?=[0-9a-zA-Z]+$)");
                             break;
 
-                        case Domain.Dto.CharacterType.Letter:
+                        case JayTom.Dws.Legacy.Contracts.Dto.CharacterType.Letter:
                             regularChars.Add("(?=\\d+$)");
                             break;
 
-                        case Domain.Dto.CharacterType.Number:
+                        case JayTom.Dws.Legacy.Contracts.Dto.CharacterType.Number:
                             regularChars.Add("(?=[a-zA-Z]+$)");
                             break;
                     }
@@ -320,7 +314,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void ClearConditionsDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 DisallowedCharacters =
                     RequiredCharacters =

@@ -6,14 +6,14 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.PackageExits;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 {
 
     public class SortingInstructionBindingEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private string _identifier = string.Empty;
         private string _exceptionContent = string.Empty;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
@@ -26,9 +26,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
         private bool _isOk;
         private string _replyContent = string.Empty;
 
-        public SortingInstructionBindingEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public SortingInstructionBindingEditorViewModel(IPackageExitCatalog packageExitCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void DeleteInstructionDelegate(SortingInstructionItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 SortingInstructionItems.Remove(obj);
                 //调整Num
@@ -135,7 +135,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
         private async void AddInstructionDelegate(object obj)
         {
             //添加指令
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (SortingInstructionItems?.Any(a => a.Instruction.Equals(Instruction)) != true)
                 {
@@ -163,10 +163,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel

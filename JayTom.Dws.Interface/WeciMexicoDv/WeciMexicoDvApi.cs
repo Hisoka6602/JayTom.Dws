@@ -15,7 +15,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace JayTom.Dws.Interface.WeciMexicoDv {
+namespace JayTom.Dws.Integrations.WeciMexicoDv {
 
     /// <summary>
     /// 卫慈-墨西哥dv60
@@ -74,7 +74,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(TimeOut);
                     using var content = new StringContent(
                         JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
@@ -117,7 +117,7 @@ namespace JayTom.Dws.Interface.WeciMexicoDv {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

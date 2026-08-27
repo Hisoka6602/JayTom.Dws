@@ -1,4 +1,4 @@
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 
 namespace JayTom.Dws.Tests.Application;
 

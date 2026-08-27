@@ -8,21 +8,30 @@ using Prism.Services.Dialogs;
 using System.Windows.Controls;
 using JayTom.Dws.PluginInterface;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
-using PluginParamChangedEvent = JayTom.Dws.Domain.EventMediators.PluginParamChangedEvent;
-using BarcodeTypeProviderEvent = JayTom.Dws.Domain.EventMediators.BarcodeTypeProviderEvent;
+using JayTom.Dws.Application.Events;
+using PluginType = JayTom.Dws.Application.Events.PluginType;
+using PluginParamChangedEvent = JayTom.Dws.Application.Events.PluginParamChangedEvent;
+using BarcodeTypeProviderEvent = JayTom.Dws.Application.Events.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
 {
 
     public class SunnenInputBarcodeViewModel : BindableBase, IDialogAware
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private string _barCode = string.Empty;
         private PackageType _packageType = PackageType.Pallet;
         private int _deductedLength;
         private int _deductedWidth;
         private int _deductedHeight;
+
+        /// <summary>创建条码输入展示模型。</summary>
+        public SunnenInputBarcodeViewModel(
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
+        {
+            _eventBus = eventBus;
+        }
 
         /// <summary>
         /// 条码
@@ -140,7 +149,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
                     "Pallet" => PackageType.Pallet,
                     _ => PackageType
                 };
-                EventAggregator.Instance.Publish(new PluginParamChangedEvent
+                _eventBus.Publish(new PluginParamChangedEvent
                 {
                     Type = PluginType.HomeTool,
                     PluginName = "SunnenPlugin",
@@ -160,7 +169,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
             {
                 if (!string.IsNullOrEmpty(BarCode))
                 {
-                    EventAggregator.Instance.Publish(new BarcodeTypeProviderEvent
+                    _eventBus.Publish(new BarcodeTypeProviderEvent
                     {
                         Barcode = BarCode,
 
@@ -188,7 +197,7 @@ namespace JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels
                 {
                     textBox.Focus();
                 }
-                EventAggregator.Instance.Publish(new PluginParamChangedEvent
+                _eventBus.Publish(new PluginParamChangedEvent
                 {
                     Type = PluginType.HomeTool,
                     PluginName = "SunnenPlugin",

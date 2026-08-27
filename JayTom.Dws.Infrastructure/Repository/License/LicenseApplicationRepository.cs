@@ -2,15 +2,15 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.License;
+using JayTom.Dws.Models.License;
 using System.Linq.Expressions;
 using System.Collections.Generic;
-using JayTom.Dws.Data.VideoApiData;
-using JayTom.Dws.Domain.Repository;
+using JayTom.Dws.Models.VideoApiData;
+using JayTom.Dws.Legacy.Contracts.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.Repository.License;
-using JayTom.Dws.Domain.Repository.VideoApiData;
+using JayTom.Dws.Legacy.Contracts.Repositories.License;
+using JayTom.Dws.Legacy.Contracts.Repositories.VideoApiData;
 
 namespace JayTom.Dws.Infrastructure.Repository.License {
 

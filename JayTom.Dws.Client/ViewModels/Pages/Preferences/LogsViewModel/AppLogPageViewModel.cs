@@ -9,17 +9,18 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using JayTom.Dws.Application.Logs;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.Views.Editors;
 using JayTom.Dws.Client.Models.DataModels;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Domain.Repository.LocalLog;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.LogsItemModels;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
@@ -27,7 +28,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
     public class AppLogPageViewModel : BindableBase
     {
-        private readonly IAppLogRepository _appLogRepository;
+        private readonly ILogQueryService<AppLogInfoModel> _logQueryService;
         private bool _isLoaded;
         private ObservableCollection<AppLogItemModel> _appLogItems = new();
         private string _details = string.Empty;
@@ -40,9 +41,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         private ObservableCollection<LogType> _logTypeItems = new(Enum.GetValues(typeof(LogType)).Cast<LogType>());
         private SnackbarMessageQueue _appLogMessageQueue = new(TimeSpan.FromSeconds(2));
 
-        public AppLogPageViewModel(IAppLogRepository appLogRepository)
+        public AppLogPageViewModel(ILogQueryService<AppLogInfoModel> logQueryService)
         {
-            _appLogRepository = appLogRepository;
+            _logQueryService = logQueryService;
         }
 
         public SnackbarMessageQueue AppLogMessageQueue
@@ -71,7 +72,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
         private async void ClickDelegate(AppLogItemModel obj)
         {
             //显示详细信息
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 Details = obj.Message;
             });
@@ -253,34 +254,25 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
             _ = DialogHost.Show(loadingDialog, model.Identifier);
             try
             {
-                var total = await _appLogRepository.Total(s =>
-                        (StartTime == null || s.CreateTime >= StartTime.Value) &&
-                        (EndTime == null || s.CreateTime <= EndTime.Value) &&
-                        (SelectLogType == null || s.Type == SelectLogType) &&
-                        (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)))
+                var result = await _logQueryService.SearchAsync(
+                        new LogQuery(StartTime, EndTime, SelectLogType, Message),
+                        pageIndex - 1,
+                        pageSize)
                     .ConfigureAwait(false);
-                var pageCount = total / pageSize + (total % pageSize > 0 ? 1 : 0);
-                var entities = total > 0
-                    ? await _appLogRepository.SelectOrderByDescending(s =>
-                            (StartTime == null || s.CreateTime >= StartTime.Value) &&
-                            (EndTime == null || s.CreateTime <= EndTime.Value) &&
-                            (SelectLogType == null || s.Type == SelectLogType) &&
-                            (string.IsNullOrEmpty(Message) || s.Message.Contains(Message)), o => o.CreateTime,
-                        pageIndex - 1, pageSize).ConfigureAwait(false)
-                    : [];
-                var items = entities.Select(entity => new AppLogItemModel
+                var pageCount = result.Total / pageSize + (result.Total % pageSize > 0 ? 1 : 0);
+                var items = result.Items.Select(entity => new AppLogItemModel
                 {
                     ClickCommand = ClickCommand,
                     CreateTime = entity.CreateTime,
                     Message = entity.Message,
                     Type = entity.Type
                 }).ToList();
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     Details = string.Empty;
                     PageCount = pageCount;
                     AppLogItems = new ObservableCollection<AppLogItemModel>(items);
-                    if (total == 0)
+                    if (result.Total == 0)
                     {
                         AppLogMessageQueue?.Enqueue("No data matching the criteria found.");
                     }
@@ -297,7 +289,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
             }
             finally
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     if (DialogHost.IsDialogOpen(model.Identifier))
                     {
@@ -314,7 +306,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void ClearSearchCriteriaDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 StartTime =
                 EndTime = null;
@@ -344,16 +336,16 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void ClearMessageDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
                 {
                     model.Identifier = "AppLogDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
+                    DialogHost.Show(loadingDialog, model.Identifier)
+                        .Forget("显示应用日志清理进度对话框");
                     await Task.Delay(500);
-                    var total = await _appLogRepository.Total(s => s.Id > 0);
-                    await _appLogRepository.DeleteCount(total);
+                    await _logQueryService.ClearAsync();
                     AppLogItems.Clear();
                     Details = string.Empty;
                     PageIndex = PageCount = 0;
@@ -372,7 +364,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 
         private async void OpenDateTimeDialogDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var dataTimeEditor = new DataTimeEditor();
                 if (dataTimeEditor.DataContext is DataTimeEditorViewModel model)

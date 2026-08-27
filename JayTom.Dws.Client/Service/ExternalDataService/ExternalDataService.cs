@@ -5,15 +5,15 @@ using System.Linq;
 using System.Globalization;
 using Newtonsoft.Json;
 using System.Threading;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using NetTopologySuite.Algorithm;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 
 namespace JayTom.Dws.Client.Service.ExternalDataService

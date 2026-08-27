@@ -1,13 +1,13 @@
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Application.Configuration;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Repository.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CloudConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
@@ -56,6 +56,7 @@ public static class PersistenceServiceCollectionExtensions {
         services.AddTransient<IUsbCameraConfigRepository, UsbCameraConfigRepository>();
         services.AddTransient<IConfigRepository, ConfigRepository>();
         services.AddTransient<ISettingsReader, SettingsReader>();
+        services.AddTransient<IConfigurationUnitOfWork, ConfigurationUnitOfWork>();
         services.AddTransient<ISettingsStore, SettingsStore>();
         services.AddTransient<ILogisticsCodeRecognitionRepository, LogisticsCodeRecognitionRepository>();
         services.AddTransient<IPackageExitDefinitionRepository, PackageExitDefinitionRepository>();
@@ -113,6 +114,7 @@ public static class PersistenceServiceCollectionExtensions {
                 builder.CommandTimeout(100);
                 builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             })
+            .AddInterceptors(SqliteConnectionPragmaInterceptor.Instance)
             .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
             .EnableDetailedErrors(false)
             .EnableSensitiveDataLogging(false);

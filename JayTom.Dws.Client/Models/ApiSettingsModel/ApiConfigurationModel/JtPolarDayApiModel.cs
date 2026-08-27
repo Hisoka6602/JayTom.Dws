@@ -1,5 +1,5 @@
 using Prism.Mvvm;
-using JayTom.Dws.Interface.Jtexpress;
+using JayTom.Dws.Integrations.Jtexpress;
 
 namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
 {

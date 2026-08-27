@@ -91,6 +91,9 @@ namespace JayTom.Dws.Client.Service.Device
         /// <returns></returns>
         Task<OperationResult<string>> RefreshCameraEnumerationAsync(CancellationToken token = default);
 
+        /// <summary>按当前 SDK 配置发现 IPC/NVR 设备，隐藏具体厂商实现。</summary>
+        Task<IReadOnlyList<CameraInfo>> DiscoverSecurityCamerasAsync(CancellationToken token = default);
+
         /// <summary>
         /// 相机绑定事件
         /// </summary>

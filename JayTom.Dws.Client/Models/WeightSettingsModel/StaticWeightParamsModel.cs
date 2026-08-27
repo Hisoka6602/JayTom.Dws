@@ -1,6 +1,6 @@
 using Prism.Mvvm;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Models.LocalLog;
 
 namespace JayTom.Dws.Client.Models.WeightSettingsModel
 {

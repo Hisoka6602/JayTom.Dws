@@ -1,0 +1,85 @@
+{
+  "rid": "win-x64",
+  "assets": [
+    {
+      "name": "hikvision-industrial-reader",
+      "relativePath": "Cameras/IndustrialCamera/Hikvision/Dll/MVIDCodeReader.dll",
+      "sourceRelativePath": "Cameras/IndustrialCamera/Hikvision/Dll/MVIDCodeReader.dll",
+      "version": "1.1.2.0",
+      "length": 28530176,
+      "sha256": "762905ddbb0c1a4f8512a449650b151ef3c64776c98fbc3d43aef23069240826"
+    },
+    {
+      "name": "wayzim-industrial-reader",
+      "relativePath": "Cameras/IndustrialCamera/Wayzim/Dll/WayzimCodeReader.dll",
+      "sourceRelativePath": "Cameras/IndustrialCamera/Wayzim/Dll/WayzimCodeReader.dll",
+      "version": "3.3.65.0",
+      "length": 587776,
+      "sha256": "f5f20feaa85e280b043d15fd164633f9a814887f858e3b661a467343b867b802"
+    },
+    {
+      "name": "dahua-security-sdk",
+      "relativePath": "Cameras/SecurityCamera/DaHuatech/Dll/dhnetsdk.dll",
+      "sourceRelativePath": "Cameras/SecurityCamera/DaHuatech/Dll/dhnetsdk.dll",
+      "version": "3.5.7.58964",
+      "length": 25951232,
+      "sha256": "e3a2ab75d21abc6e76bdda80897b315951594718b995234e4dbc885627e3fcc3"
+    },
+    {
+      "name": "dahua-playback-sdk",
+      "relativePath": "dhPlayDll/dhnetsdk.dll",
+      "sourceRelativePath": "dhPlayDll/dhnetsdk.dll",
+      "version": "3.5.6.69989",
+      "length": 28329472,
+      "sha256": "a030625daa34b593b6267d410e79cfe4246368fed4f67edc316edd6cbf7391d1"
+    },
+    {
+      "name": "hikvision-smart-reader",
+      "relativePath": "MvCodeReaderSDK.Net.dll",
+      "sourceRelativePath": "Cameras/SmartCamera/Hikvision/Dll/MvCodeReaderSDK.Net.dll",
+      "version": "1.5.3.2",
+      "length": 39424,
+      "sha256": "98853cd796255cc897ae8420137b1621dd56c307e32747966fce30fac30a6479"
+    },
+    {
+      "name": "irayple-smart-reader",
+      "relativePath": "ThridLibray.dll",
+      "sourceRelativePath": "Cameras/SmartCamera/Irayple/Dll/ThridLibray.dll",
+      "version": "1.0.0.239288",
+      "length": 118272,
+      "sha256": "d8ded65d74dcf8f8b934d68bc96002ac90a953eca4228a6b87f064cf399a8af8"
+    },
+    {
+      "name": "wayzim-smart-camera",
+      "relativePath": "CamSDK.dll",
+      "sourceRelativePath": "Cameras/SmartCamera/Wayzim/Dll/CamSDK.dll",
+      "version": "1.0.1.0",
+      "length": 92160,
+      "sha256": "d4694e5f5c585633c61a445bd37e29a38e02ebff9f955485f80cd4117d9951d7"
+    },
+    {
+      "name": "dimension-volume-camera",
+      "relativePath": "Cameras/VolumeCamera/Dimension/Dll/DimensionMessumentDll.dll",
+      "sourceRelativePath": "Cameras/VolumeCamera/Dimension/Dll/DimensionMessumentDll.dll",
+      "version": "unversioned",
+      "length": 22528,
+      "sha256": "982ee7faf573b818e184442fa4055071b14efd4f8795e07cf9eb71616fe4db43"
+    },
+    {
+      "name": "hikvision-volume-camera",
+      "relativePath": "VolMeasure.Net.dll",
+      "sourceRelativePath": "Cameras/VolumeCamera/Hikvision/Dll/VolMeasure.Net.dll",
+      "version": "2.3.0.3",
+      "length": 24064,
+      "sha256": "9474a3da817f2a77cd756872cbc66622b584ebe73dc5d31b31fd1e706c850297"
+    },
+    {
+      "name": "irayple-volume-camera",
+      "relativePath": "Cameras/VolumeCamera/Irayple/Dll/Volume3DSdkmd.dll",
+      "sourceRelativePath": "Cameras/VolumeCamera/Irayple/Dll/Volume3DSdkmd.dll",
+      "version": "1.0.0.0",
+      "length": 1065472,
+      "sha256": "6a2cfafbdbd7651cb1b106a3027767b0e0feba8788a29696dc35beeb0b3edb4b"
+    }
+  ]
+}

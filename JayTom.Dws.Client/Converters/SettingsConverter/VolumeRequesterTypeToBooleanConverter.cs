@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System;
 using System.Globalization;
 using System.Windows.Data;

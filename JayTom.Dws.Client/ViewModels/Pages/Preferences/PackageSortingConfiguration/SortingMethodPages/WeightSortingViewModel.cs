@@ -1,4 +1,7 @@
 using System;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Application.Messaging;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -7,20 +10,20 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -29,20 +32,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class WeightSortingViewModel : BulkOperationsTemplateViewModel<WeightSortingItemInfoModel>
     {
-        private readonly IWeightSortingRepository _weightSortingRepository;
-        private readonly IWeightRuleRepository _weightRuleRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly ISortingConfigurationCatalog<WeightSortingInfoModel> _sortingCatalog;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private bool _isLoaded;
         private ObservableCollection<WeightSortingItemInfoModel> _weightSortingItems = new();
 
-        public WeightSortingViewModel(IWeightSortingRepository weightSortingRepository,
-            IWeightRuleRepository weightRuleRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) : base(excel)
+        public WeightSortingViewModel(ISortingConfigurationCatalog<WeightSortingInfoModel> sortingCatalog,
+            IPackageExitCatalog packageExitCatalog,
+            IExcel excel, IEventBus eventBus) : base(eventBus, excel)
         {
-            _weightSortingRepository = weightSortingRepository;
-            _weightRuleRepository = weightRuleRepository;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _sortingCatalog = sortingCatalog;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         public ObservableCollection<WeightSortingItemInfoModel> WeightSortingItems
@@ -53,7 +53,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var weightSortingRuleEditor = new WeightSortingRuleEditor();
                 if (weightSortingRuleEditor.DataContext is WeightSortingRuleEditorViewModel model)
@@ -83,11 +83,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 Remarks = s.Remarks,
                             })?.ToList()
                         };
-                        var insert = await _weightSortingRepository.InsertDetailAsync(weightSortingInfoModel);
+                        var insert = await _sortingCatalog.AddAsync(weightSortingInfoModel);
                         if (insert)
                         {
-                            EventAggregator.Instance.Publish(weightSortingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(weightSortingInfoModel);
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -123,12 +123,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is WeightSortingItemInfoModel item)
             {
-                var weightSortingInfoModel = await _weightSortingRepository.
-                    FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (weightSortingInfoModel is not null)
-                {
-                    return await _weightSortingRepository.Delete(weightSortingInfoModel);
-                }
+                return await _sortingCatalog.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -138,7 +133,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is WeightSortingItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var weightSortingRuleEditor = new WeightSortingRuleEditor();
                     if (weightSortingRuleEditor.DataContext is WeightSortingRuleEditorViewModel model)
@@ -173,11 +168,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     WeightSortingId = model.WeightSortingItemInfo.Id,
                                 })?.ToList()
                             };
-                            var insert = await _weightSortingRepository.UpdateDetailAsync(weightSortingInfoModel);
+                            var insert = await _sortingCatalog.UpdateAsync(weightSortingInfoModel);
                             if (insert)
                             {
-                                EventAggregator.Instance.Publish(weightSortingInfoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(weightSortingInfoModel);
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -197,17 +192,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task ClearProcess()
         {
-            var weightSortingInfoModels = await _weightSortingRepository.Select(s => s.Id > 0,
-                o => o.Id);
-            await _weightSortingRepository.DeleteRange(weightSortingInfoModels);
+            await _sortingCatalog.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
             await Task.Delay(300);
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
-            var models = await _weightSortingRepository
-                .WeightSortingItems(s => s.Id > 0);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            var models = await _sortingCatalog.ListAsync();
             WeightSortingItems.Clear();
             var infoModels = models?.Select((s, i) => new WeightSortingItemInfoModel()
             {
@@ -241,10 +233,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             var selectIds = WeightSortingItems.Where(w => w.IsSelect)
                 .Select(s => s.Id)
                 .ToList();
-            var weightSortingInfoModels = await _weightSortingRepository.Select(s => selectIds.Contains(s.Id),
-                o => o.Id);
-
-            await _weightSortingRepository.DeleteRange(weightSortingInfoModels);
+            await _sortingCatalog.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<WeightSortingItemInfoModel> ExportProcess()
@@ -270,8 +259,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (items?.Any() == true)
             {
-                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+                var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
                 var dateTime = DateTime.Now;
                 var weightSortingInfoModels = items
                     .Select(s => new WeightSortingInfoModel()
@@ -304,7 +292,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     .ToList();
 
                 //批量添加
-                return await _weightSortingRepository.InsertRangeDetailAsync(weightSortingInfoModels);
+                return await _sortingCatalog.AddRangeAsync(weightSortingInfoModels);
             }
 
             return false;

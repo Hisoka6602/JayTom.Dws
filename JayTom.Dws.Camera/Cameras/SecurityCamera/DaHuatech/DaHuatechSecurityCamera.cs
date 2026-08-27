@@ -23,6 +23,7 @@ using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Camera.FilterContainer;
 using static System.Net.Mime.MediaTypeNames;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
@@ -49,7 +50,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         public void Dispose() {
-            Stop().GetAwaiter().GetResult();
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步停止安防相机后发布生命周期事件。</summary>
+        private async Task DisposeCoreAsync() {
+            await Stop();
             OnCameraDisconnected(new CameraConnectionEventArgs() {
                 CameraInfo = this.Info
             });
@@ -112,7 +119,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             BindingType = CameraBindingType.ScannerCamera;
             if (param is CameraInfo cameraInfo) {
@@ -163,7 +170,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                             else {
                                 var thumbnailImage = GenerateThumbnail(imageBitmap);
                                 imageBitmap.Dispose();
-                                await OnRealtimeImageAsync(new RealtimeImageEventArgs() {
+                                OnRealtimeImage(new RealtimeImageEventArgs() {
                                     ThumbImage = thumbnailImage
                                 });
                             }
@@ -192,7 +199,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             //获取登录账号密码
             //登录设备
             try {
@@ -244,29 +251,24 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             return new KeyValuePair<bool, string>(false, "设备未连接");
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
-            if (_barCodeReader is not null) {
-                foreach (var parameter in parameters) {
-                    switch (parameter.Key) {
-                        case "BarcodeReaderParameter": {
-                                //读码器参数
-                                var (key, value) = _barCodeReader.ApplySettingsAsync(
-                                    (BarcodeReaderSettings)parameter.Value).GetAwaiter().GetResult();
-                                if (!key) {
-                                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                        Exception = new Exception(value)
-                                    });
-                                }
-
-                                break;
-                            }
-                    }
-                }
-            }
-            else {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
+            ArgumentNullException.ThrowIfNull(settings);
+            if (_barCodeReader is null) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception("设备未初始化")
+                    Exception = new Exception("设备未连接")
                 });
+                return;
+            }
+
+            if (settings.BarcodeReader is not null) {
+                var (key, value) = await _barCodeReader.ApplySettingsAsync(
+                    settings.BarcodeReader,
+                    cancellationToken);
+                if (!key) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                        Exception = new Exception(value)
+                    });
+                }
             }
         }
 
@@ -274,29 +276,37 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public void StartRealTimeImage() {
             if (Info is not null) {
-                var (key, value) = _baseDaHuatech.StartRealtimePlay(Info.SerialNumber).GetAwaiter().GetResult();
-                if (key) {
-                    IsRealtimeImageEnabled = true;
-                }
-                else {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception(value)
-                    });
-                }
+                TaskCleanup.Observe(StartRealTimeImageCoreAsync(Info.SerialNumber), exception =>
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception }));
+            }
+        }
+
+        /// <summary>异步启动实时预览并更新状态。</summary>
+        private async Task StartRealTimeImageCoreAsync(string serialNumber) {
+            var (key, value) = await _baseDaHuatech.StartRealtimePlay(serialNumber);
+            if (key) {
+                IsRealtimeImageEnabled = true;
+            }
+            else {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = new Exception(value) });
             }
         }
 
         public void StopRealTimeImage() {
             if (Info is not null) {
-                var (key, value) = _baseDaHuatech.StopRealtimePlay(Info.SerialNumber).GetAwaiter().GetResult();
-                if (key) {
-                    IsRealtimeImageEnabled = false;
-                }
-                else {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception(value)
-                    });
-                }
+                TaskCleanup.Observe(StopRealTimeImageCoreAsync(Info.SerialNumber), exception =>
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception }));
+            }
+        }
+
+        /// <summary>异步停止实时预览并更新状态。</summary>
+        private async Task StopRealTimeImageCoreAsync(string serialNumber) {
+            var (key, value) = await _baseDaHuatech.StopRealtimePlay(serialNumber);
+            if (key) {
+                IsRealtimeImageEnabled = false;
+            }
+            else {
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = new Exception(value) });
             }
         }
 
@@ -464,7 +474,7 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     image.Dispose();
                 }
                 if (realtimeConsumer) {
-                    _ = OnRealtimeImageAsync(new RealtimeImageEventArgs {
+                    OnRealtimeImage(new RealtimeImageEventArgs {
                         ThumbImage = realtimeThumbnail,
                         Timestamp = timestamp
                     });
@@ -504,14 +514,13 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             CameraUnregistered?.Invoke(this, e);
         }
 
-        protected virtual Task OnRealtimeImageAsync(RealtimeImageEventArgs e) {
+        protected virtual void OnRealtimeImage(RealtimeImageEventArgs e) {
             var handler = RealtimeImage;
             if (handler is null) {
                 e.ThumbImage?.Dispose();
-                return Task.CompletedTask;
+                return;
             }
             handler.Invoke(this, e);
-            return Task.CompletedTask;
         }
 
         public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {

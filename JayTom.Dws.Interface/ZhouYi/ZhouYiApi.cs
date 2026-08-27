@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface.ZhouYi {
+namespace JayTom.Dws.Integrations.ZhouYi {
 
     public partial class ZhouYiApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -51,7 +51,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
             // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
             var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
 
-            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
             httpClient.DefaultRequestHeaders.Add("appid", _parameters.ApplicationCode);
@@ -92,7 +92,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
             return new UploadResponse {
                 ExceptionMsg = exceptionMsg,
-                ApiParameters = JsonConvert.SerializeObject(this),
+                ApiParameters = IntegrationParameterSerializer.Serialize(this),
                 IsSuccess = isSuccess,
                 DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 RequestContent = bodyStrNoWs,
@@ -128,7 +128,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
             // DWS-HEX-COMPACT: 外部接口签名要求使用无分隔符的小写摘要。
             var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(signPlain)));
 
-            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+            using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
             httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.TimeOut);
 
             httpClient.DefaultRequestHeaders.Add("appid", _parameters.ApplicationCode);
@@ -169,7 +169,7 @@ namespace JayTom.Dws.Interface.ZhouYi {
 
             return new UploadResponse {
                 ExceptionMsg = exceptionMsg,
-                ApiParameters = JsonConvert.SerializeObject(this),
+                ApiParameters = IntegrationParameterSerializer.Serialize(this),
                 IsSuccess = isSuccess,
                 DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                 RequestContent = bodyStrNoWs,

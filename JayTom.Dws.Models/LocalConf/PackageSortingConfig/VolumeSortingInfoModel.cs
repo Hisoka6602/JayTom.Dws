@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations.Schema;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
+namespace JayTom.Dws.Models.LocalConf.PackageSortingConfig {
 
     [Table("Conf_VolumeSortingInfo", Schema = "dbo")]
     public class VolumeSortingInfoModel : BasePackageSortingConfig {

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "id": "dws-ocr-expressbill",
+      "version": "2023.11.29.2106",
+      "fileName": "OCR202311292106.onnx",
+      "developmentCachePath": "JayTom.Dws.Ocr/OnnxModels/OCR202311292106.onnx",
+      "outputPath": "OnnxModels/OCR202311292106.onnx",
+      "sizeBytes": 13204412,
+      "sha256": "C3A966646E96B9D4ED91B125D8101AE347C065069C4244D9421D672AD9F902AB",
+      "deployment": "external-copy"
+    }
+  ]
+}

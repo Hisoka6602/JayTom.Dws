@@ -12,7 +12,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 {
@@ -20,7 +21,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
     public class VolumeCameraConfigViewModel : BindableBase
     {
         private readonly IDeviceService _deviceService;
-        private readonly IVolumeCameraConfigRepository _volumeCameraConfigRepository;
+        private readonly ICameraConfigurationCatalog<VolumeCameraConfigInfoModel> _volumeCameraConfigRepository;
 
         private ObservableCollection<VolumeCameraItemInfoModel> _volumeCameraItems = new()
         {
@@ -63,7 +64,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         private bool _eventsSubscribed;
 
         public VolumeCameraConfigViewModel(IDeviceService deviceService,
-            IVolumeCameraConfigRepository volumeCameraConfigRepository)
+            ICameraConfigurationCatalog<VolumeCameraConfigInfoModel> volumeCameraConfigRepository)
         {
             _deviceService = deviceService;
             _volumeCameraConfigRepository = volumeCameraConfigRepository;
@@ -78,7 +79,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                             f.SerialNumber.Equals(model.SerialNumber));
                         if (infoModel is not null)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                                 VolumeCameraItems.Add(new VolumeCameraItemInfoModel
                                 {
                                     ConnectionType = (CameraConnectionType)infoModel.ConnectionType,
@@ -100,7 +101,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                     }
                     catch (Exception exception)
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                             VolumeCameraMessageQueue.Enqueue(
                                 $"加载新绑定体积相机失败:{exception.Message}"));
                     }
@@ -109,7 +110,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
             _cameraUnboundHandler = async delegate (object? sender, CameraFinderItemInfoModel model)
             {
                 //解绑相机,更新列表
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     var infoModel =
                         VolumeCameraItems.FirstOrDefault(f => f.SerialNumber.Equals(model.SerialNumber));
@@ -223,7 +224,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 _eventsSubscribed = true;
             }
 
-            _ = LoadCameraItemsAsync();
+            LoadCameraItemsAsync().Forget("加载体积相机列表");
         }
 
         /// <summary>

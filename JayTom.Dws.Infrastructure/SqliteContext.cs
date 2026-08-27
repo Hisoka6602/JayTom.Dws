@@ -1,187 +1,28 @@
-﻿using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Infrastructure.Persistence.ModelConfigurations.Packages;
 using Microsoft.EntityFrameworkCore;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalData;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
 
-namespace JayTom.Dws.Infrastructure {
+namespace JayTom.Dws.Infrastructure;
 
-    public sealed class SqliteContext : DbContext {
+/// <summary>承载本地包裹数据库会话，实体关系由包裹模块配置拥有。</summary>
+public sealed class SqliteContext : DbContext
+{
+    /// <summary>创建包裹数据库上下文并执行一次性数据库初始化。</summary>
+    public SqliteContext(DbContextOptions<SqliteContext> options) : base(options)
+    {
+        SqliteDatabaseInitializer.EnsureInitialized(
+            this,
+            SqliteDatabaseInitializer.ResolveDatabasePath(this, "Data.db"));
+    }
 
-        public SqliteContext(DbContextOptions<SqliteContext> options) : base(options) {
-            SqliteDatabaseInitializer.EnsureInitialized(
-                this, SqliteDatabaseInitializer.ResolveDatabasePath(this, "Data.db"));
-        }
+    /// <summary>保持既有 SQLite REAL 列结构，同时在业务模型中使用定点数。</summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+        configurationBuilder.Properties<decimal>().HaveColumnType("REAL");
 
-        /// <summary>保持既有 SQLite REAL 列结构，同时在业务模型中使用定点数。</summary>
-        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) {
-            configurationBuilder.Properties<decimal>()
-                .HaveColumnType("REAL");
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            //data
-            {
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasKey(c => new {
-                        c.Id
-                    });
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasIndex(b => b.PackageTimestamped)
-                    .IsUnique(false);
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasIndex(b => b.PackageCreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //条码信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.BarCodeInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<BarCodeInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasKey(c => new {
-                        c.Id
-                    });
-                modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasIndex(b => b.Barcode)
-                    .IsUnique(false);
-                modelBuilder.Entity<BarCodeInfoModel>()
-                    .HasIndex(b => b.ScanTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //称重信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.WeightInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<WeightInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<WeightInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //体积信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.VolumeInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<VolumeInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<VolumeInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-
-                //上传信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.UploadInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<UploadInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<UploadInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-
-                //格口信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.ExitInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<ExitInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<ExitInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //分拣信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.SortingInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<SortingInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<SortingInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-
-                //物流信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.LogisticsInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<LogisticsInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<LogisticsInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //Ocr
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.OcrInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<OcrInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<OcrInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //Ocr详细信息
-                modelBuilder.Entity<OcrInfoModel>()
-                    .HasMany(b => b.OcrDetailedInfos)
-                    .WithOne(n => n.OcrInfo)
-                    .HasForeignKey(n => new { n.OcrInfoId })
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<OcrDetailedInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //图片信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasMany(b => b.ImageInfos)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey(n => new { n.PackageId })
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<ImageInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //视频云
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.CloudVideoUploadInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<CloudVideoUploadInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<CloudVideoUploadInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //声音
-                modelBuilder.Entity<SoundInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<SoundInfoModel>()
-                    .HasIndex(b => b.SoundName)
-                    .IsUnique();
-                //聚合包裹信息
-                modelBuilder.Entity<PackageInfoModel>()
-                    .HasOne(b => b.AggregatePackagesInfo)
-                    .WithOne(n => n.PackageInfo)
-                    .HasForeignKey<AggregatePackagesInfoModel>(n => n.PackageId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<AggregatePackagesInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                //指令信息
-
-                modelBuilder.Entity<SortingInfoModel>()
-                    .HasMany(b => b.InstructionInfos)
-                    .WithOne(n => n.SortingInfo)
-                    .HasForeignKey(n => new { n.SortingInfoId })
-                    .OnDelete(DeleteBehavior.Cascade);
-                modelBuilder.Entity<InstructionInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-            }
-
-            base.OnModelCreating(modelBuilder);
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-            base.OnConfiguring(optionsBuilder);
-            //optionsBuilder.EnableSensitiveDataLogging(); // 启用敏感数据日志
-        }
+    /// <summary>应用包裹模块的独立 Fluent Configuration。</summary>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // 包裹模块配置集中拥有 HasIndex 调用，避免上下文内联实体细节。
+        PackageModelConfigurations.Apply(modelBuilder);
+        base.OnModelCreating(modelBuilder);
     }
 }

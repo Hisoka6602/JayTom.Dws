@@ -1,5 +1,7 @@
 using JayTom.Dws.Application.Configuration;
 using NLog;
+using JayTom.Dws.Client.Observability;
+using JayTom.Dws.Abstractions.Observability;
 using JayTom.Dws.Application.Workflows;
 using JayTom.Dws.Abstractions.Integrations;
 using System;
@@ -11,62 +13,62 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading;
 using TouchSocket.Core;
-using JayTom.Dws.Interface;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Integrations;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Interface.Wdt;
-using JayTom.Dws.Interface.ttx;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
+using JayTom.Dws.Integrations.Wdt;
+using JayTom.Dws.Integrations.ttx;
+using JayTom.Dws.Models.LocalConf;
 using NPOI.SS.Formula.Functions;
-using JayTom.Dws.Interface.Post;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Integrations.Post;
+using JayTom.Dws.Legacy.Contracts.Packages;
 using JayTom.Dws.PluginInterface;
-using JayTom.Dws.Interface.geek_;
+using JayTom.Dws.Integrations.geek_;
 using System.Collections.Generic;
 using NPOI.XSSF.Streaming.Values;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Interface.Sunnen;
-using JayTom.Dws.Interface.JdyWms;
-using JayTom.Dws.Interface.ZhouYi;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Interface.Szjy188;
-using JayTom.Dws.Interface.CaiNiao;
+using JayTom.Dws.Integrations.Cloud;
+using JayTom.Dws.Integrations.Sunnen;
+using JayTom.Dws.Integrations.JdyWms;
+using JayTom.Dws.Integrations.ZhouYi;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Integrations.Szjy188;
+using JayTom.Dws.Integrations.CaiNiao;
 using System.Collections.Concurrent;
-using JayTom.Dws.Interface.Routdata;
-using JayTom.Dws.Interface.Jtexpress;
-using JayTom.Dws.Interface.Jushuitan;
+using JayTom.Dws.Integrations.Routdata;
+using JayTom.Dws.Integrations.Jtexpress;
+using JayTom.Dws.Integrations.Jushuitan;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Interface.Eshippingit;
+using JayTom.Dws.Integrations.Eshippingit;
 using JayTom.Dws.PluginInterface.Utils;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Interface.zhuoyan_scm;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Integrations.zhuoyan_scm;
 using JayTom.Dws.Client.Service.Sorting;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Service.ImageService;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using static JayTom.Dws.Interface.CaiNiao.CaiNiaoApi;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using static JayTom.Dws.Integrations.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
-using UploadResponse = JayTom.Dws.Interface.UploadResponse;
-using PluginType = JayTom.Dws.Domain.EventMediators.PluginType;
-using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using PushPackageInfo = JayTom.Dws.Domain.EventMediators.PushPackageInfo;
-using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
-using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
-using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
-using PluginParamChangedEvent = JayTom.Dws.Domain.EventMediators.PluginParamChangedEvent;
-using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
-using PackageAbnormalSortingType = JayTom.Dws.Domain.EventMediators.PackageAbnormalSortingType;
+using UploadResponse = JayTom.Dws.Integrations.Contracts.UploadResponse;
+using PluginType = JayTom.Dws.Application.Events.PluginType;
+using InstructionType = JayTom.Dws.Models.Package.InstructionType;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols.CommunicationProtocols;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using PushPackageInfo = JayTom.Dws.Application.Events.PushPackageInfo;
+using SortingExitType = JayTom.Dws.Application.Events.SortingExitType;
+using ApplicationStatus = JayTom.Dws.Application.Events.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Application.Events.TriggerPositionEvent;
+using PackageExitUpdateEvent = JayTom.Dws.Application.Events.PackageExitUpdateEvent;
+using PluginParamChangedEvent = JayTom.Dws.Application.Events.PluginParamChangedEvent;
+using ApplicationStatusChanged = JayTom.Dws.Application.Events.ApplicationStatusChanged;
+using PackageAbnormalSortingType = JayTom.Dws.Application.Events.PackageAbnormalSortingType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -76,6 +78,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
     /// </summary>
     public class SubmitApiBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly ISettingsStore _settingsStore;
         private readonly IImageStorageService _imageStorageService;
@@ -145,24 +149,26 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
         public SubmitApiBackgroundService(IProviderRegistry<IDataUploader> providerRegistry,
             ISettingsStore settingsStore, IImageStorageService imageStorageService,
-            IMemoryCache memoryCache)
+            IMemoryCache memoryCache,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _providerRegistry = providerRegistry;
             _settingsStore = settingsStore;
             _imageStorageService = imageStorageService;
             _memoryCache = memoryCache;
             _apiResponseDispatcher = new NonBlockingOrderedDispatcher<ApiResponseReceived>(
-                static response => EventAggregator.Instance.PublishPackage(response),
+                response => _eventBus.PublishPackage(response),
                 static (_, exception) => LogManager.GetCurrentClassLogger()
                     .Error(exception, "发布 API 格口响应失败"),
                 "ApiResponses",
                 ThreadPriority.AboveNormal);
             _apiResponseNotificationDispatcher =
                 new NonBlockingOrderedDispatcher<ApiResponseReceived>(
-                    static response =>
+                    response =>
                     {
-                        EventAggregator.Instance.Publish(response);
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent
+                        _eventBus.Publish(response);
+                        _eventBus.Publish(new TriggerPositionEvent
                         {
                             IsSuccess = response.UploadResponse?.IsSuccess ?? false,
                             TriggerPosition = TriggerPositionEnum.HttpOutput
@@ -172,7 +178,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         .Error(exception, "发布 API 普通通知失败"),
                     "ApiResponseNotifications");
             //包裹信息完成
-            EventAggregator.Instance.SubscribePackage<PackageInfo>(item =>
+            _eventBus.SubscribePackage<PackageInfo>(item =>
             {
                 if (item is { BarCodeInfo: not null } model)
                 {
@@ -231,7 +237,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async item =>
             {
                 if (!await _settingsUpdateGate.WaitAsync(
                         TimeSpan.FromSeconds(30)))
@@ -456,7 +462,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     _settingsUpdateGate.Release();
                 }
             });
-            EventAggregator.Instance.Subscribe<PluginParamChangedEvent>(item =>
+            _eventBus.Subscribe<PluginParamChangedEvent>(item =>
             {
                 if (item is { } model)
                 {
@@ -493,7 +499,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         });
                 }
             };
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is WindowsAction { Type: WindowsActionType.Close })
                 {
@@ -501,7 +507,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //集包推送
-            EventAggregator.Instance.Subscribe<PackageAggregationInfo>(item =>
+            _eventBus.Subscribe<PackageAggregationInfo>(item =>
             {
                 //加入队列
                 if (item is { } info)
@@ -510,7 +516,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.SubscribePackage<ApiResponseReceived>(item =>
+            _eventBus.SubscribePackage<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
@@ -523,7 +529,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //系统信息
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            _eventBus.Subscribe<ApplicationStatusChanged>(item =>
             {
                 if (item is { Status: ApplicationStatus.Stop })
                 {
@@ -532,7 +538,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
             //更新格口信息
-            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item =>
+            _eventBus.Subscribe<PackageExitUpdateEvent>(item =>
             {
                 if (item is { } model)
                 {
@@ -783,7 +789,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                                 {
                                                     ExceptionMsg = value,
                                                     ApiExceptionType =
-                                                        JayTom.Dws.Interface.ApiExceptionType
+                                                        JayTom.Dws.Integrations.Contracts.ApiExceptionType
                                                             .LogicValidationFailed
                                                 };
                                         }
@@ -1142,7 +1148,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         if (_activeSubmitRequests.TryAdd(submitRequestTask, 0))
                         {
                             Interlocked.Increment(ref _activeSubmitRequestCount);
-                            _ = ObserveSubmitRequestAsync(submitRequestTask);
+                            ObserveSubmitRequestAsync(submitRequestTask)
+                                .Forget("观察接口提交请求");
                         }
                     }
 
@@ -1310,7 +1317,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     {
                         RequeueWork(_savedImageItems, inFlightSavedImage);
                     }
-                    LogManager.GetCurrentClassLogger().Error($"{e}");
+                    LogManager.GetCurrentClassLogger().ErrorSanitized(e, "api-submit.loop");
                 }
                 finally
                 {
@@ -1946,8 +1953,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             {
                                 packageValue.Value.WaitSubmitTime =
                                     DateTime.Now.AddSeconds(1);
-                                NLog.LogManager.GetCurrentClassLogger()
-                                    .Error($"设置极兔 Api 参数失败:{keyValuePair.Value}");
+                                NLog.LogManager.GetCurrentClassLogger().Error(
+                                    "操作 {Operation} 失败；关联标识 {CorrelationId}；消息 {ErrorMessage}",
+                                    "api-parameters.configure",
+                                    CorrelationContext.CurrentValueText,
+                                    SensitiveDataRedactor.RedactMessage(keyValuePair.Value?.ToString()));
                                 return;
                             }
 
@@ -2008,25 +2018,21 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     _imageStorageService.ImageSettingsDto?
                                         .IsSaveBarcodeImage == true)
                                 {
-                                    // 条码图片可能晚于真实落格事件保存完成。只要现场启用了
-                                    // 条码图，就持续保留该票并等待 ImageSaved 事件写入缓存；
-                                    // 绝不因包裹创建已超过固定秒数而发送无图卸车报文。
-                                    packageValue.Value.WaitSubmitTime =
-                                        DateTime.Now.AddMilliseconds(200);
-                                    return;
+                                    // 图片与设备信息回传彼此独立；图片尚未保存时继续发送
+                                    // packageInfo，避免图片链路故障阻断小件回传。
+                                    LogManager.GetCurrentClassLogger().Warn(
+                                        $"极昼条码图片尚未保存，继续发送无图设备报文:Timestamp={packageValue.Key},WaybillNo={barcode}");
                                 }
 
                                 using var image = LoadImageSnapshot(
                                     savedImageInfo?.FilePath);
-                                if (image is null &&
+                                if (savedImageInfo is not null &&
+                                    image is null &&
                                     _imageStorageService.ImageSettingsDto?
                                         .IsSaveBarcodeImage == true)
                                 {
-                                    // ImageSaved 已到达但文件可能仍被占用或暂时不可读；
-                                    // 继续等待，避免把空 Image 交给接口后形成无图卸车。
-                                    packageValue.Value.WaitSubmitTime =
-                                        DateTime.Now.AddMilliseconds(200);
-                                    return;
+                                    LogManager.GetCurrentClassLogger().Warn(
+                                        $"极昼条码图片不可读取，继续发送无图设备报文:Timestamp={packageValue.Key},WaybillNo={barcode}");
                                 }
 
                                 var cameraSerialNumber =
@@ -2165,7 +2171,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                     //判断推送锁格(条码、原格口、包裹信息)
                     //推送集包信息
-                    EventAggregator.Instance.Publish(new PushPackageInfo()
+                    _eventBus.Publish(new PushPackageInfo()
                     {
                         PackageInfo = packageValue.Value.PackageInfo ?? new PackageInfo(),
                         PackageExitUpdateEvent = packageValue.Value.PackageExitUpdateItems?.LastOrDefault() ?? new PackageExitUpdateEvent(),

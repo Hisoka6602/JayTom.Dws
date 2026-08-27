@@ -7,6 +7,7 @@ using System.Windows;
 using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;
 using NPOI.SS.Formula.Functions;
@@ -15,16 +16,18 @@ using JayTom.Dws.Ocr.ExpressBill;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
+using JayTom.Dws.Application.Messaging;
+using JayTom.Dws.Application.Workflows;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
@@ -32,12 +35,31 @@ namespace JayTom.Dws.Client.ViewModels.Pages
     public abstract class BulkOperationsTemplateViewModel<T> : BindableBase where T : class, new()
     {
         private SnackbarMessageQueue _messageQueue = new(TimeSpan.FromSeconds(2));
+        /// <summary>发布展示层触发的应用事件。</summary>
+        protected readonly IEventBus _eventBus;
         protected readonly IExcel _excel;
+        /// <summary>统一维护耗时命令的忙碌与取消状态。</summary>
+        private readonly AsyncOperationController _operationController = new();
 
-        protected BulkOperationsTemplateViewModel(IExcel excel)
+        protected BulkOperationsTemplateViewModel(IEventBus eventBus, IExcel excel)
         {
+            _eventBus = eventBus;
             _excel = excel;
+            CancelOperationCommand = new DelegateCommand(
+                _operationController.Cancel,
+                () => IsBusy);
+            _operationController.StateChanged += (_, _) =>
+            {
+                RaisePropertyChanged(nameof(IsBusy));
+                CancelOperationCommand.RaiseCanExecuteChanged();
+            };
         }
+
+        /// <summary>获取当前是否正在执行耗时命令。</summary>
+        public bool IsBusy => _operationController.IsBusy;
+
+        /// <summary>获取取消当前耗时命令的统一命令。</summary>
+        public DelegateCommand CancelOperationCommand { get; }
 
         public SnackbarMessageQueue MessageQueue
         {
@@ -76,7 +98,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             if (deleteProcess)
             {
                 RefreshData();
-                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                _eventBus.Publish(new SettingsChangedEvent
                 {
                     SettingsName = SettingsName,
                     IsLocallySaved = true
@@ -124,7 +146,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     {
                         await BulkDeleteProcess();
                         RefreshData();
-                        EventAggregator.Instance.Publish(new SettingsChangedEvent
+                        _eventBus.Publish(new SettingsChangedEvent
                         {
                             SettingsName = SettingsName,
                             IsLocallySaved = true
@@ -165,7 +187,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     model.FilePath = saveFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
+                    DialogHost.Show(exportDialog, model.Identifier)
+                        .Forget("显示批量导出进度对话框");
                     try
                     {
                         var export = await _excel.Export(saveFileDialog.FileName,
@@ -177,7 +200,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                                 model.ProgressText = $"{p}%";
                                 if (p == 100)
                                 {
-                                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                    await UiThread.Dispatcher.InvokeAsync(() =>
                                     {
                                         if (DialogHost.IsDialogOpen(model.Identifier))
                                         {
@@ -191,7 +214,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                             });
                         if (!export)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -233,7 +256,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     model.FilePath = openFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
+                    DialogHost.Show(exportDialog, model.Identifier)
+                        .Forget("显示批量导入进度对话框");
 
                     var readExcel = await _excel.ReadExcel<T>(openFileDialog.FileName, async p =>
                     {
@@ -241,7 +265,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         model.ProgressText = $"{p}%";
                         if (p == 100)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -251,7 +275,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         }
                     }, async (Exception e) =>
                     {
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        await UiThread.Dispatcher.InvokeAsync(() =>
                         {
                             if (DialogHost.IsDialogOpen(model.Identifier))
                             {
@@ -268,7 +292,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         {
                             MessageQueue.Enqueue("保存成功");
                             RefreshData();
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -302,7 +326,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 {
                     await ClearProcess();
                     RefreshData();
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    _eventBus.Publish(new SettingsChangedEvent
                     {
                         SettingsName = SettingsName,
                         IsLocallySaved = true
@@ -316,17 +340,23 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 刷新数据
         /// </summary>
-        public async Task RefreshDataAsync()
+        public Task RefreshDataAsync() =>
+            _operationController.TryRunAsync(RefreshDataCoreAsync);
+
+        /// <summary>执行支持取消的刷新流程。</summary>
+        private async Task RefreshDataCoreAsync(CancellationToken cancellationToken)
         {
             var loadingDialog = new LoadingDialog();
             if (loadingDialog.DataContext is not LoadingDialogViewModel model) return;
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            cancellationToken.ThrowIfCancellationRequested();
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 model.Identifier = Identifier;
                 DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
             });
             await RefreshDataProcess();
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            cancellationToken.ThrowIfCancellationRequested();
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 if (DialogHost.IsDialogOpen(model.Identifier))
                 {
@@ -336,7 +366,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         }
 
         /// <summary>从同步命令入口请求刷新。</summary>
-        protected void RefreshData() => _ = RefreshDataAsync();
+        protected void RefreshData() => RefreshDataAsync().Forget("刷新批量操作数据");
 
         protected abstract Task RefreshDataProcess();
 

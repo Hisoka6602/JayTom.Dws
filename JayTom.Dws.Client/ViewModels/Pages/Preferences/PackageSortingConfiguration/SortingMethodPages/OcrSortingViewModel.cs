@@ -1,4 +1,7 @@
 using System;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Application.Messaging;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -6,24 +9,24 @@ using System.Windows;
 using Newtonsoft.Json;
 using JayTom.Dws.Plugin;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -32,20 +35,17 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class OcrSortingViewModel : BulkOperationsTemplateViewModel<ExcelOcrSortingItemInfoModel>
     {
-        private readonly IOcrSortingRepository _ocrSortingRepository;
-        private readonly IOcrRuleRepository _ocrRuleRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly ISortingConfigurationCatalog<OcrSortingInfoModel> _sortingCatalog;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private ObservableCollection<OcrSortingItemInfoModel> _ocrSortingItems = new();
         private bool _isLoaded;
 
-        public OcrSortingViewModel(IOcrSortingRepository ocrSortingRepository,
-            IOcrRuleRepository ocrRuleRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) : base(excel)
+        public OcrSortingViewModel(ISortingConfigurationCatalog<OcrSortingInfoModel> sortingCatalog,
+            IPackageExitCatalog packageExitCatalog,
+            IExcel excel, IEventBus eventBus) : base(eventBus, excel)
         {
-            _ocrSortingRepository = ocrSortingRepository;
-            _ocrRuleRepository = ocrRuleRepository;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _sortingCatalog = sortingCatalog;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         public ObservableCollection<OcrSortingItemInfoModel> OcrSortingItems
@@ -56,7 +56,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var ocrSortingRuleEditor = new OcrSortingRuleEditor();
                 if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model)
@@ -86,11 +86,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 JsonContent = s.JsonContent
                             })?.ToList()
                         };
-                        var insert = await _ocrSortingRepository.InsertDetailAsync(ocrSortingInfoModel);
+                        var insert = await _sortingCatalog.AddAsync(ocrSortingInfoModel);
                         if (insert)
                         {
-                            EventAggregator.Instance.Publish(ocrSortingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(ocrSortingInfoModel);
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -126,12 +126,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is OcrSortingItemInfoModel item)
             {
-                var ocrSortingInfoModel = await _ocrSortingRepository.
-                    FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (ocrSortingInfoModel is not null)
-                {
-                    return await _ocrSortingRepository.Delete(ocrSortingInfoModel);
-                }
+                return await _sortingCatalog.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -141,7 +136,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is OcrSortingItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var ocrSortingRuleEditor = new OcrSortingRuleEditor();
                     if (ocrSortingRuleEditor.DataContext is OcrSortingRuleEditorViewModel model)
@@ -176,11 +171,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     JsonContent = s.JsonContent
                                 })?.ToList()
                             };
-                            var insert = await _ocrSortingRepository.UpdateDetailAsync(ocrSortingInfoModel);
+                            var insert = await _sortingCatalog.UpdateAsync(ocrSortingInfoModel);
                             if (insert)
                             {
-                                EventAggregator.Instance.Publish(ocrSortingInfoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(ocrSortingInfoModel);
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -202,8 +197,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (items?.Any() == true)
             {
-                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+                var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
                 var dateTime = DateTime.Now;
                 var ocrSortingInfoModels = items
                     .Select(s => new OcrSortingInfoModel()
@@ -246,7 +240,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     .ToList();
 
                 //批量添加
-                return await _ocrSortingRepository.InsertRangeDetailAsync(ocrSortingInfoModels);
+                return await _sortingCatalog.AddRangeAsync(ocrSortingInfoModels);
             }
 
             return false;
@@ -254,16 +248,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task ClearProcess()
         {
-            var ocrSortingInfoModels = await _ocrSortingRepository.Select(s => s.Id > 0, o => o.Id);
-            await _ocrSortingRepository.DeleteRange(ocrSortingInfoModels);
+            await _sortingCatalog.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
             await Task.Delay(300);
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
-            var models = await _ocrSortingRepository
-                .OcrSortingItems(s => s.Id > 0);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            var models = await _sortingCatalog.ListAsync();
             OcrSortingItems.Clear();
             var infoModels = models?.Select((s, i) => new OcrSortingItemInfoModel()
             {
@@ -297,10 +289,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var selectIds = OcrSortingItems.Where(w => w.IsSelect).Select(s => s.Id)
                 .ToList();
-            var ocrSortingInfoModels = await _ocrSortingRepository.Select(w => selectIds.Contains(w.Id),
-                o => o.Id);
-
-            await _ocrSortingRepository.DeleteRange(ocrSortingInfoModels);
+            await _sortingCatalog.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<ExcelOcrSortingItemInfoModel> ExportProcess()

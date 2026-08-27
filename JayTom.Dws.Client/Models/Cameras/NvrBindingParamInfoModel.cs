@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
 
 namespace JayTom.Dws.Client.Models.Cameras

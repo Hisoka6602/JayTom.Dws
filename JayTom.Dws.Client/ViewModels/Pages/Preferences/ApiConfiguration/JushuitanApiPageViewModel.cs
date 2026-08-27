@@ -1,5 +1,5 @@
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Integrations;
 using JayTom.Dws.Client.Extensions;
 using JayTom.Dws.Abstractions.Integrations;
 using JayTom.Dws.Application.Configuration;
@@ -13,12 +13,12 @@ using System.Windows.Input;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
-using JayTom.Dws.Interface.Wdt;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Integrations.Wdt;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Interface.Jushuitan;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Integrations.Jushuitan;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -35,7 +35,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private decimal _weight;
 
         public JushuitanApiPageViewModel(ISettingsStore settingsStore,
-            IProviderRegistry<IDataUploader> providerRegistry, IDialogService dialogService) : base(settingsStore)
+            IProviderRegistry<IDataUploader> providerRegistry, IDialogService dialogService, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _providerRegistry = providerRegistry;
             _dialogService = dialogService;
@@ -73,7 +73,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<JushuitanErpApiDto>(SettingsName) ?? new JushuitanErpApiDto();
                 JushuitanErpApiInfo = new JushuitanErpApiModel()
@@ -127,7 +127,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsRefreshing)
             {
                 IsRefreshing = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var jushuitanErpApi = _providerRegistry.Resolve<JushuitanErpApi>(ApiType.Jushuitan);
                     await jushuitanErpApi.SetParameters(new JushuitanErpApi.ApiParameters()
@@ -194,7 +194,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsUploading)
             {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //上传
                     var jushuitanErpApi = _providerRegistry.Resolve<JushuitanErpApi>(ApiType.Jushuitan);

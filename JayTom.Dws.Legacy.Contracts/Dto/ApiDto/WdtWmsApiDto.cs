@@ -1,0 +1,31 @@
+using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+namespace JayTom.Dws.Legacy.Contracts.Dto.ApiDto {
+
+    public class WdtWmsApiDto {
+        public string Url { get; set; } = string.Empty;
+        public string Sid { get; set; } = string.Empty;
+        public string AppKey { get; set; } = string.Empty;
+        public string AppSecret { get; set; } = string.Empty;
+        public string Method { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 超时
+        /// </summary>
+        public int TimeOut { get; set; } = 1000;
+
+        /// <summary>
+        /// 表示是否必须包含包装条码
+        /// </summary>
+        public bool MustIncludeBoxBarcode { get; set; }
+
+        /// <summary>
+        /// 指定条码开头
+        /// </summary>
+        public string AnyStartCodes { get; set; } = string.Empty;
+    }
+}

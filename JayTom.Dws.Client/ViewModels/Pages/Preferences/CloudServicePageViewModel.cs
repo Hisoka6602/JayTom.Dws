@@ -84,15 +84,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     if (!_regionManager.Regions.ContainsRegionWithName("CloudServiceRegion"))
                     {
                         //创建区域(用于视觉树以外控件)
-                        RegionManager.SetRegionName(obj, "CloudServiceRegion");
+                        RegionManager.SetRegionName(obj, NavigationRegions.CloudService.Name);
                         RegionManager.SetRegionManager(obj, _regionManager);
                     }
-                    _regionManager.Regions["CloudServiceRegion"].RequestNavigate("CloudVideoPage");
+                    _regionManager.Navigate(
+                        new NavigationRequest(
+                            NavigationRegions.CloudService,
+                            NavigationDestinations.CloudVideo));
                 });
             }
         }
@@ -104,7 +107,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void MenuClickDelegate(MenuItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!obj.PageClassName.Equals(string.Empty))
                 {
@@ -115,8 +118,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
                     obj.IsSelected = true;
 
-                    _regionManager?.Regions?["CloudServiceRegion"]
-                        ?.RequestNavigate(new Uri(obj.PageClassName, UriKind.Relative));
+                    _regionManager.Navigate(
+                        NavigationRequest.To(NavigationRegions.CloudService, obj.PageClassName));
                 }
             }, DispatcherPriority.Background);
         }

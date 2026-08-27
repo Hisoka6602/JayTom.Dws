@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using JayTom.Dws.Abstractions.Results;
 using Newtonsoft.Json;
 
-namespace JayTom.Dws.Interface.License {
+namespace JayTom.Dws.Integrations.License {
 
     public interface IClientLicenseApi {
 

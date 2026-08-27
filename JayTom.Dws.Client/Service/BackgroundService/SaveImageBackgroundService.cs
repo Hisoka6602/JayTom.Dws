@@ -6,19 +6,19 @@ using System.Drawing;
 using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Domain.Model;
+using JayTom.Dws.Legacy.Contracts.Model;
 using System.Collections.Generic;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Service.ImageService;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using static JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech.DaHuatechSecurityCamera;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
@@ -26,6 +26,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
     public class SaveImageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IImageStorageService _imageStorageService;
         private readonly ISaveImage _saveImage;
         private readonly ISettingsStore _settingsStore;
@@ -102,13 +104,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private const long MaxPendingCropImageBytes = 64L * 1024L * 1024L;
 
         public SaveImageBackgroundService(IImageStorageService imageStorageService, ISaveImage saveImage,
-            ISettingsStore settingsStore, IDeviceService deviceService)
+            ISettingsStore settingsStore, IDeviceService deviceService,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _imageStorageService = imageStorageService;
             _saveImage = saveImage;
             _settingsStore = settingsStore;
             _deviceService = deviceService;
-            EventAggregator.Instance.Subscribe<ImageMessageInfo>(info =>
+            _eventBus.Subscribe<ImageMessageInfo>(info =>
             {
                 //判断是否需要存图
                 if (info is ImageMessageInfo imageInfo)
@@ -131,7 +135,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     imageInfo?.Image?.Dispose();
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(OnSettingsChanged);
+            _eventBus.Subscribe<SettingsChangedEvent>(OnSettingsChanged);
             _deviceService.OcrContentRecognized += delegate (object? sender, OcrResult result)
             {
                 var ocrSettings = Volatile.Read(ref _ocrSettingsDto);
@@ -141,7 +145,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     {
                         try
                         {
-                            EnqueueCropImage(new Bitmap(result.CropImage));
+                            EnqueueCropImage(OcrBitmapAdapter.Decode(result.CropImage));
                         }
                         catch (Exception exception)
                         {
@@ -151,7 +155,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                 }
             };
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is WindowsAction { Type: WindowsActionType.Close })
                 {
@@ -259,7 +263,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         {
             if (settings.SettingsName is "SaveImageSettings" or "OcrSettings")
             {
-                _ = ReloadSettingsAsync(settings.SettingsName, _stoppingToken);
+                ReloadSettingsAsync(settings.SettingsName, _stoppingToken)
+                    .Forget("重新加载存图设置");
             }
         }
 

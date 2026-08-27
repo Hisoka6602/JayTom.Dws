@@ -101,7 +101,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
         public async void OnDialogClosed()
         {
             //断开
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 if (_baseDaHuatech is not null)
                 {
@@ -114,7 +114,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration
 
         public async void OnDialogOpened(IDialogParameters parameters)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var info = parameters.GetValue<NvrBindingItemModel>("NvrBindingItem");
                 if (info is not null)

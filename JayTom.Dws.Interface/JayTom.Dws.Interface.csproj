@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!-- 外部系统供应商实现层：契约由 Integrations.Contracts 物理拥有。 -->
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -28,15 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 契约由跨平台项目编译，本项目仅保留供应商实现。 -->
-    <Compile Remove="IDataUploader.cs" />
-    <Compile Remove="IApiUploader.cs" />
-    <Compile Remove="BaseApiParameters.cs" />
-    <Compile Remove="ApiHttpClientNames.cs" />
-    <Compile Remove="INetworkTime.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="ApiSettingJson\GeekPlusApiSetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -58,6 +50,10 @@
     <None Update="ApiSettingJson\ZhuoYanScmSettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="JayTom.Dws.Tests" />
   </ItemGroup>
 
 </Project>

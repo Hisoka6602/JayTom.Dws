@@ -1,4 +1,12 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.SortingInstructions;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Communications;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Application.CameraConfigurations;
+using JayTom.Dws.Application.PackageHistory;
 using Polly;
 using System;
 using System.IO;
@@ -8,68 +16,69 @@ using Polly.Retry;
 using System.Drawing;
 using Newtonsoft.Json;
 using System.Threading;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalData;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalData;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Integrations.Cloud;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 using System.Collections.Concurrent;
-using JayTom.Dws.Domain.Dto.CloudDto;
+using JayTom.Dws.Legacy.Contracts.Dto.CloudDto;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Infrastructure.IComputer;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Client.Service.SyncSettings;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
-using JayTom.Dws.Domain.Dto.CameraConfiguration;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
+using JayTom.Dws.Legacy.Contracts.Dto.CameraConfiguration;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using ApiExceptionType = JayTom.Dws.Interface.ApiExceptionType;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using InstructionType = JayTom.Dws.Interface.Cloud.InstructionType;
-using RemoteAction = JayTom.Dws.Domain.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Domain.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CloudConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
+using ApiExceptionType = JayTom.Dws.Integrations.Contracts.ApiExceptionType;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using InstructionType = JayTom.Dws.Integrations.Cloud.InstructionType;
+using RemoteAction = JayTom.Dws.Application.Events.RemoteAction;
+using RemoteCommand = JayTom.Dws.Application.Events.RemoteCommand;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
 
     public class CloudBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
         private readonly ICloud _cloud;
-        private readonly IPackageRepository _packageRepository;
-        private readonly ICloudVideoUploadRepository _cloudVideoUploadRepository;
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly ICloudVideoTransferQueue _cloudVideoTransfers;
+        private readonly ICameraConfigurationCatalog<NvrCameraBindingInfoModel> _nvrCameraBindingRepository;
         private readonly IComputer _computer;
         private readonly ISyncSettingsService _syncSettingsService;
-        private readonly IApiSortingRepository _apiSortingRepository;
-        private readonly IBarCodeSortingRepository _barCodeSortingRepository;
-        private readonly ILogisticsSortingRepository _logisticsSortingRepository;
-        private readonly IOcrSortingRepository _ocrSortingRepository;
-        private readonly IVolumeSortingRepository _volumeSortingRepository;
-        private readonly IWeightSortingRepository _weightSortingRepository;
-        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
-        private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
-        private readonly ISortingInstructionBindingRepository _sortingInstructionBindingRepository;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        private readonly ISortingConfigurationCatalog<ApiSortingInfoModel> _apiSortingRepository;
+        private readonly ISortingConfigurationCatalog<BarCodeSortingInfoModel> _barCodeSortingRepository;
+        private readonly ISortingConfigurationCatalog<LogisticsSortingInfoModel> _logisticsSortingRepository;
+        private readonly ISortingConfigurationCatalog<OcrSortingInfoModel> _ocrSortingRepository;
+        private readonly ISortingConfigurationCatalog<VolumeSortingInfoModel> _volumeSortingRepository;
+        private readonly ISortingConfigurationCatalog<WeightSortingInfoModel> _weightSortingRepository;
+        private readonly ICommunicationConfigurationCatalog _communicationConnectionConfigRepository;
+        private readonly ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> _logisticsCodeRecognitionRepository;
+        private readonly IPackageExitManagement _packageExitDefinitionRepository;
+        private readonly IPackageExitLockBindingCatalog _packageExitLockBindingRepository;
+        private readonly ISortingInstructionBindingCatalog _sortingInstructionBindingRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
         private CloudVideoSettingsDto _cloudVideoSettingsDto = new();
         private SyncSettingsDto _syncSettingsDto = new();
         private long _startTimeTicks = DateTime.Now.Ticks;
@@ -84,28 +93,29 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private int _isWindowsClose;
 
         public CloudBackgroundService(ISettingsStore settingsStore,
-            ICloud cloud, IPackageRepository packageRepository,
-            ICloudVideoUploadRepository cloudVideoUploadRepository,
-            INvrCameraBindingRepository nvrCameraBindingRepository,
+            ICloud cloud,
+            ICloudVideoTransferQueue cloudVideoTransfers,
+            ICameraConfigurationCatalog<NvrCameraBindingInfoModel> nvrCameraBindingRepository,
             IComputer computer,
             ISyncSettingsService syncSettingsService,
-            IApiSortingRepository apiSortingRepository,
-            IBarCodeSortingRepository barCodeSortingRepository,
-            ILogisticsSortingRepository logisticsSortingRepository,
-            IOcrSortingRepository ocrSortingRepository,
-            IVolumeSortingRepository volumeSortingRepository,
-            IWeightSortingRepository weightSortingRepository,
-            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository,
-            ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IPackageExitLockBindingRepository packageExitLockBindingRepository,
-            ISortingInstructionBindingRepository sortingInstructionBindingRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository)
+            ISortingConfigurationCatalog<ApiSortingInfoModel> apiSortingRepository,
+            ISortingConfigurationCatalog<BarCodeSortingInfoModel> barCodeSortingRepository,
+            ISortingConfigurationCatalog<LogisticsSortingInfoModel> logisticsSortingRepository,
+            ISortingConfigurationCatalog<OcrSortingInfoModel> ocrSortingRepository,
+            ISortingConfigurationCatalog<VolumeSortingInfoModel> volumeSortingRepository,
+            ISortingConfigurationCatalog<WeightSortingInfoModel> weightSortingRepository,
+            ICommunicationConfigurationCatalog communicationConnectionConfigRepository,
+            ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> logisticsCodeRecognitionRepository,
+            IPackageExitManagement packageExitDefinitionRepository,
+            IPackageExitLockBindingCatalog packageExitLockBindingRepository,
+            ISortingInstructionBindingCatalog sortingInstructionBindingRepository,
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
             _cloud = cloud;
-            _packageRepository = packageRepository;
-            _cloudVideoUploadRepository = cloudVideoUploadRepository;
+            _cloudVideoTransfers = cloudVideoTransfers;
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
             _computer = computer;
             _syncSettingsService = syncSettingsService;
@@ -122,7 +132,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _sortingInstructionBindingRepository = sortingInstructionBindingRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
 
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async item =>
             {
                 await _settingsUpdateGate.WaitAsync();
                 try
@@ -425,7 +435,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var apiSortingInfoModels = await _apiSortingRepository.ApiSortingItems(s => s.Id > 0);
+                                    var apiSortingInfoModels = await _apiSortingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(apiSortingItemsSettings.SettingsName,
                                         JsonConvert.SerializeObject(apiSortingInfoModels,
                                         new JsonSerializerSettings()
@@ -446,7 +456,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var barCodeSortingInfoModels = await _barCodeSortingRepository.BarCodeSortingItems(s => s.Id > 0);
+                                    var barCodeSortingInfoModels = await _barCodeSortingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(barcodeSortingItemsSettings.SettingsName,
                                         JsonConvert.SerializeObject(barCodeSortingInfoModels,
                                             new JsonSerializerSettings()
@@ -467,7 +477,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var logisticsSortingInfoModels = await _logisticsSortingRepository.LogisticsSortingItems(s => s.Id > 0);
+                                    var logisticsSortingInfoModels = await _logisticsSortingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(logisticsSortingItemsSettings.SettingsName,
                                         JsonConvert.SerializeObject(logisticsSortingInfoModels,
                                             new JsonSerializerSettings()
@@ -488,7 +498,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var ocrSortingInfoModels = await _ocrSortingRepository.OcrSortingItems(s => s.Id > 0);
+                                    var ocrSortingInfoModels = await _ocrSortingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(ocrSortingItemsSettings.SettingsName,
                                         JsonConvert.SerializeObject(ocrSortingInfoModels,
                                             new JsonSerializerSettings()
@@ -509,7 +519,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var volumeSortingInfoModels = await _volumeSortingRepository.VolumeSortingItems(s => s.Id > 0);
+                                    var volumeSortingInfoModels = await _volumeSortingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(volumeSortingItemsSettings.SettingsName,
     JsonConvert.SerializeObject(volumeSortingInfoModels, new JsonSerializerSettings { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
                                     if (!key)
@@ -526,7 +536,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseSortingModeSync: true })
                                 {
-                                    var weightSortingInfoModels = await _weightSortingRepository.WeightSortingItems(s => s.Id > 0);
+                                    var weightSortingInfoModels = await _weightSortingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(weightSortingItemsSettings.SettingsName, JsonConvert.SerializeObject(weightSortingInfoModels, new JsonSerializerSettings() { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
                                     if (!key)
                                     {
@@ -542,7 +552,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseConnectionSync: true })
                                 {
-                                    var communicationConnectionConfigInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(s => s.Id > 0);
+                                    var communicationConnectionConfigInfoModels = await _communicationConnectionConfigRepository.ListWithDetailsAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(communicationsItemsSettings.SettingsName,
                                         JsonConvert.SerializeObject(communicationConnectionConfigInfoModels,
                                         new JsonSerializerSettings()
@@ -563,7 +573,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseLogisticsSync: true })
                                 {
-                                    var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.LogisticsCodes(s => s.Id > 0);
+                                    var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.ListAsync();
 
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(logisticsCodeRecognitionItemSettings.SettingsName, JsonConvert.SerializeObject(logisticsCodeRecognitionInfoModels, new JsonSerializerSettings() { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
                                     if (!key)
@@ -580,7 +590,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseExitSync: true })
                                 {
-                                    var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.Id);
+                                    var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(packageExitDefinitionItemSettings.SettingsName, JsonConvert.SerializeObject(packageExitDefinitionInfoModels, new JsonSerializerSettings() { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
                                     if (!key)
                                     {
@@ -612,7 +622,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseLockerExitSync: true })
                                 {
-                                    var packageExitLockBindingInfoModels = await _packageExitLockBindingRepository.Select(s => s.Id > 0, o => o.Id);
+                                    var packageExitLockBindingInfoModels = await _packageExitLockBindingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(packageExitLockBindingItemSettings.SettingsName,
                                         JsonConvert.SerializeObject(packageExitLockBindingInfoModels,
                                         new JsonSerializerSettings()
@@ -633,7 +643,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 if (_syncSettingsService.IsConnected &&
                                     _syncSettingsDto is { IsUseSyncSettings: true, IsUseInstructionSync: true })
                                 {
-                                    var sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.InstructionBindings(s => s.Id > 0);
+                                    var sortingInstructionBindingInfoModels = await _sortingInstructionBindingRepository.ListAsync();
                                     var (key, value) = await _syncSettingsService.SubmitSyncContent(sortingInstructionBindingItemSettings.SettingsName, JsonConvert.SerializeObject(sortingInstructionBindingInfoModels, new JsonSerializerSettings() { PreserveReferencesHandling = PreserveReferencesHandling.Objects }));
                                     if (!key)
                                     {
@@ -721,7 +731,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     _settingsUpdateGate.Release();
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
@@ -732,7 +742,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             {
                 try
                 {
-                    EventAggregator.Instance.Publish(new RemoteAction
+                    _eventBus.Publish(new RemoteAction
                     {
                         Command = RemoteCommand.Stop
                     });
@@ -769,7 +779,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<ApiSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _apiSortingRepository.SyncEntities(models);
+                                        await _apiSortingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -787,7 +797,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<BarCodeSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _barCodeSortingRepository.SyncEntities(models);
+                                        await _barCodeSortingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -805,7 +815,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<LogisticsSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _logisticsSortingRepository.SyncEntities(models);
+                                        await _logisticsSortingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -822,7 +832,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<OcrSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _ocrSortingRepository.SyncEntities(models);
+                                        await _ocrSortingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -839,7 +849,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<VolumeSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _volumeSortingRepository.SyncEntities(models);
+                                        await _volumeSortingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -856,7 +866,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<WeightSortingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _weightSortingRepository.SyncEntities(models);
+                                        await _weightSortingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -873,7 +883,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<CommunicationConnectionConfigInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _communicationConnectionConfigRepository.SyncEntities(models);
+                                        await _communicationConnectionConfigRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -890,7 +900,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<LogisticsCodeRecognitionInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _logisticsCodeRecognitionRepository.SyncEntities(models);
+                                        await _logisticsCodeRecognitionRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -907,7 +917,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<PackageExitDefinitionInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _packageExitDefinitionRepository.SyncEntities(models);
+                                        await _packageExitDefinitionRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -924,7 +934,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<PackageExitLockBindingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _packageExitLockBindingRepository.SyncEntities(models);
+                                        await _packageExitLockBindingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -941,7 +951,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     var models = JsonConvert.DeserializeObject<List<SortingInstructionBindingInfoModel>>(info.SettingsInfo?.ToString() ?? string.Empty);
                                     if (models is not null)
                                     {
-                                        await _sortingInstructionBindingRepository.SyncEntities(models);
+                                        await _sortingInstructionBindingRepository.SyncAsync(models);
                                     }
                                 }
                                 catch (Exception e)
@@ -967,11 +977,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 break;
                             }
                     }
-                    EventAggregator.Instance.Publish(new SettingsChangedEvent
+                    _eventBus.Publish(new SettingsChangedEvent
                     {
                         SettingsName = info.SettingsName,
                     });
-                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    _eventBus.Publish(new AppLogInfoModel
                     {
                         CreateTime = DateTime.Now,
                         Message = $"远程更新配置:{info.SettingsName}",
@@ -981,7 +991,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 catch (Exception e)
                 {
                     NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    _eventBus.Publish(new AppLogInfoModel
                     {
                         CreateTime = DateTime.Now,
                         Message = $"远程更新配置:{info.SettingsName}失败,异常:{e.Message}",
@@ -1028,17 +1038,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             var startTime = new DateTime(
                                 Interlocked.Read(ref _startTimeTicks),
                                 DateTimeKind.Local);
-                            var (key, value) = await _packageRepository.SelectPackage(s =>
-                                    s.BarCodeInfo != null &&
-                                    s.BarCodeInfo.ScanTime.CompareTo(startTime) > 0 &&
-                                    s.BarCodeInfo.ScanTime.CompareTo(
-                                        DateTime.Now.AddSeconds(0 - settings
-                                            .UploadIntervalInSeconds)) <= 0 &&
-                                    (s.CloudVideoUploadInfo == null || s.CloudVideoUploadInfo.UploadTime == null),
-                                o => o.PackageCreateTime, 0,
-                                Math.Max(1, settings.Concurrency), stoppingToken);
+                            var packageInfoModels = await _cloudVideoTransfers.ListPendingAsync(
+                                startTime,
+                                DateTime.Now.AddSeconds(-settings.UploadIntervalInSeconds),
+                                Math.Max(1, settings.Concurrency),
+                                stoppingToken);
 
-                            if (key && value is { } packageInfoModels)
+                            if (packageInfoModels.Count > 0)
                             {
                                 var pendingPackages = packageInfoModels
                                     .Where(package => package.BarCodeInfo != null)
@@ -1111,7 +1117,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             Math.Min(250 * Math.Pow(2, retryAttempt - 1), 5000)),
                         (outcome, delay, retryCount, context) =>
                         {
-                            EventAggregator.Instance.Publish(new CloudVideoUploadRetryMessage
+                            _eventBus.Publish(new CloudVideoUploadRetryMessage
                             {
                                 Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
                                 RetryCount = retryCount
@@ -1168,7 +1174,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             UploadInfo = new PackageCloudUploadInfo()
                             {
                                 ApiExceptionType = (ApiExceptionType)(packageInfoModel.UploadInfo?.ApiExceptionType ??
-                                                                      Data.Package.ApiExceptionType.None),
+                                                                      JayTom.Dws.Models.Package.ApiExceptionType.None),
                                 DurationInSeconds = packageInfoModel.UploadInfo?.DurationInSeconds ?? 0,
                                 ExceptionMessage = packageInfoModel.UploadInfo?.ExceptionMessage ?? string.Empty,
                                 InterfaceParameters = packageInfoModel.UploadInfo?.InterfaceParameters ?? string.Empty,
@@ -1256,7 +1262,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 })?.ToList()
                         }, token: token);
 
-                        EventAggregator.Instance.Publish(new CloudVideoUploadMessage
+                        _eventBus.Publish(new CloudVideoUploadMessage
                         {
                             Barcode = packageInfoModel.BarCodeInfo?.Barcode ?? string.Empty,
                             IsSuccessful = cloudUploadResponse.IsSuccessful,
@@ -1267,38 +1273,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
                         if (cloudUploadResponse.IsSuccessful)
                         {
-                            var cloudVideoUploadInfoModel = await _cloudVideoUploadRepository.FirstOrDefault(f =>
-                                f.PackageId.Equals(packageInfoModel.Id), token);
-                            if (cloudVideoUploadInfoModel is not null)
-                            {
-                                //更新
-                                cloudVideoUploadInfoModel.ResponseContent = cloudUploadResponse.ResponseContent;
-                                cloudVideoUploadInfoModel.TargetAddress = cloudUploadResponse.TargetAddress;
-                                cloudVideoUploadInfoModel.UploadTime = cloudUploadResponse.UploadTime;
-                                cloudVideoUploadInfoModel.UploadContent = cloudUploadResponse.UploadContent;
-                                cloudVideoUploadInfoModel.UploadDuration = cloudUploadResponse.UploadDuration;
-                                cloudVideoUploadInfoModel.ScanImageCount =
-                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0;
-                                cloudVideoUploadInfoModel.PanoramaImageCount =
-                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0;
-
-                                return await _cloudVideoUploadRepository.Update(cloudVideoUploadInfoModel, token);
-                            }
-                            else
-                            {
-                                return await _cloudVideoUploadRepository.Insert(new CloudVideoUploadInfoModel()
-                                {
-                                    PackageId = packageInfoModel.Id,
-                                    ResponseContent = cloudUploadResponse.ResponseContent,
-                                    TargetAddress = cloudUploadResponse.TargetAddress,
-                                    UploadTime = cloudUploadResponse.UploadTime,
-                                    UploadContent = cloudUploadResponse.UploadContent,
-                                    UploadDuration = cloudUploadResponse.UploadDuration,
-                                    ScanImageCount = packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
-                                    PanoramaImageCount =
-                                        packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0
-                                }, token);
-                            }
+                            return await _cloudVideoTransfers.SaveReceiptAsync(
+                                packageInfoModel.Id,
+                                new CloudVideoUploadReceipt(
+                                    cloudUploadResponse.ResponseContent,
+                                    cloudUploadResponse.TargetAddress,
+                                    cloudUploadResponse.UploadTime,
+                                    cloudUploadResponse.UploadContent,
+                                    cloudUploadResponse.UploadDuration,
+                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 0) ?? 0,
+                                    packageInfoModel.ImageInfos?.Count(c => c.Type == 1) ?? 0),
+                                token);
                         }
                         return false;
                     }

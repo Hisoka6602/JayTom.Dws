@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalLog {
+namespace JayTom.Dws.Models.LocalLog {
 
     [Table("Log_ApiLogInfo", Schema = "dbo")]
     public class ApiLogInfoModel : BaseLogInfoModel {

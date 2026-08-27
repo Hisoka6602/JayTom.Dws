@@ -31,12 +31,33 @@ public static class DispatcherTaskExtensions
     public static void Forget(this Task task, string operationName)
     {
         ArgumentNullException.ThrowIfNull(task);
-        _ = task.ContinueWith(
-            completed => NLog.LogManager.GetCurrentClassLogger().Error(
-                completed.Exception,
-                $"后台任务执行失败:{operationName}"),
-            CancellationToken.None,
-            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
+        ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
+        _ = ObserveAsync(task, operationName);
+    }
+
+    /// <summary>等待后台任务并隔离日志记录器自身的异常，保证观察任务永不故障。</summary>
+    private static async Task ObserveAsync(Task task, string operationName)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // 取消是受控生命周期结果，无需按故障记录。
+        }
+        catch (Exception exception)
+        {
+            try
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(
+                    exception,
+                    $"后台任务执行失败:{operationName}");
+            }
+            catch
+            {
+                // 日志基础设施不得让异常重新变为未观察任务异常。
+            }
+        }
     }
 }

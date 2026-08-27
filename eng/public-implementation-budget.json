@@ -1,0 +1,9 @@
+{
+  "description": "生产实现项目中显式 public class 的零增长预算；新辅助实现默认 internal。",
+  "projects": {
+    "JayTom.Dws.Application": 61,
+    "JayTom.Dws.Camera": 77,
+    "JayTom.Dws.Infrastructure": 118,
+    "JayTom.Dws.Interface": 73
+  }
+}

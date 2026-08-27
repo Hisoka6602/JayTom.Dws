@@ -1,6 +1,6 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 
 namespace JayTom.Dws.Client.Models.CommunicationsSettingsModel
 {

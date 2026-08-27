@@ -1,5 +1,5 @@
 using JayTom.Dws.Application.Configuration;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 
 namespace JayTom.Dws.Infrastructure.Configuration;
 

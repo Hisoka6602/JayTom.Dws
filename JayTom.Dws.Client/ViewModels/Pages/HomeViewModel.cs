@@ -9,57 +9,58 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.License;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Windows.Controls;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using JayTom.Dws.Client.Service;
-using JayTom.Dws.Domain.Manager;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Legacy.Contracts.Packages;
+using JayTom.Dws.Integrations.Cloud;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
-using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Interface.License;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
+using JayTom.Dws.Integrations.License;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Models.DataModels;
-using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Client.Service.ResultOutput;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Application.Configuration;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
-using LogType = JayTom.Dws.Data.LocalLog.LogType;
+using LogType = JayTom.Dws.Models.LocalLog.LogType;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using InstructionType = JayTom.Dws.Data.Package.InstructionType;
-using RemoteAction = JayTom.Dws.Domain.EventMediators.RemoteAction;
-using RemoteCommand = JayTom.Dws.Domain.EventMediators.RemoteCommand;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
+using InstructionType = JayTom.Dws.Models.Package.InstructionType;
+using RemoteAction = JayTom.Dws.Application.Events.RemoteAction;
+using RemoteCommand = JayTom.Dws.Application.Events.RemoteCommand;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.SubHomeViewModels;
-using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using ApplicationStatus = JayTom.Dws.Application.Events.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
 using ExceptionEventArgs = JayTom.Dws.Client.Service.Sorting.ExceptionEventArgs;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using static JayTom.Dws.Client.Service.BackgroundService.SubmitApiBackgroundService;
-using PackageExitUpdateEvent = JayTom.Dws.Domain.EventMediators.PackageExitUpdateEvent;
-using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
-using BarcodeTypeProviderEvent = JayTom.Dws.Domain.EventMediators.BarcodeTypeProviderEvent;
+using PackageExitUpdateEvent = JayTom.Dws.Application.Events.PackageExitUpdateEvent;
+using ApplicationStatusChanged = JayTom.Dws.Application.Events.ApplicationStatusChanged;
+using BarcodeTypeProviderEvent = JayTom.Dws.Application.Events.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
 
     public class HomeViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IDialogService _dialogService;
         private readonly IDeviceService _deviceService;
         private readonly IImageStorageService _imageStorageService;
@@ -277,8 +278,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             ISettingsReader settingsReader,
             ISortingService sortingService,
             IClientLicenseApi clientLicenseApi,
-            CameraHomeViewModel cameraHomeViewModel)
+            CameraHomeViewModel cameraHomeViewModel,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _dialogService = dialogService;
             _deviceService = deviceService;
             _imageStorageService = imageStorageService;
@@ -290,7 +293,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             _deviceService.BarcodeScanned += DeviceServiceOnBarcodeScanned;
             _deviceService.BarcodeMissed += async delegate (object? sender, BarcodeReadEventArgs args)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = args?.Barcode ?? "未识别到条码";
                 }, DispatcherPriority.Background);
@@ -302,7 +305,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             _deviceService.VolumeCaptured += DeviceServiceOnVolumeCaptured;
             _deviceService.DeviceException += async delegate (object? sender, DeviceExceptionEventArgs args)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue(args?.Exception?.Message ?? string.Empty);
                 }, DispatcherPriority.Background);
@@ -311,7 +314,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             };
             _deviceService.StableWeight += async delegate (object? sender, StableWeightEventArgs args)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     Weight = args.Weight;
                 }, DispatcherPriority.Background);
@@ -319,7 +322,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             _deviceService.OcrContentRecognized += DeviceServiceOnOcrContentRecognized;
             _deviceService.BarCodeKeyReceived += async (sender, s) =>
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = s.Barcode;
                 }, DispatcherPriority.Background);
@@ -327,14 +330,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
             _imageStorageService.ImageSaveFailed += async delegate (object? sender, Exception exception)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("图片保存异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
             };
             _resultOutputService.OutputFailed += async delegate (object? sender, Exception exception)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("结果输出异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
@@ -342,7 +345,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             //外部数据
             _externalDataService.ExternalDataException += async delegate (object? sender, Exception exception)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     HomeMessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("外部输入异常") ?? string.Empty}:{exception.Message}");
                 }, DispatcherPriority.Background);
@@ -350,7 +353,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             //外部全量数据
             _externalDataService.ContentInputReceived += async (sender, args) =>
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     BarCode = args?.Barcode ?? "未解析到条码";
                     Weight = args?.Weight ?? 0;
@@ -362,7 +365,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             };
             _externalDataService.VolumeReceived += async delegate (object? sender, ExternalVolumeInputEventArgs args)
             {
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     Length = (decimal)args.Length;
                     Width = (decimal)args.Width;
@@ -379,7 +382,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 HomeMessageQueue.Enqueue($"{args.ExceptionMessage}");
             };
-            EventAggregator.Instance.Subscribe<PackageInfo>(info =>
+            _eventBus.Subscribe<PackageInfo>(info =>
             {
                 if (info is { } model)
                 {
@@ -396,18 +399,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(info =>
+            _eventBus.Subscribe<BarcodeTypeProviderEvent>(info =>
             {
                 if (info is { } args)
                 {
-                    System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         //更新右边信息
                         BarCode = args?.Barcode ?? "未识别到条码";
                     });
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async info =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async info =>
             {
                 try
                 {
@@ -420,7 +423,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                                 .ConfigureAwait(false);
                             if (volumeSettingsDto is not null)
                             {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                await UiThread.Dispatcher.InvokeAsync(() =>
                                 {
                                     VolumeUnit = volumeSettingsDto.Unit;
                                 }, DispatcherPriority.Background);
@@ -433,7 +436,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                                 .ConfigureAwait(false);
                             if (ocrSettingsDto is not null)
                             {
-                                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                await UiThread.Dispatcher.InvokeAsync(() =>
                                 {
                                     OcrSettingsInfo = new OcrSettingsInfoModel()
                                     {
@@ -455,7 +458,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 }
             });
             //更新上传状态
-            EventAggregator.Instance.Subscribe<ApiResponseReceived>(item =>
+            _eventBus.Subscribe<ApiResponseReceived>(item =>
             {
                 if (item is { } model)
                 {
@@ -463,14 +466,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 }
             });
             //更新云视频上传状态
-            EventAggregator.Instance.Subscribe<CloudVideoUploadMessage>(item =>
+            _eventBus.Subscribe<CloudVideoUploadMessage>(item =>
             {
                 if (item is { } model)
                 {
                     _cloudVideoUploadItems.Enqueue(model);
                 }
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
@@ -478,11 +481,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 }
             });
             //程序启停
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            _eventBus.Subscribe<ApplicationStatusChanged>(item =>
             {
                 if (item is { } info)
                 {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    _eventBus.Publish(new AppLogInfoModel
                     {
                         CreateTime = DateTime.Now,
                         Message = $"程序{(info.Status == ApplicationStatus.Start ? "启动" : "停止")}",
@@ -491,7 +494,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 }
             });
             //更新格口
-            EventAggregator.Instance.Subscribe<PackageExitUpdateEvent>(item =>
+            _eventBus.Subscribe<PackageExitUpdateEvent>(item =>
             {
                 if (item is { } model)
                 {
@@ -500,7 +503,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             });
             _uiUpdateWorker = Task.Run(ProcessUiUpdates);
             //远程指令
-            EventAggregator.Instance.Subscribe<RemoteAction>(async item =>
+            _eventBus.SubscribeAsync<RemoteAction>(async item =>
             {
                 if (item is { } remoteAction)
                 {
@@ -525,11 +528,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <param name="args"></param>
         private async void DeviceServiceOnOcrContentRecognized(object? sender, OcrResult args)
         {
-            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+            await UiThread.Dispatcher.BeginInvoke(() =>
             {
                 //更新右边信息
                 BarCode = args?.BarCode ?? "未识别到条码";
-                OcrItemInfo.ElapsedTime = args?.ElapsedTime ?? 0;
+                OcrItemInfo.ElapsedTime = args?.ElapsedMilliseconds ?? 0;
                 OcrItemInfo.RecipientAddress = args?.RecipientAddress ?? string.Empty;
                 OcrItemInfo.RecipientName = args?.RecipientName ?? string.Empty;
                 OcrItemInfo.RecipientPhone = args?.RecipientPhone ?? string.Empty;
@@ -542,7 +545,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void DeviceServiceOnVolumeCaptured(object? sender, VolumeCapturedEventArgs args)
         {
-            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+            await UiThread.Dispatcher.BeginInvoke(() =>
             {
                 Length = (decimal)args.Length;
                 Width = (decimal)args.Width;
@@ -553,7 +556,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void DeviceServiceOnBarcodeScanned(object? sender, BarcodeReadEventArgs args)
         {
-            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+            await UiThread.Dispatcher.BeginInvoke(() =>
             {
                 BarCode = args?.Barcode ?? "未识别到条码";
             }, DispatcherPriority.Background);
@@ -565,11 +568,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void LoadedDelegate(Page obj)
         {
-            EventAggregator.Instance.Publish(new SettingsChangedEvent
+            _eventBus.Publish(new SettingsChangedEvent
             {
                 SettingsName = "VolumeSettings"
             });
-            EventAggregator.Instance.Publish(new SettingsChangedEvent
+            _eventBus.Publish(new SettingsChangedEvent
             {
                 SettingsName = "OcrSettings"
             });
@@ -588,7 +591,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                 }
                 catch (Exception e)
                 {
-                    EventAggregator.Instance.Publish(new AppLogInfoModel
+                    _eventBus.Publish(new AppLogInfoModel
                     {
                         CreateTime = DateTime.Now,
                         Message = e.Message,
@@ -665,7 +668,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         var (b, s) = LicenseManager.DecryptAuthorizationFile(firstOrDefault, out var data);
 
                         if (!b) {
-                            EventAggregator.Instance.Publish(new AppLogInfoModel {
+                            _eventBus.Publish(new AppLogInfoModel {
                                 CreateTime = DateTime.Now,
                                 Message = s,
                                 Type = LogType.Exception
@@ -679,7 +682,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         }
                     }
                     else {
-                        EventAggregator.Instance.Publish(new AppLogInfoModel {
+                        _eventBus.Publish(new AppLogInfoModel {
                             CreateTime = DateTime.Now,
                             Message = "未检测到授权文件",
                             Type = LogType.Exception
@@ -692,7 +695,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     var (externalDataStarted, externalDataMessage) = await _externalDataService.Start();
                     if (!externalDataStarted)
                     {
-                        EventAggregator.Instance.Publish(new AppLogInfoModel
+                        _eventBus.Publish(new AppLogInfoModel
                         {
                             CreateTime = DateTime.Now,
                             Message = externalDataMessage,
@@ -706,7 +709,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     if (!deviceStarted)
                     {
                         await _externalDataService.Stop();
-                        EventAggregator.Instance.Publish(new AppLogInfoModel
+                        _eventBus.Publish(new AppLogInfoModel
                         {
                             CreateTime = DateTime.Now,
                             Message = deviceMessage,
@@ -721,7 +724,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     {
                         await _deviceService.Stop();
                         await _externalDataService.Stop();
-                        EventAggregator.Instance.Publish(new AppLogInfoModel
+                        _eventBus.Publish(new AppLogInfoModel
                         {
                             CreateTime = DateTime.Now,
                             Message = sortingMessage,
@@ -731,7 +734,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                         return;
                     }
 
-                    EventAggregator.Instance.Publish(new ApplicationStatusChanged
+                    _eventBus.Publish(new ApplicationStatusChanged
                     {
                         Status = ApplicationStatus.Start
                     });
@@ -743,14 +746,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     await _externalDataService.Stop();
                     await _deviceService.Stop();
                     await _sortingService.Stop();
-                    EventAggregator.Instance.Publish(new ApplicationStatusChanged
+                    _eventBus.Publish(new ApplicationStatusChanged
                     {
                         Status = ApplicationStatus.Stop
                     });
                     AppContext.SetData("IsRunning", false);
                 }
 
-                await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                await UiThread.Dispatcher.BeginInvoke(() =>
                 {
                     RunningStatus = _deviceService.RunningStatus;
                 }, DispatcherPriority.Background);
@@ -805,9 +808,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 记录启动或停止流程中未处理的异常。
         /// </summary>
-        private static void LogStartStopFailure(Exception exception)
+        private void LogStartStopFailure(Exception exception)
         {
-            EventAggregator.Instance.Publish(new AppLogInfoModel
+            _eventBus.Publish(new AppLogInfoModel
             {
                 CreateTime = DateTime.Now,
                 Message = exception.Message,
@@ -983,7 +986,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
         private async void ClearCountDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+            await UiThread.Dispatcher.BeginInvoke(() =>
             {
                 if (_deviceService.RunningStatus)
                 {

@@ -1,6 +1,6 @@
-﻿using System.ComponentModel;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Data.Package;
+using System.ComponentModel;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Models.Package;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 

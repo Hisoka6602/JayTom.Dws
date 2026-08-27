@@ -1,5 +1,7 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
+using JayTom.Dws.Application.Audio;
+using JayTom.Dws.Application.Storage;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,18 +11,18 @@ using System.IO.Ports;
 using Mono.Unix.Native;
 using System.Threading;
 using System.Diagnostics;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Domain.Converters;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
 using JayTom.Dws.Abstractions.Devices;
 using JayTom.Dws.Abstractions.Graphics;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
@@ -31,13 +33,16 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
     public class DefaultConfigurationService : IDefaultConfigurationService
     {
         private readonly ISettingsStore _settingsStore;
-        private readonly ISoundRepository _soundRepository;
+        private readonly ISoundCatalog _soundCatalog;
+        private readonly IBinaryAssetStore _assetStore;
 
         public DefaultConfigurationService(ISettingsStore settingsStore,
-            ISoundRepository soundRepository)
+            ISoundCatalog soundCatalog,
+            IBinaryAssetStore assetStore)
         {
             _settingsStore = settingsStore;
-            _soundRepository = soundRepository;
+            _soundCatalog = soundCatalog;
+            _assetStore = assetStore;
         }
 
         public async Task WriteDefaultConfiguration()
@@ -49,19 +54,23 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                     return;
                 }
 
+                var failPath = Path.Combine(AppContext.BaseDirectory, "Sound", "fail.wav");
+                var successPath = Path.Combine(AppContext.BaseDirectory, "Sound", "success.wav");
+                var failAsset = await SaveBundledSoundAsync(failPath);
+                var successAsset = await SaveBundledSoundAsync(successPath);
+                if (!failAsset.IsSuccess || !successAsset.IsSuccess) {
+                    throw new InvalidOperationException("默认声音资源外置失败。");
+                }
+
                 var fail = new SoundInfoModel()
                 {
-                    SoundName = new FileInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\fail.wav")
-                        .Name,
-                    SoundFile = File.ReadAllBytes(
-                        $"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\fail.wav")
+                    SoundName = Path.GetFileName(failPath),
+                    SoundFileReference = failAsset.Value.Value
                 };
                 var success = new SoundInfoModel()
                 {
-                    SoundName = new FileInfo($"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\success.wav")
-                        .Name,
-                    SoundFile = File.ReadAllBytes(
-                        $"{System.AppDomain.CurrentDomain.BaseDirectory}Sound\\success.wav")
+                    SoundName = Path.GetFileName(successPath),
+                    SoundFileReference = successAsset.Value.Value
                 };
                 //重量
                 var task1 = _settingsStore.SaveAsync("WeightSettings",new WeightSettingsDto
@@ -155,9 +164,9 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
                         Unit = VolumeUnit.Millimeter,
                     });
                 //输出
-                var task5 = _soundRepository.InsertOrUpdate(fail);
+                var task5 = _soundCatalog.SaveAsync(fail);
                 //(声音)
-                var task9 = _soundRepository.InsertOrUpdate(success);
+                var task9 = _soundCatalog.SaveAsync(success);
 
                 //声音
                 var task6 = _settingsStore.SaveAsync("ResultOutputSettings",new ResultOutputSettingsDto
@@ -243,6 +252,23 @@ namespace JayTom.Dws.Client.Service.DefaultConfiguration
             {
                 NLog.LogManager.GetCurrentClassLogger().Error($"写默认配置失败!");
             }
+        }
+
+        private async Task<JayTom.Dws.Abstractions.Results.OperationResult<BinaryAssetReference>>
+            SaveBundledSoundAsync(string path)
+        {
+            await using var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                64 * 1024,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            return await _assetStore.SaveAsync(
+                "sounds",
+                Path.GetFileName(path),
+                stream,
+                CancellationToken.None);
         }
 
         public string GetMaxFreeSpaceDrive()

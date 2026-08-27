@@ -1,7 +1,7 @@
 using System.Drawing;
 using JayTom.Dws.Abstractions.Imaging;
-using JayTom.Dws.Interface;
-using JayTom.Dws.Interface.Jtexpress;
+using JayTom.Dws.Integrations;
+using JayTom.Dws.Integrations.Jtexpress;
 
 namespace JayTom.Dws.Tests;
 
@@ -11,10 +11,10 @@ namespace JayTom.Dws.Tests;
 public sealed class JtPolarDayApiTests
 {
     /// <summary>
-    /// 本地图片暂存失败时不得继续发送无图 scanInfo 和 packageInfo。
+    /// 本地图片暂存失败时仍应继续发送无图 scanInfo 和 packageInfo。
     /// </summary>
     [Fact]
-    public async Task DeviceInfoDoesNotUploadWhenLocalImageStagingFails()
+    public async Task DeviceInfoUploadsWithoutImageWhenLocalImageStagingFails()
     {
         var requestPaths = new List<string>();
         using var handler = new StubHttpMessageHandler(request =>
@@ -33,35 +33,39 @@ public sealed class JtPolarDayApiTests
         Assert.True(parameterResult.Key, parameterResult.Value);
 
         using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => api.UploadInBackground(
-                "JT5513378378679",
-                1,
-                new DateTime(2026, 8, 10, 16, 38, 38),
-                imageInfo: new UploadImageInfo
-                {
-                    Image = image,
-                    CameraSerialNumber = "CAM01"
-                },
-                other: new JtPolarDayApi.UploadContext
-                {
-                    CarNum = "84",
-                    GridNo = "05",
-                    GridCode = "01",
-                    FallTime = new DateTime(2026, 8, 10, 16, 38, 41)
-                }));
+        await api.UploadInBackground(
+            "JT5513378378679",
+            1,
+            new DateTime(2026, 8, 10, 16, 38, 38),
+            imageInfo: new UploadImageInfo
+            {
+                Image = image,
+                CameraSerialNumber = "CAM01"
+            },
+            other: new JtPolarDayApi.UploadContext
+            {
+                CarNum = "84",
+                GridNo = "05",
+                GridCode = "01",
+                FallTime = new DateTime(2026, 8, 10, 16, 38, 41)
+            });
 
-        Assert.Contains("图片上传失败", exception.Message, StringComparison.Ordinal);
-        Assert.Contains(
-            requestPaths,
-            path => path.EndsWith(
-                "/polarDay/upload/sortingImage",
-                StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(
-            requestPaths,
-            path => path.EndsWith(
+        Assert.Equal(3, requestPaths.Count);
+        Assert.EndsWith(
+            "/polarDay/upload/sortingImage",
+            requestPaths[0],
+            StringComparison.OrdinalIgnoreCase);
+        Assert.All(
+            requestPaths.Skip(1),
+            path => Assert.EndsWith(
                 "/polarDay/upload/deviceInfo",
+                path,
                 StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            handler.RequestContents,
+            content => content.Contains(
+                "\"eventType\":\"packageInfo\"",
+                StringComparison.Ordinal));
     }
 
     /// <summary>

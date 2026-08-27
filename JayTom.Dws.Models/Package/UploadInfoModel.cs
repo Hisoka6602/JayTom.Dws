@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.Package {
+namespace JayTom.Dws.Models.Package {
 
     [Table("Data_UploadInfo", Schema = "dbo")]
     public class UploadInfoModel : BasePackageForeignKeyInfoModel {

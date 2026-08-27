@@ -1,4 +1,7 @@
 using System;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Application.Messaging;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -7,21 +10,21 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
 using JayTom.Dws.Client.Models.PackageSorting.Excel;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -30,23 +33,20 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class LogisticsSortingViewModel : BulkOperationsTemplateViewModel<LogisticsSortingItemInfoModel>
     {
-        private readonly ILogisticsSortingRepository _logisticsSortingRepository;
-        private readonly ILogisticsRuleRepository _logisticsRuleRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-        private readonly ILogisticsCodeRecognitionRepository _logisticsCodeRecognitionRepository;
+        private readonly ISortingConfigurationCatalog<LogisticsSortingInfoModel> _sortingCatalog;
+        private readonly IPackageExitCatalog _packageExitCatalog;
+        private readonly ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> _logisticsCatalog;
         private bool _isLoaded;
         private ObservableCollection<LogisticsSortingItemInfoModel> _logisticsSortingItems = new();
 
-        public LogisticsSortingViewModel(ILogisticsSortingRepository logisticsSortingRepository,
-            ILogisticsRuleRepository logisticsRuleRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            ILogisticsCodeRecognitionRepository logisticsCodeRecognitionRepository,
-            IExcel excel) : base(excel)
+        public LogisticsSortingViewModel(ISortingConfigurationCatalog<LogisticsSortingInfoModel> sortingCatalog,
+            IPackageExitCatalog packageExitCatalog,
+            ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel> logisticsCatalog,
+            IExcel excel, IEventBus eventBus) : base(eventBus, excel)
         {
-            _logisticsSortingRepository = logisticsSortingRepository;
-            _logisticsRuleRepository = logisticsRuleRepository;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            _logisticsCodeRecognitionRepository = logisticsCodeRecognitionRepository;
+            _sortingCatalog = sortingCatalog;
+            _packageExitCatalog = packageExitCatalog;
+            _logisticsCatalog = logisticsCatalog;
         }
 
         public ObservableCollection<LogisticsSortingItemInfoModel> LogisticsSortingItems
@@ -57,7 +57,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var logisticsSortingRuleEditor = new LogisticsSortingRuleEditor();
                 if (logisticsSortingRuleEditor.DataContext is LogisticsSortingRuleEditorViewModel model)
@@ -87,11 +87,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 Remarks = s.Remarks,
                             })?.ToList()
                         };
-                        var insert = await _logisticsSortingRepository.InsertDetailAsync(logisticsSortingInfoModel);
+                        var insert = await _sortingCatalog.AddAsync(logisticsSortingInfoModel);
                         if (insert)
                         {
-                            EventAggregator.Instance.Publish(logisticsSortingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(logisticsSortingInfoModel);
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -127,12 +127,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is LogisticsSortingItemInfoModel item)
             {
-                var logisticsSortingInfoModel = await _logisticsSortingRepository.
-                    FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (logisticsSortingInfoModel is not null)
-                {
-                    return await _logisticsSortingRepository.Delete(logisticsSortingInfoModel);
-                }
+                return await _sortingCatalog.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -142,7 +137,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is LogisticsSortingItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var logisticsSortingRuleEditor = new LogisticsSortingRuleEditor();
                     if (logisticsSortingRuleEditor.DataContext is LogisticsSortingRuleEditorViewModel model)
@@ -176,11 +171,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     Remarks = s.Remarks,
                                 })?.ToList()
                             };
-                            var update = await _logisticsSortingRepository.UpdateDetailAsync(logisticsSortingInfoModel);
+                            var update = await _sortingCatalog.UpdateAsync(logisticsSortingInfoModel);
                             if (update)
                             {
-                                EventAggregator.Instance.Publish(logisticsSortingInfoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(logisticsSortingInfoModel);
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -200,20 +195,15 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task ClearProcess()
         {
-            var logisticsSortingInfoModels = await _logisticsSortingRepository.
-                Select(s => s.Id > 0,
-                    o => o.Id);
-            await _logisticsSortingRepository.DeleteRange(logisticsSortingInfoModels);
+            await _sortingCatalog.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
-            var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                o => o.ModifyTime);
+            var logisticsCodeRecognitionInfoModels = await _logisticsCatalog.ListAsync();
 
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
-            var models = await _logisticsSortingRepository
-                .LogisticsSortingItems(s => s.Id > 0);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            var models = await _sortingCatalog.ListAsync();
             LogisticsSortingItems.Clear();
             var infoModels = models?.Select((s, i) => new LogisticsSortingItemInfoModel()
             {
@@ -248,9 +238,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var selectIds = LogisticsSortingItems.Where(w => w.IsSelect)
                 .Select(s => s.Id).ToList();
-            var logisticsSortingInfoModels = await _logisticsSortingRepository.Select(s => selectIds.Contains(s.Id),
-                o => o.Id);
-            await _logisticsSortingRepository.DeleteRange(logisticsSortingInfoModels);
+            await _sortingCatalog.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<LogisticsSortingItemInfoModel> ExportProcess()
@@ -276,10 +264,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (items?.Any() == true)
             {
-                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
-                var logisticsCodeRecognitionInfoModels = await _logisticsCodeRecognitionRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+                var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+                var logisticsCodeRecognitionInfoModels = await _logisticsCatalog.ListAsync();
                 var dateTime = DateTime.Now;
                 var logisticsSortingInfoModels = items
                     .Select(s => new LogisticsSortingInfoModel()
@@ -312,7 +298,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     .ToList();
 
                 //批量添加
-                return await _logisticsSortingRepository.InsertRangeDetailAsync(logisticsSortingInfoModels);
+                return await _sortingCatalog.AddRangeAsync(logisticsSortingInfoModels);
             }
 
             return false;

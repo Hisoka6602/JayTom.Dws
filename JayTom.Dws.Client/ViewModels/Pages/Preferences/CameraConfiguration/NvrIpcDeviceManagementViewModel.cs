@@ -1,5 +1,6 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
+using JayTom.Dws.Application.CameraConfigurations;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
@@ -8,28 +9,26 @@ using System.Windows;
 using System.Drawing;
 using JayTom.Dws.Camera;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Legacy.Contracts.Packages;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.ViewModels.Editors.Enums;
 using JayTom.Dws.Client.Views.Editors.CloudService;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
+using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
 {
@@ -40,8 +39,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
     public class NvrIpcDeviceManagementViewModel : BindableBase
     {
         private readonly ISettingsStore _settingsStore;
-        private readonly IIpcNvrConfigRepository _ipcNvrConfigRepository;
-        private readonly IBarcodeScannerCameraConfigRepository _barcodeScannerCameraConfigRepository;
+        /// <summary>封装厂商设备发现与生命周期的设备服务。</summary>
+        private readonly IDeviceService _deviceService;
+        private readonly ICameraConfigurationCatalog<IpcNvrConfigInfoModel> _ipcNvrConfigRepository;
+        private readonly ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> _barcodeScannerCameraConfigRepository;
         private List<IpcNvrConfigInfoModel>? _ipcNvrConfigInfoModels;
         private List<BarcodeScannerCameraConfigInfoModel>? _scannerCameraConfigInfoModels;
 
@@ -72,10 +73,12 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
         }
 
         public NvrIpcDeviceManagementViewModel(ISettingsStore settingsStore,
-            IIpcNvrConfigRepository ipcNvrConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository)
+            IDeviceService deviceService,
+            ICameraConfigurationCatalog<IpcNvrConfigInfoModel> ipcNvrConfigRepository,
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository)
         {
             _settingsStore = settingsStore;
+            _deviceService = deviceService;
             _ipcNvrConfigRepository = ipcNvrConfigRepository;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
         }
@@ -269,8 +272,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration
                 if (sdkSelectorDto.IsUseDaHuaSecurityCameraSdk)
                 {
                     // 原生SDK枚举可能同步阻塞，保留在线程池执行以避免卡住界面线程。
-                    cameraList = await Task.Run(async () =>
-                        await new DaHuatechSecurityCamera().EnumerateCameras() ?? []);
+                    cameraList = [.. await _deviceService.DiscoverSecurityCamerasAsync()];
                 }
                 else
                 {

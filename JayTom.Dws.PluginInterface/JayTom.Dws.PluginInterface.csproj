@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin.Abstractions\JayTom.Dws.Plugin.Abstractions.csproj" />
   </ItemGroup>
 

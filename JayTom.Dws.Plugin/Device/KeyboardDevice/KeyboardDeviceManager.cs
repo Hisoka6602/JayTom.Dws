@@ -33,6 +33,8 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
         private static RawInputReceiverWindow? _window;
         private static string _regexPattern = string.Empty;
         private static List<KeyboardDeviceInfo> _keyboardDevices = new();
+        /// <summary>拥有键盘消息循环任务，确保其生命周期和异常均可被管理。</summary>
+        private Task? _listenerTask;
 
         public void Dispose() {
             StopListening();
@@ -73,7 +75,7 @@ namespace JayTom.Dws.Plugin.Device.KeyboardDevice {
             IsListening = true;
             ListeningDevice = device;
 
-            Task.Run(() => {
+            _listenerTask = Task.Run(() => {
                 try {
                     _window = RawInputReceiverWindow.Instance;
 

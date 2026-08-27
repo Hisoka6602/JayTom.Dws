@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
 
 namespace JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels
 {

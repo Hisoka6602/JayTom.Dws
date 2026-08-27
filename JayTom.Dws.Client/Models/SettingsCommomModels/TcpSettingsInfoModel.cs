@@ -1,7 +1,7 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 using JayTom.Dws.Plugin.Tcp;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 
 namespace JayTom.Dws.Client.Models.SettingsCommomModels
 {

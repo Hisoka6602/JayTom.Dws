@@ -1,6 +1,7 @@
 using JayTom.Dws.Application.Workflows;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 
 namespace JayTom.Dws.Client.Service.BackgroundService;
 
@@ -11,6 +12,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService;
 internal sealed class BoundedLogQueue<T> {
     /// <summary>实际保存日志项的无损队列。</summary>
     private readonly LosslessWorkQueue<T> _queue = new();
+    /// <summary>在成功入队后调用的轻量唤醒通知。</summary>
+    private Action? _itemEnqueued;
 
     /// <summary>获取当前队列是否没有待处理日志。</summary>
     public bool IsEmpty => _queue.IsEmpty;
@@ -20,9 +23,17 @@ internal sealed class BoundedLogQueue<T> {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(capacity);
     }
 
+    /// <summary>设置非阻塞入队通知，用于立即唤醒后台批量写入器。</summary>
+    public void SetEnqueuedCallback(Action callback) {
+        ArgumentNullException.ThrowIfNull(callback);
+        Volatile.Write(ref _itemEnqueued, callback);
+    }
+
     /// <summary>非阻塞加入日志。</summary>
     public void Enqueue(T item) {
-        _queue.TryEnqueue(item);
+        if (_queue.TryEnqueue(item)) {
+            Volatile.Read(ref _itemEnqueued)?.Invoke();
+        }
     }
 
     /// <summary>立即尝试读取一个日志项。</summary>

@@ -7,20 +7,20 @@ using Prism.Commands;
 using System.IO.Ports;
 using Newtonsoft.Json;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.CommunicationsSettingsModel;
 using JayTom.Dws.Client.Models.PackageSorting.CommunicationConnectionSub;
@@ -131,7 +131,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private bool _isLoaded;
 
         public StackedPackageDetectionSettingsViewModel(ISettingsStore settingsStore,
-            IDeviceService deviceService) : base(settingsStore)
+            IDeviceService deviceService, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _deviceService = deviceService;
         }
@@ -213,7 +213,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         private async void PortUpdateDelegate()
         {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
@@ -294,7 +294,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());

@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-namespace JayTom.Dws.Interface.Jtexpress {
+namespace JayTom.Dws.Integrations.Jtexpress {
 
     /// <summary>
     /// 为极昼扫描上报生成满足图片服务大小限制的图片内容。

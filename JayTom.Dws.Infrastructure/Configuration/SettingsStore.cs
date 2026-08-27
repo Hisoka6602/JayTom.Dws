@@ -1,6 +1,6 @@
 using JayTom.Dws.Application.Configuration;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using Newtonsoft.Json;
 
 namespace JayTom.Dws.Infrastructure.Configuration;
@@ -11,27 +11,35 @@ namespace JayTom.Dws.Infrastructure.Configuration;
 public sealed class SettingsStore : ISettingsStore {
     /// <summary>本地配置仓储。</summary>
     private readonly IConfigRepository _repository;
+    /// <summary>原子配置快照工作单元。</summary>
+    private readonly IConfigurationUnitOfWork _unitOfWork;
+
+    /// <summary>应用层配置校验注册表。</summary>
+    private readonly ConfigurationValidationRegistry _validationRegistry;
 
     /// <summary>
     /// 初始化设置存储适配器。
     /// </summary>
     /// <param name="repository">本地配置仓储。</param>
-    public SettingsStore(IConfigRepository repository) {
+    public SettingsStore(
+        IConfigRepository repository,
+        IConfigurationUnitOfWork unitOfWork,
+        ConfigurationValidationRegistry validationRegistry) {
         _repository = repository;
+        _unitOfWork = unitOfWork;
+        _validationRegistry = validationRegistry;
     }
 
     /// <summary>判断是否已存在任意应用配置。</summary>
     public async Task<bool> AnyAsync(CancellationToken cancellationToken = default) {
-        var items = await _repository.MemoryCacheData().ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
+        var items = await _repository.MemoryCacheData(cancellationToken).ConfigureAwait(false);
         return items.Count > 0;
     }
 
     /// <summary>获取按配置键组织的原始值快照。</summary>
     public async Task<IReadOnlyDictionary<string, string>> GetSnapshotAsync(
         CancellationToken cancellationToken = default) {
-        var items = await _repository.MemoryCacheData().ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
+        var items = await _repository.MemoryCacheData(cancellationToken).ConfigureAwait(false);
         return items
             .GroupBy(item => item.ConfigName, StringComparer.Ordinal)
             .ToDictionary(
@@ -54,6 +62,12 @@ public sealed class SettingsStore : ISettingsStore {
         CancellationToken cancellationToken = default) {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(settings);
+        IReadOnlyList<string> validationErrors = _validationRegistry.Validate(settings);
+        if (validationErrors.Count > 0) {
+            NLog.LogManager.GetCurrentClassLogger().Warn(
+                "拒绝保存无效配置 {0}: {1}", key, string.Join(" ", validationErrors));
+            return Task.FromResult(false);
+        }
         return SaveRawAsync(key, JsonConvert.SerializeObject(settings), cancellationToken);
     }
 
@@ -88,6 +102,20 @@ public sealed class SettingsStore : ISettingsStore {
             };
         }).ToList();
         return _repository.InsertOrUpdateRange(entities, cancellationToken);
+    }
+
+    /// <summary>在单一事务内完整替换配置表，并在提交后刷新缓存。</summary>
+    public async Task<bool> ReplaceSnapshotAsync(
+        IReadOnlyDictionary<string, string> snapshot,
+        CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        foreach (var pair in snapshot) {
+            ArgumentException.ThrowIfNullOrWhiteSpace(pair.Key);
+            ArgumentNullException.ThrowIfNull(pair.Value);
+        }
+
+        return await _unitOfWork.ReplaceSnapshotAsync(snapshot, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>读取原始配置值。</summary>

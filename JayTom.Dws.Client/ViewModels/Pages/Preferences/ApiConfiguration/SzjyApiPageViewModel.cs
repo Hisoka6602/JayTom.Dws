@@ -1,5 +1,5 @@
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Integrations;
 using JayTom.Dws.Client.Extensions;
 using JayTom.Dws.Abstractions.Integrations;
 using JayTom.Dws.Application.Configuration;
@@ -12,10 +12,10 @@ using System.Windows.Input;
 using Prism.Services.Dialogs;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Interface.Szjy188;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Integrations.Szjy188;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -42,7 +42,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         private string _nickname = string.Empty;
 
         public SzjyApiPageViewModel(ISettingsStore settingsStore, IProviderRegistry<IDataUploader> providerRegistry,
-            IDialogService dialogService) : base(settingsStore)
+            IDialogService dialogService, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _providerRegistry = providerRegistry;
             _dialogService = dialogService;
@@ -176,7 +176,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var settingsDto = await _settingsStore.GetAsync<SzjyApiDto>(SettingsName) ?? new SzjyApiDto();
                     SzjyApiInfo = new SzjyApiInfoModel()
@@ -201,7 +201,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsLoggingIn)
             {
                 IsLoggingIn = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     IsLoginSuccessful = false;
                     //设置参数
@@ -251,7 +251,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             if (!IsUploading)
             {
                 IsUploading = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //上传
                     var szjyApi = _providerRegistry.Resolve<SzjyApi>(ApiType.SzjyApi);

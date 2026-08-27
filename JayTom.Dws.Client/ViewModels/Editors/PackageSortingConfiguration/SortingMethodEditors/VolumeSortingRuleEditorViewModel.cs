@@ -1,8 +1,8 @@
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Application.PackageExits;
 using MaterialDesignThemes.Wpf;
 using Prism.Commands;
 using Prism.Mvvm;
@@ -15,7 +15,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 {
     public class VolumeSortingRuleEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private string _identifier = string.Empty;
         private bool _isOk;
         private string _exceptionContent = string.Empty;
@@ -28,9 +28,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private ObservableCollection<VolumeRuleItemInfoModel> _volumeRuleItems = new();
         private VolumeSortingItemInfoModel _volumeSortingItemInfo = new();
 
-        public VolumeSortingRuleEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public VolumeSortingRuleEditorViewModel(IPackageExitCatalog packageExitCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private async void AddDataItemDelegate(string obj)
         {
             //判断前面是空或者连接符
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!FormulaTemplate.Any() || FormulaTemplate.LastOrDefault()?.Type == 6)
                 {
@@ -163,7 +163,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void AddOperatorDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 //添加之前判断前面是不是普通值
                 if (FormulaTemplate.LastOrDefault()?.Type == 1)
@@ -192,7 +192,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void AddReferenceValueDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 //添加之前判断前面是不是普通值
                 if (FormulaTemplate.LastOrDefault()?.Type == 4)
@@ -226,7 +226,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
         private async void AddStitchingDelegate(string obj)
         {
             //判断前面是不是参照值
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 //添加之前判断前面是不是普通值
                 if (FormulaTemplate.LastOrDefault()?.Type == 5)
@@ -255,7 +255,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (model.ApplicationType == ItemApplicationType.Formula)
                 {
@@ -315,10 +315,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) =>
@@ -352,7 +351,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void DeleteFormulaDelegate(VolumeRuleItemInfoModel obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 VolumeRuleItems.Remove(obj);
                 //调整Num
@@ -373,7 +372,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.Sorti
 
         private async void SaveRuleDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 string formula = IsUseCustomFormula ? CustomFormula : Formula;
                 if (!string.IsNullOrEmpty(formula) && !VolumeRuleItems.Any(a => a.Formula.Equals(formula)))

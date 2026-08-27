@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Legacy.Contracts.Packages;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Service.BackgroundService;
 

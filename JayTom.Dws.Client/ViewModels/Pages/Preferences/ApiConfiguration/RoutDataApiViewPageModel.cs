@@ -9,10 +9,10 @@ using Newtonsoft.Json;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -26,13 +26,13 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             set => SetProperty(ref field, value);
         } = new();
 
-        public RoutDataApiViewPageModel(ISettingsStore settingsStore) : base(settingsStore)
+        public RoutDataApiViewPageModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<RoutDataApiDto>(SettingsName) ?? new RoutDataApiDto();
                 RoutDataApiInfo = new RoutDataApiModel()

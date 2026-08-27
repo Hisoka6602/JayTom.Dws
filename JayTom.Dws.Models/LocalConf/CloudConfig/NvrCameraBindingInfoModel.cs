@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Models.Attributes;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalConf.CloudConfig {
+namespace JayTom.Dws.Models.LocalConf.CloudConfig {
     //这里的外键需要连扫码相机(可空外键)
 
     [Table("Conf_NvrCameraBindingInfo", Schema = "dbo")]

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Win32;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Integrations;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;

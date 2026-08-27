@@ -1,4 +1,5 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Messaging;
 using DryIoc;
 using System;
 using System.Linq;
@@ -9,7 +10,7 @@ using Prism.Mvvm;
 using Prism.DryIoc;
 using System.Windows;
 using JayTom.Dws.Ocr;
-using JayTom.Dws.Nvr;
+using JayTom.Dws.Camera.Nvr.Legacy;
 using System.IO.Pipes;
 using System.Net.Http;
 using System.IO.Ports;
@@ -17,8 +18,7 @@ using System.Threading;
 using JayTom.Dws.Camera;
 using JayTom.Dws.Plugin;
 using System.Diagnostics;
-using JayTom.Dws.Nvr.Nvr;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Integrations;
 using System.Globalization;
 using System.Windows.Media;
 using JayTom.Dws.Abstractions.Integrations.Ftp;
@@ -28,14 +28,14 @@ using JayTom.Dws.Client.Views;
 using JayTom.Dws.Plugin.Excel;
 using JayTom.Dws.Plugin.Speech;
 using System.Windows.Threading;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using JayTom.Dws.Client.Service;
 using JayTom.Dws.Infrastructure;
 using JayTom.Dws.Ocr.ExpressBill;
-using JayTom.Dws.Interface.Cloud;
+using JayTom.Dws.Integrations.Cloud;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Client.ViewModels;
-using JayTom.Dws.Interface.License;
+using JayTom.Dws.Integrations.License;
 using JayTom.Dws.Client.Views.Pages;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +45,7 @@ using JayTom.Dws.Plugin.Tcp.TcpClient;
 using JayTom.Dws.Plugin.Tcp.TcpServer;
 using JayTom.Dws.Camera.BarCodeReader;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Infrastructure.Service;
@@ -56,15 +56,15 @@ using JayTom.Dws.Infrastructure.IComputer;
 using JayTom.Dws.Plugin.Scale.StaticScale;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
-using JayTom.Dws.Domain.Repository.LocalLog;
-using JayTom.Dws.Interface.Cloud.CloudVideo;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
+using JayTom.Dws.Integrations.Cloud.CloudVideo;
 using JayTom.Dws.Client.Service.TestService;
 using JayTom.Dws.Client.Service.ResultOutput;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Domain.Service.CacheCleanup;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Legacy.Contracts.Services.CacheCleanup;
 using JayTom.Dws.Client.Service.SyncSettings;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
 using JayTom.Dws.Client.Service.ImageService;
 using JayTom.Dws.Plugin.Device.KeyboardDevice;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,12 +83,12 @@ using JayTom.Dws.Infrastructure.Repository.LocalData;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 using JayTom.Dws.Client.ViewModels.Editors.CloudService;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
 using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.IpcNvrConfig;
 using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
 using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
 using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
@@ -101,7 +101,7 @@ using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService;
 using JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub;
@@ -115,9 +115,9 @@ using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
 using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
@@ -137,8 +137,6 @@ namespace JayTom.Dws.Client
         private Mutex? _singleInstanceMutex;
         /// <summary>用于通知已运行实例激活窗口的命名管道。</summary>
         private const string PipeName = "DwsPipe";
-        /// <summary>单个设备或分拣组件在停机阶段允许占用的最长时间。</summary>
-        private static readonly TimeSpan ComponentStopTimeout = TimeSpan.FromSeconds(5);
 
         /// <summary>向容器注册展示层、应用服务与基础设施。</summary>
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
@@ -150,20 +148,6 @@ namespace JayTom.Dws.Client
         protected override Window CreateShell()
         {
             return Container.Resolve<MainWindow>();
-        }
-
-        /// <summary>
-        /// 创建启用连接池和写锁等待的 SQLite 连接字符串。
-        /// </summary>
-        /// <param name="databaseFileName">数据库文件名。</param>
-        /// <returns>SQLite 连接字符串。</returns>
-        private static string CreateSqliteConnectionString(string databaseFileName)
-        {
-            return new SqliteConnectionStringBuilder
-            {
-                DataSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, databaseFileName),
-                Mode = SqliteOpenMode.ReadWriteCreate
-            }.ToString();
         }
 
         /// <summary>建立单实例约束并注册全局异常处理。</summary>
@@ -222,12 +206,12 @@ namespace JayTom.Dws.Client
         /// <summary>
         /// 记录未处理异常并尽力发布到应用日志，不让日志链路中的二次异常覆盖原始故障。
         /// </summary>
-        private static void ReportUnhandledException(Exception exception, string source)
+        private void ReportUnhandledException(Exception exception, string source)
         {
             try
             {
                 NLog.LogManager.GetCurrentClassLogger().Error(exception, source);
-                EventAggregator.Instance.Publish(new AppLogInfoModel
+                Container.Resolve<IEventBus>().Publish(new AppLogInfoModel
                 {
                     CreateTime = DateTime.Now,
                     Message = $"{source}:{exception.Message}",
@@ -249,7 +233,7 @@ namespace JayTom.Dws.Client
         {
             try
             {
-                EventAggregator.Instance.Publish(new AppLogInfoModel
+                Container.Resolve<IEventBus>().Publish(new AppLogInfoModel
                 {
                     CreateTime = DateTime.Now,
                     Message = "程序关闭",
@@ -257,7 +241,8 @@ namespace JayTom.Dws.Client
                 });
 
                 using var shutdownCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-                var shutdownTask = StopApplicationServicesAsync(shutdownCancellation.Token);
+                var shutdownTask = Container.Resolve<IApplicationLifecycleCoordinator>()
+                    .StopAsync(shutdownCancellation.Token);
                 var shutdownFrame = new DispatcherFrame();
                 var timeoutTimer = new DispatcherTimer(
                     TimeSpan.FromSeconds(20),
@@ -308,49 +293,6 @@ namespace JayTom.Dws.Client
             }
         }
 
-        /// <summary>
-        /// 按依赖顺序停止设备、分拣和后台服务。
-        /// </summary>
-        private async Task StopApplicationServicesAsync(CancellationToken token)
-        {
-            var serviceProvider = Container.Resolve<IServiceProvider>();
-            var deviceService = serviceProvider.GetRequiredService<IDeviceService>();
-            if (deviceService.RunningStatus)
-            {
-                try
-                {
-                    await deviceService.Stop()
-                        .WaitAsync(ComponentStopTimeout, token)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception exception)
-                {
-                    NLog.LogManager.GetCurrentClassLogger()
-                        .Error(exception, "停止设备服务失败或超时，继续执行其余停机步骤");
-                }
-            }
-
-            var sortingService = serviceProvider.GetRequiredService<ISortingService>();
-            if (sortingService.RunningStatus)
-            {
-                try
-                {
-                    await sortingService.Stop()
-                        .WaitAsync(ComponentStopTimeout, token)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception exception)
-                {
-                    NLog.LogManager.GetCurrentClassLogger()
-                        .Error(exception, "停止分拣服务失败或超时，继续执行其余停机步骤");
-                }
-            }
-
-            // 先停止设备和分拣生产者，再停止并刷新后台消费者，避免停机窗口继续产生新工作。
-            var hostedServiceSupervisor = serviceProvider.GetRequiredService<IHostedServiceSupervisor>();
-            await hostedServiceSupervisor.StopAsync(token).ConfigureAwait(false);
-        }
-
         /// <summary>通过命名管道通知已运行实例激活主窗口。</summary>
         private void NotifyExistingInstance()
         {
@@ -383,7 +325,7 @@ namespace JayTom.Dws.Client
         protected override void OnInitialized()
         {
             base.OnInitialized();
-            _ = StartApplicationServicesAsync();
+            StartApplicationServicesAsync().Forget("启动应用服务");
         }
 
         /// <summary>异步初始化配置并启动受管后台服务。</summary>
@@ -391,19 +333,8 @@ namespace JayTom.Dws.Client
         {
             try
             {
-                await Task.Yield();
-                await InitializeConfigurationAsync();
-                // 获取 IServiceProvider
-                var serviceProvider = Container.Resolve<IServiceProvider>();
-
-                var hostedServiceSupervisor = serviceProvider
-                    .GetRequiredService<IHostedServiceSupervisor>();
-                await hostedServiceSupervisor.StartAsync(CancellationToken.None);
-                foreach (var serviceState in hostedServiceSupervisor.GetHealthSnapshot())
-                {
-                    NLog.LogManager.GetCurrentClassLogger()
-                        .Info($"服务名:{serviceState.Key}，状态:{serviceState.Value}");
-                }
+                await Container.Resolve<IApplicationLifecycleCoordinator>()
+                    .StartAsync(CancellationToken.None);
                 NLog.LogManager.GetCurrentClassLogger().Info("全部服务启动完成");
             }
             catch (Exception exception)
@@ -413,23 +344,5 @@ namespace JayTom.Dws.Client
             }
         }
 
-        /// <summary>
-        /// 异步创建默认配置并加载当前语言。
-        /// </summary>
-        private async Task InitializeConfigurationAsync()
-        {
-            var container = Container.GetContainer();
-            var defaultConfigurationService = container.Resolve<IDefaultConfigurationService>();
-            await defaultConfigurationService.WriteDefaultConfiguration();
-
-            var settingsStore = container.Resolve<ISettingsStore>();
-            var language = await settingsStore.GetRawAsync("Language");
-            if (!string.IsNullOrWhiteSpace(language))
-            {
-                var culture = new CultureInfo(language);
-                CultureInfo.CurrentCulture = culture;
-                CultureInfo.CurrentUICulture = culture;
-            }
-        }
     }
 }

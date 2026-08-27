@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Domain.Dto.CameraConfiguration;
+using JayTom.Dws.Legacy.Contracts.Dto.CameraConfiguration;
 
 namespace JayTom.Dws.Client.Models.Cameras
 {

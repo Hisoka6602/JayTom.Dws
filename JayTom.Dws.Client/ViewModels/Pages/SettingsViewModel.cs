@@ -8,28 +8,30 @@ using System.Windows;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Domain.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
 
     public class SettingsViewModel : BindableBase
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IRegionManager _regionManager;
         private readonly ISettingsStore _settingsStore;
         private Frame? _frame;
@@ -57,8 +59,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// </summary>
         private bool _isLoading;
 
-        public SettingsViewModel(IRegionManager regionManager, ISettingsStore settingsStore)
+        public SettingsViewModel(IRegionManager regionManager, ISettingsStore settingsStore,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _regionManager = regionManager;
             _settingsStore = settingsStore;
             _menuItems = new()
@@ -299,7 +303,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     PageClassName = "CacheClearSettingsPage"
                 },
             };
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item =>
+            _eventBus.SubscribeAsync<WindowsAction>(async item =>
             {
                 await Task.Delay(100);
                 if (item is WindowsAction info && _frame is not null)
@@ -314,7 +318,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async settings =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async settings =>
             {
                 if (settings is SettingsChangedEvent { SettingsName: "PassWordSettings" })
                 {
@@ -370,9 +374,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             if (!_regionManager.Regions.ContainsRegionWithName("ContentRegion"))
             {
                 // 创建区域，用于视觉树以外的控件。
-                RegionManager.SetRegionName(obj, "ContentRegion");
+                RegionManager.SetRegionName(obj, NavigationRegions.Content.Name);
                 RegionManager.SetRegionManager(obj, _regionManager);
-                await NavigateWithLoadingAsync(_currentPageClassName);
+                await NavigateWithLoadingAsync(
+                    NavigationRequest.To(NavigationRegions.Content, _currentPageClassName));
             }
         }
 
@@ -433,7 +438,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages
 
                 nextItem?.RadiusRight = new CornerRadius(0, 10, 0, 0);
 
-                await NavigateWithLoadingAsync(obj.PageClassName);
+                await NavigateWithLoadingAsync(
+                    NavigationRequest.To(NavigationRegions.Content, obj.PageClassName));
             }
             finally
             {
@@ -444,8 +450,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         /// <summary>
         /// 在显示加载动画后导航，并在目标页面完成首帧渲染后关闭动画。
         /// </summary>
-        /// <param name="pageClassName">目标页面注册名称。</param>
-        private async Task NavigateWithLoadingAsync(string pageClassName)
+        /// <param name="request">强类型导航请求。</param>
+        private async Task NavigateWithLoadingAsync(NavigationRequest request)
         {
             IsLoading = true;
             var minimumAnimationTask = Task.Delay(MinimumLoadingDurationMilliseconds);
@@ -453,9 +459,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             {
                 // 先让加载遮罩和等待圈完成首帧渲染，再创建目标页面。
                 await Dispatcher.Yield(DispatcherPriority.ContextIdle);
-                _regionManager.Regions["ContentRegion"]
-                    .RequestNavigate(new Uri(pageClassName, UriKind.Relative));
-                _currentPageClassName = pageClassName;
+                _regionManager.Navigate(request);
+                _currentPageClassName = request.Destination.RegisteredName;
 
                 // 等待目标页面完成首帧布局，同时让等待圈至少完整显示一段时间。
                 await Dispatcher.Yield(DispatcherPriority.ContextIdle);

@@ -1,11 +1,11 @@
-using JayTom.Dws.Interface;
+using JayTom.Dws.Integrations;
 using Newtonsoft.Json;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
 using System;
 using System.Windows.Input;
-using UploadResponse = JayTom.Dws.Interface.UploadResponse;
+using UploadResponse = JayTom.Dws.Integrations.Contracts.UploadResponse;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog
 {
@@ -40,7 +40,7 @@ namespace JayTom.Dws.Client.ViewModels.Dialog
         public async void OnDialogOpened(IDialogParameters parameters)
         {
             var itemModel = parameters.GetValue<UploadResponse>("UploadResponse");
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (itemModel is not null)
                 {

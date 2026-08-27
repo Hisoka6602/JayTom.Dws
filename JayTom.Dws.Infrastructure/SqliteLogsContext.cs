@@ -1,133 +1,28 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
-using System.Collections.Generic;
+using JayTom.Dws.Infrastructure.Persistence.ModelConfigurations.Logs;
 using Microsoft.EntityFrameworkCore;
 
-namespace JayTom.Dws.Infrastructure {
+namespace JayTom.Dws.Infrastructure;
 
-    public sealed class SqliteLogsContext : DbContext {
+/// <summary>承载本地日志数据库会话，实体映射由日志模块配置拥有。</summary>
+public sealed class SqliteLogsContext : DbContext
+{
+    /// <summary>创建日志数据库上下文并执行一次性数据库初始化。</summary>
+    public SqliteLogsContext(DbContextOptions<SqliteLogsContext> options) : base(options)
+    {
+        SqliteDatabaseInitializer.EnsureInitialized(
+            this,
+            SqliteDatabaseInitializer.ResolveDatabasePath(this, "ClientLogs.db"));
+    }
 
-        public SqliteLogsContext(DbContextOptions<SqliteLogsContext> options) : base(options) {
-            SqliteDatabaseInitializer.EnsureInitialized(
-                this, SqliteDatabaseInitializer.ResolveDatabasePath(this, "ClientLogs.db"));
-        }
+    /// <summary>保持既有 SQLite REAL 列结构，同时在业务模型中使用定点数。</summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+        configurationBuilder.Properties<decimal>().HaveColumnType("REAL");
 
-        /// <summary>保持既有 SQLite REAL 列结构，同时在业务模型中使用定点数。</summary>
-        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) {
-            configurationBuilder.Properties<decimal>()
-                .HaveColumnType("REAL");
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            //log
-            {
-                //程序运行日志
-                modelBuilder.Entity<AppLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<AppLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //相机日志
-
-                modelBuilder.Entity<CameraLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<CameraLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //分拣日志
-                modelBuilder.Entity<SortingLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<SortingLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //称重日志
-                modelBuilder.Entity<WeighingLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<WeighingLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //体积日志
-                modelBuilder.Entity<VolumeLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<VolumeLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //API日志
-                modelBuilder.Entity<ApiLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<ApiLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //输出日志
-                modelBuilder.Entity<OutputLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<OutputLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //输入日志
-                modelBuilder.Entity<InputLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<InputLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //OCR日志
-                modelBuilder.Entity<OcrLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<OcrLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //FTP日志
-                modelBuilder.Entity<FtpLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<FtpLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //清理记录
-                modelBuilder.Entity<LogCleaningLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<LogCleaningLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-                //异常日志
-                modelBuilder.Entity<ExceptionLogInfoModel>().HasKey(c => new {
-                    c.Id
-                });
-                modelBuilder.Entity<ExceptionLogInfoModel>()
-                    .HasIndex(b => b.CreateTime)
-                    .IsUnique(false)
-                    .HasAnnotation("IndexSortOrder", "Descending");
-            }
-            base.OnModelCreating(modelBuilder);
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-            base.OnConfiguring(optionsBuilder);
-            //optionsBuilder.EnableSensitiveDataLogging(); // 启用敏感数据日志
-        }
+    /// <summary>应用日志模块的独立 Fluent Configuration。</summary>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // 日志模块配置集中拥有 HasIndex 调用，避免上下文内联实体细节。
+        LogModelConfigurations.Apply(modelBuilder);
+        base.OnModelCreating(modelBuilder);
     }
 }

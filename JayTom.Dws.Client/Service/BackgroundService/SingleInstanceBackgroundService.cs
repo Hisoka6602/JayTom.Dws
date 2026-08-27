@@ -5,21 +5,25 @@ using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using JayTom.Dws.Application.Events;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
 
     public class SingleInstanceBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private static volatile bool _isWindowsClose;
         private const string PipeName = "DwsPipe";
 
-        public SingleInstanceBackgroundService()
+        public SingleInstanceBackgroundService(
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus = eventBus;
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {

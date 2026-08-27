@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.FilterContainer;
 using JayTom.Dws.Camera.Concurrency;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
@@ -53,14 +54,20 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
         }
 
         public void Dispose() {
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步停止相机和图像工作器后释放资源。</summary>
+        private async Task DisposeCoreAsync() {
             var cameraInfo = Info;
             if (Status != CameraStatus.Uninitialized &&
                 Status != CameraStatus.Disconnected) {
-                Stop().GetAwaiter().GetResult();
+                await Stop();
                 _cancellationTokenSource?.Cancel();
                 if (_imageCallbackThread != null) {
                     try {
-                        _imageCallbackThread.GetAwaiter().GetResult();
+                        await _imageCallbackThread;
                     }
                     catch (OperationCanceledException) {
                     }
@@ -128,7 +135,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             //ICAMAPI.ICAM_RegisterCameraStateCallback(callback, IntPtr.Zero);
             if (Status != CameraStatus.Disconnected &&
@@ -166,7 +173,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (Status != CameraStatus.Initialized || this.Info is null) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
@@ -258,6 +265,13 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             long frameNo) {
             PooledFrameBuffer? buffer = null;
             try {
+                var hasCodeMetadata = image.CodeModels is { Length: > 0 };
+                var hasBarcodeConsumer = hasCodeMetadata && BarcodeRead is not null;
+                var hasRealtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
+                if (!hasBarcodeConsumer && !hasRealtimeConsumer) {
+                    return;
+                }
+
                 EnsureFrameDispatcher();
                 buffer = PooledFrameBuffer.CopyFrom(image.ImageData, checked((int)image.DataLen));
                 var copiedImage = image;
@@ -444,7 +458,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
             return new KeyValuePair<bool, string>(true, "设备未运行");
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 

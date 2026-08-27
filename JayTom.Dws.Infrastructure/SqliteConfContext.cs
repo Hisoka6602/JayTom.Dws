@@ -1,17 +1,17 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using JayTom.Dws.Data.LocalConf.CloudConfig;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.ConnectionParams;
 
 namespace JayTom.Dws.Infrastructure {
 

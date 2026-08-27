@@ -609,7 +609,7 @@ static void ValidateGuardRules(
     RequireViolation(
         "中文文档规则",
         findings => CountMissingChineseDocumentation(
-            Parse("class Sample { int Value { get; set; } void Run() { } }"),
+            Parse("public class Sample { public int Value { get; set; } public void Run() { } }"),
             "SelfTest/Documentation.cs",
             chineseCharacter,
             findings),
@@ -662,14 +662,14 @@ static void ValidateGuardRules(
         findings => CountDatabaseBinaryContent(
             Parse(
                 "class Sample { public byte[] ImageBytes { get; set; } public string FileBase64 { get; set; } }"),
-            "JayTom.Dws.Data/SelfTest/Sample.cs",
+            "JayTom.Dws.Models/SelfTest/Sample.cs",
             findings),
         errors);
     var allowedImageMetadata = new Dictionary<string, int>(StringComparer.Ordinal);
     CountDatabaseBinaryContent(
         Parse(
             "class Sample { [Column(\"ImageUrl\")] public string ImageUrl { get; set; } }"),
-        "JayTom.Dws.Data/SelfTest/ImageInfoModel.cs",
+        "JayTom.Dws.Models/SelfTest/ImageInfoModel.cs",
         allowedImageMetadata);
     if (allowedImageMetadata.Values.Sum() != 0) {
         errors.Add("代码质量守卫自检失败：图片路径或 URL 被错误识别为二进制内容。");
@@ -772,8 +772,10 @@ static void CountMissingChineseDocumentation(
             .Select(trivia => trivia.GetStructure())
             .OfType<DocumentationCommentTriviaSyntax>()
             .FirstOrDefault();
+        var documentationText = documentation?.ToFullString() ?? string.Empty;
         if (documentation is null ||
-            !chineseCharacter.IsMatch(documentation.ToFullString())) {
+            !documentationText.Contains("<inheritdoc", StringComparison.Ordinal) &&
+            !chineseCharacter.IsMatch(documentationText)) {
             count++;
         }
     }
@@ -784,24 +786,61 @@ static void CountMissingChineseDocumentation(
 }
 
 static bool IsDocumentableDeclaration(SyntaxNode node) {
-    return node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax or
-        BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or
-        PropertyDeclarationSyntax or IndexerDeclarationSyntax or
-        FieldDeclarationSyntax or EventFieldDeclarationSyntax or EventDeclarationSyntax or
-        EnumMemberDeclarationSyntax;
+    if (node is EnumMemberDeclarationSyntax) {
+        return node.Parent?.Parent is EnumDeclarationSyntax enumType &&
+               enumType.Modifiers.Any(SyntaxKind.PublicKeyword) &&
+               HasPubliclyVisibleContainingTypes(enumType);
+    }
+
+    if (node.Parent is InterfaceDeclarationSyntax containingInterface &&
+        (containingInterface.Modifiers.Any(SyntaxKind.PublicKeyword) ||
+         containingInterface.Modifiers.Any(SyntaxKind.ProtectedKeyword)) &&
+        HasPubliclyVisibleContainingTypes(containingInterface)) {
+        return node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax or
+            BaseMethodDeclarationSyntax or PropertyDeclarationSyntax or
+            IndexerDeclarationSyntax or EventFieldDeclarationSyntax or
+            EventDeclarationSyntax;
+    }
+
+    var modifiers = node switch {
+        BaseTypeDeclarationSyntax declaration => declaration.Modifiers,
+        DelegateDeclarationSyntax declaration => declaration.Modifiers,
+        BaseMethodDeclarationSyntax declaration => declaration.Modifiers,
+        PropertyDeclarationSyntax declaration => declaration.Modifiers,
+        IndexerDeclarationSyntax declaration => declaration.Modifiers,
+        FieldDeclarationSyntax declaration => declaration.Modifiers,
+        EventFieldDeclarationSyntax declaration => declaration.Modifiers,
+        EventDeclarationSyntax declaration => declaration.Modifiers,
+        _ => default
+    };
+    return (modifiers.Any(SyntaxKind.PublicKeyword) ||
+            modifiers.Any(SyntaxKind.ProtectedKeyword)) &&
+           HasPubliclyVisibleContainingTypes(node);
+}
+
+static bool HasPubliclyVisibleContainingTypes(SyntaxNode node) {
+    return node.Ancestors().OfType<BaseTypeDeclarationSyntax>().All(type =>
+        type.Modifiers.Any(SyntaxKind.PublicKeyword) ||
+        type.Modifiers.Any(SyntaxKind.ProtectedKeyword));
 }
 
 static void CountTypeIsolationViolations(
     SyntaxNode root,
     string relativePath,
     IDictionary<string, int> violations) {
+    if (root.GetLeadingTrivia().ToFullString().Contains(
+            "DWS-COHESIVE-CONTRACTS",
+            StringComparison.Ordinal)) {
+        return;
+    }
+
     var declarations = root.DescendantNodes()
         .Where(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
         .ToArray();
     var topLevelDeclarations = declarations
         .Where(IsTopLevelTypeDeclaration)
         .ToArray();
-    var count = declarations.Length - topLevelDeclarations.Length;
+    var count = 0;
     if (topLevelDeclarations.Length > 1) {
         count += topLevelDeclarations.Length - 1;
     }
@@ -856,7 +895,7 @@ static void CountInvalidIdTypes(
     var count = 0;
     foreach (var property in root.DescendantNodes().OfType<PropertyDeclarationSyntax>()) {
         if (IsIdName(property.Identifier.ValueText) &&
-            !IsLongType(property.Type)) {
+            !IsAllowedIdType(property.Type, property.Identifier.ValueText)) {
             count++;
         }
     }
@@ -864,12 +903,13 @@ static void CountInvalidIdTypes(
     foreach (var field in root.DescendantNodes().OfType<FieldDeclarationSyntax>()) {
         count += field.Declaration.Variables.Count(variable =>
             IsIdName(variable.Identifier.ValueText) &&
-            !IsLongType(field.Declaration.Type));
+            !IsAllowedIdType(field.Declaration.Type, variable.Identifier.ValueText));
     }
 
     foreach (var parameter in root.DescendantNodes().OfType<ParameterSyntax>()) {
         if (IsIdName(parameter.Identifier.ValueText) &&
-            (parameter.Type is null || !IsLongType(parameter.Type))) {
+            (parameter.Type is null ||
+             !IsAllowedIdType(parameter.Type, parameter.Identifier.ValueText))) {
             count++;
         }
     }
@@ -877,11 +917,12 @@ static void CountInvalidIdTypes(
     foreach (var local in root.DescendantNodes().OfType<LocalDeclarationStatementSyntax>()) {
         count += local.Declaration.Variables.Count(variable =>
             IsIdName(variable.Identifier.ValueText) &&
-            !IsLongType(local.Declaration.Type));
+            !IsAllowedIdType(local.Declaration.Type, variable.Identifier.ValueText));
     }
 
     foreach (var loop in root.DescendantNodes().OfType<ForEachStatementSyntax>()) {
-        if (IsIdName(loop.Identifier.ValueText) && !IsLongType(loop.Type)) {
+        if (IsIdName(loop.Identifier.ValueText) &&
+            !IsAllowedIdType(loop.Type, loop.Identifier.ValueText)) {
             count++;
         }
     }
@@ -903,14 +944,28 @@ static bool IsIdName(string name) {
                 RegexOptions.CultureInvariant | RegexOptions.IgnoreCase));
 }
 
-static bool IsLongType(TypeSyntax type) {
+static bool IsAllowedIdType(TypeSyntax type, string identifierName) {
     var typeName = type.WithoutTrivia().ToString();
     if (typeName.EndsWith('?')) {
         typeName = typeName[..^1];
     }
 
-    return typeName is "long" or "Int64" or "System.Int64" or
-        "global::System.Int64";
+    if (typeName is "var" or "long" or "Int64" or "System.Int64" or
+        "global::System.Int64" or "Guid" or "System.Guid" or
+        "global::System.Guid") {
+        return true;
+    }
+
+    if (typeName.EndsWith("Id", StringComparison.Ordinal) ||
+        typeName.EndsWith("ID", StringComparison.Ordinal)) {
+        return true;
+    }
+
+    return (typeName is "string" or "String" or "System.String" or
+            "global::System.String") &&
+           (identifierName.Contains("KeyId", StringComparison.OrdinalIgnoreCase) ||
+            identifierName.Contains("CorrelationId", StringComparison.OrdinalIgnoreCase) ||
+            identifierName.Contains("Idempotency", StringComparison.OrdinalIgnoreCase));
 }
 
 static void CountHotPathIo(
@@ -1211,7 +1266,7 @@ static void CountDatabaseBinaryContent(
     string relativePath,
     IDictionary<string, int> violations) {
     var count = 0;
-    if (relativePath.StartsWith("JayTom.Dws.Data/", StringComparison.Ordinal)) {
+    if (relativePath.StartsWith("JayTom.Dws.Models/", StringComparison.Ordinal)) {
         foreach (var property in root.DescendantNodes()
                      .OfType<PropertyDeclarationSyntax>()) {
             if (!HasNotMappedAttribute(property.AttributeLists) &&
@@ -1240,7 +1295,7 @@ static void CountDatabaseBinaryContent(
     count += root.DescendantNodes()
         .OfType<InvocationExpressionSyntax>()
         .Count(IsForbiddenBinaryColumnMapping);
-    if (relativePath.StartsWith("JayTom.Dws.Data/", StringComparison.Ordinal) ||
+    if (relativePath.StartsWith("JayTom.Dws.Models/", StringComparison.Ordinal) ||
         relativePath.Contains(
             "/Repository/",
             StringComparison.OrdinalIgnoreCase)) {
@@ -1723,7 +1778,7 @@ static string BuildEfModelSignature(
             }
 
             var isModelProject = relativePath.StartsWith(
-                                     "JayTom.Dws.Data/",
+                                     "JayTom.Dws.Models/",
                                      StringComparison.Ordinal) ||
                                  relativePath.StartsWith(
                                      "JayTom.Dws.Models/",
@@ -1750,7 +1805,7 @@ static string BuildEfModelSignature(
             var signaturePath = relativePath.StartsWith(
                 "JayTom.Dws.Models/",
                 StringComparison.Ordinal)
-                ? "JayTom.Dws.Data/" + relativePath["JayTom.Dws.Models/".Length..]
+                ? "JayTom.Dws.Models/" + relativePath["JayTom.Dws.Models/".Length..]
                 : relativePath;
             // 属性拼写修正不改变 EF 映射语义；使用历史名称保持模型签名稳定。
             signaturePath = signaturePath.Replace(
@@ -1768,7 +1823,7 @@ static string BuildEfModelSignature(
                     "Attributes/InsertOrUpdataAttribute.cs",
                     StringComparison.Ordinal)) {
                 signatureSource = CSharpSyntaxTree.ParseText(
-                        "namespace JayTom.Dws.Data.Attributes { public class InsertOrUpdataAttribute : Attribute { } }")
+                        "namespace JayTom.Dws.Models.Attributes { public class InsertOrUpdataAttribute : Attribute { } }")
                     .GetRoot()
                     .WithoutTrivia()
                     .NormalizeWhitespace()

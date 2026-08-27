@@ -16,7 +16,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
 using Newtonsoft.Json.Linq;
 
-namespace JayTom.Dws.Interface.Cloud.CloudVideo {
+namespace JayTom.Dws.Integrations.Cloud.CloudVideo {
 
     public class CloudVideoUploadApi : ICloud {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -77,7 +77,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                     }
                 }
                 //提交
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.Timeout);
                 var message = await httpClient.PostAsync($"http://{_parameters.WebDoMain}/api/BarCode/UploadBarcodeData", formData, token);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -160,7 +160,7 @@ namespace JayTom.Dws.Interface.Cloud.CloudVideo {
                 var jsonContent = new StringContent(data, Encoding.UTF8, "application/json");
                 formData.Add(jsonContent, "packageInfo");
                 //提交
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_parameters.Timeout);
                 //$"http://{_parameters.WebDoMain}"
                 using var message = await httpClient.PostAsync($"{_parameters.WebDoMain}", formData, token);

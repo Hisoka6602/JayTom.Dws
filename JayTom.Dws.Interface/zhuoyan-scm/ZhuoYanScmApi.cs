@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using static JayTom.Dws.Interface.Post.PostInApi;
+using static JayTom.Dws.Integrations.Post.PostInApi;
 
-namespace JayTom.Dws.Interface.zhuoyan_scm {
+namespace JayTom.Dws.Integrations.zhuoyan_scm {
 
     public class ZhuoYanScmApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -63,7 +63,7 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -110,7 +110,7 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -146,7 +146,7 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters?.TimeOut ?? 1000);
                 HttpResponseMessage message;
                 await using (Stream dataStream =
@@ -193,7 +193,7 @@ namespace JayTom.Dws.Interface.zhuoyan_scm {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),

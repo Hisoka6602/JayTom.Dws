@@ -4,20 +4,22 @@ using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using System.Collections.Generic;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Infrastructure.IComputer;
 using NetworkType = JayTom.Dws.Client.Models.NetworkType;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
 
     public class ComputerInfoBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IComputerInfoReporter _computerInfoReporter;
         private readonly IComputer _computer;
         private static readonly TimeSpan WarningInterval = TimeSpan.FromMinutes(5);
@@ -27,11 +29,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private long _lastMemoryWarning;
         private long _lastCollectionError;
 
-        public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter, IComputer computer)
+        public ComputerInfoBackgroundService(IComputerInfoReporter computerInfoReporter, IComputer computer,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _computerInfoReporter = computerInfoReporter;
             _computer = computer;
-            EventAggregator.Instance.Subscribe<WindowsAction>(item =>
+            _eventBus.Subscribe<WindowsAction>(item =>
             {
                 if (item is { Type: WindowsActionType.Close })
                 {
@@ -151,7 +155,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
         }
 
-        private static void PublishThrottledLog(string message, LogType type, ref long lastPublishedTimestamp)
+        private void PublishThrottledLog(string message, LogType type, ref long lastPublishedTimestamp)
         {
             var now = Stopwatch.GetTimestamp();
             if (lastPublishedTimestamp != 0 &&
@@ -161,7 +165,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
 
             lastPublishedTimestamp = now;
-            EventAggregator.Instance.Publish(new AppLogInfoModel
+            _eventBus.Publish(new AppLogInfoModel
             {
                 CreateTime = DateTime.Now,
                 Message = message,

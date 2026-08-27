@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.LocalLog {
+namespace JayTom.Dws.Models.LocalLog {
 
     [Table("Log_WeighingLogInfo", Schema = "dbo")]
     public class WeighingLogInfoModel : BaseLogInfoModel {

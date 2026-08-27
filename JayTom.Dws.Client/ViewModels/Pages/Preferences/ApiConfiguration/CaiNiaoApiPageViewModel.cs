@@ -8,10 +8,10 @@ using Newtonsoft.Json;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -21,7 +21,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
     {
         private CaiNiaoApiModel _caiNiaoApiInfo = new();
 
-        public CaiNiaoApiPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public CaiNiaoApiPageViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -33,7 +33,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<CaiNiaoApiDto>(SettingsName) ?? new CaiNiaoApiDto();
                 CaiNiaoApiInfo = new CaiNiaoApiModel()

@@ -1,7 +1,7 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 using System.IO.Ports;
 using JayTom.Dws.Plugin.Tcp;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 
 namespace JayTom.Dws.Client.Models.SettingsCommomModels
 {

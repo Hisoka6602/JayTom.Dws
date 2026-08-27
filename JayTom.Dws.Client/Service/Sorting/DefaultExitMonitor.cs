@@ -1,4 +1,7 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.SortingInstructions;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Communications;
 using System;
 using S7.Net;
 using ImTools;
@@ -12,18 +15,18 @@ using System.Diagnostics;
 using Byte = System.Byte;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using System.Collections.Generic;
 using DateTime = System.DateTime;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using Microsoft.Extensions.Configuration;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Dto.PackageExitLockDto;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.PackageExitLockDto;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Models.PackageSorting.PackageExitLockModels;
 
 namespace JayTom.Dws.Client.Service.Sorting
@@ -31,9 +34,11 @@ namespace JayTom.Dws.Client.Service.Sorting
 
     public class DefaultExitMonitor : IExitMonitor
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
+        private readonly IPackageExitManagement _packageExitDefinitionRepository;
         private readonly ISettingsStore _settingsStore;
-        private readonly IPackageExitLockBindingRepository _packageExitLockBindingRepository;
+        private readonly IPackageExitLockBindingCatalog _packageExitLockBindingRepository;
 
         public event EventHandler<PackageExitDefinitionInfoModel>? LockExitEvent;
 
@@ -61,9 +66,11 @@ namespace JayTom.Dws.Client.Service.Sorting
         private readonly System.Threading.Lock _statusSync = new();
         private int _isConnected;
 
-        public DefaultExitMonitor(IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            ISettingsStore settingsStore, IPackageExitLockBindingRepository packageExitLockBindingRepository)
+        public DefaultExitMonitor(IPackageExitManagement packageExitDefinitionRepository,
+            ISettingsStore settingsStore, IPackageExitLockBindingCatalog packageExitLockBindingRepository,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
             _settingsStore = settingsStore;
             _packageExitLockBindingRepository = packageExitLockBindingRepository;
@@ -94,12 +101,9 @@ namespace JayTom.Dws.Client.Service.Sorting
                     {
                         _packageExitLockSettingsDto = packageExitLockSettings;
                         //取出队列
-                        _lockBindingInfoModels = await _packageExitLockBindingRepository.Select(s => s.Id > 0,
-                            o => o.Id, token);
+                        _lockBindingInfoModels = [.. await _packageExitLockBindingRepository.ListAsync(token)];
 
-                        _definitionInfoModels = await _packageExitDefinitionRepository.
-                            Select(s => s.Id > 0,
-                                o => o.Id, token);
+                        _definitionInfoModels = [.. await _packageExitDefinitionRepository.ListAsync(token)];
                     }
                     catch (Exception e)
                     {
@@ -513,7 +517,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         protected virtual void OnExceptionOccurred(ExceptionEventArgs e)
         {
-            EventAggregator.Instance.Publish(new SortingLogInfoModel
+            _eventBus.Publish(new SortingLogInfoModel
             {
                 CreateTime = DateTime.Now,
                 Message = $"格口监控服务异常:{e.ExceptionMessage}",
@@ -524,7 +528,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         protected virtual void OnLockExitEvent(PackageExitDefinitionInfoModel e)
         {
-            EventAggregator.Instance.Publish(new SortingLogInfoModel
+            _eventBus.Publish(new SortingLogInfoModel
             {
                 CreateTime = DateTime.Now,
                 Message = $"格口:[{e.ExitName}],锁定",
@@ -535,7 +539,7 @@ namespace JayTom.Dws.Client.Service.Sorting
 
         protected virtual void OnUnLockExitEvent(PackageExitDefinitionInfoModel e)
         {
-            EventAggregator.Instance.Publish(new SortingLogInfoModel
+            _eventBus.Publish(new SortingLogInfoModel
             {
                 CreateTime = DateTime.Now,
                 Message = $"格口:[{e.ExitName}],解除锁定",

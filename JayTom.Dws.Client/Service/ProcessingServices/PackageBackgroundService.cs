@@ -1,4 +1,8 @@
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Application.CameraConfigurations;
+using JayTom.Dws.Application.PackageProcessing;
 using NLog;
 using System;
 using DryIoc;
@@ -11,41 +15,41 @@ using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using System.Threading;
 using JayTom.Dws.Camera;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Data.LocalLog;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Threading.Channels;
-using JayTom.Dws.Domain.Manager;
+using JayTom.Dws.Legacy.Contracts.Packages;
 using System.Collections.Generic;
 using NPOI.XSSF.Streaming.Values;
 using System.Windows.Media.Media3D;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Camera.FilterContainer;
-using JayTom.Dws.Domain.DownstreamProtocols;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
 using JayTom.Dws.Client.Service.ResultOutput;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
 using JayTom.Dws.Plugin.Device.GrayscaleDevice;
 using JayTom.Dws.Client.Service.ExternalDataService;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.DownstreamProtocols.CommunicationProtocols;
-using WindowsAction = JayTom.Dws.Domain.EventMediators.WindowsAction;
-using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using WindowsActionType = JayTom.Dws.Domain.EventMediators.WindowsActionType;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
-using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
-using BarcodeTypeProviderEvent = JayTom.Dws.Domain.EventMediators.BarcodeTypeProviderEvent;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols.CommunicationProtocols;
+using WindowsAction = JayTom.Dws.Client.Events.WindowsAction;
+using ApplicationStatus = JayTom.Dws.Application.Events.ApplicationStatus;
+using WindowsActionType = JayTom.Dws.Client.Events.WindowsActionType;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Application.Events.TriggerPositionEvent;
+using ApplicationStatusChanged = JayTom.Dws.Application.Events.ApplicationStatusChanged;
+using BarcodeTypeProviderEvent = JayTom.Dws.Application.Events.BarcodeTypeProviderEvent;
 
 namespace JayTom.Dws.Client.Service.ProcessingServices
 {
@@ -55,6 +59,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
     /// </summary>
     public class PackageBackgroundService : Microsoft.Extensions.Hosting.BackgroundService
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IDeviceService _deviceService;
         /// <summary>
         /// 获取运行期包裹会话存储。
@@ -67,6 +73,8 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
         private readonly ISortingService _sortingService;
         private readonly IStackedPackageService _stackedPackageService;
         private readonly IGrayscaleService _grayscaleService;
+        /// <summary>应用层包裹业务阶段编排器。</summary>
+        private readonly PackageProcessingPipeline _packageProcessingPipeline;
         private ExternalDataSourceEventArgs _externalDataSource = new();
 
         //private CommunicationsSettingsDto _communicationsSettingsDto = new();
@@ -111,11 +119,14 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             IResultOutputService resultOutputService,
             IImageStorageService imageStorageService,
             IExternalDataService externalDataService, ISettingsStore settingsStore,
-            ISortingService sortingService, IPanoramaCameraConfigRepository panoramaCameraConfigRepository,
-            IBarcodeScannerCameraConfigRepository barcodeScannerCameraConfigRepository,
+            ISortingService sortingService, ICameraConfigurationCatalog<PanoramaCameraConfigInfoModel> panoramaCameraConfigRepository,
+            ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel> barcodeScannerCameraConfigRepository,
             IStackedPackageService stackedPackageService,
-            IGrayscaleService grayscaleService)
+            IGrayscaleService grayscaleService,
+            PackageProcessingPipeline packageProcessingPipeline,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _packageSessionStore = packageSessionStore;
             _deviceService = deviceService;
             _resultOutputService = resultOutputService;
@@ -125,6 +136,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             _sortingService = sortingService;
             _stackedPackageService = stackedPackageService;
             _grayscaleService = grayscaleService;
+            _packageProcessingPipeline = packageProcessingPipeline;
 
             //相机
             _deviceService.CameraInitialized += async delegate (object? sender, IReadOnlyList<ICamera> list)
@@ -239,7 +251,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 },
                                 Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image),
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -263,7 +275,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     BindTime = DateTime.Now
                                 };
                                 packageInfo.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                _eventBus.Publish(new TriggerPositionEvent()
                                 {
                                     IsSuccess = true,
                                     TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
@@ -351,7 +363,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 },
                                 Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image),
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -375,7 +387,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     BindTime = DateTime.Now
                                 };
                                 packageInfo.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                _eventBus.Publish(new TriggerPositionEvent()
                                 {
                                     IsSuccess = true,
                                     TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
@@ -430,7 +442,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             },
                         };
 
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                        _eventBus.Publish(new TriggerPositionEvent()
                         {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -459,7 +471,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                         FormattedVolume = Convert.ToDecimal(args.Volume) - packageInfo.VolumeToDeduct,
                                         SourceType = SourceType.Camera,
                                     };
-                                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                    _eventBus.Publish(new TriggerPositionEvent()
                                     {
                                         IsSuccess = true,
                                         TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
@@ -478,7 +490,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     FormattedVolume = Convert.ToDecimal(args.Volume) - packageInfo.VolumeToDeduct,
                                     SourceType = SourceType.Camera,
                                 };
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                _eventBus.Publish(new TriggerPositionEvent()
                                 {
                                     IsSuccess = true,
                                     TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
@@ -540,7 +552,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             }
                         };
                         //-----
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                        _eventBus.Publish(new TriggerPositionEvent()
                         {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -558,7 +570,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 SourceType = SourceType.SerialPort,
                                 WeighingMode = WeighingMode.Static
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
@@ -668,7 +680,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             IsImageSaveRequested = true
                         };
 
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                        _eventBus.Publish(new TriggerPositionEvent()
                         {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -702,19 +714,19 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 SourceType = SourceType.Input,
                                 OriginalText = args.SourceContent
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.BarCodeSetValueAfter,
                                 PackageInfo = packageInfo
                             });
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.WeightSetValueAfter,
                                 PackageInfo = packageInfo
                             });
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
@@ -756,7 +768,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             },
                         };
 
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                        _eventBus.Publish(new TriggerPositionEvent()
                         {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -776,7 +788,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 FormattedVolume = Convert.ToDecimal(args.Volume) - packageInfo.VolumeToDeduct,
                                 SourceType = SourceType.Tcp,
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.VolumeSetValueAfter,
@@ -795,7 +807,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         }*/
                     }
 
-                    EventAggregator.Instance.Publish(new VolumeLogInfoModel()
+                    _eventBus.Publish(new VolumeLogInfoModel()
                     {
                         Type = LogType.Information,
                         Message = $"获取体积信息:{args.Length},{args.Width},{args.Height}",
@@ -828,13 +840,13 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 CreateTime = args.InstructionTime,
                             };
 
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.PackageTrigger,
                                 PackageInfo = packageInfo
                             });
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            _eventBus.Publish(new InstructionReceived()
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -876,7 +888,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
 
                         if (packageInfo is not null)
                         {
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            _eventBus.Publish(new InstructionReceived()
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -892,7 +904,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 },
                                 ConnectionName = args.ConnectionName,
                             });
-                            /*EventAggregator.Instance.Publish(new CallBackPackageInfo {
+                            /*_eventBus.Publish(new CallBackPackageInfo {
                                 CallBackTime = DateTime.Now,
                                 PackageCreateTime = keyValuePair.Value.CreateTime,
                                 PackageInfo = keyValuePair.Value,
@@ -933,7 +945,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
                         if (packageInfo is not null)
                         {
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            _eventBus.Publish(new InstructionReceived()
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -969,7 +981,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         var packageInfo = _packageSessionStore.GetPackage(f => f.Value != null && f.Value.Guid.Equals(num));
                         if (packageInfo is not null)
                         {
-                            EventAggregator.Instance.Publish(new InstructionReceived()
+                            _eventBus.Publish(new InstructionReceived()
                             {
                                 Timestamp = new DateTimeOffset(packageInfo.CreateTime).ToUnixTimeMilliseconds(),
                                 IsCreatedByLowerMachine = true,
@@ -1062,7 +1074,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                         _takePackageSlim.Release();
                     }
                     //匹配包裹
-                    EventAggregator.Instance.Publish(new InstructionReceived()
+                    _eventBus.Publish(new InstructionReceived()
                     {
                         Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
                         IsCreatedByLowerMachine = false,
@@ -1113,7 +1125,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     _createPackageSlim.Release();
                 }
 
-                EventAggregator.Instance.Publish(new InstructionReceived()
+                _eventBus.Publish(new InstructionReceived()
                 {
                     Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
                     IsCreatedByLowerMachine = false,
@@ -1139,7 +1151,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     _instructionsAttachItems.Clear();
                     BarCodeFilterContainer.ResetFilter();
                 }
-                EventAggregator.Instance.Publish(new InstructionReceived()
+                _eventBus.Publish(new InstructionReceived()
                 {
                     Timestamp = new DateTimeOffset(args.InstructionTime).ToUnixTimeMilliseconds(),
                     IsCreatedByLowerMachine = false,
@@ -1182,15 +1194,18 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 DisplayIdentifier = args.CameraSerialNumber,
                                 Source = SourceType.Ocr
                             },
-                            Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image),
+                            Image = args.Image is null
+                                ? null
+                                : JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnership(
+                                    OcrBitmapAdapter.Decode(args.Image)),
                         };
-                        EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                        _eventBus.Publish(new TriggerPositionEvent()
                         {
                             IsSuccess = true,
                             TriggerPosition = TriggerPositionEnum.PackageTrigger,
                             PackageInfo = packageInfo
                         });
-                        EventAggregator.Instance.Publish(new PackageOcrInfo()
+                        _eventBus.Publish(new PackageOcrInfo()
                         {
                             BarCode = args.BarCode,
                             VirtualNumber = args.VirtualNumber,
@@ -1203,7 +1218,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                             ThreeSegmentCode = args.ThreeSegmentCode,
                             VirtualNumberLast4 = args.VirtualNumberLast4,
                             RecognitionTime = args.RecognitionTime,
-                            ElapsedTime = args.ElapsedTime,
+                            ElapsedTime = args.ElapsedMilliseconds,
                             RecognitionTimestamp = args.RecognitionTimestamp,
                             CameraSerialNumber = args.CameraSerialNumber,
                             SubmitTimestamp = args.SubmitTimestamp
@@ -1221,7 +1236,10 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 DisplayIdentifier = args.CameraSerialNumber,
                                 Source = SourceType.Ocr
                             };
-                            packageInfo.Image = JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnershipIfPresent(args.Image);
+                            packageInfo.Image = args.Image is null
+                                ? null
+                                : JayTom.Dws.Abstractions.Imaging.ImageHandle.TakeOwnership(
+                                    OcrBitmapAdapter.Decode(args.Image));
                         }
                     }
                 }
@@ -1231,7 +1249,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }
             };
             //手动输入条码
-            EventAggregator.Instance.Subscribe<BarcodeTypeProviderEvent>(async barcodeInfo =>
+            _eventBus.SubscribeAsync<BarcodeTypeProviderEvent>(async barcodeInfo =>
             {
                 if (barcodeInfo is { } args)
                 {
@@ -1264,7 +1282,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 CreateTime = DateTime.Now,
                                 IsCreatedByLowerMachine = false,
                             };
-                            EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                            _eventBus.Publish(new TriggerPositionEvent()
                             {
                                 IsSuccess = true,
                                 TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -1291,7 +1309,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }
             });
             //配置更改触发事件
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(async item =>
+            _eventBus.SubscribeAsync<SettingsChangedEvent>(async item =>
             {
                 if (item is { } model)
                 {
@@ -1341,7 +1359,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }
             });
             //创建包裹后触发
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(async item =>
+            _eventBus.SubscribeAsync<TriggerPositionEvent>(async item =>
             {
                 if (item is { TriggerPosition: TriggerPositionEnum.PackageTrigger, PackageInfo: { } packageInfo })
                 {
@@ -1499,7 +1517,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     }
                     _packageSessionStore.AddPackage(packageInfo, packageRemoveTimers);
                     //触发创建包裹事件
-                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                    _eventBus.Publish(new TriggerPositionEvent()
                     {
                         IsSuccess = true,
                         TriggerPosition = TriggerPositionEnum.CreateTimePackageAfter,
@@ -1601,17 +1619,17 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                 }
             });
             //包裹组合完成后触发
-            EventAggregator.Instance.Subscribe<PackageInfo>(async item =>
+            _eventBus.SubscribeAsync<PackageInfo>(async item =>
             {
             });
-            EventAggregator.Instance.Subscribe<WindowsAction>(async item =>
+            _eventBus.SubscribeAsync<WindowsAction>(async item =>
             {
                 if (item is WindowsAction { Type: WindowsActionType.Close })
                 {
                     _isWindowsClose = true;
                 }
             });
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            _eventBus.Subscribe<ApplicationStatusChanged>(item =>
             {
                 if (item is { } info)
                 {
@@ -1632,7 +1650,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
             //移除包裹事件
             _packageSessionStore.PackageRemoved += (sender, args) =>
             {
-                EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                _eventBus.Publish(new TriggerPositionEvent()
                 {
                     IsSuccess = true,
                     TriggerPosition = TriggerPositionEnum.RemovePackageAfter,
@@ -1640,25 +1658,50 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                     Description = args.Description
                 });
             };
-            _packageSessionStore.PackageCompleted += (sender, args) =>
+            _packageSessionStore.PackageCompleted += async (sender, args) =>
             {
-                //执行输出
-                if (args.CompletedPackage?.BarCodeInfo is not null &&
-                    args.CompletedPackage?.WeightInfo is not null &&
-                    args.CompletedPackage?.VolumeInfo is not null)
+                if (args.CompletedPackage is not
+                    {
+                        BarCodeInfo: not null,
+                        WeightInfo: not null,
+                        VolumeInfo: not null
+                    } completedPackage)
                 {
-                    _resultOutputService.ExecuteOutput(
-                        args.CompletedPackage.BarCodeInfo.Barcode,
-                        (decimal)args.CompletedPackage.WeightInfo.FormattedWeight,
-                        args.CompletedPackage.BarCodeInfo.ScanTime,
-                        (decimal)args.CompletedPackage.VolumeInfo.FormattedLength,
-                        (decimal)args.CompletedPackage.VolumeInfo.FormattedWidth,
-                        (decimal)args.CompletedPackage.VolumeInfo.FormattedHeight,
-                        (decimal)args.CompletedPackage.VolumeInfo.FormattedVolume,
-                        args.CompletedPackage.BarCodeInfo.SerialNumber);
-
-                    EventAggregator.Instance.Publish(args.CompletedPackage);
+                    return;
                 }
+
+                PackageProcessingOutcome outcome = await _packageProcessingPipeline.ExecuteAsync(
+                    new PackageProcessingRequest(
+                        completedPackage.CreateTime.Ticks,
+                        completedPackage.CreateTime,
+                        completedPackage.BarCodeInfo.Barcode,
+                        completedPackage.BarCodeInfo.ScanTime,
+                        completedPackage.BarCodeInfo.SerialNumber,
+                        (decimal)completedPackage.WeightInfo.FormattedWeight,
+                        (decimal)completedPackage.VolumeInfo.FormattedLength,
+                        (decimal)completedPackage.VolumeInfo.FormattedWidth,
+                        (decimal)completedPackage.VolumeInfo.FormattedHeight,
+                        (decimal)completedPackage.VolumeInfo.FormattedVolume));
+                if (!outcome.IsReady)
+                {
+                    LogManager.GetCurrentClassLogger().Warn(
+                        "包裹 {0} 未通过 {1} 阶段：{2}",
+                        completedPackage.Guid,
+                        outcome.LastStage,
+                        outcome.Reason);
+                    return;
+                }
+
+                _resultOutputService.ExecuteOutput(
+                    completedPackage.BarCodeInfo.Barcode,
+                    (decimal)completedPackage.WeightInfo.FormattedWeight,
+                    completedPackage.BarCodeInfo.ScanTime,
+                    (decimal)completedPackage.VolumeInfo.FormattedLength,
+                    (decimal)completedPackage.VolumeInfo.FormattedWidth,
+                    (decimal)completedPackage.VolumeInfo.FormattedHeight,
+                    (decimal)completedPackage.VolumeInfo.FormattedVolume,
+                    completedPackage.BarCodeInfo.SerialNumber);
+                _eventBus.Publish(completedPackage);
             };
         }
 
@@ -1755,7 +1798,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     BarCodeInfo = barCodeFrameInfo.BarCodeInfo,
                                     Image = barCodeFrameInfo.Image,
                                 };
-                                EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                _eventBus.Publish(new TriggerPositionEvent()
                                 {
                                     IsSuccess = true,
                                     TriggerPosition = TriggerPositionEnum.PackageTrigger,
@@ -1928,7 +1971,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     (decimal)value.VolumeInfo.FormattedVolume, value.BarCodeInfo.SerialNumber,
                                     stoppingToken);
                                 value.MarkCompleted();
-                                EventAggregator.Instance.Publish(value);
+                                _eventBus.Publish(value);
                             }
                             else
                             {
@@ -1989,7 +2032,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                 if (info is not null &&
                                     info.SupplyCounterPackageSignalItem.Any(supplyCounterPackageSignal => supplyCounterPackageSignal.Type == SignalType.SendingPreSignal) != true)
                                 {
-                                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                                    _eventBus.Publish(new TriggerPositionEvent()
                                     {
                                         IsSuccess = true,
                                         TriggerPosition = TriggerPositionEnum.SendingPreSignalBefore,
@@ -2041,7 +2084,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                             .FirstOrDefault(item => string.Equals(item?.SerialNumber,
                                                 panoramaImageInfo.CameraSerialNumber,
                                                 StringComparison.Ordinal));
-                                        EventAggregator.Instance.Publish(new ImageMessageInfo
+                                        _eventBus.Publish(new ImageMessageInfo
                                         {
                                             BarCode = info.BarCodeInfo.Barcode,
                                             CameraSerialNumber = panoramaImageInfo.CameraSerialNumber,
@@ -2084,7 +2127,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                         .FirstOrDefault(item => string.Equals(item?.SerialNumber,
                                             volumeCameraImageInfo.CameraSerialNumber,
                                             StringComparison.Ordinal));
-                                    EventAggregator.Instance.Publish(new ImageMessageInfo
+                                    _eventBus.Publish(new ImageMessageInfo
                                     {
                                         BarCode = info.BarCodeInfo.Barcode,
                                         CameraSerialNumber = volumeCameraImageInfo.CameraSerialNumber,
@@ -2120,7 +2163,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                     .FirstOrDefault(item => string.Equals(item?.SerialNumber,
                                         codeInfo.BarCodeInfo?.SerialNumber,
                                         StringComparison.Ordinal));
-                                EventAggregator.Instance.Publish(new ImageMessageInfo
+                                _eventBus.Publish(new ImageMessageInfo
                                 {
                                     BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                     CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,

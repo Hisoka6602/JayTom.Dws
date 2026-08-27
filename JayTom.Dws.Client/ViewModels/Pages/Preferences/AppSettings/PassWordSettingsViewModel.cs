@@ -3,12 +3,12 @@ using System;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.AppSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
@@ -22,7 +22,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
             set => SetProperty(ref field, value);
         } = new();
 
-        public PassWordSettingsViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public PassWordSettingsViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
         }
 
@@ -31,7 +31,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<PassWordSettingsDto>(SettingsName) ??
                                   new PassWordSettingsDto();

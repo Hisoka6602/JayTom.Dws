@@ -1,5 +1,5 @@
-﻿using Prism.Mvvm;
-using JayTom.Dws.Domain.Dto;
+using Prism.Mvvm;
+using JayTom.Dws.Legacy.Contracts.Dto;
 
 namespace JayTom.Dws.Client.Models.ApiSettingsModel
 {

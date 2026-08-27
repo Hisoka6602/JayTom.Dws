@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
+using JayTom.Dws.Abstractions.Threading;
 
 namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
@@ -16,7 +17,13 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
         private MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
 
         public void Dispose() {
-            Stop().GetAwaiter().GetResult();
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步停止相机后释放体积 SDK 句柄。</summary>
+        private async Task DisposeCoreAsync() {
+            await Stop();
             if (_handle is null || _handle == IntPtr.Zero) {
                 return;
             }
@@ -79,7 +86,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (_handle is not null && _handle != IntPtr.Zero) {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
@@ -112,7 +119,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             return new KeyValuePair<bool, string>(true, $"初始化成功");
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             try {
                 if (Status == CameraStatus.Running) {
@@ -163,7 +170,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             }
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
         }
 
         public bool IsRealtimeImageEnabled { get; } = false;

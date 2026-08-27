@@ -8,16 +8,16 @@ using Newtonsoft.Json;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
 using JayTom.Dws.PluginInterface.Utils;
 using Color = System.Windows.Media.Color;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.ImageSettingModels;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
@@ -138,7 +138,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private int _timeout;
         private bool _isLoaded;
 
-        public SaveImageSettingsPageViewModel(ISettingsStore settingsStore) : base(settingsStore)
+        public SaveImageSettingsPageViewModel(ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _imageSource = _originalImage;
         }
@@ -345,7 +345,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             if (!_isLoaded)
             {
                 _isLoaded = true;
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     //加载配置 SaveImageSettings
                     WatermarkItems.Clear();
@@ -472,7 +472,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void RemoveTemplateItemDelegate(ItemBaseTemplateModel model)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (model.ApplicationType == ItemApplicationType.Watermark)
                 {
@@ -507,7 +507,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddWatermarkItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 var count = WatermarkItems.Count;
@@ -540,7 +540,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddSubDirectoryItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 SubDirectoryItems.Add(new ItemBaseTemplateModel()
@@ -560,7 +560,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void AddImageNamingItemDelegate(string obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 obj = obj.Replace("'", string.Empty);
                 ImageNamingItems.Add(new ItemBaseTemplateModel()
@@ -591,7 +591,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             };
             if (openFileDialog.ShowDialog() == true)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     //判断图片
 
@@ -614,7 +614,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             Task.Run(async () =>
             {
                 //信号锁
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     //组合水印
                     var watermarkTestText = string.Join("\n", WatermarkItems.Select(TestWatermarkConvertGroup));

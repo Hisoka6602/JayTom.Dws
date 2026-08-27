@@ -1,4 +1,6 @@
 using JayTom.Dws.Client.Service;
+using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.UseCases;
 using JayTom.Dws.Client.Service.DefaultConfiguration;
 using JayTom.Dws.Client.Service.Device;
 using JayTom.Dws.Client.Service.ExternalDataService;
@@ -6,12 +8,36 @@ using JayTom.Dws.Client.Service.ImageService;
 using JayTom.Dws.Client.Service.ResultOutput;
 using JayTom.Dws.Client.Service.Sorting;
 using JayTom.Dws.Client.Service.SyncSettings;
-using JayTom.Dws.Domain.Service.CacheCleanup;
-using JayTom.Dws.Domain.Service.ImageService;
+using JayTom.Dws.Legacy.Contracts.Services.CacheCleanup;
+using JayTom.Dws.Legacy.Contracts.Services.ImageService;
 using Microsoft.Extensions.DependencyInjection;
 using JayTom.Dws.Infrastructure.Service;
 using JayTom.Dws.Application.Messaging;
+using JayTom.Dws.Application.Deployment;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Logs;
+using JayTom.Dws.Application.Audio;
+using JayTom.Dws.Application.Communications;
+using JayTom.Dws.Application.PackageHistory;
+using JayTom.Dws.Application.PackageProcessing;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Application.SortingInstructions;
+using JayTom.Dws.Application.Sorting;
+using JayTom.Dws.Application.CameraConfigurations;
 using JayTom.Dws.Client.EventMediators;
+using JayTom.Dws.Client.Service.Runtime;
+using JayTom.Dws.Models.LocalLog;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CloudConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.Composition;
 
@@ -19,12 +45,123 @@ namespace JayTom.Dws.Client.Composition;
 internal static class ApplicationServiceRegistration {
     /// <summary>注册设备、分拣、输出和同步等应用服务。</summary>
     public static IServiceCollection AddDwsApplicationServices(this IServiceCollection services) {
-        services.AddSingleton(EventAggregator.Instance);
+        services.AddSingleton(System.TimeProvider.System);
+        services.AddSingleton<NativeDependencyValidator>();
+        services.AddSingleton<IConfigurationMigration, InitialConfigurationMigration>();
+        services.AddTransient<ConfigurationMigrationRunner>();
+        services.AddTransient<ISettingsAccess, SettingsAccess>();
+        services.AddSingleton<IConfigurationValidator, WeightSettingsValidator>();
+        services.AddSingleton<IConfigurationValidator, ImageSettingsValidator>();
+        services.AddSingleton<ConfigurationValidationRegistry>();
+        services.AddSingleton<IApplicationRequestValidator<MigrateConfigurationCommand>, MigrateConfigurationCommandValidator>();
+        services.AddTransient<IApplicationCommandHandler<MigrateConfigurationCommand, ConfigurationMigrationReceipt>, MigrateConfigurationCommandHandler>();
+        services.AddSingleton<EventAggregator>();
         services.AddSingleton<IEventBus>(provider => provider.GetRequiredService<EventAggregator>());
         services.AddSingleton<IPackageSessionStore, PackageSessionStore>();
+        services.AddTransient<IPackageExitCatalog, PackageExitCatalog>();
+        services.AddTransient<IPackageExitAdministration, PackageExitCatalog>();
+        services.AddTransient<IPackageExitManagement, PackageExitCatalog>();
+        services.AddTransient<IPackageExitLockBindingCatalog, PackageExitLockBindingCatalog>();
+        services.AddTransient<ISoundCatalog, SoundCatalog>();
+        services.AddTransient<ICommunicationConfigurationCatalog, CommunicationConfigurationCatalog>();
+        services.AddTransient<IPackageHistoryQueryService, PackageHistoryQueryService>();
+        services.AddSingleton<IApplicationRequestValidator<SearchPackageHistoryQuery>, SearchPackageHistoryQueryValidator>();
+        services.AddTransient<IApplicationQueryHandler<SearchPackageHistoryQuery, PackageHistoryPage>, SearchPackageHistoryQueryHandler>();
+        services.AddTransient<IPackageProcessingPersistence, PackageProcessingPersistence>();
+        services.AddSingleton<IPackageProcessingStage, PackageAcquisitionStage>();
+        services.AddSingleton<IPackageProcessingStage, PackageMatchingStage>();
+        services.AddSingleton<IPackageProcessingStage, PackageCompletionStage>();
+        services.AddSingleton<PackageProcessingPipeline>();
+        services.AddTransient<ICloudVideoTransferQueue, CloudVideoTransferQueue>();
+        services.AddTransient<IBarcodeHistoryCatalog, BarcodeHistoryCatalog>();
+        services.AddTransient<ISortingInstructionBindingCatalog, SortingInstructionBindingCatalog>();
+        services.AddTransient<ICameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel>>(provider =>
+            new CameraConfigurationCatalog<BarcodeScannerCameraConfigInfoModel>(provider.GetRequiredService<IBarcodeScannerCameraConfigRepository>()));
+        services.AddTransient<ICameraConfigurationCatalog<PanoramaCameraConfigInfoModel>>(provider =>
+            new CameraConfigurationCatalog<PanoramaCameraConfigInfoModel>(provider.GetRequiredService<IPanoramaCameraConfigRepository>()));
+        services.AddTransient<ICameraConfigurationCatalog<VolumeCameraConfigInfoModel>>(provider =>
+            new CameraConfigurationCatalog<VolumeCameraConfigInfoModel>(provider.GetRequiredService<IVolumeCameraConfigRepository>()));
+        services.AddTransient<ICameraConfigurationCatalog<UsbCameraConfigInfoModel>>(provider =>
+            new CameraConfigurationCatalog<UsbCameraConfigInfoModel>(provider.GetRequiredService<IUsbCameraConfigRepository>()));
+        services.AddTransient<ICameraConfigurationCatalog<IpcNvrConfigInfoModel>>(provider =>
+            new CameraConfigurationCatalog<IpcNvrConfigInfoModel>(provider.GetRequiredService<IIpcNvrConfigRepository>()));
+        services.AddTransient<ICameraConfigurationCatalog<NvrWatermarkConfigInfoModel>>(provider =>
+            new CameraConfigurationCatalog<NvrWatermarkConfigInfoModel>(provider.GetRequiredService<INvrWatermarkConfigRepository>()));
+        services.AddTransient<ICameraConfigurationCatalog<NvrCameraBindingInfoModel>>(provider =>
+            new CameraConfigurationCatalog<NvrCameraBindingInfoModel>(provider.GetRequiredService<INvrCameraBindingRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<ApiSortingInfoModel>>(provider =>
+            new SortingConfigurationCatalog<ApiSortingInfoModel>(provider.GetRequiredService<IApiSortingRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<BarCodeSortingInfoModel>>(provider =>
+            new SortingConfigurationCatalog<BarCodeSortingInfoModel>(provider.GetRequiredService<IBarCodeSortingRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<LogisticsSortingInfoModel>>(provider =>
+            new SortingConfigurationCatalog<LogisticsSortingInfoModel>(provider.GetRequiredService<ILogisticsSortingRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel>>(provider =>
+            new SortingConfigurationCatalog<LogisticsCodeRecognitionInfoModel>(provider.GetRequiredService<ILogisticsCodeRecognitionRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<OcrSortingInfoModel>>(provider =>
+            new SortingConfigurationCatalog<OcrSortingInfoModel>(provider.GetRequiredService<IOcrSortingRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<VolumeSortingInfoModel>>(provider =>
+            new SortingConfigurationCatalog<VolumeSortingInfoModel>(provider.GetRequiredService<IVolumeSortingRepository>()));
+        services.AddTransient<ISortingConfigurationCatalog<WeightSortingInfoModel>>(provider =>
+            new SortingConfigurationCatalog<WeightSortingInfoModel>(provider.GetRequiredService<IWeightSortingRepository>()));
+        services.AddTransient<ISortingRuleCatalog<ApiRuleInfoModel>>(provider =>
+            new SortingRuleCatalog<ApiRuleInfoModel>(provider.GetRequiredService<IApiRuleRepository>()));
+        services.AddTransient<ISortingRuleCatalog<BarCodeRegexInfoModel>>(provider =>
+            new SortingRuleCatalog<BarCodeRegexInfoModel>(provider.GetRequiredService<IBarCodeRegexRepository>()));
+        services.AddTransient<ISortingRuleCatalog<LogisticsRegexInfoModel>>(provider =>
+            new SortingRuleCatalog<LogisticsRegexInfoModel>(provider.GetRequiredService<ILogisticsRegexRepository>()));
+        services.AddTransient<ISortingRuleCatalog<LogisticsRuleInfoModel>>(provider =>
+            new SortingRuleCatalog<LogisticsRuleInfoModel>(provider.GetRequiredService<ILogisticsRuleRepository>()));
+        services.AddTransient<ISortingRuleCatalog<OcrRuleInfoModel>>(provider =>
+            new SortingRuleCatalog<OcrRuleInfoModel>(provider.GetRequiredService<IOcrRuleRepository>()));
+        services.AddTransient<ISortingRuleCatalog<VolumeRuleInfoModel>>(provider =>
+            new SortingRuleCatalog<VolumeRuleInfoModel>(provider.GetRequiredService<IVolumeRuleRepository>()));
+        services.AddTransient<ISortingRuleCatalog<WeightRuleInfoModel>>(provider =>
+            new SortingRuleCatalog<WeightRuleInfoModel>(provider.GetRequiredService<IWeightRuleRepository>()));
+        services.AddTransient<ILogQueryService<ApiLogInfoModel>>(provider =>
+            new LogQueryService<ApiLogInfoModel>(provider.GetRequiredService<IApiLogRepository>()));
+        services.AddTransient<ILogQueryService<AppLogInfoModel>>(provider =>
+            new LogQueryService<AppLogInfoModel>(provider.GetRequiredService<IAppLogRepository>()));
+        services.AddTransient<ILogQueryService<CameraLogInfoModel>>(provider =>
+            new LogQueryService<CameraLogInfoModel>(provider.GetRequiredService<ICameraLogRepository>()));
+        services.AddTransient<ILogQueryService<FtpLogInfoModel>>(provider =>
+            new LogQueryService<FtpLogInfoModel>(provider.GetRequiredService<IFtpLogRepository>()));
+        services.AddTransient<ILogQueryService<OutputLogInfoModel>>(provider =>
+            new LogQueryService<OutputLogInfoModel>(provider.GetRequiredService<IOutputLogRepository>()));
+        services.AddTransient<ILogQueryService<SortingLogInfoModel>>(provider =>
+            new LogQueryService<SortingLogInfoModel>(provider.GetRequiredService<ISortingLogRepository>()));
+        services.AddTransient<ILogQueryService<VolumeLogInfoModel>>(provider =>
+            new LogQueryService<VolumeLogInfoModel>(provider.GetRequiredService<IVolumeLogRepository>()));
+        services.AddTransient<ILogQueryService<WeighingLogInfoModel>>(provider =>
+            new LogQueryService<WeighingLogInfoModel>(provider.GetRequiredService<IWeighingLogRepository>()));
+        services.AddTransient<ILogSink<AppLogInfoModel>>(provider =>
+            new LogSink<AppLogInfoModel>(provider.GetRequiredService<IAppLogRepository>()));
+        services.AddTransient<ILogSink<CameraLogInfoModel>>(provider =>
+            new LogSink<CameraLogInfoModel>(provider.GetRequiredService<ICameraLogRepository>()));
+        services.AddTransient<ILogSink<SortingLogInfoModel>>(provider =>
+            new LogSink<SortingLogInfoModel>(provider.GetRequiredService<ISortingLogRepository>()));
+        services.AddTransient<ILogSink<WeighingLogInfoModel>>(provider =>
+            new LogSink<WeighingLogInfoModel>(provider.GetRequiredService<IWeighingLogRepository>()));
+        services.AddTransient<ILogSink<VolumeLogInfoModel>>(provider =>
+            new LogSink<VolumeLogInfoModel>(provider.GetRequiredService<IVolumeLogRepository>()));
+        services.AddTransient<ILogSink<ApiLogInfoModel>>(provider =>
+            new LogSink<ApiLogInfoModel>(provider.GetRequiredService<IApiLogRepository>()));
+        services.AddTransient<ILogSink<OutputLogInfoModel>>(provider =>
+            new LogSink<OutputLogInfoModel>(provider.GetRequiredService<IOutputLogRepository>()));
+        services.AddTransient<ILogSink<InputLogInfoModel>>(provider =>
+            new LogSink<InputLogInfoModel>(provider.GetRequiredService<IInputLogRepository>()));
+        services.AddTransient<ILogSink<OcrLogInfoModel>>(provider =>
+            new LogSink<OcrLogInfoModel>(provider.GetRequiredService<IOcrLogRepository>()));
+        services.AddTransient<ILogSink<FtpLogInfoModel>>(provider =>
+            new LogSink<FtpLogInfoModel>(provider.GetRequiredService<IFtpLogRepository>()));
+        services.AddTransient<ILogSink<LogCleaningLogInfoModel>>(provider =>
+            new LogSink<LogCleaningLogInfoModel>(provider.GetRequiredService<ICleanupLogRepository>()));
+        services.AddTransient<ILogSink<ExceptionLogInfoModel>>(provider =>
+            new LogSink<ExceptionLogInfoModel>(provider.GetRequiredService<IExceptionLogRepository>()));
         services.AddSingleton<IComputerInfoReporter, ComputerInfoReporter>();
         services.AddSingleton<IDefaultConfigurationService, DefaultConfigurationService>();
         services.AddSingleton<IDeviceService, DefaultDeviceService>();
+        services.AddSingleton<IUsbBarCodeReaderFactory, UsbBarCodeReaderFactory>();
+        services.AddSingleton<ICameraSdkDeploymentService, CameraSdkDeploymentService>();
         services.AddSingleton<IImageStorageService, DefaultImageStorageService>();
         services.AddSingleton<IResultOutputService, DefaultResultOutputService>();
         services.AddSingleton<IExternalDataService, ExternalDataService>();
@@ -33,8 +170,10 @@ internal static class ApplicationServiceRegistration {
         services.AddSingleton<IExitMonitor, DefaultExitMonitor>();
         services.AddSingleton<IStackedPackageService, DefaultStackedPackageService>();
         services.AddSingleton<ISortingConnectionService, DefaultSortingConnectionService>();
+        services.AddSingleton<ISortingProtocolAdapter, SortingConnectionProtocolAdapter>();
         services.AddSingleton<IGrayscaleService, DefaultGrayscaleService>();
         services.AddSingleton<ISyncSettingsService, SyncSettingsService>();
+        services.AddSingleton<IApplicationLifecycleCoordinator, ApplicationLifecycleCoordinator>();
         return services;
     }
 }

@@ -1,5 +1,5 @@
-﻿using Prism.Mvvm;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using Prism.Mvvm;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting
 {

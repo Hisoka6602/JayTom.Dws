@@ -6,12 +6,15 @@ using Prism.Commands;
 using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Threading;
 using JayTom.Dws.Client.Models;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Views.Dialog;
 using JayTom.Dws.Client.ViewModels.Dialog;
+using JayTom.Dws.Application.Workflows;
+using JayTom.Dws.Application.Presentation;
 
 namespace JayTom.Dws.Client.ViewModels.Pages
 {
@@ -24,11 +27,27 @@ namespace JayTom.Dws.Client.ViewModels.Pages
         private int _pageSize = 500;
         private SnackbarMessageQueue _itemMessageQueue = new(TimeSpan.FromSeconds(2));
         private ObservableCollection<T> _itemsSource = new();
+        /// <summary>统一维护耗时命令的忙碌与取消状态。</summary>
+        private readonly AsyncOperationController _operationController = new();
 
         protected ListOperationBaseViewModel(IExcel excel)
         {
             _excel = excel;
+            CancelOperationCommand = new DelegateCommand(
+                _operationController.Cancel,
+                () => IsBusy);
+            _operationController.StateChanged += (_, _) =>
+            {
+                RaisePropertyChanged(nameof(IsBusy));
+                CancelOperationCommand.RaiseCanExecuteChanged();
+            };
         }
+
+        /// <summary>获取当前是否正在执行耗时命令。</summary>
+        public bool IsBusy => _operationController.IsBusy;
+
+        /// <summary>获取取消当前耗时命令的统一命令。</summary>
+        public DelegateCommand CancelOperationCommand { get; }
 
         public abstract string Identifier { get; }
         public abstract string ExcelTitle { get; }
@@ -159,7 +178,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                     model.FilePath = saveFileDialog.FileName;
                     model.Identifier = "MainDialog";
                     model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier);
+                    DialogHost.Show(exportDialog, model.Identifier)
+                        .Forget("显示列表导出进度对话框");
                     try
                     {
                         var export = await _excel.Export(saveFileDialog.FileName,
@@ -171,7 +191,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                                 model.ProgressText = $"{p}%";
                                 if (p == 100)
                                 {
-                                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                                    await UiThread.Dispatcher.InvokeAsync(() =>
                                     {
                                         if (DialogHost.IsDialogOpen(model.Identifier))
                                         {
@@ -185,7 +205,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages
                             });
                         if (!export)
                         {
-                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            await UiThread.Dispatcher.InvokeAsync(() =>
                             {
                                 if (DialogHost.IsDialogOpen(model.Identifier))
                                 {
@@ -309,42 +329,55 @@ namespace JayTom.Dws.Client.ViewModels.Pages
             var clearData = await ClearData();
             if (clearData)
             {
-                System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     ItemsSource.Clear();
-                });
+                }).Task.Forget("清空列表数据");
             }
         }
 
         public void LoadDataToView(int currentPage)
         {
-            System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            _operationController.TryRunAsync(async cancellationToken =>
             {
-                var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model)
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
-                    model.Identifier = Identifier;
-                    DialogHost.Show(loadingDialog, model.Identifier).ConfigureAwait(false);
-                    await Task.Delay(500);
-                    ItemsSource.Clear();
-                    var (key, value) = await LoadData(currentPage);
-                    if (key > 0)
+                    var loadingDialog = new LoadingDialog();
+                    if (loadingDialog.DataContext is LoadingDialogViewModel model)
                     {
-                        TotalPages = key / PageSize + (key % PageSize > 0 ? 1 : 0);
+                        model.Identifier = Identifier;
+                        DialogHost.Show(loadingDialog, model.Identifier)
+                            .Forget("显示列表加载进度对话框");
+                        try
+                        {
+                            await Task.Delay(500, cancellationToken);
+                            ItemsSource.Clear();
+                            var (key, value) = await LoadData(currentPage);
+                            cancellationToken.ThrowIfCancellationRequested();
+                            if (key > 0)
+                            {
+                                PaginationState pagination = PaginationState.Create(key, PageSize, currentPage);
+                                CurrentPage = pagination.CurrentPage;
+                                TotalPages = pagination.TotalPages;
 
-                        await Task.Delay(100);
-                        ItemsSource = value;
-                        ItemMessageQueue?.Enqueue($"共查询到:{key}条数据,显示{ItemsSource?.Count}条");
+                                await Task.Delay(100, cancellationToken);
+                                ItemsSource = value;
+                                ItemMessageQueue?.Enqueue($"共查询到:{key}条数据,显示{ItemsSource?.Count}条");
+                            }
+                            else
+                            {
+                                ItemMessageQueue?.Enqueue("No data matching the criteria found.");
+                            }
+                        }
+                        finally
+                        {
+                            if (DialogHost.IsDialogOpen(model.Identifier))
+                            {
+                                DialogHost.Close(model.Identifier);
+                            }
+                        }
                     }
-                    else
-                    {
-                        ItemMessageQueue?.Enqueue("No data matching the criteria found.");
-                    }
-                    if (DialogHost.IsDialogOpen(model.Identifier))
-                    {
-                        DialogHost.Close(model.Identifier);
-                    }
-                }
+                });
             }).Forget("加载列表数据");
         }
     }

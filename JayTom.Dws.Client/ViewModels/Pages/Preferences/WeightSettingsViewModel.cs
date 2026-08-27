@@ -6,25 +6,25 @@ using Prism.Commands;
 using Newtonsoft.Json;
 using System.IO.Ports;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
 using JayTom.Dws.Plugin.Scale;
 using JayTom.Dws.Client.Models;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Plugin.Scale.StaticScale;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 using JayTom.Dws.Plugin.Scale.DynamicScale;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.WeightSettingsModel;
 using JayTom.Dws.Plugin.Scale.ScaleValueParameters;
 using JayTom.Dws.Client.Models.SettingsCommomModels;
 using TcpConnectParam = JayTom.Dws.Plugin.Scale.TcpConnectParam;
-using WeightAccessMode = JayTom.Dws.Domain.Dto.WeightAccessMode;
+using WeightAccessMode = JayTom.Dws.Legacy.Contracts.Dto.WeightAccessMode;
 using TcpConnectionMode = JayTom.Dws.Plugin.Scale.TcpConnectionMode;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
@@ -96,7 +96,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private ObservableCollection<DataFormatType> _dataFormatTypeItems = new(Enum.GetValues(typeof(DataFormatType)).Cast<DataFormatType>());
 
         public WeightSettingViewModel(IDynamicScale dynamicScale,
-            IStaticScale staticScale, ISettingsStore settingsStore) : base(settingsStore)
+            IStaticScale staticScale, ISettingsStore settingsStore, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _dynamicScale = dynamicScale;
             _staticScale = staticScale;
@@ -104,7 +104,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 if (SelectWeightMode.Value == WeightMode.Dynamic)
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         RealtimeWeight = Convert.ToDecimal(f);
                     });
@@ -114,7 +114,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 if (SelectWeightMode.Value == WeightMode.Dynamic && IsRealtimeDataEnabled)
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         ReceivedData ??= string.Empty;
                         if (ReceivedData.Length >= 5000)
@@ -129,7 +129,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 if (SelectWeightMode.Value == WeightMode.Static)
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         RealtimeWeight = Convert.ToDecimal(f);
                     });
@@ -139,7 +139,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 if (SelectWeightMode.Value == WeightMode.Static && IsRealtimeDataEnabled)
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         ReceivedData ??= string.Empty;
                         if (ReceivedData.Length >= 5000)
@@ -153,7 +153,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             _dynamicScale.Excepted += async delegate (object? sender, Exception exception)
             {
                 //异常的输出之后需要取消
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称异常") ?? string.Empty}:{exception.Message}");
                 });
@@ -161,21 +161,21 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             _staticScale.Excepted += async delegate (object? sender, Exception exception)
             {
                 //异常的输出之后需要取消
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称异常")}:{exception.Message}");
                 });
             };
             _dynamicScale.Connected += async delegate (object? sender, IScale scale)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("动态称连接成功")}");
                 });
             };
             _staticScale.Connected += async delegate (object? sender, IScale scale)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     base.MessageQueue.Enqueue($"{Languages.Language.ResourceManager.GetString("静态称连接成功")}");
                 });
@@ -331,7 +331,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private async void PortUpdateDelegate()
         {
             //重新枚举串口
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 PortItems.Clear();
                 PortItems.AddRange(SerialPort.GetPortNames());
@@ -349,7 +349,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private void IsRealtimeDataEnabledChangedDelegate()
         {
             /*if (!IsRealtimeDataEnabled) {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                await UiThread.Dispatcher.InvokeAsync(() => {
                     ReceivedData = string.Empty;
                 });
             }*/
@@ -427,7 +427,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             ConnectionMode = (TcpConnectionMode?)WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
                             DataFormat = (FormatType)WeightSettingsInfo.TcpSettingsInfo.DataFormat,
                         },
-                    });
+                    }).Forget("连接静态秤");
                     //连接静态称
                     break;
 
@@ -466,7 +466,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                             ConnectionMode = (TcpConnectionMode?)WeightSettingsInfo.TcpSettingsInfo.ConnectionMode,
                             DataFormat = (FormatType)WeightSettingsInfo.TcpSettingsInfo.DataFormat,
                         },
-                    });
+                    }).Forget("连接动态秤");
                     break;
             }
 
@@ -547,7 +547,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
             {
                 _isLoaded = true;
 
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     PortItems.Clear();
                     PortItems.AddRange(SerialPort.GetPortNames());
@@ -633,7 +633,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private async void WeightParserDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 if (!string.IsNullOrEmpty(WeightSourceContent) && ParsedWeight > 0)
                 {

@@ -1,4 +1,4 @@
-﻿namespace JayTom.Dws.Data.Attributes {
+namespace JayTom.Dws.Models.Attributes {
 
     public class UpdateByAttribute : Attribute {
     }

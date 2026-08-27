@@ -13,10 +13,10 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Image = System.Drawing.Image;
-using JayTom.Dws.Interface.Routdata;
+using JayTom.Dws.Integrations.Routdata;
 using System.Text.RegularExpressions;
 
-namespace JayTom.Dws.Interface.Eshippingit {
+namespace JayTom.Dws.Integrations.Eshippingit {
 
     public partial class EshippingitApi : IDataUploader {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -55,7 +55,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                     httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
                     HttpResponseMessage message;
@@ -105,7 +105,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -138,7 +138,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             try {
-                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi)) {
+                using (var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi)) {
                     httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                     httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
                     HttpResponseMessage message;
@@ -188,7 +188,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 stopwatch.Stop();
                 response = new UploadResponse() {
                     ExceptionMsg = exceptionMsg,
-                    ApiParameters = JsonConvert.SerializeObject(this),
+                    ApiParameters = IntegrationParameterSerializer.Serialize(this),
                     IsSuccess = isSuccess,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
@@ -295,7 +295,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
 
         public async Task<OssParameters?> GetOssParameters() {
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut * 3);
                 httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
 
@@ -322,7 +322,7 @@ namespace JayTom.Dws.Interface.Eshippingit {
                 cloudFileName = cloudFileName
             };
             try {
-                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Interface.ApiHttpClientNames.ExternalApi);
+                using var httpClient = _httpClientFactory.CreateClient(global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
                 httpClient.Timeout = TimeSpan.FromMilliseconds(Parameters.TimeOut);
                 httpClient.DefaultRequestHeaders.Add("Authorization", Parameters.Authorization);
                 HttpResponseMessage message;

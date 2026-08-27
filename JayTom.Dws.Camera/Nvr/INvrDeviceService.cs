@@ -55,9 +55,9 @@ namespace JayTom.Dws.Camera.Nvr {
         /// <summary>
         /// 初始化
         /// </summary>
-        /// <param name="param"></param>
+        /// <param name="cancellationToken">取消令牌。</param>
         /// <returns></returns>
-        Task<KeyValuePair<bool, string>> Initialize(object param);
+        Task<KeyValuePair<bool, string>> Initialize(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 开启实时预览

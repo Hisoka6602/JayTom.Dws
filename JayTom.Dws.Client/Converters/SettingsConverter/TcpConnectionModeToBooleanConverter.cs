@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Domain.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 using System;
 using System.Globalization;
 using System.Windows.Data;

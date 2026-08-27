@@ -1,6 +1,6 @@
 using System;
 using Prism.Mvvm;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 
 namespace JayTom.Dws.Client.Models.DataModels
 {

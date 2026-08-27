@@ -24,10 +24,15 @@
     <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Application\JayTom.Dws.Application.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Camera\JayTom.Dws.Camera.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Camera.Contracts\JayTom.Dws.Camera.Contracts.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Domain\JayTom.Dws.Domain.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Interface\JayTom.Dws.Interface.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Integrations.Contracts\JayTom.Dws.Integrations.Contracts.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Infrastructure\JayTom.Dws.Infrastructure.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Legacy.Contracts\JayTom.Dws.Legacy.Contracts.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.License\JayTom.Dws.License.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin.Abstractions\JayTom.Dws.Plugin.Abstractions.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Plugin.Runtime\JayTom.Dws.Plugin.Runtime.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
 </Project>

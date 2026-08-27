@@ -1,6 +1,6 @@
 using JayTom.Dws.Abstractions.Integrations;
-using JayTom.Dws.Domain.Dto;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Legacy.Contracts.Dto;
+using JayTom.Dws.Integrations;
 using System;
 
 namespace JayTom.Dws.Client.Extensions;

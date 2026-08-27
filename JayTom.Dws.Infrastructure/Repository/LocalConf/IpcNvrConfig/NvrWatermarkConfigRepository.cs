@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using JayTom.Dws.Data.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Models.LocalConf.IpcNvrConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig {
 

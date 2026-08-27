@@ -1,5 +1,5 @@
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Dto;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {

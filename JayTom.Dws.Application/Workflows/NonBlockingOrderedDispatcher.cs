@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace JayTom.Dws.Application.Workflows;
 
@@ -10,7 +11,9 @@ namespace JayTom.Dws.Application.Workflows;
 public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
 {
     /// <summary>保存待处理工作项的无界内存队列。</summary>
-    private readonly ConcurrentQueue<T> _queue = new();
+    private readonly ConcurrentQueue<QueuedDispatcherItem<T>> _queue = new();
+    /// <summary>保存必须抢在普通工作项之前执行的高优先级队列。</summary>
+    private readonly ConcurrentQueue<QueuedDispatcherItem<T>> _priorityQueue = new();
     /// <summary>合并密集写入的唤醒信号，避免每个工作项都经过阻塞集合计数。</summary>
     private readonly AutoResetEvent _workAvailable = new(false);
     /// <summary>按顺序执行工作项的处理器。</summary>
@@ -27,9 +30,21 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
     private int _wakeScheduled;
     /// <summary>零表示接收工作，一表示停止中，二表示已经释放。</summary>
     private int _disposeState;
+    /// <summary>自上次读取以来观察到的最大排队耗时，单位微秒。</summary>
+    private long _maximumQueueDelayMicroseconds;
+    /// <summary>自上次读取以来观察到的最大单项执行耗时，单位微秒。</summary>
+    private long _maximumHandlerDurationMicroseconds;
 
     /// <summary>尚未执行完成的工作项数量。</summary>
     public long PendingCount => Interlocked.Read(ref _pendingCount);
+
+    /// <summary>读取并清零自上次采样以来的最大排队耗时，单位微秒。</summary>
+    public long TakeMaximumQueueDelayMicroseconds() =>
+        Interlocked.Exchange(ref _maximumQueueDelayMicroseconds, 0);
+
+    /// <summary>读取并清零自上次采样以来的最大单项执行耗时，单位微秒。</summary>
+    public long TakeMaximumHandlerDurationMicroseconds() =>
+        Interlocked.Exchange(ref _maximumHandlerDurationMicroseconds, 0);
 
     /// <summary>创建单消费者、严格保持写入顺序的非阻塞调度器。</summary>
     public NonBlockingOrderedDispatcher(
@@ -63,6 +78,20 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
     /// </summary>
     public bool TryEnqueue(T item)
     {
+        return TryEnqueueCore(item, false);
+    }
+
+    /// <summary>
+    /// 立即写入高优先级工作项；消费者会先排空高优先级队列，同时保持各优先级内部的写入顺序。
+    /// </summary>
+    public bool TryEnqueuePriority(T item)
+    {
+        return TryEnqueueCore(item, true);
+    }
+
+    /// <summary>把工作项写入指定优先级队列且从不等待消费者。</summary>
+    private bool TryEnqueueCore(T item, bool isPriority)
+    {
         if (Volatile.Read(ref _disposeState) != 0)
         {
             return false;
@@ -78,7 +107,17 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
         try
         {
             Interlocked.Increment(ref _pendingCount);
-            _queue.Enqueue(item);
+            var queuedItem = new QueuedDispatcherItem<T>(
+                item,
+                Stopwatch.GetTimestamp());
+            if (isPriority)
+            {
+                _priorityQueue.Enqueue(queuedItem);
+            }
+            else
+            {
+                _queue.Enqueue(queuedItem);
+            }
         }
         finally
         {
@@ -98,17 +137,21 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
     {
         while (true)
         {
-            while (_queue.TryDequeue(out var item))
+            while (TryDequeue(out var queuedItem))
             {
+                var handlerStartedAt = Stopwatch.GetTimestamp();
+                RecordMaximum(
+                    ref _maximumQueueDelayMicroseconds,
+                    ToMicroseconds(queuedItem.EnqueuedAtTimestamp, handlerStartedAt));
                 try
                 {
-                    _handler(item);
+                    _handler(queuedItem.Item);
                 }
                 catch (Exception exception)
                 {
                     try
                     {
-                        _exceptionHandler?.Invoke(item, exception);
+                        _exceptionHandler?.Invoke(queuedItem.Item, exception);
                     }
                     catch
                     {
@@ -117,23 +160,59 @@ public sealed class NonBlockingOrderedDispatcher<T> : IAsyncDisposable
                 }
                 finally
                 {
+                    RecordMaximum(
+                        ref _maximumHandlerDurationMicroseconds,
+                        ToMicroseconds(handlerStartedAt, Stopwatch.GetTimestamp()));
                     Interlocked.Decrement(ref _pendingCount);
                 }
             }
 
-            if (Volatile.Read(ref _disposeState) != 0 && _queue.IsEmpty)
+            if (Volatile.Read(ref _disposeState) != 0 &&
+                Volatile.Read(ref _writersInFlight) == 0 &&
+                QueuesAreEmpty())
             {
                 return;
             }
 
             Volatile.Write(ref _wakeScheduled, 0);
-            if (!_queue.IsEmpty)
+            if (!QueuesAreEmpty())
             {
                 Volatile.Write(ref _wakeScheduled, 1);
                 continue;
             }
 
             _workAvailable.WaitOne();
+        }
+    }
+
+    /// <summary>先读取高优先级队列，再读取普通队列。</summary>
+    private bool TryDequeue(out QueuedDispatcherItem<T> item)
+    {
+        return _priorityQueue.TryDequeue(out item) || _queue.TryDequeue(out item);
+    }
+
+    /// <summary>判断两个优先级队列是否均为空。</summary>
+    private bool QueuesAreEmpty() => _priorityQueue.IsEmpty && _queue.IsEmpty;
+
+    /// <summary>把两次单调时间戳的差值转换为整数微秒。</summary>
+    private static long ToMicroseconds(long startedAt, long completedAt)
+    {
+        var elapsedTimestamp = Math.Max(0L, completedAt - startedAt);
+        return elapsedTimestamp * 1_000_000L / Stopwatch.Frequency;
+    }
+
+    /// <summary>以无锁方式记录更大的耗时水位。</summary>
+    private static void RecordMaximum(ref long target, long value)
+    {
+        var current = Volatile.Read(ref target);
+        while (value > current)
+        {
+            var observed = Interlocked.CompareExchange(ref target, value, current);
+            if (observed == current)
+            {
+                return;
+            }
+            current = observed;
         }
     }
 

@@ -9,15 +9,15 @@ using JayTom.Dws.Ocr;
 using Newtonsoft.Json;
 using TouchSocket.Core;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.LocalConf;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.OcrSettingsModel;
 
@@ -30,7 +30,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private CreatePackageSettingsInfoModel _createPackageSettingsInfo = new();
         private bool _isLoaded;
 
-        public CreatePackageSettingsViewModel(ISettingsStore settingsStore, IDeviceService deviceService) : base(settingsStore)
+        public CreatePackageSettingsViewModel(ISettingsStore settingsStore, IDeviceService deviceService, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _deviceService = deviceService;
         }
@@ -48,7 +48,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                 _isLoaded = true;
                 try
                 {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                    await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                     {
                         var deserializeObject = await _settingsStore.GetAsync<CreatePackageSettingsDto>(SettingsName) ?? new CreatePackageSettingsDto();
                         CreatePackageSettingsInfo = new CreatePackageSettingsInfoModel()

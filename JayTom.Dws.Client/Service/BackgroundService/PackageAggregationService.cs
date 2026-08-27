@@ -1,25 +1,28 @@
 using System;
+using JayTom.Dws.Application.SortingInstructions;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Communications;
 using ImTools;
 using NPOI.Util;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using PushPackageInfo = JayTom.Dws.Domain.EventMediators.PushPackageInfo;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using PushPackageInfo = JayTom.Dws.Application.Events.PushPackageInfo;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
-using ApplicationStatus = JayTom.Dws.Domain.EventMediators.ApplicationStatus;
-using ApplicationStatusChanged = JayTom.Dws.Domain.EventMediators.ApplicationStatusChanged;
+using ApplicationStatus = JayTom.Dws.Application.Events.ApplicationStatus;
+using ApplicationStatusChanged = JayTom.Dws.Application.Events.ApplicationStatusChanged;
 
 namespace JayTom.Dws.Client.Service.BackgroundService
 {
@@ -29,22 +32,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService
     /// </summary>
     public class PackageAggregationService : Microsoft.Extensions.Hosting.BackgroundService
     {
-        private readonly IPackageRepository _packageRepository;
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly IExitMonitor _exitMonitor;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitManagement _packageExitDefinitionRepository;
 
         private readonly ConcurrentDictionary<long, PackageAggregationInfo> _exitPackageAggregationItems = new();
         private readonly ConcurrentQueue<PushPackageInfo> _packageInfoItems = new();
         private readonly ConcurrentDictionary<DateTime, PackageAggregationInfo> _overexitPackageAggregationItems = new();
         private readonly SemaphoreSlim _createPackageSlim = new(1);
 
-        public PackageAggregationService(IPackageRepository packageRepository,
-            IExitMonitor exitMonitor, IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public PackageAggregationService(
+            IExitMonitor exitMonitor, IPackageExitManagement packageExitDefinitionRepository,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
-            _packageRepository = packageRepository;
+            _eventBus = eventBus;
             _exitMonitor = exitMonitor;
             _packageExitDefinitionRepository = packageExitDefinitionRepository;
-            /*EventAggregator.Instance.Subscribe<CallBackPackageInfo>(async item => {
+            /*_eventBus.SubscribeAsync<CallBackPackageInfo>(async item => {
                 if (item is CallBackPackageInfo info) {
                     var (key, value) = await _packageRepository.FirstOrDefaultInfo(f => f.PackageCreateTime.Equals(info.PackageCreateTime));
                     if (key && value is not null) {
@@ -53,7 +58,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                 }
             });*/
-            EventAggregator.Instance.Subscribe<PushPackageInfo>(async item =>
+            _eventBus.SubscribeAsync<PushPackageInfo>(async item =>
             {
                 if (item is PushPackageInfo model)
                 {
@@ -96,7 +101,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
 
-            EventAggregator.Instance.Subscribe<ApplicationStatusChanged>(item =>
+            _eventBus.Subscribe<ApplicationStatusChanged>(item =>
             {
                 if (item is ApplicationStatusChanged info)
                 {
@@ -179,9 +184,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         {
             //遍历格口
 
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.IsActive &&
-                s.Type != ExitType.AbnormalExit,
-                o => o.Id, stoppingToken);
+            List<PackageExitDefinitionInfoModel> packageExitDefinitionInfoModels =
+            [.. (await _packageExitDefinitionRepository.ListAsync(stoppingToken))
+                .Where(static item => item.IsActive && item.Type != ExitType.AbnormalExit)];
             packageExitDefinitionInfoModels.ForEach(s =>
             {
                 var packageAggregationInfo = new PackageAggregationInfo
@@ -235,7 +240,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         Parallel.ForEach(keyValuePairs, svalue =>
                         {
                             _overexitPackageAggregationItems.TryRemove(svalue.Key, out var info);
-                            EventAggregator.Instance.Publish(info);
+                            _eventBus.Publish(info);
                         });
                     }
                 }

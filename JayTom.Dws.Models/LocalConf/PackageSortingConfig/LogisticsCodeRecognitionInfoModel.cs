@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
 
-namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
+namespace JayTom.Dws.Models.LocalConf.PackageSortingConfig {
     [Table("Conf_LogisticsCodeRecognitionInfo", Schema = "dbo")]
     public class LogisticsCodeRecognitionInfoModel : BasePackageSortingConfig {
 
@@ -28,8 +28,12 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// <summary>
         /// 物流声音
         /// </summary>
-        [Column("Sound"), InsertOrUpdate]
+        [NotMapped]
         public byte[]? SoundBytes { get; set; }
+
+        /// <summary>数据库外部声音文件的稳定引用。</summary>
+        [Column("SoundFileReference"), InsertOrUpdate]
+        public string? SoundFileReference { get; set; }
 
         /// <summary>
         /// 声音文件名
@@ -40,8 +44,12 @@ namespace JayTom.Dws.Data.LocalConf.PackageSortingConfig {
         /// <summary>
         /// 物流图标
         /// </summary>
-        [Column("Icon"), InsertOrUpdate]
+        [NotMapped]
         public byte[]? IconBytes { get; set; }
+
+        /// <summary>数据库外部图标文件的稳定引用。</summary>
+        [Column("IconFileReference"), InsertOrUpdate]
+        public string? IconFileReference { get; set; }
 
         /// <summary>
         /// 图标名称

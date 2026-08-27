@@ -21,7 +21,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JayTom.Dws.Abstractions\JayTom.Dws.Abstractions.csproj" />
+    <ProjectReference Include="..\JayTom.Dws.Camera.Contracts\JayTom.Dws.Camera.Contracts.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Ocr\JayTom.Dws.Ocr.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="JayTom.Dws.Tests" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,9 +66,6 @@
 
   <ItemGroup>
     <None Update="Cameras\IndustrialCamera\Hikvision\Dll\MVIDCodeReader.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cameras\IndustrialCamera\Hikvision\Dll\MVIDCodeReader.Net.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\IndustrialCamera\Hikvision\Dll\RulerFilter.dll">
@@ -107,25 +110,10 @@
     <None Update="Cameras\SecurityCamera\DaHuatech\Dll\IvsDrawer.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Cameras\SecurityCamera\DaHuatech\Dll\NetSDKCS.pdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.XML">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cameras\SmartCamera\Irayple\Dll\CLIDelegate.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\VolumeCamera\Dimension\Dll\DimensionMessument.exe">
@@ -144,9 +132,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\VolumeCamera\Dimension\Dll\vcruntime140.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Cameras\VolumeCamera\Hikvision\Dll\VolMeasure.Net.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Cameras\VolumeCamera\Irayple\Dll\avcodec-58.dll">

@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.DownstreamProtocols;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
 using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
 
@@ -95,7 +95,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <param name="instructions"></param>
         /// <param name="interval"></param>
         /// <param name="attach"></param>
-        void SendInstructions(object tag, long exitId, List<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
+        void SendInstructions(object tag, long exitId, IReadOnlyList<SortingInstructionInfoModel> instructions, TimeSpan interval, InstructionsAttach attach);
 
         /// <summary>
         /// 发送前置信号

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Prism.Commands;
 using System.Windows.Input;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
@@ -131,7 +131,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors
 
         private async void UpdateRegularExpressionDelegate()
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await UiThread.Dispatcher.InvokeAsync(() =>
             {
                 var regularChars = new List<string>();
                 if (IsNumeric)

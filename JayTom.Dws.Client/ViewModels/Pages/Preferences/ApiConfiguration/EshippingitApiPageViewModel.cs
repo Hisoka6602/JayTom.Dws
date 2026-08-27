@@ -1,7 +1,8 @@
-using JayTom.Dws.Interface;
+using JayTom.Dws.Integrations;
 using JayTom.Dws.Client.Extensions;
 using JayTom.Dws.Abstractions.Integrations;
 using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.PackageHistory;
 using System;
 using System.IO;
 using System.Linq;
@@ -13,22 +14,21 @@ using System.Net.Http;
 using System.Threading;
 using System.Windows.Input;
 using System.Windows.Forms;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using System.Windows.Shapes;
 using Path = System.IO.Path;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Data.LocalConf;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Models.LocalConf;
 using NPOI.SS.Formula.Functions;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.ApiDto;
+using JayTom.Dws.Legacy.Contracts.Dto.ApiDto;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Interface.Eshippingit;
+using JayTom.Dws.Integrations.Eshippingit;
 using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
-using JayTom.Dws.Infrastructure.Repository.LocalData;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
@@ -38,8 +38,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
     {
         private readonly IProviderRegistry<IDataUploader> _providerRegistry;
         private readonly IDeviceService _deviceService;
-        private readonly IPackageRepository _packageRepository;
-        private readonly IBarCodeRepository _barCodeRepository;
+        private readonly IBarcodeHistoryCatalog _barcodeHistory;
         private EshippingitApiModel _eshippingitApiInfo = new();
         private string _progressText = $"0%";
         private decimal _progress;
@@ -101,13 +100,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
         public EshippingitApiPageViewModel(ISettingsStore settingsStore,
             IProviderRegistry<IDataUploader> providerRegistry,
             IDeviceService deviceService,
-            IPackageRepository packageRepository,
-            IBarCodeRepository barCodeRepository) : base(settingsStore)
+            IBarcodeHistoryCatalog barcodeHistory, JayTom.Dws.Application.Messaging.IEventBus eventBus) : base(settingsStore, eventBus)
         {
             _providerRegistry = providerRegistry;
             _deviceService = deviceService;
-            _packageRepository = packageRepository;
-            _barCodeRepository = barCodeRepository;
+            _barcodeHistory = barcodeHistory;
         }
 
         public override string Identifier => "EshippingitApiParametersDialogHost";
@@ -133,7 +130,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
         public override async void LoadedDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var settingsDto = await _settingsStore.GetAsync<EshippingitApiDto>(SettingsName) ?? new EshippingitApiDto();
                 EshippingitApiInfo = new EshippingitApiModel()
@@ -169,9 +166,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
             }
         }
 
-        public ICommand UploadImageCommand => new DelegateCommand<object>(UploadImageDelegate);
+        public ICommand UploadImageCommand => new DelegateCommand<object>(
+            parameter => UploadImageAsync(parameter).Forget("批量上传 Eshippingit 图片"));
 
-        private async void UploadImageDelegate(object obj)
+        private async Task UploadImageAsync(object obj)
         {
             if (IsUploadProgress)
             {
@@ -186,7 +184,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 return;
             }
 
-            Task.Run(async () =>
+            await Task.Run(async () =>
             {
                 if (!string.IsNullOrEmpty(ImageRootDirectory))
                 {
@@ -205,7 +203,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
                     var difference = imageFiles.Except(uploadedList).ToList();
 
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    await UiThread.Dispatcher.InvokeAsync(() =>
                     {
                         MaxProgress = imageFiles.Count;
                         Progress = 0;
@@ -221,7 +219,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     await using var fs = File.Create(jsonFilePath);
                     await System.Text.Json.JsonSerializer.SerializeAsync(fs, process);
                 }
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     //恢复按钮
                     IsUploadProgress = false;
@@ -254,7 +252,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
 
             var progress = new Progress<(int, bool)>(async valueTuple =>
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                await UiThread.Dispatcher.InvokeAsync(() =>
                 {
                     lock (uploadedList)
                     {
@@ -272,8 +270,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 });
             });
 
-            var barCodeInfoModels = await _barCodeRepository.SelectOrderByDescending(w =>
-                imagesPath.Select(Path.GetFileNameWithoutExtension).Contains(w.Barcode), o => o.ScanTime);
+            var barCodeInfoModels = await _barcodeHistory.ListByCodesAsync(
+                imagesPath.ConvertAll(path =>
+                    Path.GetFileNameWithoutExtension(path) ?? string.Empty));
 
             NLog.LogManager.GetCurrentClassLogger().Error($"barCodeInfoModels:{barCodeInfoModels.Count}");
 

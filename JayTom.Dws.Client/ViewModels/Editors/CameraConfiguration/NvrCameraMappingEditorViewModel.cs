@@ -10,19 +10,19 @@ using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.Cameras;
-using JayTom.Dws.Data.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CameraConfig;
+using JayTom.Dws.Models.LocalConf.CloudConfig;
+using JayTom.Dws.Application.CameraConfigurations;
 using JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech;
-using JayTom.Dws.Domain.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.IpcNvrConfig;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
 {
 
     public class NvrCameraMappingEditorViewModel : BindableBase
     {
-        private readonly INvrCameraBindingRepository _nvrCameraBindingRepository;
+        private readonly ICameraConfigurationCatalog<NvrCameraBindingInfoModel> _nvrCameraBindingRepository;
 
         private ObservableCollection<NvrCameraMappingItemInfoModel> _nvrCameraMappingItemInfos = new()
         {
@@ -44,7 +44,8 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
             set => SetProperty(ref _nvrCameraMappingItemInfos, value);
         }
 
-        public NvrCameraMappingEditorViewModel(INvrCameraBindingRepository nvrCameraBindingRepository)
+        public NvrCameraMappingEditorViewModel(
+            ICameraConfigurationCatalog<NvrCameraBindingInfoModel> nvrCameraBindingRepository)
         {
             _nvrCameraBindingRepository = nvrCameraBindingRepository;
         }
@@ -68,7 +69,7 @@ namespace JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration
                 Port = s.Port,
             })?.ToList();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 NvrCameraMappingItemInfos.Clear();
                 await Task.Delay(200);

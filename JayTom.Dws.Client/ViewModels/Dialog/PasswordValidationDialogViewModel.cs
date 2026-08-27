@@ -1,4 +1,4 @@
-﻿using JayTom.Dws.Application.Configuration;
+using JayTom.Dws.Application.Configuration;
 using System;
 using Prism.Mvvm;
 using System.Linq;
@@ -8,8 +8,8 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.AppDto;
-using JayTom.Dws.Domain.Repository.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Client.Models.AppSettingModel;
 
 namespace JayTom.Dws.Client.ViewModels.Dialog

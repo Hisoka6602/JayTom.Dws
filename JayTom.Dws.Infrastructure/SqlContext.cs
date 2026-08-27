@@ -1,5 +1,5 @@
-﻿using JayTom.Dws.Data.LocalConf;
-using JayTom.Dws.Data.ServerData;
+using JayTom.Dws.Models.LocalConf;
+using JayTom.Dws.Models.ServerData;
 using Microsoft.EntityFrameworkCore;
 
 namespace JayTom.Dws.Infrastructure {

@@ -54,4 +54,12 @@ public interface ISettingsStore : ISettingsReader {
         IReadOnlyDictionary<string, string> values,
         CancellationToken cancellationToken = default);
 
+    /// <summary>在单一事务中以指定快照完整替换当前配置，用于可回滚迁移。</summary>
+    /// <param name="snapshot">替换后的完整配置快照。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>替换成功时返回 <see langword="true"/>。</returns>
+    Task<bool> ReplaceSnapshotAsync(
+        IReadOnlyDictionary<string, string> snapshot,
+        CancellationToken cancellationToken = default);
+
 }

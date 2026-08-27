@@ -39,10 +39,14 @@ namespace JayTom.Dws.Ocr.ExpressBill {
 
         public OcrStatus OcrStatus { get; private set; } = OcrStatus.Initialized;
 
-        public async Task SubmitImage(Bitmap imageBytes, string cameraSerialNumber) {
+        public async Task SubmitImage(
+            OcrImageFrame image,
+            string cameraSerialNumber,
+            CancellationToken cancellationToken = default) {
+            using var bitmap = OcrBitmapAdapter.Decode(image);
             var lockTaken = false;
             try {
-                await _semaphoreSlim.WaitAsync();
+                await _semaphoreSlim.WaitAsync(cancellationToken);
                 lockTaken = true;
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill.OcrStatus == OcrStatus.Initialized) {
@@ -51,7 +55,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                             expressBill.OnnxModel = _onnxModel;
                         }
 
-                        var ocrResult = await expressBill.ParseOcrResult(imageBytes, cameraSerialNumber);
+                        var ocrResult = await expressBill.ParseOcrResult(bitmap, cameraSerialNumber);
                         if (ocrResult is not null) {
                             OnOcrContentRecognized(ocrResult);
                         }
@@ -81,12 +85,13 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             }
         }
 
-        public OcrResult? ParseOcrTemporarilyResult(Bitmap imageBytes, string cropImageModelPath, decimal confidenceThreshold,
+        public OcrResult? ParseOcrTemporarilyResult(OcrImageFrame image, string cropImageModelPath, decimal confidenceThreshold,
             decimal rectangleScale) {
+            using var bitmap = OcrBitmapAdapter.Decode(image);
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
-                        return expressBill.ParseOcrResult(imageBytes,
+                        return expressBill.ParseOcrResult(bitmap,
                             new YoloParser(cropImageModelPath), confidenceThreshold, rectangleScale);
                     }
                 }
@@ -98,7 +103,11 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return null;
         }
 
-        public async Task<OcrResult?> ParseOcrResultAsync(Bitmap imageBytes) {
+        public async Task<OcrResult?> ParseOcrResultAsync(
+            OcrImageFrame image,
+            CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
+            using var bitmap = OcrBitmapAdapter.Decode(image);
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
@@ -107,7 +116,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                             expressBill.OnnxModel = _onnxModel;
                         }
 
-                        var ocrResultAsync = await expressBill.ParseOcrResultAsync(imageBytes);
+                        var ocrResultAsync = await expressBill.ParseOcrResultAsync(bitmap);
                         if (_isSecondConfirmationEnabled) {
                             lock (_confirmationLock) {
                                 if (ocrResultAsync?.BarCode.Equals(_lastBarCode) != true) {
@@ -127,7 +136,8 @@ namespace JayTom.Dws.Ocr.ExpressBill {
             return null;
         }
 
-        public OcrResult? ParseOcrResult(Bitmap imageBytes) {
+        public OcrResult? ParseOcrResult(OcrImageFrame image) {
+            using var bitmap = OcrBitmapAdapter.Decode(image);
             try {
                 using (var expressBill = _expressBillPool.GetObject()) {
                     if (expressBill.OcrStatus is not OcrStatus.Uninitialized) {
@@ -135,7 +145,7 @@ namespace JayTom.Dws.Ocr.ExpressBill {
                             expressBill.OnnxModel = _onnxModel;
                         }
 
-                        var ocrResult = expressBill.ParseOcrResult(imageBytes, _confidenceThreshold, _rectangleScale);
+                        var ocrResult = expressBill.ParseOcrResult(bitmap, _confidenceThreshold, _rectangleScale);
                         if (_isSecondConfirmationEnabled) {
                             lock (_confirmationLock) {
                                 if (ocrResult?.BarCode.Equals(_lastBarCode) != true) {

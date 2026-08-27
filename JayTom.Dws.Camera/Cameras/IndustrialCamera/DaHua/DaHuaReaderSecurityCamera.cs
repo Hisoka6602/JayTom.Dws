@@ -46,11 +46,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 
-        public Task<KeyValuePair<bool, string>> Start(object param) {
+        public Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 
@@ -58,7 +58,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.DaHua {
             throw new NotImplementedException();
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 

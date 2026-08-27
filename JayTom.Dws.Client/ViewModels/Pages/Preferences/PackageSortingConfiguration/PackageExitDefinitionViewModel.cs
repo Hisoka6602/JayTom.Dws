@@ -11,15 +11,18 @@ using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
+using JayTom.Dws.Application.Messaging;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.Communications;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration
 {
@@ -27,18 +30,18 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
     //包裹出口定义页面
     public class PackageExitDefinitionViewModel : BulkOperationsTemplateViewModel<PackageExitDefinitionItemInfoModel>
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
-
-        private readonly ICommunicationConnectionConfigRepository _communicationConnectionConfigRepository;
+        /// <summary>出口定义应用层写入用例。</summary>
+        private readonly IPackageExitAdministration _packageExitAdministration;
+        private readonly ICommunicationConfigurationCatalog _communicationCatalog;
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
 
-        public PackageExitDefinitionViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository,
+        public PackageExitDefinitionViewModel(IPackageExitAdministration packageExitAdministration,
+            IEventBus eventBus,
             IExcel excel,
-            ICommunicationConnectionConfigRepository communicationConnectionConfigRepository) : base(excel)
+            ICommunicationConfigurationCatalog communicationCatalog) : base(eventBus, excel)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
-
-            _communicationConnectionConfigRepository = communicationConnectionConfigRepository;
+            _packageExitAdministration = packageExitAdministration;
+            _communicationCatalog = communicationCatalog;
         }
 
         public ObservableCollection<PackageExitDefinitionItemInfoModel> PackageExitDefinitionItems
@@ -49,7 +52,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
                 if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model)
@@ -78,11 +81,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             CommunicationConnectionId = model.SelectConnectionItem.Id,
                             Pid = model.SelectExitDefinitionInfo.Id
                         };
-                        var insertOrUpdate = await _packageExitDefinitionRepository.Insert(packageExitDefinitionInfoModel);
+                        var insertOrUpdate = await _packageExitAdministration.InsertAsync(packageExitDefinitionInfoModel);
                         if (insertOrUpdate)
                         {
-                            EventAggregator.Instance.Publish(packageExitDefinitionInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(packageExitDefinitionInfoModel);
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -105,11 +108,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is PackageExitDefinitionItemInfoModel item)
             {
-                var model = await _packageExitDefinitionRepository.FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (model is not null)
-                {
-                    return await _packageExitDefinitionRepository.Delete(model);
-                }
+                return await _packageExitAdministration.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -119,10 +118,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var selectIds = PackageExitDefinitionItems.Where(w => w.IsSelect)
                 .Select(s => s.Id).ToList();
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository
-                .Select(s => selectIds.Contains(s.Id),
-                o => o.Id);
-            await _packageExitDefinitionRepository.DeleteRange(packageExitDefinitionInfoModels);
+            await _packageExitAdministration.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<PackageExitDefinitionItemInfoModel> ExportProcess() => [.. PackageExitDefinitionItems];
@@ -132,8 +128,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
             if (items?.Any() == true)
             {
                 //批量添加到数据库
-                var configInfoModels = await _communicationConnectionConfigRepository.Select(s =>
-                    s.Id > 0, o => o.Id);
+                var configInfoModels = await _communicationCatalog.ListAsync();
 
                 var connectionIdsByName = configInfoModels
                     .Where(item => !string.IsNullOrWhiteSpace(item.ConnectionName))
@@ -161,7 +156,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     });
                 }
 
-                var insertOrUpdate = await _packageExitDefinitionRepository.InsertRange(infoModels);
+                var insertOrUpdate = await _packageExitAdministration.InsertRangeAsync(infoModels);
                 if (insertOrUpdate)
                 {
                     //如果存在Pid则更新Pid
@@ -171,10 +166,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         var list = itemInfoModels.Select(s => s.MainExitName).ToList();
                         var upDataList = itemInfoModels.Select(s => s.ExitName).ToList();
                         //取出主Id
-                        var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => list.Contains(s.ExitName),
-                            o => o.Id);
-                        var exitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => upDataList.Contains(s.ExitName),
-                            o => o.Id);
+                        var packageExitDefinitionInfoModels = await _packageExitAdministration.ListByNamesAsync(list);
+                        var exitDefinitionInfoModels = await _packageExitAdministration.ListByNamesAsync(upDataList);
                         foreach (var packageExitDefinitionInfoModel in exitDefinitionInfoModels)
                         {
                             var infoModel = itemInfoModels.FirstOrDefault(f =>
@@ -184,7 +177,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                             packageExitDefinitionInfoModel.Pid = definitionInfoModel?.Id ?? 0;
                         }
 
-                        var updateRange = await _packageExitDefinitionRepository.UpdateRange(exitDefinitionInfoModels);
+                        var updateRange = await _packageExitAdministration.UpdateRangeAsync(exitDefinitionInfoModels);
                         if (!updateRange)
                         {
                             return false;
@@ -202,7 +195,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is PackageExitDefinitionItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var packageExitDefinitionEditor = new PackageExitDefinitionEditor();
                     if (packageExitDefinitionEditor.DataContext is PackageExitDefinitionEditorViewModel model)
@@ -231,7 +224,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                         if (model.IsOk)
                         {
                             //保存到数据库
-                            var insertOrUpdate = await _packageExitDefinitionRepository.Update(new PackageExitDefinitionInfoModel()
+                            var insertOrUpdate = await _packageExitAdministration.UpdateAsync(new PackageExitDefinitionInfoModel()
                             {
                                 CreateTime = item.CreateTime,
                                 ExitName = model.ExitName,
@@ -248,7 +241,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 MessageQueue.Enqueue("保存成功");
                                 //刷新列表
                                 RefreshData();
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -268,11 +261,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         private async void ActiveDelegate(PackageExitDefinitionItemInfoModel obj)
         {
-            var model = await _packageExitDefinitionRepository.FirstOrDefault(f => f.Id.Equals(obj.Id));
+            var model = await _packageExitAdministration.FindByIdAsync(obj.Id);
             if (model is not null)
             {
                 model.IsActive = obj.IsActive;
-                var update = await _packageExitDefinitionRepository.Update(model);
+                var update = await _packageExitAdministration.UpdateAsync(model);
                 if (!update)
                 {
                     MessageQueue.Enqueue("保存失败");
@@ -295,18 +288,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task ClearProcess()
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.Id);
-            await _packageExitDefinitionRepository.DeleteRange(packageExitDefinitionInfoModels);
+            await _packageExitAdministration.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
             await Task.Delay(300);
-            var configInfoModels = await _communicationConnectionConfigRepository.CommunicationConnectionConfigItems(s => s.Id > 0);
-            var models = await _packageExitDefinitionRepository.
-                Select(s => s.Id > 0,
-                    o => o.ModifyTime);
+            var configInfoModels = await _communicationCatalog.ListWithDetailsAsync();
+            var models = await _packageExitAdministration.ListByModifiedTimeAsync();
 
             PackageExitDefinitionItems.Clear();
             var infoModels = models?.Select((s, i) => new PackageExitDefinitionItemInfoModel

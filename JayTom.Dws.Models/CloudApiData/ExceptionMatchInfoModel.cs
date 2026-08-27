@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
+using JayTom.Dws.Models.Package;
 using System.Collections.Generic;
-using JayTom.Dws.Data.Attributes;
+using JayTom.Dws.Models.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JayTom.Dws.Data.CloudApiData {
+namespace JayTom.Dws.Models.CloudApiData {
 
     [Table("Conf_ExceptionMatchInfo", Schema = "dbo")]
     public class ExceptionMatchInfoModel : BaseModel {

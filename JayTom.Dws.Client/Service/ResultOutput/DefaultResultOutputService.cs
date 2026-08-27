@@ -1,40 +1,45 @@
 using JayTom.Dws.Application.Configuration;
 using Polly;
+using JayTom.Dws.Application.Audio;
+using JayTom.Dws.Application.Storage;
 using System;
 using DryIoc;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Globalization;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Tcp;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.LocalLog;
 using JayTom.Dws.Plugin.Speech;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.Dto.BaseInfoModels;
-using JayTom.Dws.Domain.Repository.LocalConf;
-using JayTom.Dws.Domain.Repository.LocalData;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Client.Service.BackgroundService;
 using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
-using TriggerPositionEvent = JayTom.Dws.Domain.EventMediators.TriggerPositionEvent;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
+using TriggerPositionEvent = JayTom.Dws.Application.Events.TriggerPositionEvent;
 
 namespace JayTom.Dws.Client.Service.ResultOutput
 {
 
     public class DefaultResultOutputService : IResultOutputService, IAsyncDisposable
     {
+        /// <summary>应用内消息总线。</summary>
+        private readonly JayTom.Dws.Application.Messaging.IEventBus _eventBus;
         private readonly ISettingsStore _settingsStore;
         private readonly ISpeech _speech;
         private readonly ITcpContentOutput _tcpContentOutput;
 
-        private readonly ISoundRepository _soundRepository;
+        private readonly ISoundCatalog _soundCatalog;
+        private readonly IBinaryAssetStore _assetStore;
         private readonly SemaphoreSlim _settingsSemaphore = new(1, 1);
         private readonly SemaphoreSlim _outputSemaphore = new(1, 1);
         private readonly SemaphoreSlim _soundSemaphore = new(1, 1);
@@ -90,12 +95,16 @@ namespace JayTom.Dws.Client.Service.ResultOutput
 
         public DefaultResultOutputService(ISettingsStore settingsStore,
             ISpeech speech, ITcpContentOutput tcpContentOutput,
-            ISoundRepository soundRepository)
+            ISoundCatalog soundCatalog,
+            IBinaryAssetStore assetStore,
+            JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _settingsStore = settingsStore;
             _speech = speech;
             _tcpContentOutput = tcpContentOutput;
-            _soundRepository = soundRepository;
+            _soundCatalog = soundCatalog;
+            _assetStore = assetStore;
             // 三个消费者彼此独立；每个消费者内部保持原有的单实例串行约束。
             _outputWorker = Task.Run(() => ProcessWorkAsync(_outputWorkChannel, _workerCancellation.Token));
             _soundWorker = Task.Run(() => ProcessWorkAsync(_soundWorkChannel, _workerCancellation.Token));
@@ -111,7 +120,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
             };
 
             //扫到包裹
-            EventAggregator.Instance.Subscribe<TriggerPositionEvent>(position =>
+            _eventBus.Subscribe<TriggerPositionEvent>(position =>
             {
                 //播放声音事件
                 if (position is TriggerPositionEvent trigger)
@@ -126,7 +135,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                     }
                 }
             });
-            EventAggregator.Instance.Subscribe<SettingsChangedEvent>(settings =>
+            _eventBus.Subscribe<SettingsChangedEvent>(settings =>
             {
                 if (settings is SettingsChangedEvent { SettingsName: "ResultOutputSettings" })
                 {
@@ -135,7 +144,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                 }
             });
             //默认加载
-            EventAggregator.Instance.Publish(new SettingsChangedEvent()
+            _eventBus.Publish(new SettingsChangedEvent()
             {
                 SettingsName = "ResultOutputSettings",
             });
@@ -153,14 +162,19 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                 var nextSounds = new ConcurrentDictionary<string, byte[]>();
                 if (nextSettings.IsUseAudioOutput)
                 {
-                    var soundInfoModels = await _soundRepository.Select(s => s.Id > 0, o => o.Id);
+                    var soundInfoModels = await _soundCatalog.ListAsync();
                     foreach (var soundInfoModel in soundInfoModels?
-                                 .Where(soundInfoModel => soundInfoModel.SoundFile is not null)
+                                 .Where(soundInfoModel =>
+                                     !string.IsNullOrWhiteSpace(soundInfoModel.SoundFileReference))
                              ?? new List<SoundInfoModel>())
                     {
-                        nextSounds.TryAdd(
-                            soundInfoModel.SoundName,
-                            soundInfoModel.SoundFile ?? []);
+                        var asset = await _assetStore.ReadAsync(
+                            new BinaryAssetReference(soundInfoModel.SoundFileReference),
+                            16 * 1024 * 1024,
+                            CancellationToken.None);
+                        if (asset.IsSuccess && asset.Value is not null) {
+                            nextSounds.TryAdd(soundInfoModel.SoundName, asset.Value);
+                        }
                     }
                 }
 
@@ -331,12 +345,12 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                 isSend = await _tcpContentOutput.SendMessage(message, cancellationToken);
                 if (isSend)
                 {
-                    EventAggregator.Instance.Publish(new TriggerPositionEvent()
+                    _eventBus.Publish(new TriggerPositionEvent()
                     {
                         IsSuccess = isSend,
                         TriggerPosition = TriggerPositionEnum.TcpOutput
                     });
-                    EventAggregator.Instance.Publish(new OutputLogInfoModel()
+                    _eventBus.Publish(new OutputLogInfoModel()
                     {
                         Type = LogType.Information,
                         CreateTime = DateTime.Now,
@@ -366,7 +380,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                     {
                         case DataFormatType.Ascii:
                             _serialPort?.WriteLine(message);
-                            EventAggregator.Instance.Publish(new OutputLogInfoModel()
+                            _eventBus.Publish(new OutputLogInfoModel()
                             {
                                 Type = LogType.Information,
                                 CreateTime = DateTime.Now,
@@ -380,7 +394,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                             {
                                 var toByteArray = HexStringToByteArray(message);
                                 _serialPort?.Write(toByteArray, 0, toByteArray.Length);
-                                EventAggregator.Instance.Publish(new OutputLogInfoModel()
+                                _eventBus.Publish(new OutputLogInfoModel()
                                 {
                                     Type = LogType.Information,
                                     CreateTime = DateTime.Now,
@@ -486,7 +500,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                             if (tryGetValue && file is not null)
                             {
                                 await _speech.PlayCacheByteFile(soundName, file);
-                                EventAggregator.Instance.Publish(new OutputLogInfoModel()
+                                _eventBus.Publish(new OutputLogInfoModel()
                                 {
                                     Type = LogType.Information,
                                     CreateTime = DateTime.Now,
@@ -507,7 +521,7 @@ namespace JayTom.Dws.Client.Service.ResultOutput
                             if (tryGetValue && file is not null)
                             {
                                 await _speech.PlayCacheByteFile(soundName, file);
-                                EventAggregator.Instance.Publish(new OutputLogInfoModel()
+                                _eventBus.Publish(new OutputLogInfoModel()
                                 {
                                     Type = LogType.Information,
                                     CreateTime = DateTime.Now,

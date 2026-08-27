@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using JayTom.Dws.Domain.Dto.AppDto;
+using JayTom.Dws.Legacy.Contracts.Dto.AppDto;
 
 namespace JayTom.Dws.Client.Models.AppSettingModel
 {

@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using Prism.Mvvm;
 using System.Linq;
-using JayTom.Dws.Domain.Dto;
+using JayTom.Dws.Legacy.Contracts.Dto;
 using JayTom.Dws.Plugin.Scale;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.Models.SettingsCommomModels;

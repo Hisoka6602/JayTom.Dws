@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using JayTom.Dws.Camera.Concurrency;
+using JayTom.Dws.Abstractions.Threading;
 using JayTom.Dws.Camera.FilterContainer;
 using static MVIDCodeReaderNet.MVIDCodeReader;
 using JayTom.Dws.Camera.Attributes.CameraAttributes;
@@ -136,7 +137,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
         public event EventHandler<RealtimeImageEventArgs>? RealtimeImage;
 
-        public async Task<KeyValuePair<bool, string>> Initialize(object param) {
+        public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
             if (_mvCodeReader != null) {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
@@ -329,7 +330,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// <exception cref="NotImplementedException"></exception>
         private void OcrOnOcrContentRecognized(object? sender, OcrResult e) {
             if (e?.Image != null) {
-                var thumbnail = GenerateThumbnail(e.Image);
+                using var image = OcrBitmapAdapter.Decode(e.Image);
+                var thumbnail = GenerateThumbnail(image);
                 if (!string.IsNullOrEmpty(e.BarCode)) {
                     //过滤
                     var validateData = _barCodeFilterContainer.ValidateData(new BarCodeFilterInfo() {
@@ -345,21 +347,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                             //暂时屏蔽画框
                             thumbnail = await DrawIndicator(thumbnail, new Size(e.Image.Width, e.Image.Height), e);
                         }*/
-                        e.Thumbnail = thumbnail;
+                        e.Thumbnail = thumbnail is null ? null : OcrBitmapAdapter.Encode(thumbnail);
                         e.BarCode = _barCodeFilterContainer.RegexReplace(e.BarCode);
                         OnOcrContentRecognized(e);
-                    }
-                    else {
-                        e.Image.Dispose();
-                        if (!IsRealtimeImageEnabled) {
-                            thumbnail?.Dispose();
-                        }
-                    }
-                }
-                else {
-                    e.Image.Dispose();
-                    if (!IsRealtimeImageEnabled) {
-                        thumbnail?.Dispose();
                     }
                 }
                 if (IsRealtimeImageEnabled) {
@@ -368,10 +358,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         Timestamp = e?.SubmitTimestamp ?? 0
                     });
                 }
+                else {
+                    thumbnail?.Dispose();
+                }
             }
         }
 
-        public async Task<KeyValuePair<bool, string>> Start(object param) {
+        public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
             // ch:开始采集 | en:Start Grabbing
             int nRet = _mvCodeReader?.MV_CODEREADER_StartGrabbing_NET() ?? 0;
@@ -410,6 +403,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         }
 
         public void Dispose() {
+            TaskCleanup.Observe(DisposeCoreAsync(), exception => OnCameraExceptionOccurred(
+                new CameraExceptionEventArgs { Exception = exception }));
+        }
+
+        /// <summary>异步等待全部相机工作器退出后释放 SDK 资源。</summary>
+        private async Task DisposeCoreAsync() {
             if (Status != CameraStatus.Uninitialized) {
                 //注销线程
                 _tokenSource.Cancel();
@@ -418,13 +417,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 _mvCodeReader?.MV_CODEREADER_CloseDevice_NET();
                 _mvCodeReader?.MV_CODEREADER_DestroyHandle_NET();
                 if (_continuousSoftTriggerThread is not null) {
-                    WaitForWorker(_continuousSoftTriggerThread);
+                    await WaitForWorkerAsync(_continuousSoftTriggerThread);
                     _continuousSoftTriggerThread.Dispose();
                     _continuousSoftTriggerThread = null;
                 }
 
                 if (_barcodeThread is not null) {
-                    WaitForWorker(_barcodeThread);
+                    await WaitForWorkerAsync(_barcodeThread);
                     _barcodeThread.Dispose();
                     _barcodeThread = null;
                 }
@@ -445,7 +444,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 catch (SemaphoreFullException) {
                 }
                 if (_ocrThread is not null) {
-                    WaitForWorker(_ocrThread);
+                    await WaitForWorkerAsync(_ocrThread);
                     _ocrThread.Dispose();
                     _ocrThread = null;
                 }
@@ -454,9 +453,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
-        private static void WaitForWorker(Task worker) {
+        private static async Task WaitForWorkerAsync(Task worker) {
             try {
-                worker.GetAwaiter().GetResult();
+                await worker;
             }
             catch (OperationCanceledException) {
             }
@@ -599,7 +598,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
         }
 
-        public void SetParameters(Dictionary<string, object> parameters) {
+        public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 
@@ -1004,7 +1003,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         continue;
                     }
 
-                    var result = Ocr?.ParseOcrResult(bitmap);
+                    var result = Ocr?.ParseOcrResult(OcrBitmapAdapter.Encode(bitmap));
                     var thumbnail = GenerateThumbnail(bitmap);
                     if (result is not null &&
                         !string.IsNullOrEmpty(result.BarCode) &&
@@ -1024,50 +1023,35 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                     new Size(bitmap.Width, bitmap.Height),
                                     result);
                             }
-                            result.Image ??= bitmap;
-                            result.Thumbnail = thumbnail;
+                            result.Image ??= OcrBitmapAdapter.Encode(bitmap);
+                            result.Thumbnail = thumbnail is null ? null : OcrBitmapAdapter.Encode(thumbnail);
                             result.BarCode = _barCodeFilterContainer.RegexReplace(result.BarCode);
                             OnOcrContentRecognized(result);
-                        }
-                        else {
-                            result.Image?.Dispose();
-                            if (result.Image != bitmap) {
-                                bitmap.Dispose();
-                            }
-                            if (!IsRealtimeImageEnabled) {
-                                thumbnail?.Dispose();
-                            }
                         }
                     }
                     else if (TriggerMode == TriggerMode.Hardware) {
                         OnOcrContentRecognized(new OcrResult {
                             BarCode = "NoRead",
-                            Image = bitmap,
-                            Thumbnail = thumbnail,
+                            Image = OcrBitmapAdapter.Encode(bitmap),
+                            Thumbnail = thumbnail is null ? null : OcrBitmapAdapter.Encode(thumbnail),
                             CropImage = result?.CropImage,
                             CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
-                            ElapsedTime = result?.ElapsedTime ?? 0,
+                            ElapsedMilliseconds = result?.ElapsedMilliseconds ?? 0,
                             RecognitionTime = result?.RecognitionTime ?? DateTime.Now,
                             RecognitionTimestamp = result?.RecognitionTimestamp ??
                                                    new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds()
                         });
                     }
-                    else {
-                        result?.Image?.Dispose();
-                        if (result?.Image != bitmap) {
-                            bitmap.Dispose();
-                        }
-                        if (!IsRealtimeImageEnabled) {
-                            thumbnail?.Dispose();
-                        }
-                    }
-
                     if (IsRealtimeImageEnabled) {
                         OnRealtimeImage(new RealtimeImageEventArgs {
                             ThumbImage = thumbnail,
                             Timestamp = result?.SubmitTimestamp ?? 0
                         });
                     }
+                    else {
+                        thumbnail?.Dispose();
+                    }
+                    bitmap.Dispose();
                 }
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) {

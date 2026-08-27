@@ -1,4 +1,7 @@
 using System;
+using JayTom.Dws.Application.PackageExits;
+using JayTom.Dws.Application.SortingConfigurations;
+using JayTom.Dws.Application.Messaging;
 using Prism.Mvvm;
 using System.Linq;
 using Prism.Commands;
@@ -7,20 +10,20 @@ using JayTom.Dws.Plugin;
 using System.Windows.Input;
 using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
-using JayTom.Dws.Data.LocalData;
+using JayTom.Dws.Models.LocalData;
 using System.Collections.Generic;
 using JayTom.Dws.Client.Views.Dialog;
 using System.Collections.ObjectModel;
 using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Domain.EventMediators;
+using JayTom.Dws.Application.Events;
 using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.Models.PackageSorting;
 using JayTom.Dws.Client.Models.PackageSorting.Rule;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using SettingsChangedEvent = JayTom.Dws.Domain.EventMediators.SettingsChangedEvent;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig.RuleConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
+using SettingsChangedEvent = JayTom.Dws.Application.Events.SettingsChangedEvent;
 using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
 using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
 
@@ -29,22 +32,19 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
     public class VolumeSortingViewModel : BulkOperationsTemplateViewModel<VolumeSortingItemInfoModel>
     {
-        private readonly IVolumeSortingRepository _volumeSortingRepository;
-        private readonly IVolumeRuleRepository _volumeRuleRepository;
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly ISortingConfigurationCatalog<VolumeSortingInfoModel> _sortingCatalog;
+        private readonly IPackageExitCatalog _packageExitCatalog;
 
         private ObservableCollection<VolumeSortingItemInfoModel> _volumeSortingItems = new();
 
         private bool _isLoaded;
 
-        public VolumeSortingViewModel(IVolumeSortingRepository volumeSortingRepository,
-            IVolumeRuleRepository volumeRuleRepository,
-            IPackageExitDefinitionRepository packageExitDefinitionRepository,
-            IExcel excel) : base(excel)
+        public VolumeSortingViewModel(ISortingConfigurationCatalog<VolumeSortingInfoModel> sortingCatalog,
+            IPackageExitCatalog packageExitCatalog,
+            IExcel excel, IEventBus eventBus) : base(eventBus, excel)
         {
-            _volumeSortingRepository = volumeSortingRepository;
-            _volumeRuleRepository = volumeRuleRepository;
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _sortingCatalog = sortingCatalog;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         public ObservableCollection<VolumeSortingItemInfoModel> VolumeSortingItems
@@ -55,7 +55,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async void AddDelegate(object obj)
         {
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var volumeSortingRuleEditor = new VolumeSortingRuleEditor();
                 if (volumeSortingRuleEditor.DataContext is VolumeSortingRuleEditorViewModel model)
@@ -85,11 +85,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                 Remarks = s.Remarks,
                             })?.ToList()
                         };
-                        var insert = await _volumeSortingRepository.InsertDetailAsync(volumeSortingInfoModel);
+                        var insert = await _sortingCatalog.AddAsync(volumeSortingInfoModel);
                         if (insert)
                         {
-                            EventAggregator.Instance.Publish(volumeSortingInfoModel);
-                            EventAggregator.Instance.Publish(new SettingsChangedEvent
+                            _eventBus.Publish(volumeSortingInfoModel);
+                            _eventBus.Publish(new SettingsChangedEvent
                             {
                                 SettingsName = SettingsName,
                                 IsLocallySaved = true
@@ -126,12 +126,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is VolumeSortingItemInfoModel item)
             {
-                var volumeSortingInfoModel = await _volumeSortingRepository.
-                    FirstOrDefault(f => f.Id.Equals(item.Id));
-                if (volumeSortingInfoModel is not null)
-                {
-                    return await _volumeSortingRepository.Delete(volumeSortingInfoModel);
-                }
+                return await _sortingCatalog.DeleteByIdAsync(item.Id);
             }
 
             return false;
@@ -141,7 +136,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (obj is VolumeSortingItemInfoModel item)
             {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+                await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
                 {
                     var volumeSortingRuleEditor = new VolumeSortingRuleEditor();
                     if (volumeSortingRuleEditor.DataContext is VolumeSortingRuleEditorViewModel model)
@@ -176,11 +171,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                                     VolumeSortingId = model.VolumeSortingItemInfo.Id,
                                 })?.ToList()
                             };
-                            var insert = await _volumeSortingRepository.UpdateDetailAsync(volumeSortingInfoModel);
+                            var insert = await _sortingCatalog.UpdateAsync(volumeSortingInfoModel);
                             if (insert)
                             {
-                                EventAggregator.Instance.Publish(volumeSortingInfoModel);
-                                EventAggregator.Instance.Publish(new SettingsChangedEvent
+                                _eventBus.Publish(volumeSortingInfoModel);
+                                _eventBus.Publish(new SettingsChangedEvent
                                 {
                                     SettingsName = SettingsName,
                                     IsLocallySaved = true
@@ -201,17 +196,14 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
 
         protected override async Task ClearProcess()
         {
-            var volumeSortingInfoModels = await _volumeSortingRepository.Select(s => s.Id > 0,
-                o => o.Id);
-            await _volumeSortingRepository.DeleteRange(volumeSortingInfoModels);
+            await _sortingCatalog.DeleteAllAsync();
         }
 
         protected override async Task RefreshDataProcess()
         {
             await Task.Delay(300);
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0, o => o.CreateTime);
-            var models = await _volumeSortingRepository
-                .VolumeSortingItems(s => s.Id > 0);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
+            var models = await _sortingCatalog.ListAsync();
             VolumeSortingItems.Clear();
             var infoModels = models?.Select((s, i) => new VolumeSortingItemInfoModel()
             {
@@ -244,9 +236,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             var selectIds = VolumeSortingItems.Where(w => w.IsSelect)
                 .Select(s => s.Id).ToList();
-            var volumeSortingInfoModels = await _volumeSortingRepository.Select(s => selectIds.Contains(s.Id),
-                o => o.Id);
-            await _volumeSortingRepository.DeleteRange(volumeSortingInfoModels);
+            await _sortingCatalog.DeleteByIdsAsync(selectIds);
         }
 
         protected override List<VolumeSortingItemInfoModel> ExportProcess()
@@ -272,8 +262,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
         {
             if (items?.Any() == true)
             {
-                var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                    o => o.CreateTime);
+                var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
                 var dateTime = DateTime.Now;
                 var volumeSortingInfoModels = items
                     .Select(s => new VolumeSortingInfoModel()
@@ -306,7 +295,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfigura
                     .ToList();
 
                 //批量添加
-                return await _volumeSortingRepository.InsertRangeDetailAsync(volumeSortingInfoModels);
+                return await _sortingCatalog.AddRangeAsync(volumeSortingInfoModels);
             }
 
             return false;

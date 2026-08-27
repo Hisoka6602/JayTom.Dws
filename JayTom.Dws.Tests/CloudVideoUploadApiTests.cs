@@ -1,6 +1,6 @@
 using System.Drawing;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Interface.Cloud.CloudVideo;
+using JayTom.Dws.Integrations.Cloud;
+using JayTom.Dws.Integrations.Cloud.CloudVideo;
 
 namespace JayTom.Dws.Tests;
 

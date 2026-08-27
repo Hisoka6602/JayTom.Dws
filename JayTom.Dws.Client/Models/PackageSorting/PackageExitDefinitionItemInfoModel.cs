@@ -1,8 +1,8 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using JayTom.Dws.Plugin.Excel.Attributes;
 using System.ComponentModel.DataAnnotations;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 
 namespace JayTom.Dws.Client.Models.PackageSorting
 {

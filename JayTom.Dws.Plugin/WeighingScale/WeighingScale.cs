@@ -1,4 +1,5 @@
 using System.IO.Ports;
+using JayTom.Dws.Abstractions.Threading;
 using System.Globalization;
 using TouchSocket.Core;
 using System.Collections.Concurrent;
@@ -118,9 +119,16 @@ namespace JayTom.Dws.Plugin.WeighingScale {
         }
 
         public void Dispose() {
+            TaskCleanup.Observe(DisposeCoreAsync(), OnExcepted);
+        }
+
+        /// <summary>异步等待接收工作器退出后释放串口。</summary>
+        private async Task DisposeCoreAsync() {
             _tokenSource.Cancel();
             try {
-                _receiveTask?.GetAwaiter().GetResult();
+                if (_receiveTask is not null) {
+                    await _receiveTask;
+                }
             }
             catch (OperationCanceledException) {
             }

@@ -1,18 +1,18 @@
 using System;
 using System.Threading;
-using JayTom.Dws.Interface;
+using JayTom.Dws.Integrations;
 using System.Threading.Tasks;
-using JayTom.Dws.Data.Package;
-using JayTom.Dws.Domain.Model;
-using JayTom.Dws.Data.LocalLog;
+using JayTom.Dws.Models.Package;
+using JayTom.Dws.Legacy.Contracts.Model;
+using JayTom.Dws.Models.LocalLog;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
-using JayTom.Dws.Interface.Cloud;
-using JayTom.Dws.Domain.EventMediators;
-using JayTom.Dws.Domain.DownstreamProtocols;
+using JayTom.Dws.Integrations.Cloud;
+using JayTom.Dws.Application.Events;
+using JayTom.Dws.Legacy.Contracts.DownstreamProtocols;
 using JayTom.Dws.Client.Service.BackgroundService;
-using JayTom.Dws.Data.LocalConf.PackageSortingConfig;
-using SortingExitType = JayTom.Dws.Domain.EventMediators.SortingExitType;
+using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
+using SortingExitType = JayTom.Dws.Application.Events.SortingExitType;
 
 namespace JayTom.Dws.Client.Service.Sorting
 {
@@ -95,6 +95,9 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// 是否已连接
         /// </summary>
         bool IsConnected { get; }
+
+        /// <summary>获取当前配置是否要求包裹保留到格口指令发送完成。</summary>
+        bool RequiresSortingInstruction { get; }
 
         /// <summary>
         /// 获取物流信息
@@ -325,7 +328,7 @@ namespace JayTom.Dws.Client.Service.Sorting
         /// <summary>
         /// Api响应内容
         /// </summary>
-        public JayTom.Dws.Interface.UploadResponse ApiResponse { get; set; } = new();
+        public JayTom.Dws.Integrations.Contracts.UploadResponse ApiResponse { get; set; } = new();
 
         /// <summary>
         /// 格口Id

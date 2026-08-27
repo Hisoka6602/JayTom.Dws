@@ -11,13 +11,13 @@ using LibreHardwareMonitor.Hardware;
 using System.Collections.ObjectModel;
 using Microsoft.AspNetCore.Mvc.Filters;
 using JayTom.Dws.Client.Models.PackageSorting;
-using JayTom.Dws.Domain.Repository.LocalConf.PackageSortingConfig;
+using JayTom.Dws.Application.PackageExits;
 
 namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 {
     public class PackageExitLockEditorViewModel : BindableBase
     {
-        private readonly IPackageExitDefinitionRepository _packageExitDefinitionRepository;
+        private readonly IPackageExitCatalog _packageExitCatalog;
         private string _identifier = string.Empty;
         private string _exceptionContent = string.Empty;
         private PackageExitLockBindingItemInfoModel _packageExitLockBindingItemInfo = new();
@@ -29,9 +29,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
         private ObservableCollection<PackageExitDefinitionItemInfoModel> _packageExitDefinitionItems = new();
         private PackageExitDefinitionItemInfoModel _selectExitDefinitionInfo = new();
 
-        public PackageExitLockEditorViewModel(IPackageExitDefinitionRepository packageExitDefinitionRepository)
+        public PackageExitLockEditorViewModel(IPackageExitCatalog packageExitCatalog)
         {
-            _packageExitDefinitionRepository = packageExitDefinitionRepository;
+            _packageExitCatalog = packageExitCatalog;
         }
 
         /// <summary>
@@ -119,10 +119,9 @@ namespace JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration
 
         private async void LoadedDelegate(object obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitDefinitionRepository.Select(s => s.Id > 0,
-                o => o.CreateTime);
+            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 PackageExitDefinitionItems.Clear();
                 var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel
