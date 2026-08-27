@@ -9,7 +9,7 @@ internal sealed class DefaultApplicationPathProvider : IApplicationPathProvider 
     /// <summary>创建路径提供器并规范化绝对路径。</summary>
     public DefaultApplicationPathProvider(ApplicationPathOptions options) {
         DataDirectory = Normalize(options.DataDirectory);
-        _databaseDirectory = Normalize(options.DatabaseDirectory ?? options.DataDirectory);
+        _databaseDirectory = Normalize(options.DatabaseDirectory);
         ConfigurationDirectory = Normalize(options.ConfigurationDirectory);
         LogDirectory = Normalize(options.LogDirectory);
         ModelDirectory = Normalize(options.ModelDirectory);

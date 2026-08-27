@@ -5,6 +5,7 @@
 ## 存储位置与自动迁移
 
 - 三个 SQLite 数据库固定保存在可执行程序所在目录（`AppContext.BaseDirectory`）。
+- 数据库目录是必填部署配置，禁止缺省回退到 `%LOCALAPPDATA%` 等系统用户目录。
 - 程序目录已有同名数据库时直接使用，自动迁移绝不覆盖现有文件。
 - 程序目录没有数据库时，按显式 `DWS_LEGACY_DATA_DIRECTORY`、上一版本 `%LOCALAPPDATA%\JayTom\Dws\data`、当前工作目录的顺序查找历史库。
 - 发现历史库后通过 SQLite 在线备份生成完整快照，合并已提交的 WAL 数据，经 `PRAGMA quick_check` 校验后原子落盘；源数据库始终保留。
