@@ -1299,6 +1299,6 @@
     "JayTom.Dws.Utils/JayTom.Dws.Utils.csproj": 1
   },
   "LegacyTargetFramework": {},
-  "EfModelSignature": "46236074B5F2CEE69944F8B1DF1CFE443E020AC52CACCCA771A2CD445FD9C0CB",
-  "EfMigrationCount": 6
+  "EfModelSignature": "95C720190E2EAA58A20B4F3AD8841A76CFC4E222C5CEA18F06A8EC9D1F724BD6",
+  "EfMigrationCount": 7
 }

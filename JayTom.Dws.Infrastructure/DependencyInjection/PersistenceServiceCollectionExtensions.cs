@@ -8,7 +8,9 @@ using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.Co
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
+using JayTom.Dws.Application.Deployment;
 using JayTom.Dws.Infrastructure;
+using JayTom.Dws.Infrastructure.Migrations;
 using JayTom.Dws.Infrastructure.Repository.LocalConf;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
 using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
@@ -22,8 +24,6 @@ using JayTom.Dws.Infrastructure.Configuration;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.IO;
 
 namespace JayTom.Dws.Infrastructure.DependencyInjection;
 
@@ -32,11 +32,20 @@ public static class PersistenceServiceCollectionExtensions {
     /// <summary>注册持久化基础设施。</summary>
     public static IServiceCollection AddDwsPersistence(this IServiceCollection services) {
         services.AddPooledDbContextFactory<SqliteContext>(
-            options => ConfigureSqlite(options, "Data.db"), 32);
+            (provider, options) => ConfigureSqlite(
+                options,
+                provider.GetRequiredService<IApplicationPathProvider>(),
+                "Data.db"), 32);
         services.AddPooledDbContextFactory<SqliteConfContext>(
-            options => ConfigureSqlite(options, "Configuration.db"), 32);
+            (provider, options) => ConfigureSqlite(
+                options,
+                provider.GetRequiredService<IApplicationPathProvider>(),
+                "Configuration.db"), 32);
         services.AddPooledDbContextFactory<SqliteLogsContext>(
-            options => ConfigureSqlite(options, "ClientLogs.db"), 32);
+            (provider, options) => ConfigureSqlite(
+                options,
+                provider.GetRequiredService<IApplicationPathProvider>(),
+                "ClientLogs.db"), 32);
 
         services.AddTransient<IPackageRepository, PackageRepository>();
         services.AddTransient<IBarCodeRepository, BarCodeRepository>();
@@ -102,9 +111,14 @@ public static class PersistenceServiceCollectionExtensions {
     }
 
     /// <summary>为指定数据库文件配置统一的 SQLite 策略。</summary>
-    private static void ConfigureSqlite(DbContextOptionsBuilder options, string databaseFileName) {
+    private static void ConfigureSqlite(
+        DbContextOptionsBuilder options,
+        IApplicationPathProvider pathProvider,
+        string databaseFileName) {
+        var databasePath = pathProvider.GetDatabasePath(databaseFileName);
+        LegacyDatabaseMigrationCoordinator.EnsureMigrated(databasePath, databaseFileName);
         var connectionString = new SqliteConnectionStringBuilder {
-            DataSource = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, databaseFileName),
+            DataSource = databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
             Cache = SqliteCacheMode.Shared,
             Pooling = true,

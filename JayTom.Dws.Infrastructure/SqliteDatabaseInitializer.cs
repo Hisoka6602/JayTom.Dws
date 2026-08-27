@@ -120,8 +120,8 @@ namespace JayTom.Dws.Infrastructure {
                     ON Data_UploadInfo (RequestStatus);
                 CREATE INDEX IF NOT EXISTS IX_Data_PackageInfo_PackageTimestamped
                     ON Data_PackageInfo (PackageTimestamped);
-                CREATE INDEX IF NOT EXISTS IX_Data_InstructionInfo_PackageId
-                    ON Data_InstructionInfo (PackageId);
+                CREATE INDEX IF NOT EXISTS IX_Data_InstructionInfo_SortingInfoId
+                    ON Data_InstructionInfo (SortingInfoId);
                 CREATE INDEX IF NOT EXISTS IX_Data_SortingInfo_PackageId
                     ON Data_SortingInfo (PackageId);
                 CREATE INDEX IF NOT EXISTS IX_Data_ExitInfo_PackageId

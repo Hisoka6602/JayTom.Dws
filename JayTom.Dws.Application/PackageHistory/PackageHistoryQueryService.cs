@@ -62,14 +62,15 @@ public sealed class PackageHistoryQueryService : IPackageHistoryQueryService {
     /// <summary>将稳定查询对象转换为持久化适配器能够翻译的表达式。</summary>
     private static Expression<Func<PackageInfoModel, bool>> CreatePredicate(PackageHistoryQuery query) =>
         item => item.BarCodeInfo != null &&
-                item.WeightInfo != null &&
                 (query.StartTime == null || item.BarCodeInfo.ScanTime >= query.StartTime) &&
                 (query.EndTime == null || item.BarCodeInfo.ScanTime <= query.EndTime) &&
                 (string.IsNullOrWhiteSpace(query.Barcode) || item.BarCodeInfo.Barcode.Contains(query.Barcode)) &&
                 (string.IsNullOrWhiteSpace(query.PhysicalExit) ||
                  item.ExitInfo != null && item.ExitInfo.PhysicalExit == query.PhysicalExit) &&
-                (query.MinWeight <= 0 || item.WeightInfo.FormattedWeight >= query.MinWeight) &&
-                (query.MaxWeight <= 0 || item.WeightInfo.FormattedWeight <= query.MaxWeight) &&
+                (query.MinWeight <= 0 ||
+                 item.WeightInfo != null && item.WeightInfo.FormattedWeight >= query.MinWeight) &&
+                (query.MaxWeight <= 0 ||
+                 item.WeightInfo != null && item.WeightInfo.FormattedWeight <= query.MaxWeight) &&
                 (query.UploadStatus == null ||
                  item.UploadInfo != null && item.UploadInfo.RequestStatus == query.UploadStatus);
 }
