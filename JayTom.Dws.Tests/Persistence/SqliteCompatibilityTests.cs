@@ -42,16 +42,16 @@ public sealed class SqliteCompatibilityTests {
         }
     }
 
-    /// <summary>验证迁移会把旧库 WAL 中的已提交记录合并进稳定目录，同时保留源文件。</summary>
+    /// <summary>验证迁移会把旧库 WAL 中的已提交记录合并进目标目录，同时保留源文件。</summary>
     [Fact]
     public async Task LegacyDatabaseMigration_CopiesCommittedWalDataAndKeepsSource() {
         var migrationRoot = Path.Combine(
             Path.GetTempPath(),
             $"jaytom-dws-location-migration-{Guid.NewGuid():N}");
         var legacyDirectory = Path.Combine(migrationRoot, "legacy");
-        var stableDirectory = Path.Combine(migrationRoot, "stable");
+        var targetDirectory = Path.Combine(migrationRoot, "runtime");
         var sourcePath = Path.Combine(legacyDirectory, "Data.db");
-        var targetPath = Path.Combine(stableDirectory, "Data.db");
+        var targetPath = Path.Combine(targetDirectory, "Data.db");
         Directory.CreateDirectory(legacyDirectory);
 
         try {
@@ -92,29 +92,29 @@ public sealed class SqliteCompatibilityTests {
         }
     }
 
-    /// <summary>验证稳定目录已经有数据库时，迁移逻辑绝不会覆盖现有数据。</summary>
+    /// <summary>验证运行目录已经有数据库时，迁移逻辑绝不会覆盖现有数据。</summary>
     [Fact]
     public async Task LegacyDatabaseMigration_DoesNotOverwriteExistingTarget() {
         var migrationRoot = Path.Combine(
             Path.GetTempPath(),
             $"jaytom-dws-location-preserve-{Guid.NewGuid():N}");
         var legacyDirectory = Path.Combine(migrationRoot, "legacy");
-        var stableDirectory = Path.Combine(migrationRoot, "stable");
+        var targetDirectory = Path.Combine(migrationRoot, "runtime");
         var sourcePath = Path.Combine(legacyDirectory, "Data.db");
-        var targetPath = Path.Combine(stableDirectory, "Data.db");
+        var targetPath = Path.Combine(targetDirectory, "Data.db");
         Directory.CreateDirectory(legacyDirectory);
-        Directory.CreateDirectory(stableDirectory);
+        Directory.CreateDirectory(targetDirectory);
 
         try {
             await CreateMarkerDatabaseAsync(sourcePath, "legacy");
-            await CreateMarkerDatabaseAsync(targetPath, "stable");
+            await CreateMarkerDatabaseAsync(targetPath, "runtime");
 
             LegacyDatabaseMigrationCoordinator.EnsureMigrated(
                 targetPath,
                 "Data.db",
                 [legacyDirectory]);
 
-            Assert.Equal("stable", await ReadMarkerAsync(targetPath));
+            Assert.Equal("runtime", await ReadMarkerAsync(targetPath));
             Assert.Equal("legacy", await ReadMarkerAsync(sourcePath));
         }
         finally {
@@ -171,15 +171,17 @@ public sealed class SqliteCompatibilityTests {
         }
     }
 
-    /// <summary>验证持久化注册实际使用路径提供器给出的稳定数据目录。</summary>
+    /// <summary>验证持久化注册实际使用路径提供器给出的独立数据库目录。</summary>
     [Fact]
-    public async Task PersistenceRegistration_UsesStableDataDirectory() {
+    public async Task PersistenceRegistration_UsesConfiguredDatabaseDirectory() {
         var applicationRoot = Path.Combine(
             Path.GetTempPath(),
             $"jaytom-dws-stable-path-{Guid.NewGuid():N}");
         var dataDirectory = Path.Combine(applicationRoot, "data");
+        var databaseDirectory = Path.Combine(applicationRoot, "runtime");
         var paths = new DefaultApplicationPathProvider(new ApplicationPathOptions {
             DataDirectory = dataDirectory,
+            DatabaseDirectory = databaseDirectory,
             ConfigurationDirectory = Path.Combine(applicationRoot, "configuration"),
             LogDirectory = Path.Combine(applicationRoot, "logs"),
             ModelDirectory = Path.Combine(applicationRoot, "models"),
@@ -195,7 +197,7 @@ public sealed class SqliteCompatibilityTests {
             await using var context = await factory.CreateDbContextAsync();
 
             Assert.Equal(
-                Path.Combine(dataDirectory, "Data.db"),
+                Path.Combine(databaseDirectory, "Data.db"),
                 context.Database.GetDbConnection().DataSource);
         }
         finally {
@@ -204,6 +206,20 @@ public sealed class SqliteCompatibilityTests {
                 Directory.Delete(applicationRoot, recursive: true);
             }
         }
+    }
+
+    /// <summary>验证生产默认配置将 SQLite 数据库放在可执行程序所在目录。</summary>
+    [Fact]
+    public void DefaultPathConfiguration_UsesApplicationDirectoryForDatabases() {
+        var services = new ServiceCollection();
+        services.AddDwsInfrastructurePlatformAdapters();
+        using var provider = services.BuildServiceProvider();
+        var paths = provider.GetRequiredService<IApplicationPathProvider>();
+
+        Assert.Equal(
+            Path.Combine(AppContext.BaseDirectory, "Data.db"),
+            paths.GetDatabasePath("Data.db"));
+        Assert.NotEqual(paths.DataDirectory, AppContext.BaseDirectory);
     }
 
     /// <summary>验证旧 INTEGER/REAL 列可读写且初始化不会重建业务表。</summary>

@@ -4,9 +4,12 @@ namespace JayTom.Dws.Infrastructure.Configuration;
 
 /// <summary>使用显式选项解析和约束全部运行时路径。</summary>
 internal sealed class DefaultApplicationPathProvider : IApplicationPathProvider {
+    private readonly string _databaseDirectory;
+
     /// <summary>创建路径提供器并规范化绝对路径。</summary>
     public DefaultApplicationPathProvider(ApplicationPathOptions options) {
         DataDirectory = Normalize(options.DataDirectory);
+        _databaseDirectory = Normalize(options.DatabaseDirectory ?? options.DataDirectory);
         ConfigurationDirectory = Normalize(options.ConfigurationDirectory);
         LogDirectory = Normalize(options.LogDirectory);
         ModelDirectory = Normalize(options.ModelDirectory);
@@ -36,7 +39,7 @@ internal sealed class DefaultApplicationPathProvider : IApplicationPathProvider 
             throw new ArgumentException("数据库名称必须是安全文件名。", nameof(databaseName));
         }
 
-        return Path.Combine(DataDirectory, databaseName);
+        return Path.Combine(_databaseDirectory, databaseName);
     }
 
     private static string Normalize(string path) {

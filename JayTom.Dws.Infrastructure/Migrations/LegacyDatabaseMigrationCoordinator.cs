@@ -5,7 +5,7 @@ using NLog;
 namespace JayTom.Dws.Infrastructure.Migrations;
 
 /// <summary>
-/// 将旧版本放在程序目录中的 SQLite 数据库一次性迁移到稳定的用户数据目录。
+/// 在数据库存储位置调整后，将旧位置中的 SQLite 数据库一次性迁移到当前目录。
 /// </summary>
 internal static class LegacyDatabaseMigrationCoordinator {
     /// <summary>允许部署脚本显式指定旧版数据库所在目录。</summary>
@@ -27,6 +27,7 @@ internal static class LegacyDatabaseMigrationCoordinator {
             databaseFileName,
             new[] {
                 Environment.GetEnvironmentVariable(LegacyDataDirectoryEnvironmentVariable),
+                GetPreviousStableDataDirectory(),
                 AppContext.BaseDirectory,
                 Environment.CurrentDirectory
             });
@@ -59,7 +60,7 @@ internal static class LegacyDatabaseMigrationCoordinator {
                 try {
                     BackupAndValidate(sourcePath, normalizedTargetPath);
                     Logger.Info(
-                        "已将旧版数据库 {DatabaseName} 从 {SourceDirectory} 迁移到稳定数据目录 {TargetDirectory}；旧文件已保留。",
+                        "已将数据库 {DatabaseName} 从旧目录 {SourceDirectory} 迁移到当前数据库目录 {TargetDirectory}；旧文件已保留。",
                         databaseFileName,
                         Path.GetDirectoryName(sourcePath),
                         Path.GetDirectoryName(normalizedTargetPath));
@@ -84,7 +85,14 @@ internal static class LegacyDatabaseMigrationCoordinator {
         }
     }
 
-    /// <summary>枚举显式旧目录、当前程序目录和当前工作目录中的旧数据库。</summary>
+    /// <summary>获取上一版本使用的稳定用户数据目录。</summary>
+    private static string GetPreviousStableDataDirectory() {
+        var applicationData = Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(applicationData, "JayTom", "Dws", "data");
+    }
+
+    /// <summary>枚举显式旧目录、上一版本用户数据目录和当前工作目录中的旧数据库。</summary>
     private static IEnumerable<string> FindLegacyCandidates(
         string databaseFileName,
         string normalizedTargetPath,

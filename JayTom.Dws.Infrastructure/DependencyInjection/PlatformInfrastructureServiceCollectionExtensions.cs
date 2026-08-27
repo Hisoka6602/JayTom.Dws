@@ -31,7 +31,7 @@ public static class PlatformInfrastructureServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>创建不依赖当前工作目录的默认运行时路径。</summary>
+    /// <summary>创建默认运行时路径；SQLite 数据库固定放在可执行程序所在目录。</summary>
     private static ApplicationPathOptions CreatePathOptions()
     {
         var applicationData = Environment.GetFolderPath(
@@ -40,6 +40,7 @@ public static class PlatformInfrastructureServiceCollectionExtensions
         return new ApplicationPathOptions
         {
             DataDirectory = Path.Combine(root, "data"),
+            DatabaseDirectory = AppContext.BaseDirectory,
             ConfigurationDirectory = Path.Combine(root, "configuration"),
             LogDirectory = Path.Combine(root, "logs"),
             ModelDirectory = Path.Combine(root, "models"),

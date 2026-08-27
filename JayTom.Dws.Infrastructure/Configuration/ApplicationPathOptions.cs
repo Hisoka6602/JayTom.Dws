@@ -5,6 +5,9 @@ public sealed record ApplicationPathOptions {
     /// <summary>获取应用数据根目录。</summary>
     public required string DataDirectory { get; init; }
 
+    /// <summary>获取 SQLite 数据库目录；未指定时兼容使用应用数据根目录。</summary>
+    public string? DatabaseDirectory { get; init; }
+
     /// <summary>获取配置目录。</summary>
     public required string ConfigurationDirectory { get; init; }
 
