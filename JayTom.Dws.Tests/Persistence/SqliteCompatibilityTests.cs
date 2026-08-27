@@ -208,18 +208,28 @@ public sealed class SqliteCompatibilityTests {
         }
     }
 
-    /// <summary>验证生产默认配置将 SQLite 数据库放在可执行程序所在目录。</summary>
+    /// <summary>验证生产默认配置将全部应用管理的可写内容放在可执行程序所在目录。</summary>
     [Fact]
-    public void DefaultPathConfiguration_UsesApplicationDirectoryForDatabases() {
+    public void DefaultPathConfiguration_UsesApplicationDirectoryForWritableData() {
         var services = new ServiceCollection();
         services.AddDwsInfrastructurePlatformAdapters();
         using var provider = services.BuildServiceProvider();
         var paths = provider.GetRequiredService<IApplicationPathProvider>();
+        var applicationDirectory = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(AppContext.BaseDirectory));
 
         Assert.Equal(
-            Path.Combine(AppContext.BaseDirectory, "Data.db"),
+            Path.Combine(applicationDirectory, "Data.db"),
             paths.GetDatabasePath("Data.db"));
-        Assert.NotEqual(paths.DataDirectory, AppContext.BaseDirectory);
+        Assert.Equal(Path.Combine(applicationDirectory, "data"), paths.DataDirectory);
+        Assert.Equal(
+            Path.Combine(applicationDirectory, "configuration"),
+            paths.ConfigurationDirectory);
+        Assert.Equal(Path.Combine(applicationDirectory, "logs"), paths.LogDirectory);
+        Assert.Equal(Path.Combine(applicationDirectory, "models"), paths.ModelDirectory);
+        Assert.Equal(
+            Path.Combine(applicationDirectory, "adapters"),
+            paths.AdapterPackDirectory);
     }
 
     /// <summary>验证旧 INTEGER/REAL 列可读写且初始化不会重建业务表。</summary>

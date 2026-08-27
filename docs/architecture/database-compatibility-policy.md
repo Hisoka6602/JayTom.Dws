@@ -6,6 +6,8 @@
 
 - 三个 SQLite 数据库固定保存在可执行程序所在目录（`AppContext.BaseDirectory`）。
 - 数据库目录是必填部署配置，禁止缺省回退到 `%LOCALAPPDATA%` 等系统用户目录。
+- 应用管理的资源、加密配置、日志、模型和适配器分别保存在程序目录下的 `data`、`configuration`、`logs`、`models` 和 `adapters` 子目录。
+- 除非程序本身部署在系统盘，应用默认路径不会向系统盘写入运行数据；操作系统、.NET 运行时或第三方驱动必须产生的数据不在此约束范围内。
 - 程序目录已有同名数据库时直接使用，自动迁移绝不覆盖现有文件。
 - 程序目录没有数据库时，按显式 `DWS_LEGACY_DATA_DIRECTORY`、上一版本 `%LOCALAPPDATA%\JayTom\Dws\data`、当前工作目录的顺序查找历史库。
 - 发现历史库后通过 SQLite 在线备份生成完整快照，合并已提交的 WAL 数据，经 `PRAGMA quick_check` 校验后原子落盘；源数据库始终保留。

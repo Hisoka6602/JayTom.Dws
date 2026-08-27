@@ -31,20 +31,19 @@ public static class PlatformInfrastructureServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>创建默认运行时路径；SQLite 数据库固定放在可执行程序所在目录。</summary>
+    /// <summary>创建默认运行时路径；应用管理的可写内容全部位于可执行程序所在目录。</summary>
     private static ApplicationPathOptions CreatePathOptions()
     {
-        var applicationData = Environment.GetFolderPath(
-            Environment.SpecialFolder.LocalApplicationData);
-        var root = Path.Combine(applicationData, "JayTom", "Dws");
+        var root = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(AppContext.BaseDirectory));
         return new ApplicationPathOptions
         {
             DataDirectory = Path.Combine(root, "data"),
-            DatabaseDirectory = AppContext.BaseDirectory,
+            DatabaseDirectory = root,
             ConfigurationDirectory = Path.Combine(root, "configuration"),
             LogDirectory = Path.Combine(root, "logs"),
             ModelDirectory = Path.Combine(root, "models"),
-            AdapterPackDirectory = Path.Combine(AppContext.BaseDirectory, "adapters")
+            AdapterPackDirectory = Path.Combine(root, "adapters")
         };
     }
 }
