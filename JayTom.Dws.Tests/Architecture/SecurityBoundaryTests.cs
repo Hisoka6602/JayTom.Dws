@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using JayTom.Dws.Infrastructure.Jwt;
+using JayTom.Dws.License;
 
 namespace JayTom.Dws.Tests.Architecture;
 
@@ -166,6 +167,32 @@ public sealed class SecurityBoundaryTests
         Assert.Contains("$envelope.algorithm -ne 'PS256'", script, StringComparison.Ordinal);
         Assert.Contains("Copy-Item -LiteralPath $publicKeyFullPath", script, StringComparison.Ordinal);
         Assert.Contains("license-manifest.json", script, StringComparison.Ordinal);
+    }
+
+    /// <summary>验证生产公钥随客户端发布，且文件名与公钥指纹一致。</summary>
+    [Fact]
+    public void Production_public_keys_are_packaged_as_application_trust_roots()
+    {
+        string trustDirectory = Path.Combine(
+            RepositoryRoot,
+            "JayTom.Dws.Client",
+            "license-trust");
+        string[] publicKeyPaths = Directory.GetFiles(trustDirectory, "*.pem");
+        string project = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "JayTom.Dws.Client",
+            "JayTom.Dws.Client.csproj"));
+
+        Assert.NotEmpty(publicKeyPaths);
+        foreach (string publicKeyPath in publicKeyPaths)
+        {
+            string expectedKeyId = Path.GetFileNameWithoutExtension(publicKeyPath);
+            string actualKeyId = LicenseManager.ComputeKeyId(File.ReadAllText(publicKeyPath));
+            Assert.Equal(expectedKeyId, actualKeyId);
+        }
+
+        Assert.Contains("<None Update=\"license-trust\\*.pem\">", project, StringComparison.Ordinal);
+        Assert.Contains("<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>", project, StringComparison.Ordinal);
     }
 
     /// <summary>验证通用仓储不再暴露可接收任意 SQL 的入口，Raw SQL 技术债为零。</summary>
