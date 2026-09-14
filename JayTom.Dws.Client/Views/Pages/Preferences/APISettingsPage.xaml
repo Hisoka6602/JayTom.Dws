@@ -18,6 +18,38 @@
     mvvm:ViewModelLocator.AutoWireViewModel="True"
     FontFamily="{StaticResource CustomFontFamily}"
     mc:Ignorable="d">
+    <Page.Resources>
+        <Style
+            x:Key="ApiTabNavigationButtonStyle"
+            BasedOn="{StaticResource MaterialDesignFlatButton}"
+            TargetType="{x:Type Button}">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Opacity" Value="0.82" />
+            <Setter Property="ToolTipService.ShowDuration" Value="5000" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#267B7B7B" />
+                    <Setter Property="Opacity" Value="1" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#3D7B7B7B" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.28" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded" SourceName="ApiSettingsView">
             <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
@@ -91,22 +123,128 @@
             </StackPanel>
             <!--  内容  -->
             <TabControl
+                x:Name="ApiTabs"
                 Grid.Row="1"
                 HorizontalContentAlignment="Left"
                 materialDesign:ColorZoneAssist.Foreground="White"
                 materialDesign:ColorZoneAssist.Mode="Custom"
                 materialDesign:TabAssist.HasFilledTab="True"
-                materialDesign:TabAssist.HasUniformTabWidth="True"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                materialDesign:TabAssist.HasUniformTabWidth="False"
+                ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                Style="{StaticResource MaterialDesignUniformTabControl}"
+                Style="{StaticResource MaterialDesignTabControl}"
                 TabStripPlacement="Top">
-                <!--  接口数量超出可用宽度时自动换行，避免右侧接口页签被裁切。  -->
-                <TabControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </TabControl.ItemsPanel>
+                <TabControl.Template>
+                    <ControlTemplate TargetType="{x:Type TabControl}">
+                        <Grid
+                            Background="{TemplateBinding Background}"
+                            ClipToBounds="True"
+                            KeyboardNavigation.TabNavigation="Local"
+                            SnapsToDevicePixels="True">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--  单行页签导航：左右翻页、滚轮横移和全部页签菜单。  -->
+                            <Border
+                                Grid.Row="0"
+                                BorderBrush="#24FFFFFF"
+                                BorderThickness="0,0,0,1">
+                                <Grid x:Name="HeaderNavigationBar" MinHeight="44">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button
+                                        x:Name="PART_ScrollLeftButton"
+                                        Grid.Column="0"
+                                        Width="36"
+                                        AutomationProperties.Name="向左浏览接口选项卡"
+                                        Style="{StaticResource ApiTabNavigationButtonStyle}"
+                                        ToolTip="向左浏览接口">
+                                        <materialDesign:PackIcon
+                                            Width="20"
+                                            Height="20"
+                                            Kind="ChevronLeft" />
+                                    </Button>
+
+                                    <ScrollViewer
+                                        x:Name="PART_HeaderScrollViewer"
+                                        Grid.Column="1"
+                                        Margin="2,0"
+                                        HorizontalScrollBarVisibility="Hidden"
+                                        VerticalScrollBarVisibility="Disabled"
+                                        CanContentScroll="False"
+                                        Focusable="False"
+                                        PanningMode="HorizontalOnly">
+                                        <TabPanel
+                                            HorizontalAlignment="Left"
+                                            IsItemsHost="True"
+                                            KeyboardNavigation.TabIndex="1"
+                                            Panel.ZIndex="1" />
+                                    </ScrollViewer>
+
+                                    <Button
+                                        x:Name="PART_ScrollRightButton"
+                                        Grid.Column="2"
+                                        Width="36"
+                                        AutomationProperties.Name="向右浏览接口选项卡"
+                                        Style="{StaticResource ApiTabNavigationButtonStyle}"
+                                        ToolTip="向右浏览接口">
+                                        <materialDesign:PackIcon
+                                            Width="20"
+                                            Height="20"
+                                            Kind="ChevronRight" />
+                                    </Button>
+
+                                    <Border
+                                        Grid.Column="3"
+                                        BorderBrush="#24FFFFFF"
+                                        BorderThickness="1,0,0,0">
+                                        <Button
+                                            x:Name="PART_OverflowButton"
+                                            MinWidth="68"
+                                            AutomationProperties.Name="打开全部接口选项卡菜单"
+                                            Style="{StaticResource ApiTabNavigationButtonStyle}"
+                                            ToolTip="查看全部接口">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon
+                                                    Width="17"
+                                                    Height="17"
+                                                    Margin="0,0,4,0"
+                                                    Kind="DotsHorizontal" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    FontSize="12"
+                                                    FontWeight="SemiBold"
+                                                    Text="更多" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <ContentPresenter
+                                x:Name="PART_SelectedContentHost"
+                                Grid.Row="1"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                ContentSource="SelectedContent"
+                                RecognizesAccessKey="True"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="HeaderNavigationBar" Property="Opacity" Value="0.56" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </TabControl.Template>
                 <TabItem Foreground="White" Header="{x:Static languages:Language.DefaultApi}">
                     <controls:DeferredFrame
                         Margin="0"

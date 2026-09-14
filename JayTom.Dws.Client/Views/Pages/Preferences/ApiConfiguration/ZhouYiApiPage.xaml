@@ -118,38 +118,6 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
-                    <!--  ApplicationCode  -->
-                    <StackPanel Orientation="Horizontal">
-                        <!--  图标  -->
-                        <TextBlock
-                            Margin="5,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="Bold"
-                            Foreground="DarkGray"
-                            Text="ApplicationCode:" />
-                        <Border
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="#1A696969"
-                            CornerRadius="5">
-                            <TextBox
-                                Width="350"
-                                Height="30"
-                                MaxWidth="500"
-                                Margin="5,0"
-                                materialDesign:TextFieldAssist.HasClearButton="False"
-                                materialDesign:TextFieldAssist.HasFilledTextField="True"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                FontSize="13"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ZhouYiApiInfo.ApplicationCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                        </Border>
-                    </StackPanel>
                     <!--  AppKey  -->
                     <StackPanel Orientation="Horizontal">
                         <!--  图标  -->
@@ -179,11 +147,10 @@
                                 FontWeight="Bold"
                                 Foreground="White"
                                 InputMethod.IsInputMethodEnabled="False"
-                                Text="{Binding ZhouYiApiInfo.AppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                Text="{Binding ZhouYiApiInfo.ApplicationCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </Border>
                     </StackPanel>
-
-                    <!--  NeedUpload  -->
+                    <!--  AppSecret  -->
                     <StackPanel Orientation="Horizontal">
                         <!--  图标  -->
                         <TextBlock
@@ -192,7 +159,40 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="NeedUpload:" />
+                            Text="AppSecret:" />
+                        <Border
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Background="#1A696969"
+                            CornerRadius="5">
+                            <TextBox
+                                Width="350"
+                                Height="30"
+                                MaxWidth="500"
+                                Margin="5,0"
+                                materialDesign:TextFieldAssist.HasClearButton="False"
+                                materialDesign:TextFieldAssist.HasFilledTextField="True"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                InputMethod.IsInputMethodEnabled="False"
+                                Text="{Binding ZhouYiApiInfo.AppKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!--  是否上传  -->
+                    <StackPanel Orientation="Horizontal">
+                        <!--  图标  -->
+                        <TextBlock
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="Bold"
+                            Foreground="DarkGray"
+                            Text="是否上传：" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
@@ -207,7 +207,7 @@
                                 Style="{StaticResource CustomCheckBoxStyle}" />
                         </Border>
                     </StackPanel>
-                    <!--  IsFstCode  -->
+                    <!--  是否一段码匹配  -->
                     <StackPanel Orientation="Horizontal">
                         <!--  图标  -->
                         <TextBlock
@@ -216,7 +216,7 @@
                             FontSize="13"
                             FontWeight="Bold"
                             Foreground="DarkGray"
-                            Text="IsFstCode:" />
+                            Text="是否一段码匹配（勾选：出港，未勾选：进港）：" />
                         <Border
                             Margin="5"
                             HorizontalAlignment="Center"
