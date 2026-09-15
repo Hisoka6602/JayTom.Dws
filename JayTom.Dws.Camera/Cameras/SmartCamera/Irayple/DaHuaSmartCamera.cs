@@ -34,6 +34,22 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         private long _frameNo = 0;
         /// <summary>脱离华睿 SDK 回调执行块解析、图像处理和事件发布的无损顺序调度器。</summary>
         private LosslessOrderedDispatcher<DaHuaCapturedFrame>? _frameDispatcher;
+        /// <summary>串行保护同一设备的启动和停止。</summary>
+        private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
+        /// <summary>隔离不同采集会话的迟到回调和排队帧。</summary>
+        private readonly CameraCaptureSession _captureSession = new();
+        /// <summary>华睿没有触发序号时，以连续回调静默 200ms 作为电平触发帧组的收束条件。</summary>
+        private static readonly TimeSpan TriggerFrameQuietPeriod = TimeSpan.FromMilliseconds(200);
+        /// <summary>合并电平触发期间连续帧中的 NoRead 候选。</summary>
+        private TriggerBurstNoReadGate? _noReadGate;
+        /// <summary>记录相机实际返回的硬件触发激活方式是否为高低电平。</summary>
+        private bool _isLevelTrigger;
+        /// <summary>保存可解除的码流回调，避免反复启动时叠加订阅。</summary>
+        private EventHandler<GrabbedEventArgs>? _imageGrabbedHandler;
+        /// <summary>保存设备打开回调，释放设备时解除引用。</summary>
+        private EventHandler<EventArgs>? _cameraOpenedHandler;
+        /// <summary>保存设备断线回调，释放设备时解除引用。</summary>
+        private EventHandler<EventArgs>? _connectionLostHandler;
 
         /// <summary>
         /// 摄像头对象
@@ -78,7 +94,15 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         /// <summary>异步停止相机后发布注销事件。</summary>
         private async Task DisposeCoreAsync() {
-            await Stop();
+            var stopped = await Stop();
+            if (!stopped.Key) {
+                throw new InvalidOperationException(stopped.Value);
+            }
+            if (_device is not null) {
+                _device.CameraOpened -= _cameraOpenedHandler;
+                _device.ConnectionLost -= _connectionLostHandler;
+                _device = null;
+            }
             OnCameraUnregistered(new CameraUnregisteredEventArgs() {
                 CameraInfo = this.Info
             });
@@ -134,6 +158,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
 
         public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
+            if (_device is not null) {
+                return new KeyValuePair<bool, string>(false, "已初始化过!");
+            }
             if (param is CameraInfo info) {
                 this.Info = info;
                 //实例化对象
@@ -143,10 +170,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     if (_device != null) {
                         //注册事件
                         //相机打开事件
-                        _device.CameraOpened += delegate (object? sender, EventArgs args) {
+                        _cameraOpenedHandler = delegate (object? sender, EventArgs args) {
                             //设置参数
                             //设置触发
-                            _device.TriggerSet.Open(TriggerSourceEnum.Line1);
+                            ConfigureTrigger(_device.TriggerSet);
+                            ReadTriggerActivation(_device.ParameterCollection);
                             //设置图像格式
                             using (var p = _device.ParameterCollection[ParametrizeNameSet.ImagePixelFormat]) {
                                 p.SetValue("Mono8");
@@ -167,20 +195,19 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             }
                             // 保留少量驱动缓冲以降低延迟和非托管内存占用。
                             _device.StreamGrabber.SetBufferCount(3);
-                            //开启码流
-                            var loopThread = _device.GrabUsingGrabLoopThread();
-                            if (!loopThread) {
-                                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                                    Exception = new Exception("开启码流失败!")
-                                });
-                            }
                         };
+                        _device.CameraOpened += _cameraOpenedHandler;
                         //相机断连事件
-                        _device.ConnectionLost += delegate (object? sender, EventArgs args) {
+                        _connectionLostHandler = delegate (object? sender, EventArgs args) {
+                            _captureSession.Stop();
+                            _noReadGate?.Dispose();
+                            _noReadGate = null;
+                            OnCameraDisconnected(new CameraConnectionEventArgs { CameraInfo = Info });
                             OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                                 Exception = new Exception($"摄像头:{Info?.SerialNumber}丢失/断开")
                             });
                         };
+                        _device.ConnectionLost += _connectionLostHandler;
 
                         OnCameraInitialized(new CameraInitializedEventArgs() {
                             CameraInfo = this.Info
@@ -210,60 +237,149 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         }
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
-            await Task.Yield();
-            //打开设备
-            if (_device is not null) {
-                if (_device.IsOpen) {
-                    return new KeyValuePair<bool, string>(true, "设备已在运行中!");
-                }
+            await _lifecycleGate.WaitAsync(cancellationToken);
+            try {
+                //打开设备
+                if (_device is not null) {
+                    if (Status == CameraStatus.Running && _device.IsGrabbing) {
+                        return new KeyValuePair<bool, string>(true, "设备已在运行中!");
+                    }
 
-                var open = _device.Open();
-                if (open) {
-                    EnsureFrameDispatcher();
-                    //码流回调事件
-                    _device.StreamGrabber.ImageGrabbed += delegate (object? sender, GrabbedEventArgs args) {
-                        QueueCapturedFrame(args.GrabResult, DateTime.Now);
-                    };
-                    OnCameraStarted(new CameraStartedEventArgs() {
-                        CameraInfo = this.Info,
-                        Camera = this
-                    });
-                    return new KeyValuePair<bool, string>(true, "设备启动成功!");
+                    var open = _device.IsOpen || _device.Open();
+                    if (open) {
+                        EnsureFrameDispatcher();
+                        var generation = _captureSession.Start();
+                        if (_isLevelTrigger) {
+                            EnsureNoReadGate();
+                        }
+                        //码流回调事件
+                        if (_imageGrabbedHandler is not null) {
+                            _device.StreamGrabber.ImageGrabbed -= _imageGrabbedHandler;
+                        }
+                        _imageGrabbedHandler = delegate (object? sender, GrabbedEventArgs args) {
+                            if (_captureSession.IsCurrent(generation)) {
+                                QueueCapturedFrame(args.GrabResult, DateTime.Now, generation);
+                            }
+                        };
+                        _device.StreamGrabber.ImageGrabbed += _imageGrabbedHandler;
+                        if (!_device.GrabUsingGrabLoopThread()) {
+                            _captureSession.Stop();
+                            _device.StreamGrabber.ImageGrabbed -= _imageGrabbedHandler;
+                            _imageGrabbedHandler = null;
+                            _device.Close();
+                            _noReadGate?.Dispose();
+                            _noReadGate = null;
+                            _frameDispatcher?.Dispose();
+                            _frameDispatcher = null;
+                            return new KeyValuePair<bool, string>(false, "开启码流失败");
+                        }
+                        OnCameraStarted(new CameraStartedEventArgs() {
+                            CameraInfo = this.Info,
+                            Camera = this
+                        });
+                        return new KeyValuePair<bool, string>(true, "设备启动成功!");
+                    }
+                    else {
+                        OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
+                            Exception = new Exception("设备启动失败!")
+                        });
+                        return new KeyValuePair<bool, string>(false, "设备启动失败!");
+                    }
                 }
                 else {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                        Exception = new Exception("设备启动失败!")
+                        Exception = new Exception("设备未初始化!")
                     });
-                    return new KeyValuePair<bool, string>(false, "设备启动失败!");
+                    return new KeyValuePair<bool, string>(false, "设备未初始化!");
                 }
             }
-            else {
-                OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
-                    Exception = new Exception("设备未初始化!")
-                });
-                return new KeyValuePair<bool, string>(false, "设备未初始化!");
+            catch (Exception exception) {
+                _captureSession.Stop();
+                _noReadGate?.Dispose();
+                _noReadGate = null;
+                if (_device is not null && _imageGrabbedHandler is not null) {
+                    _device.StreamGrabber.ImageGrabbed -= _imageGrabbedHandler;
+                    _imageGrabbedHandler = null;
+                }
+                _frameDispatcher?.Dispose();
+                _frameDispatcher = null;
+                OnCameraExceptionOccurred(new CameraExceptionEventArgs { Exception = exception });
+                return new KeyValuePair<bool, string>(false, exception.Message);
+            }
+            finally {
+                _lifecycleGate.Release();
             }
         }
 
         public async Task<KeyValuePair<bool, string>> Stop() {
-            await Task.Yield();
-            if (_device is not null) {
-                _device?.ShutdownGrab();
-                _frameDispatcher?.Dispose();
-                _frameDispatcher = null;
-                _device?.Close();
-                //_device?.Dispose();
-                _device = null;
-                OnCameraDisconnected(new CameraConnectionEventArgs() {
-                    CameraInfo = this.Info
-                });
+            await _lifecycleGate.WaitAsync();
+            try {
+                _captureSession.Stop();
+                _noReadGate?.Dispose();
+                _noReadGate = null;
+                if (_device is not null) {
+                    if (_imageGrabbedHandler is not null) {
+                        _device.StreamGrabber.ImageGrabbed -= _imageGrabbedHandler;
+                        _imageGrabbedHandler = null;
+                    }
+                    var stopped = !_device.IsGrabbing || _device.ShutdownGrab();
+                    _frameDispatcher?.Dispose();
+                    _frameDispatcher = null;
+                    var closed = !_device.IsOpen || _device.Close();
+                    if (!stopped || !closed) {
+                        Status = CameraStatus.Failure;
+                        return new KeyValuePair<bool, string>(false, "停止华睿相机采集或关闭设备失败");
+                    }
+                    OnCameraStopped(new CameraStoppedEventArgs() {
+                        CameraInfo = this.Info
+                    });
+                }
+                return new KeyValuePair<bool, string>(true, "设备停止成功!");
             }
-            return new KeyValuePair<bool, string>(true, "设备停止成功!");
+            finally {
+                _lifecycleGate.Release();
+            }
         }
 
         public async Task ApplySettingsAsync(CameraRuntimeSettings settings, CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
+
+        /// <summary>按照配置开启软件或硬件触发，连续采集时关闭触发。</summary>
+        private void ConfigureTrigger(ITrigger trigger) {
+            var configured = IsUseTriggerMode
+                ? trigger.Open(TriggerMode == TriggerMode.Software ? TriggerSourceEnum.Software : TriggerSourceEnum.Line1)
+                : trigger.Close();
+            if (!configured) {
+                throw new InvalidOperationException("华睿相机触发参数设置失败");
+            }
+        }
+
+        /// <summary>读取相机当前触发激活方式，决定是否需要把连续图像合并为一个触发帧组。</summary>
+        private void ReadTriggerActivation(IParameterCollection parameters) {
+            _isLevelTrigger = false;
+            if (!IsUseTriggerMode || TriggerMode != TriggerMode.Hardware) {
+                return;
+            }
+            try {
+                using var activation = parameters[ParametrizeNameSet.TriggerActivation];
+                var value = activation.GetValue()?.ToString();
+                _isLevelTrigger = IsLevelTriggerActivation(value);
+                NLog.LogManager.GetCurrentClassLogger().Info(
+                    $"华睿触发激活方式:相机={Info?.SerialNumber},TriggerActivation={value ?? "未知"}," +
+                    $"连续帧汇总={_isLevelTrigger}");
+            }
+            catch (Exception exception) {
+                NLog.LogManager.GetCurrentClassLogger().Warn(
+                    exception,
+                    $"读取华睿触发激活方式失败:相机={Info?.SerialNumber};按单帧触发处理");
+            }
+        }
+
+        /// <summary>判断厂商触发激活值是否表示高电平或低电平持续触发。</summary>
+        private static bool IsLevelTriggerActivation(string? value) =>
+            string.Equals(value, "LevelHigh", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "LevelLow", StringComparison.OrdinalIgnoreCase);
 
         public bool IsRealtimeImageEnabled { get; private set; }
 
@@ -337,20 +453,47 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// <summary>确保华睿 SDK 回调后的重处理运行在独立长驻线程上。</summary>
         private void EnsureFrameDispatcher() {
             _frameDispatcher ??= new LosslessOrderedDispatcher<DaHuaCapturedFrame>(
-                frame => GrabResultDecode(frame.RawData, frame.ScanTime, frame.FrameNo),
+                frame => {
+                    if (_captureSession.IsCurrent(frame.Generation)) {
+                        GrabResultDecodeCore(frame.RawData, frame.ScanTime, frame.FrameNo, frame.Generation);
+                    }
+                },
                 (_, exception) => OnCameraExceptionOccurred(new CameraExceptionEventArgs {
                     Exception = new Exception("后台处理华睿扫码帧异常", exception)
                 }));
         }
 
+        /// <summary>创建华睿电平触发帧组门控器，并在对应采集会话有效时发布汇总 NoRead。</summary>
+        private void EnsureNoReadGate() {
+            _noReadGate ??= new TriggerBurstNoReadGate(
+                TriggerFrameQuietPeriod,
+                PublishBufferedNoRead,
+                exception => OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception("发布华睿触发帧组NoRead失败", exception)
+                }));
+        }
+
+        /// <summary>发布已经确认整轮没有原始条码结果的华睿 NoRead。</summary>
+        private void PublishBufferedNoRead(int generation, BarcodeReadEventArgs args) {
+            if (!_captureSession.IsCurrent(generation) || !_isLevelTrigger ||
+                !IsUseTriggerMode || TriggerMode != TriggerMode.Hardware || IsHideNoRead ||
+                NotBarcodeHitEvent is null) {
+                ReleaseEventImages(args);
+                return;
+            }
+            OnNotBarcodeHitEvent(args);
+        }
+
         /// <summary>在 SDK 回调入口立即克隆帧，并以原始观测时间无等待入队。</summary>
-        private void QueueCapturedFrame(IGrabbedRawData rawData, DateTime scanTime) {
+        private void QueueCapturedFrame(IGrabbedRawData rawData, DateTime scanTime, int generation) {
+            if (!_captureSession.IsCurrent(generation)) {
+                return;
+            }
             try {
-                EnsureFrameDispatcher();
                 var frame = new DaHuaCapturedFrame(
                     rawData.Clone(),
                     scanTime,
-                    Interlocked.Increment(ref _frameNo));
+                    Interlocked.Increment(ref _frameNo), generation);
                 if (_frameDispatcher?.TryEnqueue(frame) != true) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs {
                         Exception = new InvalidOperationException("华睿相机帧处理器已经停止。")
@@ -369,20 +512,40 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// </summary>
         /// <param name="grabbedRawData"></param>
         private void GrabResultDecode(IGrabbedRawData grabbedRawData, DateTime scanTime, long frameNo) {
+            GrabResultDecodeCore(grabbedRawData, scanTime, frameNo, 0);
+        }
+
+        /// <summary>解析一帧华睿 SDK 数据，并按实际触发方式决定立即或汇总发布 NoRead。</summary>
+        private void GrabResultDecodeCore(
+            IGrabbedRawData grabbedRawData,
+            DateTime scanTime,
+            long frameNo,
+            int generation) {
             Bitmap? bitmap = null;
             try {
                 var timestamp = new DateTimeOffset(scanTime).ToUnixTimeMilliseconds();
                 var barcodeInfo = new List<DaHuaBarcodeInfo>();
+                var hasSdkBarcode = false;
+                var hasDecodeResult = false;
                 var chunkData = grabbedRawData.ChunkData;
                 for (var i = 0; i < chunkData.ChunkCount; i++) {
                     uint chunkNumber = 0;
                     var vecChunkInfos = new List<string>();
                     chunkData.GetChunkDataByIndex((uint)i, ref chunkNumber, ref vecChunkInfos);
-                    ParseChunkData(chunkNumber, vecChunkInfos, scanTime, barcodeInfo);
+                    var sdkCodeCount = ParseChunkData(chunkNumber, vecChunkInfos, scanTime, barcodeInfo);
+                    hasSdkBarcode |= sdkCodeCount > 0;
+                    hasDecodeResult |= sdkCodeCount >= 0;
                 }
 
-                var noReadConsumer = barcodeInfo.Count == 0 && IsUseTriggerMode &&
-                                     TriggerMode == TriggerMode.Hardware && NotBarcodeHitEvent is not null;
+                var canReportNoRead = !IsHideNoRead && IsUseTriggerMode &&
+                                      TriggerMode == TriggerMode.Hardware && NotBarcodeHitEvent is not null;
+                var aggregateNoRead = canReportNoRead && _isLevelTrigger;
+                var noReadGate = aggregateNoRead ? _noReadGate : null;
+                if (aggregateNoRead && noReadGate is not null && hasDecodeResult && hasSdkBarcode) {
+                    noReadGate!.Observe(generation, true, null);
+                }
+                var noReadConsumer = hasDecodeResult && !hasSdkBarcode && canReportNoRead &&
+                                     (!aggregateNoRead || noReadGate is not null);
                 var barcodeConsumerCount = BarcodeReadTriggered is null ? 0 : barcodeInfo.Count;
                 var realtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
                 if (!noReadConsumer && barcodeConsumerCount == 0 && !realtimeConsumer) {
@@ -419,7 +582,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     ? new Bitmap(thumbnailImage)
                     : thumbnailImage;
                 if (noReadConsumer) {
-                    OnNotBarcodeHitEvent(new BarcodeReadEventArgs {
+                    var candidate = new BarcodeReadEventArgs {
                             Timestamp = timestamp,
                             Barcode = "NoRead",
                             Image = bitmap,
@@ -427,7 +590,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                             CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                             ScanTime = scanTime,
                             FrameNo = frameNo
-                        });
+                    };
+                    if (aggregateNoRead) {
+                        noReadGate!.Observe(generation, false, candidate);
+                    }
+                    else {
+                        OnNotBarcodeHitEvent(candidate);
+                    }
                 }
                 for (var index = 0; index < barcodeConsumerCount; index++) {
                     var isLast = index == barcodeConsumerCount - 1;
@@ -470,13 +639,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         /// <summary>
         /// 单遍解析一个相机块，避免对每个字段反复扫描全部文本。
         /// </summary>
-        private void ParseChunkData(
+        private int ParseChunkData(
             uint chunkType,
             List<string> values,
             DateTime scanTime,
             List<DaHuaBarcodeInfo> output) {
             var parsed = new Dictionary<int, DaHuaBarcodeInfo>();
-            var codeCount = 0;
+            // 未携带解码计数字段的纯图像不能当作一次读码失败。
+            var codeCount = -1;
             foreach (var value in values) {
                 var countMatch = ChunkCountPattern.Match(value);
                 if (countMatch.Success) {
@@ -526,6 +696,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                     output.Add(barcode);
                 }
             }
+            return codeCount;
         }
 
         /// <summary>
@@ -567,7 +738,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
         }
 
         protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
-            Status = CameraStatus.Disconnected;
+            Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
         }
 
@@ -614,6 +785,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 return;
             }
             handler.Invoke(this, e);
+        }
+
+        /// <summary>释放未发布事件持有的原图和缩略图。</summary>
+        private static void ReleaseEventImages(BarcodeReadEventArgs args) {
+            args.Image?.Dispose();
+            if (!ReferenceEquals(args.Image, args.ThumbImage)) {
+                args.ThumbImage?.Dispose();
+            }
         }
 
         protected virtual void OnBarcodeReadTriggered(BarcodeTriggeredEventArgs e) {

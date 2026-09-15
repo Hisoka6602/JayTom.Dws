@@ -14,7 +14,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
 
     public class DimensionVolumeCamera : IVolumeCamera {
         private DimensionVolumeSdk? _dimensionVolumeSdk = null;
-        private static MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
+        private MeasurementTriggerMode _measurementTriggerMode = MeasurementTriggerMode.Continuous;
 
         /// <summary>
         /// 设备列表
@@ -35,6 +35,11 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         public DimensionVolumeCamera(CameraInfo info) {
             this.Info = info;
             this.Info.Type = CameraType.ThreeDCamera;
+            EnsureSdk();
+        }
+
+        /// <summary>为参数构造和默认构造后的初始化复用同一 SDK 实例与结果订阅。</summary>
+        private void EnsureSdk() {
             if (_dimensionVolumeSdk is null) {
                 _dimensionVolumeSdk = new();
                 _dimensionVolumeSdk.VolumeCaptured += delegate (object? sender, DimensionVolumeInfo info) {
@@ -121,6 +126,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
                 this.Info = cameraInfo;
                 var tryGetValue = _devInfo.TryGetValue(cameraInfo.SerialNumber, out var devInfo);
                 if (tryGetValue && devInfo is not null) {
+                    EnsureSdk();
                     var (key, value) = await _dimensionVolumeSdk.Initialize();
                     Status = key ? CameraStatus.Initialized : CameraStatus.Uninitialized;
 
@@ -153,7 +159,9 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Dimension {
         }
 
         public async Task<KeyValuePair<bool, string>> Stop() {
-            await _dimensionVolumeSdk.StopVolumeCapture();
+            if (_dimensionVolumeSdk is not null) {
+                await _dimensionVolumeSdk.StopVolumeCapture();
+            }
             OnCameraStopped(new CameraStoppedEventArgs() {
                 CameraInfo = this.Info
             });

@@ -883,8 +883,6 @@ namespace JayTom.Dws.Camera {
                     }
                     Interlocked.Exchange(ref _pendingFrame, null)?.Image.Dispose();
                     _selectCamera?.Close();
-                    _selectCamera?.Dispose();
-                    _selectCamera = null;
                     _isOpend = false;
                     return new KeyValuePair<bool, string>(true, "停止成功");
                 }
@@ -912,6 +910,8 @@ namespace JayTom.Dws.Camera {
         /// <summary>异步停止 USB 读码器后释放 SDK 资源。</summary>
         private async Task DisposeCoreAsync() {
             await Stop();
+            _selectCamera?.Dispose();
+            _selectCamera = null;
             //mBarcodeReader?.Recycle();
             mBarcodeReader?.Dispose();
             mBarcodeReader = null;

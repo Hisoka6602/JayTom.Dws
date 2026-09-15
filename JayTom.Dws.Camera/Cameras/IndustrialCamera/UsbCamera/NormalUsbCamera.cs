@@ -293,6 +293,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.UsbCamera {
                         Exception = new Exception(value)
                     });
                 }
+                else {
+                    OnCameraStopped(new CameraStoppedEventArgs { CameraInfo = Info });
+                }
                 return new KeyValuePair<bool, string>(key, value);
             }
             else {

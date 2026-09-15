@@ -11,12 +11,16 @@ internal sealed class WayzimCapturedFrame {
         CodeInfoStruct codeInfo,
         DateTime scanTime,
         long timestamp,
-        long frameNo) {
+        long frameNo,
+        int generation = 0,
+        uint sdkFrameNo = 0) {
         Buffer = buffer;
         CodeInfo = codeInfo;
         ScanTime = scanTime;
         Timestamp = timestamp;
         FrameNo = frameNo;
+        Generation = generation;
+        SdkFrameNo = sdkFrameNo;
     }
 
     /// <summary>获取通过共享数组池保存的 JPEG 帧。</summary>
@@ -29,4 +33,8 @@ internal sealed class WayzimCapturedFrame {
     public long Timestamp { get; }
     /// <summary>获取回调到达时分配的帧号。</summary>
     public long FrameNo { get; }
+    /// <summary>获取接收该帧的采集代号。</summary>
+    public int Generation { get; }
+    /// <summary>获取快仓 SDK 返回的原始帧号。</summary>
+    public uint SdkFrameNo { get; }
 }

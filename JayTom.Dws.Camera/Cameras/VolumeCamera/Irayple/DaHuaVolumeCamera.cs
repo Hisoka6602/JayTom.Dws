@@ -61,7 +61,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             };
         }
 
-        public CameraInfo? Info { get; }
+        public CameraInfo? Info { get; private set; }
         public SdkType SdkType => SdkType.VolumeCameraSdk;
         public string SdkName => "Volume3DSdk";
         public bool IsOriginalImageOut { get; set; }
@@ -91,6 +91,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
             if (_handle is not null && _handle != IntPtr.Zero) {
                 return new KeyValuePair<bool, string>(false, "已初始化过!");
             }
+            Info = param;
             try {
                 if (_handle is null || _handle == IntPtr.Zero) {
                     _handle = Volume3DSdk.vslbVolume3DCreate();
@@ -103,6 +104,7 @@ namespace JayTom.Dws.Camera.Cameras.VolumeCamera.Irayple {
                     var ret = Volume3DSdk.vslbVolume3DInit(_handle.Value, null);
                     if (ret != 0) {
                         Volume3DSdk.vslbVolume3DDestroy(_handle.Value);
+                        _handle = null;
                         return new KeyValuePair<bool, string>(false, $"初始化失败:{ret}");
                     }
                 }

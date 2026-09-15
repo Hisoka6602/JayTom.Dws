@@ -57,6 +57,8 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         /// <summary>异步停止安防相机后发布生命周期事件。</summary>
         private async Task DisposeCoreAsync() {
             await Stop();
+            _barCodeReader?.Dispose();
+            _barCodeReader = null;
             OnCameraDisconnected(new CameraConnectionEventArgs() {
                 CameraInfo = this.Info
             });
@@ -121,14 +123,16 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         public async Task<KeyValuePair<bool, string>> Initialize(CameraInfo param, CancellationToken cancellationToken = default) {
             await Task.Yield();
-            BindingType = CameraBindingType.ScannerCamera;
+            if (Status is CameraStatus.Initialized or CameraStatus.Running or CameraStatus.Paused) {
+                return new KeyValuePair<bool, string>(false, "已初始化过");
+            }
             if (param is CameraInfo cameraInfo) {
                 var tryGetValue = _devInfo.TryGetValue(cameraInfo.SerialNumber, out var devInfo);
                 if (tryGetValue && devInfo is not null) {
                     this.Info = devInfo;
                     //注册各种事件
-                    if (BindingType == CameraBindingType.ScannerCamera) {
-                        _barCodeReader ??= new DynamsoftBarCodeReader();
+                    if (BindingType == CameraBindingType.ScannerCamera && _barCodeReader is null) {
+                        _barCodeReader = new DynamsoftBarCodeReader();
                         _barCodeReader.BarcodeRead += (sender, result) => HandleBarcodeResult(result);
 
                         await _barCodeReader.InitializeAsync();
@@ -162,6 +166,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                     });
 
                     _baseDaHuatech.RegisterRealtimeFrameCallback(devInfo.SerialNumber, async imageBitmap => {
+                        if (Status != CameraStatus.Running) {
+                            imageBitmap.Dispose();
+                            return;
+                        }
                         try {
                             if (BindingType == CameraBindingType.ScannerCamera) {
                                 //推送图片到解码器
@@ -200,6 +208,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
+            if (Status == CameraStatus.Running) {
+                return new KeyValuePair<bool, string>(true, "设备已在运行中");
+            }
             //获取登录账号密码
             //登录设备
             try {
@@ -237,6 +248,9 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
             //断开
 
             await Task.Yield(); ;
+            if (Status is CameraStatus.Uninitialized or CameraStatus.Paused) {
+                return new KeyValuePair<bool, string>(true, "设备已停止");
+            }
             if (!string.IsNullOrEmpty(this.Info?.SerialNumber)) {
                 await _baseDaHuatech.StopRealtimePlay(this.Info.SerialNumber);
                 var (key, value) = await _baseDaHuatech.LogOut(this.Info.SerialNumber);
@@ -245,7 +259,12 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
                         Exception = new Exception(value)
                     });
                 }
-                _barCodeReader?.Dispose();
+                if (key) {
+                    Status = CameraStatus.Paused;
+                    IsRealtimeImageEnabled = false;
+                    _imageMessageQueue.Clear();
+                    CameraStopped?.Invoke(this, new CameraStoppedEventArgs { CameraInfo = Info });
+                }
                 return new KeyValuePair<bool, string>(key, value);
             }
             return new KeyValuePair<bool, string>(false, "设备未连接");
@@ -402,6 +421,10 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
 
         private void HandleBarcodeResult(BarcodeResult result) {
             var image = result.Image;
+            if (Status != CameraStatus.Running) {
+                image?.Dispose();
+                return;
+            }
             if (image is null) {
                 return;
             }
@@ -507,10 +530,12 @@ namespace JayTom.Dws.Camera.Cameras.SecurityCamera.DaHuatech {
         }
 
         protected virtual void OnCameraDisconnected(CameraConnectionEventArgs e) {
+            Status = CameraStatus.Disconnected;
             CameraDisconnected?.Invoke(this, e);
         }
 
         protected virtual void OnCameraUnregistered(CameraUnregisteredEventArgs e) {
+            Status = CameraStatus.Uninitialized;
             CameraUnregistered?.Invoke(this, e);
         }
 

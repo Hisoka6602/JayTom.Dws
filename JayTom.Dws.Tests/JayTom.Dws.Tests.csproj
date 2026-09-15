@@ -35,4 +35,15 @@
     <ProjectReference Include="..\JayTom.Dws.Plugin.Runtime\JayTom.Dws.Plugin.Runtime.csproj" />
     <ProjectReference Include="..\JayTom.Dws.Plugin\JayTom.Dws.Plugin.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="MvCodeReaderSDK.Net">
+      <HintPath>..\JayTom.Dws.Camera\Cameras\SmartCamera\Hikvision\Dll\MvCodeReaderSDK.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="ThridLibray">
+      <HintPath>..\JayTom.Dws.Camera\Cameras\SmartCamera\Irayple\Dll\ThridLibray.dll</HintPath>
+    </Reference>
+    <Reference Include="CamSDK">
+      <HintPath>..\JayTom.Dws.Camera\Cameras\SmartCamera\Wayzim\Dll\CamSDK.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

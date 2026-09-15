@@ -175,11 +175,20 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Wayzim {
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
-            if (Status != CameraStatus.Initialized || this.Info is null) {
+            if (Status == CameraStatus.Running) {
+                return new KeyValuePair<bool, string>(true, "设备已在运行中");
+            }
+            if (Status is not (CameraStatus.Initialized or CameraStatus.Paused) || this.Info is null) {
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = new Exception("设备未初始化!")
                 });
                 return new KeyValuePair<bool, string>(false, "设备未初始化!");
+            }
+            if (Status == CameraStatus.Paused) {
+                var result = ICAMAPI.ICAM_StartCamera(checked((int)Info.Id));
+                if (result != 0) {
+                    return new KeyValuePair<bool, string>(false, $"恢复相机失败,状态码:{result}");
+                }
             }
             if (BindingType == CameraBindingType.ScannerCamera && _imageCallbackThread is null) {
                 _cancellationTokenSource = new CancellationTokenSource();

@@ -356,7 +356,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Warning,
-                    Message = $"相机:{args.CameraSerialNumber}光电触发但未识别到条码",
+                    Message = args.TriggerIndex is { } triggerIndex
+                        ? $"相机:{args.CameraSerialNumber}触发周期结束未识别到条码,触发序号:{triggerIndex},SDK帧号:{args.SdkFrameNo},通道:{args.SdkChannelId}"
+                        : $"相机:{args.CameraSerialNumber}收到无条码帧,帧号:{args.FrameNo},SDK帧号:{args.SdkFrameNo}",
                     CameraSerialNumber = args.CameraSerialNumber
                 });
             };

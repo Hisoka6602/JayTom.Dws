@@ -36,6 +36,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         private long _frameNo = 0;
         /// <summary>脱离快仓 SDK 回调执行图像解码和事件发布的无损顺序调度器。</summary>
         private LosslessOrderedDispatcher<WayzimCapturedFrame>? _frameDispatcher;
+        /// <summary>隔离停止和重启前后的 SDK 回调。</summary>
+        private readonly CameraCaptureSession _captureSession = new();
+        /// <summary>快仓单相机接口没有暴露扫描结束回调，连续帧静默 200ms 后收束当前触发帧组。</summary>
+        private static readonly TimeSpan TriggerFrameQuietPeriod = TimeSpan.FromMilliseconds(200);
+        /// <summary>合并同一轮连续回调中的 NoRead 候选，并让任意原始条码结果取消该候选。</summary>
+        private TriggerBurstNoReadGate? _noReadGate;
+        /// <summary>仅为已启用硬件触发且未隐藏的空帧发布未读码结果。</summary>
+        private bool CanReportNoRead => IsUseTriggerMode && TriggerMode == TriggerMode.Hardware && !IsHideNoRead;
 
         /// <summary>
         /// 固定端口
@@ -119,6 +127,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     return new KeyValuePair<bool, string>(false, "设备不存在或已离线,请重新枚举!");
                 }
             }
+            OnCameraInitialized(new CameraInitializedEventArgs { CameraInfo = Info });
             return new KeyValuePair<bool, string>(true, "初始化成功");
         }
 
@@ -129,25 +138,46 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 await _bindingSlim.WaitAsync();
                 await Task.Delay(50);
                 if (Status == CameraStatus.Running) {
-                    return new KeyValuePair<bool, string>(false, "设备已在运行中");
+                    return new KeyValuePair<bool, string>(true, "设备已在运行中");
+                }
+                if (Info is null || Status is not (CameraStatus.Initialized or CameraStatus.Paused)) {
+                    return new KeyValuePair<bool, string>(false, "设备未初始化");
                 }
 
                 EnsureFrameDispatcher();
-                _cameraDataService = GWCameraService.GetCameraInstance(checked((int)(Info?.Id ?? 0)), ReaultCallBack, null, ref errorMsg, port);
-                if (!errorMsg.Equals(string.Empty)) {
+                EnsureNoReadGate();
+                var generation = _captureSession.Start();
+                _cameraDataService = GWCameraService.GetCameraInstance(checked((int)Info.Id),
+                    (result, tag) => ReaultCallBack(result, tag, generation), null, ref errorMsg, port);
+                if (!errorMsg.Equals(string.Empty) || _cameraDataService is null) {
+                    _captureSession.Stop();
+                    _cameraDataService?.Dispose();
+                    _cameraDataService = null;
+                    _noReadGate?.Dispose();
+                    _noReadGate = null;
+                    _frameDispatcher?.Dispose();
+                    _frameDispatcher = null;
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                         Exception = new Exception($"相机回调绑定失败:{errorMsg}")
                     });
                     return new KeyValuePair<bool, string>(false, errorMsg);
                 }
                 else {
-                    OnCameraInitialized(new CameraInitializedEventArgs() {
+                    OnCameraStarted(new CameraStartedEventArgs() {
                         CameraInfo = this.Info,
+                        Camera = this,
                     });
                     return new KeyValuePair<bool, string>(true, errorMsg);
                 }
             }
             catch (Exception e) {
+                _captureSession.Stop();
+                _cameraDataService?.Dispose();
+                _cameraDataService = null;
+                _noReadGate?.Dispose();
+                _noReadGate = null;
+                _frameDispatcher?.Dispose();
+                _frameDispatcher = null;
                 OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                     Exception = e
                 });
@@ -161,7 +191,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         /// <summary>确保快仓回调只负责复制数据，后续图像处理由独立长驻线程完成。</summary>
         private void EnsureFrameDispatcher() {
             _frameDispatcher ??= new LosslessOrderedDispatcher<WayzimCapturedFrame>(
-                ProcessCapturedFrame,
+                frame => {
+                    if (_captureSession.IsCurrent(frame.Generation)) {
+                        ProcessCapturedFrame(frame);
+                    }
+                    else {
+                        frame.Buffer.Dispose();
+                    }
+                },
                 (frame, exception) => {
                     frame.Buffer.Dispose();
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs {
@@ -170,12 +207,34 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 });
         }
 
+        /// <summary>创建快仓触发帧组门控器，并在当前采集会话仍有效时发布汇总后的 NoRead。</summary>
+        private void EnsureNoReadGate() {
+            _noReadGate ??= new TriggerBurstNoReadGate(
+                TriggerFrameQuietPeriod,
+                PublishBufferedNoRead,
+                exception => OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                    Exception = new Exception("发布快仓触发帧组NoRead失败", exception)
+                }));
+        }
+
+        /// <summary>发布已经确认整轮没有原始条码结果的快仓 NoRead。</summary>
+        private void PublishBufferedNoRead(int generation, BarcodeReadEventArgs args) {
+            if (!_captureSession.IsCurrent(generation) || !CanReportNoRead || NotBarcodeHitEvent is null) {
+                ReleaseEventImages(args);
+                return;
+            }
+            OnNotBarcodeHitEvent(args);
+        }
+
         /// <summary>
         /// 接收数据
         /// </summary>
         /// <param name="infostruct"></param>
         /// <param name="tag"></param>
-        private void ReaultCallBack(ResultInfoStruct infostruct, object tag) {
+        private void ReaultCallBack(ResultInfoStruct infostruct, object tag, int generation) {
+            if (!_captureSession.IsCurrent(generation)) {
+                return;
+            }
             PooledFrameBuffer? buffer = null;
             var scanTime = DateTime.Now;
             try {
@@ -186,13 +245,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
 
                 var hasCodeMetadata = infostruct.CodeInfo.CodeInfos is { Count: > 0 };
                 var hasBarcodeConsumer = hasCodeMetadata && BarcodeReadTriggered is not null;
-                var hasNoReadConsumer = !hasCodeMetadata && NotBarcodeHitEvent is not null;
+                var needsNoReadDecision = CanReportNoRead && NotBarcodeHitEvent is not null;
                 var hasRealtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
-                if (!hasBarcodeConsumer && !hasNoReadConsumer && !hasRealtimeConsumer) {
+                if (!hasBarcodeConsumer && !needsNoReadDecision && !hasRealtimeConsumer) {
                     return;
                 }
 
-                EnsureFrameDispatcher();
                 var frameLength = Math.Min(infostruct.ImageInfo.Size, imageBytes.Length);
                 buffer = PooledFrameBuffer.CopyFrom(imageBytes, frameLength);
                 var codeInfo = infostruct.CodeInfo;
@@ -210,7 +268,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     codeInfo,
                     scanTime,
                     new DateTimeOffset(scanTime).ToUnixTimeMilliseconds(),
-                    Interlocked.Increment(ref _frameNo));
+                    Interlocked.Increment(ref _frameNo),
+                    generation,
+                    infostruct.FrameNum);
                 if (_frameDispatcher?.TryEnqueue(frame) == true) {
                     buffer = null;
                 }
@@ -247,9 +307,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 }
 
                 var barcodeConsumerCount = BarcodeReadTriggered is null ? 0 : results.Count;
-                var noReadConsumer = codeInfos.Count == 0 && NotBarcodeHitEvent is not null;
+                var observesNoReadCycle = CanReportNoRead && NotBarcodeHitEvent is not null;
+                var noReadGate = observesNoReadCycle ? _noReadGate : null;
+                if (codeInfos.Count > 0 && noReadGate is not null) {
+                    noReadGate.Observe(frame.Generation, true, null);
+                }
+                var needsNoReadCandidate = codeInfos.Count == 0 && noReadGate is not null;
                 var realtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
-                if (barcodeConsumerCount == 0 && !noReadConsumer && !realtimeConsumer) {
+                if (barcodeConsumerCount == 0 && !needsNoReadCandidate && !realtimeConsumer) {
                     return;
                 }
 
@@ -279,20 +344,22 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                     }
                 }
 
-                var primaryConsumerCount = barcodeConsumerCount + (noReadConsumer ? 1 : 0);
+                var primaryConsumerCount = barcodeConsumerCount + (needsNoReadCandidate ? 1 : 0);
                 var realtimeThumbnail = realtimeConsumer && primaryConsumerCount > 0
                     ? new Bitmap(thumbnailImage)
                     : thumbnailImage;
-                if (noReadConsumer) {
-                    OnNotBarcodeHitEvent(new BarcodeReadEventArgs {
+                if (needsNoReadCandidate) {
+                    var candidate = new BarcodeReadEventArgs {
                         Timestamp = frame.Timestamp,
                         Barcode = "NoRead",
                         Image = bitmap,
                         ThumbImage = thumbnailImage,
                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                         ScanTime = frame.ScanTime,
-                        FrameNo = frame.FrameNo
-                    });
+                        FrameNo = frame.FrameNo,
+                        SdkFrameNo = frame.SdkFrameNo
+                    };
+                    noReadGate!.Observe(frame.Generation, false, candidate);
                 }
                 for (var index = 0; index < barcodeConsumerCount; index++) {
                     var isLast = index == barcodeConsumerCount - 1;
@@ -304,7 +371,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                         CameraSerialNumber = this.Info?.SerialNumber ?? string.Empty,
                         ScanTime = frame.ScanTime,
                         AreaCoords = results[index].AreaCoords,
-                        FrameNo = frame.FrameNo
+                        FrameNo = frame.FrameNo,
+                        SdkFrameNo = frame.SdkFrameNo
                     });
                 }
                 if (primaryConsumerCount == 0) {
@@ -358,19 +426,28 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         }
 
         public async Task<KeyValuePair<bool, string>> Stop() {
-            await Task.Yield();
+            await _bindingSlim.WaitAsync();
             try {
+                _captureSession.Stop();
+                _noReadGate?.Dispose();
+                _noReadGate = null;
+                if ((Status is CameraStatus.Uninitialized or CameraStatus.Paused) && _cameraDataService is null) {
+                    return new KeyValuePair<bool, string>(true, "设备已停止");
+                }
                 _cameraDataService?.Dispose();
                 _cameraDataService = null;
                 _frameDispatcher?.Dispose();
                 _frameDispatcher = null;
-                OnCameraDisconnected(new CameraConnectionEventArgs() {
+                OnCameraStopped(new CameraStoppedEventArgs() {
                     CameraInfo = Info
                 });
                 return new KeyValuePair<bool, string>(true, string.Empty);
             }
             catch (Exception e) {
                 return new KeyValuePair<bool, string>(false, e.Message);
+            }
+            finally {
+                _bindingSlim.Release();
             }
         }
 
@@ -471,7 +548,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
         }
 
         protected virtual void OnCameraStopped(CameraStoppedEventArgs e) {
-            Status = CameraStatus.Disconnected;
+            Status = CameraStatus.Paused;
             CameraStopped?.Invoke(this, e);
         }
 
@@ -506,6 +583,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 return;
             }
             handler.Invoke(this, e);
+        }
+
+        /// <summary>释放未发布事件持有的原图和缩略图。</summary>
+        private static void ReleaseEventImages(BarcodeReadEventArgs args) {
+            args.Image?.Dispose();
+            if (!ReferenceEquals(args.Image, args.ThumbImage)) {
+                args.ThumbImage?.Dispose();
+            }
         }
 
         public Bitmap? GenerateThumbnail(Bitmap? sourceImage, int thumbnailWidth = 800, int thumbnailHeight = 600) {

@@ -108,6 +108,15 @@ namespace JayTom.Dws.Camera {
         /// 帧号
         /// </summary>
         public long FrameNo { get; set; }
+
+        /// <summary>厂商 SDK 提供的有效触发序号；无可靠触发关联时为空。</summary>
+        public uint? TriggerIndex { get; set; }
+
+        /// <summary>厂商 SDK 原始图像帧号，与应用内 FrameNo 区分。</summary>
+        public uint? SdkFrameNo { get; set; }
+
+        /// <summary>厂商 SDK 图像流通道号。</summary>
+        public long? SdkChannelId { get; set; }
     }
 
     /// <summary>

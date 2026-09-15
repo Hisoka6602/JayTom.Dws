@@ -318,6 +318,11 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
                 var thumbnail = GenerateThumbnail(bitmap);
                 var result = Ocr?.ParseOcrResult(OcrBitmapAdapter.Encode(bitmap));
+                if (Status != CameraStatus.Running) {
+                    bitmap.Dispose();
+                    thumbnail?.Dispose();
+                    continue;
+                }
                 if (result is not null && !string.IsNullOrEmpty(result.BarCode)) {
                     _ocrMissCount = 0;
                     ClearOcrQueue();
@@ -373,6 +378,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
         /// 无解码信息回调
         /// </summary>
         public void ReadImageCallback(MVIDCodeReader.MVID_IMAGE_INFO output, IntPtr user) {
+            if (Status != CameraStatus.Running) {
+                return;
+            }
             try {
                 var image = ConvertPointerToImage(output);
                 if (BindingType is CameraBindingType.OcrCamera && image is not null) {
@@ -417,10 +425,16 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
 
         public async Task<KeyValuePair<bool, string>> Start(CancellationToken cancellationToken = default) {
             await Task.Yield();
+            if (_myCodeReader is null) {
+                return new KeyValuePair<bool, string>(false, "设备未初始化");
+            }
+            if (Status == CameraStatus.Running) {
+                return new KeyValuePair<bool, string>(true, "设备已在运行中");
+            }
             //设置属性
             //设置图像输出模式
             if (BindingType is CameraBindingType.ScannerCamera) {
-                _myCodeReader?.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);//测试完需要改回来
+                _nRet = _myCodeReader.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);
                 if (_nRet != MVIDCodeReader.MVID_CR_OK) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                         Exception = new Exception($"初始化失败:设置图像输出模式失败,{_nRet:X}")
@@ -429,7 +443,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                 }
             }
             else {
-                _myCodeReader?.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);
+                _nRet = _myCodeReader.MVID_CR_CAM_SetImageOutPutMode_NET(MVIDCodeReader.MVID_IMAGE_OUTPUT_MODE.MVID_OUTPUT_NORMAL);
                 if (_nRet != MVIDCodeReader.MVID_CR_OK) {
                     OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                         Exception = new Exception($"初始化失败:设置图像输出模式失败,{_nRet:X}")
@@ -444,6 +458,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     _imageCallback = ImageCallbackFunc;
                     _nRet = _myCodeReader?.MVID_CR_CAM_RegisterImageCallBack_NET(_imageCallback, IntPtr.Zero) ?? 0;
                     if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        _imageCallback = null;
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                             Exception = new Exception($"初始化失败:注册扫码回调函数失败,{_nRet:X}")
                         });
@@ -459,6 +474,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     };
                     _nRet = _myCodeReader?.MVID_CR_CAM_RegisterImageBufferCallBack_NET(_readImageCallback, IntPtr.Zero) ?? 0;
                     if (_nRet != MVIDCodeReader.MVID_CR_OK) {
+                        _readImageCallback = null;
                         OnCameraExceptionOccurred(new CameraExceptionEventArgs() {
                             Exception = new Exception($"初始化失败:注册实时图像回调函数失败,{_nRet:X}")
                         });
@@ -491,6 +507,7 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
                     });
                     return new KeyValuePair<bool, string>(false, $"停止识别失败:{_nRet:X}");
                 }
+                Status = CameraStatus.Paused;
                 ClearOcrQueue();
                 _frameDispatcher?.Dispose();
                 _frameDispatcher = null;
@@ -772,6 +789,9 @@ namespace JayTom.Dws.Camera.Cameras.IndustrialCamera.Hikvision {
             _frameDispatcher ??= new LosslessOrderedDispatcher<IndustrialCapturedFrame>(
                 frame => {
                     using (frame.Buffer) {
+                        if (Status != CameraStatus.Running) {
+                            return;
+                        }
                         ProcessImage(
                             frame.Output,
                             frame.Buffer,
