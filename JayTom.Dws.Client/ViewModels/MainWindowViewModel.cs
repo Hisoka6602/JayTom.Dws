@@ -259,11 +259,19 @@ namespace JayTom.Dws.Client.ViewModels
 
         private void CloseWinDelegate(object obj)
         {
-            _eventBus.Publish(new WindowsAction
+            var application = System.Windows.Application.Current;
+            if (application is null ||
+                application.Dispatcher.HasShutdownStarted ||
+                application.Dispatcher.HasShutdownFinished)
             {
-                Type = WindowsActionType.Close
-            });
-            System.Windows.Application.Current.Shutdown();
+                return;
+            }
+            if (application.Dispatcher.CheckAccess())
+            {
+                application.Shutdown();
+                return;
+            }
+            _ = application.Dispatcher.BeginInvoke(() => application.Shutdown());
         }
 
         private void MaxWinDelegate(object obj)

@@ -537,6 +537,37 @@ public sealed class ArchitectureBoundaryTests {
         Assert.DoesNotContain("StopApplicationServicesAsync", appSource, StringComparison.Ordinal);
     }
 
+    /// <summary>验证启动失败和窗口关闭均经过有界、不可重启的应用生命周期。</summary>
+    [Fact]
+    public void App_lifecycle_must_fail_fast_and_establish_shutdown_barrier() {
+        string appSource = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "JayTom.Dws.Client",
+            "App.xaml.cs"));
+        string supervisorSource = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "JayTom.Dws.Client",
+            "Service",
+            "Runtime",
+            "HostedServiceSupervisor.cs"));
+        string mainWindowSource = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "JayTom.Dws.Client",
+            "ViewModels",
+            "MainWindowViewModel.cs"));
+
+        Assert.Contains("Volatile.Read(ref _startupCompleted) != 0", appSource, StringComparison.Ordinal);
+        Assert.Contains("RequestApplicationShutdown(-1)", appSource, StringComparison.Ordinal);
+        Assert.Contains("Volatile.Read(ref _compositionInitialized) != 0", appSource, StringComparison.Ordinal);
+        Assert.Contains("Environment.Exit", appSource, StringComparison.Ordinal);
+        int shutdownBarrier = appSource.IndexOf("lifecycleCoordinator.BeginShutdown();", StringComparison.Ordinal);
+        int closeNotification = appSource.IndexOf("PublishCloseNotification();", StringComparison.Ordinal);
+        Assert.True(shutdownBarrier >= 0 && closeNotification > shutdownBarrier);
+        Assert.Contains("IsShutdownRequested(cancellationToken)", supervisorSource, StringComparison.Ordinal);
+        Assert.Contains("application.Dispatcher.CheckAccess()", mainWindowSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Type = WindowsActionType.Close", mainWindowSource, StringComparison.Ordinal);
+    }
+
     /// <summary>验证后台工作流只注册生产服务，并显式声明生产者在消费者之后启动。</summary>
     [Fact]
     public void Hosted_workflows_must_declare_production_startup_order() {

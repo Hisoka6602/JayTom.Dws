@@ -26,6 +26,21 @@ public sealed class CompositionBoundaryTests
         Assert.Contains("ICloudApiClientMessageHub, CloudApiClientMessageHub", infrastructureRegistration, StringComparison.Ordinal);
     }
 
+    /// <summary>进程配置必须锚定部署目录，不能依赖快捷方式或计划任务传入的工作目录。</summary>
+    [Fact]
+    public void Application_configuration_is_anchored_to_deployment_directory()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string clientRegistration = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "JayTom.Dws.Client",
+            "Composition",
+            "PlatformAdapterRegistration.cs"));
+
+        Assert.Contains(".SetBasePath(AppContext.BaseDirectory)", clientRegistration, StringComparison.Ordinal);
+        Assert.DoesNotContain(".SetBasePath(Directory.GetCurrentDirectory())", clientRegistration, StringComparison.Ordinal);
+    }
+
     /// <summary>ViewModel 只能依赖应用目录或能力端口，不得引用 Infrastructure 命名空间和旧仓储接口。</summary>
     [Fact]
     public void ViewModels_depend_on_application_and_capability_ports()

@@ -30,6 +30,20 @@ public sealed class BackgroundLoopArchitectureTests
         Assert.Empty(violations);
     }
 
+    /// <summary>永久专用调度线程必须是后台线程，不能阻止桌面进程退出。</summary>
+    [Fact]
+    public void Dedicated_scheduler_threads_are_background_threads()
+    {
+        string[] schedulerPaths =
+        [
+            Path.Combine(RepositoryRoot, "JayTom.Dws.Utils", "DedicatedThreadTaskScheduler.cs"),
+            Path.Combine(RepositoryRoot, "JayTom.Dws.PluginInterface", "Utils", "DedicatedThreadTaskScheduler.cs")
+        ];
+
+        Assert.All(schedulerPaths, path =>
+            Assert.Contains("IsBackground = true", File.ReadAllText(path), StringComparison.Ordinal));
+    }
+
     /// <summary>定位仓库根目录。</summary>
     private static string FindRepositoryRoot()
     {

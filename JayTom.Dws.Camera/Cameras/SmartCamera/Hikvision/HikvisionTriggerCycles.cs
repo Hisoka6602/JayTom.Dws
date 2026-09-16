@@ -1,6 +1,6 @@
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 
-/// <summary>在相机顺序处理线程中合并同一次 SDK 触发的空帧，直到触发结束且收帧队列排空。</summary>
+/// <summary>在相机顺序处理线程中将同一次 SDK 触发的全部帧收束为一个最终业务结果。</summary>
 internal sealed class HikvisionTriggerCycles : IDisposable {
     private const int RetainedCompletedCycles = 256;
     private const int MaximumPendingCycles = 64;
@@ -27,6 +27,46 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
             Release(cycle.PendingNoRead);
             cycle.PendingNoRead = null;
         }
+    }
+
+    /// <summary>暂存同一触发的首个有效条码；重复条码丢弃，不同条码判定为冲突并拒绝整个周期。</summary>
+    /// <returns>首次发现冲突时返回冲突描述，其余情况返回空。</returns>
+    public string? HoldBarcode(uint triggerIndex, BarcodeTriggeredEventArgs candidate) {
+        Cycle cycle;
+        try {
+            cycle = GetCycle(triggerIndex);
+        }
+        catch {
+            Release(candidate);
+            throw;
+        }
+
+        cycle.HasFrame = true;
+        cycle.HasBarcode = true;
+        Release(cycle.PendingNoRead);
+        cycle.PendingNoRead = null;
+        if (cycle.Completed || cycle.HasBarcodeConflict) {
+            Release(candidate);
+            return null;
+        }
+        if (cycle.PendingBarcode is null) {
+            cycle.PendingBarcode = candidate;
+            return null;
+        }
+        if (string.Equals(
+                cycle.PendingBarcode.Barcode,
+                candidate.Barcode,
+                StringComparison.OrdinalIgnoreCase)) {
+            Release(candidate);
+            return null;
+        }
+
+        var conflict = $"触发序号={triggerIndex},首条码={cycle.PendingBarcode.Barcode},冲突条码={candidate.Barcode}";
+        cycle.HasBarcodeConflict = true;
+        Release(cycle.PendingBarcode);
+        cycle.PendingBarcode = null;
+        Release(candidate);
+        return conflict;
     }
 
     /// <summary>仅保留同周期第一张空帧的图片；被替换或取消的图片在这里释放。</summary>
@@ -56,12 +96,19 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
                 continue;
             }
             cycle.Completed = true;
-            if (!cycle.HasBarcode && cycle.PendingNoRead is { } candidate) {
-                result.Add(candidate);
+            if (!cycle.HasBarcodeConflict && cycle.PendingBarcode is { } barcode) {
+                result.Add(barcode);
+            }
+            else if (!cycle.HasBarcode && cycle.PendingNoRead is { } noRead) {
+                result.Add(noRead);
             }
             else {
                 Release(cycle.PendingNoRead);
             }
+            if (cycle.HasBarcodeConflict) {
+                Release(cycle.PendingBarcode);
+            }
+            cycle.PendingBarcode = null;
             cycle.PendingNoRead = null;
             _completed.Enqueue(pair.Key);
         }
@@ -75,6 +122,7 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
     public void Dispose() {
         foreach (var cycle in _cycles.Values) {
             Release(cycle.PendingNoRead);
+            Release(cycle.PendingBarcode);
         }
         _cycles.Clear();
         _completed.Clear();
@@ -102,8 +150,10 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
     private sealed class Cycle {
         public bool HasFrame { get; set; }
         public bool HasBarcode { get; set; }
+        public bool HasBarcodeConflict { get; set; }
         public bool Completed { get; set; }
         public long? EndSequence { get; set; }
         public BarcodeReadEventArgs? PendingNoRead { get; set; }
+        public BarcodeTriggeredEventArgs? PendingBarcode { get; set; }
     }
 }

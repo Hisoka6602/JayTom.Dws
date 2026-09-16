@@ -283,7 +283,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
-                    Message = $"相机:{args.CameraSerialNumber}获取到条码[{args.Barcode}]",
+                    Message = args.TriggerIndex is { } triggerIndex
+                        ? $"相机:{args.CameraSerialNumber}获取到条码[{args.Barcode}],触发序号:{triggerIndex},SDK帧号:{args.SdkFrameNo},通道:{args.SdkChannelId}"
+                        : $"相机:{args.CameraSerialNumber}获取到条码[{args.Barcode}],SDK帧号:{args.SdkFrameNo}",
                     CameraSerialNumber = args.CameraSerialNumber,
                 });
             };

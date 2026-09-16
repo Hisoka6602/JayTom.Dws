@@ -40,10 +40,20 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private LosslessOrderedDispatcher<Action>? _frameDispatcher;
         /// <summary>管理当前采集会话中的电平触发周期。</summary>
         private readonly HikvisionTriggerCycles _triggerCycles = new();
+        /// <summary>固件没有触发边界事件时，按帧内触发序号限制每次触发只能发布一个结果。</summary>
+        private readonly HikvisionFrameTriggerResults _frameTriggerResults = new();
         /// <summary>保持委托存活到 SDK 句柄销毁，避免原生回调指向已回收的托管委托。</summary>
         private MvCodeReader.cbTriggerdelegate? _triggerCallback;
-        /// <summary>标记已成功注册电平触发边界回调。</summary>
+        /// <summary>标记已成功注册硬件触发边界回调。</summary>
         private bool _triggerCallbacksRegistered;
+        /// <summary>SDK 至少实际送达过一次边界；仅“注册成功”不足以证明固件会产生边界事件。</summary>
+        private int _triggerBoundaryObserved;
+        /// <summary>当前会话的触发关联方式：0 未决定、1 原生边界、2 帧内触发序号。</summary>
+        private int _triggerCorrelationMode;
+        /// <summary>每个采集会话只报告一次帧内触发序号降级，避免日志风暴。</summary>
+        private int _frameTriggerFallbackReported;
+        /// <summary>标记相机是否成功返回 TriggerActivation；读取失败时不能把多帧误判成多个包裹。</summary>
+        private bool _triggerActivationKnown;
         /// <summary>记录从相机读取的触发激活方式是否为高或低电平。</summary>
         private bool _isLevelTrigger;
         /// <summary>为触发边界生成递增序号，供拉帧线程建立排空屏障。</summary>
@@ -266,22 +276,22 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
                     EnsureFrameDispatcher();
                     ReadTriggerSettings();
-                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware &&
-                        BindingType != CameraBindingType.OcrCamera && _isLevelTrigger) {
+                    if (ShouldRegisterTriggerCycleCallback()) {
                         _triggerCallback = TriggerCallback;
                         nRet = _mvCodeReader.MV_CODEREADER_RegisterTriggerCallBack_NET(
                             _triggerCallback, IntPtr.Zero);
                         if (nRet != MvCodeReader.MV_CODEREADER_OK) {
-                            _mvCodeReader.MV_CODEREADER_CloseDevice_NET();
-                            _mvCodeReader.MV_CODEREADER_DestroyHandle_NET();
-                            _mvCodeReader = null;
                             _triggerCallback = null;
-                            _frameDispatcher?.Dispose();
-                            _frameDispatcher = null;
-                            return new KeyValuePair<bool, string>(false,
-                                $"注册海康触发周期回调失败,{nRet:X};无法可靠判定NoRead，请检查SDK及相机固件");
+                            NLog.LogManager.GetCurrentClassLogger().Warn(
+                                $"海康相机={Info?.SerialNumber}:注册SDK触发周期回调失败,{nRet:X};" +
+                                "将使用帧内触发序号保证同一次触发最多发布一个结果");
                         }
-                        _triggerCallbacksRegistered = true;
+                        else {
+                            _triggerCallbacksRegistered = true;
+                            NLog.LogManager.GetCurrentClassLogger().Info(
+                                $"海康相机={Info?.SerialNumber}:已注册SDK触发周期回调," +
+                                $"TriggerActivation={(_triggerActivationKnown ? (_isLevelTrigger ? "Level" : "Edge") : "Unknown")}");
+                        }
                     }
                     _tokenSource = new CancellationTokenSource();
                     _barcodeThread = Task.Run(() => BarcodeCallbackThread(_tokenSource.Token));
@@ -392,6 +402,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
             Interlocked.Increment(ref _captureGeneration);
             await ResetTriggerCyclesAsync();
+            Volatile.Write(ref _triggerBoundaryObserved, 0);
+            Volatile.Write(ref _triggerCorrelationMode, 0);
+            Volatile.Write(ref _frameTriggerFallbackReported, 0);
             Volatile.Write(ref _acceptFrames, 1);
             // ch:开始采集 | en:Start Grabbing
             int nRet = _mvCodeReader?.MV_CODEREADER_StartGrabbing_NET() ?? 0;
@@ -422,6 +435,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
 
             Volatile.Write(ref _acceptFrames, 0);
             Interlocked.Increment(ref _captureGeneration);
+            Volatile.Write(ref _triggerBoundaryObserved, 0);
+            Volatile.Write(ref _triggerCorrelationMode, 0);
             Status = CameraStatus.Paused;
             await ResetTriggerCyclesAsync();
             CameraStopped?.Invoke(this, new CameraStoppedEventArgs {
@@ -460,7 +475,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 _frameDispatcher?.Dispose();
                 _frameDispatcher = null;
                 _triggerCycles.Dispose();
+                _frameTriggerResults.Dispose();
                 _triggerCallbacksRegistered = false;
+                Volatile.Write(ref _triggerBoundaryObserved, 0);
+                Volatile.Write(ref _triggerCorrelationMode, 0);
+                Volatile.Write(ref _frameTriggerFallbackReported, 0);
+                _triggerActivationKnown = false;
+                _isLevelTrigger = false;
                 _triggerCallback = null;
                 //置空对象
                 _mvCodeReader = null;
@@ -586,8 +607,28 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 stFrameInfo);
                         }
                         if (barcodeTriggeredEventArgsList.Count > 0) {
-                            foreach (var barcodeTriggeredEventArgse in barcodeTriggeredEventArgsList) {
-                                OnBarcodeReadTriggered(barcodeTriggeredEventArgse);
+                            if (HasReliableTriggerBoundary) {
+                                foreach (var barcodeTriggeredEventArgs in barcodeTriggeredEventArgsList) {
+                                    var conflict = _triggerCycles.HoldBarcode(
+                                        stFrameInfo.nTriggerIndex,
+                                        barcodeTriggeredEventArgs);
+                                    if (conflict is not null) {
+                                        OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                                            Exception = new InvalidOperationException(
+                                                $"海康同一次触发识别到不同条码，已拒绝该触发以防错配:{conflict}")
+                                        });
+                                    }
+                                }
+                            }
+                            else if (UsesFrameTriggerIndex) {
+                                PublishFrameTriggerBarcodes(
+                                    stFrameInfo.nTriggerIndex,
+                                    barcodeTriggeredEventArgsList);
+                            }
+                            else {
+                                foreach (var barcodeTriggeredEventArgs in barcodeTriggeredEventArgsList) {
+                                    OnBarcodeReadTriggered(barcodeTriggeredEventArgs);
+                                }
                             }
                         }
                         else {
@@ -600,7 +641,8 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     else {
                         //如果没读到条码
                         if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware &&
-                            !IsHideNoRead && NotBarcodeHitEvent is not null) {
+                            !IsHideNoRead &&
+                            NotBarcodeHitEvent is not null) {
                             var candidate = new BarcodeReadEventArgs() {
                                 Timestamp = timestamp,
                                 Barcode = "NoRead",
@@ -614,9 +656,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                                 SdkFrameNo = stFrameInfo.nFrameNum,
                                 SdkChannelId = stFrameInfo.nChannelID
                             };
-                            if (_triggerCallbacksRegistered) {
+                            if (HasReliableTriggerBoundary) {
                                 candidate.TriggerIndex = stFrameInfo.nTriggerIndex;
                                 _triggerCycles.HoldNoRead(stFrameInfo.nTriggerIndex, candidate);
+                            }
+                            else if (UsesFrameTriggerIndex) {
+                                candidate.TriggerIndex = stFrameInfo.nTriggerIndex;
+                                PublishFrameTriggerNoRead(stFrameInfo.nTriggerIndex, candidate);
                             }
                             else {
                                 // 边沿采集的帧触发号可能固定为零，不能据此合并不同包裹。
@@ -788,6 +834,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 if (info.nTriggerFlag is not (0 or 1)) {
                     return;
                 }
+                if (Interlocked.CompareExchange(ref _triggerCorrelationMode, 1, 0) == 2) {
+                    // 第一帧已经选择帧内触发号后不在会话中途切换，避免同一触发被两套状态机各发布一次。
+                    return;
+                }
+                Volatile.Write(ref _triggerBoundaryObserved, 1);
                 var sequence = Interlocked.Increment(ref _triggerBoundarySequence);
                 _frameDispatcher?.TryEnqueue(() => {
                     if (generation != Volatile.Read(ref _captureGeneration) ||
@@ -813,22 +864,27 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     Volatile.Read(ref _acceptFrames) == 0) {
                     return;
                 }
-                foreach (var candidate in _triggerCycles.CompleteDrained(throughSequence)) {
-                    if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware && !IsHideNoRead &&
-                        NotBarcodeHitEvent is not null) {
+                foreach (var result in _triggerCycles.CompleteDrained(throughSequence)) {
+                    if (result is BarcodeTriggeredEventArgs barcode && BarcodeReadTriggered is not null) {
                         try {
-                            OnNotBarcodeHitEvent(candidate);
+                            OnBarcodeReadTriggered(barcode);
                         }
                         catch (Exception exception) {
-                            // 一个下游订阅者异常不能导致同批其他触发结果丢失。
+                            NLog.LogManager.GetCurrentClassLogger().Error(exception, "发布海康触发周期条码失败");
+                        }
+                    }
+                    else if (result is not BarcodeTriggeredEventArgs &&
+                        IsUseTriggerMode && TriggerMode == TriggerMode.Hardware && !IsHideNoRead &&
+                        NotBarcodeHitEvent is not null) {
+                        try {
+                            OnNotBarcodeHitEvent(result);
+                        }
+                        catch (Exception exception) {
                             NLog.LogManager.GetCurrentClassLogger().Error(exception, "发布海康触发周期NoRead失败");
                         }
                     }
                     else {
-                        candidate.Image?.Dispose();
-                        if (!ReferenceEquals(candidate.Image, candidate.ThumbImage)) {
-                            candidate.ThumbImage?.Dispose();
-                        }
+                        ReleaseBarcodeResult(result);
                     }
                 }
             });
@@ -840,6 +896,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             if (_frameDispatcher?.TryEnqueue(() => {
                     try {
                         _triggerCycles.Dispose();
+                        _frameTriggerResults.Dispose();
                         completion.SetResult();
                     }
                     catch (Exception exception) {
@@ -850,27 +907,116 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
             }
             else {
                 _triggerCycles.Dispose();
+                _frameTriggerResults.Dispose();
             }
         }
 
         /// <summary>读取实际相机节点，仅电平触发使用 SDK 明确支持的帧触发编号。</summary>
         private void ReadTriggerSettings() {
+            _triggerActivationKnown = false;
             _isLevelTrigger = false;
+            _triggerCallbacksRegistered = false;
+            Volatile.Write(ref _triggerBoundaryObserved, 0);
+            Volatile.Write(ref _triggerCorrelationMode, 0);
+            Volatile.Write(ref _frameTriggerFallbackReported, 0);
             var logger = NLog.LogManager.GetCurrentClassLogger();
             foreach (var node in new[] { "TriggerMode", "TriggerSource", "TriggerActivation" }) {
                 var value = new MvCodeReader.MV_CODEREADER_ENUMVALUE();
                 var result = _mvCodeReader!.MV_CODEREADER_GetEnumValue_NET(node, ref value);
                 if (node == "TriggerActivation") {
                     // 海康 TriggerActivation: 0 RisingEdge, 1 FallingEdge, 2 LevelHigh, 3 LevelLow。
-                    _isLevelTrigger = result == MvCodeReader.MV_CODEREADER_OK && value.nCurValue is 2 or 3;
+                    _triggerActivationKnown = result == MvCodeReader.MV_CODEREADER_OK && value.nCurValue <= 3;
+                    _isLevelTrigger = _triggerActivationKnown && value.nCurValue is 2 or 3;
                     if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware &&
-                        (result != MvCodeReader.MV_CODEREADER_OK || value.nCurValue > 3)) {
-                        logger.Warn($"海康相机={Info?.SerialNumber}:无法确认触发激活方式，保留逐帧结果并记录SDK帧号，请检查相机触发参数");
+                        !_triggerActivationKnown) {
+                        logger.Warn(
+                            $"海康相机={Info?.SerialNumber}:无法读取触发激活方式，将直接尝试SDK触发周期回调；" +
+                            "不会再把同一次触发的条码帧或空帧逐帧发布");
                     }
                 }
                 logger.Info(result == MvCodeReader.MV_CODEREADER_OK
                     ? $"海康触发参数:相机={Info?.SerialNumber},{node}={value.nCurValue}"
                     : $"海康触发参数:相机={Info?.SerialNumber},{node}读取失败,SDK错误码={result:X}");
+            }
+        }
+
+        /// <summary>电平触发或无法读取激活方式时都请求原生边界，不能把“读取失败”当作边沿触发。</summary>
+        private bool ShouldRegisterTriggerCycleCallback() =>
+            IsUseTriggerMode && TriggerMode == TriggerMode.Hardware &&
+            BindingType != CameraBindingType.OcrCamera &&
+            (_isLevelTrigger || !_triggerActivationKnown);
+
+        /// <summary>只有第一帧前真实送达过边界，才在本采集会话使用原生开始/结束周期。</summary>
+        private bool HasReliableTriggerBoundary =>
+            _triggerCallbacksRegistered && Volatile.Read(ref _triggerCorrelationMode) == 1 &&
+            Volatile.Read(ref _triggerBoundaryObserved) != 0;
+
+        /// <summary>固件无边界回调时使用帧元数据中的触发序号；该序号在电平触发中由 SDK 明确定义。</summary>
+        private bool UsesFrameTriggerIndex => Volatile.Read(ref _triggerCorrelationMode) == 2;
+
+        /// <summary>第一帧到达时锁定本会话的关联方式，禁止中途切换造成重复业务结果。</summary>
+        private void EnsureTriggerCorrelationMode(MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 frameInfo) {
+            if (!ShouldRegisterTriggerCycleCallback() ||
+                Volatile.Read(ref _triggerCorrelationMode) != 0) {
+                return;
+            }
+            if (Interlocked.CompareExchange(ref _triggerCorrelationMode, 2, 0) != 0) {
+                return;
+            }
+            if (Interlocked.CompareExchange(ref _frameTriggerFallbackReported, 1, 0) == 0) {
+                NLog.LogManager.GetCurrentClassLogger().Warn(
+                    $"海康相机={Info?.SerialNumber}:采集帧到达前未收到SDK触发边界；" +
+                    $"已降级使用帧内触发序号去重,触发序号={frameInfo.nTriggerIndex},SDK帧号={frameInfo.nFrameNum}；" +
+                    "同一次触发只发布首个条码或NoRead，不再丢弃全部包裹结果");
+            }
+        }
+
+        /// <summary>帧触发号降级路径只发布同一触发的第一个唯一条码。</summary>
+        private void PublishFrameTriggerBarcodes(
+            uint triggerIndex,
+            IReadOnlyList<BarcodeTriggeredEventArgs> candidates) {
+            foreach (var candidate in candidates) {
+                candidate.TriggerIndex = triggerIndex;
+                var claim = _frameTriggerResults.TryClaim(
+                    triggerIndex,
+                    candidate.Barcode,
+                    false,
+                    out var existing);
+                if (claim == HikvisionFrameTriggerResults.Claim.Accepted) {
+                    OnBarcodeReadTriggered(candidate);
+                    continue;
+                }
+                ReleaseBarcodeResult(candidate);
+                if (claim == HikvisionFrameTriggerResults.Claim.Conflict) {
+                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
+                        Exception = new InvalidOperationException(
+                            $"海康同一帧内触发序号出现不同结果，已拒绝后续结果以防错配:" +
+                            $"触发序号={triggerIndex},首结果={existing},后续结果={candidate.Barcode}")
+                    });
+                }
+            }
+        }
+
+        /// <summary>帧触发号降级路径只发布同一触发的第一个 NoRead，且原始有码帧优先。</summary>
+        private void PublishFrameTriggerNoRead(uint triggerIndex, BarcodeReadEventArgs candidate) {
+            var claim = _frameTriggerResults.TryClaim(
+                triggerIndex,
+                candidate.Barcode,
+                true,
+                out _);
+            if (claim == HikvisionFrameTriggerResults.Claim.Accepted) {
+                OnNotBarcodeHitEvent(candidate);
+            }
+            else {
+                ReleaseBarcodeResult(candidate);
+            }
+        }
+
+        /// <summary>释放尚未交给业务订阅者的单个读码结果及其图像。</summary>
+        private static void ReleaseBarcodeResult(BarcodeReadEventArgs result) {
+            result.Image?.Dispose();
+            if (!ReferenceEquals(result.Image, result.ThumbImage)) {
+                result.ThumbImage?.Dispose();
             }
         }
 
@@ -918,9 +1064,16 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         /// <summary>在独立长驻线程中按收帧顺序执行图像解码、过滤和事件发布。</summary>
         private void ProcessCapturedFrame(HikvisionCapturedFrame frame) {
             using (frame.Buffer) {
+                EnsureTriggerCorrelationMode(frame.FrameInfo);
                 if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware &&
-                    _triggerCallbacksRegistered && BindingType != CameraBindingType.OcrCamera) {
+                    HasReliableTriggerBoundary && BindingType != CameraBindingType.OcrCamera) {
                     _triggerCycles.ObserveFrame(frame.FrameInfo.nTriggerIndex, frame.BarcodeResult.nCodeNum > 0);
+                }
+                else if (IsUseTriggerMode && TriggerMode == TriggerMode.Hardware &&
+                    UsesFrameTriggerIndex && BindingType != CameraBindingType.OcrCamera) {
+                    _frameTriggerResults.ObserveFrame(
+                        frame.FrameInfo.nTriggerIndex,
+                        frame.BarcodeResult.nCodeNum > 0);
                 }
                 if (BindingType != CameraBindingType.OcrCamera &&
                     !HasFrameConsumer(frame.BarcodeResult)) {
@@ -988,7 +1141,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         pstFrameInfoEx2,
                         50) ?? 0;
                     if (result != MvCodeReader.MV_CODEREADER_OK) {
-                        if (result == MvCodeReader.MV_CODEREADER_E_NODATA && _triggerCallbacksRegistered) {
+                        if (result == MvCodeReader.MV_CODEREADER_E_NODATA && HasReliableTriggerBoundary) {
                             QueueDrainedTriggerCycles(boundaryBeforeRead, generation);
                         }
                         continue;
@@ -1091,7 +1244,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         ScanTime = scanTime,
                         AreaCoords = areaCoordinates,
                         FrameNo = frameNo,
-                        TriggerIndex = _triggerCallbacksRegistered ? stFrameInfoEx2.nTriggerIndex : null,
+                        TriggerIndex = HasReliableTriggerBoundary || UsesFrameTriggerIndex
+                            ? stFrameInfoEx2.nTriggerIndex
+                            : null,
                         SdkFrameNo = stFrameInfoEx2.nFrameNum,
                         SdkChannelId = stFrameInfoEx2.nChannelID
                     };

@@ -47,7 +47,7 @@ internal static class PlatformAdapterRegistration {
         services.AddDwsIntegrationHttpClient();
         services.AddMemoryCache();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build());
         services.AddSingleton<IClock, SystemClock>();

@@ -8,7 +8,7 @@ using MvCodeReaderSDKNet;
 
 namespace JayTom.Dws.Tests;
 
-/// <summary>验证海康同一次硬件触发的多帧结果只产生一次最终 NoRead。</summary>
+/// <summary>验证海康同一次硬件触发的全部帧只产生一个最终条码或 NoRead。</summary>
 public sealed class HikvisionTriggerCycleTests {
     /// <summary>五张空帧须等到触发结束和队列排空后才发布一个结果。</summary>
     [Fact]
@@ -143,6 +143,8 @@ public sealed class HikvisionTriggerCycleTests {
         var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
         var flags = BindingFlags.NonPublic | BindingFlags.Instance;
         typeof(HikvisionSmartCamera).GetField("_triggerCallbacksRegistered", flags)!.SetValue(camera, true);
+        typeof(HikvisionSmartCamera).GetField("_triggerBoundaryObserved", flags)!.SetValue(camera, 1);
+        typeof(HikvisionSmartCamera).GetField("_triggerCorrelationMode", flags)!.SetValue(camera, 1);
         using var cycles = (HikvisionTriggerCycles)typeof(HikvisionSmartCamera).GetField("_triggerCycles", flags)!.GetValue(camera)!;
         cycles.OnTrigger(42, true, 1);
         var count = 0;
@@ -170,11 +172,148 @@ public sealed class HikvisionTriggerCycleTests {
         Assert.All(received, args => Assert.Null(args.TriggerIndex));
     }
 
+    /// <summary>TriggerActivation 读取失败不能再被当成边沿触发，仍须尝试注册 SDK 周期回调。</summary>
+    [Fact]
+    public void Unknown_trigger_activation_requests_sdk_boundary_callback() {
+        var camera = new HikvisionSmartCamera {
+            IsUseTriggerMode = true,
+            TriggerMode = TriggerMode.Hardware,
+            BindingType = CameraBindingType.ScannerCamera
+        };
+        SetField(camera, "_triggerActivationKnown", false);
+        SetField(camera, "_isLevelTrigger", false);
+
+        Assert.True((bool)Invoke(camera, "ShouldRegisterTriggerCycleCallback")!);
+
+        SetField(camera, "_triggerActivationKnown", true);
+        Assert.False((bool)Invoke(camera, "ShouldRegisterTriggerCycleCallback")!);
+    }
+
+    /// <summary>SDK 仅返回注册成功但固件不送边界时，降级按帧内触发号发布一个 NoRead。</summary>
+    [Fact]
+    public void Missing_boundary_uses_frame_trigger_index_instead_of_dropping_result() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        var received = new List<BarcodeReadEventArgs>();
+        camera.NotBarcodeHitEvent += (_, args) => received.Add(args);
+
+        ActivateFrameTriggerFallback(camera, 42, 1, false);
+        DeliverEmptyFrame(camera, 42, 1);
+
+        Assert.Equal((uint)42, OnlyResult(received).TriggerIndex);
+        Assert.False((bool)Invoke(camera, "get_HasReliableTriggerBoundary")!);
+        Assert.True((bool)Invoke(camera, "get_UsesFrameTriggerIndex")!);
+    }
+
+    /// <summary>同一触发的重复条码帧只保留第一条，并在周期排空后发布一次。</summary>
+    [Fact]
+    public void Repeated_barcode_frames_publish_one_final_barcode() {
+        using var cycles = new HikvisionTriggerCycles();
+        cycles.OnTrigger(42, true, 1);
+        var first = BarcodeCandidate(42, 1, "JT001");
+        var duplicateImage = new Bitmap(1, 1);
+        var duplicate = BarcodeCandidate(42, 2, "JT001", duplicateImage);
+
+        Assert.Null(cycles.HoldBarcode(42, first));
+        Assert.Null(cycles.HoldBarcode(42, duplicate));
+        Assert.Empty(cycles.CompleteDrained(1));
+        cycles.OnTrigger(42, false, 2);
+
+        var completed = Assert.IsType<BarcodeTriggeredEventArgs>(OnlyResult(cycles.CompleteDrained(2)));
+        Assert.Same(first, completed);
+        Assert.Equal("JT001", completed.Barcode);
+        Assert.Throws<ArgumentException>(() => duplicateImage.GetPixel(0, 0));
+    }
+
+    /// <summary>同一触发识别出不同条码时拒绝整个周期，不能把第二条顺延给下一包裹。</summary>
+    [Fact]
+    public void Conflicting_barcodes_reject_the_whole_trigger() {
+        using var cycles = new HikvisionTriggerCycles();
+        var firstImage = new Bitmap(1, 1);
+        var conflictImage = new Bitmap(1, 1);
+        cycles.OnTrigger(7, true, 1);
+        Assert.Null(cycles.HoldBarcode(7, BarcodeCandidate(7, 1, "JT-A", firstImage)));
+
+        var conflict = cycles.HoldBarcode(7, BarcodeCandidate(7, 2, "JT-B", conflictImage));
+        cycles.OnTrigger(7, false, 2);
+
+        Assert.Contains("JT-A", conflict);
+        Assert.Contains("JT-B", conflict);
+        Assert.Empty(cycles.CompleteDrained(2));
+        Assert.Throws<ArgumentException>(() => firstImage.GetPixel(0, 0));
+        Assert.Throws<ArgumentException>(() => conflictImage.GetPixel(0, 0));
+    }
+
+    /// <summary>回调虽注册但固件不送真实边界时，帧内触发号仍让有效条码正常进入业务队列。</summary>
+    [Fact]
+    public void Barcode_is_published_once_through_frame_trigger_fallback() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        var received = new List<BarcodeReadEventArgs>();
+        camera.BarcodeReadTriggered += (_, args) => received.Add(args);
+        camera.NotBarcodeHitEvent += (_, args) => received.Add(args);
+
+        ActivateFrameTriggerFallback(camera, 42, 1, true);
+        DeliverBarcodeFrame(camera, 42, 1, "JT001");
+        ActivateFrameTriggerFallback(camera, 42, 2, true);
+        DeliverBarcodeFrame(camera, 42, 2, "JT001");
+        ActivateFrameTriggerFallback(camera, 42, 3, false);
+        DeliverEmptyFrame(camera, 42, 3);
+
+        var result = Assert.IsType<BarcodeTriggeredEventArgs>(OnlyResult(received));
+        Assert.Equal("JT001", result.Barcode);
+        Assert.Equal((uint)42, result.TriggerIndex);
+    }
+
+    /// <summary>帧触发号变化后必须允许下一包裹发布，不能把整个采集会话只保留一个结果。</summary>
+    [Fact]
+    public void Frame_trigger_fallback_accepts_one_result_for_each_trigger_index() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        var received = new List<BarcodeReadEventArgs>();
+        camera.BarcodeReadTriggered += (_, args) => received.Add(args);
+
+        ActivateFrameTriggerFallback(camera, 41, 1, true);
+        DeliverBarcodeFrame(camera, 41, 1, "JT041");
+        ActivateFrameTriggerFallback(camera, 42, 2, true);
+        DeliverBarcodeFrame(camera, 42, 2, "JT042");
+
+        Assert.Equal(new[] { "JT041", "JT042" }, received.Select(args => args.Barcode));
+        Assert.Equal(new uint?[] { 41, 42 }, received.Select(args => args.TriggerIndex));
+    }
+
+    /// <summary>周期排空入口根据最终结果类型只发布一个条码事件。</summary>
+    [Fact]
+    public async Task Drained_trigger_publishes_one_buffered_barcode_event() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        SetField(camera, "_triggerBoundaryObserved", 1);
+        SetField(camera, "_triggerCorrelationMode", 1);
+        SetField(camera, "_acceptFrames", 1);
+        Invoke(camera, "EnsureFrameDispatcher");
+        using var dispatcher = GetField<LosslessOrderedDispatcher<Action>>(camera, "_frameDispatcher");
+        var cycles = GetField<HikvisionTriggerCycles>(camera, "_triggerCycles");
+        var received = new List<BarcodeReadEventArgs>();
+        camera.BarcodeReadTriggered += (_, args) => received.Add(args);
+        cycles.OnTrigger(88, true, 1);
+        cycles.HoldBarcode(88, BarcodeCandidate(88, 1, "JT088"));
+        cycles.HoldBarcode(88, BarcodeCandidate(88, 2, "JT088"));
+        cycles.OnTrigger(88, false, 2);
+
+        Invoke(camera, "QueueDrainedTriggerCycles", 2L, 0);
+        await Flush(dispatcher);
+
+        Assert.Equal("JT088", OnlyResult(received).Barcode);
+        await (Task)Invoke(camera, "ResetTriggerCyclesAsync")!;
+    }
+
     /// <summary>实际原生回调入口和顺序调度队列在排空后只发布一次事件。</summary>
     [Fact]
     public async Task Native_boundary_callback_and_frame_queue_publish_one_result_after_drain() {
         var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
         SetField(camera, "_triggerCallbacksRegistered", true);
+        SetField(camera, "_triggerBoundaryObserved", 1);
+        SetField(camera, "_triggerCorrelationMode", 1);
         SetField(camera, "_acceptFrames", 1);
         Invoke(camera, "EnsureFrameDispatcher");
         using var dispatcher = GetField<LosslessOrderedDispatcher<Action>>(camera, "_frameDispatcher");
@@ -200,6 +339,8 @@ public sealed class HikvisionTriggerCycleTests {
     public async Task Reset_releases_pending_image_and_rejects_old_generation_drain() {
         var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
         SetField(camera, "_triggerCallbacksRegistered", true);
+        SetField(camera, "_triggerBoundaryObserved", 1);
+        SetField(camera, "_triggerCorrelationMode", 1);
         SetField(camera, "_acceptFrames", 1);
         Invoke(camera, "EnsureFrameDispatcher");
         using var dispatcher = GetField<LosslessOrderedDispatcher<Action>>(camera, "_frameDispatcher");
@@ -234,6 +375,8 @@ public sealed class HikvisionTriggerCycleTests {
     public void Sdk_success_cancels_empty_cycle_even_without_a_barcode_subscriber() {
         var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
         SetField(camera, "_triggerCallbacksRegistered", true);
+        SetField(camera, "_triggerBoundaryObserved", 1);
+        SetField(camera, "_triggerCorrelationMode", 1);
         using var cycles = GetField<HikvisionTriggerCycles>(camera, "_triggerCycles");
         var image = new Bitmap(2, 2);
         cycles.HoldNoRead(42, new BarcodeReadEventArgs { Image = image });
@@ -295,11 +438,59 @@ public sealed class HikvisionTriggerCycleTests {
         Barcode = "NoRead"
     };
 
+    /// <summary>构造可由周期管理器取得所有权的条码候选。</summary>
+    private static BarcodeTriggeredEventArgs BarcodeCandidate(
+        uint trigger,
+        uint frame,
+        string barcode,
+        Bitmap? image = null) => new() {
+        TriggerIndex = trigger,
+        SdkFrameNo = frame,
+        Barcode = barcode,
+        Image = image,
+        ThumbImage = image
+    };
+
+    /// <summary>模拟生产处理入口在过滤前锁定帧触发号降级并记录 SDK 原始读码状态。</summary>
+    private static void ActivateFrameTriggerFallback(
+        HikvisionSmartCamera camera,
+        uint trigger,
+        uint frame,
+        bool hasBarcode) {
+        var info = new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 {
+            nTriggerIndex = trigger,
+            nFrameNum = frame
+        };
+        Invoke(camera, "EnsureTriggerCorrelationMode", info);
+        GetField<HikvisionFrameTriggerResults>(camera, "_frameTriggerResults")
+            .ObserveFrame(trigger, hasBarcode);
+    }
+
     /// <summary>将模拟的 SDK 空帧传入适配器实际读码处理方法。</summary>
     private static void DeliverEmptyFrame(HikvisionSmartCamera camera, uint trigger, uint frame) {
         var method = typeof(HikvisionSmartCamera).GetMethod("HandleBarcodeReading", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var info = new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 { nTriggerIndex = trigger, nFrameNum = frame };
         var result = new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2();
         method.Invoke(camera, [null, info, result, DateTime.Now, (long)frame, (long)frame, null]);
+    }
+
+    /// <summary>绕过原生内存构造一张已经完成过滤的条码帧。</summary>
+    private static void DeliverBarcodeFrame(
+        HikvisionSmartCamera camera,
+        uint trigger,
+        uint frame,
+        string barcode) {
+        var method = typeof(HikvisionSmartCamera).GetMethod(
+            "HandleBarcodeReading",
+            BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var info = new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 {
+            nTriggerIndex = trigger,
+            nFrameNum = frame
+        };
+        var result = new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 { nCodeNum = 1 };
+        var filtered = new List<BarcodeTriggeredEventArgs> {
+            BarcodeCandidate(trigger, frame, barcode)
+        };
+        method.Invoke(camera, [null, info, result, DateTime.Now, (long)frame, (long)frame, filtered]);
     }
 }

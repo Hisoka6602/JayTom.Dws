@@ -1,129 +1,18 @@
-using JayTom.Dws.Application.Configuration;
 using JayTom.Dws.Application.Messaging;
-using DryIoc;
-using System;
-using System.Linq;
-using Example;
-using Prism.Ioc;
-using System.IO;
-using Prism.Mvvm;
 using Prism.DryIoc;
-using System.Windows;
-using JayTom.Dws.Ocr;
-using JayTom.Dws.Camera.Nvr.Legacy;
-using System.IO.Pipes;
-using System.Net.Http;
-using System.IO.Ports;
-using System.Threading;
-using JayTom.Dws.Camera;
-using JayTom.Dws.Plugin;
+using Prism.Ioc;
+using System;
 using System.Diagnostics;
-using JayTom.Dws.Integrations;
-using System.Globalization;
-using System.Windows.Media;
-using JayTom.Dws.Abstractions.Integrations.Ftp;
+using System.IO;
+using System.IO.Pipes;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Interop;
-using JayTom.Dws.Client.Views;
-using JayTom.Dws.Plugin.Excel;
-using JayTom.Dws.Plugin.Speech;
+using System.Windows;
 using System.Windows.Threading;
-using JayTom.Dws.Models.LocalLog;
-using JayTom.Dws.Client.Service;
-using JayTom.Dws.Infrastructure;
-using JayTom.Dws.Ocr.ExpressBill;
-using JayTom.Dws.Integrations.Cloud;
-using JayTom.Dws.Plugin.SaveImage;
-using JayTom.Dws.Client.ViewModels;
-using JayTom.Dws.Integrations.License;
-using JayTom.Dws.Client.Views.Pages;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using JayTom.Dws.Client.Views.Dialog;
-using JayTom.Dws.Client.Views.Editors;
-using JayTom.Dws.Plugin.Tcp.TcpClient;
-using JayTom.Dws.Plugin.Tcp.TcpServer;
-using JayTom.Dws.Camera.BarCodeReader;
-using JayTom.Dws.Client.Service.Device;
-using JayTom.Dws.Application.Events;
-using JayTom.Dws.Client.EventMediators;
-using JayTom.Dws.Client.Service.Sorting;
-using JayTom.Dws.Infrastructure.Service;
-using JayTom.Dws.Client.ViewModels.Pages;
-using Microsoft.Extensions.Configuration;
-using JayTom.Dws.Client.ViewModels.Dialog;
-using JayTom.Dws.Infrastructure.IComputer;
-using JayTom.Dws.Plugin.Scale.StaticScale;
-using JayTom.Dws.Client.ViewModels.Editors;
-using JayTom.Dws.Plugin.Scale.DynamicScale;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
-using JayTom.Dws.Integrations.Cloud.CloudVideo;
-using JayTom.Dws.Client.Service.TestService;
-using JayTom.Dws.Client.Service.ResultOutput;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
-using JayTom.Dws.Legacy.Contracts.Services.CacheCleanup;
-using JayTom.Dws.Client.Service.SyncSettings;
-using JayTom.Dws.Legacy.Contracts.Services.ImageService;
-using JayTom.Dws.Client.Service.ImageService;
-using JayTom.Dws.Plugin.Device.KeyboardDevice;
-using Microsoft.Extensions.DependencyInjection;
-using JayTom.Dws.Plugin.Device.GrayscaleDevice;
-using JayTom.Dws.Client.Views.Pages.Preferences;
-using JayTom.Dws.Client.Service.BackgroundService;
+using JayTom.Dws.Client.Events;
 using JayTom.Dws.Client.Service.Runtime;
-using JayTom.Dws.Client.Views.Editors.CloudService;
-using JayTom.Dws.Client.Service.ProcessingServices;
-using JayTom.Dws.Client.Service.ExternalDataService;
-using JayTom.Dws.Infrastructure.Repository.LocalLog;
-using DryIoc.Microsoft.DependencyInjection.Extension;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences;
-using JayTom.Dws.Infrastructure.Repository.LocalConf;
-using JayTom.Dws.Infrastructure.Repository.LocalData;
-using JayTom.Dws.Client.Service.DefaultConfiguration;
-using JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
-using JayTom.Dws.Client.ViewModels.Editors.CloudService;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CloudConfig;
-using JayTom.Dws.Client.Views.Dialog.CameraConfiguration;
-using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.Views;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.CameraConfig;
-using JayTom.Dws.Client.Views.Pages.Preferences.LogsViews;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Client.Views.Editors.CameraConfiguration;
-using JayTom.Dws.Client.Views.Pages.Preferences.AppSettings;
-using JayTom.Dws.Client.Views.Pages.Preferences.CloudService;
-using JayTom.Dws.Client.Service.Sorting.Communication.TcpComm;
-using JayTom.Dws.Client.ViewModels.Dialog.CameraConfiguration;
-using JayTom.Dws.Client.HomeToolPlugin.SunnenPlugin.ViewModels;
-using JayTom.Dws.Client.ViewModels.Editors.CameraConfiguration;
-using JayTom.Dws.Client.Service.Sorting.Communication.SerialComm;
-using JayTom.Dws.Client.Views.Pages.Preferences.ApiConfiguration;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.AppSettings;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CloudConfig;
-using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.CameraConfig;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.CloudService;
-using JayTom.Dws.Infrastructure.SignalR.CloudApi.ClientMessageHub;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.IpcNvrConfig;
-using JayTom.Dws.Client.Service.ResultOutput.Communication.TcpComm;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel;
-using JayTom.Dws.Client.Views.Pages.Preferences.CameraConfiguration;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration;
-using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.CameraConfiguration;
-using JayTom.Dws.Client.Service.ExternalDataService.Communication.TcpComm;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig;
-using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration;
-using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig.ConnectionParams;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.RuleConfig;
-using JayTom.Dws.Client.Views.Editors.PackageSortingConfiguration.SortingMethodEditors;
-using JayTom.Dws.Infrastructure.Repository.LocalConf.PackageSortingConfig.ConnectionParams;
-using JayTom.Dws.Client.ViewModels.Editors.PackageSortingConfiguration.SortingMethodEditors;
-using JayTom.Dws.Client.Views.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
-using JayTom.Dws.Client.ViewModels.Pages.Preferences.PackageSortingConfiguration.SortingMethodPages;
+using JayTom.Dws.Client.Views;
+using JayTom.Dws.Models.LocalLog;
 
 namespace JayTom.Dws.Client
 {
@@ -133,8 +22,24 @@ namespace JayTom.Dws.Client
     /// </summary>
     public partial class App : PrismApplication
     {
+        /// <summary>优雅停机允许占用的最长时间。</summary>
+        private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(20);
+        /// <summary>退出事件开始后强制终止残留进程的最后期限。</summary>
+        private static readonly TimeSpan ForcedExitDelay = TimeSpan.FromSeconds(30);
         /// <summary>用于阻止桌面进程重复启动的互斥量。</summary>
         private Mutex? _singleInstanceMutex;
+        /// <summary>应用级生命周期令牌，关闭请求可取消尚未完成的异步启动。</summary>
+        private readonly CancellationTokenSource _applicationLifetimeCancellation = new();
+        /// <summary>优雅停机失效时保证进程最终终止的看门狗。</summary>
+        private static Timer? _forcedExitTimer;
+        /// <summary>标记当前实例是否实际持有单实例互斥量。</summary>
+        private bool _ownsSingleInstanceMutex;
+        /// <summary>标记 Prism 容器已经可以安全解析应用服务。</summary>
+        private int _compositionInitialized;
+        /// <summary>标记 WPF 与 Prism 启动流程已经完整结束。</summary>
+        private int _startupCompleted;
+        /// <summary>标记应用已经收到退出请求。</summary>
+        private int _shutdownRequested;
         /// <summary>用于通知已运行实例激活窗口的命名管道。</summary>
         private const string PipeName = "DwsPipe";
 
@@ -154,8 +59,13 @@ namespace JayTom.Dws.Client
         protected override void OnStartup(StartupEventArgs e)
         {
             ConfigureRealtimeThreadPool();
-            NLog.LogManager.GetCurrentClassLogger().Info("OnStartup开始");
+            NLog.LogManager.GetCurrentClassLogger().Info(
+                "OnStartup开始:PID={ProcessId},BaseDirectory={BaseDirectory},WorkingDirectory={WorkingDirectory}",
+                Environment.ProcessId,
+                AppContext.BaseDirectory,
+                Environment.CurrentDirectory);
             _singleInstanceMutex = new Mutex(true, "Dws.Client", out var createdNew);
+            _ownsSingleInstanceMutex = createdNew;
             if (!createdNew)
             {
                 // 另一个实例已经在运行，尝试激活它的窗口
@@ -168,10 +78,12 @@ namespace JayTom.Dws.Client
             this.DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args)
             {
                 ReportUnhandledException(args.Exception, "UI线程未处理异常");
-                args.Handled = !IsFatalException(args.Exception);
+                args.Handled = Volatile.Read(ref _startupCompleted) != 0 &&
+                               Volatile.Read(ref _shutdownRequested) == 0 &&
+                               !IsFatalException(args.Exception);
                 if (!args.Handled)
                 {
-                    Shutdown(-2);
+                    RequestApplicationShutdown(-2);
                 }
             };
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args)
@@ -186,9 +98,17 @@ namespace JayTom.Dws.Client
                 ReportUnhandledException(args.Exception, "未观察任务异常");
                 args.SetObserved();
             };
-            base.OnStartup(e);
-
-            NLog.LogManager.GetCurrentClassLogger().Info("OnStartup结束");
+            try
+            {
+                base.OnStartup(e);
+                Volatile.Write(ref _startupCompleted, 1);
+                NLog.LogManager.GetCurrentClassLogger().Info("OnStartup结束:PID={ProcessId}", Environment.ProcessId);
+            }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Fatal(exception, "应用启动失败，正在退出");
+                RequestApplicationShutdown(-1);
+            }
         }
 
         /// <summary>
@@ -231,40 +151,25 @@ namespace JayTom.Dws.Client
         /// <summary>在退出前按顺序停止应用服务并释放进程资源。</summary>
         protected override void OnExit(ExitEventArgs e)
         {
+            Interlocked.Exchange(ref _shutdownRequested, 1);
+            ArmForcedExitWatchdog(e.ApplicationExitCode);
+            NLog.LogManager.GetCurrentClassLogger().Info(
+                "OnExit开始:PID={ProcessId},ExitCode={ExitCode},CompositionInitialized={CompositionInitialized}",
+                Environment.ProcessId,
+                e.ApplicationExitCode,
+                Volatile.Read(ref _compositionInitialized) != 0);
             try
             {
-                Container.Resolve<IEventBus>().Publish(new AppLogInfoModel
+                _applicationLifetimeCancellation.Cancel();
+                if (Volatile.Read(ref _compositionInitialized) != 0)
                 {
-                    CreateTime = DateTime.Now,
-                    Message = "程序关闭",
-                    Type = LogType.Information
-                });
-
-                using var shutdownCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-                var shutdownTask = Container.Resolve<IApplicationLifecycleCoordinator>()
-                    .StopAsync(shutdownCancellation.Token);
-                var shutdownFrame = new DispatcherFrame();
-                var timeoutTimer = new DispatcherTimer(
-                    TimeSpan.FromSeconds(20),
-                    DispatcherPriority.Send,
-                    (_, _) => shutdownFrame.Continue = false,
-                    Dispatcher);
-                _ = shutdownTask.ContinueWith(
-                    _ => shutdownFrame.Continue = false,
-                    CancellationToken.None,
-                    TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.FromCurrentSynchronizationContext());
-                timeoutTimer.Start();
-                Dispatcher.PushFrame(shutdownFrame);
-                timeoutTimer.Stop();
-                if (!shutdownTask.IsCompleted)
-                {
-                    NLog.LogManager.GetCurrentClassLogger().Warn("程序关闭资源释放超过 20 秒，继续退出");
-                }
-                else if (shutdownTask.Exception is not null)
-                {
-                    NLog.LogManager.GetCurrentClassLogger()
-                        .Error(shutdownTask.Exception, "程序关闭资源释放异常");
+                    var lifecycleCoordinator = Container.Resolve<IApplicationLifecycleCoordinator>();
+                    lifecycleCoordinator.BeginShutdown();
+                    PublishCloseNotification();
+                    using var shutdownCancellation = new CancellationTokenSource(ShutdownTimeout);
+                    WaitForShutdown(
+                        lifecycleCoordinator.StopAsync(shutdownCancellation.Token),
+                        ShutdownTimeout);
                 }
             }
             catch (Exception exception)
@@ -275,22 +180,104 @@ namespace JayTom.Dws.Client
             {
                 if (_singleInstanceMutex is not null)
                 {
-                    try
+                    if (_ownsSingleInstanceMutex)
                     {
-                        _singleInstanceMutex.ReleaseMutex();
-                    }
-                    catch (ApplicationException)
-                    {
-                        // 当前实例不再持有互斥锁时只需释放句柄。
+                        try
+                        {
+                            _singleInstanceMutex.ReleaseMutex();
+                        }
+                        catch (ApplicationException exception)
+                        {
+                            NLog.LogManager.GetCurrentClassLogger().Warn(exception, "释放单实例互斥量失败");
+                        }
                     }
                     _singleInstanceMutex.Dispose();
                     _singleInstanceMutex = null;
+                    _ownsSingleInstanceMutex = false;
                 }
 
+                NLog.LogManager.GetCurrentClassLogger().Info("OnExit完成:PID={ProcessId}", Environment.ProcessId);
                 NLog.LogManager.Flush(TimeSpan.FromSeconds(5));
                 NLog.LogManager.Shutdown();
                 base.OnExit(e);
             }
+        }
+
+        /// <summary>广播兼容的窗口关闭事件；监督器停机屏障必须先于此事件建立。</summary>
+        private void PublishCloseNotification()
+        {
+            try
+            {
+                Container.Resolve<IEventBus>().Publish(new WindowsAction
+                {
+                    Type = WindowsActionType.Close
+                });
+            }
+            catch (Exception exception)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(exception, "发布程序关闭通知失败");
+            }
+        }
+
+        /// <summary>在 UI 消息循环仍可调度时有界等待异步资源释放。</summary>
+        private void WaitForShutdown(Task shutdownTask, TimeSpan timeout)
+        {
+            var shutdownFrame = new DispatcherFrame();
+            var timeoutTimer = new DispatcherTimer(
+                timeout,
+                DispatcherPriority.Send,
+                (_, _) => shutdownFrame.Continue = false,
+                Dispatcher);
+            _ = shutdownTask.ContinueWith(
+                _ => shutdownFrame.Continue = false,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.FromCurrentSynchronizationContext());
+            timeoutTimer.Start();
+            Dispatcher.PushFrame(shutdownFrame);
+            timeoutTimer.Stop();
+            if (!shutdownTask.IsCompleted)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn("程序关闭资源释放超过 {TimeoutSeconds} 秒", timeout.TotalSeconds);
+            }
+            else if (shutdownTask.IsFaulted)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Error(shutdownTask.Exception, "程序关闭资源释放异常");
+            }
+            else if (shutdownTask.IsCanceled)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn("程序关闭资源释放已取消");
+            }
+        }
+
+        /// <summary>即使遗留前台线程拒绝退出，也在最后期限到达后终止当前进程。</summary>
+        private void ArmForcedExitWatchdog(int exitCode)
+        {
+            _forcedExitTimer = new Timer(
+                static state =>
+                {
+                    Trace.WriteLine("优雅停机超过最终期限，强制终止进程。");
+                    Environment.Exit((int)state!);
+                },
+                exitCode,
+                ForcedExitDelay,
+                Timeout.InfiniteTimeSpan);
+        }
+
+        /// <summary>从任意线程安全地请求 WPF 应用退出。</summary>
+        private void RequestApplicationShutdown(int exitCode)
+        {
+            Interlocked.Exchange(ref _shutdownRequested, 1);
+            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+            {
+                return;
+            }
+            if (Dispatcher.CheckAccess())
+            {
+                Shutdown(exitCode);
+                return;
+            }
+            _ = Dispatcher.BeginInvoke(() => Shutdown(exitCode));
         }
 
         /// <summary>通过命名管道通知已运行实例激活主窗口。</summary>
@@ -305,7 +292,7 @@ namespace JayTom.Dws.Client
             }
             catch (TimeoutException)
             {
-                // 如果连接超时，可以处理错误情况
+                NLog.LogManager.GetCurrentClassLogger().Warn("已运行实例未响应窗口激活请求");
             }
             catch (Exception exception)
             {
@@ -325,6 +312,7 @@ namespace JayTom.Dws.Client
         protected override void OnInitialized()
         {
             base.OnInitialized();
+            Volatile.Write(ref _compositionInitialized, 1);
             StartApplicationServicesAsync().Forget("启动应用服务");
         }
 
@@ -334,13 +322,17 @@ namespace JayTom.Dws.Client
             try
             {
                 await Container.Resolve<IApplicationLifecycleCoordinator>()
-                    .StartAsync(CancellationToken.None);
+                    .StartAsync(_applicationLifetimeCancellation.Token);
                 NLog.LogManager.GetCurrentClassLogger().Info("全部服务启动完成");
+            }
+            catch (OperationCanceledException) when (_applicationLifetimeCancellation.IsCancellationRequested)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Info("应用关闭期间取消后台服务启动");
             }
             catch (Exception exception)
             {
                 NLog.LogManager.GetCurrentClassLogger().Fatal(exception, "应用初始化失败");
-                Shutdown(-1);
+                RequestApplicationShutdown(-1);
             }
         }
 

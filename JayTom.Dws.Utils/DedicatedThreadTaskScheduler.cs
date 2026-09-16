@@ -24,7 +24,10 @@ namespace JayTom.Dws.Utils {
                     while (true) {
                         TryExecuteTask(_tasks.Take());
                     }
-                });
+                }) {
+                    IsBackground = true,
+                    Name = $"DwsDedicatedScheduler-{index}"
+                };
             }
 
             Array.ForEach(threads, it => it.Start());

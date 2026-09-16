@@ -63,6 +63,8 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
     private long _lastHeartbeatErrorTimestamp;
     /// <summary>标记监督器是否已经启动。</summary>
     private int _isStarted;
+    /// <summary>标记应用已进入停机阶段；一旦设置，监督器不得再创建服务实例。</summary>
+    private int _shutdownRequested;
 
     /// <summary>使用依赖注入容器登记的后台服务描述创建监督器。</summary>
     public HostedServiceSupervisor(
@@ -76,10 +78,18 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
 
     /// <summary>启动并开始监督全部后台服务。</summary>
     public async Task StartAsync(CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (Volatile.Read(ref _shutdownRequested) != 0) {
+            throw new InvalidOperationException("后台服务监督器已经进入停机阶段，不能再次启动");
+        }
         if (Interlocked.CompareExchange(ref _isStarted, 1, 0) != 0) {
             return;
         }
 
+        if (Volatile.Read(ref _shutdownRequested) != 0) {
+            Interlocked.Exchange(ref _isStarted, 0);
+            throw new OperationCanceledException("后台服务监督器启动期间收到停机请求");
+        }
         _lifetimeCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var lifetimeToken = _lifetimeCancellation.Token;
         var initialStarts = new TaskCompletionSource[_serviceDescriptors.Count];
@@ -99,16 +109,22 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
             await Task.WhenAll(initialStarts.Select(source => source.Task)).ConfigureAwait(false);
         }
         catch {
-            await _lifetimeCancellation.CancelAsync().ConfigureAwait(false);
-            Interlocked.Exchange(ref _isStarted, 0);
+            BeginShutdown();
+            await StopAsync(CancellationToken.None).ConfigureAwait(false);
             throw;
         }
         _heartbeatTask = RunHeartbeatLoopAsync(lifetimeToken);
         await WriteHeartbeatAsync("Running", cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>同步建立停机屏障，供窗口关闭通知早于异步资源释放时使用。</summary>
+    public void BeginShutdown() {
+        Interlocked.Exchange(ref _shutdownRequested, 1);
+    }
+
     /// <summary>停止监督并按逆序停止全部后台服务。</summary>
     public async Task StopAsync(CancellationToken cancellationToken = default) {
+        BeginShutdown();
         if (Interlocked.Exchange(ref _isStarted, 0) == 0) {
             return;
         }
@@ -158,7 +174,7 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
         var failureCounter = new StableRunFailureCounter(StableRunDuration);
         var isInitialAttempt = true;
 
-        while (!cancellationToken.IsCancellationRequested) {
+        while (!IsShutdownRequested(cancellationToken)) {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var service = (IHostedService)scope.ServiceProvider.GetRequiredService(
                 descriptor.ServiceType);
@@ -183,7 +199,7 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
                 if (service is Microsoft.Extensions.Hosting.BackgroundService backgroundService &&
                     backgroundService.ExecuteTask is { } executionTask) {
                     await executionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    if (!cancellationToken.IsCancellationRequested) {
+                    if (!IsShutdownRequested(cancellationToken)) {
                         throw new InvalidOperationException($"后台服务意外结束:{serviceName}");
                     }
                 }
@@ -191,8 +207,11 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
                     await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
                 }
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
-                break;
+            catch (OperationCanceledException) when (IsShutdownRequested(cancellationToken)) {
+                // 继续进入统一移除和 StopAsync 路径，避免作用域先于服务停止被释放。
+            }
+            catch (Exception) when (IsShutdownRequested(cancellationToken)) {
+                // 停机屏障建立后的执行异常不触发重启，但仍必须完成服务停止。
             }
             catch (Exception exception) {
                 int consecutiveFailures = failureCounter.RegisterFailure();
@@ -212,7 +231,7 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
                 .Remove(new KeyValuePair<Type, ActiveHostedService>(descriptor.ServiceType, activeService))) {
                 await StopServiceSafelyAsync(service, CancellationToken.None).ConfigureAwait(false);
             }
-            if (cancellationToken.IsCancellationRequested) {
+            if (IsShutdownRequested(cancellationToken)) {
                 break;
             }
 
@@ -221,7 +240,7 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
             try {
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            catch (OperationCanceledException) when (IsShutdownRequested(cancellationToken)) {
                 break;
             }
         }
@@ -229,6 +248,10 @@ internal sealed class HostedServiceSupervisor : IHostedServiceSupervisor, IAsync
         initialStart.TrySetCanceled(cancellationToken);
         _serviceStates[serviceName] = "Stopped";
     }
+
+    /// <summary>判断监督器是否已经进入不可重启的停机阶段。</summary>
+    private bool IsShutdownRequested(CancellationToken cancellationToken) =>
+        cancellationToken.IsCancellationRequested || Volatile.Read(ref _shutdownRequested) != 0;
 
     /// <summary>停止单个服务并隔离超时或释放异常。</summary>
     private static async Task StopServiceSafelyAsync(

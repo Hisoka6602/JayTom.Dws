@@ -11,6 +11,9 @@ public interface IHostedServiceSupervisor {
     /// <summary>启动并开始监督全部后台服务。</summary>
     Task StartAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>同步建立停机屏障，阻止已结束的服务在正式停止前再次启动。</summary>
+    void BeginShutdown();
+
     /// <summary>停止监督并按逆序停止全部后台服务。</summary>
     Task StopAsync(CancellationToken cancellationToken = default);
 

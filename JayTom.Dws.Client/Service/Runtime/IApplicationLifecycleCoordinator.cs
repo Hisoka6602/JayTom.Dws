@@ -9,6 +9,9 @@ public interface IApplicationLifecycleCoordinator
     /// <summary>初始化配置并按依赖顺序启动后台工作流。</summary>
     Task StartAsync(CancellationToken cancellationToken);
 
+    /// <summary>同步建立停机屏障，禁止后台服务在关闭窗口期间重新启动。</summary>
+    void BeginShutdown();
+
     /// <summary>按依赖逆序停止生产者与后台消费者。</summary>
     Task StopAsync(CancellationToken cancellationToken);
 }

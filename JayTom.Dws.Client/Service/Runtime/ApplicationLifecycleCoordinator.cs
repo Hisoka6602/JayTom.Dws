@@ -108,9 +108,16 @@ public sealed class ApplicationLifecycleCoordinator : IApplicationLifecycleCoord
         LogManager.GetCurrentClassLogger().InfoOperation("application.start", "completed");
     }
 
+    /// <summary>同步建立停机屏障，避免关闭通知使后台服务被监督器误判并重启。</summary>
+    public void BeginShutdown()
+    {
+        _hostedServiceSupervisor.BeginShutdown();
+    }
+
     /// <summary>按设备、分拣、后台消费者的依赖逆序执行停机。</summary>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        BeginShutdown();
         await StopComponentAsync(
             "设备服务",
             () => _deviceService.RunningStatus,

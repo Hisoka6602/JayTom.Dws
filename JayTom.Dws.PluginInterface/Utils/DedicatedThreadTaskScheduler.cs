@@ -23,7 +23,10 @@ namespace JayTom.Dws.PluginInterface.Utils {
                     while (true) {
                         TryExecuteTask(_tasks.Take());
                     }
-                });
+                }) {
+                    IsBackground = true,
+                    Name = $"DwsPluginDedicatedScheduler-{index}"
+                };
             }
 
             Array.ForEach(threads, it => it.Start());
