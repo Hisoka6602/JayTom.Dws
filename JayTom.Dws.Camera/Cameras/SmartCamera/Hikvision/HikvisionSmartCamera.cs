@@ -40,7 +40,7 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
         private LosslessOrderedDispatcher<Action>? _frameDispatcher;
         /// <summary>管理当前采集会话中的电平触发周期。</summary>
         private readonly HikvisionTriggerCycles _triggerCycles = new();
-        /// <summary>固件没有触发边界事件时，按帧内触发序号限制每次触发只能发布一个结果。</summary>
+        /// <summary>固件没有触发边界事件时，按帧内触发序号对同一次触发的候选结果分组去重。</summary>
         private readonly HikvisionFrameTriggerResults _frameTriggerResults = new();
         /// <summary>保持委托存活到 SDK 句柄销毁，避免原生回调指向已回收的托管委托。</summary>
         private MvCodeReader.cbTriggerdelegate? _triggerCallback;
@@ -609,15 +609,9 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         if (barcodeTriggeredEventArgsList.Count > 0) {
                             if (HasReliableTriggerBoundary) {
                                 foreach (var barcodeTriggeredEventArgs in barcodeTriggeredEventArgsList) {
-                                    var conflict = _triggerCycles.HoldBarcode(
+                                    _triggerCycles.HoldBarcode(
                                         stFrameInfo.nTriggerIndex,
                                         barcodeTriggeredEventArgs);
-                                    if (conflict is not null) {
-                                        OnCameraExceptionOccurred(new CameraExceptionEventArgs {
-                                            Exception = new InvalidOperationException(
-                                                $"海康同一次触发识别到不同条码，已拒绝该触发以防错配:{conflict}")
-                                        });
-                                    }
                                 }
                             }
                             else if (UsesFrameTriggerIndex) {
@@ -967,11 +961,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 NLog.LogManager.GetCurrentClassLogger().Warn(
                     $"海康相机={Info?.SerialNumber}:采集帧到达前未收到SDK触发边界；" +
                     $"已降级使用帧内触发序号去重,触发序号={frameInfo.nTriggerIndex},SDK帧号={frameInfo.nFrameNum}；" +
-                    "同一次触发只发布首个条码或NoRead，不再丢弃全部包裹结果");
+                    "同一次触发的重复条码只发布一次，不同条码交由多条码处理规则决定");
             }
         }
 
-        /// <summary>帧触发号降级路径只发布同一触发的第一个唯一条码。</summary>
+        /// <summary>帧触发号降级路径发布同一触发的全部不同条码，并统一分组时间供业务多条码规则判断。</summary>
         private void PublishFrameTriggerBarcodes(
             uint triggerIndex,
             IReadOnlyList<BarcodeTriggeredEventArgs> candidates) {
@@ -981,19 +975,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     triggerIndex,
                     candidate.Barcode,
                     false,
-                    out var existing);
+                    candidate.ScanTime,
+                    out var groupedScanTime);
                 if (claim == HikvisionFrameTriggerResults.Claim.Accepted) {
+                    candidate.ScanTime = groupedScanTime;
                     OnBarcodeReadTriggered(candidate);
                     continue;
                 }
                 ReleaseBarcodeResult(candidate);
-                if (claim == HikvisionFrameTriggerResults.Claim.Conflict) {
-                    OnCameraExceptionOccurred(new CameraExceptionEventArgs {
-                        Exception = new InvalidOperationException(
-                            $"海康同一帧内触发序号出现不同结果，已拒绝后续结果以防错配:" +
-                            $"触发序号={triggerIndex},首结果={existing},后续结果={candidate.Barcode}")
-                    });
-                }
             }
         }
 
@@ -1003,8 +992,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                 triggerIndex,
                 candidate.Barcode,
                 true,
-                out _);
+                candidate.ScanTime,
+                out var groupedScanTime);
             if (claim == HikvisionFrameTriggerResults.Claim.Accepted) {
+                candidate.ScanTime = groupedScanTime;
                 OnNotBarcodeHitEvent(candidate);
             }
             else {

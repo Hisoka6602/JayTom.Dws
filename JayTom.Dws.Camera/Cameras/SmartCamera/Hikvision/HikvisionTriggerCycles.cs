@@ -29,9 +29,8 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
         }
     }
 
-    /// <summary>暂存同一触发的首个有效条码；重复条码丢弃，不同条码判定为冲突并拒绝整个周期。</summary>
-    /// <returns>首次发现冲突时返回冲突描述，其余情况返回空。</returns>
-    public string? HoldBarcode(uint triggerIndex, BarcodeTriggeredEventArgs candidate) {
+    /// <summary>暂存同一触发的全部不同条码；相同条码跨帧重复出现时仅保留一次。</summary>
+    public void HoldBarcode(uint triggerIndex, BarcodeTriggeredEventArgs candidate) {
         Cycle cycle;
         try {
             cycle = GetCycle(triggerIndex);
@@ -45,28 +44,17 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
         cycle.HasBarcode = true;
         Release(cycle.PendingNoRead);
         cycle.PendingNoRead = null;
-        if (cycle.Completed || cycle.HasBarcodeConflict) {
+        if (cycle.Completed) {
             Release(candidate);
-            return null;
+            return;
         }
-        if (cycle.PendingBarcode is null) {
-            cycle.PendingBarcode = candidate;
-            return null;
-        }
-        if (string.Equals(
-                cycle.PendingBarcode.Barcode,
-                candidate.Barcode,
-                StringComparison.OrdinalIgnoreCase)) {
+        if (!cycle.Barcodes.Add(candidate.Barcode)) {
             Release(candidate);
-            return null;
+            return;
         }
-
-        var conflict = $"触发序号={triggerIndex},首条码={cycle.PendingBarcode.Barcode},冲突条码={candidate.Barcode}";
-        cycle.HasBarcodeConflict = true;
-        Release(cycle.PendingBarcode);
-        cycle.PendingBarcode = null;
-        Release(candidate);
-        return conflict;
+        cycle.ScanTime ??= candidate.ScanTime;
+        candidate.ScanTime = cycle.ScanTime.Value;
+        cycle.PendingBarcodes.Add(candidate);
     }
 
     /// <summary>仅保留同周期第一张空帧的图片；被替换或取消的图片在这里释放。</summary>
@@ -96,8 +84,8 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
                 continue;
             }
             cycle.Completed = true;
-            if (!cycle.HasBarcodeConflict && cycle.PendingBarcode is { } barcode) {
-                result.Add(barcode);
+            if (cycle.PendingBarcodes.Count > 0) {
+                result.AddRange(cycle.PendingBarcodes);
             }
             else if (!cycle.HasBarcode && cycle.PendingNoRead is { } noRead) {
                 result.Add(noRead);
@@ -105,10 +93,7 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
             else {
                 Release(cycle.PendingNoRead);
             }
-            if (cycle.HasBarcodeConflict) {
-                Release(cycle.PendingBarcode);
-            }
-            cycle.PendingBarcode = null;
+            cycle.PendingBarcodes.Clear();
             cycle.PendingNoRead = null;
             _completed.Enqueue(pair.Key);
         }
@@ -122,7 +107,9 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
     public void Dispose() {
         foreach (var cycle in _cycles.Values) {
             Release(cycle.PendingNoRead);
-            Release(cycle.PendingBarcode);
+            foreach (var barcode in cycle.PendingBarcodes) {
+                Release(barcode);
+            }
         }
         _cycles.Clear();
         _completed.Clear();
@@ -150,10 +137,11 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
     private sealed class Cycle {
         public bool HasFrame { get; set; }
         public bool HasBarcode { get; set; }
-        public bool HasBarcodeConflict { get; set; }
         public bool Completed { get; set; }
         public long? EndSequence { get; set; }
+        public DateTime? ScanTime { get; set; }
         public BarcodeReadEventArgs? PendingNoRead { get; set; }
-        public BarcodeTriggeredEventArgs? PendingBarcode { get; set; }
+        public HashSet<string> Barcodes { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<BarcodeTriggeredEventArgs> PendingBarcodes { get; } = [];
     }
 }

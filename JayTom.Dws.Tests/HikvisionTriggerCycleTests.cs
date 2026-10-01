@@ -8,7 +8,7 @@ using MvCodeReaderSDKNet;
 
 namespace JayTom.Dws.Tests;
 
-/// <summary>验证海康同一次硬件触发的全部帧只产生一个最终条码或 NoRead。</summary>
+/// <summary>验证海康同一次硬件触发的全部帧只产生一个 NoRead 或一组去重后的有效条码。</summary>
 public sealed class HikvisionTriggerCycleTests {
     /// <summary>五张空帧须等到触发结束和队列排空后才发布一个结果。</summary>
     [Fact]
@@ -214,8 +214,8 @@ public sealed class HikvisionTriggerCycleTests {
         var duplicateImage = new Bitmap(1, 1);
         var duplicate = BarcodeCandidate(42, 2, "JT001", duplicateImage);
 
-        Assert.Null(cycles.HoldBarcode(42, first));
-        Assert.Null(cycles.HoldBarcode(42, duplicate));
+        cycles.HoldBarcode(42, first);
+        cycles.HoldBarcode(42, duplicate);
         Assert.Empty(cycles.CompleteDrained(1));
         cycles.OnTrigger(42, false, 2);
 
@@ -225,23 +225,25 @@ public sealed class HikvisionTriggerCycleTests {
         Assert.Throws<ArgumentException>(() => duplicateImage.GetPixel(0, 0));
     }
 
-    /// <summary>同一触发识别出不同条码时拒绝整个周期，不能把第二条顺延给下一包裹。</summary>
+    /// <summary>同一触发识别出不同条码时保留全部唯一值，并统一分组时间交给业务多条码规则。</summary>
     [Fact]
-    public void Conflicting_barcodes_reject_the_whole_trigger() {
+    public void Distinct_barcodes_are_kept_in_the_same_trigger_group() {
         using var cycles = new HikvisionTriggerCycles();
-        var firstImage = new Bitmap(1, 1);
-        var conflictImage = new Bitmap(1, 1);
+        var firstScanTime = new DateTime(2026, 9, 20, 10, 0, 0, 100);
+        var secondScanTime = firstScanTime.AddMilliseconds(60);
         cycles.OnTrigger(7, true, 1);
-        Assert.Null(cycles.HoldBarcode(7, BarcodeCandidate(7, 1, "JT-A", firstImage)));
+        var first = BarcodeCandidate(7, 1, "JT-A");
+        first.ScanTime = firstScanTime;
+        cycles.HoldBarcode(7, first);
 
-        var conflict = cycles.HoldBarcode(7, BarcodeCandidate(7, 2, "JT-B", conflictImage));
+        var second = BarcodeCandidate(7, 2, "JT-B");
+        second.ScanTime = secondScanTime;
+        cycles.HoldBarcode(7, second);
         cycles.OnTrigger(7, false, 2);
 
-        Assert.Contains("JT-A", conflict);
-        Assert.Contains("JT-B", conflict);
-        Assert.Empty(cycles.CompleteDrained(2));
-        Assert.Throws<ArgumentException>(() => firstImage.GetPixel(0, 0));
-        Assert.Throws<ArgumentException>(() => conflictImage.GetPixel(0, 0));
+        var completed = cycles.CompleteDrained(2).Cast<BarcodeTriggeredEventArgs>().ToList();
+        Assert.Equal(new[] { "JT-A", "JT-B" }, completed.Select(item => item.Barcode));
+        Assert.All(completed, item => Assert.Equal(firstScanTime, item.ScanTime));
     }
 
     /// <summary>回调虽注册但固件不送真实边界时，帧内触发号仍让有效条码正常进入业务队列。</summary>
@@ -280,6 +282,39 @@ public sealed class HikvisionTriggerCycleTests {
 
         Assert.Equal(new[] { "JT041", "JT042" }, received.Select(args => args.Barcode));
         Assert.Equal(new uint?[] { 41, 42 }, received.Select(args => args.TriggerIndex));
+    }
+
+    /// <summary>同一帧触发号中的不同条码必须全部进入业务层，并使用同一分组时间触发多条码规则。</summary>
+    [Fact]
+    public void Frame_trigger_fallback_publishes_distinct_barcodes_as_one_group() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        var received = new List<BarcodeReadEventArgs>();
+        camera.BarcodeReadTriggered += (_, args) => received.Add(args);
+
+        ActivateFrameTriggerFallback(camera, 42, 1, true);
+        DeliverBarcodeFrame(camera, 42, 1, "JT-A", "JT-B");
+
+        Assert.Equal(new[] { "JT-A", "JT-B" }, received.Select(args => args.Barcode));
+        Assert.Equal(received[0].ScanTime, received[1].ScanTime);
+        Assert.All(received, args => Assert.Equal((uint)42, args.TriggerIndex));
+    }
+
+    /// <summary>同一触发跨帧识别到的不同条码也必须共用分组时间，避免被误配到后续包裹。</summary>
+    [Fact]
+    public void Frame_trigger_fallback_groups_distinct_barcodes_across_frames() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        var received = new List<BarcodeReadEventArgs>();
+        camera.BarcodeReadTriggered += (_, args) => received.Add(args);
+
+        ActivateFrameTriggerFallback(camera, 42, 1, true);
+        DeliverBarcodeFrame(camera, 42, 1, "JT-A");
+        ActivateFrameTriggerFallback(camera, 42, 2, true);
+        DeliverBarcodeFrame(camera, 42, 2, "JT-B");
+
+        Assert.Equal(new[] { "JT-A", "JT-B" }, received.Select(args => args.Barcode));
+        Assert.Equal(received[0].ScanTime, received[1].ScanTime);
     }
 
     /// <summary>周期排空入口根据最终结果类型只发布一个条码事件。</summary>
@@ -479,7 +514,7 @@ public sealed class HikvisionTriggerCycleTests {
         HikvisionSmartCamera camera,
         uint trigger,
         uint frame,
-        string barcode) {
+        params string[] barcodes) {
         var method = typeof(HikvisionSmartCamera).GetMethod(
             "HandleBarcodeReading",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -487,10 +522,14 @@ public sealed class HikvisionTriggerCycleTests {
             nTriggerIndex = trigger,
             nFrameNum = frame
         };
-        var result = new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 { nCodeNum = 1 };
-        var filtered = new List<BarcodeTriggeredEventArgs> {
-            BarcodeCandidate(trigger, frame, barcode)
-        };
-        method.Invoke(camera, [null, info, result, DateTime.Now, (long)frame, (long)frame, filtered]);
+        var result = new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 { nCodeNum = (uint)barcodes.Length };
+        var scanTime = DateTime.Now;
+        var filtered = new List<BarcodeTriggeredEventArgs>(barcodes.Length);
+        foreach (var barcode in barcodes) {
+            var candidate = BarcodeCandidate(trigger, frame, barcode);
+            candidate.ScanTime = scanTime;
+            filtered.Add(candidate);
+        }
+        method.Invoke(camera, [null, info, result, scanTime, (long)frame, (long)frame, filtered]);
     }
 }

@@ -1,7 +1,7 @@
 namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision;
 
 /// <summary>
-/// 固件不送达触发开始/结束回调时，使用电平触发帧自带的触发序号保证一个触发最多发布一个结果。
+/// 固件不送达触发开始/结束回调时，使用电平触发帧自带的触发序号对同一触发的结果分组去重。
 /// </summary>
 internal sealed class HikvisionFrameTriggerResults : IDisposable {
     private const int RetainedTriggers = 256;
@@ -12,7 +12,6 @@ internal sealed class HikvisionFrameTriggerResults : IDisposable {
     public enum Claim {
         Accepted,
         Duplicate,
-        Conflict,
         Suppressed
     }
 
@@ -27,20 +26,18 @@ internal sealed class HikvisionFrameTriggerResults : IDisposable {
         uint triggerIndex,
         string result,
         bool isNoRead,
-        out string? existingResult) {
+        DateTime scanTime,
+        out DateTime groupedScanTime) {
         var state = GetOrAdd(triggerIndex);
-        existingResult = state.Result;
+        state.ScanTime ??= scanTime;
+        groupedScanTime = state.ScanTime.Value;
         if (isNoRead && state.HasRawBarcode) {
             return Claim.Suppressed;
         }
-        if (state.Result is null) {
-            state.Result = result;
-            existingResult = result;
+        if (state.Results.Add(result)) {
             return Claim.Accepted;
         }
-        return string.Equals(state.Result, result, StringComparison.OrdinalIgnoreCase)
-            ? Claim.Duplicate
-            : Claim.Conflict;
+        return Claim.Duplicate;
     }
 
     public void Dispose() {
@@ -63,6 +60,7 @@ internal sealed class HikvisionFrameTriggerResults : IDisposable {
 
     private sealed class TriggerResult {
         public bool HasRawBarcode { get; set; }
-        public string? Result { get; set; }
+        public DateTime? ScanTime { get; set; }
+        public HashSet<string> Results { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }
