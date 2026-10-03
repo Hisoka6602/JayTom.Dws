@@ -34,6 +34,11 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             "/polarDay/upload/sortingImage";
 
         /// <summary>
+        /// 在线服务的图片上传链接申请地址。
+        /// </summary>
+        private const string GetUploadUrlPath = "/polarDay/query/getUploadUrl";
+
+        /// <summary>
         /// 目标格口查询相对地址。
         /// </summary>
         private const string QueryChutePath = "/polarDay/query/queryChute";
@@ -226,12 +231,26 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             CancellationToken token) {
             var context = other as UploadContext ?? new UploadContext();
             var parameters = Volatile.Read(ref _parameters);
+            var validationMessage = ValidateUploadParameters(parameters);
+            if (!string.IsNullOrEmpty(validationMessage)) {
+                throw new InvalidOperationException(validationMessage);
+            }
+
+            if (context.OperateType.HasValue &&
+                context.OperateType is not 1 and not 2) {
+                throw new InvalidOperationException(
+                    "极昼查询返回的操作类型必须为 1 或 2");
+            }
+
             var imagePath = EmptyToNull(context.HalfPath);
             if (imageInfo?.Image is { } image) {
                 try {
                     var imageContent =
                         JtPolarDayScanImageProcessor.CreateUploadContent(
-                            image.As<System.Drawing.Image>());
+                            image.As<System.Drawing.Image>(),
+                            NormalizeBarcode(barcode),
+                            scanTime,
+                            RoundMeasurement(weight));
                     imagePath = await UploadScanImageAsync(
                             barcode,
                             scanTime,
@@ -353,10 +372,9 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             var isPackageEvent = eventType == PackageEventType;
             return new DeviceInfoRequest {
                 EquipmentCode = parameters.EquipmentCode,
-                SiteCode = parameters.SiteCode,
                 EventType = eventType,
                 WaybillNo = NormalizeBarcode(barcode),
-                OperateType = parameters.OperateType,
+                OperateType = context.OperateType ?? parameters.OperateType,
                 Operator = parameters.Operator,
                 IsOfflineData = context.IsOfflineData ? 1 : 0,
                 EquipmentLayer = parameters.EquipmentLayer,
@@ -375,8 +393,7 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                 Weight = RoundMeasurement(weight),
                 WeightSource = parameters.WeightSource,
                 SortingPlanCode = parameters.SortingPlanCode,
-                HalfPath = EmptyToNull(imagePath) ??
-                           EmptyToNull(context.HalfPath),
+                HalfPath = EmptyToNull(imagePath),
                 LandOnCarTime = isPackageEvent
                     ? (context.LandOnCarTime ?? scanTime)
                     .ToString("yyyy-MM-dd HH:mm:ss.fff")
@@ -449,7 +466,7 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         }
 
         /// <summary>
-        /// 将图片上传到本地适配服务并返回 packageInfo.halfPath。
+        /// 上传扫描图片并返回设备报文使用的半路径。
         /// </summary>
         private async Task<string> UploadScanImageAsync(
             string barcode,
@@ -461,6 +478,14 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                 JtPolarDayScanImageProcessor.MaxImageSizeBytes) {
                 throw new InvalidOperationException(
                     "极昼扫描图片超过接口允许的最大大小");
+            }
+
+            if (IsOnlineService(parameters.BaseUrl)) {
+                return await UploadOnlineImageAsync(
+                        imageContent,
+                        parameters,
+                        token)
+                    .ConfigureAwait(false);
             }
 
             var requestData = new {
@@ -491,6 +516,138 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             }
 
             return halfPathElement.GetString()!;
+        }
+
+        /// <summary>
+        /// 按在线协议申请图片链接，然后上传原始文件流。
+        /// </summary>
+        /// <param name="imageContent">符合大小限制的水印 JPEG 文件。</param>
+        /// <param name="parameters">接口参数快照。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>上传成功的图片半路径。</returns>
+        private async Task<string> UploadOnlineImageAsync(
+            byte[] imageContent,
+            ApiParameter parameters,
+            CancellationToken token) {
+            if (string.IsNullOrWhiteSpace(parameters.ImageReqUserCode)) {
+                throw new InvalidOperationException(
+                    "极昼在线图片上传需要配置图片用户编号 reqUserCode");
+            }
+
+            var requestData = new {
+                equipmentCode = parameters.EquipmentCode,
+                fileNames = new[] { $"scan_{Guid.NewGuid():N}.jpg" },
+                reqUserCode = parameters.ImageReqUserCode
+            };
+            var response = await ExecuteRequestAsync(
+                    GetUploadUrlPath,
+                    requestData,
+                    parameters,
+                    parameters.ImageUploadTimeoutMilliseconds,
+                    EvaluateDeviceInfoResponse,
+                    token)
+                .ConfigureAwait(false);
+            if (!response.IsSuccess) {
+                throw new InvalidOperationException(
+                    $"极昼图片上传链接申请失败:{response.ExceptionMsg}");
+            }
+
+            using var document = JsonDocument.Parse(response.ResponseContent);
+            if (!document.RootElement.TryGetProperty("data", out var data)) {
+                throw new InvalidOperationException("极昼图片响应缺少 data");
+            }
+
+            if (data.ValueKind == JsonValueKind.Array &&
+                data.GetArrayLength() == 1) {
+                data = data[0];
+            }
+
+            if (data.ValueKind != JsonValueKind.Object ||
+                !data.TryGetProperty("halfPath", out var halfPathElement) ||
+                halfPathElement.ValueKind != JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(halfPathElement.GetString()) ||
+                !data.TryGetProperty("fullPath", out var fullPathElement) ||
+                fullPathElement.ValueKind != JsonValueKind.String ||
+                !Uri.TryCreate(fullPathElement.GetString(), UriKind.Absolute,
+                    out var uploadUri) ||
+                (uploadUri.Scheme != Uri.UriSchemeHttps &&
+                 uploadUri.Scheme != Uri.UriSchemeHttp) ||
+                !data.TryGetProperty("contentType", out var contentTypeElement) ||
+                contentTypeElement.ValueKind != JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(contentTypeElement.GetString())) {
+                throw new InvalidOperationException(
+                    "极昼图片响应缺少有效的 halfPath、fullPath 或 contentType");
+            }
+
+            await PutImageFileAsync(
+                    uploadUri,
+                    contentTypeElement.GetString()!,
+                    imageContent,
+                    parameters,
+                    token)
+                .ConfigureAwait(false);
+            return halfPathElement.GetString()!;
+        }
+
+        /// <summary>
+        /// 向已签发的存储链接发送二进制文件；存储请求不携带极昼鉴权头。
+        /// </summary>
+        /// <param name="uploadUri">服务返回的文件上传地址。</param>
+        /// <param name="contentType">服务返回的文件类型。</param>
+        /// <param name="imageContent">JPEG 文件字节。</param>
+        /// <param name="parameters">超时和重试参数。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>图片上传任务。</returns>
+        private async Task PutImageFileAsync(
+            Uri uploadUri,
+            string contentType,
+            byte[] imageContent,
+            ApiParameter parameters,
+            CancellationToken token) {
+            for (var attempt = 1; attempt <= parameters.RetryCount; attempt++) {
+                try {
+                    using var request = new HttpRequestMessage(HttpMethod.Put, uploadUri);
+                    request.Content = new ByteArrayContent(imageContent);
+                    request.Content.Headers.ContentType =
+                        System.Net.Http.Headers.MediaTypeHeaderValue.Parse(contentType);
+                    using var timeoutSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(token);
+                    timeoutSource.CancelAfter(parameters.ImageUploadTimeoutMilliseconds);
+                    using var client = _httpClientFactory.CreateClient(
+                        global::JayTom.Dws.Integrations.Contracts.ApiHttpClientNames.ExternalApi);
+                    using var response = await client.SendAsync(
+                            request,
+                            HttpCompletionOption.ResponseHeadersRead,
+                            timeoutSource.Token)
+                        .ConfigureAwait(false);
+                    if (response.StatusCode == HttpStatusCode.OK) {
+                        return;
+                    }
+
+                    throw new HttpRequestException(
+                        $"极昼图片二进制上传失败:HTTP {(int)response.StatusCode}",
+                        null,
+                        response.StatusCode);
+                }
+                catch (Exception exception) when (
+                    attempt < parameters.RetryCount &&
+                    !token.IsCancellationRequested &&
+                    exception is HttpRequestException or OperationCanceledException) {
+                    await Task.Delay(parameters.RetryIntervalMilliseconds, token)
+                        .ConfigureAwait(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 根据文档规定的在线服务前缀识别云端接口。
+        /// </summary>
+        /// <param name="baseUrl">服务基础地址。</param>
+        /// <returns>是否使用在线图片上传协议。</returns>
+        private static bool IsOnlineService(string baseUrl) {
+            return Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) &&
+                   uri.AbsolutePath.TrimEnd('/').EndsWith(
+                       "/sdsOnlineApi", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -775,9 +932,8 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             }
 
             if (string.IsNullOrWhiteSpace(parameters.EquipmentCode) ||
-                string.IsNullOrWhiteSpace(parameters.SortingPlanCode) ||
-                string.IsNullOrWhiteSpace(parameters.Operator)) {
-                return "极昼设备编号、分拣计划和操作员不能为空";
+                string.IsNullOrWhiteSpace(parameters.SortingPlanCode)) {
+                return "极昼设备编号和分拣计划不能为空";
             }
 
             if (parameters.QueryTimeoutMilliseconds <= 0 ||
@@ -788,12 +944,21 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                 return "极昼超时和重试参数无效";
             }
 
-            if (parameters.OperateType is < 1 or > 3) {
-                return "极昼操作类型只能为 1、2 或 3";
+            if (parameters.OperateType is not 1 and not 2) {
+                return "极昼操作类型只能为 1（出港）或 2（进港）";
             }
 
-            if (string.IsNullOrWhiteSpace(parameters.SiteCode)) {
-                return "极昼场地编码不能为空";
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 仅在设备上报时验证上报字段，格口查询不依赖供件台配置。
+        /// </summary>
+        /// <param name="parameters">接口参数。</param>
+        /// <returns>上报配置失败原因；成功时为空。</returns>
+        private static string ValidateUploadParameters(ApiParameter parameters) {
+            if (string.IsNullOrWhiteSpace(parameters.Operator)) {
+                return "极昼设备上报的操作员账号不能为空";
             }
 
             if (parameters.EquipmentLayer <= 0 ||
@@ -900,18 +1065,69 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         }
 
         /// <summary>
-        /// 将空地址或内置测试地址切换为新版正式环境地址。
+        /// 为空地址提供默认值，并保留明确配置的测试或自定义地址。
         /// </summary>
         /// <param name="baseUrl">当前保存的新版服务地址。</param>
-        /// <returns>可继续使用的正式或自定义服务地址。</returns>
+        /// <returns>可继续使用的正式、测试或自定义服务地址。</returns>
         public static string NormalizeProductionBaseUrl(string? baseUrl) {
-            return string.IsNullOrWhiteSpace(baseUrl) ||
-                   string.Equals(
-                       baseUrl.TrimEnd('/'),
-                       TestBaseUrl,
-                       StringComparison.OrdinalIgnoreCase)
+            return string.IsNullOrWhiteSpace(baseUrl)
                 ? ProductionBaseUrl
-                : baseUrl;
+                : baseUrl.Trim();
+        }
+
+        /// <summary>
+        /// 读取格口查询返回的操作类型，供扫码和落格上报沿用。
+        /// </summary>
+        /// <param name="responseContent">格口查询响应正文。</param>
+        /// <param name="sortingPlanCode">当前实际使用的分拣计划。</param>
+        /// <returns>有效的出港或进港类型；无匹配记录时为空。</returns>
+        public static int? GetQueryOperateType(
+            string? responseContent,
+            string sortingPlanCode) {
+            if (string.IsNullOrWhiteSpace(responseContent)) {
+                return null;
+            }
+
+            try {
+                using var document = JsonDocument.Parse(responseContent);
+                var root = document.RootElement;
+                if (root.ValueKind != JsonValueKind.Object ||
+                    !root.TryGetProperty("code", out var code) ||
+                    code.ValueKind != JsonValueKind.Number ||
+                    !code.TryGetInt32(out var responseCode) || responseCode != 1 ||
+                    !root.TryGetProperty("data", out var data)) {
+                    return null;
+                }
+
+                if (data.ValueKind == JsonValueKind.Array &&
+                    data.GetArrayLength() == 1) {
+                    data = data[0];
+                }
+
+                if (data.ValueKind != JsonValueKind.Object ||
+                    !data.TryGetProperty("codeList", out var codeList) ||
+                    codeList.ValueKind != JsonValueKind.Array) {
+                    return null;
+                }
+
+                foreach (var entry in codeList.EnumerateArray()) {
+                    if (entry.ValueKind == JsonValueKind.Object &&
+                        entry.TryGetProperty("sortingPlanCode", out var planCode) &&
+                        planCode.ValueKind == JsonValueKind.String &&
+                        string.Equals(planCode.GetString(), sortingPlanCode,
+                            StringComparison.Ordinal) &&
+                        entry.TryGetProperty("operateType", out var operateType) &&
+                        operateType.ValueKind == JsonValueKind.Number &&
+                        operateType.TryGetInt32(out var value) && value is 1 or 2) {
+                        return value;
+                    }
+                }
+            }
+            catch (JsonException) {
+                // 查询失败或返回非 JSON 时，设备上报继续使用已校验的配置。
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -972,7 +1188,12 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             public string AppSecret { get; set; } = string.Empty;
 
             /// <summary>
-            /// 旧配置兼容字段；当前图片只上传本地服务，不读取此值。
+            /// 在线图片链接申请的用户编号 reqUserCode，由现场提供。
+            /// </summary>
+            public string ImageReqUserCode { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 旧配置兼容字段；新版在线图片上传使用极昼返回的存储链接。
             /// </summary>
             public string ImageServiceBaseUrl { get; set; } =
                 DefaultImageServiceBaseUrl;
@@ -1004,7 +1225,7 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                 DefaultImageScanType;
 
             /// <summary>
-            /// 图片上传到本地兼容服务的超时毫秒数。
+            /// 图片链接申请和二进制上传的超时毫秒数。
             /// </summary>
             public int ImageUploadTimeoutMilliseconds { get; set; } =
                 10000;
@@ -1027,7 +1248,7 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                 DefaultSortingPlanCode;
 
             /// <summary>
-            /// 操作类型，1 出港、2 进港、3 进出港。
+            /// 操作类型，1 出港、2 进港。
             /// </summary>
             public int OperateType { get; set; } = 1;
 
@@ -1125,6 +1346,7 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                     BaseUrl = BaseUrl,
                     AppKey = AppKey,
                     AppSecret = AppSecret,
+                    ImageReqUserCode = ImageReqUserCode,
                     ImageServiceBaseUrl = ImageServiceBaseUrl,
                     ImageAccount = ImageAccount,
                     ImagePassword = ImagePassword,
@@ -1162,6 +1384,11 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         /// 极昼单票扩展上下文。
         /// </summary>
         public sealed class UploadContext {
+            /// <summary>
+            /// 查询响应中的实际操作类型；未取得时使用设备配置。
+            /// </summary>
+            public int? OperateType { get; set; }
+
             /// <summary>
             /// 是否为离线补传数据。
             /// </summary>
@@ -1281,11 +1508,6 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             /// 设备编号。
             /// </summary>
             public string EquipmentCode { get; set; } = string.Empty;
-
-            /// <summary>
-            /// 场地编码。
-            /// </summary>
-            public string SiteCode { get; set; } = string.Empty;
 
             /// <summary>
             /// 事件类型。

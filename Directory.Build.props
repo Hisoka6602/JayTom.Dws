@@ -23,6 +23,11 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
   <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('JayTom.Dws.')) and '$(Configuration)' == 'Release'">
+    <!-- Release 构建串行解析项目引用并使用短生命周期编译进程，降低发布时的内存提交峰值。 -->
+    <BuildInParallel>false</BuildInParallel>
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <!-- 仅限制 C# 编译进程的 GC 和并行度，避免 Visual Studio 发布时耗尽内存提交额度。 -->
+    <CscEnvironment>$(CscEnvironment);DOTNET_gcServer=0;DOTNET_PROCESSOR_COUNT=2</CscEnvironment>
     <!-- 发布构建始终以执行速度为优化目标。 -->
     <Optimize>true</Optimize>
     <IlcOptimizationPreference>Speed</IlcOptimizationPreference>

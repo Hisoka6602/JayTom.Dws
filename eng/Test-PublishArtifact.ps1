@@ -53,7 +53,20 @@ $duplicateHashes = @($nativeFiles |
         }
     } |
     Group-Object Hash |
-    Where-Object Count -gt 1)
+    Where-Object Count -gt 1 |
+    Where-Object {
+        # 自包含 .NET 运行时携带同内容的 DAC 原名和带版本别名，供不同诊断工具定位。
+        # 只允许发布根目录下这一对文件，其他同内容二进制仍按重复资产拒绝。
+        $duplicatePaths = @($_.Group.Path)
+        $rootFileNames = @($duplicatePaths |
+            Where-Object { [System.IO.Path]::GetDirectoryName($_) -eq $publishRoot } |
+            ForEach-Object { [System.IO.Path]::GetFileName($_) })
+        $isRuntimeDiagnosticAlias = $duplicatePaths.Count -eq 2 -and
+            $rootFileNames.Count -eq 2 -and
+            $rootFileNames -contains 'mscordaccore.dll' -and
+            @($rootFileNames | Where-Object { $_ -match '^mscordaccore_amd64_amd64_\d+\.\d+\.\d+\.\d+\.dll$' }).Count -eq 1
+        -not $isRuntimeDiagnosticAlias
+    })
 if ($duplicateHashes.Count -gt 0) {
     $duplicates = $duplicateHashes | ForEach-Object {
         $_.Group.Path -join ', '
@@ -66,4 +79,4 @@ if (-not (Test-Path -LiteralPath $applicationPath -PathType Leaf)) {
     throw 'The publish artifact is missing JayTom.Dws.Client.exe.'
 }
 
-Write-Host ('Publish smoke check passed: {0} native entry files, no PDB or duplicate binaries.' -f $manifest.assets.Count)
+Write-Host ('Publish smoke check passed: {0} native entry files, no PDB or unexpected duplicate binaries.' -f $manifest.assets.Count)

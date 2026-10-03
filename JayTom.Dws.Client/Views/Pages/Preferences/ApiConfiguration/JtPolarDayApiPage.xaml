@@ -51,6 +51,12 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="InputMethod.IsInputMethodEnabled" Value="False" />
+            <Style.Triggers>
+                <!--  填充样式的触发器会覆盖普通 Setter；保持内部透明，底色只由圆角容器绘制。  -->
+                <Trigger Property="materialDesign:TextFieldAssist.HasFilledTextField" Value="True">
+                    <Setter Property="Background" Value="Transparent" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!--  与极兔 API 配置页一致的枚举下拉框样式。  -->
@@ -154,15 +160,22 @@
                     </Border>
                 </StackPanel>
 
-                <!--  图片只上传到本地兼容服务，OPA 登录与二次上传由本地服务负责。  -->
+                <!--  在线服务申请图片链接后上传二进制；本地服务保留兼容上传方式。  -->
                 <StackPanel Margin="50,4,0,0" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="本地图片上传超时:" />
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片上传超时:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
                         <TextBox
                             Width="70"
                             materialDesign:HintAssist.Hint="ms"
                             Style="{StaticResource ParameterTextBoxStyle}"
                             Text="{Binding PolarDayApiInfo.ImageUploadTimeoutMilliseconds, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片用户编号:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="200"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageReqUserCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     </Border>
                 </StackPanel>
 
@@ -171,14 +184,14 @@
                     FontSize="12"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="DWS 只把已加水印的图片上传到本地服务；本地服务负责登录极兔、申请链接和上传二进制。" />
+                    Text="云端图片先申请链接，再上传带运单号、扫描时间和重量水印的文件；本地服务使用兼容上传方式。" />
 
                 <TextBlock
                     Margin="55,4,0,5"
                     FontSize="12"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="切换极昼新旧环境时只修改服务地址；本地兼容服务与极兔官方使用相同调用路径。" />
+                    Text="操作员填写登录账号，图片用户编号填写现场提供的 reqUserCode；切换环境时同步更新设备和应用参数。" />
 
                 <!--  设备编号、分拣计划。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">

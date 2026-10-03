@@ -135,25 +135,53 @@ internal sealed class ApiSortingRuleEvaluator
                    StringComparison.Ordinal);
     }
 
-    /// <summary>清理接口响应中的控制字符并只解析一次 JSON 文档。</summary>
+    /// <summary>优先解析原始 JSON；仅对无效的旧响应清理控制字符和额外转义。</summary>
     private static JsonDocument? TryParseResponse(string responseContent)
     {
         try
         {
-            string unescapedContent = Regex.Unescape(responseContent);
-            string sanitizedContent = Regex.Replace(
-                unescapedContent,
-                @"[\u0000-\u001D\b]",
-                string.Empty);
-            return JsonDocument.Parse(sanitizedContent);
+            return ParseResponseJson(responseContent);
         }
         catch (Exception exception) when (
             exception is ArgumentException or System.Text.Json.JsonException)
         {
-            NLog.LogManager.GetCurrentClassLogger()
-                .Warn(exception, "API 响应不是有效 JSON");
-            return null;
+            try
+            {
+                string sanitizedContent = Regex.Replace(
+                    responseContent,
+                    @"[\u0000-\u001D\b]",
+                    string.Empty);
+                try
+                {
+                    return ParseResponseJson(sanitizedContent);
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    // 仅兼容旧服务额外转义整个报文的情况，合法 JSON 的字段转义必须保留。
+                    return ParseResponseJson(Regex.Unescape(sanitizedContent));
+                }
+            }
+            catch (Exception fallbackException) when (
+                fallbackException is ArgumentException or System.Text.Json.JsonException)
+            {
+                NLog.LogManager.GetCurrentClassLogger()
+                    .Warn(fallbackException, "API 响应不是有效 JSON");
+                return null;
+            }
         }
+    }
+
+    /// <summary>解析响应文档，并兼容将完整 JSON 放在外层 JSON 字符串中的服务。</summary>
+    private static JsonDocument ParseResponseJson(string responseContent)
+    {
+        JsonDocument document = JsonDocument.Parse(responseContent);
+        if (document.RootElement.ValueKind != JsonValueKind.String)
+        {
+            return document;
+        }
+        string content = document.RootElement.GetString() ?? string.Empty;
+        document.Dispose();
+        return JsonDocument.Parse(content);
     }
 
     /// <summary>解析单条 API 规则；无效配置不会进入响应热路径。</summary>
@@ -178,18 +206,14 @@ internal sealed class ApiSortingRuleEvaluator
     {
         var stack = new Stack<JsonElement>();
         stack.Push(root);
-        JsonElement? lastMatch = null;
         while (stack.Count > 0)
         {
             JsonElement element = stack.Pop();
             if (element.ValueKind == JsonValueKind.Object &&
                 element.TryGetProperty(fieldName, out JsonElement field))
             {
-                lastMatch = field;
-                if (direction == SearchDirection.Forward)
-                {
-                    return field;
-                }
+                // 栈入序已经按方向调整，反向时首次找到的即为最后一个候选字段。
+                return field;
             }
             if (element.ValueKind == JsonValueKind.Object)
             {
@@ -214,6 +238,6 @@ internal sealed class ApiSortingRuleEvaluator
                 }
             }
         }
-        return lastMatch;
+        return null;
     }
 }

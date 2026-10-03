@@ -202,6 +202,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                     settings.BaseUrl),
                 AppKey = settings.AppKey,
                 AppSecret = settings.AppSecret,
+                ImageReqUserCode = settings.ImageReqUserCode,
                 ImageServiceBaseUrl = DefaultIfBlank(
                     settings.ImageServiceBaseUrl,
                     JtPolarDayApi.DefaultImageServiceBaseUrl),
@@ -257,6 +258,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 BaseUrl = PolarDayApiInfo.BaseUrl,
                 AppKey = PolarDayApiInfo.AppKey,
                 AppSecret = PolarDayApiInfo.AppSecret,
+                ImageReqUserCode = PolarDayApiInfo.ImageReqUserCode,
                 ImageServiceBaseUrl =
                     PolarDayApiInfo.ImageServiceBaseUrl,
                 ImageAccount = PolarDayApiInfo.ImageAccount,
@@ -373,6 +375,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 BaseUrl = PolarDayApiInfo.BaseUrl,
                 AppKey = PolarDayApiInfo.AppKey,
                 AppSecret = PolarDayApiInfo.AppSecret,
+                ImageReqUserCode = PolarDayApiInfo.ImageReqUserCode,
                 ImageServiceBaseUrl =
                     PolarDayApiInfo.ImageServiceBaseUrl,
                 ImageAccount = PolarDayApiInfo.ImageAccount,
@@ -424,8 +427,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.ApiConfiguration
                 new IntegerItemModel { Name = "1：出港", Value = 1 });
             OperateTypeItems.Add(
                 new IntegerItemModel { Name = "2：进港", Value = 2 });
-            OperateTypeItems.Add(
-                new IntegerItemModel { Name = "3：进出港", Value = 3 });
         }
 
         /// <summary>

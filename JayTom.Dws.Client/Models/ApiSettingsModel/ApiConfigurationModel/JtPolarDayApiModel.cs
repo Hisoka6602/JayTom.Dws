@@ -26,6 +26,11 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         private string _appSecret = string.Empty;
 
         /// <summary>
+        /// 在线图片链接申请的用户编号。
+        /// </summary>
+        private string _imageReqUserCode = string.Empty;
+
+        /// <summary>
         /// 极昼图片服务基础地址。
         /// </summary>
         private string _imageServiceBaseUrl =
@@ -195,6 +200,15 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         }
 
         /// <summary>
+        /// 在线图片链接申请的用户编号 reqUserCode。
+        /// </summary>
+        public string ImageReqUserCode
+        {
+            get => _imageReqUserCode;
+            set => SetProperty(ref _imageReqUserCode, value);
+        }
+
+        /// <summary>
         /// 极昼图片服务基础地址。
         /// </summary>
         public string ImageServiceBaseUrl
@@ -285,7 +299,7 @@ namespace JayTom.Dws.Client.Models.ApiSettingsModel.ApiConfigurationModel
         }
 
         /// <summary>
-        /// 操作类型，1 出港、2 进港、3 进出港。
+        /// 操作类型，1 出港、2 进港。
         /// </summary>
         public int OperateType
         {

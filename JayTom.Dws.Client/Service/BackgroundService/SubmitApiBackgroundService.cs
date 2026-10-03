@@ -1631,6 +1631,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     settings.BaseUrl),
                 AppKey = settings.AppKey,
                 AppSecret = settings.AppSecret,
+                ImageReqUserCode = settings.ImageReqUserCode,
                 ImageServiceBaseUrl = DefaultIfBlank(
                     settings.ImageServiceBaseUrl,
                     JtPolarDayApi.DefaultImageServiceBaseUrl),
@@ -2071,6 +2072,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     null,
                                     new JtPolarDayApi.UploadContext
                                     {
+                                        OperateType = JtPolarDayApi.GetQueryOperateType(
+                                            packageValue.Value.ApiResponse.UploadResponse?
+                                                .ResponseContent,
+                                            _jtPolarDayApiParam.SortingPlanCode),
                                         LandOnCarTime =
                                             packageInfo.BarCodeInfo?.ScanTime ??
                                             packageInfo.CreateTime,
@@ -2079,7 +2084,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                             { } grayscaleResult
                                                 ? grayscaleResult.CarNumber
                                                     .ToString()
-                                                : packageInfo.Guid.ToString(),
+                                                : string.Empty,
                                         GridNo = fallEvent.ExitName,
                                         GridCode =
                                             ConvertToPolarDayGridCode(

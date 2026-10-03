@@ -11,6 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- 直接编译生产规则解析器，验证响应匹配行为且避免加载 WPF 应用及硬件。 -->
+    <Compile Include="..\JayTom.Dws.Client\Service\Sorting\ApiSortingRuleEvaluator.cs" Link="Client\ApiSortingRuleEvaluator.cs" />
+    <Compile Include="..\JayTom.Dws.Client\Service\Sorting\ApiRuleSnapshot.cs" Link="Client\ApiRuleSnapshot.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NLog" />
     <PackageReference Include="xunit" />

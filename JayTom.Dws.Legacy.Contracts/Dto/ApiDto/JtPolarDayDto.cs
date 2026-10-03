@@ -21,6 +21,11 @@ namespace JayTom.Dws.Legacy.Contracts.Dto.ApiDto {
         public string AppSecret { get; set; } = string.Empty;
 
         /// <summary>
+        /// 在线图片链接申请的用户编号 reqUserCode，由现场提供。
+        /// </summary>
+        public string ImageReqUserCode { get; set; } = string.Empty;
+
+        /// <summary>
         /// 极昼图片服务基础地址。
         /// </summary>
         public string ImageServiceBaseUrl { get; set; } =
@@ -77,7 +82,7 @@ namespace JayTom.Dws.Legacy.Contracts.Dto.ApiDto {
         public string SortingPlanCode { get; set; } = "6398155-001";
 
         /// <summary>
-        /// 操作类型，1 出港、2 进港、3 进出港。
+        /// 操作类型，1 出港、2 进港。
         /// </summary>
         public int OperateType { get; set; } = 1;
 

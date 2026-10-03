@@ -9,6 +9,40 @@ namespace JayTom.Dws.Integrations.Jtexpress {
     /// </summary>
     internal static class JtPolarDayScanImageProcessor {
         /// <summary>
+        /// 在图片副本上补齐在线协议要求的运单、扫描时间和重量水印。
+        /// </summary>
+        /// <param name="source">扫描图片。</param>
+        /// <param name="barcode">运单号。</param>
+        /// <param name="scanTime">首次扫描时间。</param>
+        /// <param name="weight">千克重量。</param>
+        /// <returns>带水印且符合大小限制的 JPEG 字节。</returns>
+        internal static byte[] CreateUploadContent(
+            Image source,
+            string barcode,
+            DateTime scanTime,
+            decimal weight) {
+            ArgumentNullException.ThrowIfNull(source);
+            var width = Math.Max(source.Width, 480);
+            var fontSize = Math.Max(16, width / 80);
+            using var bitmap = new Bitmap(
+                width,
+                source.Height + fontSize * 4 + 12,
+                PixelFormat.Format24bppRgb);
+            using (var graphics = Graphics.FromImage(bitmap)) {
+                graphics.Clear(Color.Black);
+                graphics.DrawImageUnscaled(source, 0, 0);
+                using var font = new Font(
+                    "Arial", fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
+                var watermark = FormattableString.Invariant(
+                    $"{barcode}\n{scanTime:yyyy-MM-dd HH:mm:ss.fff}\n{weight:0.00} kg");
+                graphics.DrawString(
+                    watermark, font, Brushes.White, 6, source.Height + 6);
+            }
+
+            return CreateUploadContent(bitmap);
+        }
+
+        /// <summary>
         /// 极昼图片接口允许的最大文件大小。
         /// </summary>
         internal const int MaxImageSizeBytes = 409600;
