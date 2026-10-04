@@ -17,6 +17,7 @@ using JayTom.Dws.Client.ViewModels.Dialog;
 using JayTom.Dws.Client.ViewModels.Editors;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalLog;
 using JayTom.Dws.Client.Models.LogsItemModels;
+using JayTom.Dws.Client.Extensions;
 
 namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
 {
@@ -268,25 +269,24 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
             get => new DelegateCommand<object>(ClearMessageDelegate);
         }
 
-        private async void ClearMessageDelegate(object obj)
+        private void ClearMessageDelegate(object obj) =>
+            ClearMessageAsync().Forget("清理相机日志");
+
+        private async Task ClearMessageAsync()
         {
             await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
                 var loadingDialog = new LoadingDialog();
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
                 {
-                    model.Identifier = "AppLogDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier)
-                        .Forget("显示相机日志清理进度对话框");
+                    model.Identifier = "CameraLogDialog";
+                    using var dialog = LogPageDialog.Open(loadingDialog, model.Identifier);
+                    dialog.Completion.Forget("显示相机日志清理进度对话框");
                     await Task.Delay(500);
                     await _logQueryService.ClearAsync();
                     CameraLogItems.Clear();
                     Details = string.Empty;
                     PageIndex = PageCount = 0;
-                    if (DialogHost.IsDialogOpen(model.Identifier))
-                    {
-                        DialogHost.Close(model.Identifier);
-                    }
                 }
             });
         }
@@ -296,7 +296,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
             get => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
         }
 
-        private async void OpenDateTimeDialogDelegate(object obj)
+        private void OpenDateTimeDialogDelegate(object obj) =>
+            OpenDateTimeDialogAsync(obj).Forget("选择相机日志查询时间");
+
+        private async Task OpenDateTimeDialogAsync(object obj)
         {
             await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
@@ -317,7 +320,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
                         model.SelectedTime = EndTime;
                     }
 
-                    await DialogHost.Show(dataTimeEditor, model.Identifier);
+                    using var dialog = LogPageDialog.Open(dataTimeEditor, model.Identifier);
+                    await dialog.Completion;
                     if (model.IsOk)
                     {
                         if (obj?.ToString()?.Equals("StartTime") == true)
@@ -356,7 +360,10 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
             }
         }
 
-        private async void LoadData(int pageIndex)
+        private void LoadData(int pageIndex) =>
+            LoadDataAsync(pageIndex).Forget("加载相机日志");
+
+        private async Task LoadDataAsync(int pageIndex)
         {
             const int pageSize = 500;
             //这里的查询要分开锁，不然显示有卡顿
@@ -366,8 +373,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
                 if (loadingDialog.DataContext is LoadingDialogViewModel model)
                 {
                     model.Identifier = "CameraLogDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier)
-                        .Forget("显示相机日志加载进度对话框");
+                    using var dialog = LogPageDialog.Open(loadingDialog, model.Identifier);
+                    dialog.Completion.Forget("显示相机日志加载进度对话框");
                     await Task.Delay(500);
                     CameraLogItems.Clear();
                     Details = string.Empty;
@@ -403,10 +410,6 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences.LogsViewModel
                         CameraLogMessageQueue?.Enqueue("No data matching the criteria found.");
                     }
 
-                    if (DialogHost.IsDialogOpen(model.Identifier))
-                    {
-                        DialogHost.Close(model.Identifier);
-                    }
                 }
             }, DispatcherPriority.Background);
         }

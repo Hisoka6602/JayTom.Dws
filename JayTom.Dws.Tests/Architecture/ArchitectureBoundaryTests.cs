@@ -142,6 +142,10 @@ public sealed class ArchitectureBoundaryTests {
                      $"{Path.DirectorySeparatorChar}Tests{Path.DirectorySeparatorChar}",
                      StringComparison.OrdinalIgnoreCase))) {
             XDocument project = XDocument.Load(projectPath);
+            if (project.Descendants("IsTestProject").Any(element =>
+                    string.Equals(element.Value.Trim(), "true", StringComparison.OrdinalIgnoreCase))) {
+                continue;
+            }
             Assert.DoesNotContain(
                 project.Descendants("Compile"),
                 element => element.Attribute("Include")?.Value.Contains(

@@ -100,6 +100,9 @@ namespace JayTom.Dws.Client.Service.Device
 
         public event EventHandler<BarcodeReadEventArgs>? BarcodeMissed;
 
+        /// <summary>转交被相机过滤的触发结果，供下位机占位消费。</summary>
+        public event EventHandler<BarcodeReadEventArgs>? BarcodeFiltered;
+
         public event EventHandler<PanoramaCaptureEventArgs>? PanoramaCaptured;
 
         public event EventHandler<VolumeCapturedEventArgs>? VolumeCaptured;
@@ -1105,6 +1108,7 @@ namespace JayTom.Dws.Client.Service.Device
                             switch (camera)
                             {
                                 case IIndustrialCamera industrialCamera:
+                                    industrialCamera.FilteredBarcodeReturned += (_, args) => BarcodeFiltered?.Invoke(this, args);
                                     industrialCamera.TakePhotoDelay =
                                         panoramaCameraConfig?.CaptureDelayTime ?? 0;
                                     //填充其他信息
@@ -1132,6 +1136,7 @@ namespace JayTom.Dws.Client.Service.Device
                                     break;
 
                                 case ISmartCamera smartCamera:
+                                    smartCamera.FilteredBarcodeReturned += (_, args) => BarcodeFiltered?.Invoke(this, args);
                                     smartCamera.BarcodeReadTriggered +=
                                         delegate (object? sender, BarcodeTriggeredEventArgs args)
                                         {

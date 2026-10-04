@@ -2165,6 +2165,7 @@ namespace JayTom.Dws.Client.Service.ProcessingServices
                                         StringComparison.Ordinal));
                                 _eventBus.Publish(new ImageMessageInfo
                                 {
+                                    PackageTimestamped = codeInfo.Timestamp,
                                     BarCode = codeInfo.BarCodeInfo?.Barcode ?? string.Empty,
                                     CameraSerialNumber = codeInfo.BarCodeInfo?.SerialNumber ?? string.Empty,
                                     Weight = (decimal)(codeInfo.WeightInfo?.FormattedWeight ?? 0),

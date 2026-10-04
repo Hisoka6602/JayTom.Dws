@@ -74,6 +74,41 @@ public interface IPackageSessionStore {
         DateTime processingAt,
         Action<PackageInfo> assignment);
 
+    /// <summary>原子绑定条码，并返回拒绝原因、候选包裹和实际时间间隔。</summary>
+    PackageInfo? TryBindBarcode(
+        DateTime observedAt,
+        BarcodeQueueOrderEnum queueOrder,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
+        Action<PackageInfo> assignment,
+        out BarcodeAssignmentRejection? rejection);
+
+    /// <summary>原子消费并移除一个符合条码匹配规则的未赋值包裹，不发布包裹完成事件。</summary>
+    PackageInfo? TryDiscardUnassignedPackage(
+        DateTime observedAt,
+        BarcodeQueueOrderEnum queueOrder,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
+        out BarcodeAssignmentRejection? rejection);
+
+    /// <summary>只消费指定小车的相机结果；空赋值表示丢弃，拒绝时关闭原包裹且绝不搜索其他小车。</summary>
+    PackageInfo? TryConsumeCameraResultForPackage(
+        DateTime packageCreatedAt,
+        DateTime observedAt,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
+        Action<PackageInfo>? assignment,
+        out BarcodeAssignmentRejection? rejection);
+
     /// <summary>根据创建时间获取包裹。</summary>
     /// <param name="createTime">包裹创建时间。</param>
     /// <returns>匹配的包裹，找不到时返回空。</returns>
@@ -83,6 +118,9 @@ public interface IPackageSessionStore {
     /// <param name="packageId">下位机包裹序号。</param>
     /// <returns>匹配的包裹，不存在时返回空。</returns>
     PackageInfo? GetPackageById(long packageId);
+
+    /// <summary>按扫码时间和相机编号直接查找已绑定包裹，用于同次触发的多条码处理。</summary>
+    PackageInfo? GetPackageByBarcodeObservation(DateTime scanTime, string serialNumber);
 
     /// <summary>获取所有符合条件的包裹快照。</summary>
     /// <param name="predicate">筛选条件。</param>

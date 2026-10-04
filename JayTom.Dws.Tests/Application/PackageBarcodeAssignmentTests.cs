@@ -255,9 +255,9 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
         Assert.Null(second.BarCodeInfo);
     }
 
-    /// <summary>倒序模式也必须优先删除过期队首，晚到条码不得赋给后面的成熟包裹。</summary>
+    /// <summary>区间匹配应跳过过期队首，继续选择区间内仍可赋值的包裹。</summary>
     [Fact]
-    public void TryBindBarcode_DescendingOrderStillRejectsExpiredHeadSpill()
+    public void TryBindBarcode_WindowSkipsExpiredHeadAndBindsEligibleSuccessor()
     {
         var firstCreatedAt = new DateTime(2026, 8, 13, 10, 0, 0, DateTimeKind.Local);
         var secondCreatedAt = firstCreatedAt.AddMilliseconds(250);
@@ -282,9 +282,83 @@ public sealed class PackageBarcodeAssignmentTests : IDisposable
                 BindTime = observedAt
             });
 
-        Assert.Null(bound);
-        Assert.Null(_store.GetPackage(firstCreatedAt));
-        Assert.Null(second.BarCodeInfo);
+        Assert.Same(second, bound);
+        Assert.Null(first.BarCodeInfo);
+        Assert.NotNull(second.BarCodeInfo);
+    }
+
+    /// <summary>20、60、500ms案例先过滤50至700ms区间；正序先选500ms，倒序先选60ms，区间为空才拒绝。</summary>
+    [Theory]
+    [InlineData(BarcodeQueueOrderEnum.TimeAscending, 500L, 60L)]
+    [InlineData(BarcodeQueueOrderEnum.TimeDescending, 60L, 500L)]
+    public void TryBindBarcode_WindowUsesConfiguredOrder(
+        BarcodeQueueOrderEnum queueOrder, long expectedFirstId, long expectedSecondId)
+    {
+        var observedAt = new DateTime(2026, 10, 3, 11, 30, 0, DateTimeKind.Local);
+        var twenty = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-20), Guid = 20 };
+        var sixty = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-60), Guid = 60 };
+        var fiveHundred = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-500), Guid = 500 };
+        var tooOld = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-800), Guid = 800 };
+        var future = new PackageInfo { CreateTime = observedAt.AddMilliseconds(10), Guid = 10 };
+        foreach (var package in new[] { twenty, tooOld, fiveHundred, future, sixty }) _store.AddPackage(package, []);
+
+        PackageInfo? Assign(string barcode) => _store.TryBindBarcode(observedAt, queueOrder,
+            true, 50, 700, null, observedAt,
+            package => package.BarCodeInfo = new BarCodeInfoModel { Barcode = barcode });
+
+        Assert.Equal(expectedFirstId, Assign("JT-FIRST")?.Guid);
+        Assert.Equal(expectedSecondId, Assign("JT-SECOND")?.Guid);
+        Assert.Null(Assign("JT-NONE-IN-WINDOW"));
+        Assert.Null(twenty.BarCodeInfo);
+        Assert.Null(tooOld.BarCodeInfo);
+        Assert.Null(future.BarCodeInfo);
+    }
+
+    /// <summary>赋值窗口两端包含边界，不能把边界内包裹误判为不匹配。</summary>
+    [Theory]
+    [InlineData(49, false)]
+    [InlineData(50, true)]
+    [InlineData(700, true)]
+    [InlineData(701, false)]
+    public void TryBindBarcode_FiftyToSevenHundredIncludesEndpoints(int interval, bool expected)
+    {
+        var observedAt = new DateTime(2026, 10, 3, 11, 30, 0, DateTimeKind.Local);
+        var package = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-interval) };
+        _store.AddPackage(package, []);
+        var result = _store.TryBindBarcode(observedAt, BarcodeQueueOrderEnum.TimeAscending,
+            true, 50, 700, null, observedAt,
+            target => target.BarCodeInfo = new BarCodeInfoModel { Barcode = "JT-BOUNDARY" });
+        Assert.Equal(expected, result is not null);
+    }
+
+    /// <summary>窗口内最近包裹已被赋值时，应继续匹配下一个未赋值候选。</summary>
+    [Fact]
+    public void TryBindBarcode_WindowSkipsAlreadyAssignedCandidate()
+    {
+        var observedAt = new DateTime(2026, 10, 3, 11, 30, 0, DateTimeKind.Local);
+        var assigned = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-60),
+            BarCodeInfo = new BarCodeInfoModel { Barcode = "JT-EXISTING" } };
+        var available = new PackageInfo { CreateTime = observedAt.AddMilliseconds(-500) };
+        _store.AddPackage(assigned, []);
+        _store.AddPackage(available, []);
+        var result = Bind(observedAt, "JT-NEXT", minimumAssignmentMilliseconds: 50,
+            maximumAssignmentMilliseconds: 700);
+        Assert.Same(available, result);
+        Assert.Equal("JT-EXISTING", assigned.BarCodeInfo?.Barcode);
+    }
+
+    /// <summary>关闭赋值区间后保留配置的时间顺序选择方式。</summary>
+    [Theory]
+    [InlineData(BarcodeQueueOrderEnum.TimeAscending, 500L)]
+    [InlineData(BarcodeQueueOrderEnum.TimeDescending, 20L)]
+    public void TryBindBarcode_DisabledWindowKeepsConfiguredOrder(BarcodeQueueOrderEnum queueOrder, long expectedId)
+    {
+        var observedAt = new DateTime(2026, 10, 3, 11, 30, 0, DateTimeKind.Local);
+        foreach (var interval in new[] { 20, 60, 500 })
+            _store.AddPackage(new PackageInfo { CreateTime = observedAt.AddMilliseconds(-interval), Guid = interval }, []);
+        var result = _store.TryBindBarcode(observedAt, queueOrder, false, 50, 700, null, observedAt,
+            target => target.BarCodeInfo = new BarCodeInfoModel { Barcode = "JT-ORDER" });
+        Assert.Equal(expectedId, result?.Guid);
     }
 
     /// <summary>早于包裹创建的条码不得绑定，也不得把尚未到达的包裹误删。</summary>

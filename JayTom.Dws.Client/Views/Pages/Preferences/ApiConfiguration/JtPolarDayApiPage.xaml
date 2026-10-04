@@ -160,7 +160,7 @@
                     </Border>
                 </StackPanel>
 
-                <!--  在线服务申请图片链接后上传二进制；本地服务保留兼容上传方式。  -->
+                <!--  图片统一通过在线接口上传，本地查询可单独指定图片服务环境。  -->
                 <StackPanel Margin="50,4,0,0" Orientation="Horizontal">
                     <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片上传超时:" />
                     <Border Style="{StaticResource ParameterContainerStyle}">
@@ -179,19 +179,29 @@
                     </Border>
                 </StackPanel>
 
+                <StackPanel Margin="50,0,0,0" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource ParameterLabelStyle}" Text="图片接口地址:" />
+                    <Border Style="{StaticResource ParameterContainerStyle}">
+                        <TextBox
+                            Width="450"
+                            Style="{StaticResource ParameterTextBoxStyle}"
+                            Text="{Binding PolarDayApiInfo.ImageServiceBaseUrl, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </Border>
+                </StackPanel>
+
                 <TextBlock
                     Margin="55,0,0,5"
                     FontSize="12"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="云端图片先申请链接，再上传带运单号、扫描时间和重量水印的文件；本地服务使用兼容上传方式。" />
+                    Text="极昼在本地扫码图片保存完成后回传；请开启扫码存图并配置有效路径，上传失败会保留任务重试。" />
 
                 <TextBlock
                     Margin="55,4,0,5"
                     FontSize="12"
                     FontWeight="Bold"
                     Foreground="DarkGray"
-                    Text="操作员填写登录账号，图片用户编号填写现场提供的 reqUserCode；切换环境时同步更新设备和应用参数。" />
+                    Text="图片用户编号填写现场提供的 reqUserCode；本地查询时图片地址使用在线接口（以 /sdsOnlineApi 结尾），云端查询时使用同一环境。" />
 
                 <!--  设备编号、分拣计划。  -->
                 <StackPanel Margin="50,0,0,0" Orientation="Horizontal">

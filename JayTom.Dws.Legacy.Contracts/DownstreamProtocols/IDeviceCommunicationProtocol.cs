@@ -253,6 +253,8 @@ namespace JayTom.Dws.Legacy.Contracts.DownstreamProtocols {
 
         /// <summary>全部格口指令成功写入物理连接后执行的完成回调。</summary>
         public Action? OnSendSucceeded { get; set; }
+        /// <summary>仅在格口指令尚未开始写入物理连接时报告失败，允许业务层安全改发异常口。</summary>
+        public Action<Exception>? OnSendFailedBeforeWrite { get; set; }
 
         /// <summary>
         /// 真正写入下位机前执行的包裹身份复核；返回空表示通过，否则为拒绝原因。

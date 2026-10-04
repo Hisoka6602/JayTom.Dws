@@ -97,8 +97,10 @@ public sealed class ProjectDependencyTests {
         Assert.NotEmpty(asynchronousTargets);
         Assert.All(asynchronousTargets, target => {
             Assert.Equal("Discard", target.Attribute("overflowAction")?.Value);
-            Assert.Equal("20000", target.Attribute("queueLimit")?.Value);
+            var expectedCapacity = target.Attribute("name")?.Value == "AsyncAnomalyLogFile" ? "4096" : "20000";
+            Assert.Equal(expectedCapacity, target.Attribute("queueLimit")?.Value);
         });
+        Assert.Contains(asynchronousTargets, target => target.Attribute("name")?.Value == "AsyncAnomalyLogFile");
         Assert.NotEmpty(fileTargets);
         Assert.All(fileTargets, target => {
             Assert.Equal("104857600", target.Attribute("archiveAboveSize")?.Value);

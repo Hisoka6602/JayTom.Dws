@@ -547,6 +547,13 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Irayple {
                 var noReadConsumer = hasDecodeResult && !hasSdkBarcode && canReportNoRead &&
                                      (!aggregateNoRead || noReadGate is not null);
                 var barcodeConsumerCount = BarcodeReadTriggered is null ? 0 : barcodeInfo.Count;
+                if (hasSdkBarcode && barcodeInfo.Count == 0) {
+                    FilteredBarcodeReturned?.Invoke(this, new BarcodeReadEventArgs {
+                        Barcode = "filtered", IsFiltered = true,
+                        CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
+                        ScanTime = scanTime, Timestamp = timestamp, FrameNo = frameNo
+                    });
+                }
                 var realtimeConsumer = IsRealtimeImageEnabled && RealtimeImage is not null;
                 if (!noReadConsumer && barcodeConsumerCount == 0 && !realtimeConsumer) {
                     return;

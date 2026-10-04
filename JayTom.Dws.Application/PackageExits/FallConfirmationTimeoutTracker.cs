@@ -97,6 +97,15 @@ public sealed class FallConfirmationTimeoutTracker
         return true;
     }
 
+    /// <summary>停止分拣时取消旧包裹的等待，并抑制随后到达的旧回复，不生成落格事件。</summary>
+    public void CancelPending()
+    {
+        foreach (var pair in _pending)
+        {
+            TryConfirm(pair.Key);
+        }
+    }
+
     /// <summary>
     /// 取出达到固定等待时长的包裹，并生成与真实下位机回复相同类型的物理落格事件。
     /// </summary>

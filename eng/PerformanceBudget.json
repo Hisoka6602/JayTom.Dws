@@ -6,5 +6,9 @@
   "packageBarcodePipeline": {
     "operationCount": 1000,
     "maximumElapsedMilliseconds": 5000
+  },
+  "packageLowerMachineMixedResults": {
+    "operationCount": 100000,
+    "maximumElapsedMilliseconds": 5000
   }
 }

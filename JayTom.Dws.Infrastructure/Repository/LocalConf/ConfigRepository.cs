@@ -4,6 +4,7 @@ using JayTom.Dws.Models.LocalConf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
+using JayTom.Dws.Infrastructure.Configuration;
 
 namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
 
@@ -17,11 +18,11 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalConf {
                 var configInfoModels = await base.MemoryCacheData(token);
                 var configInfoModel = configInfoModels.FirstOrDefault(f => f.ConfigName.Equals(keyName));
                 if (configInfoModel is not null) {
-                    return JsonConvert.DeserializeObject<T>(configInfoModel.Value);
+                    return JsonConvert.DeserializeObject<T>(configInfoModel.Value, new Point2DJsonConverter());
                 }
             }
             catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"配置项Json反序列化错误:{e}");
+                NLog.LogManager.GetCurrentClassLogger().Error(e, $"配置项Json反序列化错误;配置名称={keyName}");
             }
 
             return null;

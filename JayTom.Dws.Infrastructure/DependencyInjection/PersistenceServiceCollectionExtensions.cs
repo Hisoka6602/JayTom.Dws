@@ -120,7 +120,8 @@ public static class PersistenceServiceCollectionExtensions {
         var connectionString = new SqliteConnectionStringBuilder {
             DataSource = databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            Cache = SqliteCacheMode.Shared,
+            // WAL 使用独立连接缓存，历史读事务不再持有阻止实时写入的共享表锁。
+            Cache = SqliteCacheMode.Private,
             Pooling = true,
             DefaultTimeout = 30
         }.ToString();

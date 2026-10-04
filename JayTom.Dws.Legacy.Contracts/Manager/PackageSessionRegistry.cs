@@ -15,10 +15,12 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
         private readonly ConcurrentDictionary<DateTime, PackageInfo> _packageInfos = new();
         /// <summary>维护稳定的包裹创建顺序，避免热路径每次查找都对并发快照重新排序。</summary>
         private readonly SortedSet<DateTime> _packageOrder = [];
-        /// <summary>仅保存未赋值包裹，条码绑定可直接取得队首而无需扫描全部会话。</summary>
+        /// <summary>仅保存未赋值包裹，利用有序时间索引定位赋值窗口内的最近候选。</summary>
         private readonly SortedSet<DateTime> _unassignedPackageOrder = [];
         /// <summary>按下位机序号直接定位包裹，避免回调热路径扫描全部会话。</summary>
         private readonly Dictionary<long, DateTime> _packageIdIndex = [];
+        /// <summary>直接定位同一次相机扫码已绑定的包裹，避免多条码判断扫描全部活动会话。</summary>
+        private readonly Dictionary<(DateTime ScanTime, string SerialNumber), DateTime> _barcodeObservationIndex = [];
         /// <summary>保护创建顺序索引的一致性。</summary>
         private readonly object _packageOrderGate = new();
         /// <summary>保存可原子读取的当前包裹数量。</summary>
@@ -86,6 +88,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                         }
                         _packageIdIndex[package.Guid] = package.CreateTime;
                     }
+                    IndexBarcodeObservation(package);
                     Interlocked.Increment(ref _packageCount);
                 }
 
@@ -100,6 +103,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                     lock (_packageOrderGate) {
                         _packageOrder.Remove(package.CreateTime);
                         _unassignedPackageOrder.Remove(package.CreateTime);
+                        RemoveBarcodeObservation(package);
                         if (package.Guid != 0 &&
                             _packageIdIndex.TryGetValue(package.Guid, out var indexedKey) &&
                             indexedKey == package.CreateTime) {
@@ -130,7 +134,15 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
         public bool RemovePackage(
             DateTime createTime,
             string description,
-            Func<KeyValuePair<DateTime, PackageInfo>, bool>? predicate) {
+            Func<KeyValuePair<DateTime, PackageInfo>, bool>? predicate) =>
+            RemovePackage(createTime, description, predicate, isDiscarded: false);
+
+        /// <summary>保留内部移除通知，丢弃结果不触发常规业务输出。</summary>
+        private bool RemovePackage(
+            DateTime createTime,
+            string description,
+            Func<KeyValuePair<DateTime, PackageInfo>, bool>? predicate,
+            bool isDiscarded) {
             if (!_packageInfos.TryGetValue(createTime, out var current)) {
                 return false;
             }
@@ -151,6 +163,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                 lock (_packageOrderGate) {
                     _packageOrder.Remove(createTime);
                     _unassignedPackageOrder.Remove(createTime);
+                    RemoveBarcodeObservation(info);
                     if (info.Guid != 0 &&
                         _packageIdIndex.TryGetValue(info.Guid, out var indexedKey) &&
                         indexedKey == createTime) {
@@ -158,7 +171,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                     }
                 }
                 info.MarkRemoved();
-                OnPackageRemoved(new PackageRemovedEventArgs(info, description));
+                OnPackageRemoved(new PackageRemovedEventArgs(info, description, isDiscarded));
             }
 
             return tryRemove;
@@ -192,6 +205,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                     lock (_packageOrderGate) {
                         _packageOrder.Remove(pair.Key);
                         _unassignedPackageOrder.Remove(pair.Key);
+                        RemoveBarcodeObservation(removedPackage);
                         if (removedPackage.Guid != 0 &&
                             _packageIdIndex.TryGetValue(removedPackage.Guid, out var indexedKey) &&
                             indexedKey == pair.Key) {
@@ -282,7 +296,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
 
         /// <summary>以设备或 TCP 观测时间为基准，原子选择并更新一个未赋值包裹。</summary>
         /// <param name="observedAt">条码被设备或通讯层观测到的时间。</param>
-        /// <param name="queueOrder">包裹选择顺序。</param>
+        /// <param name="queueOrder">区间内候选包裹按用户选择的创建时间正序或倒序匹配。</param>
         /// <param name="enforceAssignmentInterval">是否校验赋值时间窗口。</param>
         /// <param name="minimumAssignmentMilliseconds">赋值时间窗口下限，单位毫秒。</param>
         /// <param name="maximumAssignmentMilliseconds">赋值时间窗口上限，单位毫秒。</param>
@@ -298,8 +312,91 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
             int maximumAssignmentMilliseconds,
             int? emptyPackageExpiryMilliseconds,
             DateTime processingAt,
-            Action<PackageInfo> assignment) {
+            Action<PackageInfo> assignment) =>
+            TryBindBarcode(
+                observedAt, queueOrder, enforceAssignmentInterval,
+                minimumAssignmentMilliseconds, maximumAssignmentMilliseconds,
+                emptyPackageExpiryMilliseconds, processingAt, assignment, out _);
+
+        /// <summary>绑定条码，并在拒绝时返回本次决策的原因及候选包裹时间。</summary>
+        public PackageInfo? TryBindBarcode(
+            DateTime observedAt,
+            BarcodeQueueOrderEnum queueOrder,
+            bool enforceAssignmentInterval,
+            int minimumAssignmentMilliseconds,
+            int maximumAssignmentMilliseconds,
+            int? emptyPackageExpiryMilliseconds,
+            DateTime processingAt,
+            Action<PackageInfo> assignment,
+            out BarcodeAssignmentRejection? rejection) {
             ArgumentNullException.ThrowIfNull(assignment);
+            return TryConsumeBarcodeResult(
+                observedAt, queueOrder, enforceAssignmentInterval,
+                minimumAssignmentMilliseconds, maximumAssignmentMilliseconds,
+                emptyPackageExpiryMilliseconds, processingAt, assignment,
+                discard: false, out rejection);
+        }
+
+        /// <summary>按相同匹配规则原子消费一个 NoRead 占位，释放资源且不完成业务包裹。</summary>
+        public PackageInfo? TryDiscardUnassignedPackage(
+            DateTime observedAt,
+            BarcodeQueueOrderEnum queueOrder,
+            bool enforceAssignmentInterval,
+            int minimumAssignmentMilliseconds,
+            int maximumAssignmentMilliseconds,
+            int? emptyPackageExpiryMilliseconds,
+            DateTime processingAt,
+            out BarcodeAssignmentRejection? rejection) =>
+            TryConsumeBarcodeResult(
+                observedAt, queueOrder, enforceAssignmentInterval,
+                minimumAssignmentMilliseconds, maximumAssignmentMilliseconds,
+                emptyPackageExpiryMilliseconds, processingAt, assignment: null,
+                discard: true, out rejection);
+
+        /// <summary>只消费指定小车的相机结果；空赋值操作表示丢弃，拒绝时关闭原包裹且绝不搜索下一辆车。</summary>
+        public PackageInfo? TryConsumeCameraResultForPackage(
+            DateTime packageCreatedAt,
+            DateTime observedAt,
+            bool enforceAssignmentInterval,
+            int minimumAssignmentMilliseconds,
+            int maximumAssignmentMilliseconds,
+            int? emptyPackageExpiryMilliseconds,
+            DateTime processingAt,
+            Action<PackageInfo>? assignment,
+            out BarcodeAssignmentRejection? rejection) =>
+            TryConsumeBarcodeResult(
+                observedAt, BarcodeQueueOrderEnum.TimeAscending, enforceAssignmentInterval,
+                minimumAssignmentMilliseconds, maximumAssignmentMilliseconds,
+                emptyPackageExpiryMilliseconds, processingAt, assignment,
+                discard: assignment is null, out rejection, packageCreatedAt);
+
+        /// <summary>赋值和丢弃共用选择、时窗与包裹锁，避免先查找再移除的并发间隙。</summary>
+        private PackageInfo? TryConsumeBarcodeResult(
+            DateTime observedAt,
+            BarcodeQueueOrderEnum queueOrder,
+            bool enforceAssignmentInterval,
+            int minimumAssignmentMilliseconds,
+            int maximumAssignmentMilliseconds,
+            int? emptyPackageExpiryMilliseconds,
+            DateTime processingAt,
+            Action<PackageInfo>? assignment,
+            bool discard,
+            out BarcodeAssignmentRejection? rejection,
+            DateTime? originalCreatedAt = null) {
+            rejection = null;
+
+            BarcodeAssignmentRejection DescribeRejection(
+                BarcodeAssignmentRejectionReason reason,
+                DateTime? createdAt = null,
+                long? packageId = null,
+                long? packageTimestamp = null) {
+                PackageInfo? snapshot = null;
+                if (createdAt is { } key && (!packageId.HasValue || !packageTimestamp.HasValue))
+                    _packageInfos.TryGetValue(key, out snapshot);
+                return new(reason, observedAt, processingAt, createdAt, packageId ?? snapshot?.Guid) {
+                    PackageTimestamp = packageTimestamp ?? snapshot?.Timestamp
+                };
+            }
 
             var minimumTicks = Math.Max(0L, (long)minimumAssignmentMilliseconds * TimeSpan.TicksPerMillisecond);
             var maximumTicks = (long)maximumAssignmentMilliseconds * TimeSpan.TicksPerMillisecond;
@@ -307,14 +404,26 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                 ? (long)emptyPackageExpiryMilliseconds.Value * TimeSpan.TicksPerMillisecond
                 : long.MaxValue;
             if (enforceAssignmentInterval && maximumTicks < minimumTicks) {
+                rejection = DescribeRejection(BarcodeAssignmentRejectionReason.InvalidAssignmentWindow, originalCreatedAt);
+                if (originalCreatedAt is { } invalidKey) {
+                    RemovePackage(invalidKey, "相机结果已消费，赋值窗口配置无效",
+                        static pair => pair.Value.BarCodeInfo is null, isDiscarded: true);
+                }
                 return null;
             }
 
             var observedTicks = observedAt.Ticks;
             var processingTicks = processingAt.Ticks;
-            while (!_packageInfos.IsEmpty) {
+            while (originalCreatedAt.HasValue || !_packageInfos.IsEmpty) {
                 KeyValuePair<DateTime, PackageInfo>? selected = null;
-                lock (_packageOrderGate) {
+                if (originalCreatedAt is { } originalKey) {
+                    if (!_packageInfos.TryGetValue(originalKey, out var originalPackage)) {
+                        rejection = DescribeRejection(BarcodeAssignmentRejectionReason.OriginalPackageUnavailable, originalKey);
+                        return null;
+                    }
+                    selected = new KeyValuePair<DateTime, PackageInfo>(originalKey, originalPackage);
+                }
+                else lock (_packageOrderGate) {
                     while (_unassignedPackageOrder.Count > 0) {
                         var key = SelectBarcodeCandidateKey(
                             observedTicks,
@@ -322,8 +431,17 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                             queueOrder,
                             enforceAssignmentInterval,
                             minimumTicks,
+                            maximumTicks,
                             emptyPackageExpiryTicks);
                         if (key is null) {
+                            // 倒序选择会跳过太新的包裹；全部候选过早时仍记录最早候选的实际间隔。
+                            var earliestKey = _unassignedPackageOrder.Min;
+                            _packageInfos.TryGetValue(earliestKey, out var earliestPackage);
+                            rejection = DescribeRejection(
+                                observedTicks < earliestKey.Ticks
+                                    ? BarcodeAssignmentRejectionReason.ObservedBeforePackageCreation
+                                    : BarcodeAssignmentRejectionReason.BelowMinimumInterval,
+                                earliestKey, earliestPackage?.Guid, earliestPackage?.Timestamp);
                             return null;
                         }
                         if (_packageInfos.TryGetValue(key.Value, out var package) &&
@@ -336,82 +454,151 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                 }
 
                 if (selected is not { } candidate) {
+                    rejection = DescribeRejection(BarcodeAssignmentRejectionReason.NoUnassignedPackage);
                     return null;
                 }
 
                 var expiredWhileQueued = false;
+                PackageInfo? discardedPackage = null;
                 lock (candidate.Value.SyncRoot) {
                     if (!_packageInfos.TryGetValue(candidate.Key, out var current) ||
                         !ReferenceEquals(current, candidate.Value) ||
                         current.BarCodeInfo is not null) {
+                        if (originalCreatedAt.HasValue) {
+                            rejection = DescribeRejection(BarcodeAssignmentRejectionReason.OriginalPackageUnavailable,
+                                candidate.Key, candidate.Value.Guid, candidate.Value.Timestamp);
+                            return null;
+                        }
                         continue;
                     }
 
                     var ageTicks = observedTicks - candidate.Key.Ticks;
                     var processingAgeTicks = processingTicks - candidate.Key.Ticks;
-                    if (ageTicks < 0) {
-                        return null;
+                    if (ageTicks < 0 && (enforceAssignmentInterval || !originalCreatedAt.HasValue)) {
+                        rejection = DescribeRejection(
+                            BarcodeAssignmentRejectionReason.ObservedBeforePackageCreation,
+                            candidate.Key, current.Guid, current.Timestamp);
+                        if (!originalCreatedAt.HasValue) {
+                            return null;
+                        }
                     }
-                    if (ageTicks >= emptyPackageExpiryTicks ||
+                    else if (ageTicks >= emptyPackageExpiryTicks ||
                         processingAgeTicks >= emptyPackageExpiryTicks) {
-                        // 不再检查后续包裹；晚到条码跳过过期队首会让后续包裹整体错位。
+                        // 窗口内可用候选已全部筛选；当前对象仅作为失败诊断或过期清理对象。
                         expiredWhileQueued = true;
+                        rejection = DescribeRejection(
+                            ageTicks >= emptyPackageExpiryTicks
+                                ? BarcodeAssignmentRejectionReason.EmptyPackageExpiredAtObservation
+                                : BarcodeAssignmentRejectionReason.EmptyPackageExpiredWhileQueued,
+                            candidate.Key, current.Guid, current.Timestamp);
                     }
                     else if (enforceAssignmentInterval &&
                         (ageTicks < minimumTicks || ageTicks > maximumTicks)) {
-                        return null;
+                        rejection = DescribeRejection(
+                            ageTicks < minimumTicks
+                                ? BarcodeAssignmentRejectionReason.BelowMinimumInterval
+                                : BarcodeAssignmentRejectionReason.AboveMaximumInterval,
+                            candidate.Key, current.Guid, current.Timestamp);
+                        if (!originalCreatedAt.HasValue) {
+                            return null;
+                        }
                     }
                     else {
-                        assignment(current);
-                        lock (_packageOrderGate) {
-                            _unassignedPackageOrder.Remove(candidate.Key);
+                        if (discard) {
+                            lock (_packageOrderGate) {
+                                if (!((ICollection<KeyValuePair<DateTime, PackageInfo>>)_packageInfos)
+                                    .Remove(candidate)) {
+                                    continue;
+                                }
+                                _packageOrder.Remove(candidate.Key);
+                                _unassignedPackageOrder.Remove(candidate.Key);
+                                if (current.Guid != 0 &&
+                                    _packageIdIndex.TryGetValue(current.Guid, out var indexedKey) &&
+                                    indexedKey == candidate.Key) {
+                                    _packageIdIndex.Remove(current.Guid);
+                                }
+                                Interlocked.Decrement(ref _packageCount);
+                            }
+                            current.MarkRemoved();
+                            discardedPackage = current;
                         }
-                        return current;
+                        else {
+                            assignment!(current);
+                            lock (_packageOrderGate) {
+                                _unassignedPackageOrder.Remove(candidate.Key);
+                                IndexBarcodeObservation(current);
+                            }
+                            return current;
+                        }
                     }
                 }
 
+                if (discardedPackage is not null) {
+                    OnPackageRemoved(new PackageRemovedEventArgs(
+                        discardedPackage, "NoRead 已消费并丢弃", isDiscarded: true));
+                    return discardedPackage;
+                }
+                if (originalCreatedAt.HasValue) {
+                    RemovePackage(candidate.Key, "相机结果已消费，原小车未通过赋值校验",
+                        static pair => pair.Value.BarCodeInfo is null, isDiscarded: true);
+                    return null;
+                }
                 if (expiredWhileQueued) {
                     RemovePackage(
                         candidate.Key,
                         "空包裹过期优先，拒绝晚到条码",
-                        pair => pair.Value.BarCodeInfo is null);
+                        static pair => pair.Value.BarCodeInfo is null,
+                        isDiscarded: discard);
                 }
                 return null;
             }
 
+            rejection = DescribeRejection(BarcodeAssignmentRejectionReason.NoUnassignedPackage);
             return null;
         }
 
-        /// <summary>按配置顺序选择候选；倒序时跳过尚未达到最小间隔的新包裹。</summary>
+        /// <summary>先筛选全部未赋值且未过期的窗口候选，再按用户配置的时间顺序选择首个；无命中时返回最近候选用于诊断。</summary>
         private DateTime? SelectBarcodeCandidateKey(
             long observedTicks,
             long processingTicks,
             BarcodeQueueOrderEnum queueOrder,
             bool enforceAssignmentInterval,
             long minimumTicks,
+            long maximumTicks,
             long emptyPackageExpiryTicks) {
             var oldestKey = _unassignedPackageOrder.Min;
-            if (observedTicks - oldestKey.Ticks >= emptyPackageExpiryTicks ||
-                processingTicks - oldestKey.Ticks >= emptyPackageExpiryTicks) {
-                // 无论选择顺序如何，过期空包裹都必须先被选中并触发删除，禁止条码顺延。
-                return oldestKey;
-            }
-            if (queueOrder == BarcodeQueueOrderEnum.TimeAscending ||
-                !enforceAssignmentInterval) {
+            if (!enforceAssignmentInterval) {
+                if (observedTicks - oldestKey.Ticks >= emptyPackageExpiryTicks ||
+                    processingTicks - oldestKey.Ticks >= emptyPackageExpiryTicks) {
+                    return oldestKey;
+                }
                 return queueOrder == BarcodeQueueOrderEnum.TimeAscending
                     ? oldestKey
                     : _unassignedPackageOrder.Max;
             }
 
-            DateTime? candidate = null;
-            foreach (var key in _unassignedPackageOrder) {
-                var ageTicks = observedTicks - key.Ticks;
-                if (ageTicks < minimumTicks) {
-                    break;
-                }
-                candidate = key;
+            var firstEligibleTicks = Math.Max(DateTime.MinValue.Ticks, observedTicks - maximumTicks);
+            var lastEligibleTicks = observedTicks - minimumTicks;
+            if (emptyPackageExpiryTicks != long.MaxValue) {
+                firstEligibleTicks = Math.Max(firstEligibleTicks,
+                    Math.Max(observedTicks, processingTicks) - emptyPackageExpiryTicks + 1);
             }
-            return candidate;
+            if (firstEligibleTicks <= lastEligibleTicks) {
+                // 区间视图按用户配置迭代；不复制或重新排序整个队列，也不因首个区间外包裹而提前拒绝。
+                var window = _unassignedPackageOrder.GetViewBetween(
+                    new DateTime(firstEligibleTicks), new DateTime(lastEligibleTicks));
+                IEnumerable<DateTime> orderedCandidates = queueOrder == BarcodeQueueOrderEnum.TimeAscending
+                    ? window : window.Reverse();
+                using var eligible = orderedCandidates.GetEnumerator();
+                if (eligible.MoveNext()) {
+                    return eligible.Current;
+                }
+            }
+
+            // 只有整个有效区间为空才进入失败诊断；保留最近已创建对象的真实时间与拒绝原因。
+            using var observedCandidates = _unassignedPackageOrder.GetViewBetween(
+                DateTime.MinValue, new DateTime(observedTicks)).Reverse().GetEnumerator();
+            return observedCandidates.MoveNext() ? observedCandidates.Current : oldestKey;
         }
 
         /// <summary>
@@ -433,6 +620,40 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                 }
             }
             return GetPackage(createTime);
+        }
+
+        /// <summary>按相机观测键直接查找多条码所属的活动包裹。</summary>
+        public PackageInfo? GetPackageByBarcodeObservation(DateTime scanTime, string serialNumber) {
+            DateTime createTime;
+            lock (_packageOrderGate) {
+                if (!_barcodeObservationIndex.TryGetValue((scanTime, serialNumber), out createTime)) {
+                    return null;
+                }
+            }
+            var package = GetPackage(createTime);
+            var barcode = package?.BarCodeInfo;
+            return barcode is not null && barcode.ScanTime == scanTime &&
+                   string.Equals(barcode.SerialNumber, serialNumber, StringComparison.Ordinal)
+                ? package
+                : null;
+        }
+
+        /// <summary>仅在索引锁内维护已赋值包裹的相机观测键。</summary>
+        private void IndexBarcodeObservation(PackageInfo package) {
+            if (package.BarCodeInfo is { } barcode) {
+                _barcodeObservationIndex[(barcode.ScanTime, barcode.SerialNumber)] = package.CreateTime;
+            }
+        }
+
+        /// <summary>相同观测键被后续包裹复用时，移除旧包裹不能删除新映射。</summary>
+        private void RemoveBarcodeObservation(PackageInfo package) {
+            if (package.BarCodeInfo is { } barcode) {
+                var key = (barcode.ScanTime, barcode.SerialNumber);
+                if (_barcodeObservationIndex.TryGetValue(key, out var createTime) &&
+                    createTime == package.CreateTime) {
+                    _barcodeObservationIndex.Remove(key);
+                }
+            }
         }
 
         /// <summary>
@@ -518,6 +739,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                     lock (_packageOrderGate) {
                         _packageOrder.Remove(key);
                         _unassignedPackageOrder.Remove(key);
+                        RemoveBarcodeObservation(info);
                         if (info.Guid != 0 &&
                             _packageIdIndex.TryGetValue(info.Guid, out var indexedKey) &&
                             indexedKey == key) {
@@ -532,6 +754,7 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
                     _packageOrder.Clear();
                     _unassignedPackageOrder.Clear();
                     _packageIdIndex.Clear();
+                    _barcodeObservationIndex.Clear();
                     Volatile.Write(ref _packageCount, 0);
                 }
             }
@@ -620,10 +843,18 @@ namespace JayTom.Dws.Legacy.Contracts.Packages {
     public class PackageRemovedEventArgs : EventArgs {
         public PackageInfo RemovedPackage { get; }
         public string Description { get; }
+        /// <summary>是否仅消费占位并丢弃业务结果；内部资源清理订阅者仍会收到通知。</summary>
+        public bool IsDiscarded { get; }
 
         public PackageRemovedEventArgs(PackageInfo removedPackage, string description) {
             RemovedPackage = removedPackage;
             Description = description;
+        }
+
+        /// <summary>创建可区分内部丢弃与常规移除的资源清理通知。</summary>
+        public PackageRemovedEventArgs(PackageInfo removedPackage, string description, bool isDiscarded)
+            : this(removedPackage, description) {
+            IsDiscarded = isDiscarded;
         }
     }
 

@@ -6,6 +6,7 @@ using JayTom.Dws.Application.CameraConfigurations;
 using JayTom.Dws.Application.PackageHistory;
 using System;
 using JayTom.Dws.Application.Workflows;
+using JayTom.Dws.Abstractions.Threading;
 using System.Linq;
 using Newtonsoft.Json;
 using System.Threading;
@@ -57,6 +58,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly LosslessWorkQueue<InstructionReceived> _instructionItems = new();
         private readonly LosslessWorkQueue<ExceptionSortingReceived> _exceptionSortingItems = new();
         private readonly LosslessWorkQueue<PackageExitUpdateEvent> _packageExitUpdateItems = new();
+        /// <summary>只让历史查询读取积压指标，分拣事件入队仍保持非阻塞。</summary>
+        private readonly IDisposable _historyReadPressureRegistration;
         /// <summary>包裹主记录每次 SQLite 提交允许合并的最大数量。</summary>
         private const int PackageInsertBatchSize = 64;
         /// <summary>
@@ -102,6 +105,9 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _packagePersistence = packagePersistence;
             _imageStorageService = imageStorageService;
             _barcodeScannerCameraConfigRepository = barcodeScannerCameraConfigRepository;
+            _historyReadPressureRegistration = RealtimeWorkPressure.Register(() =>
+                _insertItems.Count + _updateResponseItems.Count + _savedImageItems.Count +
+                _instructionItems.Count + _exceptionSortingItems.Count + _packageExitUpdateItems.Count);
             _imageStorageService.ImageSaved += delegate (object? sender, ImageSavedEventArgs args)
             {
                 //保存后触发
@@ -127,7 +133,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                         WeightInfo = model.WeightInfo,
                         VolumeInfo = model.VolumeInfo,
                         PackageCreateTime = model.CreateTime,
-                        PackageTimestamped = new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds(),
+                        PackageTimestamped = model.Timestamp,
                     });
                 }
             });
@@ -223,6 +229,10 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             foreach (var package in insertBatch)
                             {
                                 _retryTracker.Forget(package);
+                                JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("persistence.package.saved",
+                                    "原包裹主记录已提交数据库", packageTimestamp: package.PackageTimestamped,
+                                    barcode: package.BarCodeInfo?.Barcode,
+                                    fields: [("databaseId", package.Id), ("createdAt", package.PackageCreateTime)]);
                                 ReleasePendingInstructions(package.PackageTimestamped);
                             }
                         }
@@ -548,6 +558,16 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
                 catch (Exception e)
                 {
+                    JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("persistence.failed",
+                        "数据库处理失败，保留工作重试", JayTom.Dws.Models.LocalLog.LogType.Exception,
+                        packageTimestamp: inFlightResponse?.Timestamp ?? inFlightSavedImage?.PackageTimestamp ??
+                            inFlightInstruction?.Timestamp ?? inFlightExceptionSorting?.Timestamp ?? inFlightExitUpdate?.Timestamp ??
+                            inFlightInsertBatch?.FirstOrDefault()?.PackageTimestamped ?? 0,
+                        fields: [("reasonCode", "PersistenceException"), ("error", e.ToString()),
+                            ("batchPackageTimestamps", inFlightInsertBatch is null ? null :
+                                string.Join(",", inFlightInsertBatch.Select(package => package.PackageTimestamped))),
+                            ("pendingInserts", _insertItems.Count), ("pendingResponses", _updateResponseItems.Count),
+                            ("pendingInstructions", _instructionItems.Count)]);
                     if (inFlightInsertBatch is not null)
                     {
                         foreach (var package in inFlightInsertBatch)
@@ -608,6 +628,24 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         {
             var isWithinInitialRetryWindow =
                 _retryTracker.TryRegisterFailure(item, out var attempt);
+            if (attempt == 1 || attempt == _retryTracker.MaxAttempts + 1 || attempt % 100 == 0)
+            {
+                var timestamp = item switch
+                {
+                    PackageInfoModel package => package.PackageTimestamped,
+                    ApiResponseReceived response => response.Timestamp,
+                    SavedImageInfo image => image.PackageTimestamp,
+                    InstructionReceived instruction => instruction.Timestamp,
+                    ExceptionSortingReceived failure => failure.Timestamp,
+                    PackageExitUpdateEvent fall => fall.Timestamp,
+                    _ => 0
+                };
+                JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("persistence.retry",
+                    "原包裹数据库工作尚未成功，保留工作并延时重试",
+                    isWithinInitialRetryWindow ? JayTom.Dws.Models.LocalLog.LogType.Information : JayTom.Dws.Models.LocalLog.LogType.Warning,
+                    packageTimestamp: timestamp, fields: [("reasonCode", "PersistenceWorkPending"),
+                        ("workType", typeof(T).Name), ("attempt", attempt), ("retryMilliseconds", 50)]);
+            }
             if (!isWithinInitialRetryWindow &&
                 (attempt == _retryTracker.MaxAttempts + 1 || attempt % 100 == 0))
             {
@@ -670,7 +708,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     pair.Value.Dequeue();
                     _pendingInstructionCount--;
                     LogManager.GetCurrentClassLogger().Error(
-                        $"指令等待包裹主记录超时，停止关联:Timestamp={pending.Instruction.Timestamp},SortingCode={pending.Instruction.SortingCode}");
+                        $"指令等待包裹主记录超时，停止关联:Timestamp={pending.Instruction.Timestamp},SortingCode={pending.Instruction.SortingCode},InstructionType={pending.Instruction.InstructionInfos?.FirstOrDefault()?.InstructionType},InstructionTime={pending.Instruction.InstructionInfos?.FirstOrDefault()?.InstructionGeneratedTime:O},InstructionContent={pending.Instruction.InstructionInfos?.FirstOrDefault()?.InstructionContent}");
                 }
 
                 if (pair.Value.Count == 0)
@@ -726,6 +764,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
 
             _retryScheduler.Dispose();
+            _historyReadPressureRegistration.Dispose();
             _workSignal.Dispose();
             base.Dispose();
         }

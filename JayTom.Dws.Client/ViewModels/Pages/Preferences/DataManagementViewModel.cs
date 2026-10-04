@@ -3,6 +3,9 @@ using JayTom.Dws.Application.PackageExits;
 using JayTom.Dws.Application.PackageHistory;
 using JayTom.Dws.Application.UseCases;
 using System;
+using System.Runtime.CompilerServices;
+using JayTom.Dws.Abstractions.Threading;
+using JayTom.Dws.Client.Extensions;
 using DryIoc;
 using System.IO;
 using Prism.Mvvm;
@@ -64,6 +67,22 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         private decimal _minWeight;
         private decimal _maxWeight;
         private bool _isLoaded;
+        /// <summary>查询页面每次只构建一百条记录，限制渲染和内存峰值。</summary>
+        private const int HistoryPageSize = 100;
+        /// <summary>只保留用户最近一次查询的结果。</summary>
+        private CancellationTokenSource? _queryCancellation;
+        /// <summary>只保留最近打开的单包裹详情读取。</summary>
+        private CancellationTokenSource? _detailsCancellation;
+        /// <summary>在页面卸载时取消尚未结束的导出。</summary>
+        private CancellationTokenSource? _exportCancellation;
+        /// <summary>标记导出正在执行，避免重复点击堆积工作簿。</summary>
+        private bool _isExporting;
+        /// <summary>判断异步读取返回时页面是否仍然有效。</summary>
+        private bool _isPageActive;
+        /// <summary>保存本页拥有的查询进度会话。</summary>
+        private LogPageDialog? _queryDialog;
+        /// <summary>为导出单独保留一个低优先级通道，避免导出等待读取时阻塞查询通道。</summary>
+        private static readonly Lazy<LowPriorityWorkScheduler> ExportScheduler = new(() => new("DwsHistoryExport", 1));
 
         private ObservableCollection<PackageItemModel> _packageItems = new()
         {
@@ -308,7 +327,7 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private void JumpPageDelegate(object obj)
         {
-            if (PageIndex >= 0 && PageIndex <= PageCount)
+            if (PageIndex >= 1 && PageIndex <= PageCount)
             {
                 LoadData(PageIndex);
             }
@@ -337,50 +356,71 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         public ICommand LoadedCommand => new DelegateCommand<Page>(LoadedDelegate);
 
-        private async void LoadedDelegate(Page obj)
+        /// <summary>页面入口只启动已观察异常的异步操作。</summary>
+        private void LoadedDelegate(Page obj)
         {
-            var packageExitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
-            PackageExitDefinitionItems.Clear();
-            await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
-            {
-                PackageExitDefinitionItems.Clear();
-                var packageExitDefinitionItemInfoModels = packageExitDefinitionInfoModels?.Select((s, i) => new PackageExitDefinitionItemInfoModel
-                {
-                    CreateTime = s.CreateTime,
-                    ExitName = s.ExitName,
-                    Id = s.Id,
-                    IsActive = s.IsActive,
-                    ModifyTime = s.ModifyTime,
-                    Num = i + 1,
-                    Remarks = s.Remarks,
-                    Type = s.Type
-                })?.ToList();
+            _isPageActive = true;
+            LoadedAsync(obj).Forget("加载数据查询页面");
+        }
 
-                if (packageExitDefinitionItemInfoModels?.Any() == true)
-                {
-                    PackageExitDefinitionItems.AddRange(packageExitDefinitionItemInfoModels);
-                }
-            });
-            if (!_isLoaded)
+        /// <summary>低优先级读取页面筛选配置，避免打开页面就同步访问数据库。</summary>
+        private async Task LoadedAsync(Page obj)
+        {
+            try
             {
-                var parentContainer = PluginInterface.Utils.Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
-                if (parentContainer is not null)
+                var exits = await LowPriorityWorkScheduler.Shared.RunAsync(() => _packageExitCatalog.ListAsync());
+                if (!_isPageActive) return;
+                PackageExitDefinitionItems = new ObservableCollection<PackageExitDefinitionItemInfoModel>(exits.Select((s, i) => new PackageExitDefinitionItemInfoModel
                 {
-                    PageMaxHeight = Convert.ToDecimal(parentContainer.ActualHeight);
-                    parentContainer.SizeChanged += delegate (object sender, SizeChangedEventArgs args)
+                    CreateTime = s.CreateTime, ExitName = s.ExitName, Id = s.Id, IsActive = s.IsActive,
+                    ModifyTime = s.ModifyTime, Num = i + 1, Remarks = s.Remarks, Type = s.Type
+                }));
+                if (!_isLoaded)
+                {
+                    var parent = PluginInterface.Utils.Utils.GetParentContainer<Grid>(obj, f => f.Visibility == Visibility.Visible);
+                    if (parent is not null)
                     {
-                        PageMaxHeight = Convert.ToDecimal(parentContainer.ActualHeight);
-                    };
+                        PageMaxHeight = Convert.ToDecimal(parent.ActualHeight);
+                        parent.SizeChanged += (_, _) => PageMaxHeight = Convert.ToDecimal(parent.ActualHeight);
+                    }
+                    _isLoaded = true;
                 }
-                _isLoaded = true;
-                //加载数据
-                FirstPageDelegate(obj);
+                if (PageIndex < 1) PageIndex = 1;
+                LoadData(PageIndex);
             }
+            catch (Exception error)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn(error, "加载数据查询页面失败");
+                DataManagementMessageQueue.Enqueue("数据查询暂不可用，请稍后重试。");
+            }
+        }
+
+        /// <summary>离开页面立即取消历史读取和导出，不保留无用的后台任务。</summary>
+        public ICommand UnloadedCommand => new DelegateCommand<object>(_ =>
+        {
+            _isPageActive = false;
+            CancelBackgroundOperation(_queryCancellation, "取消已离开页面的数据查询");
+            CancelBackgroundOperation(_detailsCancellation, "取消已离开页面的详情读取");
+            CancelBackgroundOperation(_exportCancellation, "取消已离开页面的数据导出");
+            _queryDialog?.Dispose();
+            _queryDialog = null;
+        });
+
+        /// <summary>立即标记取消并在线程池执行取消回调，避免慢提供商回调同步阻断 UI 输入。</summary>
+        private static void CancelBackgroundOperation(CancellationTokenSource? cancellation, string operation)
+        {
+            if (cancellation is null) return;
+            try { cancellation.CancelAsync().Forget(operation); }
+            catch (ObjectDisposedException) { } // 已完成的旧操作可能刚释放自己的取消源。
         }
 
         public ICommand OpenDateTimeDialogCommand => new DelegateCommand<object>(OpenDateTimeDialogDelegate);
 
-        private async void OpenDateTimeDialogDelegate(object obj)
+        /// <summary>打开日期筛选入口统一观察异步异常，切页和宿主关闭不会导致程序崩溃。</summary>
+        private void OpenDateTimeDialogDelegate(object obj) => OpenDateTimeDialogAsync(obj).Forget("打开日期筛选");
+
+        /// <summary>异步处理打开日期筛选操作。</summary>
+        private async Task OpenDateTimeDialogAsync(object obj)
         {
             await UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
             {
@@ -401,7 +441,8 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
                         model.SelectedTime = EndTime ?? DateTime.Now;
                     }
 
-                    await DialogHost.Show(dataTimeEditor, model.Identifier);
+                    using var dialog = LogPageDialog.Open(dataTimeEditor, model.Identifier);
+                    await dialog.Completion;
                     if (model.IsOk)
                     {
                         if (obj?.ToString()?.Equals("StartTime") == true)
@@ -430,10 +471,9 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
 
         private void UploadStatusDelegate(PackageItemModel obj)
         {
-            //判断状态是否已上传再获进行弹窗
             if (obj.RequestStatus != UploadStatus.NotUploaded)
             {
-                _dialogService.Show("ApiAccessDialog", new DialogParameters { { "PackageItem", obj } }, null);
+                LoadDetailsAsync(obj, "ApiAccessDialog").Forget("加载单包裹接口详情");
             }
         }
 
@@ -527,7 +567,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         public ICommand ClearSearchCriteriaCommand => new DelegateCommand<object>(ClearSearchCriteriaDelegate);
 
-        private async void ClearSearchCriteriaDelegate(object obj)
+        /// <summary>清空查询条件入口统一观察异步异常，切页和宿主关闭不会导致程序崩溃。</summary>
+        private void ClearSearchCriteriaDelegate(object obj) => ClearSearchCriteriaAsync(obj).Forget("清空查询条件");
+
+        /// <summary>异步处理清空查询条件操作。</summary>
+        private async Task ClearSearchCriteriaAsync(object obj)
         {
             await UiThread.Dispatcher.InvokeAsync(() =>
             {
@@ -556,268 +600,199 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         public ICommand ExportDataCommand => new DelegateCommand<object>(ExportDataDelegate);
 
-        private async void ExportDataDelegate(object obj)
+        /// <summary>导出入口观察所有后台异常，防止 async void 异常终止程序。</summary>
+        private void ExportDataDelegate(object obj) => ExportDataAsync().Forget("导出历史包裹");
+
+        /// <summary>以单独低优先级通道分页导出，不累积全历史列表及完整工作簿。</summary>
+        private async Task ExportDataAsync()
         {
-            if (PackageItems?.Any() != true)
+            if (_isExporting) return;
+            if (PackageItems.Count == 0)
             {
-                DataManagementMessageQueue?.Enqueue(Languages.Language.ResourceManager.GetString("列表中没有数据") ?? string.Empty);
+                DataManagementMessageQueue.Enqueue("列表中没有数据。");
                 return;
             }
-
-            //导出
-            var saveFileDialog = new Microsoft.Win32.SaveFileDialog()
+            var saveDialog = new Microsoft.Win32.SaveFileDialog
             {
                 Title = "Please select the location to save the file.",
-                Filter = $"{Languages.Language.ResourceManager.GetString("Excel文件") ?? string.Empty}(xlsx)|*.xlsx",
-                DefaultExt = "xlsx",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Filter = "Excel (*.xlsx)|*.xlsx", DefaultExt = "xlsx",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
             };
-            if (saveFileDialog.ShowDialog() == true)
+            if (saveDialog.ShowDialog() != true) return;
+            var filter = CreateHistoryFilter() with { EndTime = EndTime ?? TimeProvider.System.GetLocalNow().DateTime };
+            var dispatcher = UiThread.Dispatcher;
+            using var cancellation = new CancellationTokenSource();
+            _exportCancellation = cancellation;
+            _isExporting = true;
+            LogPageDialog? dialog = null;
+            try
             {
-                var exportDialog = new ExportDialog();
-                if (exportDialog.DataContext is ExportDialogViewModel model)
+                var view = new ExportDialog();
+                var model = view.DataContext as ExportDialogViewModel;
+                if (model is not null)
                 {
-                    model.FilePath = saveFileDialog.FileName;
-                    model.Identifier = "MainDialog";
-                    model.Message = "Retrieving data...";
-                    DialogHost.Show(exportDialog, model.Identifier)
-                        .Forget("显示数据导出进度对话框");
-                    //如果页数超过1页则从数据库获取数据(未完成)  ExcelPackageItemModel
-                    // var packageItemModels = new List<PackageItemModel>();
-                    var packageItemModels = new List<ExcelPackageItemModel>();
-                    if (PageCount > 0)
-                    {
-                        for (var i = 0; i < PageCount; i++)
-                        {
-                            var result = await _packageHistoryQuery.HandleAsync(
-                                new SearchPackageHistoryQuery(
-                                    new PackageHistoryQuery(
-                                    StartTime,
-                                    EndTime,
-                                    BarCode,
-                                    SelectExitDefinitionInfo?.ExitName,
-                                    MinWeight,
-                                    MaxWeight,
-                                    SelectedUploadStatus),
-                                    i,
-                                    500));
-                            var infoModels = result.Items;
-
-                            if (infoModels?.Any() == true)
-                            {
-                                var itemModels = infoModels?.Select((s, num) => new ExcelPackageItemModel
-                                {
-                                    Num = num + 1 + (i * 500),
-                                    TimestampMilliseconds = s.PackageTimestamped,
-                                    Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
-                                    Weight = (decimal)(s.WeightInfo?.FormattedWeight ?? 0),
-                                    Length = (decimal)(s.VolumeInfo?.FormattedLength ?? 0),
-                                    Width = (decimal)(s.VolumeInfo?.FormattedWidth ?? 0),
-                                    Height = (decimal)(s.VolumeInfo?.FormattedHeight ?? 0),
-                                    Volume = (decimal)(s.VolumeInfo?.FormattedVolume ?? 0),
-                                    ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
-                                    RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
-                                    BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
-                                    TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
-                                    PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
-                                    SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
-                                    SignalCallbackInstructionGeneratedTime = s?.SortingInfo?.InstructionInfos?.LastOrDefault(l => l.InstructionType
-                                        is InstructionType.SignalCallback
-                                        or InstructionType.PackageExceptionEx)?.InstructionGeneratedTime
-                                })?.ToList();
-                                packageItemModels.AddRange(itemModels ?? new List<ExcelPackageItemModel>());
-                            }
-                        }
-                    }
-
-                    var export = await _excel.Export(saveFileDialog.FileName,
-                        $"PackageItems",
-                        "PackageItems", packageItemModels,
-                        new List<string>(), async p =>
-                        {
-                            model.Progress = p;
-                            model.ProgressText = $"{p}%";
-                            if (p == 100)
-                            {
-                                await UiThread.Dispatcher.InvokeAsync(() =>
-                                {
-                                    if (DialogHost.IsDialogOpen(model.Identifier))
-                                    {
-                                        DialogHost.Close(model.Identifier);
-                                    }
-                                });
-                            }
-                        }, e =>
-                        {
-                            DataManagementMessageQueue?.Enqueue(e.Message);
-                        });
-                    if (!export)
-                    {
-                        await UiThread.Dispatcher.InvokeAsync(() =>
-                        {
-                            if (DialogHost.IsDialogOpen(model.Identifier))
-                            {
-                                DialogHost.Close(model.Identifier);
-                            }
-                        });
-                    }
+                    model.FilePath = saveDialog.FileName;
+                    model.Identifier = "DataManagementDialog";
+                    model.Message = "正在分页导出数据...";
+                    dialog = LogPageDialog.Open(view, model.Identifier);
+                    dialog.Completion.Forget("显示数据导出进度");
                 }
+                string? exportError = null;
+                var previousProgress = -1;
+                void Progress(int value)
+                {
+                    if (value == previousProgress || cancellation.IsCancellationRequested) return;
+                    previousProgress = value;
+                    dispatcher.InvokeAsync(() =>
+                    {
+                        if (model is not null) { model.Progress = value; model.ProgressText = value + "%"; }
+                    }, DispatcherPriority.Background, cancellation.Token).Task.Forget("更新数据导出进度");
+                }
+                var result = await ExportScheduler.Value.RunAsync(() => _excel.ExportStreamingAsync(
+                    saveDialog.FileName, "PackageItems", "PackageItems", ReadExportItemsAsync(filter, Progress, cancellation.Token),
+                    Array.Empty<string>(), Progress, error => exportError = error.Message, cancellation.Token), cancellation.Token);
+                DataManagementMessageQueue.Enqueue(result ? "数据导出完成。" : "数据导出失败：" + (exportError ?? "没有可导出的数据。"));
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (Exception error)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn(error, "导出历史包裹失败");
+                DataManagementMessageQueue.Enqueue("数据导出失败，请稍后重试。");
+            }
+            finally
+            {
+                dialog?.Dispose();
+                _exportCancellation = null;
+                _isExporting = false;
             }
         }
 
-        /// <summary>
-        /// 加载数据
-        /// </summary>
-        /// <param name="pageIndex"></param>
-        private void LoadData(int pageIndex)
+        /// <summary>每次只保留一页导出对象，筛选条件在导出开始时固定。</summary>
+        private async IAsyncEnumerable<ExcelPackageItemModel> ReadExportItemsAsync(PackageHistoryQuery filter,
+            Action<int> progress, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            const int pageSize = 500;
-            //这里的查询要分开锁，不然显示有卡顿
-            UiThread.Dispatcher.InvokeAsyncUnwrapped(async () =>
+            var pageCount = 1;
+            for (var page = 0; page < pageCount; page++)
             {
-                var loadingDialog = new LoadingDialog();
-                if (loadingDialog.DataContext is LoadingDialogViewModel model)
+                var result = await _packageHistoryQuery.HandleAsync(new SearchPackageHistoryQuery(
+                    filter with { IncludeTotal = page == 0 }, page, HistoryPageSize), cancellationToken);
+                if (page == 0) pageCount = (int)Math.Ceiling((decimal)result.Total / HistoryPageSize);
+                var rowNumber = page * HistoryPageSize;
+                foreach (var s in result.Items)
                 {
-                    model.Identifier = "DataManagementDialog";
-                    DialogHost.Show(loadingDialog, model.Identifier)
-                        .Forget("显示数据加载进度对话框");
-                    await Task.Delay(500);
-                    PackageItems.Clear();
-                    //获取格口集合
-                    var exitDefinitionInfoModels = await _packageExitCatalog.ListAsync();
-                    //获取条数
-                    var result = await _packageHistoryQuery.HandleAsync(
-                        new SearchPackageHistoryQuery(
-                            new PackageHistoryQuery(
-                            StartTime,
-                            EndTime,
-                            BarCode,
-                            SelectExitDefinitionInfo?.ExitName,
-                            MinWeight,
-                            MaxWeight,
-                            SelectedUploadStatus),
-                            pageIndex - 1,
-                            pageSize));
-                    if (result.Total > 0)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    yield return new ExcelPackageItemModel
                     {
-                        PageCount = result.Total / pageSize + (result.Total % pageSize > 0 ? 1 : 0);
-                        var infoModels = result.Items;
-
-                        if (infoModels?.Any() == true)
-                        {
-                            var itemModels = infoModels?.Select((s, i) => new PackageItemModel
-                            {
-                                Num = i + 1,
-                                TimestampMilliseconds = s.PackageTimestamped,
-                                Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
-                                Weight = (decimal)(s.WeightInfo?.FormattedWeight ?? 0),
-                                Length = (decimal)(s.VolumeInfo?.FormattedLength ?? 0),
-                                Width = (decimal)(s.VolumeInfo?.FormattedWidth ?? 0),
-                                Height = (decimal)(s.VolumeInfo?.FormattedHeight ?? 0),
-                                Volume = (decimal)(s.VolumeInfo?.FormattedVolume ?? 0),
-                                ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
-                                RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
-                                BarcodeImagePath = s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
-                                IsBarcodeImageExists = !string.IsNullOrWhiteSpace(
-                                    s.ImageInfos?.LastOrDefault(l => l.Type == 0)?.LocalPath),
-                                Other = s.Other ?? string.Empty,
-                                ExitName = s.ExitInfo?.PhysicalExit ?? string.Empty,
-                                PanoramaImageItems = s.ImageInfos?.Where(w => w.Type == 1)?.Select(ps =>
-                                new PanoramaImageItemModel()
-                                {
-                                    IsPanoramaImageExists = !string.IsNullOrWhiteSpace(ps.LocalPath),
-                                    PanoramaImagePath = ps.LocalPath
-                                })?.ToList() ?? new List<PanoramaImageItemModel>(),
-                                UploadInfo = new UploadItemModel
-                                {
-                                    DurationInSeconds = s.UploadInfo?.DurationInSeconds ?? 0,
-                                    ExceptionMessage = s.UploadInfo?.ExceptionMessage ?? string.Empty,
-                                    InterfaceParameters = s.UploadInfo?.InterfaceParameters ?? string.Empty,
-                                    IsSuccess = s.UploadInfo?.RequestStatus == UploadStatus.Succeeded,
-                                    RequestContent = s.UploadInfo?.RequestContent ?? string.Empty,
-                                    RequestTime = s.UploadInfo?.RequestTime,
-                                    RequestUrl = s.UploadInfo?.RequestUrl ?? string.Empty,
-                                    ResponseContent = s.UploadInfo?.ResponseContent ?? string.Empty,
-                                    ResponseTime = s.UploadInfo?.ResponseTime
-                                },
-                                WeightInfo = new WeightItemModel()
-                                {
-                                    CreateTime = s.WeightInfo?.CreateTime,
-                                    FormattedWeight = s.WeightInfo?.FormattedWeight ?? 0,
-                                    OriginalText = s.WeightInfo?.OriginalText ?? string.Empty,
-                                    SourceType = s.WeightInfo?.SourceType ?? SourceType.SerialPort
-                                },
-                                SortingInfo = new SortingItemModel
-                                {
-                                    IsSortingUsed = s.SortingInfo?.IsSortingUsed ?? false,
-                                    SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
-                                    SortingMode = s.SortingInfo?.SortingMode ?? SortMode.None,
-                                    IsCreatedByLowerMachine = s.SortingInfo?.IsCreatedByLowerMachine ?? false,
-                                    CommunicationMethod = s.SortingInfo?.CommunicationMethod ?? CommunicationsType.None,
-                                    ChecksumProtocolName = s.SortingInfo?.ChecksumProtocolName ?? string.Empty,
-                                    ConnectionName = s.SortingInfo?.ConnectionName ?? string.Empty,
-                                    IsAbnormalSorting = s.SortingInfo?.IsAbnormalSorting ?? false,
-                                    AbnormalSortingType = s.SortingInfo?.AbnormalSortingType ?? AbnormalSortingType.None,
-                                    InstructionInfoItems = new ObservableCollection<InstructionInfoItemModel>(s.SortingInfo?.InstructionInfos?
-                                        .Select(s1 => new InstructionInfoItemModel()
-                                        {
-                                            InstructionGeneratedTime = s1.InstructionGeneratedTime,
-                                            InstructionType = s1.InstructionType,
-                                            InstructionContent = s1.InstructionContent
-                                        })?.ToList() ?? new List<InstructionInfoItemModel>())
-                                },
-                                VolumeInfo = new VolumeItemModel()
-                                {
-                                    CreateTime = s.VolumeInfo?.CreateTime,
-                                    FormattedHeight = s.VolumeInfo?.FormattedHeight ?? 0,
-                                    FormattedLength = s.VolumeInfo?.FormattedLength ?? 0,
-                                    FormattedVolume = s.VolumeInfo?.FormattedVolume ?? 0,
-                                    FormattedWidth = s.VolumeInfo?.FormattedWidth ?? 0,
-                                    OriginalText = s.VolumeInfo?.OriginalText ?? string.Empty,
-                                    SourceType = s.VolumeInfo?.SourceType ?? SourceType.Camera
-                                },
-                                OcrInfo = new OcrItemInfo()
-                                {
-                                    CreateTime = s.OcrInfo?.RecognizeTime,
-                                    /*OcrInterfaceName = s.OcrInfo?.OcrInterfaceName ?? string.Empty,
-                                    OriginalContent = s.OcrInfo?.OriginalContent ?? string.Empty,
-                                    ParsedContent = s.OcrInfo?.ParsedContent ?? string.Empty*/
-                                },
-                                ExitInfo = new ExitInfoItemModel()
-                                {
-                                    PhysicalExitId = s.ExitInfo?.PhysicalExitId ?? 0,
-                                    PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
-                                    TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty,
-                                },
-                                IsUploadedToCloudVideo = s.IsUploadedToCloudVideo
-                            })?.ToList();
-                            await Task.Delay(100);
-                            PackageItems.AddRange(itemModels);
-                            DataManagementMessageQueue?.Enqueue($"共查询到:{result.Total}条数据,显示{PackageItems?.Count}条");
-                        }
-                        else
-                        {
-                            DataManagementMessageQueue?.Enqueue("Error loading data. Please try again.");
-                        }
-                    }
-                    else
-                    {
-                        DataManagementMessageQueue?.Enqueue("No data matching the criteria found.");
-                    }
-
-                    if (DialogHost.IsDialogOpen(model.Identifier))
-                    {
-                        DialogHost.Close(model.Identifier);
-                    }
+                        Num = ++rowNumber,
+                        TimestampMilliseconds = s.PackageTimestamped, Barcode = s.BarCodeInfo?.Barcode ?? string.Empty,
+                        Weight = s.WeightInfo?.FormattedWeight ?? 0, Length = s.VolumeInfo?.FormattedLength ?? 0,
+                        Width = s.VolumeInfo?.FormattedWidth ?? 0, Height = s.VolumeInfo?.FormattedHeight ?? 0,
+                        Volume = s.VolumeInfo?.FormattedVolume ?? 0, ScanTime = s.BarCodeInfo?.ScanTime ?? s.PackageCreateTime,
+                        RequestStatus = s.UploadInfo?.RequestStatus ?? UploadStatus.NotUploaded,
+                        BarcodeImagePath = s.ImageInfos.LastOrDefault(l => l.Type == 0)?.LocalPath ?? string.Empty,
+                        TheoreticalExit = s.ExitInfo?.TheoreticalExit ?? string.Empty, PhysicalExit = s.ExitInfo?.PhysicalExit ?? string.Empty,
+                        SortingCode = s.SortingInfo?.SortingCode ?? string.Empty,
+                        SignalCallbackInstructionGeneratedTime = s.SortingInfo?.InstructionInfos.LastOrDefault(l => l.InstructionType
+                            is InstructionType.SignalCallback or InstructionType.PackageExceptionEx)?.InstructionGeneratedTime
+                    };
                 }
-            }, DispatcherPriority.Background).Forget("加载数据管理列表");
+                progress(Math.Min(99, (page + 1) * 100 / Math.Max(1, pageCount)));
+            }
+        }
+
+        /// <summary>在 UI 线程取得不可变的筛选条件，后台任务不会读取正在编辑的控件属性。</summary>
+        private PackageHistoryQuery CreateHistoryFilter() => new(StartTime, EndTime, BarCode,
+            SelectExitDefinitionInfo?.ExitName, MinWeight, MaxWeight, SelectedUploadStatus);
+
+        /// <summary>启动可取消的单页读取并观察其异常。</summary>
+        private void LoadData(int pageIndex) => LoadDataAsync(pageIndex).Forget("加载数据管理列表");
+
+        /// <summary>取消旧请求，后台读取和映射，只在 UI 线程一次性替换最新的有界页面。</summary>
+        private async Task LoadDataAsync(int pageIndex)
+        {
+            var filter = CreateHistoryFilter();
+            var dispatcher = UiThread.Dispatcher;
+            CancelBackgroundOperation(_queryCancellation, "取消已替代的数据查询");
+            _queryDialog?.Dispose();
+            using var cancellation = new CancellationTokenSource();
+            _queryCancellation = cancellation;
+            LogPageDialog? dialog = null;
+            try
+            {
+                if (System.Windows.Application.Current is not null)
+                {
+                    var loading = new LoadingDialog();
+                    dialog = LogPageDialog.Open(loading, "DataManagementDialog");
+                    _queryDialog = dialog;
+                    dialog.Completion.Forget("显示数据加载进度");
+                }
+                var result = await _packageHistoryQuery.HandleAsync(new SearchPackageHistoryQuery(
+                    filter, Math.Max(0, pageIndex - 1), HistoryPageSize), cancellation.Token);
+                var items = await LowPriorityWorkScheduler.Shared.RunAsync(() =>
+                    new ObservableCollection<PackageItemModel>(result.Items.Select(DataManagementItemMapper.Map)), cancellation.Token);
+                await dispatcher.InvokeAsync(() =>
+                {
+                    if (!ReferenceEquals(_queryCancellation, cancellation)) return;
+                    PageCount = (int)Math.Ceiling((decimal)result.Total / HistoryPageSize);
+                    PackageItems = items;
+                    DataManagementMessageQueue.Enqueue(result.Total == 0 ? "没有符合条件的数据。" : $"共查询到:{result.Total}条数据,显示{items.Count}条");
+                }, DispatcherPriority.Background, cancellation.Token);
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (Exception error)
+            {
+                if (ReferenceEquals(_queryCancellation, cancellation))
+                {
+                    NLog.LogManager.GetCurrentClassLogger().Warn(error, "加载数据管理列表失败");
+                    DataManagementMessageQueue.Enqueue("数据查询失败，请稍后重试。" + error.Message);
+                }
+            }
+            finally
+            {
+                dialog?.Dispose();
+                if (ReferenceEquals(_queryDialog, dialog)) _queryDialog = null;
+                if (ReferenceEquals(_queryCancellation, cancellation)) _queryCancellation = null;
+            }
         }
 
         public ICommand ShowDetailsCommand => new DelegateCommand<object>(ShowDetailsDelegate);
 
         private void ShowDetailsDelegate(object obj)
         {
-            _dialogService.Show("PackageDetailsDialog", new DialogParameters { { "PackageItem", obj } }, null);
+            if (obj is PackageItemModel item) LoadDetailsAsync(item, "PackageDetailsDialog").Forget("加载单包裹详情");
+        }
+
+        /// <summary>打开详情时才读取单个包裹的完整接口报文，列表查询不占用这些大字段的内存。</summary>
+        private async Task LoadDetailsAsync(PackageItemModel item, string dialogName)
+        {
+            CancelBackgroundOperation(_detailsCancellation, "取消已替代的详情读取");
+            using var cancellation = new CancellationTokenSource();
+            _detailsCancellation = cancellation;
+            try
+            {
+                var page = await _packageHistoryQuery.HandleAsync(new SearchPackageHistoryQuery(
+                    new PackageHistoryQuery(PackageTimestamp: item.TimestampMilliseconds), 0, 1), cancellation.Token);
+                cancellation.Token.ThrowIfCancellationRequested();
+                if (page.Items.Count == 0)
+                {
+                    DataManagementMessageQueue.Enqueue("该包裹记录已不存在。");
+                    return;
+                }
+                var detail = await LowPriorityWorkScheduler.Shared.RunAsync(
+                    () => DataManagementItemMapper.Map(page.Items[0], item.Num - 1), cancellation.Token);
+                cancellation.Token.ThrowIfCancellationRequested();
+                _dialogService.Show(dialogName, new DialogParameters { { "PackageItem", detail } }, null);
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (Exception error)
+            {
+                NLog.LogManager.GetCurrentClassLogger().Warn(error, "加载单包裹详情失败");
+                DataManagementMessageQueue.Enqueue("包裹详情读取失败，请稍后重试。");
+            }
+            finally
+            {
+                if (ReferenceEquals(_detailsCancellation, cancellation)) _detailsCancellation = null;
+            }
         }
 
         /// <summary>
@@ -825,7 +800,11 @@ namespace JayTom.Dws.Client.ViewModels.Pages.Preferences
         /// </summary>
         public ICommand ViewNvrRecordingCommand => new DelegateCommand<PackageItemModel>(ViewNvrRecordingDelegate);
 
-        private async void ViewNvrRecordingDelegate(PackageItemModel obj)
+        /// <summary>查看包裹录像入口统一观察异步异常，切页和宿主关闭不会导致程序崩溃。</summary>
+        private void ViewNvrRecordingDelegate(PackageItemModel obj) => ViewNvrRecordingAsync(obj).Forget("查看包裹录像");
+
+        /// <summary>异步处理查看包裹录像操作。</summary>
+        private async Task ViewNvrRecordingAsync(PackageItemModel obj)
         {
             var nvrRecordingDialog = new NvrRecordingDialog();
             if (nvrRecordingDialog.DataContext is NvrRecordingViewModel model)

@@ -49,6 +49,9 @@ namespace JayTom.Dws.Legacy.Contracts.Services.ImageService {
     public class ImageSavedEventArgs : EventArgs {
         public long PackageTimestamp { get; set; }
 
+        /// <summary>保存的图片已包含条码、扫码时间和重量水印，可直接复用合规 JPEG。</summary>
+        public bool HasBarcodeScanWeightWatermark { get; set; }
+
         /// <summary>
         /// 相机序列号
         /// </summary>

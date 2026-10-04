@@ -199,6 +199,8 @@ PublishScripts/
 *.snupkg
 # The packages folder can be ignored because of Package Restore
 **/[Pp]ackages/*
+# Contracts 的 Packages 保存包裹源码，不属于 NuGet 下载缓存。
+!JayTom.Dws.Legacy.Contracts/Packages/*.cs
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
@@ -366,3 +368,6 @@ FodyWeavers.xsd
 /temp/windowsdesktop-runtime-7.0.20-win-x64.exe
 /JayTom.Dws.Installation/Assets/dotnet-hosting-7.0.20-win.exe
 /JayTom.Dws.Installation/Assets/windowsdesktop-runtime-7.0.20-win-x64.exe
+
+# Local Docker/Windows simulation binaries, isolated databases, images and raw reports.
+/output/simulation/

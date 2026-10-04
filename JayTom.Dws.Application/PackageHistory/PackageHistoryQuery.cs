@@ -12,5 +12,7 @@ public sealed record PackageHistoryQuery(
     string? PhysicalExit = null,
     decimal MinWeight = 0,
     decimal MaxWeight = 0,
-    UploadStatus? UploadStatus = null);
+    UploadStatus? UploadStatus = null,
+    bool IncludeTotal = true,
+    long? PackageTimestamp = null);
 

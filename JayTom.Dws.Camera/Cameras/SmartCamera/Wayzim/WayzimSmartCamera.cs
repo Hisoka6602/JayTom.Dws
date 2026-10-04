@@ -307,6 +307,14 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Wayzim {
                 }
 
                 var barcodeConsumerCount = BarcodeReadTriggered is null ? 0 : results.Count;
+                if (codeInfos.Count > 0 && results.Count == 0) {
+                    FilteredBarcodeReturned?.Invoke(this, new BarcodeReadEventArgs {
+                        Barcode = "filtered", IsFiltered = true,
+                        CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
+                        ScanTime = frame.ScanTime, Timestamp = frame.Timestamp,
+                        FrameNo = frame.FrameNo, SdkFrameNo = frame.SdkFrameNo
+                    });
+                }
                 var observesNoReadCycle = CanReportNoRead && NotBarcodeHitEvent is not null;
                 var noReadGate = observesNoReadCycle ? _noReadGate : null;
                 if (codeInfos.Count > 0 && noReadGate is not null) {

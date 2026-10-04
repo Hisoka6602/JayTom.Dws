@@ -1,0 +1,1709 @@
+[
+  {
+    "kind": "text",
+    "tag": "JayTom DWS：密集包裹延迟相机响应链路",
+    "x": 130.0,
+    "top": 84,
+    "w": 1490,
+    "h": 48,
+    "size": 36
+  },
+  {
+    "kind": "text",
+    "tag": "单页垂直泳道",
+    "x": 1690,
+    "top": 98,
+    "w": 195,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "300 ms 连续触发 | C 已创建才返回 A",
+    "x": 130.0,
+    "top": 163,
+    "w": 1770.0,
+    "h": 30,
+    "size": 22
+  },
+  {
+    "kind": "text",
+    "tag": "场景前提",
+    "x": 158.0,
+    "top": 266,
+    "w": 130,
+    "h": 30,
+    "size": 22
+  },
+  {
+    "kind": "text",
+    "tag": "创建包裹与拍照来自同次物理触发；每次必返最终结果",
+    "x": 306.0,
+    "top": 263,
+    "w": 1560.0,
+    "h": 58,
+    "size": 20
+  },
+  {
+    "kind": "text",
+    "tag": "lane:0",
+    "x": 138.0,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:0.subtitle",
+    "x": 140.0,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:1",
+    "x": 359.25,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:1.subtitle",
+    "x": 361.25,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:2",
+    "x": 580.5,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:2.subtitle",
+    "x": 582.5,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:3",
+    "x": 801.75,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:3.subtitle",
+    "x": 803.75,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:4",
+    "x": 1023.0,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:4.subtitle",
+    "x": 1025.0,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:5",
+    "x": 1244.25,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:5.subtitle",
+    "x": 1246.25,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:6",
+    "x": 1465.5,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:6.subtitle",
+    "x": 1467.5,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "lane:7",
+    "x": 1686.75,
+    "top": 504.0,
+    "w": 205.25,
+    "h": 31,
+    "size": 23
+  },
+  {
+    "kind": "text",
+    "tag": "lane:7.subtitle",
+    "x": 1688.75,
+    "top": 567.0,
+    "w": 201.25,
+    "h": 20,
+    "size": 14
+  },
+  {
+    "kind": "text",
+    "tag": "time:A",
+    "x": 24,
+    "top": 834,
+    "w": 100,
+    "h": 25,
+    "size": 18
+  },
+  {
+    "kind": "text",
+    "tag": "time:B",
+    "x": 24,
+    "top": 1054,
+    "w": 100,
+    "h": 25,
+    "size": 18
+  },
+  {
+    "kind": "text",
+    "tag": "time:C",
+    "x": 24,
+    "top": 1274,
+    "w": 100,
+    "h": 25,
+    "size": 18
+  },
+  {
+    "kind": "text",
+    "tag": "time:RA",
+    "x": 24,
+    "top": 1630,
+    "w": 100,
+    "h": 25,
+    "size": 18
+  },
+  {
+    "kind": "text",
+    "tag": "time:RB",
+    "x": 18,
+    "top": 2397,
+    "w": 106,
+    "h": 25,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "time:RC",
+    "x": 18,
+    "top": 2627,
+    "w": 106,
+    "h": 25,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "stage:阶段 1 | 0-600 ms：A、B、C 密集触发，创建与拍照并行，结果尚未返回",
+    "x": 156.0,
+    "top": 700,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "stage:阶段 2 | C 已创建才返回 A：固定次序消费，窗口只校验原车，后车不顺延",
+    "x": 156.0,
+    "top": 1470,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "stage:阶段 3 | 每个原车的通用处理：多相机融合、NoRead / 过滤、窗口与齐套",
+    "x": 156.0,
+    "top": 2830,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "stage:阶段 4 | A 一旦齐套即可继续：界面、API、持久化与存图并行",
+    "x": 156.0,
+    "top": 3530,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "stage:阶段 5 | API 可乱序完成：响应保留原车身份，选择目标口或配置异常口",
+    "x": 156.0,
+    "top": 4398,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "stage:阶段 6 | 向 PLC 回复原车 A，区分写入成功、真实落格及软件补记",
+    "x": 156.0,
+    "top": 5000,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "trigger-A.title",
+    "x": 377.25,
+    "top": 827,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "trigger-A.detail",
+    "x": 377.25,
+    "top": 882,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "trigger-A",
+    "x": 365.25,
+    "top": 780,
+    "w": 193.25,
+    "h": 186,
+    "lane": 1,
+    "number": 1
+  },
+  {
+    "kind": "text",
+    "tag": "photo-A.title",
+    "x": 598.5,
+    "top": 827,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "photo-A.detail",
+    "x": 598.5,
+    "top": 858,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "photo-A",
+    "x": 586.5,
+    "top": 780,
+    "w": 193.25,
+    "h": 186,
+    "lane": 2,
+    "number": 2
+  },
+  {
+    "kind": "text",
+    "tag": "slot-A.title",
+    "x": 819.75,
+    "top": 827,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "slot-A.detail",
+    "x": 819.75,
+    "top": 858,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "slot-A",
+    "x": 807.75,
+    "top": 780,
+    "w": 193.25,
+    "h": 186,
+    "lane": 3,
+    "number": 3
+  },
+  {
+    "kind": "text",
+    "tag": "trigger-B.title",
+    "x": 377.25,
+    "top": 1047,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "trigger-B.detail",
+    "x": 377.25,
+    "top": 1102,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "trigger-B",
+    "x": 365.25,
+    "top": 1000,
+    "w": 193.25,
+    "h": 186,
+    "lane": 1,
+    "number": 4
+  },
+  {
+    "kind": "text",
+    "tag": "photo-B.title",
+    "x": 598.5,
+    "top": 1047,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "photo-B.detail",
+    "x": 598.5,
+    "top": 1078,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "photo-B",
+    "x": 586.5,
+    "top": 1000,
+    "w": 193.25,
+    "h": 186,
+    "lane": 2,
+    "number": 5
+  },
+  {
+    "kind": "text",
+    "tag": "slot-B.title",
+    "x": 819.75,
+    "top": 1047,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "slot-B.detail",
+    "x": 819.75,
+    "top": 1078,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "slot-B",
+    "x": 807.75,
+    "top": 1000,
+    "w": 193.25,
+    "h": 186,
+    "lane": 3,
+    "number": 6
+  },
+  {
+    "kind": "text",
+    "tag": "trigger-C.title",
+    "x": 377.25,
+    "top": 1267,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "trigger-C.detail",
+    "x": 377.25,
+    "top": 1322,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "trigger-C",
+    "x": 365.25,
+    "top": 1220,
+    "w": 193.25,
+    "h": 186,
+    "lane": 1,
+    "number": 7
+  },
+  {
+    "kind": "text",
+    "tag": "photo-C.title",
+    "x": 598.5,
+    "top": 1267,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "photo-C.detail",
+    "x": 598.5,
+    "top": 1298,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "photo-C",
+    "x": 586.5,
+    "top": 1220,
+    "w": 193.25,
+    "h": 186,
+    "lane": 2,
+    "number": 8
+  },
+  {
+    "kind": "text",
+    "tag": "slot-C.title",
+    "x": 819.75,
+    "top": 1267,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "slot-C.detail",
+    "x": 819.75,
+    "top": 1298,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "slot-C",
+    "x": 807.75,
+    "top": 1220,
+    "w": 193.25,
+    "h": 186,
+    "lane": 3,
+    "number": 9
+  },
+  {
+    "kind": "text",
+    "tag": "waiting-note.title",
+    "x": 1262.25,
+    "top": 854,
+    "w": 611.75,
+    "h": 25,
+    "size": 21.0
+  },
+  {
+    "kind": "text",
+    "tag": "waiting-note.detail",
+    "x": 1262.25,
+    "top": 886,
+    "w": 611.75,
+    "h": 250,
+    "size": 18
+  },
+  {
+    "kind": "box",
+    "tag": "waiting-note",
+    "x": 1250.25,
+    "top": 835,
+    "w": 635.75,
+    "h": 496,
+    "lane": 5,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "result-A.title",
+    "x": 598.5,
+    "top": 1597,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "result-A.detail",
+    "x": 598.5,
+    "top": 1652,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "result-A",
+    "x": 586.5,
+    "top": 1550,
+    "w": 193.25,
+    "h": 226,
+    "lane": 2,
+    "number": 10
+  },
+  {
+    "kind": "text",
+    "tag": "pair-A.title",
+    "x": 819.75,
+    "top": 1597,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "pair-A.detail",
+    "x": 819.75,
+    "top": 1628,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "pair-A",
+    "x": 807.75,
+    "top": 1550,
+    "w": 193.25,
+    "h": 208,
+    "lane": 3,
+    "number": 11
+  },
+  {
+    "kind": "text",
+    "tag": "identity-note.title",
+    "x": 1262.25,
+    "top": 1569,
+    "w": 611.75,
+    "h": 25,
+    "size": 21.0
+  },
+  {
+    "kind": "text",
+    "tag": "identity-note.detail",
+    "x": 1262.25,
+    "top": 1601,
+    "w": 611.75,
+    "h": 75,
+    "size": 18
+  },
+  {
+    "kind": "box",
+    "tag": "identity-note",
+    "x": 1250.25,
+    "top": 1550,
+    "w": 635.75,
+    "h": 208,
+    "lane": 5,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "window-A.title",
+    "x": 819.75,
+    "top": 1867,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "window-A.detail",
+    "x": 819.75,
+    "top": 1898,
+    "w": 169.25,
+    "h": 140,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "window-A",
+    "x": 807.75,
+    "top": 1820,
+    "w": 193.25,
+    "h": 250,
+    "lane": 3,
+    "number": 12
+  },
+  {
+    "kind": "text",
+    "tag": "window-reject.title",
+    "x": 377.25,
+    "top": 1839,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "window-reject.detail",
+    "x": 377.25,
+    "top": 1870,
+    "w": 169.25,
+    "h": 140,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "window-reject",
+    "x": 365.25,
+    "top": 1820,
+    "w": 193.25,
+    "h": 250,
+    "lane": 1,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "bind-A.title",
+    "x": 819.75,
+    "top": 2147,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "bind-A.detail",
+    "x": 819.75,
+    "top": 2178,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "bind-A",
+    "x": 807.75,
+    "top": 2100,
+    "w": 193.25,
+    "h": 190,
+    "lane": 3,
+    "number": 13
+  },
+  {
+    "kind": "text",
+    "tag": "timestamp-note.title",
+    "x": 1262.25,
+    "top": 1869,
+    "w": 611.75,
+    "h": 25,
+    "size": 21.0
+  },
+  {
+    "kind": "text",
+    "tag": "timestamp-note.detail",
+    "x": 1262.25,
+    "top": 1901,
+    "w": 611.75,
+    "h": 200,
+    "size": 18
+  },
+  {
+    "kind": "box",
+    "tag": "timestamp-note",
+    "x": 1250.25,
+    "top": 1850,
+    "w": 635.75,
+    "h": 395,
+    "lane": 5,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "result-B.title",
+    "x": 598.5,
+    "top": 2387,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "result-B.detail",
+    "x": 598.5,
+    "top": 2442,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "result-B",
+    "x": 586.5,
+    "top": 2340,
+    "w": 193.25,
+    "h": 200,
+    "lane": 2,
+    "number": 14
+  },
+  {
+    "kind": "text",
+    "tag": "pair-B.title",
+    "x": 819.75,
+    "top": 2387,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "pair-B.detail",
+    "x": 819.75,
+    "top": 2418,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "pair-B",
+    "x": 807.75,
+    "top": 2340,
+    "w": 193.25,
+    "h": 190,
+    "lane": 3,
+    "number": 15
+  },
+  {
+    "kind": "text",
+    "tag": "result-C.title",
+    "x": 598.5,
+    "top": 2617,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "result-C.detail",
+    "x": 598.5,
+    "top": 2672,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "result-C",
+    "x": 586.5,
+    "top": 2570,
+    "w": 193.25,
+    "h": 200,
+    "lane": 2,
+    "number": 16
+  },
+  {
+    "kind": "text",
+    "tag": "pair-C.title",
+    "x": 819.75,
+    "top": 2617,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "pair-C.detail",
+    "x": 819.75,
+    "top": 2648,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "pair-C",
+    "x": 807.75,
+    "top": 2570,
+    "w": 193.25,
+    "h": 190,
+    "lane": 3,
+    "number": 17
+  },
+  {
+    "kind": "text",
+    "tag": "fusion.title",
+    "x": 819.75,
+    "top": 2967,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "fusion.detail",
+    "x": 819.75,
+    "top": 3022,
+    "w": 169.25,
+    "h": 120,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "fusion",
+    "x": 807.75,
+    "top": 2920,
+    "w": 193.25,
+    "h": 238,
+    "lane": 3,
+    "number": 18
+  },
+  {
+    "kind": "text",
+    "tag": "camera-fusion.title",
+    "x": 598.5,
+    "top": 2939,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "camera-fusion.detail",
+    "x": 598.5,
+    "top": 2970,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "camera-fusion",
+    "x": 586.5,
+    "top": 2920,
+    "w": 193.25,
+    "h": 218,
+    "lane": 2,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "noread-note.title",
+    "x": 1262.25,
+    "top": 2939,
+    "w": 611.75,
+    "h": 25,
+    "size": 21.0
+  },
+  {
+    "kind": "text",
+    "tag": "noread-note.detail",
+    "x": 1262.25,
+    "top": 2971,
+    "w": 611.75,
+    "h": 75,
+    "size": 18
+  },
+  {
+    "kind": "box",
+    "tag": "noread-note",
+    "x": 1250.25,
+    "top": 2920,
+    "w": 635.75,
+    "h": 218,
+    "lane": 5,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "discard.title",
+    "x": 377.25,
+    "top": 3249,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "discard.detail",
+    "x": 377.25,
+    "top": 3280,
+    "w": 169.25,
+    "h": 120,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "discard",
+    "x": 365.25,
+    "top": 3230,
+    "w": 193.25,
+    "h": 220,
+    "lane": 1,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "fields.title",
+    "x": 819.75,
+    "top": 3277,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "fields.detail",
+    "x": 819.75,
+    "top": 3308,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "fields",
+    "x": 807.75,
+    "top": 3230,
+    "w": 193.25,
+    "h": 220,
+    "lane": 3,
+    "number": 19
+  },
+  {
+    "kind": "text",
+    "tag": "completed.title",
+    "x": 819.75,
+    "top": 3667,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "completed.detail",
+    "x": 819.75,
+    "top": 3698,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "completed",
+    "x": 807.75,
+    "top": 3620,
+    "w": 193.25,
+    "h": 172,
+    "lane": 3,
+    "number": 20
+  },
+  {
+    "kind": "text",
+    "tag": "ui.title",
+    "x": 156.0,
+    "top": 3947,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "ui.detail",
+    "x": 156.0,
+    "top": 3978,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "ui",
+    "x": 144.0,
+    "top": 3900,
+    "w": 193.25,
+    "h": 200,
+    "lane": 0,
+    "number": 21
+  },
+  {
+    "kind": "text",
+    "tag": "upload.title",
+    "x": 1041.0,
+    "top": 3947,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "upload.detail",
+    "x": 1041.0,
+    "top": 3978,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "upload",
+    "x": 1029.0,
+    "top": 3900,
+    "w": 193.25,
+    "h": 200,
+    "lane": 4,
+    "number": 22
+  },
+  {
+    "kind": "text",
+    "tag": "persist.title",
+    "x": 1704.75,
+    "top": 3947,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "persist.detail",
+    "x": 1704.75,
+    "top": 3978,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "persist",
+    "x": 1692.75,
+    "top": 3900,
+    "w": 193.25,
+    "h": 200,
+    "lane": 7,
+    "number": 23
+  },
+  {
+    "kind": "text",
+    "tag": "api.title",
+    "x": 1262.25,
+    "top": 4217,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "api.detail",
+    "x": 1262.25,
+    "top": 4248,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "api",
+    "x": 1250.25,
+    "top": 4170,
+    "w": 193.25,
+    "h": 200,
+    "lane": 5,
+    "number": 24
+  },
+  {
+    "kind": "text",
+    "tag": "api-response.title",
+    "x": 1041.0,
+    "top": 4489,
+    "w": 169.25,
+    "h": 48,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "api-response.detail",
+    "x": 1041.0,
+    "top": 4544,
+    "w": 169.25,
+    "h": 140,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "api-response",
+    "x": 1029.0,
+    "top": 4470,
+    "w": 193.25,
+    "h": 240,
+    "lane": 4,
+    "number": null
+  },
+  {
+    "kind": "text",
+    "tag": "rules.title",
+    "x": 1483.5,
+    "top": 4517,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "rules.detail",
+    "x": 1483.5,
+    "top": 4548,
+    "w": 169.25,
+    "h": 100,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "rules",
+    "x": 1471.5,
+    "top": 4470,
+    "w": 193.25,
+    "h": 240,
+    "lane": 6,
+    "number": 25
+  },
+  {
+    "kind": "text",
+    "tag": "send.title",
+    "x": 1483.5,
+    "top": 4797,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "send.detail",
+    "x": 1483.5,
+    "top": 4828,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "send",
+    "x": 1471.5,
+    "top": 4750,
+    "w": 193.25,
+    "h": 174,
+    "lane": 6,
+    "number": 26
+  },
+  {
+    "kind": "text",
+    "tag": "plc-command.title",
+    "x": 377.25,
+    "top": 4797,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "plc-command.detail",
+    "x": 377.25,
+    "top": 4828,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "plc-command",
+    "x": 365.25,
+    "top": 4750,
+    "w": 193.25,
+    "h": 174,
+    "lane": 1,
+    "number": 27
+  },
+  {
+    "kind": "text",
+    "tag": "plc-fall.title",
+    "x": 377.25,
+    "top": 5147,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "plc-fall.detail",
+    "x": 377.25,
+    "top": 5178,
+    "w": 169.25,
+    "h": 60,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "plc-fall",
+    "x": 365.25,
+    "top": 5100,
+    "w": 193.25,
+    "h": 188,
+    "lane": 1,
+    "number": 28
+  },
+  {
+    "kind": "text",
+    "tag": "confirm.title",
+    "x": 1483.5,
+    "top": 5147,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "confirm.detail",
+    "x": 1483.5,
+    "top": 5178,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "confirm",
+    "x": 1471.5,
+    "top": 5100,
+    "w": 193.25,
+    "h": 200,
+    "lane": 6,
+    "number": 29
+  },
+  {
+    "kind": "text",
+    "tag": "closed.title",
+    "x": 1704.75,
+    "top": 5377,
+    "w": 169.25,
+    "h": 24,
+    "size": 18.2
+  },
+  {
+    "kind": "text",
+    "tag": "closed.detail",
+    "x": 1704.75,
+    "top": 5408,
+    "w": 169.25,
+    "h": 80,
+    "size": 16.5
+  },
+  {
+    "kind": "box",
+    "tag": "closed",
+    "x": 1692.75,
+    "top": 5330,
+    "w": 193.25,
+    "h": 176,
+    "lane": 7,
+    "number": 30
+  },
+  {
+    "kind": "text",
+    "tag": "fall-timeout-note.title",
+    "x": 819.75,
+    "top": 5119,
+    "w": 611.75,
+    "h": 25,
+    "size": 21.0
+  },
+  {
+    "kind": "text",
+    "tag": "fall-timeout-note.detail",
+    "x": 819.75,
+    "top": 5151,
+    "w": 611.75,
+    "h": 50,
+    "size": 18
+  },
+  {
+    "kind": "box",
+    "tag": "fall-timeout-note",
+    "x": 807.75,
+    "top": 5100,
+    "w": 635.75,
+    "h": 188,
+    "lane": 3,
+    "number": null
+  },
+  {
+    "kind": "label",
+    "tag": "创建指令 A",
+    "x": 638.003662109375,
+    "top": 742.0,
+    "w": 99.99267578125,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "创建指令 B",
+    "x": 638.574951171875,
+    "top": 962.0,
+    "w": 98.85009765625,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "创建指令 C",
+    "x": 638.263671875,
+    "top": 1182.0,
+    "w": 99.47265625,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "原车失效 / 越界",
+    "x": 619.857177734375,
+    "top": 1866.0,
+    "w": 130.28564453125,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "原车通过",
+    "x": 861.875,
+    "top": 2071.0,
+    "w": 85.0,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "A 结束，B 仍对应 B",
+    "x": 606.153564453125,
+    "top": 2296.0,
+    "w": 157.69287109375,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "允许保留且原车通过",
+    "x": 824.375,
+    "top": 3180.0,
+    "w": 160.0,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "过滤 / 丢弃仅影响本车",
+    "x": 597.357177734375,
+    "top": 3166.0,
+    "w": 175.28564453125,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "A 完成后并行继续；B、C 独立处理",
+    "x": 1140.5615234375,
+    "top": 3836.0,
+    "w": 258.876953125,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "HTTP 查询",
+    "x": 1189.292724609375,
+    "top": 4120.0,
+    "w": 97.41455078125,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "A 的业务响应",
+    "x": 1182.503662109375,
+    "top": 4356.0,
+    "w": 114.99267578125,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "原请求身份",
+    "x": 1300.0,
+    "top": 4576.0,
+    "w": 100.0,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "有效身份、格口与绑定",
+    "x": 1480.625,
+    "top": 4716.0,
+    "w": 175.0,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "原车 A 的 Id + 目标格口",
+    "x": 956.06201171875,
+    "top": 4796.0,
+    "w": 187.8759765625,
+    "h": 28
+  },
+  {
+    "kind": "label",
+    "tag": "回执对应原车 A",
+    "x": 935.003662109375,
+    "top": 5046.0,
+    "w": 129.99267578125,
+    "h": 28
+  },
+  {
+    "kind": "text",
+    "tag": "stage:补充 | 相同的 650 ms 回调，窗口结论取决于实际 ScanTime",
+    "x": 156.0,
+    "top": 5610,
+    "w": 1718.0,
+    "h": 29,
+    "size": 21
+  },
+  {
+    "kind": "text",
+    "tag": "table:0:0",
+    "x": 146.0,
+    "top": 5704,
+    "w": 373,
+    "h": 23,
+    "size": 19
+  },
+  {
+    "kind": "text",
+    "tag": "table:0:1",
+    "x": 551.0,
+    "top": 5704,
+    "w": 513,
+    "h": 23,
+    "size": 19
+  },
+  {
+    "kind": "text",
+    "tag": "table:0:2",
+    "x": 1096.0,
+    "top": 5704,
+    "w": 788,
+    "h": 23,
+    "size": 19
+  },
+  {
+    "kind": "text",
+    "tag": "table:1:0",
+    "x": 146.0,
+    "top": 5762,
+    "w": 373,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:1:1",
+    "x": 551.0,
+    "top": 5762,
+    "w": 513,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:1:2",
+    "x": 1096.0,
+    "top": 5762,
+    "w": 788,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:2:0",
+    "x": 146.0,
+    "top": 5838,
+    "w": 373,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:2:1",
+    "x": 551.0,
+    "top": 5838,
+    "w": 513,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:2:2",
+    "x": 1096.0,
+    "top": 5838,
+    "w": 788,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:3:0",
+    "x": 146.0,
+    "top": 5914,
+    "w": 373,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:3:1",
+    "x": 551.0,
+    "top": 5914,
+    "w": 513,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "table:3:2",
+    "x": 1096.0,
+    "top": 5914,
+    "w": 788,
+    "h": 23,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "防错位保证的前提：同次触发、每次最终必返、每台相",
+    "x": 154.0,
+    "top": 6046,
+    "w": 1722.0,
+    "h": 30,
+    "size": 22
+  },
+  {
+    "kind": "text",
+    "tag": "有效下位机创建不受普通创建防抖间隔限制；指令解析",
+    "x": 156.0,
+    "top": 6093,
+    "w": 1718.0,
+    "h": 78,
+    "size": 18
+  },
+  {
+    "kind": "text",
+    "tag": "排查密集场景的落盘证据",
+    "x": 130.0,
+    "top": 6250,
+    "w": 1770.0,
+    "h": 32,
+    "size": 24
+  },
+  {
+    "kind": "text",
+    "tag": "先按 packageTimestamp 找一次包",
+    "x": 130.0,
+    "top": 6303,
+    "w": 1770.0,
+    "h": 24,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "主要阶段：trigger.slot.queued",
+    "x": 130.0,
+    "top": 6340,
+    "w": 1770.0,
+    "h": 24,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "后续阶段：api.query.completed",
+    "x": 130.0,
+    "top": 6377,
+    "w": 1770.0,
+    "h": 24,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "observedAt 是窗口使用的 SDK 扫码",
+    "x": 130.0,
+    "top": 6414,
+    "w": 1770.0,
+    "h": 24,
+    "size": 17
+  },
+  {
+    "kind": "text",
+    "tag": "代码核对：YunShanPackageBackg",
+    "x": 130.0,
+    "top": 6500,
+    "w": 1770.0,
+    "h": 23,
+    "size": 16
+  },
+  {
+    "kind": "text",
+    "tag": "JayTom DWS 当前工作区 | 密集包裹与",
+    "x": 130.0,
+    "top": 6660,
+    "w": 1250,
+    "h": 25,
+    "size": 18
+  }
+]

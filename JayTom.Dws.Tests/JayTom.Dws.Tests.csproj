@@ -14,6 +14,11 @@
     <!-- 直接编译生产规则解析器，验证响应匹配行为且避免加载 WPF 应用及硬件。 -->
     <Compile Include="..\JayTom.Dws.Client\Service\Sorting\ApiSortingRuleEvaluator.cs" Link="Client\ApiSortingRuleEvaluator.cs" />
     <Compile Include="..\JayTom.Dws.Client\Service\Sorting\ApiRuleSnapshot.cs" Link="Client\ApiRuleSnapshot.cs" />
+    <Compile Include="..\JayTom.Dws.Client\Service\ImageService\DefaultImageStorageService.cs" Link="Client\DefaultImageStorageService.cs" />
+    <Compile Include="..\JayTom.Dws.Client\Service\ImageService\FtpUploadWork.cs" Link="Client\FtpUploadWork.cs" />
+    <Compile Include="..\JayTom.Dws.Client\Observability\PipelineFileLog.cs" Link="Client\PipelineFileLog.cs" />
+    <Compile Include="..\JayTom.Dws.Client\Service\BackgroundService\BoundedLogQueue.cs" Link="Client\BoundedLogQueue.cs" />
+    <None Include="..\JayTom.Dws.Client\Nlog.config" Link="Nlog.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

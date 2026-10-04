@@ -48,6 +48,20 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
             Release(candidate);
             return;
         }
+        if (candidate.IsFiltered && cycle.HasAcceptedBarcode) {
+            Release(candidate);
+            return;
+        }
+        if (!candidate.IsFiltered && !cycle.HasAcceptedBarcode) {
+            // 原始有码但被过滤的帧只占位；同周期后续有效码必须取代占位。
+            foreach (var filtered in cycle.PendingBarcodes) {
+                Release(filtered);
+                cycle.Barcodes.Remove(filtered.Barcode);
+            }
+            cycle.PendingBarcodes.Clear();
+            cycle.ScanTime = null;
+            cycle.HasAcceptedBarcode = true;
+        }
         if (!cycle.Barcodes.Add(candidate.Barcode)) {
             Release(candidate);
             return;
@@ -137,6 +151,8 @@ internal sealed class HikvisionTriggerCycles : IDisposable {
     private sealed class Cycle {
         public bool HasFrame { get; set; }
         public bool HasBarcode { get; set; }
+        /// <summary>表示该周期已有通过过滤的有效码，优先于过滤占位。</summary>
+        public bool HasAcceptedBarcode { get; set; }
         public bool Completed { get; set; }
         public long? EndSequence { get; set; }
         public DateTime? ScanTime { get; set; }

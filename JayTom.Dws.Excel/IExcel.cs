@@ -5,6 +5,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace JayTom.Dws.Plugin {
 
     public interface IExcel {
+        /// <summary>分页接收记录并使用有界行缓存写入 xlsx 文件，避免历史导出占满内存。</summary>
+        Task<bool> ExportStreamingAsync<T>(string path, string title, string sheetName,
+            IAsyncEnumerable<T> records, IReadOnlyCollection<string> excludedHeaders,
+            Action<int> progress, Action<Exception> exception, CancellationToken cancelToken = default);
 
         /// <summary>
         /// 读内容

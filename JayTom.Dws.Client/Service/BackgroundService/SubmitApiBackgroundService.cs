@@ -54,6 +54,7 @@ using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using static JayTom.Dws.Integrations.CaiNiao.CaiNiaoApi;
 using static Aliyun.OSS.Model.ListMultipartUploadsResult;
 using UploadResponse = JayTom.Dws.Integrations.Contracts.UploadResponse;
+using ApiExceptionType = JayTom.Dws.Integrations.Contracts.ApiExceptionType;
 using PluginType = JayTom.Dws.Application.Events.PluginType;
 using InstructionType = JayTom.Dws.Models.Package.InstructionType;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf.PackageSortingConfig;
@@ -210,7 +211,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             //图片暂时不写
                         };
                         shouldTrackSubmission = model.IsCreatedByLowerMachine;
-                        submissionKey = new DateTimeOffset(model.CreateTime).ToUnixTimeMilliseconds();
+                        submissionKey = model.Timestamp;
                     }
 
                     EnqueueWork(_submitItems, submitItem);
@@ -483,20 +484,27 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     ImageType = args.ImageType,
                     CameraSerialNumber = args.CameraSerialNumber ?? string.Empty,
                     ScanTime = args.ScanTime,
+                    HasBarcodeScanWeightWatermark = args.HasBarcodeScanWeightWatermark,
                 };
-                EnqueueWork(_savedImageItems, savedImageInfo);
-                if (_apiSettingsDto?.Type == ApiType.JtPolarDayApi &&
-                    args.PackageTimestamp > 0 &&
-                    args.ImageType == SaveImageType.BarcodeImage)
+                if (_apiSettingsDto?.Type == ApiType.JtPolarDayApi)
                 {
-                    _memoryCache.Set(
-                        CreateJtPolarDayImageCacheKey(args.PackageTimestamp),
-                        savedImageInfo,
-                        new MemoryCacheEntryOptions
+                    if (savedImageInfo.PackageTimestamp > 0 &&
+                        savedImageInfo.ImageType == SaveImageType.BarcodeImage &&
+                        !string.IsNullOrWhiteSpace(savedImageInfo.FilePath))
+                    {
+                        // 存图事件仅登记路径；读取和协议处理留给有界的回传工作器。
+                        _memoryCache.Set(CreateJtPolarDayImageCacheKey(savedImageInfo.PackageTimestamp),
+                            savedImageInfo, TimeSpan.FromMinutes(10));
+                        if (_packageSubmissionPushItems.TryGetValue(savedImageInfo.PackageTimestamp, out var pending))
                         {
-                            AbsoluteExpirationRelativeToNow =
-                                TimeSpan.FromMinutes(10)
-                        });
+                            pending.WaitSubmitTime = DateTime.Now;
+                        }
+                        SignalWork();
+                    }
+                }
+                else
+                {
+                    EnqueueWork(_savedImageItems, savedImageInfo);
                 }
             };
             _eventBus.Subscribe<WindowsAction>(item =>
@@ -566,7 +574,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                     }
                     else
                     {
-                        NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:{model.InstructionInfos?.FirstOrDefault()?.InstructionContent} 操作指令");
+                        NLog.LogManager.GetCurrentClassLogger().Error($"未匹配到包裹:Timestamp={model.Timestamp},ExitName={model.ExitName},InstructionType={model.InstructionType},待回传包裹数={_packageSubmissionPushItems.Count},InstructionContent={model.InstructionInfos?.FirstOrDefault()?.InstructionContent}");
                     }
                 }
             });
@@ -598,12 +606,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             var info = queuedSubmit;
                             var submitToken = stoppingToken;
                             await _apiQueryGate.WaitAsync(submitToken).ConfigureAwait(false);
+                            var requestStartedAt = DateTime.Now;
                             try
                             {
                                 // 每个并发工作项从注册表创建独立上传器，避免共享可变接口参数。
                                 IDataUploader uploader;
                                 UploadResponse? uploadResponse = null;
                                 var apiType = _apiSettingsDto?.Type;
+                                JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("api.query.start",
+                                    "开始查询目标格口", packageTimestamp: info.Timestamp,
+                                    barcode: info.Barcode, sequence: info.Guid.ToString(),
+                                    fields: [("apiType", apiType), ("scanTime", info.ScanTime), ("weight", info.Weight)]);
                                 switch (apiType)
                                 {
                                 case ApiType.None:
@@ -1100,29 +1113,12 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             }
                                 if (apiType is not null && apiType != ApiType.None)
                                 {
-                                    var apiResponse = new ApiResponseReceived
+                                    PublishFinalQueryResponse(info, uploadResponse ?? new UploadResponse
                                     {
-                                        Guid = info.Guid,
-                                        Barcode = info.Barcode,
-                                        ScanTime = info.ScanTime,
-                                        UploadResponse = uploadResponse,
-                                        PackageCreationInstruction = info.PackageCreationInstruction,
-                                        PackageCreationTime = info.PackageCreationTime,
-                                        IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
-                                        IsStackedPackage = info.IsStackedPackage ?? false,
-                                        Timestamp = info.Timestamp,
-                                        LinkedCarCount = info.LinkedCarCount
-                                    };
-                                    if (!_apiResponseDispatcher.TryEnqueue(apiResponse))
-                                    {
-                                        throw new InvalidOperationException("API 响应队列已停止");
-                                    }
-                                    if (!_apiResponseNotificationDispatcher.TryEnqueue(apiResponse))
-                                    {
-                                        LogManager.GetCurrentClassLogger().Error(
-                                            "API 普通通知队列已停止");
-                                    }
-                                    _retryTracker.Forget(info);
+                                        RequestTime = requestStartedAt, ResponseTime = DateTime.Now,
+                                        ExceptionMsg = "查询提供商未返回有效响应",
+                                        ApiExceptionType = ApiExceptionType.ContentParsingException
+                                    });
                                 }
                             }
                             catch (OperationCanceledException) when (submitToken.IsCancellationRequested)
@@ -1131,13 +1127,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                             }
                             catch (Exception exception)
                             {
-                                await RequeueWorkAfterDelayAsync(
-                                    _submitItems,
-                                    info,
-                                    submitToken);
-                                LogManager.GetCurrentClassLogger().Error(
+                                // 格口查询失败必须产生一个最终结果；无限重新排队会让本车永远没有格口。
+                                PublishFinalQueryResponse(info, new UploadResponse
+                                {
+                                    RequestTime = requestStartedAt, ResponseTime = DateTime.Now,
+                                    ExceptionMsg = exception.Message,
+                                    ApiExceptionType = exception is OperationCanceledException or TimeoutException
+                                        ? ApiExceptionType.Timeout : ApiExceptionType.Other
+                                });
+                                LogManager.GetCurrentClassLogger().Warn(
                                     exception,
-                                    $"API 查询失败，已重新排队:Timestamp={info.Timestamp},Barcode={info.Barcode}");
+                                    $"API 查询失败，已发布异常口分拣结果:Timestamp={info.Timestamp},Barcode={info.Barcode}");
                             }
                             finally
                             {
@@ -1451,6 +1451,41 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
 
             throw new InvalidOperationException($"未注册上传提供商: {apiType}");
+        }
+
+        /// <summary>成功、失败和空响应共用原包裹身份的最终通知，不重复发起格口查询。</summary>
+        private void PublishFinalQueryResponse(SubmitItemInfo info, UploadResponse response)
+        {
+            JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("api.query.completed", "原包裹格口查询完成",
+                response.IsSuccess ? JayTom.Dws.Models.LocalLog.LogType.Information : JayTom.Dws.Models.LocalLog.LogType.Warning,
+                info.Timestamp, info.Barcode, info.Guid.ToString(),
+                fields: [("reasonCode", response.IsSuccess ? "QuerySucceeded" : "QueryFailed"),
+                    ("exceptionType", response.ApiExceptionType), ("createdAt", info.PackageCreationTime),
+                    ("creationTimeTicks", info.PackageCreationTime.Ticks), ("scanTime", info.ScanTime),
+                    ("requestTime", response.RequestTime), ("responseTime", response.ResponseTime),
+                    ("durationMilliseconds", response.DurationSeconds * 1000m), ("success", response.IsSuccess),
+                    ("url", response.RequestUrl), ("response", response.ResponseContent), ("error", response.ExceptionMsg)]);
+            var apiResponse = new ApiResponseReceived
+            {
+                Guid = info.Guid, Barcode = info.Barcode, ScanTime = info.ScanTime,
+                UploadResponse = response, PackageCreationInstruction = info.PackageCreationInstruction,
+                PackageCreationTime = info.PackageCreationTime,
+                IsCreatedByLowerMachine = info.IsCreatedByLowerMachine,
+                IsStackedPackage = info.IsStackedPackage ?? false,
+                Timestamp = info.Timestamp, LinkedCarCount = info.LinkedCarCount
+            };
+            if (!_apiResponseDispatcher.TryEnqueue(apiResponse))
+            {
+                JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("api.response.queue.rejected",
+                    "原包裹格口响应未进入分拣队列", JayTom.Dws.Models.LocalLog.LogType.Exception,
+                    info.Timestamp, info.Barcode, info.Guid.ToString(),
+                    fields: [("reasonCode", "ApiResponseQueueStopped"), ("createdAt", info.PackageCreationTime)]);
+                LogManager.GetCurrentClassLogger().Error("API 格口响应队列已停止");
+                return;
+            }
+            if (!_apiResponseNotificationDispatcher.TryEnqueue(apiResponse))
+                LogManager.GetCurrentClassLogger().Error("API 普通通知队列已停止");
+            _retryTracker.Forget(info);
         }
 
         private async Task ReadDefaultConfig()
@@ -2012,28 +2047,22 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                 var imageCacheKey =
                                     CreateJtPolarDayImageCacheKey(
                                         packageValue.Key);
-                                _memoryCache.TryGetValue(
-                                    imageCacheKey,
+                                _memoryCache.TryGetValue(imageCacheKey,
                                     out SavedImageInfo? savedImageInfo);
+                                var uploadContext = packageValue.Value.PolarDayUploadContext;
                                 if (savedImageInfo is null &&
-                                    _imageStorageService.ImageSettingsDto?
-                                        .IsSaveBarcodeImage == true)
+                                    string.IsNullOrWhiteSpace(uploadContext?.SavedScanImageFilePath) &&
+                                    uploadContext?.ScanImageContent is not { Length: > 0 } &&
+                                    string.IsNullOrWhiteSpace(uploadContext?.HalfPath))
                                 {
-                                    // 图片与设备信息回传彼此独立；图片尚未保存时继续发送
-                                    // packageInfo，避免图片链路故障阻断小件回传。
-                                    LogManager.GetCurrentClassLogger().Warn(
-                                        $"极昼条码图片尚未保存，继续发送无图设备报文:Timestamp={packageValue.Key},WaybillNo={barcode}");
-                                }
-
-                                using var image = LoadImageSnapshot(
-                                    savedImageInfo?.FilePath);
-                                if (savedImageInfo is not null &&
-                                    image is null &&
-                                    _imageStorageService.ImageSettingsDto?
-                                        .IsSaveBarcodeImage == true)
-                                {
-                                    LogManager.GetCurrentClassLogger().Warn(
-                                        $"极昼条码图片不可读取，继续发送无图设备报文:Timestamp={packageValue.Key},WaybillNo={barcode}");
+                                    if (!packageValue.Value.PolarDayImageWaitReported)
+                                    {
+                                        LogManager.GetCurrentClassLogger().Warn(
+                                            $"极昼等待本地扫码图片保存完成，保留包裹回传任务:Timestamp={packageValue.Key},WaybillNo={barcode}");
+                                        packageValue.Value.PolarDayImageWaitReported = true;
+                                    }
+                                    packageValue.Value.WaitSubmitTime = DateTime.Now.AddMilliseconds(250);
+                                    return;
                                 }
 
                                 var cameraSerialNumber =
@@ -2044,6 +2073,37 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                                    .FirstOrDefault()?
                                                    .InstructionGeneratedTime ??
                                                fallEvent.CreateTime;
+                                uploadContext ??= new JtPolarDayApi.UploadContext
+                                {
+                                    OperateType = JtPolarDayApi.GetQueryOperateType(
+                                        packageValue.Value.ApiResponse.UploadResponse?.ResponseContent,
+                                        _jtPolarDayApiParam.SortingPlanCode),
+                                    LandOnCarTime = packageInfo.BarCodeInfo?.ScanTime ?? packageInfo.CreateTime,
+                                    CarNum = JtPolarDayApi.GetUploadCarNumber(
+                                        packageInfo.IsCreatedByLowerMachine, packageInfo.Guid,
+                                        packageInfo.GrayscaleResultInfo?.CarNumber),
+                                    GridNo = fallEvent.ExitName,
+                                    GridCode = ConvertToPolarDayGridCode(barcode, exitItems),
+                                    FallTime = fallTime
+                                };
+                                if (string.IsNullOrWhiteSpace(uploadContext.CarNum))
+                                {
+                                    uploadContext.CarNum = JtPolarDayApi.GetUploadCarNumber(
+                                        packageInfo.IsCreatedByLowerMachine, packageInfo.Guid,
+                                        packageInfo.GrayscaleResultInfo?.CarNumber);
+                                }
+                                if (string.IsNullOrWhiteSpace(uploadContext.HalfPath))
+                                {
+                                    uploadContext.SavedScanImageFilePath ??= savedImageInfo?.FilePath;
+                                    uploadContext.SavedScanImageHasRequiredWatermark =
+                                        savedImageInfo?.HasBarcodeScanWeightWatermark ??
+                                        uploadContext.SavedScanImageHasRequiredWatermark;
+                                }
+                                packageValue.Value.PolarDayUploadContext = uploadContext;
+                                JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("api.upload.start",
+                                    "使用本地已保存图片回传极昼",
+                                    packageTimestamp: packageValue.Key, barcode: barcode, sequence: packageInfo.Guid.ToString(),
+                                    fields: [("filePath", uploadContext.SavedScanImageFilePath), ("exitName", fallEvent.ExitName)]);
                                 await uploader.UploadInBackground(
                                     barcode,
                                     packageInfo.WeightInfo?.FormattedWeight ??
@@ -2060,38 +2120,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                                     0,
                                     new UploadImageInfo
                                     {
-                                        Image = image is null
-                                            ? null
-                                            : ImageHandle.TakeOwnership(
-                                                (Image)image.Clone()),
                                         CameraCustomName = cameraSerialNumber,
                                         CameraName = cameraSerialNumber,
                                         CameraSerialNumber =
                                             cameraSerialNumber
                                     },
                                     null,
-                                    new JtPolarDayApi.UploadContext
-                                    {
-                                        OperateType = JtPolarDayApi.GetQueryOperateType(
-                                            packageValue.Value.ApiResponse.UploadResponse?
-                                                .ResponseContent,
-                                            _jtPolarDayApiParam.SortingPlanCode),
-                                        LandOnCarTime =
-                                            packageInfo.BarCodeInfo?.ScanTime ??
-                                            packageInfo.CreateTime,
-                                        CarNum =
-                                            packageInfo.GrayscaleResultInfo is
-                                            { } grayscaleResult
-                                                ? grayscaleResult.CarNumber
-                                                    .ToString()
-                                                : string.Empty,
-                                        GridNo = fallEvent.ExitName,
-                                        GridCode =
-                                            ConvertToPolarDayGridCode(
-                                                barcode,
-                                                exitItems),
-                                        FallTime = fallTime
-                                    },
+                                    uploadContext,
                                     token);
                                 // 仅在上传任务明确完成后标记，异常时保留记录供下一轮重试。
                                 _memoryCache.Set(
@@ -2203,6 +2238,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             catch (Exception exception)
             {
                 packageValue.Value.WaitSubmitTime = DateTime.Now.AddSeconds(1);
+                JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("api.upload.retry",
+                    "原包裹落格上报失败，保留原身份等待重试", JayTom.Dws.Models.LocalLog.LogType.Warning, packageValue.Key,
+                    packageValue.Value.PackageInfo?.BarCodeInfo?.Barcode, packageValue.Value.PackageInfo?.Guid.ToString(),
+                    fields: [("reasonCode", "UploadFailed"), ("retryAt", packageValue.Value.WaitSubmitTime),
+                        ("error", exception.ToString())]);
                 LogManager.GetCurrentClassLogger().Error(
                     exception,
                     $"包裹落格上报失败，稍后重试:{packageValue.Value.PackageInfo?.BarCodeInfo?.Barcode}");
@@ -2404,6 +2444,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// </summary>
         public class PackageSubmissionPushInfo
         {
+            /// <summary>保留图片成功后的半路径，使设备上报重试不会重复上传同一文件。</summary>
+            public JtPolarDayApi.UploadContext? PolarDayUploadContext { get; set; }
+
+            /// <summary>避免等待图片时重复记录同一包裹的诊断警告。</summary>
+            public bool PolarDayImageWaitReported { get; set; }
 
             /// <summary>
             /// 包裹信息

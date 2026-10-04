@@ -62,6 +62,38 @@ public sealed class HikvisionTriggerCycleTests {
         Assert.Equal((uint)8, OnlyResult(cycles.CompleteDrained(1)).TriggerIndex);
     }
 
+    /// <summary>全过滤触发仍有一个内部最终结果，防止下位机消费位置少一位。</summary>
+    [Fact]
+    public void Fully_filtered_trigger_retains_one_internal_consumption_result() {
+        using var cycles = new HikvisionTriggerCycles();
+        cycles.OnTrigger(42, true, 1);
+        cycles.ObserveFrame(42, true);
+        cycles.HoldBarcode(42, new BarcodeTriggeredEventArgs { Barcode = "filtered", IsFiltered = true, TriggerIndex = 42 });
+        cycles.HoldBarcode(42, new BarcodeTriggeredEventArgs { Barcode = "filtered", IsFiltered = true, TriggerIndex = 42 });
+        cycles.OnTrigger(42, false, 2);
+
+        var result = OnlyResult(cycles.CompleteDrained(2));
+        Assert.True(result.IsFiltered);
+        Assert.Equal((uint)42, result.TriggerIndex);
+        Assert.Empty(cycles.CompleteDrained(2));
+    }
+
+    /// <summary>同周期有效码替换过滤占位，过滤帧到达顺序不改变最终结果。</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Accepted_barcode_wins_over_filtered_placeholder(bool filteredFirst) {
+        using var cycles = new HikvisionTriggerCycles();
+        var filtered = new BarcodeTriggeredEventArgs { Barcode = "filtered", IsFiltered = true };
+        var valid = new BarcodeTriggeredEventArgs { Barcode = "JT-42" };
+        cycles.OnTrigger(42, true, 1);
+        cycles.HoldBarcode(42, filteredFirst ? filtered : valid);
+        cycles.HoldBarcode(42, filteredFirst ? valid : filtered);
+        cycles.OnTrigger(42, false, 2);
+
+        Assert.Same(valid, OnlyResult(cycles.CompleteDrained(2)));
+    }
+
     /// <summary>短时间内相邻的不同触发各自保留一个结果。</summary>
     [Fact]
     public void Distinct_fast_triggers_are_not_merged_by_a_time_window() {
@@ -423,6 +455,31 @@ public sealed class HikvisionTriggerCycleTests {
         Invoke(camera, "ProcessCapturedFrame", frame);
         Assert.Empty(cycles.CompleteDrained(1));
         Assert.Throws<ArgumentException>(() => image.GetPixel(0, 0));
+        Assert.Throws<ObjectDisposedException>(() => buffer.Buffer);
+    }
+
+    /// <summary>真实帧处理入口对全部过滤的元数据保留无图片消费结果。</summary>
+    [Fact]
+    public void Adapter_retains_fully_filtered_frame_as_internal_result_without_bitmap() {
+        var camera = new HikvisionSmartCamera { IsOriginalImageOut = false };
+        SetField(camera, "_triggerCallbacksRegistered", true);
+        SetField(camera, "_triggerBoundaryObserved", 1);
+        SetField(camera, "_triggerCorrelationMode", 1);
+        using var cycles = GetField<HikvisionTriggerCycles>(camera, "_triggerCycles");
+        camera.BarcodeReadTriggered += (_, _) => Assert.Fail("Filtered metadata must not publish a business barcode.");
+        camera.FilteredBarcodeReturned += (_, _) => { };
+        using var buffer = PooledFrameBuffer.CopyFrom(new byte[4], 4);
+        var frame = new HikvisionCapturedFrame(buffer,
+            new MvCodeReader.MV_CODEREADER_IMAGE_OUT_INFO_EX2 { nTriggerIndex = 42 },
+            new MvCodeReader.MV_CODEREADER_RESULT_BCR_EX2 { nCodeNum = 1 }, DateTime.Now, 0, 1);
+
+        Invoke(camera, "ProcessCapturedFrame", frame);
+        cycles.OnTrigger(42, false, 1);
+        var result = OnlyResult(cycles.CompleteDrained(1));
+
+        Assert.True(result.IsFiltered);
+        Assert.Null(result.Image);
+        Assert.Equal((uint)42, result.TriggerIndex);
         Assert.Throws<ObjectDisposedException>(() => buffer.Buffer);
     }
 

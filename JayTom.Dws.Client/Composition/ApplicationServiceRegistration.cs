@@ -68,9 +68,8 @@ internal static class ApplicationServiceRegistration {
         services.AddSingleton<IApplicationRequestValidator<SearchPackageHistoryQuery>, SearchPackageHistoryQueryValidator>();
         services.AddTransient<IApplicationQueryHandler<SearchPackageHistoryQuery, PackageHistoryPage>, SearchPackageHistoryQueryHandler>();
         services.AddTransient<IPackageProcessingPersistence, PackageProcessingPersistence>();
-        services.AddSingleton<IPackageProcessingStage, PackageAcquisitionStage>();
-        services.AddSingleton<IPackageProcessingStage, PackageMatchingStage>();
-        services.AddSingleton<IPackageProcessingStage, PackageCompletionStage>();
+        foreach (var stage in PackageProcessingPipeline.CreateDefaultStages())
+            services.AddSingleton<IPackageProcessingStage>(stage);
         services.AddSingleton<PackageProcessingPipeline>();
         services.AddTransient<ICloudVideoTransferQueue, CloudVideoTransferQueue>();
         services.AddTransient<IBarcodeHistoryCatalog, BarcodeHistoryCatalog>();

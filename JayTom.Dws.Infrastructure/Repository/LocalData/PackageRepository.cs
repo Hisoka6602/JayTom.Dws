@@ -23,35 +23,64 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
         public PackageRepository(IDbContextFactory<SqliteContext> contextFactory, IMemoryCache cache) : base(contextFactory, cache) {
         }
 
+        /// <summary>统计历史包裹；取消和数据库故障必须交给查询界面处理，不能伪装成零条记录。</summary>
+        public new async Task<int> Total(Expression<Func<PackageInfoModel, bool>> where, CancellationToken token = default) {
+            await using var context = _contextFactory.CreateDbContext();
+            using var cancellation = new SqliteReadCancellationScope(context, token);
+            try {
+                return await context.Set<PackageInfoModel>().CountAsync(where, token).ConfigureAwait(false);
+            }
+            catch (Exception) when (token.IsCancellationRequested) {
+                throw new OperationCanceledException(token);
+            }
+        }
+
         public async Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackageOrderByDescending<TOrder>(Expression<Func<PackageInfoModel, bool>> where, Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
-            CancellationToken token = default) {
+            CancellationToken token = default, bool includeUploadDetails = true) {
             try {
                 pageIndex = Math.Max(0, pageIndex);
                 pageSize = Math.Clamp(pageSize, 1, 1000);
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
+                using var cancellation = new SqliteReadCancellationScope(concardContext, token);
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, List<PackageInfoModel>>(false, new List<PackageInfoModel>());
-                var barCodeInfoModels = await dbSet.AsNoTracking()
+                var query = dbSet.AsNoTracking()
                     .AsSplitQuery()
                     .Include(b => b.BarCodeInfo)
                     .Include(b => b.WeightInfo)
                     .Include(b => b.VolumeInfo)
-                    .Include(b => b.UploadInfo)
                     .Include(b => b.ExitInfo)
                     .Include(b => b.SortingInfo)
                     .ThenInclude(c => c.InstructionInfos)
                     .Include(b => b.ImageInfos)
-                    .Include(b => b.LogisticsInfo)
                     .Include(b => b.OcrInfo)
-                    .ThenInclude(c => c.OcrDetailedInfos)
                     .Include(b => b.CloudVideoUploadInfo)
                     .Where(where)
                     .OrderByDescending(order)
+                    .ThenByDescending(item => item.Id)
                     .Skip(pageIndex * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync(cancellationToken: token);
-                return new KeyValuePair<bool, List<PackageInfoModel>>(true, barCodeInfoModels);
+                    .Take(pageSize);
+                if (includeUploadDetails) {
+                    var complete = await query.Include(item => item.UploadInfo).AsNoTracking().ToListAsync(token);
+                    return new(true, complete);
+                }
+                // 列表只取上传状态；大体积请求、响应和接口参数在用户打开单包裹详情时读取。
+                var rows = await query.AsNoTracking().Select(item => new {
+                    Package = item,
+                    Upload = item.UploadInfo == null ? null : new UploadInfoModel {
+                        Id = item.UploadInfo.Id, PackageId = item.UploadInfo.PackageId,
+                        RequestStatus = item.UploadInfo.RequestStatus,
+                        RequestTime = item.UploadInfo.RequestTime, ResponseTime = item.UploadInfo.ResponseTime,
+                        DurationInSeconds = item.UploadInfo.DurationInSeconds
+                    }
+                }).ToListAsync(token);
+                var packages = new List<PackageInfoModel>(rows.Count);
+                foreach (var row in rows) { row.Package.UploadInfo = row.Upload; packages.Add(row.Package); }
+                return new(true, packages);
+            }
+            catch (Exception) when (token.IsCancellationRequested) {
+                throw new OperationCanceledException(token);
             }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
@@ -99,6 +128,7 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
             try {
                 //联表
                 await using var concardContext = _contextFactory.CreateDbContext();
+                using var cancellation = new SqliteReadCancellationScope(concardContext, token);
                 var dbSet = concardContext?.Set<PackageInfoModel>();
                 if (dbSet is null) return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
                 var barCodeInfoModels = await dbSet.AsNoTracking()
@@ -120,24 +150,12 @@ namespace JayTom.Dws.Infrastructure.Repository.LocalData {
                     .FirstOrDefaultAsync(cancellationToken: token);
                 return new KeyValuePair<bool, PackageInfoModel>(true, barCodeInfoModels);
             }
+            catch (Exception) when (token.IsCancellationRequested) {
+                throw new OperationCanceledException(token);
+            }
             catch (Exception e) {
                 NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
                 return new KeyValuePair<bool, PackageInfoModel>(false, new PackageInfoModel());
-            }
-        }
-
-        public new async Task<int> Total(Expression<Func<PackageInfoModel, bool>> @where,
-            CancellationToken token = default) {
-            try {
-                //联表
-                await using var concardContext = _contextFactory.CreateDbContext();
-                var dbSet = concardContext?.Set<PackageInfoModel>();
-                if (dbSet is null) return 0;
-                return await dbSet.CountAsync(where, cancellationToken: token);
-            }
-            catch (Exception e) {
-                NLog.LogManager.GetCurrentClassLogger().Error($"{e}");
-                return 0;
             }
         }
 

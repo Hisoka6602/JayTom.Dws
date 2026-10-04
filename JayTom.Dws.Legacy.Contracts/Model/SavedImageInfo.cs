@@ -10,6 +10,9 @@ namespace JayTom.Dws.Legacy.Contracts.Model {
     public class SavedImageInfo {
         public long PackageTimestamp { get; set; }
 
+        /// <summary>本地存图阶段已经补齐条码、扫码时间和重量水印。</summary>
+        public bool HasBarcodeScanWeightWatermark { get; set; }
+
         /// <summary>
         /// 文件路径
         /// </summary>

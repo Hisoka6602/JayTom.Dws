@@ -73,6 +73,59 @@ public sealed class PackageSessionStore : IPackageSessionStore {
             processingAt,
             assignment);
 
+    /// <summary>在绑定决策时获取拒绝诊断，避免重新查询会话导致时间或候选错位。</summary>
+    public PackageInfo? TryBindBarcode(
+        DateTime observedAt,
+        BarcodeQueueOrderEnum queueOrder,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
+        Action<PackageInfo> assignment,
+        out BarcodeAssignmentRejection? rejection) =>
+        _registry.TryBindBarcode(
+            observedAt,
+            queueOrder,
+            enforceAssignmentInterval,
+            minimumAssignmentMilliseconds,
+            maximumAssignmentMilliseconds,
+            emptyPackageExpiryMilliseconds,
+            processingAt,
+            assignment,
+            out rejection);
+
+    /// <summary>按匹配规则直接消费 NoRead 占位，不发布包裹完成事件。</summary>
+    public PackageInfo? TryDiscardUnassignedPackage(
+        DateTime observedAt,
+        BarcodeQueueOrderEnum queueOrder,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
+        out BarcodeAssignmentRejection? rejection) =>
+        _registry.TryDiscardUnassignedPackage(
+            observedAt, queueOrder, enforceAssignmentInterval,
+            minimumAssignmentMilliseconds, maximumAssignmentMilliseconds,
+            emptyPackageExpiryMilliseconds, processingAt, out rejection);
+
+    /// <summary>只消费原小车的相机结果，不将超时、空读或已移除小车的结果顺延给下一辆车。</summary>
+    public PackageInfo? TryConsumeCameraResultForPackage(
+        DateTime packageCreatedAt,
+        DateTime observedAt,
+        bool enforceAssignmentInterval,
+        int minimumAssignmentMilliseconds,
+        int maximumAssignmentMilliseconds,
+        int? emptyPackageExpiryMilliseconds,
+        DateTime processingAt,
+        Action<PackageInfo>? assignment,
+        out BarcodeAssignmentRejection? rejection) =>
+        _registry.TryConsumeCameraResultForPackage(
+            packageCreatedAt, observedAt, enforceAssignmentInterval,
+            minimumAssignmentMilliseconds, maximumAssignmentMilliseconds,
+            emptyPackageExpiryMilliseconds, processingAt, assignment, out rejection);
+
     /// <summary>按创建时间获取包裹会话。</summary>
     public PackageInfo? GetPackage(DateTime createTime) =>
         _registry.GetPackage(createTime);
@@ -80,6 +133,10 @@ public sealed class PackageSessionStore : IPackageSessionStore {
     /// <summary>按下位机包裹序号直接获取运行会话。</summary>
     public PackageInfo? GetPackageById(long packageId) =>
         _registry.GetPackageById(packageId);
+
+    /// <summary>按相机观测键直接查找同次扫码已绑定的运行包裹。</summary>
+    public PackageInfo? GetPackageByBarcodeObservation(DateTime scanTime, string serialNumber) =>
+        _registry.GetPackageByBarcodeObservation(scanTime, serialNumber);
 
     /// <summary>获取匹配的包裹会话快照。</summary>
     public List<PackageInfo> GetPackages(Func<KeyValuePair<DateTime, PackageInfo>, bool> predicate) =>

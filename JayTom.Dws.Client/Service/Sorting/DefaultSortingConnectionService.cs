@@ -834,12 +834,41 @@ namespace JayTom.Dws.Client.Service.Sorting
             TimeSpan interval,
             InstructionsAttach attach)
         {
-            QueueConnectionWork(ResolveConnectionName(exitId), () => SendInstructionsAsync(
-                tag,
-                exitId,
-                instructions,
-                interval,
-                attach));
+            var connectionName = ResolveConnectionName(exitId);
+            var queuedAt = Stopwatch.GetTimestamp();
+            TraceInstructionSend("plc.send.requested", attach, connectionName, LogType.Information,
+                ("instructionCount", instructions.Count));
+            QueueConnectionWork(connectionName, async () =>
+            {
+                var writeStarted = false;
+                var writeAttempt = 0;
+                TraceInstructionSend("plc.send.started", attach, connectionName, LogType.Information,
+                    ("queueDelayMilliseconds", Stopwatch.GetElapsedTime(queuedAt).Ticks / (decimal)TimeSpan.TicksPerMillisecond));
+                try
+                {
+                    await SendInstructionsAsync(tag, exitId, instructions, interval, attach,
+                        () =>
+                        {
+                            writeStarted = true;
+                            TraceInstructionSend("plc.write.attempt", attach, connectionName, LogType.Information,
+                                ("writeAttempt", ++writeAttempt));
+                        }).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    TraceInstructionSend("plc.send.failed", attach, connectionName, LogType.Exception,
+                        ("reasonCode", writeStarted ? "SendFailedAfterWriteStarted" : "SendFailedBeforeWrite"),
+                        ("writeStarted", writeStarted), ("writeAttempts", writeAttempt), ("error", exception.ToString()));
+                    if (!writeStarted && attach.OnSendFailedBeforeWrite is not null) attach.OnSendFailedBeforeWrite(exception);
+                    else throw;
+                }
+            }, exception =>
+            {
+                TraceInstructionSend("plc.queue.rejected", attach, connectionName, LogType.Exception,
+                    ("reasonCode", "ConnectionQueueRejected"), ("writeStarted", false), ("error", exception.ToString()));
+                if (attach.OnSendFailedBeforeWrite is not null) attach.OnSendFailedBeforeWrite(exception);
+                else OnCommunicationExceptionEvent(exception);
+            });
         }
 
         private async Task SendInstructionsAsync(
@@ -847,9 +876,16 @@ namespace JayTom.Dws.Client.Service.Sorting
             long exitId,
             IReadOnlyList<SortingInstructionInfoModel> instructions,
             TimeSpan interval,
-            InstructionsAttach attach)
+            InstructionsAttach attach,
+            Action onWriteStarted)
         {
             EnsurePackageIdentityBeforeSend(attach, exitId);
+            var targetConfig = ResolveConnectionConfig(exitId);
+            if (exitId <= 0 || targetConfig is null || string.IsNullOrWhiteSpace(targetConfig.ConnectionName) ||
+                !_connectionInfos.ContainsKey(targetConfig.ConnectionName))
+                throw new InvalidOperationException($"格口未配置有效通信连接:ExitId={exitId}");
+            if (instructions.Count == 0)
+                throw new InvalidOperationException($"格口未配置发送内容:ExitId={exitId}");
 
             if (exitId > 0)
             {
@@ -898,6 +934,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                     var message = encodedInstruction;
                                                     EnsurePackageIdentityBeforeSend(attach, exitId);
                                                     var sentAtTimestamp = Stopwatch.GetTimestamp();
+                                                    onWriteStarted();
                                                     connection.SortingSerialPort.Send(message);
                                                     OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                     {
@@ -928,6 +965,7 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                 //不使用应答
                                                 var message = encodedInstruction;
                                                 EnsurePackageIdentityBeforeSend(attach, exitId);
+                                                onWriteStarted();
                                                 connection.SortingSerialPort.Send(message);
                                                 OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                 {
@@ -970,7 +1008,8 @@ namespace JayTom.Dws.Client.Service.Sorting
 
                                                     EnsurePackageIdentityBeforeSend(attach, exitId);
                                                     var sentAtTimestamp = Stopwatch.GetTimestamp();
-                                                    var sendMessage = await SendTcpMessage(connection, message);
+                                                    var sendMessage = await SendTcpMessage(connection, message,
+                                                        onWriteStarted: onWriteStarted);
                                                     OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                     {
                                                         BarCode = attach.BarCode,
@@ -1005,7 +1044,8 @@ namespace JayTom.Dws.Client.Service.Sorting
                                                 var message = encodedInstruction;
 
                                                 EnsurePackageIdentityBeforeSend(attach, exitId);
-                                                var sendMessage = await SendTcpMessage(connection, message);
+                                                var sendMessage = await SendTcpMessage(connection, message,
+                                                    onWriteStarted: onWriteStarted);
                                                 OnCommunicationInfoEvent(new ConnectionCommunicationMessageInfo()
                                                 {
                                                     BarCode = attach.BarCode,
@@ -1067,6 +1107,8 @@ namespace JayTom.Dws.Client.Service.Sorting
                                         }
                                     }
                                 }
+                                if (sentInstructionCount != instructions.Count)
+                                    throw new InvalidOperationException($"格口指令未全部发送:ExitId={exitId}");
                                 if (sentInstructionCount == instructions.Count)
                                 {
                                     attach.OnSendSucceeded?.Invoke();
@@ -1565,6 +1607,8 @@ namespace JayTom.Dws.Client.Service.Sorting
             if (attach.ValidateBeforeSend is not null &&
                 (exitId <= 0 || attach.ExitId != exitId))
             {
+                TraceInstructionSend("plc.identity.rejected", attach, null, LogType.Warning,
+                    ("reasonCode", "ExitIdentityMismatch"), ("actualExitId", exitId));
                 throw new InvalidOperationException(
                     $"发送前格口复核失败，已禁止格口指令:目标格口={attach.ExitId},实际格口={exitId}");
             }
@@ -1572,17 +1616,32 @@ namespace JayTom.Dws.Client.Service.Sorting
             var rejectionReason = attach.ValidateBeforeSend?.Invoke();
             if (!string.IsNullOrEmpty(rejectionReason))
             {
+                TraceInstructionSend("plc.identity.rejected", attach, null, LogType.Warning,
+                    ("reasonCode", "PackageIdentityMismatch"), ("reason", rejectionReason));
                 throw new InvalidOperationException(
                     $"发送前包裹身份复核失败，已禁止格口指令:{rejectionReason}");
             }
         }
 
-        private void QueueConnectionWork(string? connectionName, Func<Task> work)
+        /// <summary>记录原车发送边界和耗时，开始写入不表示下位机已经确认落格。</summary>
+        private static void TraceInstructionSend(string stage, InstructionsAttach attach, string? connectionName,
+            LogType type, params (string Key, object? Value)[] additionalFields)
+        {
+            JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write(stage, "原包裹 PLC 指令发送证据", type,
+                attach.Timestamp, attach.BarCode, attach.Guid.ToString(),
+                fields: [("createdAt", attach.PackageCreationTime), ("creationTimeTicks", attach.PackageCreationTime.Ticks),
+                    ("scanTime", attach.ScanTime), ("connection", connectionName), ("exitId", attach.ExitId),
+                    ("exitName", attach.ExitName), .. additionalFields]);
+        }
+
+        private void QueueConnectionWork(string? connectionName, Func<Task> work,
+            Action<Exception>? onRejected = null)
         {
             if (string.IsNullOrWhiteSpace(connectionName))
             {
-                OnCommunicationExceptionEvent(new InvalidOperationException(
-                    "未解析到有效分拣连接，已禁止指令进入发送队列。"));
+                var exception = new InvalidOperationException("未解析到有效分拣连接，已禁止指令进入发送队列。");
+                if (onRejected is not null) onRejected(exception);
+                else OnCommunicationExceptionEvent(exception);
                 return;
             }
 
@@ -1594,8 +1653,9 @@ namespace JayTom.Dws.Client.Service.Sorting
                     LazyThreadSafetyMode.ExecutionAndPublication)).Value;
             if (!dispatcher.TryEnqueue(work))
             {
-                OnCommunicationExceptionEvent(new InvalidOperationException(
-                    $"分拣连接发送队列已停止:{key}"));
+                var exception = new InvalidOperationException($"分拣连接发送队列已停止:{key}");
+                if (onRejected is not null) onRejected(exception);
+                else OnCommunicationExceptionEvent(exception);
             }
             ReportConnectionPerformanceWatermarkIfDue(key, dispatcher);
         }
@@ -1902,16 +1962,22 @@ namespace JayTom.Dws.Client.Service.Sorting
         private Task<bool> SendTcpMessage(
             ConnectionInfo connection,
             string message,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            Action? onWriteStarted = null)
         {
             if (connection.SortingTcp is null)
             {
                 return Task.FromResult(false);
             }
 
-            return connection.SortingTcp.FormatType == FormatType.Hex
-                ? connection.SortingTcp.SendMessage(HexStringToByteArray(message), token)
-                : connection.SortingTcp.SendMessage(message, token);
+            if (connection.SortingTcp.FormatType == FormatType.Hex)
+            {
+                var bytes = HexStringToByteArray(message);
+                onWriteStarted?.Invoke();
+                return connection.SortingTcp.SendMessage(bytes, token);
+            }
+            onWriteStarted?.Invoke();
+            return connection.SortingTcp.SendMessage(message, token);
         }
 
         protected virtual void OnConnected(ConnectionInfo e)

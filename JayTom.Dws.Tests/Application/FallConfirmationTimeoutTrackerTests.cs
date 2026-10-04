@@ -102,6 +102,26 @@ public sealed class FallConfirmationTimeoutTrackerTests
         Assert.Equal(11, fallEvent.ExitId);
     }
 
+    /// <summary>停止清空上传队列后旧包裹不再生成超时落格，重新启动的新包裹仍可确认。</summary>
+    [Fact]
+    public void CancelPending_DoesNotGenerateOldFallsOrPreventNewPackages()
+    {
+        var time = new ManualTimeProvider();
+        var tracker = new FallConfirmationTimeoutTracker(time);
+        tracker.Register(CreateTheoreticalExit(1006, "44", 44));
+        tracker.CancelPending();
+        tracker.CancelPending();
+        time.Advance(TimeSpan.FromSeconds(60));
+
+        Assert.Empty(tracker.TakeExpired(DateTime.Now));
+        Assert.False(tracker.TryConfirm(1006));
+        tracker.Register(CreateTheoreticalExit(1006, "44", 44));
+        tracker.Register(CreateTheoreticalExit(1007, "42", 42));
+        Assert.True(tracker.TryConfirm(1007));
+        time.Advance(TimeSpan.FromSeconds(60));
+        Assert.Empty(tracker.TakeExpired(DateTime.Now));
+    }
+
     private static PackageExitUpdateEvent CreateTheoreticalExit(
         long timestamp,
         string exitName,

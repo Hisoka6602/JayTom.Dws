@@ -1,7 +1,7 @@
 namespace JayTom.Dws.Application.PackageProcessing;
 
 /// <summary>验证称重和体积数据满足完成输出条件。</summary>
-public sealed class PackageCompletionStage : IPackageProcessingStage
+internal sealed class PackageCompletionStage : IPackageProcessingStage
 {
     /// <summary>完成阶段标识。</summary>
     public PackageProcessingStage Stage => PackageProcessingStage.Completion;

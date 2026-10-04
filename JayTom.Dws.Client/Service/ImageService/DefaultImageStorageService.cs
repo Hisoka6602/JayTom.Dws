@@ -13,7 +13,6 @@ using JayTom.Dws.Models.LocalLog;
 using JayTom.Dws.Plugin.SaveImage;
 using JayTom.Dws.Domain.Converters;
 using System.Text.RegularExpressions;
-using JayTom.Dws.Client.EventMediators;
 using JayTom.Dws.Legacy.Contracts.Dto.BaseInfoModels;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalConf;
 using JayTom.Dws.Legacy.Contracts.Services.ImageService;
@@ -219,6 +218,17 @@ namespace JayTom.Dws.Client.Service.ImageService
                 }
 
                 //判断是否保存原图
+                var watermarkFields = watermarkParams is not null
+                    ? imageSettings.WatermarkInfo.ItemTemplate?
+                        .Where(item => item.ApplicationType == ItemApplicationType.Watermark)
+                        .Select(item => item.Content)
+                        .ToHashSet(StringComparer.Ordinal)
+                    : null;
+                var hasBarcodeScanWeightWatermark = watermarkParams is not null &&
+                    watermarkParams.WatermarkColor.A > 0 && watermarkParams.FontSize > 0 &&
+                    watermarkFields?.Contains("{BarCode}") == true &&
+                    watermarkFields.Contains("{ScanTime}") &&
+                    watermarkFields.Contains("{Weight}");
                 if (imageSettings.IsSaveOriginalImage)
                 {
                     var (key, value) = await _saveImage.SaveOriginalImage(drawingImage, imageName, fullPath, watermarkParams,
@@ -238,7 +248,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                             ImageType = type,
                             SaveDateTime = DateTime.Now,
                             ScanTime = scanTime,
-                            PackageTimestamp = packageTimestamped
+                            PackageTimestamp = packageTimestamped,
+                            HasBarcodeScanWeightWatermark = hasBarcodeScanWeightWatermark
                         });
                     }
                 }
@@ -262,7 +273,8 @@ namespace JayTom.Dws.Client.Service.ImageService
                             ImageType = type,
                             SaveDateTime = DateTime.Now,
                             ScanTime = scanTime,
-                            PackageTimestamp = packageTimestamped
+                            PackageTimestamp = packageTimestamped,
+                            HasBarcodeScanWeightWatermark = hasBarcodeScanWeightWatermark
                         });
                     }
                 }
@@ -480,11 +492,17 @@ namespace JayTom.Dws.Client.Service.ImageService
 
         protected virtual void OnImageSaveFailed(Exception e)
         {
+            JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Error("image.save.error", e);
             ImageSaveFailed?.Invoke(this, e);
         }
 
         protected virtual void OnImageSaved(ImageSavedEventArgs e)
         {
+            JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("image.saved", "本地图片保存完成",
+                packageTimestamp: e.PackageTimestamp, barcode: e.BarCode, occurredAt: e.SaveDateTime,
+                fields: [("filePath", e.FilePath), ("camera", e.CameraSerialNumber),
+                    ("scanTime", e.ScanTime), ("imageType", e.ImageType),
+                    ("hasRequiredWatermark", e.HasBarcodeScanWeightWatermark)]);
             ImageSaved?.Invoke(this, e);
         }
 

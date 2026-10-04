@@ -53,7 +53,7 @@ public sealed class PackageProcessingPipelineTests
 
     /// <summary>创建包含唯一固定阶段的流水线。</summary>
     private static PackageProcessingPipeline CreatePipeline() => new(
-        [new PackageAcquisitionStage(), new PackageMatchingStage(), new PackageCompletionStage()]);
+        PackageProcessingPipeline.CreateDefaultStages());
 
     /// <summary>创建有效的包裹输入快照。</summary>
     private static PackageProcessingRequest CreateRequest() => new(

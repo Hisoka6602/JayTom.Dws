@@ -267,34 +267,23 @@ namespace JayTom.Dws.Infrastructure.Repository {
         }
 
         public async Task<bool> Update(T entity, CancellationToken token) {
-            IDbContextTransaction? contextTransaction = null;
             try {
                 await using var concardContext = _contextFactory.CreateDbContext();
                 var strategy = concardContext.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync(async () => {
-                    await using (contextTransaction = await concardContext.Database.BeginTransactionAsync(token)) {
-                        if (contextTransaction is not null) {
-                            var dbSet = concardContext?.Set<T>();
-                            EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
-                            dbSet.Update(entity);
-                            await concardContext?.SaveChangesAsync(token);
-                            await contextTransaction.CommitAsync(token);
-
-                            return true;
-                        }
-                    }
-
-                    return false;
+                    // 单次 SaveChanges 自行保证整个实体图原子提交；外层事务还会让 EF 创建保存点。
+                    // 密集的格口、指令更新无需重复 BEGIN / SAVEPOINT / RELEASE / COMMIT。
+                    EntityGraphWriteGuard.ClearDependentReferenceNavigations(concardContext, entity);
+                    concardContext.Set<T>().Update(entity);
+                    await concardContext.SaveChangesAsync(token);
+                    return true;
                 });
             }
             catch (Win32Exception) {
-                await contextTransaction?.RollbackAsync(token)!;
             }
             catch (TaskCanceledException) {
-                await contextTransaction?.RollbackAsync(token)!;
             }
             catch (Exception e) {
-                await contextTransaction?.RollbackAsync(token)!;
                 LogManager.GetCurrentClassLogger().Log(LogLevel.Error, e.ToString());
             }
             return false;

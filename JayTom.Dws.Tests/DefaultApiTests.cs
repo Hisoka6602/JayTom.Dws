@@ -8,6 +8,28 @@ namespace JayTom.Dws.Tests;
 /// </summary>
 public sealed class DefaultApiTests
 {
+    /// <summary>HTTP 错误状态即使带有成功正文，也必须返回查询失败以便原车异常口兜底。</summary>
+    [Theory]
+    [InlineData(System.Net.HttpStatusCode.BadRequest)]
+    [InlineData(System.Net.HttpStatusCode.InternalServerError)]
+    [InlineData(System.Net.HttpStatusCode.ServiceUnavailable)]
+    public async Task Failed_http_status_cannot_be_overridden_by_a_success_body(System.Net.HttpStatusCode status)
+    {
+        using var handler = new StubHttpMessageHandler(_ => new System.Net.Http.HttpResponseMessage(status)
+        { Content = new System.Net.Http.StringContent("true") });
+        var api = new DefaultApi(new StubHttpClientFactory(handler));
+        await api.SetParameters(new DefaultApi.DefaultApiParameters
+        {
+            IsUseJsonUpload = true, JsonTemplate = "{\"barcode\":\"BarCodeValue\"}",
+            Url = "http://unit.test/upload", ValidationMode = 0, CompleteMatch = "true"
+        });
+        var response = await api.UploadData("NoRead", 1);
+        Assert.False(response.IsSuccess);
+        Assert.Equal(JayTom.Dws.Integrations.Contracts.ApiExceptionType.UnreachableUrl, response.ApiExceptionType);
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Contains("true", response.ResponseContent);
+    }
+
     /// <summary>
     /// 验证不带扫码时间的重载仍然会真实发送请求。
     /// </summary>

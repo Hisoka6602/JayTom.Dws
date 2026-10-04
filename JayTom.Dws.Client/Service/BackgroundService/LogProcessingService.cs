@@ -1,4 +1,5 @@
 using System;
+using JayTom.Dws.Client.Observability;
 using JayTom.Dws.Application.Logs;
 using DryIoc;
 using System.Linq;
@@ -54,9 +55,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private readonly ISortingService _sortingService;
         private readonly IExitMonitor _exitMonitor;
         private readonly IStackedPackageService _stackedPackageService;
-        /// <summary>每一种数据库日志在内存中允许等待写出的最大数量。</summary>
+        /// <summary>独立于数据库队列的异步链路文件入口。</summary>
+        private readonly PipelineFileLog _pipelineLog = PipelineFileLog.Instance;
+        /// <summary>数据库日志队列保留的源兼容容量参数，当前队列无损增长。</summary>
         private const int MaxPendingLogsPerCategory = 4096;
-        /// <summary>诊断文本日志在内存中允许等待写出的最大数量。</summary>
+        /// <summary>诊断文本队列保留的源兼容容量参数，当前队列无损增长。</summary>
         private const int MaxPendingDiagnosticLogs = 8192;
         /// <summary>日志丢弃汇总的最短报告间隔。</summary>
         private static readonly TimeSpan DroppedLogReportInterval = TimeSpan.FromMinutes(1);
@@ -105,6 +108,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             ISortingService sortingService,
             IExitMonitor exitMonitor,
             IStackedPackageService stackedPackageService,
+            ISortingConnectionService sortingConnectionService,
             JayTom.Dws.Application.Messaging.IEventBus eventBus)
         {
             _eventBus = eventBus;
@@ -126,6 +130,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _exitMonitor = exitMonitor;
             _stackedPackageService = stackedPackageService;
             ConfigureQueueSignals();
+            ConfigurePipelineTrace(sortingConnectionService);
             _eventBus.Subscribe<SettingsChangedEvent>(item =>
             {
                 if (item is { } model)
@@ -280,6 +285,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
 
             _deviceService.BarcodeScanned += delegate (object? sender, BarcodeReadEventArgs args)
             {
+                TraceRead(args, false);
                 _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Information,
@@ -338,6 +344,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.CameraException += delegate (object? sender, DeviceExceptionEventArgs args)
             {
+                if (args.Exception is { } exception) _pipelineLog.Error("camera.error", exception);
                 _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Exception,
@@ -355,6 +362,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.BarcodeMissed += delegate (object? sender, BarcodeReadEventArgs args)
             {
+                TraceRead(args, true);
                 _cameraLogItems.Enqueue(new CameraLogInfoModel()
                 {
                     Type = LogType.Warning,
@@ -419,14 +427,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };
             _deviceService.WeightStabilized += delegate (object? sender, WeightChangedEventArgs args)
             {
-                /*_eventBus.Publish(new WeighingLogInfoModel() {
+                _eventBus.Publish(new WeighingLogInfoModel() {
                     Type = LogType.Information,
+                    CreateTime = args.Time,
                     FormatWeight = args.FormattedWeight,
                     Source = args.OriginalContent,
                     Message = $"获取到重量,原内容[{args.OriginalContent}],格式化后重量:{args.FormattedWeight:F3}",
                     DataSourceType = DataSourceType.DeviceInput,
                     CommunicationType = CommunicationType.Receive,
-                });*/
+                });
             };
             _externalDataService.ContentInputReceived += (sender, args) =>
             {
@@ -447,6 +456,17 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             };*/
             _eventBus.Subscribe<InstructionReceived>(item =>
             {
+                foreach (var instruction in item.InstructionInfos ?? [])
+                {
+                    _pipelineLog.Write("instruction." + instruction.InstructionType,
+                        "指令收发及协议解析结果", packageTimestamp: item.Timestamp,
+                        barcode: item.BarCode, sequence: item.SortingCode,
+                        occurredAt: instruction.InstructionGeneratedTime,
+                        fields: [("connection", item.ConnectionName), ("rawContent", instruction.InstructionContent),
+                            ("exitId", item.ExitId), ("exitName", item.ExitName), ("mode", item.SortingMode),
+                            ("scanTime", item.ScanTime), ("protocol", item.ChecksumProtocolName),
+                            ("communication", item.CommunicationMethod)]);
+                }
                 if (item is { } model && model.InstructionInfos?.Any() == true
                     )
                 {
@@ -497,6 +517,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             });
             _eventBus.Subscribe<TriggerPositionEvent>(position =>
             {
+                var package = position.PackageInfo;
+                _pipelineLog.Write("package." + position.TriggerPosition, position.Description,
+                    packageTimestamp: package?.Timestamp ?? 0, barcode: package?.BarCodeInfo?.Barcode,
+                    sequence: package?.Guid.ToString(),
+                    fields: [("succeeded", position.IsSuccess), ("createdAt", package?.CreateTime),
+                        ("observedAt", package?.BarCodeInfo?.ScanTime), ("boundAt", package?.BarCodeInfo?.BindTime),
+                        ("camera", package?.BarCodeInfo?.SerialNumber), ("weight", package?.WeightInfo?.FormattedWeight),
+                        ("dimensions", package?.VolumeInfo?.OriginalText)]);
                 //创建包裹
                 if (position is { } trigger)
                 {
@@ -541,6 +569,14 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             //http
             _eventBus.Subscribe<ApiResponseReceived>(item =>
             {
+                _pipelineLog.Write("api.response", "目标格口查询返回",
+                    item.UploadResponse?.IsSuccess == true ? LogType.Information : LogType.Exception,
+                    item.Timestamp, item.Barcode, item.Guid.ToString(),
+                    item.UploadResponse?.ResponseTime,
+                    [("createdAt", item.PackageCreationTime), ("scanTime", item.ScanTime),
+                        ("url", item.UploadResponse?.RequestUrl), ("request", item.UploadResponse?.RequestContent),
+                        ("response", item.UploadResponse?.ResponseContent),
+                        ("durationSeconds", item.UploadResponse?.DurationSeconds), ("error", item.UploadResponse?.ExceptionMsg)]);
                 if (item is { } model)
                 {
                     _eventBus.Publish(new ApiLogInfoModel()
@@ -609,6 +645,18 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>把全部日志分类队列连接到同一个无计数累积唤醒信号。</summary>
         private void ConfigureQueueSignals()
         {
+            _exceptionItems.SetCaptureCallback(_pipelineLog.Capture);
+            _appLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _cameraLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _sortingLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _weighingLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _volumeLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _apiLogInfoItems.SetCaptureCallback(_pipelineLog.Capture);
+            _outputLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _inputLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _ocrLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _ftpLogItems.SetCaptureCallback(_pipelineLog.Capture);
+            _logCleaningLogItems.SetCaptureCallback(_pipelineLog.Capture);
             _exceptionItems.SetEnqueuedCallback(SignalFlush);
             _appLogItems.SetEnqueuedCallback(SignalFlush);
             _cameraLogItems.SetEnqueuedCallback(SignalFlush);
@@ -622,6 +670,55 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             _ftpLogItems.SetEnqueuedCallback(SignalFlush);
             _logCleaningLogItems.SetEnqueuedCallback(SignalFlush);
             _diagnosticLogItems.SetEnqueuedCallback(SignalFlush);
+        }
+
+        /// <summary>补齐格口决策、实际落格及原始通讯证据，所有回调只提交异步日志。</summary>
+        private void ConfigurePipelineTrace(ISortingConnectionService connection)
+        {
+            _eventBus.Subscribe<SortingExitReceived>(item =>
+                _pipelineLog.Write("sorting.selected", "分拣选定格口，等待指令发送及落格确认",
+                    packageTimestamp: item.Timestamp, barcode: item.BarCode,
+                    sequence: item.SortingParam?.Guid.ToString(),
+                    fields: [("scanTime", item.ScanTime), ("exitId", item.ExitId), ("exitName", item.ExitName),
+                        ("exitType", item.Type), ("weight", item.SortingParam?.Weight)]));
+            _eventBus.Subscribe<ExceptionSortingReceived>(item =>
+                _pipelineLog.Write("sorting.exception", "进入异常分拣", LogType.Warning,
+                    item.Timestamp, item.BarCode, item.SortingCode,
+                    fields: [("scanTime", item.ScanTime), ("reason", item.PackageCloudAbnormalSortingType)]));
+            _eventBus.Subscribe<PackageExitUpdateEvent>(item =>
+                _pipelineLog.Write("sorting." + item.ExitType, "格口状态更新",
+                    item.PackageAbnormalSortingType == PackageAbnormalSortingType.None
+                        ? LogType.Information : LogType.Warning,
+                    item.Timestamp,
+                    fields: [("exitId", item.ExitId), ("exitName", item.ExitName), ("exitType", item.Type),
+                        ("instructionType", item.InstructionType), ("reason", item.PackageAbnormalSortingType)]));
+            connection.CommunicationInfoEvent += (_, item) =>
+                _pipelineLog.Write("transport." + item.Type, "下位机原始通讯",
+                    packageTimestamp: item.Timestamp, barcode: item.BarCode, sequence: item.Guid?.ToString(),
+                    occurredAt: item.Time,
+                    fields: [("connection", item.ConnectionName), ("rawContent", item.Content),
+                        ("dataFormat", item.FormatType), ("exitName", item.ExitName)]);
+            connection.Connected += (_, item) => _pipelineLog.Write("transport.connected", "下位机连接建立",
+                fields: [("connection", item.ConnectionName), ("communication", item.Type)]);
+            connection.Disconnected += (_, item) => _pipelineLog.Write("transport.disconnected", "下位机断开连接",
+                LogType.Warning, fields: [("connection", item.ConnectionName), ("communication", item.Type)]);
+            connection.CommunicationExceptionEvent += (_, exception) => _pipelineLog.Error("transport.error", exception);
+            connection.HeartbeatError += (_, exception) => _pipelineLog.Error("transport.heartbeat.error", exception);
+            connection.SendError += (_, item) => _pipelineLog.Write("transport.send.error", item.ExceptionMessage, LogType.Exception);
+            _sortingService.ExceptionOccurred += (_, item) => _pipelineLog.Write("sorting.error", item.ExceptionMessage, LogType.Exception);
+        }
+
+        /// <summary>快照相机采集身份及时间，保留赋值前尚未关联包裹的读码证据。</summary>
+        private void TraceRead(BarcodeReadEventArgs item, bool missed)
+        {
+            _pipelineLog.Write(missed ? "barcode.missed" : "barcode.read",
+                missed ? "相机未识别条码" : "相机识别条码",
+                LogType.Information, barcode: item.Barcode,
+                occurredAt: item.ScanTime,
+                fields: [("camera", item.CameraSerialNumber), ("readTimestamp", item.Timestamp),
+                    ("receivedAt", DateTime.Now), ("isNoRead", missed), ("filtered", item.IsFiltered),
+                    ("observedAt", item.ScanTime), ("triggerIndex", item.TriggerIndex),
+                    ("frameNo", item.FrameNo), ("sdkFrameNo", item.SdkFrameNo), ("sdkChannelId", item.SdkChannelId)]);
         }
 
         /// <summary>非阻塞地通知后台刷新器已有日志到达。</summary>
@@ -662,6 +759,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>按固定小批次刷新全部数据库日志和诊断文本队列。</summary>
         private async Task FlushAllQueuesAsync(CancellationToken token)
         {
+            FlushDiagnosticMessages();
             await FlushBatchAsync(_exceptionItems, _exceptionLogRepository, token);
             await FlushBatchAsync(_appLogItems, _appLogRepository, token);
             await FlushBatchAsync(_cameraLogItems, _cameraLogRepository, token);
@@ -674,7 +772,6 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             await FlushBatchAsync(_ocrLogItems, _ocrLogRepository, token);
             await FlushBatchAsync(_ftpLogItems, _ftpLogRepository, token);
             await FlushBatchAsync(_logCleaningLogItems, _cleanupLogRepository, token);
-            FlushDiagnosticMessages();
             ReportDroppedLogs();
         }
 
@@ -728,7 +825,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                  index < maximumBatchSize && _diagnosticLogItems.TryDequeue(out var message);
                  index++)
             {
-                logger.Info(message);
+                logger.Info(PipelineFileLog.Sanitize(message));
             }
         }
 
@@ -778,7 +875,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         {
             foreach (var item in batch)
             {
-                queue.Enqueue(item);
+                queue.EnqueueForRetry(item);
             }
         }
 
@@ -794,6 +891,7 @@ namespace JayTom.Dws.Client.Service.BackgroundService
             }
 
             Interlocked.Exchange(ref _lastDroppedLogReportTimestamp, now);
+            _pipelineLog.ReportHealth();
             var droppedCount = _exceptionItems.ConsumeDroppedCount() +
                                _appLogItems.ConsumeDroppedCount() +
                                _cameraLogItems.ConsumeDroppedCount() +

@@ -109,6 +109,15 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 }
             });
 
+            // 停止后上传队列已经清空，旧包裹不得继续生成超时落格和迟到回复事件。
+            _eventBus.Subscribe<ApplicationStatusChanged>(item =>
+            {
+                if (item is { Status: ApplicationStatus.Stop })
+                {
+                    _fallConfirmationTracker.CancelPending();
+                }
+            });
+
             //分拣指令
             _eventBus.Subscribe<InstructionReceived>(item =>
             {
@@ -117,6 +126,13 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 {
                     var routing = Volatile.Read(ref _routingSnapshot);
                     var instructionInfoModel = model.InstructionInfos.FirstOrDefault() ?? new InstructionInfoModel();
+                    if (instructionInfoModel.InstructionType is InstructionType.PackageException or
+                        InstructionType.PackageExceptionEx or InstructionType.SignalCallback)
+                        JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("plc.fall.received",
+                            "收到原包裹下位机落格报文，进入去重和格口解析", packageTimestamp: model.Timestamp,
+                            barcode: model.BarCode, sequence: model.SortingCode,
+                            fields: [("connection", model.ConnectionName), ("rawContent", instructionInfoModel.InstructionContent),
+                                ("instructionType", instructionInfoModel.InstructionType), ("isSynthetic", false)]);
                     switch (instructionInfoModel.InstructionType)
                     {
                         //异常
@@ -285,6 +301,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
                 {
                     NLog.LogManager.GetCurrentClassLogger().Warn(
                         $"下位机60秒未回复落格，已生成正常落格事件:Timestamp={fallEvent.Timestamp},ExitName={fallEvent.ExitName},ExitId={fallEvent.ExitId}");
+                    JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("plc.fall.timeout",
+                        "未收到真实落格回执，已按现有规则补记落格", JayTom.Dws.Models.LocalLog.LogType.Warning,
+                        packageTimestamp: fallEvent.Timestamp,
+                        fields: [("reasonCode", "PhysicalConfirmationTimeout"), ("exitId", fallEvent.ExitId),
+                            ("exitName", fallEvent.ExitName), ("isSynthetic", true), ("timeoutMilliseconds", 60_000)]);
                     _eventBus.Publish(fallEvent);
                 }
             }
@@ -294,6 +315,11 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         private static void LogDuplicateFallConfirmation(
             InstructionReceived model)
         {
+            JayTom.Dws.Client.Observability.PipelineFileLog.Instance.Write("plc.fall.duplicate",
+                "落格回复已确认、已超时补记或已退出，忽略本次重复回执", JayTom.Dws.Models.LocalLog.LogType.Information,
+                model.Timestamp, model.BarCode, model.SortingCode,
+                fields: [("reasonCode", "DuplicateOrLatePhysicalConfirmation"), ("connection", model.ConnectionName),
+                    ("rawContent", model.InstructionInfos?.FirstOrDefault()?.InstructionContent)]);
             NLog.LogManager.GetCurrentClassLogger().Warn(
                 $"忽略重复或迟到的落格回复:Timestamp={model.Timestamp},SortingCode={model.SortingCode},ConnectionName={model.ConnectionName}");
         }

@@ -59,6 +59,9 @@ namespace JayTom.Dws.Client.Service.Device
         /// </summary>
         event EventHandler<BarcodeReadEventArgs> BarcodeMissed;
 
+        /// <summary>该触发的全部条码被丢弃过滤，保留内部消费结果以维持下位机位置。</summary>
+        event EventHandler<BarcodeReadEventArgs> BarcodeFiltered;
+
         /// <summary>
         /// 相机捕获到全景图片触发事件
         /// </summary>

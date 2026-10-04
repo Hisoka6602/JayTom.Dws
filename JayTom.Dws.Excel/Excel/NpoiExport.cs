@@ -13,7 +13,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JayTom.Dws.Plugin.Excel {
 
-    public class NpoiExport : IExcel {
+    public partial class NpoiExport : IExcel {
         private ICellStyle? TitleStyle { get; set; } = null;
         private ICellStyle? HeaderStyle { get; set; } = null;
         private ICellStyle? ContentStyle { get; set; } = null;

@@ -14,6 +14,8 @@ internal sealed class BoundedLogQueue<T> {
     private readonly LosslessWorkQueue<T> _queue = new();
     /// <summary>在成功入队后调用的轻量唤醒通知。</summary>
     private Action? _itemEnqueued;
+    /// <summary>首次接收日志时提交独立文件快照，数据库重试不重复记录。</summary>
+    private Action<T>? _capture;
 
     /// <summary>获取当前队列是否没有待处理日志。</summary>
     public bool IsEmpty => _queue.IsEmpty;
@@ -29,8 +31,20 @@ internal sealed class BoundedLogQueue<T> {
         Volatile.Write(ref _itemEnqueued, callback);
     }
 
+    /// <summary>设置首次入队的文件快照回调；回调只允许提交异步写入。</summary>
+    public void SetCaptureCallback(Action<T> callback) {
+        ArgumentNullException.ThrowIfNull(callback);
+        Volatile.Write(ref _capture, callback);
+    }
+
     /// <summary>非阻塞加入日志。</summary>
     public void Enqueue(T item) {
+        Volatile.Read(ref _capture)?.Invoke(item);
+        EnqueueForRetry(item);
+    }
+
+    /// <summary>恢复数据库待写项目，沿用首次入队的文件证据。</summary>
+    public void EnqueueForRetry(T item) {
         if (_queue.TryEnqueue(item)) {
             Volatile.Read(ref _itemEnqueued)?.Invoke();
         }

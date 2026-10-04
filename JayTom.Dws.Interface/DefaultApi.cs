@@ -34,6 +34,7 @@ namespace JayTom.Dws.Integrations {
             CancellationToken token = default) {
             var resultContent = string.Empty;
             var exceptionMsg = string.Empty;
+            var apiExceptionType = global::JayTom.Dws.Integrations.Contracts.ApiExceptionType.None;
             var isSuccess = false;
             UploadResponse response;
             //创建数据
@@ -67,6 +68,7 @@ namespace JayTom.Dws.Integrations {
                 using HttpResponseMessage message = await CreateRequestAsync(httpClient, data, imageInfo,
                     panoramaImageInfos, token).ConfigureAwait(false);
                 resultContent = await message.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                message.EnsureSuccessStatusCode();
                 isSuccess = _responseEvaluator.IsSuccess(
                     resultContent,
                     _parameters.ValidationMode,
@@ -77,22 +79,27 @@ namespace JayTom.Dws.Integrations {
             }
             catch (HttpRequestException e) {
                 isSuccess = false;
+                apiExceptionType = global::JayTom.Dws.Integrations.Contracts.ApiExceptionType.UnreachableUrl;
                 resultContent += exceptionMsg = e.Message;
             }
             catch (AggregateException) {
                 isSuccess = false;
+                apiExceptionType = global::JayTom.Dws.Integrations.Contracts.ApiExceptionType.Other;
                 resultContent += exceptionMsg = "接口访问异常!";
             }
             catch (JsonException) {
                 isSuccess = false;
+                apiExceptionType = global::JayTom.Dws.Integrations.Contracts.ApiExceptionType.ContentParsingException;
                 resultContent += exceptionMsg = "报文解析异常!";
             }
             catch (TaskCanceledException) {
                 isSuccess = false;
+                apiExceptionType = global::JayTom.Dws.Integrations.Contracts.ApiExceptionType.Timeout;
                 resultContent += exceptionMsg = "接口访问返回超时!";
             }
             catch (Exception e) {
                 isSuccess = false;
+                apiExceptionType = global::JayTom.Dws.Integrations.Contracts.ApiExceptionType.Other;
                 resultContent += exceptionMsg = e.Message;
             }
             finally {
@@ -101,6 +108,7 @@ namespace JayTom.Dws.Integrations {
                     ExceptionMsg = exceptionMsg,
                     ApiParameters = IntegrationParameterSerializer.Serialize(_parameters),
                     IsSuccess = isSuccess,
+                    ApiExceptionType = apiExceptionType,
                     DurationSeconds = Convert.ToDecimal(stopwatch.Elapsed.TotalSeconds),
                     RequestContent = JsonConvert.SerializeObject(data),
                     RequestTime = requestTime,

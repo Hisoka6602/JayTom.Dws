@@ -1,0 +1,23 @@
+services:
+  devices:
+    build: .
+    image: jaytom-dws-device-fixture:local
+    ports:
+      - "127.0.0.1:18086:18086"
+      - "127.0.0.1:19001:19001"
+      - "127.0.0.1:19002:19002"
+    volumes:
+      - "../../output/simulation/fixture:/results"
+    init: true
+    restart: "no"
+  realtime:
+    build: .
+    image: jaytom-dws-device-fixture:local
+    ports:
+      - "127.0.0.1:18096:18086"
+      - "127.0.0.1:19011:19001"
+      - "127.0.0.1:19012:19002"
+    volumes:
+      - "../../output/simulation/fixture:/results"
+    init: true
+    restart: "no"

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using JayTom.Dws.Abstractions.Threading;
 using JayTom.Dws.Models.Package;
 using JayTom.Dws.Legacy.Contracts.Repositories.LocalData;
 
@@ -17,7 +18,7 @@ public sealed class PackageHistoryQueryService : IPackageHistoryQueryService {
     }
 
     /// <summary>按筛选条件读取一页历史包裹。</summary>
-    public async Task<PackageHistoryPage> SearchAsync(
+    public Task<PackageHistoryPage> SearchAsync(
         PackageHistoryQuery query,
         int pageIndex,
         int pageSize,
@@ -26,8 +27,22 @@ public sealed class PackageHistoryQueryService : IPackageHistoryQueryService {
         ArgumentOutOfRangeException.ThrowIfLessThan(pageIndex, 0);
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
 
+        return LowPriorityWorkScheduler.Shared.RunAsync(
+            () => SearchCoreAsync(query, pageIndex, pageSize, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>在低优先级工作线程上查询和映射，不把同步 SQLite 读取带回 UI 线程。</summary>
+    private async Task<PackageHistoryPage> SearchCoreAsync(
+        PackageHistoryQuery query, int pageIndex, int pageSize, CancellationToken cancellationToken) {
+        if (query.PackageTimestamp is { } timestamp) {
+            var detail = await FindCoreAsync(timestamp, cancellationToken);
+            return new PackageHistoryPage(detail is null ? 0 : 1, detail is null ? [] : [detail]);
+        }
         var predicate = CreatePredicate(query);
-        var total = await _repository.Total(predicate, cancellationToken).ConfigureAwait(false);
+        var total = query.IncludeTotal
+            ? await _repository.Total(predicate, cancellationToken)
+            : -1;
+        cancellationToken.ThrowIfCancellationRequested();
         if (total == 0) {
             return new PackageHistoryPage(0, Array.Empty<PackageHistoryItem>());
         }
@@ -37,8 +52,9 @@ public sealed class PackageHistoryQueryService : IPackageHistoryQueryService {
                 item => item.PackageCreateTime,
                 pageIndex,
                 pageSize,
-                cancellationToken)
-            .ConfigureAwait(false);
+                cancellationToken, includeUploadDetails: false);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!result.Key) throw new InvalidOperationException("历史包裹读取失败，请稍后重试。");
         return new PackageHistoryPage(
             total,
             result.Key
@@ -47,13 +63,18 @@ public sealed class PackageHistoryQueryService : IPackageHistoryQueryService {
     }
 
     /// <summary>按包裹时间戳读取完整包裹信息。</summary>
-    public async Task<PackageHistoryItem?> FindByTimestampAsync(
+    public Task<PackageHistoryItem?> FindByTimestampAsync(
         long timestamp,
-        CancellationToken cancellationToken = default) {
+        CancellationToken cancellationToken = default) =>
+        LowPriorityWorkScheduler.Shared.RunAsync(() => FindCoreAsync(timestamp, cancellationToken), cancellationToken);
+
+    /// <summary>在历史读取线程上查询单个包裹详情。</summary>
+    private async Task<PackageHistoryItem?> FindCoreAsync(long timestamp, CancellationToken cancellationToken) {
         var result = await _repository.FirstOrDefaultInfo(
                 item => item.PackageTimestamped == timestamp,
-                cancellationToken)
-            .ConfigureAwait(false);
+                cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!result.Key) throw new InvalidOperationException("包裹详情读取失败，请稍后重试。");
         return result.Key && result.Value is not null
             ? PackageHistoryMapper.Map(result.Value)
             : null;

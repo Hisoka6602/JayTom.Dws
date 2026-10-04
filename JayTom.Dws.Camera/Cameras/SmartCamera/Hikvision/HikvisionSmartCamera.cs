@@ -859,7 +859,10 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     return;
                 }
                 foreach (var result in _triggerCycles.CompleteDrained(throughSequence)) {
-                    if (result is BarcodeTriggeredEventArgs barcode && BarcodeReadTriggered is not null) {
+                    if (result.IsFiltered) {
+                        FilteredBarcodeReturned?.Invoke(this, result);
+                    }
+                    else if (result is BarcodeTriggeredEventArgs barcode && BarcodeReadTriggered is not null) {
                         try {
                             OnBarcodeReadTriggered(barcode);
                         }
@@ -979,7 +982,12 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     out var groupedScanTime);
                 if (claim == HikvisionFrameTriggerResults.Claim.Accepted) {
                     candidate.ScanTime = groupedScanTime;
-                    OnBarcodeReadTriggered(candidate);
+                    if (candidate.IsFiltered) {
+                        FilteredBarcodeReturned?.Invoke(this, candidate);
+                    }
+                    else {
+                        OnBarcodeReadTriggered(candidate);
+                    }
                     continue;
                 }
                 ReleaseBarcodeResult(candidate);
@@ -1082,8 +1090,11 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                         null,
                         frame.FrameInfo,
                         frame.FrameNo);
-                    if (filteredBarcodes.Count == 0 && !IsRealtimeImageEnabled) {
-                        return;
+                    if (filteredBarcodes.Count == 0) {
+                        ReportFilteredFrame(frame);
+                        if (!IsRealtimeImageEnabled) {
+                            return;
+                        }
                     }
                 }
 
@@ -1096,6 +1107,30 @@ namespace JayTom.Dws.Camera.Cameras.SmartCamera.Hikvision {
                     frame.Timestamp,
                     frame.FrameNo,
                     filteredBarcodes);
+            }
+        }
+
+        /// <summary>全部条码被丢弃过滤时保留无图片的触发结果，避免下位机消费次序出现空洞。</summary>
+        private void ReportFilteredFrame(HikvisionCapturedFrame frame) {
+            if (FilteredBarcodeReturned is null) {
+                return;
+            }
+            var candidate = new BarcodeTriggeredEventArgs {
+                Barcode = "filtered", IsFiltered = true,
+                CameraSerialNumber = Info?.SerialNumber ?? string.Empty,
+                ScanTime = frame.ScanTime, Timestamp = frame.Timestamp,
+                FrameNo = frame.FrameNo, SdkFrameNo = frame.FrameInfo.nFrameNum,
+                TriggerIndex = HasReliableTriggerBoundary || UsesFrameTriggerIndex
+                    ? frame.FrameInfo.nTriggerIndex : null
+            };
+            if (HasReliableTriggerBoundary) {
+                _triggerCycles.HoldBarcode(frame.FrameInfo.nTriggerIndex, candidate);
+            }
+            else if (UsesFrameTriggerIndex) {
+                PublishFrameTriggerBarcodes(frame.FrameInfo.nTriggerIndex, [candidate]);
+            }
+            else {
+                FilteredBarcodeReturned?.Invoke(this, candidate);
             }
         }
 

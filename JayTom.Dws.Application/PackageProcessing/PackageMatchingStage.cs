@@ -1,7 +1,7 @@
 namespace JayTom.Dws.Application.PackageProcessing;
 
 /// <summary>验证包裹已匹配到有效条码身份。</summary>
-public sealed class PackageMatchingStage : IPackageProcessingStage
+internal sealed class PackageMatchingStage : IPackageProcessingStage
 {
     /// <summary>匹配阶段标识。</summary>
     public PackageProcessingStage Stage => PackageProcessingStage.Matching;

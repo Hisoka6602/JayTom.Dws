@@ -24,7 +24,7 @@ namespace JayTom.Dws.Legacy.Contracts.Repositories.LocalData {
         Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackageOrderByDescending<TOrder>(
             Expression<Func<PackageInfoModel, bool>> @where,
             Expression<Func<PackageInfoModel, TOrder>> order, int pageIndex, int pageSize,
-            CancellationToken token = default);
+            CancellationToken token = default, bool includeUploadDetails = true);
 
         Task<KeyValuePair<bool, List<PackageInfoModel>>> SelectPackage<TOrder>(
             Expression<Func<PackageInfoModel, bool>> @where,

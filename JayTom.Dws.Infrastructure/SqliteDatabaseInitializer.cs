@@ -84,7 +84,7 @@ namespace JayTom.Dws.Infrastructure {
                     PRAGMA busy_timeout=30000;
                     PRAGMA wal_autocheckpoint=1000;
                     PRAGMA temp_store=MEMORY;
-                    PRAGMA cache_size=-32768;
+                    PRAGMA cache_size=-8192;
                     PRAGMA mmap_size=268435456;
                     PRAGMA optimize;
                     """;

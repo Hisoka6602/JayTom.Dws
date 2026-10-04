@@ -19,10 +19,15 @@ namespace JayTom.Dws.Legacy.Contracts.DownstreamProtocols.CommunicationProtocols
                 var startData = "00";
                 var functionData = "00";
                 var interaction = "00";
-                var bytes = HexStringToByteArray(data);
+                var hasValidData = HexDataFormatter.TryParse(data, out var bytes);
+                if (!hasValidData) bytes = [0x00];
 
                 switch (type) {
                     case FunctionType.SendExit:
+                        if (!hasValidData || bytes.Length != 2)
+                            throw new FormatException("Wxkc 格口指令必须是两个有效的十六进制字节");
+                        if (attach.Guid is < 0 or > ushort.MaxValue)
+                            throw new ArgumentOutOfRangeException(nameof(attach.Guid), "Wxkc 小车 Id 超出两字节范围");
                         if (bytes.Length == 2) {
                             //格口号
                             startData = "F9";

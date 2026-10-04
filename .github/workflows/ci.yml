@@ -42,6 +42,10 @@ jobs:
         shell: pwsh
         run: dotnet test .\JayTom.Dws.Tests\JayTom.Dws.Tests.csproj -c Release -p:Platform=x64 --no-build --no-restore
 
+      - name: 验证实际客户端包裹流程
+        shell: pwsh
+        run: dotnet test .\Tests\JayTom.Dws.Client.Tests\JayTom.Dws.Client.Tests.csproj -c Release -p:Platform=x64 --no-build --no-restore
+
       - name: 生成 win-x64 发布产物
         shell: pwsh
         run: dotnet publish .\JayTom.Dws.Client\JayTom.Dws.Client.csproj -c Release -p:Platform=x64 --no-restore -m:1 -nr:false -o .\artifacts\publish

@@ -28,6 +28,9 @@
         <b:EventTrigger EventName="Loaded" SourceName="DataManagementPageView">
             <b:InvokeCommandAction Command="{Binding LoadedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Page}}}" />
         </b:EventTrigger>
+        <b:EventTrigger EventName="Unloaded" SourceName="DataManagementPageView">
+            <b:InvokeCommandAction Command="{Binding UnloadedCommand}" />
+        </b:EventTrigger>
         <!--<b:EventTrigger EventName="SizeChanged" SourceName="MainWin">
             <b:InvokeCommandAction Command="{Binding SizeChangedCommand, IsAsync=False}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" />
         </b:EventTrigger>-->
@@ -567,6 +570,10 @@
                 CanUserAddRows="False"
                 CanUserResizeColumns="True"
                 CanUserSortColumns="False"
+                EnableColumnVirtualization="True"
+                EnableRowVirtualization="True"
+                ScrollViewer.CanContentScroll="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
                 CellStyle="{StaticResource CustomDataGridTextCellStyle}"
                 ColumnHeaderStyle="{StaticResource CustomDataGridTextColumnStyle}"
                 Foreground="White"

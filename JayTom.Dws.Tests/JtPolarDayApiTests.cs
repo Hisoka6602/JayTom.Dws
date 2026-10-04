@@ -12,7 +12,7 @@ namespace JayTom.Dws.Tests;
 /// <summary>
 /// 验证极昼查询和设备信息回传的关键容错行为。
 /// </summary>
-public sealed class JtPolarDayApiTests
+public sealed partial class JtPolarDayApiTests
 {
     /// <summary>
     /// 已指定的测试和本地环境不能被默认正式地址覆盖。
@@ -104,9 +104,10 @@ public sealed class JtPolarDayApiTests
     /// 云端必须先申请链接，再 PUT 带水印的二进制图片，并在成功后回传半路径。
     /// </summary>
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task OnlineImageUsesSignedLinkThenUnsignedBinaryPut(bool responseIsArray)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task OnlineImageUsesSignedLinkThenUnsignedBinaryPut(bool responseIsArray, bool responseIsFileMap)
     {
         var paths = new List<string>();
         var parameters = CreateParameters();
@@ -128,9 +129,11 @@ public sealed class JtPolarDayApiTests
                 Assert.Equal(1, fileNames.GetArrayLength());
                 var fileName = fileNames[0].GetString();
                 Assert.Matches("^scan_[a-f0-9]{32}\\.jpg$", fileName!);
+                var data = responseIsFileMap
+                    ? "{" + JsonSerializer.Serialize(fileName) + ":" + uploadData + "}"
+                    : responseIsArray ? "[" + uploadData + "]" : uploadData;
                 return StubHttpMessageHandler.CreateOkResponse(
-                    "{\"code\":1,\"msg\":\"success\",\"data\":" +
-                    (responseIsArray ? "[" + uploadData + "]" : uploadData) + "}");
+                    "{\"code\":1,\"msg\":\"success\",\"data\":" + data + "}");
             }
 
             if (request.Method == HttpMethod.Put)
@@ -183,7 +186,7 @@ public sealed class JtPolarDayApiTests
     }
 
     /// <summary>
-    /// 存储服务没有返回 HTTP 200 时不得将图片半路径写入设备报文。
+    /// 存储服务没有返回 HTTP 200 时保留图片供重试，不能成功发送无图设备报文。
     /// </summary>
     [Theory]
     [InlineData(HttpStatusCode.Created)]
@@ -209,19 +212,18 @@ public sealed class JtPolarDayApiTests
         var result = await api.SetParameters(parameters);
         Assert.True(result.Key, result.Value);
         using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
-        await api.UploadInBackground("JT001", 0, new DateTime(2026, 8, 12, 8, 1, 2),
-            imageInfo: new UploadImageInfo { Image = image },
-            other: new JtPolarDayApi.UploadContext
-            {
-                CarNum = "1", GridNo = "01", GridCode = "111", HalfPath = "stale.jpg"
-            });
-        Assert.Equal(4, handler.RequestCount);
-        Assert.All(handler.RequestContents.Skip(2), body =>
+        var context = new JtPolarDayApi.UploadContext
         {
-            using var document = JsonDocument.Parse(body);
-            Assert.Equal(1, document.RootElement.GetArrayLength());
-            Assert.False(document.RootElement[0].TryGetProperty("halfPath", out _));
-        });
+            CarNum = "1", GridNo = "01", GridCode = "111", HalfPath = "stale.jpg"
+        };
+        await Assert.ThrowsAsync<HttpRequestException>(() => api.UploadInBackground("JT001", 0, new DateTime(2026, 8, 12, 8, 1, 2),
+            imageInfo: new UploadImageInfo { Image = image },
+            other: context));
+        Assert.Equal(2, handler.RequestCount);
+        Assert.Null(context.HalfPath);
+        Assert.Collection(handler.RequestContents,
+            body => Assert.Contains("equipmentCode", body, StringComparison.Ordinal),
+            _ => { });
     }
 
     /// <summary>
@@ -240,29 +242,31 @@ public sealed class JtPolarDayApiTests
     }
 
     /// <summary>
-    /// 本地图片暂存失败时仍应继续发送无图 scanInfo 和 packageInfo。
+    /// 图片链接申请失败必须向工作器报告失败，由同一包裹继续重试。
     /// </summary>
     [Fact]
-    public async Task DeviceInfoUploadsWithoutImageWhenLocalImageStagingFails()
+    public async Task FailedImageLinkDoesNotCompletePackageSubmission()
     {
         var requestPaths = new List<string>();
         using var handler = new StubHttpMessageHandler(request =>
         {
             requestPaths.Add(request.RequestUri?.AbsolutePath ?? string.Empty);
             return request.RequestUri?.AbsolutePath.Contains(
-                       "/polarDay/upload/sortingImage",
+                       "/polarDay/query/getUploadUrl",
                        StringComparison.OrdinalIgnoreCase) == true
                 ? StubHttpMessageHandler.CreateOkResponse(
-                    "{\"code\":0,\"msg\":\"staging failed\",\"data\":null}")
+                    "{\"code\":0,\"msg\":\"link failed\",\"data\":null}")
                 : StubHttpMessageHandler.CreateOkResponse(
                     "{\"code\":1,\"msg\":\"success\",\"data\":null}");
         });
         var api = new JtPolarDayApi(new StubHttpClientFactory(handler));
-        var parameterResult = await api.SetParameters(CreateParameters());
+        var parameters = CreateParameters();
+        parameters.RetryCount = 1;
+        var parameterResult = await api.SetParameters(parameters);
         Assert.True(parameterResult.Key, parameterResult.Value);
 
         using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
-        await api.UploadInBackground(
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.UploadInBackground(
             "JT5513378378679",
             1,
             new DateTime(2026, 8, 10, 16, 38, 38),
@@ -277,44 +281,37 @@ public sealed class JtPolarDayApiTests
                 GridNo = "05",
                 GridCode = "01",
                 FallTime = new DateTime(2026, 8, 10, 16, 38, 41)
-            });
+            }));
 
-        Assert.Equal(3, requestPaths.Count);
+        Assert.Collection(requestPaths, path => Assert.EndsWith("/getUploadUrl", path));
         Assert.EndsWith(
-            "/polarDay/upload/sortingImage",
+            "/polarDay/query/getUploadUrl",
             requestPaths[0],
             StringComparison.OrdinalIgnoreCase);
-        Assert.All(
-            requestPaths.Skip(1),
-            path => Assert.EndsWith(
-                "/polarDay/upload/deviceInfo",
-                path,
-                StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(
-            handler.RequestContents,
-            content => content.Contains(
-                "\"eventType\":\"packageInfo\"",
-                StringComparison.Ordinal));
+        Assert.DoesNotContain(requestPaths, path => path.Contains("/deviceInfo", StringComparison.Ordinal));
     }
 
     /// <summary>
-    /// 图片必须先暂存到本地适配服务，再把 halfPath 传给设备报文。
+    /// 本地查询也必须通过在线图片接口取得链接和上传文件，设备报文仍回到本地服务。
     /// </summary>
     [Fact]
-    public async Task ImageStagesLocallyBeforeDeviceInfoWithoutDirectOpaCall()
+    public async Task LocalDeviceServiceUsesOnlineImageProtocol()
     {
         var requestPaths = new List<string>();
+        var requestHosts = new List<string>();
         using var handler = new StubHttpMessageHandler(request =>
         {
             var path = request.RequestUri?.AbsolutePath ?? string.Empty;
             requestPaths.Add(path);
-            return path.EndsWith(
-                    "/polarDay/upload/sortingImage",
-                    StringComparison.OrdinalIgnoreCase)
-                ? StubHttpMessageHandler.CreateOkResponse(
-                    "{\"code\":1,\"msg\":\"success\",\"data\":{\"halfPath\":\"staging\\\\JT001.jpg\"}}")
-                : StubHttpMessageHandler.CreateOkResponse(
-                    "{\"code\":1,\"msg\":\"success\",\"data\":null}");
+            requestHosts.Add(request.RequestUri!.Host);
+            if (path.EndsWith("/getUploadUrl", StringComparison.Ordinal))
+            {
+                return StubHttpMessageHandler.CreateOkResponse(
+                    "{\"code\":1,\"msg\":\"success\",\"data\":{\"halfPath\":\"test/JT001.jpg\",\"fullPath\":\"https://storage.test/JT001.jpg\",\"contentType\":\"image/jpeg\"}}");
+            }
+            return request.Method == HttpMethod.Put
+                ? new HttpResponseMessage(HttpStatusCode.OK)
+                : StubHttpMessageHandler.CreateOkResponse("{\"code\":1,\"msg\":\"success\",\"data\":null}");
         });
         var api = new JtPolarDayApi(new StubHttpClientFactory(handler));
         var parameterResult = await api.SetParameters(CreateParameters());
@@ -339,20 +336,86 @@ public sealed class JtPolarDayApiTests
             });
 
         Assert.Equal(
-            "/polarDay/upload/sortingImage",
+            "/sdsOnlineApi/polarDay/query/getUploadUrl",
             requestPaths[0]);
         Assert.DoesNotContain(
             requestPaths,
             path => path.Contains(
                 "/opa/",
                 StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(3, requestPaths.Count);
+        Assert.Equal(4, requestPaths.Count);
+        Assert.Collection(requestHosts,
+            host => Assert.Equal("uat-sdsonline.jtexpress.com.cn", host),
+            host => Assert.Equal("storage.test", host),
+            host => Assert.Equal("unit.test", host),
+            host => Assert.Equal("unit.test", host));
         Assert.All(
-            handler.RequestContents.Skip(1),
+            handler.RequestContents.Skip(2),
             content => Assert.Contains(
-                "staging\\\\JT001.jpg",
+                "test/JT001.jpg",
                 content,
                 StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// 图片用户编号未配置时明确失败，不能把无图设备上报当作完成。
+    /// </summary>
+    [Fact]
+    public async Task MissingImageUserCodeDoesNotSilentlyCompleteUpload()
+    {
+        using var handler = new StubHttpMessageHandler(_ => StubHttpMessageHandler.CreateOkResponse("{}"));
+        var api = new JtPolarDayApi(new StubHttpClientFactory(handler));
+        var parameters = CreateParameters();
+        parameters.ImageReqUserCode = string.Empty;
+        Assert.True((await api.SetParameters(parameters)).Key);
+        using var image = ImageHandle.TakeOwnership(new Bitmap(2, 2));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => api.UploadInBackground(
+            "JT001", 0, DateTime.Now, imageInfo: new UploadImageInfo { Image = image }));
+        Assert.Contains("reqUserCode", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(0, handler.RequestCount);
+    }
+
+    /// <summary>图片已成功时保留半路径，设备上报重试不重复申请链接或上传文件。</summary>
+    [Fact]
+    public async Task DeviceRetryReusesSuccessfullyUploadedPreparedImage()
+    {
+        var imageRequests = 0;
+        var deviceRequests = 0;
+        using var handler = new StubHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/getUploadUrl", StringComparison.Ordinal))
+            {
+                imageRequests++;
+                return StubHttpMessageHandler.CreateOkResponse("{\"code\":1,\"data\":[{\"halfPath\":\"retry.jpg\",\"fullPath\":\"https://storage.test/retry.jpg\",\"contentType\":\"image/jpeg\"}]}");
+            }
+            if (request.Method == HttpMethod.Put)
+            {
+                imageRequests++;
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            deviceRequests++;
+            return deviceRequests == 1
+                ? new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                : StubHttpMessageHandler.CreateOkResponse("{\"code\":1,\"msg\":\"success\"}");
+        });
+        var api = new JtPolarDayApi(new StubHttpClientFactory(handler));
+        var parameters = CreateParameters();
+        parameters.RetryCount = 1;
+        Assert.True((await api.SetParameters(parameters)).Key);
+        using var image = new Bitmap(2, 2);
+        var context = new JtPolarDayApi.UploadContext
+        {
+            CarNum = "1", GridNo = "44", GridCode = "111",
+            ScanImageContent = JtPolarDayApi.PrepareScanImageContent(image, "JT001", DateTime.Now, 0)
+        };
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            api.UploadInBackground("JT001", 0, DateTime.Now, other: context));
+        Assert.Equal("retry.jpg", context.HalfPath);
+        Assert.Null(context.ScanImageContent);
+        await api.UploadInBackground("JT001", 0, DateTime.Now, other: context);
+        Assert.Equal(2, imageRequests);
+        Assert.Equal(3, deviceRequests);
+        Assert.All(handler.RequestContents.Skip(2), body => Assert.Contains("retry.jpg", body, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -365,6 +428,7 @@ public sealed class JtPolarDayApiTests
         AppKey = "app-key",
         AppSecret = "app-secret",
         ImageReqUserCode = "123",
+        ImageServiceBaseUrl = JtPolarDayApi.TestBaseUrl,
         SiteCode = "6398155",
         EquipmentCode = "ZXJCD6398155001",
         SortingPlanCode = "6398155-001",

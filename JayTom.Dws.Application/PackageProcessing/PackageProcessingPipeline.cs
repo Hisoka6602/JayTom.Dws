@@ -3,6 +3,10 @@ namespace JayTom.Dws.Application.PackageProcessing;
 /// <summary>按采集、匹配、完成的固定顺序编排包裹业务判定。</summary>
 public sealed class PackageProcessingPipeline
 {
+    /// <summary>通过阶段契约创建默认流水线实现，宿主无需依赖具体实现类型。</summary>
+    public static IReadOnlyList<IPackageProcessingStage> CreateDefaultStages() =>
+        [new PackageAcquisitionStage(), new PackageMatchingStage(), new PackageCompletionStage()];
+
     /// <summary>采集阶段。</summary>
     private readonly IPackageProcessingStage _acquisition;
 

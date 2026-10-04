@@ -1,7 +1,7 @@
 namespace JayTom.Dws.Application.PackageProcessing;
 
 /// <summary>验证包裹采集记录的稳定标识和时间。</summary>
-public sealed class PackageAcquisitionStage : IPackageProcessingStage
+internal sealed class PackageAcquisitionStage : IPackageProcessingStage
 {
     /// <summary>采集阶段标识。</summary>
     public PackageProcessingStage Stage => PackageProcessingStage.Acquisition;

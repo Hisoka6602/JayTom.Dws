@@ -115,6 +115,9 @@ namespace JayTom.Dws.Camera {
         /// <summary>厂商 SDK 原始图像帧号，与应用内 FrameNo 区分。</summary>
         public uint? SdkFrameNo { get; set; }
 
+        /// <summary>表示该触发的条码被过滤，仍须消费下位机位置但不生成业务包裹。</summary>
+        public bool IsFiltered { get; set; }
+
         /// <summary>厂商 SDK 图像流通道号。</summary>
         public long? SdkChannelId { get; set; }
     }

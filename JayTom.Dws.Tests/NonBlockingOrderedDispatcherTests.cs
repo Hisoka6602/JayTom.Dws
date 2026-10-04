@@ -131,6 +131,7 @@ public sealed class NonBlockingOrderedDispatcherTests
     public async Task PriorityItems_OvertakeQueuedNormalItemsInOrder()
     {
         using var releaseConsumer = new ManualResetEvent(false);
+        using var firstItemStarted = new ManualResetEvent(false);
         var processed = new List<int>();
         var completed = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -138,6 +139,7 @@ public sealed class NonBlockingOrderedDispatcherTests
         {
             if (item == 0)
             {
+                firstItemStarted.Set();
                 releaseConsumer.WaitOne(TimeSpan.FromSeconds(5));
             }
             processed.Add(item);
@@ -148,6 +150,8 @@ public sealed class NonBlockingOrderedDispatcherTests
         });
 
         Assert.True(dispatcher.TryEnqueue(0));
+        // 首项必须已经执行再制造积压；否则优先队列合法抢先会导致测试偶发失败。
+        Assert.True(firstItemStarted.WaitOne(TimeSpan.FromSeconds(5)));
         Assert.True(dispatcher.TryEnqueue(3));
         Assert.True(dispatcher.TryEnqueue(4));
         Assert.True(dispatcher.TryEnqueuePriority(1));

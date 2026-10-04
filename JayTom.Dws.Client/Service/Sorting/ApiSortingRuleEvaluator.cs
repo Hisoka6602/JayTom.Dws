@@ -47,10 +47,16 @@ internal sealed class ApiSortingRuleEvaluator
     }
 
     /// <summary>根据外部响应解析第一条命中规则对应的目标格口。</summary>
-    public long? ResolveExitId(UploadResponse response)
+    public long? ResolveExitId(UploadResponse response) => ResolveExitId(response, out _);
+
+    /// <summary>返回当前预解析规则数量，帮助区分配置缺失和响应没有命中。</summary>
+    public int RuleCount => Volatile.Read(ref _rules).Length;
+
+    /// <summary>在同一次匹配中返回规则快照，供链路日志保留规则标识和匹配条件。</summary>
+    public long? ResolveExitId(UploadResponse response, out ApiRuleSnapshot? rule)
     {
         ArgumentNullException.ThrowIfNull(response);
-        ApiRuleSnapshot? rule = FindRule(response);
+        rule = FindRule(response);
         if (rule is null ||
             !Volatile.Read(ref _sortingLookup).TryGetValue(
                 rule.Rule.ApiSortingId,

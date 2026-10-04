@@ -29,7 +29,7 @@ namespace JayTom.Dws.Legacy.Contracts.Dto.ApiDto {
         /// 极昼图片服务基础地址。
         /// </summary>
         public string ImageServiceBaseUrl { get; set; } =
-            "https://opa.jtexpress.com.cn";
+            "https://sdsonline.jtexpress.com.cn/sdsOnlineApi";
 
         /// <summary>
         /// 极昼图片服务登录账号。

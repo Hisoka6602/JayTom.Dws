@@ -89,7 +89,8 @@ namespace JayTom.Dws.Client.Service.BackgroundService
         /// <summary>
         /// 原图待保存队列容量上限。
         /// </summary>
-        private const int MaxPendingImages = 32;
+        // 以原有 256 MiB 字节预算保护大图；较小图片的密集回传不应仅因 32 个条目就被丢弃。
+        private const int MaxPendingImages = 4_096;
         /// <summary>
         /// 裁剪图待保存队列容量上限。
         /// </summary>

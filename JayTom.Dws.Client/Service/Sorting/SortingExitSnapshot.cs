@@ -1,5 +1,6 @@
 using JayTom.Dws.Models.LocalConf.PackageSortingConfig;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace JayTom.Dws.Client.Service.Sorting;
 
@@ -19,6 +20,7 @@ internal sealed class SortingExitSnapshot
         ExitLookup = exitLookup;
         AlternateExitByParent = alternateExitByParent;
         ActiveAbnormalExit = activeAbnormalExit;
+        ConfiguredAbnormalExit = activeAbnormalExit ?? items.FirstOrDefault(item => item.Type == ExitType.AbnormalExit);
     }
 
     /// <summary>格口配置的有序只读数组。</summary>
@@ -32,6 +34,9 @@ internal sealed class SortingExitSnapshot
 
     /// <summary>当前启用的异常格口。</summary>
     public PackageExitDefinitionInfoModel? ActiveAbnormalExit { get; }
+
+    /// <summary>已配置的异常口，包含已停用配置，用于区分未设置与配置不可用。</summary>
+    public PackageExitDefinitionInfoModel? ConfiguredAbnormalExit { get; }
 
     /// <summary>创建没有任何格口配置的初始快照。</summary>
     public static SortingExitSnapshot Empty { get; } = new(

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,12 +29,6 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         private const string DeviceInfoPath = "/polarDay/upload/deviceInfo";
 
         /// <summary>
-        /// 交叉带图片上传到本地适配服务的相对地址。
-        /// </summary>
-        private const string SortingImagePath =
-            "/polarDay/upload/sortingImage";
-
-        /// <summary>
         /// 在线服务的图片上传链接申请地址。
         /// </summary>
         private const string GetUploadUrlPath = "/polarDay/query/getUploadUrl";
@@ -56,10 +51,10 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             "https://uat-sdsonline.jtexpress.com.cn/sdsOnlineApi";
 
         /// <summary>
-        /// 旧配置兼容字段默认值；DWS 不再访问此地址。
+        /// 图片上传链接必须使用在线服务，本地查询也使用此默认图片地址。
         /// </summary>
         public const string DefaultImageServiceBaseUrl =
-            "https://opa.jtexpress.com.cn";
+            ProductionBaseUrl;
 
         /// <summary>
         /// 旧配置兼容字段默认值；图片扫描类型由本地服务配置。
@@ -110,6 +105,9 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         /// </summary>
         private ApiParameter _parameters = new();
 
+        /// <summary>仅串行执行必要的补水印和压缩，避免回传并发同时占满设备的图像处理资源。</summary>
+        private readonly SemaphoreSlim _savedImagePreparationGate = new(1, 1);
+
         /// <summary>
         /// 初始化极昼接口。
         /// </summary>
@@ -117,6 +115,27 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         public JtPolarDayApi(IHttpClientFactory httpClientFactory) {
             ArgumentNullException.ThrowIfNull(httpClientFactory);
             _httpClientFactory = httpClientFactory;
+        }
+
+        /// <summary>在回传工作器中生成带运单号、扫描时间和重量水印的上传文件。</summary>
+        /// <param name="image">原始扫码图片。</param>
+        /// <param name="barcode">运单号。</param>
+        /// <param name="scanTime">首次扫码时间。</param>
+        /// <param name="weight">千克重量。</param>
+        /// <returns>符合极昼大小限制的 JPEG 文件内容。</returns>
+        public static byte[] PrepareScanImageContent(
+            System.Drawing.Image image, string barcode, DateTime scanTime, decimal weight) {
+            return JtPolarDayScanImageProcessor.CreateUploadContent(
+                image, NormalizeBarcode(barcode), scanTime, RoundMeasurement(weight));
+        }
+
+        /// <summary>通过极昼在线接口申请链接并上传已准备的扫码图片。</summary>
+        /// <param name="imageContent">带协议水印的 JPEG 文件内容。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>二进制上传成功后的图片半路径。</returns>
+        public Task<string> UploadPreparedScanImageAsync(
+            byte[] imageContent, CancellationToken token = default) {
+            return UploadScanImageAsync(imageContent, Volatile.Read(ref _parameters), token);
         }
 
         /// <summary>
@@ -243,30 +262,33 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             }
 
             var imagePath = EmptyToNull(context.HalfPath);
-            if (imageInfo?.Image is { } image) {
+            if (context.ScanImageContent is { Length: > 0 } || imageInfo?.Image is not null ||
+                (!string.IsNullOrWhiteSpace(context.SavedScanImageFilePath) &&
+                 string.IsNullOrWhiteSpace(context.HalfPath))) {
+                context.HalfPath = null;
                 try {
-                    var imageContent =
-                        JtPolarDayScanImageProcessor.CreateUploadContent(
-                            image.As<System.Drawing.Image>(),
-                            NormalizeBarcode(barcode),
-                            scanTime,
-                            RoundMeasurement(weight));
+                    context.ScanImageContent ??= !string.IsNullOrWhiteSpace(context.SavedScanImageFilePath)
+                        ? await ReadSavedUploadFileAsync(context.SavedScanImageFilePath,
+                            context.SavedScanImageHasRequiredWatermark, barcode, scanTime, weight, token)
+                            .ConfigureAwait(false)
+                        : PrepareScanImageContent(imageInfo!.Image!.As<System.Drawing.Image>(),
+                            barcode, scanTime, weight);
                     imagePath = await UploadScanImageAsync(
-                            barcode,
-                            scanTime,
-                            imageContent,
+                            context.ScanImageContent,
                             parameters,
                             token)
                         .ConfigureAwait(false);
+                    context.HalfPath = imagePath;
+                    context.ScanImageContent = null;
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) {
                     throw;
                 }
                 catch (Exception exception) {
-                    Logger.Warn(
+                    Logger.Error(
                         exception,
-                        $"极昼扫描图片上传失败，继续发送不含图片的设备报文:{barcode}");
-                    imagePath = null;
+                        $"极昼扫描图片上传失败，保留包裹等待重试:{barcode}");
+                    throw;
                 }
             }
 
@@ -469,53 +491,42 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         /// 上传扫描图片并返回设备报文使用的半路径。
         /// </summary>
         private async Task<string> UploadScanImageAsync(
-            string barcode,
-            DateTime scanTime,
             byte[] imageContent,
             ApiParameter parameters,
             CancellationToken token) {
-            if (imageContent.Length >
+            if (imageContent.Length == 0 || imageContent.Length >
                 JtPolarDayScanImageProcessor.MaxImageSizeBytes) {
                 throw new InvalidOperationException(
                     "极昼扫描图片超过接口允许的最大大小");
             }
 
-            if (IsOnlineService(parameters.BaseUrl)) {
-                return await UploadOnlineImageAsync(
-                        imageContent,
-                        parameters,
-                        token)
-                    .ConfigureAwait(false);
-            }
-
-            var requestData = new {
-                waybillNo = NormalizeBarcode(barcode),
-                scanTime = scanTime.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                contentBase64 = Convert.ToBase64String(imageContent)
-            };
-            var response = await ExecuteRequestAsync(
-                    SortingImagePath,
-                    requestData,
-                    parameters,
-                    parameters.ImageUploadTimeoutMilliseconds,
-                    EvaluateDeviceInfoResponse,
-                    token)
+            var imageParameters = parameters.Clone();
+            imageParameters.BaseUrl = ResolveImageBaseUrl(parameters);
+            return await UploadOnlineImageAsync(imageContent, imageParameters, token)
                 .ConfigureAwait(false);
-            if (!response.IsSuccess) {
-                throw new InvalidOperationException(
-                    $"本地交叉带图片暂存失败:{response.ExceptionMsg}");
-            }
+        }
 
-            using var document = JsonDocument.Parse(
-                response.ResponseContent);
-            if (!document.RootElement.TryGetProperty("data", out var data) ||
-                !data.TryGetProperty("halfPath", out var halfPathElement) ||
-                string.IsNullOrWhiteSpace(halfPathElement.GetString())) {
-                throw new InvalidOperationException(
-                    "本地交叉带图片暂存响应缺少data.halfPath");
+        /// <summary>查询在本地时仍选择在线图片接口，并兼容旧配置中遗留的 OPA 地址。</summary>
+        /// <param name="parameters">设备和图片服务配置。</param>
+        /// <returns>文档规定的在线图片服务基础地址。</returns>
+        private static string ResolveImageBaseUrl(ApiParameter parameters) {
+            if (IsOnlineService(parameters.BaseUrl)) {
+                return parameters.BaseUrl;
             }
-
-            return halfPathElement.GetString()!;
+            if (IsOnlineService(parameters.ImageServiceBaseUrl)) {
+                return parameters.ImageServiceBaseUrl;
+            }
+            if (string.IsNullOrWhiteSpace(parameters.ImageServiceBaseUrl) ||
+                string.Equals(parameters.ImageServiceBaseUrl.TrimEnd('/'),
+                    "https://opa.jtexpress.com.cn", StringComparison.OrdinalIgnoreCase)) {
+                return ProductionBaseUrl;
+            }
+            if (string.Equals(parameters.ImageServiceBaseUrl.TrimEnd('/'),
+                "https://uat-opa.jtexpress.com.cn", StringComparison.OrdinalIgnoreCase)) {
+                return TestBaseUrl;
+            }
+            throw new InvalidOperationException(
+                "极昼图片服务地址必须使用以 /sdsOnlineApi 结尾的在线接口地址");
         }
 
         /// <summary>
@@ -534,9 +545,10 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                     "极昼在线图片上传需要配置图片用户编号 reqUserCode");
             }
 
+            var fileName = $"scan_{Guid.NewGuid():N}.jpg";
             var requestData = new {
                 equipmentCode = parameters.EquipmentCode,
-                fileNames = new[] { $"scan_{Guid.NewGuid():N}.jpg" },
+                fileNames = new[] { fileName },
                 reqUserCode = parameters.ImageReqUserCode
             };
             var response = await ExecuteRequestAsync(
@@ -560,6 +572,11 @@ namespace JayTom.Dws.Integrations.Jtexpress {
             if (data.ValueKind == JsonValueKind.Array &&
                 data.GetArrayLength() == 1) {
                 data = data[0];
+            }
+            else if (data.ValueKind == JsonValueKind.Object &&
+                data.TryGetProperty(fileName, out var uploadData)) {
+                // 正式响应按请求的文件名返回链接，不能把其他图片的链接用于当前运单。
+                data = uploadData;
             }
 
             if (data.ValueKind != JsonValueKind.Object ||
@@ -586,7 +603,40 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                     parameters,
                     token)
                 .ConfigureAwait(false);
+            Logger.Info($"极昼扫描图片上传成功:HalfPath={halfPathElement.GetString()}");
             return halfPathElement.GetString()!;
+        }
+
+        /// <summary>读取存图完成事件提供的文件，优先复用已含协议水印且不超过大小限制的 JPEG。</summary>
+        /// <param name="filePath">已保存图片的完整路径。</param>
+        /// <param name="hasRequiredWatermark">本地保存阶段已添加条码、扫码时间和重量水印。</param>
+        /// <param name="barcode">运单号。</param>
+        /// <param name="scanTime">扫码时间。</param>
+        /// <param name="weight">千克重量。</param>
+        /// <param name="token">取消令牌。</param>
+        /// <returns>可上传的 JPEG 内容；缺失或不可读文件向回传工作器报告失败。</returns>
+        private async Task<byte[]> ReadSavedUploadFileAsync(
+            string filePath, bool hasRequiredWatermark, string barcode,
+            DateTime scanTime, decimal weight, CancellationToken token) {
+            var content = await File.ReadAllBytesAsync(filePath, token).ConfigureAwait(false);
+            if (hasRequiredWatermark && content.Length <= JtPolarDayScanImageProcessor.MaxImageSizeBytes &&
+                content.Length >= 4 && content[0] == 0xFF && content[1] == 0xD8 &&
+                content[2] == 0xFF && content[^2] == 0xFF && content[^1] == 0xD9) {
+                return content;
+            }
+
+            await _savedImagePreparationGate.WaitAsync(token).ConfigureAwait(false);
+            try {
+                token.ThrowIfCancellationRequested();
+                using var stream = new MemoryStream(content, writable: false);
+                using var image = System.Drawing.Image.FromStream(stream);
+                return hasRequiredWatermark
+                    ? JtPolarDayScanImageProcessor.CreateUploadContent(image)
+                    : PrepareScanImageContent(image, barcode, scanTime, weight);
+            }
+            finally {
+                _savedImagePreparationGate.Release();
+            }
         }
 
         /// <summary>
@@ -1075,6 +1125,17 @@ namespace JayTom.Dws.Integrations.Jtexpress {
                 : baseUrl.Trim();
         }
 
+        /// <summary>下位机创建包裹时分拣编码就是小车号；其他来源沿用灰度设备的小车号。</summary>
+        public static string GetUploadCarNumber(
+            bool isCreatedByLowerMachine, long sortingCode, int? grayscaleCarNumber) {
+            if (isCreatedByLowerMachine) {
+                return sortingCode >= 0 ? sortingCode.ToString(CultureInfo.InvariantCulture) : string.Empty;
+            }
+            return grayscaleCarNumber is >= 0
+                ? grayscaleCarNumber.Value.ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
+        }
+
         /// <summary>
         /// 读取格口查询返回的操作类型，供扫码和落格上报沿用。
         /// </summary>
@@ -1384,6 +1445,15 @@ namespace JayTom.Dws.Integrations.Jtexpress {
         /// 极昼单票扩展上下文。
         /// </summary>
         public sealed class UploadContext {
+            /// <summary>本地存图完成事件提供的图片路径，只由回传工作器读取。</summary>
+            public string? SavedScanImageFilePath { get; set; }
+
+            /// <summary>本地保存的图片已经包含条码、扫码时间和重量水印。</summary>
+            public bool SavedScanImageHasRequiredWatermark { get; set; }
+
+            /// <summary>回传工作器读取并处理的 JPEG，图片请求重试时复用，上传成功后释放。</summary>
+            public byte[]? ScanImageContent { get; set; }
+
             /// <summary>
             /// 查询响应中的实际操作类型；未取得时使用设备配置。
             /// </summary>
