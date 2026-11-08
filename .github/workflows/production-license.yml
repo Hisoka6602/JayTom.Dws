@@ -3,13 +3,21 @@ name: 生成 DWS 生产授权文件
 on:
   workflow_dispatch:
     inputs:
+      license_format:
+        description: 授权版本：v2 用于新版客户端，legacy-v1 用于 2025 旧版客户端
+        required: true
+        default: v2
+        type: choice
+        options:
+          - v2
+          - legacy-v1
       license_code:
         description: 授权码；留空时安全生成，且不会写入日志
         required: false
         default: ''
         type: string
       machine_code:
-        description: 目标 DWS 设备“授权设置”页面显示的 64 位 SHA-256 机器码
+        description: 目标客户端显示的机器码：新版为 64 位 SHA-256 机器码，旧版为 32 位十六进制机器码
         required: true
         type: string
       customer_name:
@@ -55,7 +63,7 @@ concurrency:
 
 jobs:
   generate-license:
-    name: 签发并验签生产授权
+    name: 生成并校验生产授权
     runs-on: windows-latest
     environment: production-license
     timeout-minutes: 10
@@ -77,11 +85,16 @@ jobs:
         shell: pwsh
         run: dotnet build .\JayTom.Dws.LicenseTool\JayTom.Dws.LicenseTool.csproj -c Release --framework net10.0-windows --no-restore -p:Platform=x64
 
-      - name: 使用生产密钥签发并验签
+      - name: 验证新旧授权工具兼容性
+        shell: pwsh
+        run: .\eng\license\Test-DwsLicenseCompatibility.ps1
+
+      - name: 按所选版本生成并校验
         id: generate
         env:
-          DWS_LICENSE_PRIVATE_KEY_PEM: ${{ secrets.DWS_LICENSE_PRIVATE_KEY_PEM }}
-          DWS_LICENSE_PUBLIC_KEY_PEM: ${{ secrets.DWS_LICENSE_PUBLIC_KEY_PEM }}
+          DWS_LICENSE_PRIVATE_KEY_PEM: ${{ inputs.license_format == 'v2' && secrets.DWS_LICENSE_PRIVATE_KEY_PEM || '' }}
+          DWS_LICENSE_PUBLIC_KEY_PEM: ${{ inputs.license_format == 'v2' && secrets.DWS_LICENSE_PUBLIC_KEY_PEM || '' }}
+          INPUT_LICENSE_FORMAT: ${{ inputs.license_format }}
           INPUT_LICENSE_CODE: ${{ inputs.license_code }}
           INPUT_MACHINE_CODE: ${{ inputs.machine_code }}
           INPUT_CUSTOMER_NAME: ${{ inputs.customer_name }}
@@ -125,9 +138,14 @@ jobs:
           }
           Write-Host "::add-mask::$effectiveLicenseCode"
 
+          $licenseFormat = $env:INPUT_LICENSE_FORMAT
+          if ($licenseFormat -notin @('v2', 'legacy-v1')) {
+            throw '授权版本必须是 v2 或 legacy-v1。'
+          }
           $machineCode = $env:INPUT_MACHINE_CODE.Trim().ToUpperInvariant()
-          if ($machineCode -notmatch '^[A-F0-9]{64}$') {
-            throw '机器码必须是目标 DWS 客户端显示的 64 位十六进制 SHA-256 值。'
+          $machineCodePattern = if ($licenseFormat -eq 'v2') { '^[A-F0-9]{64}$' } else { '^[A-F0-9]{32}$' }
+          if ($machineCode -notmatch $machineCodePattern) {
+            throw '机器码与所选授权版本不匹配：新版 v2 需要 64 位，旧版 legacy-v1 需要 32 位十六进制机器码。'
           }
 
           $normalizedOutputName = $env:OUTPUT_NAME.Trim()
@@ -142,25 +160,32 @@ jobs:
           $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
 
           try {
-            $privatePem = ConvertTo-PemText $env:DWS_LICENSE_PRIVATE_KEY_PEM 'DWS_LICENSE_PRIVATE_KEY_PEM'
-            $publicPem = ConvertTo-PemText $env:DWS_LICENSE_PUBLIC_KEY_PEM 'DWS_LICENSE_PUBLIC_KEY_PEM'
-            [System.IO.File]::WriteAllText($privateKeyPath, $privatePem, $utf8WithoutBom)
-            [System.IO.File]::WriteAllText($publicKeyPath, $publicPem, $utf8WithoutBom)
-            $privatePem = $null
-            $publicPem = $null
+            $signingParameters = @{}
+            if ($licenseFormat -eq 'v2') {
+              $privatePem = ConvertTo-PemText $env:DWS_LICENSE_PRIVATE_KEY_PEM 'DWS_LICENSE_PRIVATE_KEY_PEM'
+              $publicPem = ConvertTo-PemText $env:DWS_LICENSE_PUBLIC_KEY_PEM 'DWS_LICENSE_PUBLIC_KEY_PEM'
+              [System.IO.File]::WriteAllText($privateKeyPath, $privatePem, $utf8WithoutBom)
+              [System.IO.File]::WriteAllText($publicKeyPath, $publicPem, $utf8WithoutBom)
+              $privatePem = $null
+              $publicPem = $null
+              $signingParameters = @{
+                PrivateKeyPath = $privateKeyPath
+                PublicKeyPath = $publicKeyPath
+              }
+            }
 
             & "$env:GITHUB_WORKSPACE\eng\license\New-DwsProductionLicense.ps1" `
+              -LicenseFormat $licenseFormat `
               -LicenseCode $effectiveLicenseCode `
               -MachineCode $machineCode `
               -CustomerName $env:INPUT_CUSTOMER_NAME `
               -ExpirationDate $env:INPUT_EXPIRATION_DATE `
-              -PrivateKeyPath $privateKeyPath `
-              -PublicKeyPath $publicKeyPath `
               -MaxBindingScannerCount $env:INPUT_MAX_BINDING_SCANNER_COUNT `
               -AppliedTemplateName $env:INPUT_APPLIED_TEMPLATE_NAME `
               -Remarks $env:INPUT_REMARKS `
               -IsAvailable $env:INPUT_IS_AVAILABLE `
-              -OutputPath $outputPath
+              -OutputPath $outputPath `
+              @signingParameters
           }
           finally {
             foreach ($temporaryKeyPath in @($privateKeyPath, $publicKeyPath)) {
@@ -172,31 +197,41 @@ jobs:
 
           $manifestPath = Join-Path -Path $artifactDirectory -ChildPath 'license-manifest.json'
           $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
-          "key_id=$($manifest.keyId)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $packageId = if ($licenseFormat -eq 'v2') { $manifest.keyId } else { 'legacy-v1' }
+          "package_id=$packageId" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
           $summaryCustomer = $env:INPUT_CUSTOMER_NAME.Replace("`r", ' ').Replace("`n", ' ')
           $summaryLicenseCode = if ($licenseCodeWasGenerated) { '已安全生成（内容已隐藏）' } else { '使用输入值（内容已隐藏）' }
+          $validationDescription = if ($licenseFormat -eq 'v2') { 'PS256（RSA-PSS / SHA-256）验签' } else { '旧版二进制解密、机器码和有效期校验' }
+          $keyDescription = if ($licenseFormat -eq 'v2') { $manifest.keyId } else { '每个文件独立生成，不使用生产签名密钥' }
+          $trustDescription = if ($licenseFormat -eq 'v2') { $manifest.trustFile } else { '旧版无需 license-trust 目录' }
+          $deployment = if ($licenseFormat -eq 'v2') {
+            '部署时必须同时导入授权文件和 license-trust 目录；生产签名私钥不会进入 artifact。'
+          } else {
+            '在旧客户端点击“导入授权文件”选择 .key，或将其放入程序目录的 License 文件夹。'
+          }
           $summary = @"
-          ### DWS v2 生产授权文件已签发并验签
+          ### DWS $licenseFormat 生产授权文件已生成并校验
 
-          - 签名算法：PS256（RSA-PSS / SHA-256）
-          - 签名密钥：$($manifest.keyId)
+          - 授权版本：$licenseFormat
+          - 校验方式：$validationDescription
+          - 密钥：$keyDescription
           - 授权码：$summaryLicenseCode
           - 机器码：$machineCode
           - 客户名称：$summaryCustomer
           - 到期时间：$env:INPUT_EXPIRATION_DATE
           - 授权文件：$normalizedOutputName
-          - 信任根：license-trust/$($manifest.keyId).pem
+          - 信任根：$trustDescription
           - 完整性清单：license-manifest.json
 
-          部署时必须同时导入授权文件和 license-trust 目录；私钥不会进入 artifact。
+          $deployment
           "@
           $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
-      - name: 上传已验签授权包
+      - name: 上传已校验授权包
         uses: actions/upload-artifact@v4
         with:
-          name: dws-production-license-${{ steps.generate.outputs.key_id }}
+          name: dws-production-license-${{ steps.generate.outputs.package_id }}
           path: artifacts/license/**
           if-no-files-found: error
           retention-days: 7

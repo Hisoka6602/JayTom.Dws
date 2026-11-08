@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using JayTom.Dws.LicenseTool;
 
 try {
     var arguments = ToolArguments.Parse(args);
@@ -22,9 +23,17 @@ try {
     }
 
     var request = LicenseGenerationRequest.FromArguments(arguments);
-    V2LicenseIssuer.Generate(request);
+    if (request.Format == "legacy-v1") {
+        LegacyLicenseFile.Generate(request);
+    }
+    else {
+        V2LicenseIssuer.Generate(request);
+    }
     Console.WriteLine($"授权文件已生成：{request.OutputPath}");
-    Console.WriteLine($"签名密钥标识：{request.KeyId}");
+    Console.WriteLine($"授权格式：{request.Format}");
+    if (request.Format == "v2") {
+        Console.WriteLine($"签名密钥标识：{request.KeyId}");
+    }
     return 0;
 }
 catch (Exception exception) {
@@ -32,7 +41,7 @@ catch (Exception exception) {
     return 1;
 }
 
-internal sealed partial record LicenseGenerationRequest(
+internal sealed record LicenseGenerationRequest(
     string LicenseCode,
     string MachineCode,
     string CustomerName,
@@ -43,13 +52,12 @@ internal sealed partial record LicenseGenerationRequest(
     bool IsAvailable,
     string OutputPath,
     string PrivateKey,
-    string KeyId) {
+    string KeyId,
+    string Format) {
     public static LicenseGenerationRequest FromArguments(ToolArguments arguments) {
         var licenseCode = arguments.GetRequired("--license-code").Trim();
         var machineCode = arguments.GetRequired("--machine-code").Trim().ToUpperInvariant();
-        if (!MachineCodeRegex().IsMatch(machineCode)) {
-            throw new ArgumentException("机器码必须是 64 位十六进制字符串。");
-        }
+        var format = LicenseFormats.Resolve(arguments.GetOptional("--format", "v2"), machineCode);
 
         var customerName = arguments.GetRequired("--customer-name").Trim();
         var expirationDate = ParseExpirationDate(
@@ -63,16 +71,24 @@ internal sealed partial record LicenseGenerationRequest(
             throw new ArgumentException("允许绑定的扫码器数量必须大于 0。");
         }
 
-        var privateKeyPath = Path.GetFullPath(
-            arguments.GetRequired("--private-key").Trim());
-        if (!File.Exists(privateKeyPath)) {
-            throw new ArgumentException($"找不到私钥文件：{privateKeyPath}");
+        var privateKey = string.Empty;
+        var keyId = string.Empty;
+        if (format == "v2") {
+            var privateKeyPath = Path.GetFullPath(
+                arguments.GetRequired("--private-key").Trim());
+            if (!File.Exists(privateKeyPath)) {
+                throw new ArgumentException($"找不到私钥文件：{privateKeyPath}");
+            }
+
+            privateKey = File.ReadAllText(privateKeyPath);
+            keyId = arguments.GetOptional(
+                "--key-id", V2LicenseIssuer.ComputeKeyId(privateKey)).Trim();
+        }
+        else if (!string.IsNullOrEmpty(arguments.GetOptional("--private-key", string.Empty)) ||
+                 !string.IsNullOrEmpty(arguments.GetOptional("--key-id", string.Empty))) {
+            throw new ArgumentException("旧版格式使用独立的一次性密钥，不能指定生产签名私钥或密钥标识。");
         }
 
-        var privateKey = File.ReadAllText(privateKeyPath);
-        var keyId = arguments.GetOptional(
-            "--key-id",
-            V2LicenseIssuer.ComputeKeyId(privateKey)).Trim();
         var outputPath = Path.GetFullPath(arguments.GetRequired("--output").Trim());
         return new LicenseGenerationRequest(
             licenseCode,
@@ -85,7 +101,8 @@ internal sealed partial record LicenseGenerationRequest(
             arguments.GetBoolean("--is-available", true),
             outputPath,
             privateKey,
-            keyId);
+            keyId,
+            format);
     }
 
     private static DateTime ParseExpirationDate(string value) {
@@ -114,7 +131,27 @@ internal sealed partial record LicenseGenerationRequest(
         return DateTime.SpecifyKind(local, DateTimeKind.Local);
     }
 
-    [GeneratedRegex("^[A-F0-9]{64}$", RegexOptions.CultureInvariant)]
+}
+
+internal static partial class LicenseFormats {
+    public static string Resolve(string requestedFormat, string machineCode) {
+        var format = requestedFormat.Trim().ToLowerInvariant();
+        if (format is not ("v2" or "legacy-v1")) {
+            throw new ArgumentException("授权格式必须是 v2 或 legacy-v1。");
+        }
+
+        if (!MachineCodeRegex().IsMatch(machineCode)) {
+            throw new ArgumentException("机器码必须是 32 位旧版或 64 位 SHA-256 十六进制字符串。");
+        }
+
+        if (machineCode.Length != (format == "v2" ? 64 : 32)) {
+            throw new ArgumentException($"{format} 格式需要 {(format == "v2" ? 64 : 32)} 位机器码。");
+        }
+
+        return format;
+    }
+
+    [GeneratedRegex("\\A(?:[A-F0-9]{32}|[A-F0-9]{64})\\z", RegexOptions.CultureInvariant)]
     private static partial Regex MachineCodeRegex();
 }
 
@@ -346,12 +383,20 @@ internal static class LicenseKeyGenerator {
 internal static class LicenseValidator {
     public static int Validate(ToolArguments arguments) {
         var filePath = Path.GetFullPath(arguments.GetRequired("--validate-file"));
-        var publicKeyPath = Path.GetFullPath(arguments.GetRequired("--public-key"));
         var machineCode = arguments.GetRequired("--machine-code").Trim().ToUpperInvariant();
-        var result = V2LicenseIssuer.Validate(
-            filePath,
-            File.ReadAllText(publicKeyPath),
-            machineCode);
+        var format = LicenseFormats.Resolve(arguments.GetOptional("--format", "v2"), machineCode);
+        LicenseValidationResult result;
+        if (format == "legacy-v1") {
+            if (!string.IsNullOrWhiteSpace(arguments.GetOptional("--public-key", string.Empty))) {
+                throw new ArgumentException("旧版文件使用内置的一次性密钥，不能指定生产公钥。");
+            }
+
+            result = LegacyLicenseFile.Validate(filePath, machineCode);
+        }
+        else {
+            var publicKeyPath = Path.GetFullPath(arguments.GetRequired("--public-key"));
+            result = V2LicenseIssuer.Validate(filePath, File.ReadAllText(publicKeyPath), machineCode);
+        }
         Console.WriteLine("[None] 授权正常。");
         Console.WriteLine($"客户名称：{result.CustomerName}");
         Console.WriteLine($"到期时间：{result.ExpirationDate:yyyy-MM-dd HH:mm:ss}");
@@ -426,7 +471,8 @@ internal sealed class ToolArguments {
 
     public static void WriteHelp() {
         Console.WriteLine("生成密钥：JayTom.Dws.LicenseTool --generate-key-pair --private-key-output <离线私钥.pem> --public-key-output <部署公钥.pem>");
-        Console.WriteLine("签发授权：JayTom.Dws.LicenseTool --private-key <离线私钥.pem> --license-code <授权码> --machine-code <64位机器码> --customer-name <客户名称> --expiration-date <到期时间> --output <授权文件>");
-        Console.WriteLine("校验授权：JayTom.Dws.LicenseTool --validate-file <授权文件> --public-key <部署公钥.pem> --machine-code <64位机器码>");
+        Console.WriteLine("签发授权：JayTom.Dws.LicenseTool [--format v2|legacy-v1] [--private-key <v2 离线私钥.pem>] --license-code <授权码> --machine-code <机器码> --customer-name <客户名称> --expiration-date <到期时间> --output <授权文件>");
+        Console.WriteLine("校验授权：JayTom.Dws.LicenseTool --validate-file <授权文件> [--format v2|legacy-v1] [--public-key <v2 部署公钥.pem>] --machine-code <机器码>");
+        Console.WriteLine("默认 v2（64 位机器码）；2025 旧客户端请选择 legacy-v1（32 位机器码），不需要生产签名密钥。");
     }
 }
