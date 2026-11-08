@@ -108,3 +108,7 @@ finally {
     if (-not $resolvedTestDirectory.StartsWith($temporaryRoot + '\dws-license-compatibility-', [StringComparison]::OrdinalIgnoreCase)) { throw '测试清理目录越界。' }
     if (Test-Path -LiteralPath $resolvedTestDirectory) { Remove-Item -LiteralPath $resolvedTestDirectory -Recurse -Force }
 }
+
+# 负向用例的非零退出码已经核验；全部检查和清理完成后明确返回成功。
+# GitHub Actions 会读取 LASTEXITCODE，不能留下最后一个预期失败用例的状态。
+exit 0
